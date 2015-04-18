@@ -1,0 +1,11 @@
+------------------------------------------------------------------------
+
+title: Connection Recovery\
+section: client-lib-development-guide\
+index: 45\
+jump_to:\
+Help with:\
+API reference:\
+----
+
+Please see the connection recovery section of the [realtime connection specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md#ablyrealtimeconnection).

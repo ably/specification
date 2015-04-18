@@ -1,0 +1,8 @@
+------------------------------------------------------------------------
+
+title: Connection host fallback\
+section: client-lib-development-guide\
+index: 58\
+----
+
+Please see the fallback host feature of the [realtime connection failures specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md#ablyrealtimeconnection-failures).

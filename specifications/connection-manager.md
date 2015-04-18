@@ -1,0 +1,8 @@
+------------------------------------------------------------------------
+
+title: Connection Manager\
+section: client-lib-development-guide\
+index: 50\
+----
+
+Please see the recovery section of the [realtime connection failures specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md#ablyrealtimeconnection-failures).

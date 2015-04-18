@@ -1,0 +1,481 @@
+------------------------------------------------------------------------
+
+title: Documentation Formatting Guide\
+section: client-lib-development-guide\
+index: 60\
+jump_to:\
+Help with:\
+- Overview and Textile#title\
+- Meta data\
+- Markup fundamentals\
+- Code blocks\
+- Language specific content\
+- Definition lists\
+- Inline Table of Contents#inline-toc\
+- Other custom styles\
+----
+
+Keeping documentation relevant, concise and up to date is very important to us. As such, we have ensured that updating and writing documentation for Ably is a simple process for Ably staff and developers, and even our customers and partners. We welcome you to fork [this documentation repository](http://github.com/ably/ably.github.com), update the documentation as you see fit, and send us your pull requests so we can incorporate your changes.
+
+Please see this [documentation repository's README](http://github.com/ably/README.md) for details on how to fork this repo, make changes, and send pull requests back to Ably. From a high level, the documentation within [this repository](http://github.com/ably/ably.github.com) is used to generate a static site hosted at <http://ably.github.com>, which is subsequently imported into the [primary Ably website documentation](https://www.ably.io/documentation) periodically. All documentation is formatted using [Textile markup](http://redcloth.org/textile). Please refer to <http://redcloth.org/textile> for a complete Textile reference.
+
+Detailed below are specific Ably layout techniques that you should be aware of when writing documentation. All standard Textile markup is supported in addition to what is documented below.
+
+## Meta data
+
+At the top of each textile page, the following meta data can be included as follows:
+
+bc\[yaml\]. ----\
+title: "Enter a title that will appear in the navigation and HTML page title"\
+section: "Specify either rest\|realtime\|other\|none to assign to nav on the left"\
+index: 0 \# Optional integer position within the nav, 0 is reserved for index & home\
+jump_to: \# Optional YAML tag that will insert a "jump to" navigation based on YAML\
+"Help with": \# surrounding quotes are not normally needed...\
+- "Item 1#anchor-link-id" \# links to #anchor-link-id\
+"API methods":\
+- "Item 2" \# auto-links to #item-2\
+- "Item 3" \# auto-links to #item-3\
+- "Language specific content"#language-specific-content\
+----
+
+View this page's Textile markup for an example of the jump to navigation.
+
+Note that if you have referenced an anchor that has language specific content, the jump to navigation will automatically update to reflect the new content for that anchor whenever a language is selected, and ignore the text you have provided.
+
+## Markup fundamentals
+
+### Headings
+
+The title of the page is automatically inserted into the page using a `h1.` tag. A simple breadcrumb navigation will be shown if the page has an index other than zero, and a page with index 0 exists.
+
+::: tip
+Use `bq(definition).` for method definitions after `h6.` method anchors. See [blockquote definitions](#block-quotes).
+:::
+
+`h1.` used to indicate a new section such as the API reference, the title will be used within the in-context navigation. The first paragraph that follows will always contain larger text. You can continue this larger style by using a `p(larger).` tag.\
+`h2.` used for the key secondary headings on a page, and will be used within the in-context navigation.\
+`h3.` used for the key tertiary headings, all paragraph text that follows is indented\
+`h4.` to `h5.` used for further headings decreasing in emphasis used in a typical hierarchical fashion\
+`h6.` used to designate a definition or reference, see [REST history section in maroon](/rest/history) for an example of how this is used
+
+`h[1-6](#anchor-id).` used with any heading tag to add an HTML ID that can be linked to using anchor tags
+
+### Documentation links
+
+Absolute reference links such as `"Google":http://www.google.com` can be used as normal.
+
+All links to other documentation pages must follow the format `"REST Channels":/rest/channels-messages"` and must resolve to a relative path for this repository. When imported into the main Ably website, the links will be automatically modified to link to the correct page in the Ably webite documentation.\
+Anchor links can be used as follows `"REST spec stats":/rest/statistics#stats`.
+
+Links can also contain mono-spaced code references within the link using the format \<code\>\"@mono-spaced-link-text@\":/rest/channels-messages\</code\>, which would appear as [`mono-spaced-link-text`](/rest/channels-messages)
+
+## Code blocks
+
+Simple code keywords inline within your content are used commonly by wrapping them the @ symbol. For example \<code\>@method@\</code\> is presented as `method`.
+
+For all code blocks, a language in lowercase must be specified. Languages currently supported are \<%= Ably::DOCUMENTATION_LANGUAGES.map { \|lang_id, lang\| "`#{lang_id}`" }.join(', ') %\>. A code block must be prefixed and suffixed with a line break, and must use the following syntax:
+
+bc\[text\]. bc\[javascript\]. var a = 1;\
+a += 1;
+
+Note, if multiple code blocks appear underneath each other with different languages, then a language selector will appear for the page. For example, the following Textile:
+
+bc\[text\]. bc\[javascript\]. var a = 1;\
+a += 1;\
+// line break\
+bc\[ruby,nodejs\]. a = 1\
+a += 1\
+// line break\
+bc\[csharp\]. Integer a = 1;\
+a += 1;
+
+generates the following where the code shown is governed by the language selected in the floating top nav
+
+bc\[javascript\]. var a = 1;\
+a += 1;
+
+bc\[ruby,nodejs\]. a = 1\
+a += 1
+
+bc\[csharp\]. Integer a = 1;\
+a += 1;
+
+Note that if you don't include a full set of languages, or at least provide a `default` language, then a language selector will appear. In the example below, no language has been specified for `javascript` or `nodejs`. Select Javascript in the top nav to see what happens when a language is not available.
+
+bc\[ruby\]. \# this is ruby
+
+bc\[csharp\]. // this is C#
+
+### Code blocks Github style
+
+As an alternative, you can use Github styled code blocks using triple backticks however the language(s) must be specified comma separated after the backticks in square brackets, for consistency with normal textile language blocks. The advantage of Github blocks over traditional Textile blocks is that line breaks are supported. Please note that lowest level indentation is stripped from the code.
+
+\`\`\`\
+\`\`\`\[javascript\]\
+var a = 1;
+
+a = 2; // note this works in spite of the line break\
+\`\`\`
+
+\`\`\`\[ruby\]\
+a = 1
+
+a = 2\
+\`\`\`
+
+\`\`\`\[csharp\]\
+int a = 1;
+
+a = 2;\
+\`\`\`\
+\`\`\`
+
+generates the following where the code shown is governed by the language selected in the floating top nav
+
+\`\`\`\[javascript,default\]\
+var a = 1;
+
+a = 2; // note this works in spite of the line break\
+\`\`\`
+
+\`\`\`\[ruby\]\
+a = 1
+
+a = 2\
+\`\`\`
+
+\`\`\`\[csharp\]\
+int a = 1;
+
+a = 2;\
+\`\`\`
+
+### Try it now code editor {#code-editor}
+
+::: tip
+In order to publish code examples to JSBin, your [/config/jsbin_config.yaml](https://github.com/ably/docs/blob/source/config/jsbin_config.example.yaml) must be set up with a valid JSBin API key.
+:::
+
+Code examples that run in your browser can be included in this documentation repo within the [/content/code folder](https://github.com/ably/docs/tree/source/content/code). Every code example must contain Javascript, HTML and CSS that will be launched in our [custom Ably JSBin](https://jsbin.ably.io).
+
+The following example shows how you can easily add a "Try it" button to your code example that will launch the code from the path you provide in our Ably JSBin code editor:
+
+bc\[text\]. bc\[javascript\](code-editor:client-lib-development-guide/example).\
+var ably = new Ably.Realtime('{{API_KEY}}');
+
+generates the following:
+
+bc\[javascript\](code-editor:client-lib-development-guide/example). var ably = new Ably.Realtime('{{API_KEY}}');
+
+### Variables
+
+In your code examples you can use handlebar like variables that are replaced with values at runtime. This is especially useful when you need to show examples that use a Token that may expire for example. When using the variables, please ensure that the case is matched exactly and that the variable is surrounded by single or double-quotes as CodeMirror colour coding can prevent the variables from being identified.
+
+The following variables are supported:
+
+- {{API_KEY_ID}}
+- {{API_KEY}}
+- {{API_KEY_BASE64}}
+- {{TOKEN}}
+- {{TOKEN_BASE64}}
+- {{MS_SINCE_EPOCH}}
+- {{SECONDS_SINCE_EPOCH}}
+- {{RANDOM_CHANNEL_NAME}}
+- {{SIGNED_TOKEN_REQUEST_EXAMPLE}}
+
+Example of the above variables being used in a code block below:
+
+    API_KEY_ID: "{{API_KEY_ID}}"
+    API_KEY: "{{API_KEY}}"
+    API_KEY_BASE64: "{{API_KEY_BASE64}}"
+    TOKEN: "{{TOKEN}}"
+    TOKEN_BASE64: "{{TOKEN_BASE64}}"
+    MS_SINCE_EPOCH: "{{MS_SINCE_EPOCH}}"
+    SECONDS_SINCE_EPOCH: "{{SECONDS_SINCE_EPOCH}}"
+    RANDOM_CHANNEL_NAME: "{{RANDOM_CHANNEL_NAME}}"
+    SIGNED_TOKEN_REQUEST_EXAMPLE: "{{SIGNED_TOKEN_REQUEST_EXAMPLE}}"
+
+### Isolated language blocks (always present) versus grouped language blocks
+
+For both code blocks, if a single language code block appears without another contiguous language block before or after it, then it will always be shown regardless of the current language selected by the viewer. This is to ensure that should you wish to show a simple HTML block or a Javascript code block with formatting for example, this can be done without worrying it will be hidden. For example:
+
+\`\`\`\[text\]\
+bc\[html\].
+
+<html>
+<body>
+</body>
+</html>
+
+\`\`\`
+
+Will always be visible as follows:
+
+bc\[html\].
+
+<html>
+<body>
+</body>
+</html>
+
+### Non-formatted mono-spaced code blocks
+
+If you want to provide a non-formatted mono-spaced box with code, then use a pre. block instead without specifying a language. For example:
+
+For example:
+
+bc\[text\]. pre. this.code is('mono-spaced')
+
+will generate a box styled as follows:
+
+    this.code is('mono-spaced')
+
+h2(#language-specific-content).\
+default: Language specific (default)\
+javascript: Language specific (Javascript)\
+nodejs: Language specific (Node.js)\
+csharp: Language specific (C#)\
+ruby: Language specific (Ruby)\
+java: Language specific (Java)
+
+Within this documentation repository's static site, all language specific content is wrapped in light dotted lines for clarity. However, when imported into the main Ably website, content will not be wrapped in dotted lines. Unlike code blocks, if you specify a single language specific block of content, it will only be shown if the language matches. Single language code blocks in contrast will appear regardless of which language is selected.
+
+You can specify multiple languages per language specific content block such as `<span class="ruby,java">`.
+
+Whenever you need to vary the content based on the language selected by the user in the top language navigation, you have the following options available:
+
+### Consecutive lines with `tag[lang].`
+
+Whenever the front end detects multiple consecutive `tag.` markup with a language specified, the front end will automatically show the content related to the selected language, and hide all other languages. Note that the special language `default` can be used to provide default copy in the absence of any specific language variation existing. For example:
+
+\`\`\`\[text\]\
+p\[default\]. Default text to appear for all languages not specified
+
+p\[ruby\]. Text to appear when Ruby is the chosen language\
+\`\`\`
+
+Will result in:
+
+::: {lang="default"}
+Default text to appear for all languages not specified
+:::
+
+::: {lang="ruby"}
+Text to appear when Ruby is the chosen language
+:::
+
+### Large blocks using `blang[lang].`
+
+When you need to vary large content blocks by language which can in turn contain any other HTML or Textile markup, you can use the custom `blank` textile markup with the `lang` attribute set within the square brackets. Indentation following the markup becomes significant and is used to indicate to the Textile parser that all text with indentation following the `blang[lang].` markup is part of this large language block.
+
+If a language block for the user's currently selected language does not exist, nothing will be shown to the user.
+
+\`\`\`\[text\]\
+blang\[default\].\
+p. This block will be shown by default
+
+This second line is considered part of the default block because it's still indented.
+
+blang\[ruby\].\
+This block will be shown when Ruby is selected
+
+This second line is considered part of the Ruby block because it's still indented.\
+\`\`\`
+
+Results in:
+
+blang\[default\].\
+p. This block will be shown by default
+
+This second line is considered part of the default block because it's still indented.
+
+blang\[ruby\].\
+This block will be shown when Ruby is selected
+
+This second line is considered part of the Ruby block because it's still indented.
+
+### In-line content with `<span lang="[lang]">`
+
+When you need to vary the content by language inline within a paragraph or another element, you can use `span` tags with the `lang` attribute set. If a language tag is missing, nothing will be shown. For example:
+
+bc\[html\]. The language currently being viewed is:\
+`<span lang="javascript">`{=html}javascript`</span>`{=html}\
+`<span lang="ruby">`{=html}ruby`</span>`{=html}
+
+Results in:
+
+The language currently being viewed is: `<span lang="javascript">`{=html}javascript`</span>`{=html} `<span lang="ruby">`{=html}ruby`</span>`{=html}
+
+Here is another examples using an additional default language tag in the format `<span lang="default"></span>`:
+
+The language `<span lang="javascript">`{=html}javascript`</span>`{=html} `<span lang="ruby">`{=html}ruby`</span>`{=html} `<span lang="default">`{=html}of all`</span>`{=html} is currently being viewed
+
+### Method or object reference / definitions with language variations `h6(#requesttoken). definition`
+
+When you need to vary the reference or definition of a method or object property by language, you can use `h6` tags with the language defined on the next line as follows:
+
+bc\[text\]. h6(#method-anchor-example).\
+default: fooBar\
+ruby: foo_bar
+
+will render as:
+
+h6(#method-anchor-example).\
+default: fooBar\
+ruby: foo_bar
+
+### Language definition lists
+
+Please refer to Definition lists below for instructions on how to specify a language for definitions and lists.
+
+### Supported languages
+
+The supported languages are as follows:
+
+- **language code** := **language name**\
+  \<% Ably::DOCUMENTATION_LANGUAGES.each do \|lang_code, lang\| %\>
+- \<%=lang_code%\> := \<%=html_escape(lang\[:name\])%\>\
+  \<% end %\>
+
+If you wish to add support for more languages, please refer to `/lib/documentation_languages.rb`
+
+## Definition lists
+
+Definition lists are used frequently to list out parameters to methods, object properties or return values. They are prefixed and sufficed with a line break, and used as follows:
+
+bc\[text\]. - value := description
+
+- value 2 := *default description* description
+
+and renders as:
+
+- value := description
+- value 2 := *default description* description
+
+Column headers for your definition lists can be specified on the first line by surrounding the definitions with an asterix. For example:
+
+bc\[text\]. - **id heading** := **value heading**
+
+- id := description
+
+will render as:
+
+- **id heading** := **value heading**
+- id := description
+
+### Language specific definitions
+
+Unfortunately as definition lists do not natively support specifying a language, a "hack" is used to make this work. The following example:
+
+bc\[html\]. - value := definition
+
+\*
+
+<div lang="ruby">
+
+ruby
+
+</div>
+
+:= a Ruby specific definition
+
+\*
+
+<div lang="javascript">
+
+javascript
+
+</div>
+
+:= a Javascript specific definition
+
+will render as:
+
+\* value := definition
+
+\*
+
+<div lang="ruby">
+
+ruby
+
+</div>
+
+:= a Ruby specific definition
+
+\*
+
+<div lang="javascript">
+
+javascript
+
+</div>
+
+:= a Javascript specific definition
+
+### Code within definitions
+
+`bc[lang]` blocks cannot be used within definitions because they need to be surrounded by lines of whitespace. Adding whitespace would however terminate the definition list. As such, the following workaround can be used if you need to embed code in a definition:
+
+bc\[text\]. - value := definition
+
+- another value := definition with code block
+  ``` {lang="json"}
+  <code>{
+    "name": "<event name>"
+  }</code>
+  ```
+
+will render as:
+
+- value := definition
+- another value := definition with code block
+  ``` {lang="json"}
+  <code>{
+    "name": "<event name>"
+  }</code>
+  ```
+
+### Method definitions with blockquotes
+
+The pattern within API sections is to define a method with an `h6` such as `h6(#method). method`, and then to define all method definitions (including any overloaded methods) with `bq(definition).`
+
+bc\[text\]. bq(definition#anchor).\
+default: send(message, options)\
+javascript: send(message, options)\
+java: public void send(Message message, Options options)
+
+will render as:
+
+bq(definition).\
+default: send(message, options)\
+javascript: send(message, options)\
+java: public void send(Message message, Options options)
+
+## Inline Table of Contents {#inline-toc}
+
+Inline Table of Contents are typically used at the start of a new section (such as API reference) to provide a form of navigation to the user. The Inline Table of Contents is also beneficial from a usability perspective as users can quickly get an overview of the content structure and scope. A custom textile tag has been created for this, `inline-toc`. An `inline-toc` tag can appear anywhere in a document as long as there is white space before it, the YAML within the tag appears directly after the tag, and the tag and YAML ends with white space. Here is example Textile markup:
+
+bc\[yaml\]. inline-toc.\
+Channel Object Reference:\
+- Methods:\
+- Publish \# the anchor link #publish will be used\
+- History#manually-curated-anchor-link\
+- Language Specific Content#language-specific-content
+
+The above code produces the following element:
+
+inline-toc.\
+Channel Object Reference:\
+- Methods:\
+- Publish\
+- History#manually-curated-anchor-link\
+- Language Specific Content#language-specific-content
+
+Note that if you have referenced an anchor that has language specific content, the Table of Contents will automatically update to reflect the new content for that anchor whenever a language is selected, and ignore the text you have provided.
+
+## Other custom styles
+
+::: tip
+Tips can be shown using the markup `p(tip).`
+:::
