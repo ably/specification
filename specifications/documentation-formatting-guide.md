@@ -173,7 +173,7 @@ In your code examples you can use handlebar like variables that are replaced wit
 
 The following variables are supported:
 
-- {{API_KEY_ID}}
+- {{API_KEY_NAME}}
 - {{API_KEY}}
 - {{API_KEY_BASE64}}
 - {{TOKEN}}
@@ -185,7 +185,7 @@ The following variables are supported:
 
 Example of the above variables being used in a code block below:
 
-    API_KEY_ID: "{{API_KEY_ID}}"
+    API_KEY_NAME: "{{API_KEY_NAME}}"
     API_KEY: "{{API_KEY}}"
     API_KEY_BASE64: "{{API_KEY_BASE64}}"
     TOKEN: "{{TOKEN}}"
