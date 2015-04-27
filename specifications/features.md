@@ -307,7 +307,7 @@ The REST library is a subset of the Realtime library and as such all Realtime li
   - `TokenDetails` is a type containing the token request response from the [REST requestToken end point](/rest-api/#requesttoken)
   - `TokenDetails#token` attribute contains the token string
   - `TokenDetails#expires` attribute contains the expiry time in milliseconds. Where idiomatic in the language, this can be a Time object
-  - `TokenDetails#issuedAt` attribute contains the time the token was issued in milliseconds. Where idiomatic in the language, this can be a Time object
+  - `TokenDetails#issued` attribute contains the time the token was issued in milliseconds. Where idiomatic in the language, this can be a Time object
   - `TokenDetails#capability` attribute contains the capability JSON stringified
   - `TokenDetails#clientId` attribute contains the clientId assigned to the token if provided
 
