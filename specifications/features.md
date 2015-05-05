@@ -104,6 +104,7 @@ As a result, this document outlines the complete feature set of both the REST an
 - Methods should exist to check if a channel exists or iterate through the existing channels
 - `Channels#get` function:
   - Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`.
+  - If options are provided, the options are set on the `Channel`. Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will therefore update the options on the channel and then return the existing `Channel`
 - `Channels#release` function:
   - Releases the channel resource i.e. it's deleted and can then be garbage collected
 
@@ -265,6 +266,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - Methods should exist to check if a channel exists or iterate through the existing channels
 - `Channels#get` function:
   - Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`.
+  - If options are provided, the options are set on the `Channel`. Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will therefore update the options on the channel and then return the existing `Channel`
 - `Channels#release` function:
   - Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
 
