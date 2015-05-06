@@ -367,7 +367,9 @@ will render as:
 
 Unfortunately as definition lists do not natively support specifying a language, a "hack" is used to make this work. The following example:
 
-bc\[html\]. - value := definition
+\`\`\`\[html\]
+
+\* value := definition
 
 \*
 
@@ -381,13 +383,34 @@ ruby
 
 \*
 
-<div lang="javascript">
+<div lang="default">
 
-javascript
+default
 
 </div>
 
-:= a Javascript specific definition
+:= a generic definition
+
+\*
+
+<div lang="ruby">
+
+ruby second
+
+</div>
+
+:= a Ruby specific definition
+
+\*
+
+<div lang="javascript">
+
+javascript second
+
+</div>
+
+:= a Javascript specific definition\
+\`\`\`
 
 will render as:
 
@@ -405,9 +428,29 @@ ruby
 
 \*
 
+<div lang="default">
+
+default
+
+</div>
+
+:= a generic definition
+
+\*
+
+<div lang="ruby">
+
+ruby second
+
+</div>
+
+:= a Ruby specific definition
+
+\*
+
 <div lang="javascript">
 
-javascript
+javascript second
 
 </div>
 
