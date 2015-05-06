@@ -397,8 +397,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 #### Message
 
-- A `Message` represents an individual presence message to be sent or received via the Ably Realtime service. See the [Ruby Message documentation](http://www.rubydoc.info/gems/ably/Ably/Models/Message), but bear in mind the attributes following underscore naming in Ruby.
-- `Message` `Action` enum has the following values in order from zero: `ABSENT`, `PRESENT`, `ENTER`, `LEAVE`, `UPDATE`
+- A `Message` represents an individual message to be sent or received via the Ably Realtime service. See the [Ruby Message documentation](http://www.rubydoc.info/gems/ably/Ably/Models/Message), but bear in mind the attributes following underscore naming in Ruby.
 - Attributes available in a `Message`, see the [Ruby Message documentation](http://www.rubydoc.info/gems/ably/Ably/Models/Message) for an explanation of each attribute:
   - `id` string - unique ID for this message
   - `clientId` string
