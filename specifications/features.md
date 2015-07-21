@@ -447,7 +447,6 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `PaginatedResult#items` attribute contains a page of results (for example an Array of `Message` objects for a channel history request).
 - `PaginatedResult#next` function returns a new `PaginatedResult` loaded with the next page of results. If there are no further pages, then `null` is returned.
 - `PaginatedResult#first` function returns a new `PaginatedResult` for the first page of results.
-- `PaginatedResult#isFirst` function returns `true` if this page is the first page
 - `PaginatedResult#hasNext` function returns `true` if there are further pages
 - `PaginatedResult#isLast` function returns `true` if this page is not the last page i.e. `!hasNext`
 
