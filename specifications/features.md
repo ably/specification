@@ -152,7 +152,7 @@ As a result, this document outlines the complete feature set of both the REST an
     - `limit` supports up to 1,000 items; if unspecified it defaults to the REST API default (100)
     - `clientId` filters members by the provided `clientId`
     - `connectionId` filters members by the provided `connectionId`
-- `Channel#history` function:
+- `Presence#history` function:
   - Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the presence request
   - Supports the following params:
     - `start` and `end` are timestamp fields represented as milliseconds since epoch, or where appropriate to the language, Date/Time objects. `start` must be equal to or less than `end` and is unaffected by the request direction.
