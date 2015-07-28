@@ -38,6 +38,8 @@ As a result, this document outlines the complete feature set of both the REST an
 
 ## REST client library {#rest}
 
+Client library developers - clone our [REST client library Google Doc spec](https://docs.google.com/spreadsheets/d/1vBzr9N-0ovtVZ0mxTeg7zLMEhcgj5lB9ivmkOcO-9J0/edit?usp=sharing) when developing a REST client library to help you keep track of feature compliance and test coverage.
+
 ### RestClient
 
 - `(RSC1)` The constructor accepts either an API key, a token string, or a set of [`ClientOptions`](#options). An exception is raised if invalid arguments are provided such as no API key, token and no means to create a token
