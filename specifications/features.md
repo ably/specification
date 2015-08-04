@@ -113,11 +113,12 @@ Client library developers - clone our [REST client library Google Doc spec](http
 
 ### Channels {#rest-channels}
 
-- `(RSN1)` `Channels` is a collection of `Channel` objects accessible through `Rest#channels`.
+- `(RSN1)` `Channels` is a collection of `Channel` objects accessible through `Rest#channels`
 - `(RSN2)` Methods should exist to check if a channel exists or iterate through the existing channels
 - `(RSN3)` `Channels#get` function:
-  - `(RSN3a)` Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`.
-  - `(RSN3b)` If options are provided, the options are set on the `Channel`. Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will therefore update the options on the channel and then return the existing `Channel`
+  - `(RSN3a)` Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`
+  - `(RSN3b)` If options are provided, the options are set on the `Channel`
+  - `(RSN3c)` Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `Channel` object
 - `(RSN4)` `Channels#release` function:
   - `(RSN4a)` Releases the channel resource i.e. it's deleted and can then be garbage collected
 
@@ -271,11 +272,12 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### Channels {#realtime-channels}
 
-- `Channels` is a collection of `Channel` objects accessible through `Realtime#channels`.
+- `Channels` is a collection of `Channel` objects accessible through `Realtime#channels`
 - Methods should exist to check if a channel exists or iterate through the existing channels
 - `Channels#get` function:
-  - Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`.
-  - If options are provided, the options are set on the `Channel`. Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will therefore update the options on the channel and then return the existing `Channel`
+  - Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`
+  - If options are provided, the options are set on the `Channel` when creaing a new `Channel`
+  - Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `Channel` object
 - `Channels#release` function:
   - Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
 
