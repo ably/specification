@@ -543,8 +543,15 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 #### ChannelOptions
 
-- `(TB1)` options provided when instancing a channel, see [Java ChannelOptions](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ChannelOptions.java)
+- `(TB1)` options provided when instancing a channel, see [Java ChannelOptions](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ChannelOptions.java) as a reference
+- `(TB2)` The attributes of `ChannelOptions` consist of:
+  - `(TB2a)` `encrypted` boolean - when true, enables automatic encryption & decryption of all messages
+  - `(TB2b)` `cipherParams` `CipherParams` - when encrypted is true, the cipher params are required
 
 #### CipherParams
 
-- `(TZ1)` params to configure encryption for a channel, see [Java CipherParams class](https://github.com/ably/ably-java/blob/master/src/io/ably/util/Crypto.java#L52)
+- `(TZ1)` params to configure encryption for a channel, see [Java CipherParams class](https://github.com/ably/ably-java/blob/master/src/io/ably/util/Crypto.java#L52) as a reference
+- `(TZ2)` The attributes of `CipherParams` consist of:
+  - `(TZ2a)` `algorithm` string - Default is `AES`. Optionally specify the algorithm to use for encryption, currently only `AES` is supported
+  - `(TZ2b)` `keyLength` integer - Default is 128. Optionally specify the key length of the cipher, typically 128 or 256
+  - `(TZ2c)` `mode` string - Default is `CBC`. Optionally specify cipher mode, currently only `CBC` is supported
