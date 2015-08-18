@@ -441,6 +441,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(TR3)` `ProtocolMessage` `Flag` enum has the following values in order from zero: `HAS_PRESENCE`, `HAS_BACKLOG`
 - `(TR4)` Attributes available in a `ProtocolMessage`, see the [Ruby ProtocolMessage documentation](http://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage) for an explanation of each attribute:
   - `(TR4a)` `action` enum
+  - `(TR4n)` `id` string
   - `(TR4b)` `channel` string
   - `(TR4c)` `channelSerial` string
   - `(TR4d)` `connectionId` string
