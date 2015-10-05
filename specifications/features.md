@@ -470,6 +470,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(TM2a)` `id` string - unique ID for this message
   - `(TM2b)` `clientId` string
   - `(TM2c)` `connectionId` string
+  - `(TM2g)` `name` string
   - `(TM2d)` `data` string, buffer or JSON-encodable object or array
   - `(TM2e)` `encoding` string
   - `(TM2f)` `timestamp` time in milliseconds since epoch
