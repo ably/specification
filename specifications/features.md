@@ -620,9 +620,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(TO3l1)` `disconnectedRetryFrequency` integer - default 15,000 (15s). When the connection is in the `DISCONNECTED` state, this delay in milliseconds controls how frequently the client library attempts to reconnect automatically
     - `(TO3l2)` `suspendedRetryFrequency` integer - default 30,000 (30s). When the connection is in the `SUSPENDED` state, this delay in milliseconds controls how frequently the client library attempts to reconnect automatically
     - `(TO3l3)` `httpOpenTimeout` integer - default 4,000 (4s). Timeout for opening the connection, available in the client library if supported by the transport
-    - `(TO3l3)` `httpRequestTimeout` integer - default 15,000 (15s). Timeout for any single HTTP request and response
-    - `(TO3l4)` `httpMaxRetryCount` integer - default 3. Max number of fallback host retries for HTTP requests that fail due to network issues or server problems
-    - `(TO3l4)` `httpMaxRetryDuration` integer - default 10,000 (10s). Max elapsed time in which fallback host retries for HTTP requests will be attempted i.e. if the first default host attempt takes 5s, and then the subsequent fallback retry attempt takes 7s, no further fallback host attempts will be made as the total elapsed time of 12s exceeds the default 10s limit
+    - `(TO3l4)` `httpRequestTimeout` integer - default 15,000 (15s). Timeout for any single HTTP request and response
+    - `(TO3l5)` `httpMaxRetryCount` integer - default 3. Max number of fallback host retries for HTTP requests that fail due to network issues or server problems
+    - `(TO3l6)` `httpMaxRetryDuration` integer - default 10,000 (10s). Max elapsed time in which fallback host retries for HTTP requests will be attempted i.e. if the first default host attempt takes 5s, and then the subsequent fallback retry attempt takes 7s, no further fallback host attempts will be made as the total elapsed time of 12s exceeds the default 10s limit
 
 #### TokenParams
 
