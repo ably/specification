@@ -528,7 +528,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(TR4d)` `connectionId` string
   - `(TR4e)` `connectionKey` string
   - `(TR4f)` `connectionSerial` long
-  - `(TR4n)` `connectionDetails` `ConnectionDetails` object - provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
+  - `(TR4o)` `connectionDetails` `ConnectionDetails` object - provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
   - `(TR4g)` `count` integer
   - `(TR4h)` `error` `ErrorInfo` object
   - `(TR4i)` `flags` integer
