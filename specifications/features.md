@@ -538,7 +538,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(TR4g)` `count` integer
   - `(TR4h)` `error` `ErrorInfo` object
   - `(TR4i)` `flags` integer
-  - `(TR4j)` `messageSerial` long
+  - `(TR4j)` `msgSerial` long
   - `(TR4k)` `messages` Array of `Message` objects
   - `(TR4l)` `presence` Array of `PresenceMessage` objects
   - `(TR4m)` `timestamp` time in milliseconds since epoch
