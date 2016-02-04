@@ -91,7 +91,7 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 <!-- -->
 
-- DETACH (12) := Sent by a client to the service to request detachment to a channel. The request must include the channel name in the channel field. Detachment is acknowledged by the service, but the the client library must place the channel object into the detached state immediately on sending the `DETACH` request.
+- DETACH (12) := Sent by a client to the service to request detachment to a channel. The request must include the channel name in the channel field. Detachment is acknowledged by the service, but the client library must place the channel object into the detached state immediately on sending the `DETACH` request.
 
 <!-- -->
 
