@@ -13,6 +13,7 @@ Help with:\
 - Conditional navigation#conditional-nav\
 - Definition lists\
 - Inline Table of Contents#inline-toc\
+- Language conventions\
 - Other custom styles\
 ----
 
@@ -533,8 +534,58 @@ Channel Object Reference:\
 
 Note that if you have referenced an anchor that has language specific content, the Table of Contents will automatically update to reflect the new content for that anchor whenever a language is selected, and ignore the text you have provided.
 
+## Language conventions
+
+### Javascript
+
+Although Javascript is not a typed language, to avoid ambiguity, types are preferred before the argument name in method definitions, and the type should be linked to the type definition where available. As argument names are irrelevant when invoking a function (only the order matters), it is better to use a meaningful name in method definitions. Example:
+
+bq(definition).\
+default: new Ably.Realtime([ClientOptions](/realtime/usage#client-options) clientOptions)
+
+Callbacks and their method signatures should be included in code definitions. Where possible, instead of simply naming the function callback, a meaningful name should be used. Example:
+
+bq(definition).\
+default: subscribe(listener([Message](/realtime/types#message) message))
+
+### Java
+
+As Java is a typed language, types must be appear before variable name in method definitions, and the type should be linked to the type definition where available. The argument names should match the definition in the library. Example:
+
+bq(definition).\
+default: new io.ably.lib.AblyRealtime([ClientOptions](#client-options) clientOptions)
+
+If the fully qualified name is too long to fit into the definition, and even more so within the navigation, then the unqualified class name can be used although it is preferable to mention the fully qualified namespace somewhere in the surrounding documentation. Example:
+
+bq(definition).\
+default: AblyRealtime([io.ably.lib.ClientOptions](#client-options) clientOptions)
+
+### Ruby
+
+Although Ruby is not a typed language, to avoid ambiguity, types are preferred before the argument name in method definitions, and the type should be linked to the type definition where available. As argument names are irrelevant when invoking a method (unless using Hash method options), it is advised to use a meaningful name in method definitions. Example:
+
+bq(definition).\
+default: Ably::Realtime.new([ClientOptions](#client-options) client_options)
+
+If the fully qualified name is too long to fit into the definition, and even more so within the navigation, then the unqualified class name can be used although it is preferable to mention the fully qualified namespace somewhere in the surrounding documentation. Example:
+
+bq(definition).\
+default: Realtime.new([ClientOptions](#client-options) client_options)
+
+Where methods yield blocks and/or return valueas, the following syntax is the standard:
+
+bq(definition).\
+default: [EventMachine::Deferrable](/realtime/types#deferrable) connect -\> yields [`Connection`](/realtime/connection)
+
+If the block yields a number of variables and they need to be named for clarity, then the following is recommended:
+
+bq(definition).\
+default: foo -\> yields Object bacon, Object cheese
+
 ## Other custom styles
 
 ::: tip
 Tips can be shown using the markup `p(tip).`
 :::
+
+ 
