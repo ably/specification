@@ -745,11 +745,14 @@ class Realtime:\
 constructor: (keyStr: String) -\> // RSC1\
 constructor: (tokenStr: String) -\> // RSC1\
 constructor: (ClientOptions) -\> // RSC1\
-connection: Connection // RTC2\
+close: () // proxy for RTN12\
+connect: () // proxy for RTN11\
+time: () -\> io Time // RTC6a\
 auth: Auth // RTC4\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
-stats: // Same as Rest.stats, RTC5a\
-time: () -\> io Time // RTC6a
+clientId: String? // proxy for RSA7\
+connection: Connection // RTC2\
+stats: // Same as Rest.stats, RTC5a
 
 class ClientOptions:\
 embeds AuthOptions // TO3j\
@@ -797,7 +800,7 @@ timestamp: Time? // RSA9d, Tk2d\
 ttl: Duration api-default 60min // RSA9e, TK2a
 
 class Auth:\
-clientId: String? // RSC17, RSA12\
+clientId: String? // RSA7, RSC17, RSA12\
 authorise: (TokenParams?, AuthOptions?) -\> io TokenDetails // RSA10\
 createTokenRequest: (TokenParams?, AuthOptions?) -\> io TokenRequest // RSA9\
 requestToken: (TokenParams?, AuthOptions?) -\> io TokenDetails // RSA8e
@@ -927,11 +930,11 @@ UPDATE // TP2
 
 class ConnectionDetails:\
 clientId: String? // RSA12a, CD2a\
-connectionKey: String? // RTN15e, CD2b\
-maxMessageSize: Int // CD2c\
+connectionKey: String // RTN15e, CD2b\
+connectionStateTtl: Duration // CD2f, RTN14e, DF1a\
 maxFrameSize: Int // CD2d\
 maxInboundRate: Int // CD2e\
-connectionStateTtl: Duration // CD2f, RTN14e, DF1a\
+maxMessageSize: Int // CD2c\
 serverId: String // CD2g
 
 class Message:\
@@ -991,15 +994,15 @@ SYNC // TR2
 
 class Connection:\
 embeds EventEmitter\<ConnectionState, ConnectionStateChange\> // RTN4a, RTN4e\
-connect: () -\> io // RTC1b, RTN3, RTN11\
-state: ConnectionState // RTN4d\
+errorReason: ErrorInfo? // RTN14a\
 id: String? // RTN8\
 key: String? // RTN9\
+recoveryKey: String? // RTN16b, RTN16c\
 serial: Int // RTN10\
-close: () -\> io // RTN12\
-ping: () -\> io // RTN13\
-errorReason: ErrorInfo? // RTN14a\
-recoveryKey: () -\> String? // RTN16b, RTN16c
+state: ConnectionState // RTN4d\
+close: () // RTN12\
+connect: () // RTC1b, RTN3, RTN11\
+ping: () -\> io // RTN13
 
 enum ConnectionState:\
 INITIALIZED\
@@ -1022,8 +1025,8 @@ class Stats:\
 
 class ErrorInfo:\
 code: Int // TI1\
-statusCode: Int // TI1\
-message: String // TI1
+message: String // TI1\
+statusCode: Int // TI1
 
 class EventEmitter\<Event, Data\>:\
 on: ((Data) -\>) // RTE4\
