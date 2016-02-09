@@ -730,20 +730,23 @@ constructor: (keyStr: String) -\> // RSC1\
 constructor: (tokenStr: String) -\> // RSC1\
 constructor: (ClientOptions) -\> // RSC1\
 auth: Auth // RSC5\
+channels: Channels`<Channel>`{=html} // RSN1\
 stats: (\
 start: Time, // RSC6b1\
 end: Time, // RSC6b1\
-direction: .Backwards \| .Forwards defaut .Backwards, // RSC6b2\
-limit: int default 100, // RSC6b3\
-unit: .Minute \| .Hour \| .Day \| .Month default .Minute // RSC6b4\
+direction: .Backwards \| .Forwards api-default .Backwards, // RSC6b2\
+limit: int api-default 100, // RSC6b3\
+unit: .Minute \| .Hour \| .Day \| .Month api-default .Minute // RSC6b4\
 ) -\> io PaginatedResult`<Stats>`{=html} // RSC6a\
-time: () -\> io Time // RSC16\
-channels: Channels`<Channel>`{=html} // RSN1
+time: () -\> io Time // RSC16
 
 class Realtime:\
+constructor: (keyStr: String) -\> // RSC1\
+constructor: (tokenStr: String) -\> // RSC1\
+constructor: (ClientOptions) -\> // RSC1\
 connection: Connection // RTC2\
-channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 auth: Auth // RTC4\
+channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 stats: // Same as Rest.stats, RTC5a\
 time: () -\> io Time // RTC6a
 
