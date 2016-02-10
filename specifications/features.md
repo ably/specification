@@ -938,6 +938,8 @@ maxMessageSize: Int // CD2c\
 serverId: String // CD2g
 
 class Message:\
+constructor: (name: String?, data: Data?) // TM2\
+constructor: (name: String?, data: Data?, clientId: String?) // TM2\
 clientId: String? // RSL1g1, TM2b\
 connectionId: String? // TM2c\
 data: Data? // TM2d\
