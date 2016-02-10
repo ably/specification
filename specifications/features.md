@@ -731,7 +731,7 @@ constructor: (keyStr: String) -\> // RSC1\
 constructor: (tokenStr: String) -\> // RSC1\
 constructor: (ClientOptions) -\> // RSC1\
 auth: Auth // RSC5\
-channels: Channels`<Channel>`{=html} // RSN1\
+channels: Channels`<RestChannel>`{=html} // RSN1\
 stats: (\
 start: Time, // RSC6b1\
 end: Time api-default now(), // RSC6b1\
