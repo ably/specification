@@ -1045,14 +1045,14 @@ message: String // TI1\
 statusCode: Int // TI1
 
 class EventEmitter\<Event, Data\>:\
-on: ((Data) -\>) // RTE4\
-on: (Event, (Data) -\>) // RTE4\
-once: ((Data) -\>) // RTE4\
-once: (Event, (Data) -\>) // RTE4\
+on: ((Data...) -\>) // RTE4\
+on: (Event, (Data...) -\>) // RTE4\
+once: ((Data...) -\>) // RTE4\
+once: (Event, (Data...) -\>) // RTE4\
 off: () // RTE5\
-off: ((Data) -\>) // RTE5\
-off: (Event, (Data) -\>) // RTE5\
-emit: (Event, Data?) // RTE6
+off: ((Data...) -\>) // RTE5\
+off: (Event, (Data...) -\>) // RTE5\
+emit: (Event, Data...) // RTE6
 
 class PaginatedResult`<T>`{=html}:\
 items: \[T\] // TG3\
