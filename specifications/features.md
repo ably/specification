@@ -566,6 +566,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(TE1)` `TokenRequest` is a type containing the token request details sent to the [REST requestToken endpoint](/rest-api/#requesttoken)
 - `(TE2)` String attributes `keyName`, `clientId`, `nonce` and `mac`
 - `(TE3)` `capability` is a string attribute containing capabilities JSON stringified
+- `(TE5)` `timestamp` long - The timestamp (in milliseconds since the epoch) of this request. Timestamps, in conjunction with the `nonce`, are used to prevent requests from being replayed
 - `(TE4)` `ttl` attribute represents time to live (expiry) of this token in milliseconds
 
 #### TokenDetails
@@ -818,6 +819,7 @@ clientId: String? // TE2\
 keyName: String // TE2\
 mac: String // TE2\
 nonce: String // TE2\
+timestamp: Time? // TE5\
 ttl: Duration? api-default 60min // TE4
 
 class Channels`<ChannelType>`{=html}:\
