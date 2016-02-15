@@ -587,5 +587,3 @@ default: foo -\> yields Object bacon, Object cheese
 ::: tip
 Tips can be shown using the markup `p(tip).`
 :::
-
- 
