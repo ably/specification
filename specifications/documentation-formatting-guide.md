@@ -325,7 +325,7 @@ Here is another examples using an additional default language tag in the format 
 
 The language `<span lang="javascript">`{=html}javascript`</span>`{=html} `<span lang="ruby">`{=html}ruby`</span>`{=html} `<span lang="default">`{=html}of all`</span>`{=html} is currently being viewed
 
-### Method or object reference / definitions with language variations `h6(#requesttoken). definition`
+### Method or object reference / definitions with language variations `h6(#request-token). definition`
 
 When you need to vary the reference or definition of a method or object property by language, you can use `h6` tags with the language defined on the next line as follows:
 
@@ -587,5 +587,3 @@ default: foo -\> yields Object bacon, Object cheese
 ::: tip
 Tips can be shown using the markup `p(tip).`
 :::
-
- 
