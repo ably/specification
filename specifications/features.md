@@ -847,7 +847,7 @@ publish(name: String?, data: Data?) =\> io // RSL1\
 publish(name: String?, data: Data?, clientId: String) =\> io // RSL1h
 
 class RealtimeChannel:\
-embeds EventEmitter\<ChannelState, ErrorInfo?\> // RTL2\
+embeds EventEmitter\<ChannelEvent, ErrorInfo?\> // RTL2\
 errorReason: ErrorInfo? // RTL4e\
 state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
@@ -876,6 +876,15 @@ ATTACHED\
 DETACHING\
 DETACHED\
 FAILED
+
+enum ChannelEvent:\
+INITIALIZED\
+ATTACHING\
+ATTACHED\
+DETACHING\
+DETACHED\
+FAILED\
+ERROR // RTL2c
 
 class ChannelOptions:\
 cipherParams: CipherParams? // RSL5a, TB2b\
