@@ -878,12 +878,7 @@ DETACHED\
 FAILED
 
 enum ChannelEvent:\
-INITIALIZED\
-ATTACHING\
-ATTACHED\
-DETACHING\
-DETACHED\
-FAILED\
+embeds ChannelState\
 ERROR // RTL2c
 
 class ChannelOptions:\
