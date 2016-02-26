@@ -203,7 +203,7 @@ Client library developers - clone our [REST client library Google Doc spec](http
     - `(RSL4d3)` a JSON Message payload is stringified either as a JSON Object or Array and represented as a JSON string and the `encoding` attribute is set to "json"
     - `(RSL4d4)` All messages received will be decoded based on the `encoding` field and deliver payloads in the format they were sent in i.e. binary, string, or a structured type containing the parsed JSON
 - `(RSL5)` Message payload encryption
-  - `(RSL5a)` When a `Channel` is instanced with the option `encrypted` true, message payloads will be automtically encrypted when sent to Ably and decrypted when received on this channel. The cipher configuration is set with the `cipherParams`
+  - `(RSL5a)` When a `Channel` is instanced with a (non-null) `cipher` channelOption, message payloads will be automatically encrypted when sent to Ably and decrypted when received on this channel, using the `cipher` configuration
   - `(RSL5b)` AES 256 and 128 CBC encryption must be supported
   - `(RSL5c)` Tests must exist that encrypt and decrypt the following fixture data for [AES 128](https://github.com/ably/ably-common/blob/master/test-resources/crypto-data-128.json) and [AES 256](https://github.com/ably/ably-common/blob/master/test-resources/crypto-data-256.json) to ensure the client library encryption is compatible across libraries
 - `(RSL6)` Message decoding
@@ -226,6 +226,18 @@ Client library developers - clone our [REST client library Google Doc spec](http
     - `(RSP4b2)` `direction` backwards or forwards; if unspecified defaults to the REST API default (backwards)
     - `(RSP4b3)` `limit` supports up to 1,000 items; if unspecified defaults to the REST API default (100)
 - `(RSP5)` Presence Messages retrieved are decoded in the same way that messages are decoded
+
+### Encryption {#rest-encryption}
+
+- `(RSE1)` `Crypto::getDefaultParams` function:
+  - `(RSE1a)` Returns a complete `CipherParams` instance, using the default values for any field not supplied
+  - `(RSE1b)` Takes a hashmap (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`
+  - `(RSE1c)` The `key` must be either a binary (e.g. a byte array, depending on the language), or a base64-encoded string. If the key is a string, the function should base64-decode it into a binary. Since the conversion to base64 is not under Ably control, this should be done leniently --- in particular, it should work with base64url (RFC 4648 s.5, which uses `-` and `_` instead of `+` and `/`) as well as base64 (RFC 4648 s.4)
+  - `(RSE1d)` Calculates a `keyLength` from the key (its size in bits).
+  - `(RSE1e)` Checks that the provided options are valid and self-consistent as best it can, raises an exception if not. At a minimum, this should include checking the calculated `keyLength` is a valid key length for the encryption algorithm (for example, 128 or 256 for `AES`)
+- `(RSE2)` `Crypto::generateRandomKey` function
+  - `(RSE2a)` Takes an optional `keyLength` parameter, which is the length in bits of the key to be generated. If unspecified, this is equal to the default `keyLength` of the default algorithm: for `AES`, 256 bits.
+  - `(RSE2b)` Returns (or calls back with, if the language cryptographic randomness primitives are blocking or async) the key as a binary (e.g. a byte array, depending on the language)
 
 ## Realtime client library features {#realtime}
 
@@ -688,20 +700,19 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 - `(TB1)` options provided when instancing a channel, see [Java ChannelOptions](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ChannelOptions.java) as a reference
 - `(TB2)` The attributes of `ChannelOptions` consist of:
-  - `(TB2a)` `encrypted` boolean - when true, enables automatic encryption & decryption of all messages
-  - `(TB2b)` `cipherParams` `CipherParams` - when encrypted is true, the cipher params are required
+  - `(TB2b)` `cipher`, which is either:
+    - `(TB2b1)` A `CipherParams` instance, or
+    - `(TB2b2)` an options hash (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`. In this case, the client library should call \`getDefaultParams\`, passing it the options hash, to obtain a `CipherParams` instance
+- `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
 
 #### CipherParams
 
 - `(TZ1)` params to configure encryption for a channel, see [Java CipherParams class](https://github.com/ably/ably-java/blob/8a151b4edfa228ddef806fa10d2f9ce2be1ac09c/lib/src/main/java/io/ably/lib/util/Crypto.java) as a reference
-- `(TZ2)` The attributes of `CipherParams` consist of anything necessary to implement the supported algorithms (eg key and iv), in addition to the following standardised attributes:
+- `(TZ2)` The attributes of `CipherParams` consist of anything necessary to implement the supported algorithms, in addition to the following standardised attributes:
   - `(TZ2a)` `algorithm` string - Default is `AES`. Optionally specify the algorithm to use for encryption, currently only `AES` is supported
-  - `(TZ2b)` `keyLength` integer - An integer, from an algorithm-dependent range of possible values. If unspecified, an algorithm-dependent default is used. For AES the allowed values at least include 128 and 256, with a default of 128
-  - `(TZ2d)` `key` string / byte array - private key used to encrypt and decrypt payloads
+  - `(TZ2b)` `keyLength` integer - the length in bits of the `key`
+  - `(TZ2d)` `key` binary - private key used to encrypt and decrypt payloads
   - `(TZ2c)` `mode` string - Default is `CBC`. Optionally specify cipher mode, currently only `CBC` is supported
-- `(TZ3)` `Crypto#getDefaultParams` function
-  - `(TZ3a)` returns a complete `CipherParams` instance with randomly generated key and iv
-  - `(TZ3b)` takes an optional key parameter, returning a `CipherParams` instance created with that key and with a keyLength calculated from that key
 
 ### Client Library defaults {#defaults}
 
@@ -878,17 +889,18 @@ DETACHED\
 FAILED
 
 class ChannelOptions:\
-cipherParams: CipherParams? // RSL5a, TB2b\
-encrypted: Bool // RSL5a, TB2a
++withCipherKey(key: Binary \| String)? -\> ChannelOptions // TB3\
+cipher: (CipherParams \| Params)? // RSL5a, TB2b
 
 class CipherParams:\
 algorithm: String default "AES" // TZ2a\
-key: String // TZ2d\
-keyLength: Int? // TZ2b\
+key: Binary // TZ2d\
+keyLength: Int // TZ2b\
 mode: String default "CBC" // TZ2c
 
 class Crypto:\
-+getDefaultParams(key: String?) -\> CipherParams // TZ3
++getDefaultParams(Params) -\> CipherParams // RSE1\
++generateRandomKey(keyLength: Int?) =\> io Binary // RSE2
 
 class RestPresence:\
 get(\
