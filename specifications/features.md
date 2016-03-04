@@ -925,7 +925,7 @@ get(\
 waitForSync: Bool default true, // RTP11c1\
 clientId: String?, // RTP11c2\
 connectionId: String?, // RTP11c3\
-) =\> io PaginatedResult`<PresenceMessage>`{=html} // RTP11\
+) =\> io \[PresenceMessage\] // RTP11\
 history(\
 start: Time, // RTP12a\
 end: Time, // RTP12a\
