@@ -54,10 +54,10 @@ bc\[json\]. {\
 
 Each possible data value type is canonically converted to a byte array before being encrypted, as follows:
 
-- `STRING` := the utf8-encoding of the string, without any trailing null byte
-- `BUFFER` := the unmodified buffer contents
-- `JSONOBJECT` := the utf8-encoding of the JSON-stringified value of the object
-- `JSONARRAY` := the utf8-encoding of the JSON-stringified value of the array
+- STRING := the utf8-encoding of the string, without any trailing null byte
+- BUFFER := the unmodified buffer contents
+- JSONOBJECT := the utf8-encoding of the JSON-stringified value of the object
+- JSONARRAY := the utf8-encoding of the JSON-stringified value of the array
 
 ### Conversion to ciphertext
 
