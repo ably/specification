@@ -358,25 +358,32 @@ If you wish to add support for more languages, please refer to `/lib/documentati
 
 Definition lists are used frequently to list out parameters to methods, object properties or return values. They are prefixed and sufficed with a line break, and used as follows:
 
-bc\[text\]. - value := description
+bc\[text\]. - value := description`<br>`{=html}*Type: `Type`*
 
-- value 2 := *default description* description
+- value 2 := *default description* description`<br>`{=html}*Type: `Type`*
 
 and renders as:
 
 - value := description
-- value 2 := *default description* description
+- value 2 := *default description* description`<br>`{=html}*Type: `Type`*
+
+Please note that:
+
+- The definition term (left hand part) is never \<code\>@code@\</code\> wrapped
+- Defaults are treated specially by placing `_default description_` at the start of the definition description (right hand part)
+- As a convention, types are placed after the definition description (right hand part) using the format `<br>`\<code\>\_\_Type: @Type@\_\_\</code\>
 
 Column headers for your definition lists can be specified on the first line by surrounding the definitions with an asterix. For example:
 
 bc\[text\]. - **id heading** := **value heading**
 
-- id := description
+id := description
 
 will render as:
 
-- **id heading** := **value heading**
-- id := description
+**id heading** := **value heading**
+
+id := description
 
 ### Language specific definitions
 
