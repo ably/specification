@@ -228,7 +228,7 @@ The members are as follows.
 <!-- -->
 
 - string clientId := The optional clientId of the client that sent the message.`<br>`{=html}`<br>`{=html}\
-  Client libraries do not need to populate this field if the clientId is implicit (ie a clientId was specified when the library was initialised, and is therefore connection-wide. Also, this field will be empty if no clientId has been specified either on library initialisation or when publishing the message.`<br>`{=html}`<br>`{=html}\
+  Client libraries do not need to populate this field if the clientId is implicit (ie a clientId was specified when the library was initialized, and is therefore connection-wide. Also, this field will be empty if no clientId has been specified either on library initialization or when publishing the message.`<br>`{=html}`<br>`{=html}\
   Messages sent from the service to the client will contain a clientId if one is available.
 
 <!-- -->
