@@ -399,7 +399,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL5)` `Channel#detach` function:
   - `(RTL5a)` If state is `INITIALIZED`, `DETACHED` or `DETACHING` nothing is done
   - `(RTL5b)` If state is `FAILED`, the `detach` request results in an error
-  - `(RTL5g)` If the connection state is `CLOSING`, `SUSPENDED` or `FAILED`, the `detach` request results in an error
+  - `(RTL5g)` If the connection state is `CLOSING` or `FAILED`, the `detach` request results in an error
   - `(RTL5h)` If the connection state is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`, or the channel state is `ATTACHING`, do the operation once the connection state is `CONNECTED` and the channel state is `ATTACHED`
   - `(RTL5d)` Otherwise a `DETACH` ProtocolMessage is sent to the server, the state changes to `DETACHING` and the channel becomes `DETACHED` when the confirmation `DETACHED` ProtocolMessage is received
   - `(RTL5f)` Once a `DETACH` `ProtocolMessage` is sent, if a `DETACHED` `ProtocolMessage` is not received within the [default realtime request timeout](#defaults), the detach request should be treated as though it has failed
@@ -799,7 +799,7 @@ Channel `detach`
 <!-- When SUSPENDED -->
 <td>
 
-[RTL5g](#RTL5g</td>)
+[See channel table](#channel-states-operations</td>)
 
 <!-- When CLOSING -->
 <td>
