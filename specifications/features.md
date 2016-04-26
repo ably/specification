@@ -399,8 +399,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL5)` `Channel#detach` function:
   - `(RTL5a)` If state is `INITIALIZED`, `DETACHED` or `DETACHING` nothing is done
   - `(RTL5b)` If state is `FAILED`, the `detach` request results in an error
-  - `(RTL5g)` If the connection state is `INITIALIZED`, `CLOSED`, `CLOSING`, `SUSPENDED` or `FAILED`, the `attach` request results in an error
-  - `(RTL5h)` If the connection state is `CONNECTING` or `DISCONNECTED`, or the channel state is `ATTACHING`, do the operation once the connection state is `CONNECTED` and the channel state is `ATTACHED`
+  - `(RTL5g)` If the connection state is `CLOSED`, `CLOSING`, `SUSPENDED` or `FAILED`, the `detach` request results in an error
+  - `(RTL5h)` If the connection state is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`, or the channel state is `ATTACHING`, do the operation once the connection state is `CONNECTED` and the channel state is `ATTACHED`
   - `(RTL5d)` Otherwise a `DETACH` ProtocolMessage is sent to the server, the state changes to `DETACHING` and the channel becomes `DETACHED` when the confirmation `DETACHED` ProtocolMessage is received
   - `(RTL5f)` Once a `DETACH` `ProtocolMessage` is sent, if a `DETACHED` `ProtocolMessage` is not received within the [default realtime request timeout](#defaults), the detach request should be treated as though it has failed
   - `(RTL5e)` If the language permits, a callback can be provided that is called when the channel is detached successfully or the detach fails and the `ErrorInfo` error is passed as an argument to the callback
@@ -413,8 +413,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL6i3)` Allows `name` and or `data` to be `null`. If any of the values are null, then key is not sent to Ably i.e. a payload with a `null` value for `data` would be sent as follows `{ "name": "click" }`
   - `(RTL6c)` Connection state conditions:
     - `(RTL6c1)` If the connection is `CONNECTED` and the channel is `ATTACHED` then the messages are published immediately
-    - `(RTL6c2)` If the connection is `CONNECTING` or `DISCONNECTED` or the channel is `ATTACHING`, and `ClientOptions#queueMessages` has not been explicitly set to false, then the message will be queued and delivered as soon as the connection state returns to `CONNECTED`
-    - `(RTL6c4)` If the connection is `INITIALIZED`, `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`, or the channel is `INITIALIZED`, `DETACHING` or `DETACHED`, the operation will result in an error
+    - `(RTL6c2)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED` or the channel is `ATTACHING`, and `ClientOptions#queueMessages` has not been explicitly set to false, then the message will be queued and delivered as soon as the connection state returns to `CONNECTED`
+    - `(RTL6c4)` If the connection is `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`, or the channel is `INITIALIZED`, `DETACHING` or `DETACHED`, the operation will result in an error
     - `(RTL6c3)` Implicitly attaches the `Channel`. However, if the channel is in or moves to the `FAILED` state before the operation succeeds, it will result in an error
   - `(RTL6d)` Messages are delivered using a single `ProtocolMessage` where possible by bundling in all messages for that channel into the `ProtocolMessage#messages` array. However, a yet to be implemented feature should limit the total number of messages bundled per `ProtocolMessage` based on the default max message size, and would reject the publish and indicate an error if any single message exceeds that limit
   - `(RTL6e)` Unidentified clients using [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) (i.e. any `clientId` is permitted as no `clientId` specified):
@@ -458,7 +458,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP5b)` If a channel enters the `ATTACHED` state then all queued presence messages will be sent immediately and a presence `SYNC` will be initiated implicitly
 - `(RTP16)` Connection state conditions:
   - `(RTP16a)` If the connection is `CONNECTED` and the channel is `ATTACHED` then all presence messages are published immediately
-  - `(RTP16b)` If the connection is `CONNECTING` or `DISCONNECTED` or the channel is `ATTACHING`, and `ClientOptions#queueMessages` has not been explicitly set to false, then all presence messages will be queued and delivered as soon as the connection state returns to `CONNECTED`
+  - `(RTP16b)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED` or the channel is `ATTACHING`, and `ClientOptions#queueMessages` has not been explicitly set to false, then all presence messages will be queued and delivered as soon as the connection state returns to `CONNECTED`
   - `(RTP16c)` Else publishing presence messages will result in an error
 - `(RTP6)` `Presence#subscribe` function:
   - `(RTP6a)` Subscribe with no arguments subscribes a listener to all presence messages
@@ -779,7 +779,7 @@ Channel `detach`
 <!-- When INITIALIZED -->
 <td>
 
-[RTL5g](#RTL5g</td>)
+[RTL5h](#RTL5h</td>)
 
 <!-- When CONNECTING -->
 <td>
@@ -826,7 +826,7 @@ Channel `publish`
 <!-- When INITIALIZED -->
 <td>
 
-[RTL6c4](#RTL6c4</td>)
+[RTL6c2](#RTL6c2</td>)
 
 <!-- When CONNECTING -->
 <td>
@@ -873,7 +873,7 @@ Presence ops.
 <!-- When INITIALIZED -->
 <td>
 
-[RTP16c](#RTP16c</td>)
+[RTP16b](#RTP16b</td>)
 
 <!-- When CONNECTING -->
 <td>
@@ -959,7 +959,7 @@ Failed
 <!-- When INITIALIZED -->
 <td>
 
-[RTL4c](#RTL4c</td>)
+[RTL4a](#RTL4a</td>)
 
 <!-- When ATTACHING -->
 <td>
@@ -996,7 +996,7 @@ Failed
 <!-- When INITIALIZED -->
 <td>
 
-[RTL5a](#RTL5a</td>)
+[RTL5h](#RTL5h</td>)
 
 <!-- When ATTACHING -->
 <td>
@@ -1070,7 +1070,7 @@ Presence ops.
 <!-- When INITIALIZED -->
 <td>
 
-[RTP16c](#RTP16c</td>)
+[RTP16b](#RTP16b</td>)
 
 <!-- When ATTACHING -->
 <td>
