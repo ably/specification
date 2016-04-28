@@ -306,6 +306,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN11)` `Connection#connect` function:
   - `(RTN11a)` Explicitly connects to the Ably service if not already connected
   - `(RTN11b)` If the state is `CLOSING`, the client can reuse the transport and make a new connection with it, but it should make sure that, when the `CLOSED` `ProtocolMessage` arrives for the old connection, it doesn't affect the new one.
+  - `(RTN11c)` If the state is `DISCONNECTED` or `SUSPENDED`, aborts the retry process described in [RTN14d](#RTN14d) and [RTN14e](#RTN14e) and immediately tries to reconnect.
+  - `(RTN11d)` If the state is `FAILED`, moves all the channels to `INITIALIZED`, sets their `errorReason` to null, and sets the connection's `errorReason` to null.
 - `(RTN12)` `Connection#close` function:
   - `(RTN12f)` If the connection state is `CONNECTING`, do the operation once the connection state is `CONNECTED`
   - `(RTN12a)` If the connection state is `CONNECTED`, sends a `CLOSE` `ProtocolMessage` to the server, sets the state to `CLOSING` and waits for a `CLOSED` `ProtocolMessage` to be received
@@ -598,15 +600,13 @@ No-op
 <!-- When DISCONNECTED -->
 <td>
 
-No-op
+[RTN11c](#RTN11c</td>)
 
-</td>
 <!-- When SUSPENDED -->
 <td>
 
-No-op
+[RTN11c](#RTN11c</td>)
 
-</td>
 <!-- When CLOSING -->
 <td>
 
@@ -620,9 +620,8 @@ No-op
 <!-- When FAILED -->
 <td>
 
-No-op
+[RTN11d](#RTN11d</td>)
 
-</td>
 </tr>
 <tr>
 <td>
