@@ -389,7 +389,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL11)` If a channel enters the `DETACHED` or `FAILED` state, then all messages that are still queued for send on that channel should be deleted from the queue triggering a failure for the publish or presence methods invoked for those messages
 - `(RTL4)` `Channel#attach` function:
   - `(RTL4a)` If already `ATTACHED` or `ATTACHING` nothing is done
-  - `(RTL4e)` If the channel is in the `DETACHING` state, do the operation once it's `DETACHED`.
+  - `(RTL4h)` If the channel is in the `DETACHING` state, do the operation once it's `DETACHED`.
   - `(RTL4g)` If state is `FAILED`, the `attach` request results in an error
   - `(RTL4b)` If the connection state is `CLOSED`, `CLOSING`, `SUSPENDED` or `FAILED`, the `attach` request results in an error
   - `(RTL4h)` If the connection state is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`, do the operation once the connection state is `CONNECTED`
@@ -972,7 +972,7 @@ Failed
 <!-- When DETACHING -->
 <td>
 
-[RTL4e](#RTL4e</td>)
+[RTL4h](#RTL4h</td>)
 
 <!-- When DETACHED -->
 <td>
