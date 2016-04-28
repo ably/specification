@@ -527,9 +527,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ## State conditions and operations
 
-`Connection` operation effects depending on current `Connnection.state`:
+### `Connection.state` effects on realtime operations {#connection-states-operations}
 
-<table id="connection-states-operations">
+<table>
 <tr>
 <th>
 </th>
@@ -740,7 +740,7 @@ Channel `attach`
 <!-- When CONNECTED -->
 <td>
 
-[See channel table](#channel-states-operations</td>)
+[See channel states table](#channel-states-operations</td>)
 
 <!-- When DISCONNECTED -->
 <td>
@@ -787,7 +787,7 @@ Channel `detach`
 <!-- When CONNECTED -->
 <td>
 
-[See channel table](#channel-states-operations</td>)
+[See channel states table](#channel-states-operations</td>)
 
 <!-- When DISCONNECTED -->
 <td>
@@ -797,7 +797,7 @@ Channel `detach`
 <!-- When SUSPENDED -->
 <td>
 
-[See channel table](#channel-states-operations</td>)
+[See channel states table](#channel-states-operations</td>)
 
 <!-- When CLOSING -->
 <td>
@@ -807,7 +807,7 @@ Channel `detach`
 <!-- When CLOSED -->
 <td>
 
-[See channel table](#channel-states-operations</td>)
+[See channel states table](#channel-states-operations</td>)
 
 <!-- When FAILED -->
 <td>
@@ -834,7 +834,7 @@ Channel `publish`
 <!-- When CONNECTED -->
 <td>
 
-[See channel table](#channel-states-operations</td>)
+[See channel states table](#channel-states-operations</td>)
 
 <!-- When DISCONNECTED -->
 <td>
@@ -881,7 +881,7 @@ Presence ops.
 <!-- When CONNECTED -->
 <td>
 
-[See channel table](#channel-states-operations</td>)
+[See channel states table](#channel-states-operations</td>)
 
 <!-- When DISCONNECTED -->
 <td>
@@ -911,9 +911,9 @@ Presence ops.
 </tr>
 </table>
 
-`RealtimeChannel` operation effects depending on current `RealtimeChannel.state`:
+### `RealtimeChannel.state` effects on channel operations {#channel-states-operations}
 
-<table id="channel-states-operations">
+<table>
 <tr>
 <th>
 </th>
