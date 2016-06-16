@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 
-title: Features spec v0.8\
+title: Features spec v0.9\
 section: client-lib-development-guide\
 index: 1\
 anchor_specs: true\
@@ -26,6 +26,8 @@ Types:\
 - Options#options\
 Interface Definition:\
 - Complete API IDL#idl\
+Previous version:\
+- Old specs\
 ----
 
 A detailed [test specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md) that applies to all client libraries is generated from the Ably Ruby client library's acceptance and test suites. Whilst every official Ably client library has test coverage, the amount of test coverage varies, and as such our recommendation is to refer to the official [test specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md) when developing a client library.
@@ -41,7 +43,7 @@ We recommend you use the [IDL (Interface Definition Language)](#idl) and the [Ab
 - `(G1)` Every test should be executed using all supported protocols (i.e. JSON and [MessagePack](http://msgpack.org/) if supported). This includes both sending & receiving data
 - `(G2)` All tests by default are run against a special Ably sandbox environment. This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a `POST` request to `https://sandbox-rest.ably.io/apps` with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see [ably-common test-app-setup.json](https://github.com/ably/ably-common/blob/master/test-resources/test-app-setup.json). See the [Java test setup](https://github.com/ably/ably-java/blob/master/test/io/ably/test/rest/RestSetup.java). Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
 - `(G3)` Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics. As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions. To create stats you must send an authenticated `POST` request to the stats JSON to `https://sandbox-rest.ably.io/stats` with the stats data you wish to create. See the [Javascript stats fixture](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51) and [setup helper](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182) as an example
-- `(G4)` All REST requests and WebSocket connections to Ably must include the current API version `0.8`. Should any new API version with breaking changes be released, the client library will continue to use the API version explicitly requested
+- `(G4)` All REST requests and WebSocket connections to Ably must include the current API version `0.9`. Should any new API version with breaking changes be released, the client library will continue to use the API version explicitly requested
 
 ## REST client library {#rest}
 
@@ -63,7 +65,7 @@ Client library developers - clone our [REST client library Google Doc spec](http
     - `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
 - `(RSC16)` `RestClient#time` function sends a get request to `rest.ably.io/time` and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST end-point `rest.ably.io`
-  - `(RSC7a)` The header `X-Ably-Version: 0.8` must be included in all REST requests to the Ably end-point
+  - `(RSC7a)` The header `X-Ably-Version: 0.9` must be included in all REST requests to the Ably end-point
 - `(RSC18)` If `ClientOptions#tls` is true, then all communication is over HTTPS. If false, all communication is over HTTP however [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) over HTTP will result in an error as private keys cannot be submitted over an insecure connection. See `Auth` below
 - `(RSC8)` Supports two protocols:
   - `(RSC8a)` [MessagePack](http://msgpack.org/) binary protocol (this is the default for environments having a suitable level or support for binary data)
@@ -277,7 +279,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN2b)` `echo` should be `true` by default; `false` will prevent messages published by the client being echoed back
   - `(RTN2d)` `clientId` contains the provided `clientId` option of `ClientOptions`, unless `clientId` is `null`
   - `(RTN2e)` Depending on the authentication scheme, either `accessToken` contains the token string, or `key` contains the API key
-  - `(RTN2f)` API version param `v` should be `0.8`
+  - `(RTN2f)` API version param `v` should be `0.9`
 - `(RTN3)` If connection option `autoConnect` is true, a connection is initiated immediately; otherwise a connection is only initiated following an explicit call to `connect()`
 - `(RTN4)` EventEmitter and states:
   - `(RTN4a)` Implements `EventEmitter` and emits events for state changes `INITIALIZED`, `CONNECTING`, `CONNECTED`, `DISCONNECTED`, `SUSPENDED`, `CLOSING`, `CLOSED`, `FAILED`
@@ -336,7 +338,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN15c)` The system's response to a resume request will be one of the following:
     - `(RTN15c1)` `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client, and no `error`. In this case, the server is indicating that the resume succeeded, all channels are still attached, and all backlog messages are available. The client should not change the state of attached channels, and immediately process any queued messages for that channel
     - `(RTN15c2)` `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client, and an `error`. In this case, the server is indicating that the resume succeeded but with a non-fatal error, all channels are still attached, and some backlog messages may be unavailable. The `ErrorInfo` received should be emitted on the client `Connection` and the `Connection#errorReason` should be set. The client should not change the state of attached channels, and immediately process any queued messages for that channel. Any channels that are not resumed in full may receive an `ATTACHED` `ProtocolMessage` with an `error`, see [`RTL12`](#RTL12)
-    - `(RTN15c3)` `CONNECTED` `ProtocolMessage` with a new `connectionId`, and an error in `error`. In this case, a new connection has been established, the resume has failed, the channels are no longer attached, and the error indicates the resume problem which should be emitted. The client library should immediately detach all channels, fail any queued messages on those channels, and set the `Channel#errorReason` on each detached `Channel`. Additionally, the internal `msgSerial` counter is reset so that the first message published to Ably will contain a `msgSerial` value of `0`
+    - `(RTN15c3)` `CONNECTED` `ProtocolMessage` with a new `connectionId`, and an error in `error`. In this case, a new connection has been established, the resume has failed, the channels are no longer attached, and the error indicates the resume problem which should be emitted. The client library should reattach all channels that are in the `SUSPENDED` state. For all `ATTACHING` or `ATTACHED` channels, the client library should fail any previously queued messages. An `ERROR` event should additionally be emitted on each `Channel` object that was automatically re-attached. Finally, the internal `msgSerial` counter is reset so that the first message published to Ably will contain a `msgSerial` value of `0`
     - `(RTN15c4)` `ERROR` `ProtocolMessage` indicating a fatal error in the connection. The server will close the transport immediately after. If the `ERROR` is non-recoverable, the client will move to the `FAILED` state triggering all attached channels to move to the `FAILED` state as well
   - `(RTN15g)` When the connection resume has failed, all channels should be detached with a suitable error reason
   - `(RTN15f)` `ACK` and `NACK` responses for published messages can only ever be received on the transport connection on which those messages were sent. Therefore, once a transport drops, the client library must either fail the publish attempt, or re-attempt by re-sending the messages on a new transport if the resume was successful (i.e. the `CONNECTED` response includes the expected `connectionId`)
@@ -381,13 +383,18 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 - `(RTL1)` As soon as a `Channel` becomes attached, all incoming messages and presence messages are processed and emitted where applicable. `PRESENCE` and `SYNC` messages are passed to the `Presence` object ensuring it maintains a map of current members on a channel in realtime
 - `(RTL2)` EventEmitter and states:
-  - `(RTL2a)` Implements `EventEmitter` and emits events for state changes `INITIALIZED`, `ATTACHING`, `ATTACHED`, `DETACHING`, `DETACHED`, `FAILED`
+  - `(RTL2a)` Implements `EventEmitter` and emits events for state changes `INITIALIZED`, `ATTACHING`, `ATTACHED`, `DETACHING`, `DETACHED`, `SUSPENDED` and `FAILED`
   - `(RTL2b)` `Channel#state` attribute is the current state of the channel
+  - `(RTL2d)` A `ChannelStateChange` object is emitted as the first argument for every connection state change
+  - `(RTL2e)` Additionally, a `ChannelStateChange` can be emitted that contains a `reason` which contains an `ErrorInfo` object with details of the error that has occurred for the `Channel`
+- `(RTL2f)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a bit flag with value 4 indicating that the channel has been resumed. The `ChannelStateChange` will then be emitted for the `ATTACHED` state and will contain a `resumed` boolean attribute with value `true` if the bit flag value 4 was included. When `resumed` is `true`, this indicates that the channel attach resumed the channel state from an existing connection and there has been no loss of message continuity. In all other cases, `resumed` is false. A test should exist to ensure that `resumed` is always false when a channel first becomes `ATTACHED`, it is `true` when the channel is `ATTACHED` following a successful [connection recovery](#RTN16), and is `false` when the channel is `ATTACHED` following a failed [connection recovery](#RTN16)
   - `(RTL2c)` Additionally, an `ERROR` event is emitted that contains an `ErrorInfo` object with details on an error that has occurred for the `Channel`
 - `(RTL3)` Connection state change side effects:
   - `(RTL3a)` If the connection state changes to `FAILED` then an `ATTACHING` or `ATTACHED` channel state will transition to `FAILED`, set the `Channel#errorReason` and emit the error event
-  - `(RTL3b)` If the connection state changes to `CLOSED` or `SUSPENDED` then an `ATTACHING` or `ATTACHED` channel state will transition to `DETACHED`
-- `(RTL11)` If a channel enters the `DETACHED` or `FAILED` state, then all messages that are still queued for send on that channel should be deleted from the queue triggering a failure for the publish or presence methods invoked for those messages
+  - `(RTL3b)` If the connection state changes to `CLOSED` then an `ATTACHING` or `ATTACHED` channel state will transition to `DETACHED`
+  - `(RTL3c)` If the connection state changes to `SUSPENDED` then an `ATTACHING` or `ATTACHED` channel state will transition to `SUSPENDED`
+  - `(RTL3d)` If the connection state changes to `CONNECTED` then a `SUSPENDED` channel state will transition to `ATTACHING`. If any of the channels automatically attached fail, then the error message received from Ably should be emitted as an `ERROR` event on the `Channel` with Ably error code `91200`
+- `(RTL11)` If a channel enters the `DETACHED`, `SUSPENDED` or `FAILED` state, then all messages that are still queued for send on that channel should be deleted from the queue triggering a failure for the publish or presence methods invoked for those messages
 - `(RTL4)` `Channel#attach` function:
   - `(RTL4a)` If already `ATTACHED` nothing is done
   - `(RTL4h)` If the channel is in a pending state `DETACHING` or `ATTACHING`, do the attach operation after the completion of the pending request
@@ -402,6 +409,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL5a)` If the channel state is `INITIALIZED` or `DETACHED` nothing is done
   - `(RTL5i)` If the channel is in a pending state `DETACHING` or `ATTACHING`, do the detach operation after the completion of the pending request
   - `(RTL5b)` If the channel state is `FAILED`, the `detach` request results in an error
+  - `(RTL5j)` If the channel state is `SUSPENDED`, the `detach` request moves the channel immediately to the `DETACHED` state
   - `(RTL5g)` If the connection state is `CLOSING` or `FAILED`, the `detach` request results in an error
   - `(RTL5h)` If the connection state is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`, do the detach operation once the connection state is `CONNECTED`
   - `(RTL5d)` Otherwise a `DETACH` ProtocolMessage is sent to the server, the state changes to `DETACHING` and the channel becomes `DETACHED` when the confirmation `DETACHED` ProtocolMessage is received
@@ -417,7 +425,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL6c)` Connection and channel state conditions:
     - `(RTL6c1)` If the connection is `CONNECTED` and the channel is `ATTACHED` then the messages are published immediately
     - `(RTL6c2)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED` or the channel is `INITIALIZED` or `ATTACHING`, and `ClientOptions#queueMessages` has not been explicitly set to false, then the message will be queued and delivered as soon as the connection state becomes `CONNECTED` and the channel is `ATTACHED`
-    - `(RTL6c4)` If the connection is `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`, or the channel is `DETACHING`, `DETACHED` or `FAILED`, the operation will result in an error
+    - `(RTL6c4)` If the connection is `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`, or the channel is `DETACHING`, `DETACHED`, `SUSPENDED` or `FAILED`, the operation will result in an error
     - `(RTL6c3)` Implicitly attaches the `Channel` if the channel is in the `INITIALIZED` state. However, if the channel is in or moves to the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
   - `(RTL6d)` Messages are delivered using a single `ProtocolMessage` where possible by bundling in all messages for that channel into the `ProtocolMessage#messages` array. However, a yet to be implemented feature should limit the total number of messages bundled per `ProtocolMessage` based on the default max message size, and would reject the publish and indicate an error if any single message exceeds that limit
   - `(RTL6e)` Unidentified clients using [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) (i.e. any `clientId` is permitted as no `clientId` specified):
@@ -448,17 +456,22 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL10b)` Additionally supports the param `untilAttach`, which if true, will only retrive messages prior to the moment that the channel was attached. This bound is specified by passing the querystring param `fromSerial` with the serial number assigned to the channel in the `ATTACHED` `ProtocolMessage`. If the `untilAttach` param is specified when the channel is not attached, it results in an error
   - `(RTL10c)` Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the history request
   - `(RTL10d)` A test should exist that publishes messages from one client, and upon confirmation of message delivery, a history request should be made on another client to ensure all messages are available
-- `(RTL12)` An attached channel may receive an additional `ATTACHED` `ProtocolMessage` from Ably at any point, however this is typically triggered following a transport being upgraded or resumed. If the `ATTACHED` message contains an `error`, the error should be emitted on the channel, the `Channel#errorReason` should be set, and the channel should remain attached. An `ATTACHED` state change event should not be emitted by the `Channel` if the `Channel` is already `ATTACHED` (i.e. no state change has occurred)
+- `(RTL12)` An attached channel may receive an additional `ATTACHED` `ProtocolMessage` from Ably at any point, however this is typically triggered following a transport being upgraded or resumed. If the `ATTACHED` message contains an `error`, the error should be emitted as a `ERROR` event on the channel and the channel should remain attached. An `ATTACHED` state change event should not be emitted by the `Channel` if the `Channel` is already `ATTACHED` as no state change has occurred
 
 ### Presence {#realtime-presence}
 
 - `(RTP1)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a bit flag with value 1 indicating that there are currently members present on the channel. If members are present, subsequent `ProtocolMessage SYNC` messages will be delivered with presence members (messages) until the `SYNC` operation is complete. If there is no flag or the right most bit is zero, then the presence map should be considered in sync immediately as there are no members present on the channel at the time of attach
-- `(RTP2)` A [PresenceMap](https://github.com/ably/ably-java/blob/master/src/io/ably/realtime/Presence.java#L384-L529) should be used to maintain a list of members present on a channel. As there are no guarantees that during the `SYNC` phase presence events will arrive in order i.e. a leave event for a member can arrive before that member is later registered as as present as part of the initial `SYNC` operation. As such, until the `SYNC` operation is complete, timestamps must be recorded for all members to ensure the most recent present state is used, see the [Java implementation](https://github.com/ably/ably-java/blob/master/src/io/ably/realtime/Presence.java#L418-L431). Once a `SYNC` event is complete, the members that are now considered `ABSENT` can be removed from the map, see the [Java implementation](https://github.com/ably/ably-java/blob/master/src/io/ably/realtime/Presence.java#L504-L509)
+- `(RTP2)` A [`PresenceMap`](https://github.com/ably/ably-java/blob/master/src/io/ably/realtime/Presence.java#L384-L529) should be used to maintain a list of members present on a channel. As there are no guarantees that during the `SYNC` phase presence events will arrive in order i.e. a leave event for a member can arrive before that member is later registered as as present as part of the initial `SYNC` operation. As such, until the `SYNC` operation is complete, timestamps must be recorded for all members to ensure the most recent present state is used, see the [Java implementation](https://github.com/ably/ably-java/blob/master/src/io/ably/realtime/Presence.java#L418-L431). Once a `SYNC` event is complete, the members that are now considered `ABSENT` can be removed from the map, see the [Java implementation](https://github.com/ably/ably-java/blob/master/src/io/ably/realtime/Presence.java#L504-L509)
 - `(RTP3)` If a `SYNC` operation is underway but not yet complete, and the transport is disconnected unexpectedly, then if the connection is resumed successfully, it is the responsibility of the client library to complete the `SYNC` operation. The client library requests a `SYNC` resume by sending a `SYNC` `ProtocolMessage` with the last received sync serial number. See the [Ruby implementation](https://github.com/ably/ably-ruby/blob/7b18a20/lib/ably/realtime/presence/members_map.rb#L169-L176) and the [Ruby test](https://github.com/ably/ably-ruby/blob/7b18a20/spec/acceptance/realtime/presence_spec.rb#L1338-L1357)
+- `(RTP17)` The Presence object is also responsible for keeping a separate copy of an object similar to the `PresenceMap` containing only members that match the current `connectionId`. Any `ENTER`, `PRESENT`, `UPDATE` or `LEAVE` event that matches the current `connectionId` should be applied to this object in the same way it is done for the `PresenceMap`. This object should be private and is used to maintain a list of members that need to be automatically re-entered by the `Presence` object when a `Channel` becomes `ATTACHED` and [`resumed`](#TH4) is false indicating that channel continuity was lost.
+  - `(RTP17a)` All members associated with the current connection are published as a `PresenceMessage` on the `Channel` irrespective of whether the client has permission to subscribe or the `Channel` is configured to publish presence events. A test should exist that attaches to a `Channel` with a `presence` capability and without a `subscribe` capability. It should then enter the `Channel` and ensure that the member entered from the current connection is present in the internal and public presence set available via [`Presence#get`](#RTP11)
 - `(RTP4)` Ensure a test exists that enters 250 members using `Presence#enterClient` on a single connection, and checks for `PRESENT` events to be emitted on another connection for each member, and once sync is complete, all 250 members should be present in a `Presence#get` request
 - `(RTP5)` Channel state change side effects:
-  - `(RTP5a)` If the channel enters the `DETACHED` or `FAILED` state then all queued presence messages will fail immediately, and the presence map is cleared
-  - `(RTP5b)` If a channel enters the `ATTACHED` state then all queued presence messages will be sent immediately and a presence `SYNC` will be initiated implicitly
+  - `(RTP5a)` If the channel enters the `DETACHED`, `SUSPENDED` or `FAILED` state then all queued presence messages will fail immediately, and the presence map is cleared
+  - `(RTP5b)` If a channel enters the `ATTACHED` state then all queued presence messages will be sent immediately and a presence `SYNC` will be initiated implicitly by the Ably service
+  - `(RTP5c)` In addition, when a channel becomes `ATTACHED`, the [`resumed` flag](#TH4) is false, and it is known that there were previously members on the channel associated with the previous connection (see [internal `PresenceMap` RTP17](#RTP17)), each of those members should be re-entered into the channel automatically using the `clientId` and `data` attributes to populate a new `ENTER` `PresenceMessage`. Once all of the `ENTER` presence messages have been published, the [internal `PresenceMap` used to keep track of members present from this client's connection](#RTP17) should return to it's initial state ensuring it contains no members. When the realtime system publishes a `PresenceMessage` for each member back for the current `Channel`, the internal `PresenceMap` will be once again populated with all of the new members re-entered for this connection
+  - `(RTP5d)` If any of the automatic `ENTER` presence messages published in [RTP5c](#RTP5c) fail, then the error message received from Ably should be emitted as an `ERROR` event on the `Channel` with Ably error code `91201`
+  - `(RTP5e)` If the channel enters the `DETACHED` or `FAILED` state, the [internal `PresenceMap` used to keep track of members present from this client's connection](#RTP17) should return to it's initial state ensuring it contains no members. Members are never automatically re-entered once the channel has become `DETACHED` or `FAILED`
 - `(RTP16)` Connection state conditions:
   - `(RTP16a)` If the connection is `CONNECTED` and the channel is `ATTACHED` then all presence messages are published immediately
   - `(RTP16b)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED` or the channel is `ATTACHING`, and `ClientOptions#queueMessages` has not been explicitly set to false, then all presence messages will be queued and delivered as soon as the connection state returns to `CONNECTED` and the channel is `ATTACHED`
@@ -936,6 +949,11 @@ Attached
 </th>
 <th>
 
+Suspended
+
+</th>
+<th>
+
 Detaching
 
 </th>
@@ -970,6 +988,11 @@ Failed
 <td>
 
 [RTL4a](#RTL4a</td>)
+
+<!-- When SUSPENDED -->
+<td>
+
+[RTL4c](#RTL4c</td>)
 
 <!-- When DETACHING -->
 <td>
@@ -1008,6 +1031,11 @@ Failed
 
 [RTL5d](#RTL5d</td>)
 
+<!-- When SUSPENDED -->
+<td>
+
+[RTL5j](#RTL5j</td>)
+
 <!-- When DETACHING -->
 <td>
 
@@ -1045,6 +1073,11 @@ Failed
 
 [RTL6c1](#RTL6c1</td>)
 
+<!-- When SUSPENDED -->
+<td>
+
+[RTL6c4](#RTL6c4</td>)
+
 <!-- When DETACHING -->
 <td>
 
@@ -1081,6 +1114,11 @@ Presence ops.
 <td>
 
 [RTP16a](#RTP16a</td>)
+
+<!-- When SUSPENDED -->
+<td>
+
+[RTP16c](#RTP16c</td>)
 
 <!-- When DETACHING -->
 <td>
@@ -1134,7 +1172,7 @@ Presence ops.
 
 - `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol. A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages. See the [Ruby ProtocolMessage documentation](http://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage), but bear in mind the attributes following underscore naming in Ruby
 - `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`
-- `(TR3)` `ProtocolMessage` `Flag` enum has the following values in order from zero: `HAS_PRESENCE`, `HAS_BACKLOG`
+- `(TR3)` `ProtocolMessage` `Flag` enum has the following values in order from zero: `HAS_PRESENCE`, `HAS_BACKLOG` and `RESUMED`
 - `(TR4)` Attributes available in a `ProtocolMessage`, see the [Ruby ProtocolMessage documentation](http://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage) for an explanation of each attribute:
   - `(TR4a)` `action` enum
   - `(TR4n)` `id` string
@@ -1203,6 +1241,13 @@ Presence ops.
 - `(TA2)` The `ConnectionStateChange` object contains the current state in attribute `current`, the previous state in attribute `previous`, and when the client is not connected and a connection attempt will be made automatically by the library, the amount of time in milliseconds until the next retry in the attribute `retryIn`
 - `(TA3)` If the connection state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
 - `(TA4)` See the [Java library implementation](https://github.com/ably/ably-java/blob/245a3f20a6dce0d34413ddfed19c5da8ea647422/src/io/ably/realtime/ConnectionStateListener.java#L15-L20) of this object
+
+#### ChannelStateChange
+
+- `(TH1)` Whenever the channel state changes, a `ChannelStateChange` object is emitted on the `Channel` object
+- `(TH2)` The `ChannelStateChange` object contains the current state in attribute `current`, the previous state in attribute `previous`
+- `(TH3)` If the connection state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
+- `(TH4)` The `ChannelStateChange` object contains an attribute `resumed` which in combination with an `ATTACHED` state, indicates whether the channel attach successfully resumed its state following the connection being resumed or recovered. If `resumed` is true, then the attribute indicates that the attach within Ably successfully recovered the state for the channel, and as such there is no loss of message continuity. In all other cases, `resumed` is false, and may be accompanied with a [channel state change error reason](#TH3)
 
 #### Capability - **API not defined yet**
 
@@ -1447,7 +1492,7 @@ publish(name: String?, data: Data?) =\> io // RSL1\
 publish(name: String?, data: Data?, clientId: String) =\> io // RSL1h
 
 class RealtimeChannel:\
-embeds EventEmitter\<ChannelEvent, ErrorInfo?\> // RTL2\
+embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2a, RTL2d, RTL2e\
 errorReason: ErrorInfo? // RTL4e\
 state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
@@ -1475,11 +1520,18 @@ ATTACHING\
 ATTACHED\
 DETACHING\
 DETACHED\
+SUSPENDED\
 FAILED
 
 enum ChannelEvent:\
 embeds ChannelState\
 ERROR // RTL2c
+
+class ChannelStateChange:\
+current: ChannelState // RTL2a, RTL2b\
+previous: ChannelState // RTL2a, RTL2b\
+reason: ErrorInfo? // RTL2e, TH3\
+resumed: Boolean // RTL2f, TH4
 
 class ChannelOptions:\
 +withCipherKey(key: Binary \| String)? -\> ChannelOptions // TB3\
@@ -1582,7 +1634,7 @@ connectionKey: String? // TR4e\
 connectionSerial: Int? // RTN10c, TR4f\
 count: Int? // TR4g\
 error: ErrorInfo? // RTN15c2, TR4h\
-flags: .HAS_PRESENCE & .HAS_BACKLOG ? // RTP1, TR3, TR4i\
+flags: .HAS_PRESENCE & .HAS_BACKLOG & .RESUMED ? // RTP1, TR3, TR4i, RTL2f\
 id: String? // TR4b\
 messages: \[Message\]? // TR4k\
 msgSerial: Int? // RTN7b, TR4j\
@@ -1681,3 +1733,7 @@ hasNext() -\> Bool // TG6\
 isLast() -\> Bool // TG7\
 next() =\> io PaginatedResult`<T>`{=html}? // TG4\
 \`\`\`
+
+## Old specs
+
+- [v0.8](/client-lib-development-guide/versions/features-0-8) (deprecated in June 2016)
