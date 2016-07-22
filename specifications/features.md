@@ -1195,7 +1195,7 @@ Presence ops.
 #### ProtocolMessage
 
 - `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol. A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages. See the [Ruby ProtocolMessage documentation](http://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage), but bear in mind the attributes following underscore naming in Ruby
-- `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`
+- `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`
 - `(TR3)` `ProtocolMessage` `Flag` enum has the following values in order from zero: `HAS_PRESENCE`, `HAS_BACKLOG` and `RESUMED`
 - `(TR4)` Attributes available in a `ProtocolMessage`, see the [Ruby ProtocolMessage documentation](http://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage) for an explanation of each attribute:
   - `(TR4a)` `action` enum
@@ -1700,7 +1700,8 @@ DETACH // TR2\
 DETACHED // TR2\
 PRESENCE // TR2\
 MESSAGE // TR2\
-SYNC // TR2
+SYNC // TR2\
+AUTH // TR2
 
 class Connection:\
 embeds EventEmitter\<ConnectionEvent, ConnectionStateChange\> // RTN4a, RTN4e, RTN4g\
