@@ -119,48 +119,48 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 ProtocolMessages are populated with one or more of the following fields.
 
-- i32 action := Indicates the purpose of the message. See [Actions](#actions) above.
+- i32 `action` := Indicates the purpose of the message. See [Actions](#actions) above.
 
 <!-- -->
 
-- i32 count := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
+- i32 `count` := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
 
 <!-- -->
 
-- Error := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
+- Error `error` := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
 
 <!-- -->
 
-- string connectionId := Contains a public string connection ID. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection ID is a public identifier used to uniquely identify each connected client.
+- string `connectionId` := Contains a public string connection ID. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection ID is a public identifier used to uniquely identify each connected client.
 
 <!-- -->
 
-- string connectionKey := Contains a private string connection Key. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection key is a private identifier used to recover and resume connections and their connection state.
+- string `connectionKey` := Contains a private string connection Key. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection key is a private identifier used to recover and resume connections and their connection state.
 
 <!-- -->
 
-- i64 connectionSerial := Contains a serial number for a message on the current connection, in `MESSAGE` and `PRESENCE` protocol messages sent from the service to the client. The `connectionSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies an attempted delivery of a Protocol Message to the client. The client uses the connection serial to track the receipt of messages, and may specify the `connectionSerial` when performing connection state recovery.
+- i64 `connectionSerial` := Contains a serial number for a message on the current connection, in `MESSAGE` and `PRESENCE` protocol messages sent from the service to the client. The `connectionSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies an attempted delivery of a Protocol Message to the client. The client uses the connection serial to track the receipt of messages, and may specify the `connectionSerial` when performing connection state recovery.
 
 <!-- -->
 
-- i64 msgSerial := Contains a serial number for a message sent from the client to the service. The `msgSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies the message across the system. The `msgSerial` is also used in the message acknowledgement protocol.
+- i64 `msgSerial` := Contains a serial number for a message sent from the client to the service. The `msgSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies the message across the system. The `msgSerial` is also used in the message acknowledgement protocol.
 
 <!-- -->
 
-- i64 timestamp := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
+- i64 `timestamp` := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
   Currently there are no requirements for the client library to process or populate the timestamp.
 
 <!-- -->
 
-- i32 flags := Currently used to flag properties in messages such as the presence sync state of an `ATTACHED` ProtocolMessage. See the list of [currently implemented bit flags](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ProtocolMessage.java).
+- i32 `flags` := Currently used to flag properties in messages such as the presence sync state of an `ATTACHED` ProtocolMessage. See the list of [currently implemented bit flags](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ProtocolMessage.java).
 
 <!-- -->
 
-- list`<Message>`{=html} messages := A ProtocolMessage with a `MESSAGE` action contains one or more messages belonging to a channel. The messages field of the ProtocolMessage contains a collection of messages.
+- list`<Message>`{=html} `messages` := A ProtocolMessage with a `MESSAGE` action contains one or more messages belonging to a channel. The messages field of the ProtocolMessage contains a collection of messages.
 
 <!-- -->
 
-- list`<Presence>`{=html} presence := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
+- list`<Presence>`{=html} `presence` := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
 
 <!-- -->
 
