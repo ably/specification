@@ -123,6 +123,14 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
+- string `id` := Unique identifier for each protocol message
+
+<!-- -->
+
+- JsonObject `auth` := JSON-like object used for providing authentication details
+
+<!-- -->
+
 - i32 `count` := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
 
 <!-- -->
@@ -161,14 +169,6 @@ ProtocolMessages are populated with one or more of the following fields.
 <!-- -->
 
 - list`<Presence>`{=html} `presence` := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
-
-<!-- -->
-
-- string or binary `data` := An optional flexible payload attribute that can be used to accompany an `action`. For example, a client-initiated `AUTH` `ProtocolMessage` can include the `TokenDetails` object as a JSON string in this attribute. Binary is supported when using MessagePack.
-
-<!-- -->
-
-- string `encoding` := An optional string identifier indicating the encodings applied to the `data` payload in left to right order. For example, an encoding with the value "json" indicates that a JSON payload was serialised as a string.
 
 ## Other message object {#other-message-structs}
 
