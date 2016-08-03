@@ -131,11 +131,15 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
-- i32 `count` := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
+- string `channel` := Present when protocol message applies to a single channel
 
 <!-- -->
 
-- Error `error` := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
+- string `channelSerial` := Contains a serial number for a message on the channel
+
+<!-- -->
+
+- i32 `count` := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
 
 <!-- -->
 
@@ -143,7 +147,11 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
-- string `connectionKey` := Contains a private string connection Key. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection key is a private identifier used to recover and resume connections and their connection state.
+- string `connectionKey` := Contains a private string connection Key. Note that this field is soon to be deprecated; when `ConnectionDetails#connectionKey` is present, it should be considered the definitive `connectionKey` for the current connection
+
+<!-- -->
+
+- ConnectionDetails `connectionDetails` := provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
 
 <!-- -->
 
@@ -151,16 +159,15 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
+- Error `error` := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
+
+<!-- -->
+
+- i32 `flags` := Currently used to flag properties in messages such as the presence sync state of an `ATTACHED` ProtocolMessage. See [client library spec TR4i](/client-lib-development-guide/features#TR4i)
+
+<!-- -->
+
 - i64 `msgSerial` := Contains a serial number for a message sent from the client to the service. The `msgSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies the message across the system. The `msgSerial` is also used in the message acknowledgement protocol.
-
-<!-- -->
-
-- i64 `timestamp` := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
-  Currently there are no requirements for the client library to process or populate the timestamp.
-
-<!-- -->
-
-- i32 `flags` := Currently used to flag properties in messages such as the presence sync state of an `ATTACHED` ProtocolMessage. See the list of [currently implemented bit flags](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ProtocolMessage.java).
 
 <!-- -->
 
@@ -169,6 +176,11 @@ ProtocolMessages are populated with one or more of the following fields.
 <!-- -->
 
 - list`<Presence>`{=html} `presence` := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
+
+<!-- -->
+
+- i64 `timestamp` := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
+  Currently there are no requirements for the client library to process or populate the timestamp.
 
 ## Other message object {#other-message-structs}
 
