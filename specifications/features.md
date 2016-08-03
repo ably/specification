@@ -166,10 +166,6 @@ Client library developers - clone our [REST client library Google Doc spec](http
   - `(RSA10h)` Will use the value from `Auth#clientId` by default, if not `null`
   - `(RSA10i)` Adheres to all requirements in `RSA8` relating to `TokenParams`, `authCallback` and `authUrl`
   - `(RSA10l)` Has an alias method `RestClient#authorise` and `RealtimeClient#authorise` that will log a deprecation warning stating that this alias method will be removed in `v1.0` and the user should instead use `authorize`
-- `(RSA13)` `Auth#update` function:
-  - `(RSA13a)` Instructs the library to update the default authentication details in `TokenParams` and `AuthOptions` used for all future authentication requests
-  - `(RSA13b)` Method signature is `update(TokenParams, AuthOptions)`. `TokenParams` and `AuthOptions` are optional. When the arguments are present, even if empty, the `TokenParams` and `AuthOptions` supersede any previously client library configured `TokenParams` and `AuthOptions`. For example, if a client is initialised with `TokenParams#ttl` configured with a custom value, and a `TokenParams` object is passed in as an argument to `#update` with a `null` value for `ttl`, then the `ttl` used for every subsequent authorisation will be `null`
-  - `(RSA13c)` If a previous token does not exist or the token has expired, then a new token will be created immediately, and in the case of a realtime client, the client will re-authenticate, see [RTC8](#RTC8). Please note that a buffer of 15s for token expiry is recommended to avoid race conditions where the token is valid at the time of the request, but invalid when it reaches the server. Therefore, we recommend that a token is considered expired 15s before the time field `expires`
 
 ### Channels {#rest-channels}
 
@@ -1357,7 +1353,7 @@ Presence ops.
 
 #### TokenParams {#token-params}
 
-- `(TK1)` A class providing parameters of a token request. These params are used when invoking `Auth#authorize`, `Auth#requestToken`, `Auth#createTokenRequest` and `Auth#update`
+- `(TK1)` A class providing parameters of a token request. These params are used when invoking `Auth#authorize`, `Auth#requestToken` and `Auth#createTokenRequest`
 - `(TK2)` The attributes of `TokenParams` consist of:
 - `(TK2a)` `ttl` long - Requested time to live for the token in milliseconds. When omitted, the REST API default of 60 minutes is applied by Ably
 - `(TK2b)` `capability` string - Capability requirements JSON stringified for the token. When omitted, the REST API default to allow all operations is applied by Ably, with the string value `{"*":["*"]}`
@@ -1500,7 +1496,6 @@ ttl: Duration api-default 60min // RSA9e, TK2a
 class Auth:\
 clientId: String? // RSA7, RSC17, RSA12\
 authorize(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA10\
-update(TokenParams?, AuthOptions?) // RSA13\
 createTokenRequest(TokenParams?, AuthOptions?) =\> io TokenRequest // RSA9\
 requestToken(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA8e
 
