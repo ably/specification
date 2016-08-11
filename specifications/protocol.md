@@ -127,7 +127,7 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
-- JsonObject `auth` := JSON-like object used for providing authentication details
+- AuthDetails `auth` := Object used for providing authentication details
 
 <!-- -->
 
