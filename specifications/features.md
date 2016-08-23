@@ -280,7 +280,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTC6)` `RealtimeClient#time` function:
   - `(RTC6a)` Proxy to `RestClient#time` presented with an async or threaded interface as appropriate
 - `(RTC7)` The client library must use the configured timeouts specified in the `ClientOptions`, falling back to the [client library defaults](#defaults) and defaults described in `ClientOptions` below
-- `(RTC8)` Authentication token changes for the current connection are possible when the client is in the `CONNECTED`, `CONNECTING` or `DISCONNECTED` states. If `auth#authorize` is called or Ably requests a re-authentication (see [RTN22](#RTN22)), the client must obtain a new token and send an `AUTH` `ProtocolMessage` to Ably. The `auth` attribute of the `ProtocolMessage` must contain an `AuthDetails` object containing either a token string or token details object
+- `(RTC8)` Authentication token changes for the current connection are possible when the client is in the `CONNECTED`, `CONNECTING` or `DISCONNECTED` states. If `auth#authorize` is called or Ably requests a re-authentication (see [RTN22](#RTN22)), the client must obtain a new token and send an `AUTH` `ProtocolMessage` to Ably. The `auth` attribute of the `ProtocolMessage` must contain an `AuthDetails` object containing a token string
   - `(RTC8a)` If the authentication token change is successful, then Ably will send a new `CONNECTED` `ProtocolMessage`. The `connectionDetails` provided in the `CONNECTED` `ProtocolMessage` must override any existing defaults, see [RTN21](#RTN21). A test should exist that performs an upgrade of capabilities without any loss of continuity or connectivity during the upgrade process. Another test should exist where the capabilities are downgraded resulting in Ably explicitly detaching the channel. That test must assert that the channel becomes detached soon after the token update and the reason is included in the channel state change event
   - `(RTC8b)` If the authentication token change fails, then Ably will send an `ERROR` `ProtocolMessage` triggering the connection to transition to the `FAILED` state. A test should exist for a token change that fails (such as sending a new token with an incompatible `clientId`)
 - `(RTC9)` `RealtimeClient#request` is a wrapper around `RestClient#request` (see [RSC19](#RSC19)) delivered in an idiomatic way for the realtime library i.e. in the case of Ruby,\
@@ -1276,7 +1276,6 @@ Presence ops.
 
 - `(AD1)` `AuthDetails` is a type used with an `AUTH` protocol messages to send authentication details
 - `(AD2)` `AuthDetails#accessToken` attribute contains the token string
-- `(AD3)` `AuthDetails#tokenDetails` attribute contains a `TokenDetails` object
 
 #### Stats
 
@@ -1729,8 +1728,7 @@ SYNC // TR2\
 AUTH // TR2
 
 class AuthDetails: // RTC8\
-accessToken: String? // AD2\
-tokenDetails: TokenDetails? // AD3
+accessToken: String // AD2
 
 class Connection:\
 embeds EventEmitter\<ConnectionEvent, ConnectionStateChange\> // RTN4a, RTN4e, RTN4g\
