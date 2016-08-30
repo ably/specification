@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 
-title: Features spec v0.9\
+title: Features spec\
 section: client-lib-development-guide\
 index: 1\
 anchor_specs: true\
