@@ -1819,4 +1819,4 @@ headers: Hash // HP8\
 
 ## Old specs
 
-- [v0.8](/client-lib-development-guide/versions/features-0-8) (deprecated in July 2016)`<br>`{=html}[View 0.8 -\> 0.9 changes](https://github.com/ably/docs/blob/source/content/client-lib-development-guide/versions/features-0-8__0-9.textile.diff)
+- [v0.8](/client-lib-development-guide/versions/features-0-8) (deprecated in July 2016)`<br>`{=html}[View 0.8 -\> 0.9 changes](https://github.com/ably/docs/blob/source/content/client-lib-development-guide/versions/features-0-8__0-9.diff)
