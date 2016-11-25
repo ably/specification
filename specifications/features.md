@@ -1566,8 +1566,7 @@ direction: .Backwards \| .Forwards api-default .Backwards, // RSL2b2\
 limit: int api-default 100 // RSL2b3\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
 publish(\[Message\]) =\> io // RSL1\
-publish(name: String?, data: Data?) =\> io // RSL1\
-publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RSL1h
+publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RSL1, RSL1h
 
 class RealtimeChannel:\
 embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2a, RTL2d, RTL2e\
@@ -1584,8 +1583,7 @@ limit: int api-default 100, // RTL10a\
 untilAttach: Bool default false // RTL10b\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
 publish(\[Message\]) =\> io // RTL6i\
-publish(name: String?, data: Data?) =\> io // RTL6i\
-publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RTL6h\
+publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RTL6i, RTL6h\
 subscribe((Message) -\>) =\> io // RTL7a\
 subscribe(String, (Message) -\>) =\> io // RTL7b\
 unsubscribe() // RTL8a, RTE5\
