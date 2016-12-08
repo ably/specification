@@ -1691,6 +1691,7 @@ clientId: String? // RSL1g1, TM2b\
 connectionId: String? // TM2c\
 data: Data? // TM2d\
 encoding: String? // TM2e\
+extras: JsonObject? // TM2i\
 id: String // TM2a\
 name: String? // TM2g\
 timestamp: Time // TM2f
