@@ -180,7 +180,7 @@ Client library developers - clone our [REST client library Google Doc spec](http
 
 ### Channel {#rest-channel}
 
-- `(RSL1)` `Channels#publish` function:
+- `(RSL1)` `Channel#publish` function:
   - `(RSL1a)` Expects either an array of `Message` objects or a `name` string and `data` payload
   - `(RSL1b)` When `name` and `data` is provided, a single message is published to Ably
   - `(RSL1c)` When an array of `Message` objects is provided, a single request is made to Ably. When publishing multiple messages, this approach is more efficient. However, a yet to be implemented feature should limit the total number of messages bundled in a single POST based on the default max request size, and would reject the publish and indicate an error if any single message exceeds that limit
