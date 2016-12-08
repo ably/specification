@@ -1502,6 +1502,7 @@ useBinaryProtocol: Bool default true // TO3f\
 // configurable retry and failure defaults\
 disconnectedRetryTimeout: Duration default 15s // TO311\
 suspendedRetryTimeout: Duration default 30s // RTN14d, TO312\
+channelRetryTimeout: Duration default 15s // RTL13b, TO3l7\
 httpOpenTimeout: Duration default 4s // TO313\
 httpRequestTimeout: Duration default 15s // TO314\
 httpMaxRetryCount: Int default 3 // TO315\
