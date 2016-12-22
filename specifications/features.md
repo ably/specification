@@ -1496,7 +1496,7 @@ Presence ops.
 
 #### PushDeviceType
 
-- `(PDT1)` One of the following strings: "mobile", "tablet", "desktop"
+- `(PDT1)` One of the following strings: "mobile", "tablet", "desktop", "embedded"
 - `(PDT2)` The client library will not check that a string acting as `PushDeviceType` complies with `(PDT1)`. Only the server will check this.
 
 ### Client Library defaults {#defaults}
@@ -1972,7 +1972,8 @@ enum PushPlatformType:\
 enum PushDeviceType:\
 "mobile" // PDT1\
 "tablet" // PDT1\
-"desktop" // PDT1
+"desktop" // PDT1\
+"embedded" // PDT1
 
 class PushChannelSubscription:\
 constructor(transport: PushTransportType, targetId: String, channelName: String) -\> PushChannelSubscription\
