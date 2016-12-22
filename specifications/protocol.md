@@ -25,7 +25,7 @@ The protocol supports both a text-based format using [JSON](http://json.org/) an
 
 The unit of any protocol transmission is a `ProtocolMessage` key value Hash object, referred to in this description as a Protocol Message.
 
-The WebSocket transport transmits Protocol Messages in a single WebSocket data frame. In the binary transport, these are sent as binary data frames, with the Protocol Message being encoded with MessagePack. In the text transport these are sent as text data frames, the text itself being the white-space-free JSON encoding of the Protocol Message. Empty fields may be encoded as null, or may be handled as undefined (and thus absent from the JSON encoding) and clients should handle both possibilities. Handling empty fields as undefined is clearly preferable, however, since the encoded text is shorter and the encode and decode overhead is minimized. Binary data payloads are handled in the same was as JSON encoded payloads are handled.
+The WebSocket transport transmits Protocol Messages in a single WebSocket data frame. In the binary transport, these are sent as binary data frames, with the Protocol Message being encoded with MessagePack. In the text transport these are sent as text data frames, the text itself being the whitespace-free JSON encoding of the Protocol Message. Empty fields may be encoded as null, or may be handled as undefined (and thus absent from the JSON encoding) and clients should handle both possibilities. Handling empty fields as undefined is clearly preferable, however, since the encoded text is shorter and the encode and decode overhead is minimised. Binary data payloads are handled in the same was as JSON encoded payloads are handled.
 
 In the Comet protocol, all request and response bodies contain an array of one or more protocol messages. In the binary protocol this is standard MessagePack binary encoding of a MessageSet Hash object. In the text (JSON) protocol request and response bodies are simply JSON-encoded arrays containing the Protocol Message content, again either in binary or text encoding.
 
@@ -109,78 +109,54 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 <!-- -->
 
-- SYNC (16) := Currently reserved for us with presence member synchronization following a channel `ATTACHED` Protocol Message being received by the client. Once a channel becomes attached, the server will automatically send a list of all members present on the channel to the client. Every `SYNC` Protocol Message received will contain a channelSerial value and one or more PresenceMessages for each member currently present on the channel i.e. they are in the `PRESENT` state. The channelSerial serves two purposes, it provides a way for the client library to resume a `SYNC` should the transport be disconnected, and it also provides a means for the client library to know when the sync is complete. A channelSerial that is being synced will contian an ID with followed by a cursor after a colon such as "cf30e75054887:psl_7g:client:189", however the final page of `SYNC` messages will have a serial with an empty cursor such as "cf30e75054887:". A client can explicitly request a SYNC with an optional channelSerial; if no channelSerial is provided the server will send a complete set of members on the channel; if a channelSerial is provided, the server will resume the `SYNC` operation.
-
-<!-- -->
-
-- AUTH (17) := Sent by the client with a new token to reauthenticate the connection, with the connection either being closed due to incompatible token details being provided, or a `CONNECTED` message being sent back to the client confirming the authentication succeeded. The server can request that the client authenticates by sending an `AUTH` protocol message to the client, and the client must respond with a new token in an `AUTH` protocol message.
+- SYNC (16) := Currently reserved for us with presence member synchronisation following a channel `ATTACHED` Protocol Message being received by the client. Once a channel becomes attached, the server will automatically send a list of all members present on the channel to the client. Every `SYNC` Protocol Message received will contain a channelSerial value and one or more PresenceMessages for each member currently present on the channel i.e. they are in the `PRESENT` state. The channelSerial serves two purposes, it provides a way for the client library to resume a `SYNC` should the transport be disconnected, and it also provides a means for the client library to know when the sync is complete. A channelSerial that is being synced will contian an ID with followed by a cursor after a colon such as "cf30e75054887:psl_7g:client:189", however the final page of `SYNC` messages will have a serial with an empty cursor such as "cf30e75054887:". A client can explicitly request a SYNC with an optional channelSerial; if no channelSerial is provided the server will send a complete set of members on the channel; if a channelSerial is provided, the server will resume the `SYNC` operation.
 
 ## Protocol Message fields
 
 ProtocolMessages are populated with one or more of the following fields.
 
-- i32 `action` := Indicates the purpose of the message. See [Actions](#actions) above.
+- i32 action := Indicates the purpose of the message. See [Actions](#actions) above.
 
 <!-- -->
 
-- string `id` := Unique identifier for each protocol message
+- i32 count := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
 
 <!-- -->
 
-- AuthDetails `auth` := Object used for providing authentication details
+- Error := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
 
 <!-- -->
 
-- string `channel` := Present when protocol message applies to a single channel
+- string connectionId := Contains a public string connection ID. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection ID is a public identifier used to uniquely identify each connected client.
 
 <!-- -->
 
-- string `channelSerial` := Contains a serial number for a message on the channel
+- string connectionKey := Contains a private string connection Key. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection key is a private identifier used to recover and resume connections and their connection state.
 
 <!-- -->
 
-- i32 `count` := The count field is used for `ACK` and `NACK` actions. See [message acknowledgement protocol](#message-acknowledgement).
+- i64 connectionSerial := Contains a serial number for a message on the current connection, in `MESSAGE` and `PRESENCE` protocol messages sent from the service to the client. The `connectionSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies an attempted delivery of a Protocol Message to the client. The client uses the connection serial to track the receipt of messages, and may specify the `connectionSerial` when performing connection state recovery.
 
 <!-- -->
 
-- string `connectionId` := Contains a public string connection ID. This field is populated in the first `CONNECTED` Protocol Messages from the service to the client. The connection ID is a public identifier used to uniquely identify each connected client.
+- i64 msgSerial := Contains a serial number for a message sent from the client to the service. The `msgSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies the message across the system. The `msgSerial` is also used in the message acknowledgement protocol.
 
 <!-- -->
 
-- string `connectionKey` := Contains a private string connection Key. Note that this field is soon to be deprecated; when `ConnectionDetails#connectionKey` is present, it should be considered the definitive `connectionKey` for the current connection
-
-<!-- -->
-
-- ConnectionDetails `connectionDetails` := provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
-
-<!-- -->
-
-- i64 `connectionSerial` := Contains a serial number for a message on the current connection, in `MESSAGE` and `PRESENCE` protocol messages sent from the service to the client. The `connectionSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies an attempted delivery of a Protocol Message to the client. The client uses the connection serial to track the receipt of messages, and may specify the `connectionSerial` when performing connection state recovery.
-
-<!-- -->
-
-- Error `error` := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
-
-<!-- -->
-
-- i32 `flags` := Currently used to flag properties in messages such as the presence sync state of an `ATTACHED` ProtocolMessage. See [client library spec TR4i](/client-lib-development-guide/features#TR4i)
-
-<!-- -->
-
-- i64 `msgSerial` := Contains a serial number for a message sent from the client to the service. The `msgSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies the message across the system. The `msgSerial` is also used in the message acknowledgement protocol.
-
-<!-- -->
-
-- list`<Message>`{=html} `messages` := A ProtocolMessage with a `MESSAGE` action contains one or more messages belonging to a channel. The messages field of the ProtocolMessage contains a collection of messages.
-
-<!-- -->
-
-- list`<Presence>`{=html} `presence` := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
-
-<!-- -->
-
-- i64 `timestamp` := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
+- i64 timestamp := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
   Currently there are no requirements for the client library to process or populate the timestamp.
+
+<!-- -->
+
+- i32 flags := Currently used to flag properties in messages such as the presence sync state of an `ATTACHED` ProtocolMessage. See the list of [currently implemented bit flags](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ProtocolMessage.java).
+
+<!-- -->
+
+- list`<Message>`{=html} messages := A ProtocolMessage with a `MESSAGE` action contains one or more messages belonging to a channel. The messages field of the ProtocolMessage contains a collection of messages.
+
+<!-- -->
+
+- list`<Presence>`{=html} presence := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
 
 ## Other message object {#other-message-structs}
 
@@ -198,7 +174,7 @@ Error contains the following fields.
 
 ### Data
 
-In transports that support JSON encoding, Strings and the JSON Object and Array types are represented as their natural JSON value in the enclosing type. For example, a Message with a string payload would be encoded in JSON (with white-space added here for clarity) as:
+In transports that support JSON encoding, Strings and the JSON Object and Array types are represented as their natural JSON value in the enclosing type. For example, a Message with a string payload would be encoded in JSON (with whitespace added here for clarity) as:
 
 bc\[json\]. {\
 "name": "my_event",\
