@@ -1581,6 +1581,7 @@ iterate() -\> Iterator`<ChannelType>`{=html} // RSN2, RTS2\
 release(String) // RSN4, RTS4
 
 class RestChannel:\
+embeds PushChannel\
 name: String?\
 presence: RestPresence // RSL3\
 history(\
@@ -1590,7 +1591,8 @@ direction: .Backwards \| .Forwards api-default .Backwards, // RSL2b2\
 limit: int api-default 100 // RSL2b3\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
 publish(\[Message\]) =\> io // RSL1\
-publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RSL1, RSL1h
+publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RSL1, RSL1h\
+push: PushChannel
 
 class RealtimeChannel:\
 embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2a, RTL2d, RTL2e\
@@ -1613,7 +1615,13 @@ subscribe((Message) -\>) =\> io // RTL7a\
 subscribe(String, (Message) -\>) =\> io // RTL7b\
 unsubscribe() // RTL8a, RTE5\
 unsubscribe((Message) -\>) // RTL8a\
-unsubscribe(String, (Message) -\>) // RTL8a
+unsubscribe(String, (Message) -\>) // RTL8a\
+push: PushChannel
+
+class PushChannel:\
+subscribe(type: .Device \| .ClientId) =\> io\
+unsubscribe(type: .Device \| .ClientId) =\> io\
+getSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html}
 
 enum ChannelState:\
 INITIALIZED\
