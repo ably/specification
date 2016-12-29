@@ -1344,6 +1344,12 @@ Presence ops.
   - `(CD2g)` `serverId` string is a unique identifier for the front-end server that the client has connected to. This server ID is only used for the purposes of debugging
   - `(CD2h)` `maxIdleInterval` is the maximum length of time in milliseconds that the server will allow no activity to occur in the server-\>client direction. After such a period of inactivity, the server will send a `HEARTBEAT` or transport-level ping to the client. If the value is 0, the server will allow arbitrarily-long levels of inactivity.
 
+#### ChannelProperties
+
+- `(CP1)` properties of a channel and its state
+- `(CP2)` The attributes of `ChannelProperties` consist of:
+  - `(CP2a)` `attachSerial` string - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMesage` for the channel, see [RTL15a](#RTL15a)
+
 ### Option types {#options}
 
 #### ClientOptions
@@ -1409,12 +1415,6 @@ Presence ops.
   - `(AO2e)` `authHeaders` - Headers to be included in any request made by the library to the `authUrl`
   - `(AO2f)` `authParams` - Additional params to be included in any request made by the library to the `authUrl`, either as query params in the case of `GET`, or form-encoded in the body in the case of `POST`
   - `(AO2g)` `queryTime` - If true, the library will query the Ably system for the current time instead of relying on a locally-available time of day
-
-#### ChannelProperties
-
-- `(CP1)` properties of a channel and its state
-- `(CP2)` The attributes of `ChannelProperties` consist of:
-  - `(CP2a)` `attachSerial` string - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMesage` for the channel, see [RTL15a](#RTL15a)
 
 #### ChannelOptions
 
