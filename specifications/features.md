@@ -1858,17 +1858,14 @@ admin: PushAdmin
 
 // Only on platforms that support receiving notifications:
 
-activate(DeviceDetails) =\> io ErrorInfo? // RSH2c\
-activateExternally(\
+activate(\
 DeviceDetails,\
-registerDevice: (ErrorInfo?, DeviceDetails?) -\> io String?,\
-renewRegistration: (ErrorInfo?, DeviceDetails?) -\> io String?\
-)\
-deactivate(deviceId: String) =\> io ErrorInfo?\
-deactivateExternally\
+registerCallback: ((ErrorInfo?, DeviceDetails?) -\> io String)?\
+) =\> io ErrorInfo? // RSH2c\
+deactivate(\
 deviceId: String,\
-deactivate: (ErrorInfo?, deviceId: String) -\> io\
-)
+deregisterCallback: ((ErrorInfo?, deviceId: String?) -\> io)?\
+) =\> io ErrorInfo?
 
 class PushAdmin:\
 deviceRegistrations: PushDeviceRegistrations\
