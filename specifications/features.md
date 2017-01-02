@@ -1875,8 +1875,8 @@ class JsonObject:\
 // Platform-dependant, typically a Dict-like object
 
 class PushDeviceRegistrations:\
-save(PushDeviceRegistration) =\> io\
-get(params: Dict\<String, String\>?) =\> io PaginatedResult`<PushDeviceRegistration>`{=html}\
+save(DeviceDetails) =\> io\
+get(params: Dict\<String, String\>?) =\> io PaginatedResult`<DeviceDetails>`{=html}\
 remove(params: Dict\<String, String\>?) =\> io
 
 class PushChannelSubscriptions:\
@@ -1885,19 +1885,6 @@ save(PushChannelSubscription) =\> io\
 listChannels() =\> io PaginatedResult`<String>`{=html}\
 get(params: Dict\<String, String\>?) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
 remove(params: Dict\<String, String\>?) =\> io
-
-class PushDeviceRegistration:\
-embeds DeviceDetails // PDR1\
-deviceId: String\
-devicePlatform: DevicePlatform\
-deviceType: PushDeviceType\
-transportType: DevicePushTransportType\
-transportId: String,\
-transportTokenOrKey: String?,\
-metadata: Dict\<String, String\>?\
-clientId: String?, // PDR2\
-state: .Active \| .Failed // PDR3\
-errorReason: ErrorInfo? // PDR4
 
 enum DevicePushTransportType:\
 "fcm" // PTT1\
