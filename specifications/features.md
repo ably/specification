@@ -1835,7 +1835,7 @@ MONTH
 class DeviceDetails:\
 + fromLocalDevice() =\> io DeviceDetails\
 id: String\
-platform: DeviceType\
+platform: DevicePlatform\
 type: DeviceType\
 clientId: String?\
 metadata: Dict\<String, String\>\
