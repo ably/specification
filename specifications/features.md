@@ -1853,9 +1853,7 @@ errorReason: ErrorInfo?\
 metadata: Dict\<String, String\>
 
 class Push:\
-publish(clientId: String, JsonObject) =\> io\
-publish(deviceId: String, JsonObject) =\> io\
-publish(transportType: String, transportId: String, transportTokenOrKey?: String) =\> io\
+publish(options: Dict\<String, String\>, JsonObject) =\> io\
 admin: PushAdmin
 
 // Only on platforms that support receiving notifications:
