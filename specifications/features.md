@@ -1876,22 +1876,15 @@ class JsonObject:\
 
 class PushDeviceRegistrations:\
 save(PushDeviceRegistration) =\> io\
-find(type: PushDeviceType, transportId: String) =\> io PushDeviceRegistration?\
-get(transportIds: \[(PushDeviceType, String)\], state?: .Active \| .Failed) -\> io PaginatedResult`<PushDeviceRegistration>`{=html}device\
-get(clientId: String, state?: .Active \| .Failed) -\> io PaginatedResult`<PushDeviceRegistration>`{=html}\
-remove(type: PushDeviceType, transportId: String) -\> io\
-remove(clientId: String) =\> io\
-remove(PushDeviceRegistration) =\> io
+get(params: Dict\<String, String\>?) =\> io PaginatedResult`<PushDeviceRegistration>`{=html}\
+remove(params: Dict\<String, String\>?) =\> io
 
 class PushChannelSubscriptions:\
 save(\[PushChannelSubscription\]) =\> io\
 save(PushChannelSubscription) =\> io\
 listChannels() =\> io PaginatedResult`<String>`{=html}\
-get(channelName: String) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
-get(type: PushDeviceType, transportId: String, channelName: String?) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
-get(clientId: String, channelName: String?) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
-remove(\[PushChannelSubscription\]) =\> io\
-remove(PushChannelSubscription) =\> io
+get(params: Dict\<String, String\>?) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
+remove(params: Dict\<String, String\>?) =\> io
 
 class PushDeviceRegistration:\
 embeds DeviceDetails // PDR1\
