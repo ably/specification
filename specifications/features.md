@@ -1833,7 +1833,7 @@ DAY\
 MONTH
 
 class DeviceDetails:\
-+ getDeviceInfo() =\> io DeviceDetails\
++ fromLocalDevice() =\> io DeviceDetails\
 id: String\
 platform: DeviceType\
 type: DeviceType\
