@@ -32,24 +32,20 @@ Previous version:\
 - Old specs\
 ----
 
-A detailed [test specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md) that applies to all client libraries is generated from the Ably Ruby client library's acceptance and test suites. Whilst every official Ably client library has test coverage, the amount of test coverage varies, and as such our recommendation is to refer to the official [test specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md) when developing a client library.
+This document outlines the complete feature set of both the REST and Realtime client libraries. It is expected that every client library developer refers to this document to ensure that their client library provides the same API and features as the existing Ably client libraries. In addition to this, it is essential that there is test coverage over all of the features described below. As an example, see the Ruby library [test specification and coverage](https://github.com/ably/ably-ruby/blob/master/SPEC.md) generated from the test suite.
 
-However, we have found the [test specification](https://github.com/ably/ably-ruby/blob/master/SPEC.md) can be difficult as a reference because of both its breadth and the fact that it applies to the Ruby client library which may be unfamiliar as a language for a lot of developers.
+We recommend you use the [IDL (Interface Definition Language)](#idl) and refer to other existing libraries that adhere to this spec as a reference when reviewing how the API has been implemented.
 
-As a result, this document outlines the complete feature set of both the REST and Realtime client libraries. It is expected that every client library developer refers to this document to ensure that their client library provides the same API and features as the existing Ably client libraries. In addition to this, it is essential that there is test coverage over all of the features described below.
-
-We recommend you use the [IDL (Interface Definition Language)](#idl) and the [Ably Java library](https://github.com/ably/ably-java) as a reference when reviewing how the API has been implemented.
+*Please note we maintain a separate Google Sheet that keeps track of which features are implemented and matching test coverage for each client library. If you intend to work on an Ably client library, please [contact us](https://www.ably.io/contact) for access to this Google Sheet as it is useful as a reference and also needs to be kept up to date*
 
 ## Test guidelines
 
 - `(G1)` Every test should be executed using all supported protocols (i.e. JSON and [MessagePack](http://msgpack.org/) if supported). This includes both sending & receiving data
-- `(G2)` All tests by default are run against a special Ably sandbox environment. This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a `POST` request to `https://sandbox-rest.ably.io/apps` with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see [ably-common test-app-setup.json](https://github.com/ably/ably-common/blob/master/test-resources/test-app-setup.json). See the [Java test setup](https://github.com/ably/ably-java/blob/master/test/io/ably/test/rest/RestSetup.java). Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
+- `(G2)` All tests by default are run against a special Ably sandbox environment. This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a `POST` request to `https://sandbox-rest.ably.io/apps` with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see [ably-common test-app-setup.json](https://github.com/ably/ably-common/blob/master/test-resources/test-app-setup.json). Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
 - `(G3)` Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics. As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions. To create stats you must send an authenticated `POST` request to the stats JSON to `https://sandbox-rest.ably.io/stats` with the stats data you wish to create. See the [Javascript stats fixture](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51) and [setup helper](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182) as an example
 - `(G4)` All REST requests and WebSocket connections to Ably must include the current API version `0.9`. Should any new API version with breaking changes be released, the client library will continue to use the API version explicitly requested
 
 ## REST client library {#rest}
-
-Client library developers - clone our [REST client library Google Doc spec](https://docs.google.com/spreadsheets/d/1vBzr9N-0ovtVZ0mxTeg7zLMEhcgj5lB9ivmkOcO-9J0/edit?usp=sharing) when developing a REST client library to help you keep track of feature compliance and test coverage.
 
 ### RestClient
 
@@ -498,7 +494,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 ### Presence {#realtime-presence}
 
 - `(RTP1)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a `HAS_PRESENCE` bit flag indicating that there are currently members present on the channel, see [TR3](#TR3) . If the flag is 1, the server will shortly perform a `SYNC` operation as described in [RTP18](#RTP18) . If that flag is 0 or there is no `flags` field, the presence map should be considered in sync immediately with no members present on the channel
-- `(RTP2)` A `PresenceMap` should be used to maintain a list of members present on a channel. Broadly, this is is a map of [memberKeys](#TP3h) to presence messages, all with `PRESENT` actions (during a sync there may also be ones with an `ABSENT` action, see [RTP2f](#RTP2f) ). Consult the [the Java implementation](https://github.com/ably/ably-java/blob/master/lib/src/main/java/io/ably/lib/realtime/Presence.java#L578-L723) for details.
+- `(RTP2)` A `PresenceMap` should be used to maintain a list of members present on a channel. Broadly, this is is a map of [memberKeys](#TP3h) to presence messages, all with `PRESENT` actions (during a sync there may also be ones with an `ABSENT` action, see [RTP2f](#RTP2f)).
   - `(RTP2a)` All incoming presence messages must be compared for newness with the matching member already in the `PresenceMap`, if one exists, where "matching" means they share the same `memberKey` (or equivalently, they share both `connectionId` and `clientId`)
   - `(RTP2b)` To compare for newness:
   - `(RTP2b1)` If either presence message has a `connectionId` which is not an initial substring of its `id`, compare them by `timestamp` numerically. (This will be the case when one of them is a 'synthesized leave' event sent by realtime to indicate a connection disconnected unexpectedly 15s ago. Such messages will have an `id` that does not correspond to its `connectionId`, as it wasn't actually published by that connection)
@@ -508,7 +504,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP2e)` If a `SYNC` is not in progress, then when a presence message with an action of `LEAVE` arrives, that `memberKey` should be deleted from the presence map, if present
   - `(RTP2f)` If a `SYNC` is in progress, then when a presence message with an action of `LEAVE` arrives, it should be stored in the presence map with the action set to `ABSENT`. When the `SYNC` completes, any `ABSENT` members should be deleted from the presence map. (This is because in a `SYNC`, we might receive a `LEAVE` before the corresponding `ENTER`).
   - `(RTP2g)` Any incoming presence message that passes the newness check should be emitted on the `Presence` object, with an event name set to its original action. Note: this action may not be the same one that it will have when stored in the presence map. For example: an incoming presence message with an `ENTER` action will be emitted as an `enter` event, and the emitted presence message will have its action set to `ENTER`. However, it will be stored in the presence map with a `PRESENT` action.
-- `(RTP3)` If a `SYNC` operation is underway but not yet complete, and the transport is disconnected unexpectedly, then if the connection is resumed successfully, it is the responsibility of the client library to complete the `SYNC` operation. The client library requests a `SYNC` resume by sending a `SYNC` `ProtocolMessage` with the `channelSerial` set to the same as the `channelSerial` of the most recently received `SYNC`. See the [Ruby implementation](https://github.com/ably/ably-ruby/blob/7b18a20/lib/ably/realtime/presence/members_map.rb#L169-L176) and the [Ruby test](https://github.com/ably/ably-ruby/blob/7b18a20/spec/acceptance/realtime/presence_spec.rb#L1338-L1357)
+- `(RTP3)` If a `SYNC` operation is underway but not yet complete, and the transport is disconnected unexpectedly, then if the connection is resumed successfully, it is the responsibility of the client library to complete the `SYNC` operation. The client library requests a `SYNC` resume by sending a `SYNC` `ProtocolMessage` with the `channelSerial` set to the same as the `channelSerial` of the most recently received `SYNC`.
 - `(RTP18)` The realtime system reserves the right to initiate a sync of the presence members at any point once a channel is attached. A server initiated sync provides Ably with a means to send a complete list of members present on the channel at any point
   - `(RTP18a)` The client library determines that a new sync has started whenever a `SYNC` `ProtocolMessage` is received with a `channel` attribute and a new sync sequence identifier in the `channelSerial` attribute. The `channelSerial` is used as the sync cursor and is a two-part identifier `<sync sequence id>:<cursor value>`. If a new sequence identifier is sent from Ably, then the client library must consider that to be the start of a new sync sequence and any previous in-flight sync should be discarded
   - `(RTP18b)` The the sync operation for that sequence identifier has completed once the cursor is empty; that is, when the `channelSerial` looks like `<sync sequence id>:`
@@ -1316,7 +1312,6 @@ Presence ops.
 - `(TA2)` The `ConnectionStateChange` object contains the current state in attribute `current`, the previous state in attribute `previous`, and when the client is not connected and a connection attempt will be made automatically by the library, the amount of time in milliseconds until the next retry in the attribute `retryIn`
 - `(TA5)` The `ConnectionStateChange` object contains the `event` that generated the connection state change
 - `(TA3)` If the connection state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
-- `(TA4)` See the [Java library implementation](https://github.com/ably/ably-java/blob/245a3f20a6dce0d34413ddfed19c5da8ea647422/src/io/ably/realtime/ConnectionStateListener.java#L15-L20) of this object
 
 #### ChannelStateChange
 
@@ -1354,7 +1349,7 @@ Presence ops.
 
 #### ClientOptions
 
-- `(TO1)` Ably library options used when instancing a REST or Realtime client library, see [Java ClientOptions](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ClientOptions.java) which extends [Java AuthOptions](https://github.com/ably/ably-java/blob/0e9d961a02f4b87a59a45fe59e23a5553590102d/src/io/ably/rest/Auth.java#L44-L129) as a reference
+- `(TO1)` Ably library options used when instancing a REST or Realtime client library
 - `(TO2)` Note: `ClientOptions` does not currently define a default for max message size or request size. This will be added in the future to ensure that REST requests does not exceed the limits before the request is made to the server. In the case of realtime, the connection constraints will be sent to the client in the initial `CONNECTED` `ProtocolMessage`
 - `(TO3)` The attributes of `ClientOptions` consist of:
   - `(TO3a)` `clientId` string - the id of the client represented by this instance
@@ -1418,7 +1413,7 @@ Presence ops.
 
 #### ChannelOptions
 
-- `(TB1)` options provided when instancing a channel, see [Java ChannelOptions](https://github.com/ably/ably-java/blob/master/src/io/ably/types/ChannelOptions.java) as a reference
+- `(TB1)` options provided when instancing a channel
 - `(TB2)` The attributes of `ChannelOptions` consist of:
   - `(TB2b)` `cipher`, which is either:
     - `(TB2b1)` A `CipherParams` instance, or
@@ -1427,7 +1422,7 @@ Presence ops.
 
 #### CipherParams
 
-- `(TZ1)` params to configure encryption for a channel, see [Java CipherParams class](https://github.com/ably/ably-java/blob/8a151b4edfa228ddef806fa10d2f9ce2be1ac09c/lib/src/main/java/io/ably/lib/util/Crypto.java) as a reference
+- `(TZ1)` params to configure encryption for a channel
 - `(TZ2)` The attributes of `CipherParams` consist of anything necessary to implement the supported algorithms, in addition to the following standardised attributes:
   - `(TZ2a)` `algorithm` string - Default is `AES`. Optionally specify the algorithm to use for encryption, currently only `AES` is supported
   - `(TZ2b)` `keyLength` integer - the length in bits of the `key`
