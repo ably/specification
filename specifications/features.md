@@ -1785,7 +1785,7 @@ FAILED
 
 enum ConnectionEvent:\
 embeds ConnectionState\
-UPDATE // RTL4h
+UPDATE // RTN4h
 
 class ConnectionStateChange:\
 current: ConnectionState // TA2\
