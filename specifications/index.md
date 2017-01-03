@@ -65,7 +65,7 @@ See the current version of the [Ably realtime protocol definition](/client-lib-d
 
 ### REST API definition
 
-See the [Ably REST API definition](/rest-api) which can be considered stable and not subject to change without the introduction of a versioning systme.
+See the [Ably REST API definition](/rest-api) which can be considered stable and not subject to change without the introduction of a versioning system.
 
 ### Encryption
 
