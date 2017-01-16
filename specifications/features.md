@@ -1441,7 +1441,7 @@ The following default values are configured for the client library:
 
 ## Interface Definition {#idl}
 
-The following bespoke IDL (Interface Definition Language) describes the types and classes present in the Rest and Realtime client libraries.
+The following bespoke IDL (Interface Definition Language) describes the types and classes present in the REST and Realtime client libraries.
 
 Please note the following conventions:
 
