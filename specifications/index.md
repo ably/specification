@@ -73,9 +73,9 @@ Ably client libraries support encryption of message content, making it easier to
 
 ### Realtime transports
 
-All Ably client libraries at a minimum support Websockets as our primary transport. Additionally, libraries may support one or more additional fallback transports such as Comet, XHR streaming, JSONP etc. The following transports are currently documented:
+All Ably client libraries at a minimum support WebSockets as our primary transport. Additionally, libraries may support one or more additional fallback transports such as Comet, XHR streaming, JSONP etc. The following transports are currently documented:
 
-- [Websocket Transport](/client-lib-development-guide/websocket)
+- [WebSocket Transport](/client-lib-development-guide/websocket)
 - [Comet Transport](/client-lib-development-guide/comet)
 
 ### Documentation {#doc-steps}
