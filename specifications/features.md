@@ -1839,8 +1839,8 @@ platform: DevicePlatform\
 formFactor: DeviceFormFactor\
 clientId: String?\
 metadata: Dict\<String, String\>\
-updateTokenId: String\
-resetId(String)\
+updateToken: String\
+resetId()\
 resetUpdateToken() =\> io\
 push: DevicePushDetails
 
@@ -1853,7 +1853,7 @@ errorReason: ErrorInfo?\
 metadata: Dict\<String, String\>
 
 class Push:\
-publish(options: Dict\<String, String\>, JsonObject) =\> io\
+publish(params: Dict\<String, String\>, JsonObject) =\> io\
 admin: PushAdmin
 
 // Only on platforms that support receiving notifications:
