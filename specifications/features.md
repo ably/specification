@@ -85,7 +85,7 @@ We recommend you use the [IDL (Interface Definition Language)](#idl) and refer t
   - `(RSC15d)` Errors that necessitate use of an alternative host include: host unresolvable or unreachable, request timeout, or a response but with an applicable HTTP status code in the range `500 <= code <= 504`. Resending requests that have failed for other failure conditions will not fix the problem and will simply increase the load on other data-centers unnecessarily
 - `(RSC17)` When instancing the library, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`
 - `(RSC19)` `RestClient#request` function is provided as a convenience for customers who wish to use bleeding edge REST API functionality that is either not documented or is not included in the API for our client libraries. The REST client library provides a function to issue HTTP requests to the Ably endpoints with all the built in functionality of the library such as authentication, paging, fallback hosts, MsgPack and JSON support etc. The function:
-  - `(RSC19a)` Method signature is `request(string method, string path, Hash params?, JsonObject | JsonArray body?, Hash headers?) -> HttpPaginatedResponse` with arguments: `method` is a valid [HTTP verb](https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html) (must support `"GET"`, `"POST"`, and `"PUT"`, should support `"PATCH"`, may support others); `path` is the path component of the URL such as `"/channels"`; `params` and `headers` are optional arguments containing pairs of key value strings (multi-valued headers are not supported) that will result in query params and HTTP headers being added respectively in the request (the argument types can be idiomatic for the language such as `Object` in the case of Javascript); `body` is an optional `JsonObject` or `JsonArray` like object argument that can be easily serialized to MsgPack or JSON
+  - `(RSC19a)` Method signature is `request(string method, string path, Dict<String, String> params?, JsonObject | JsonArray body?, Dict<String, String> headers?) -> HttpPaginatedResponse` with arguments: `method` is a valid [HTTP verb](https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html) (must support `"GET"`, `"POST"`, and `"PUT"`, should support `"PATCH"`, may support others); `path` is the path component of the URL such as `"/channels"`; `params` and `headers` are optional arguments containing pairs of key value strings (multi-valued headers are not supported) that will result in query params and HTTP headers being added respectively in the request (the argument types can be idiomatic for the language such as `Object` in the case of Javascript); `body` is an optional `JsonObject` or `JsonArray` like object argument that can be easily serialized to MsgPack or JSON
   - `(RSC19b)` All requests will unconditionally use the default authentication mechanism configured for the REST client i.e. basic or token authentication (see [Auth](#rest-auth))
   - `(RSC19c)` The library will configure the `Accept` and `Content-Type` type headers to reflect whether the client is configured to use a binary or JSON based protocol (see [RSC8](#RSC8)). All requests are encoded and decoded into Json or MsgPack as appropriate automatically by the library. Binary `body` payloads are not supported at this time
   - `(RSC19d)` `request` method returns an `HttpPaginatedResponse` object that inherits from the `PaginatedResult` object to provide details on the response plus paging support where applicable. See [HP1](#HP1) for more details
@@ -1426,7 +1426,7 @@ Presence ops.
 - `(TB2)` The attributes of `ChannelOptions` consist of:
   - `(TB2b)` `cipher`, which is either:
     - `(TB2b1)` A `CipherParams` instance, or
-    - `(TB2b2)` an options hash (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`. In this case, the client library should call \`getDefaultParams\`, passing it the options hash, to obtain a `CipherParams` instance
+    - `(TB2b2)` an options hash (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`. In this case, the client library should call `getDefaultParams`, passing it the options hash, to obtain a `CipherParams` instance
 - `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
 
 #### CipherParams
@@ -1478,7 +1478,13 @@ auth: Auth // RSC5\
 push: Push\
 device() =\> io LocalDevice\
 channels: Channels`<RestChannel>`{=html} // RSN1\
-request(String method, String path, Hash params?, JsonObject \| JsonArray body?, Hash headers?) =\> io HttpPaginatedResponse // RSC19\
+request(\
+String method,\
+String path,\
+Dict\<String, String\> params?,\
+JsonObject \| JsonArray body?,\
+Dict\<String, String\> headers\
+) =\> io HttpPaginatedResponse // RSC19\
 stats(\
 start: Time, // RSC6b1\
 end: Time api-default now(), // RSC6b1\
@@ -1497,7 +1503,13 @@ push: Push\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 clientId: String? // proxy for RSA7\
 connection: Connection // RTC2\
-request(String method, String path, Hash params?, JsonObject \| JsonArray body?, Hash headers?) =\> io HttpPaginatedResponse // RTC9\
+request(\
+String method,\
+String path,\
+Dict\<String, String\> params?,\
+JsonObject \| JsonArray body?,\
+Dict\<String, String\> headers?\
+) =\> io HttpPaginatedResponse // RTC9\
 stats: // Same as Rest.stats, RTC5a\
 close() // proxy for RTN12\
 connect() // proxy for RTN11\
@@ -1839,13 +1851,9 @@ id: String\
 platform: DevicePlatform\
 formFactor: DeviceFormFactor\
 clientId: String?\
-metadata: Dict\<String, String\>\
+metadata: JsonObject\
 updateToken: String\
 push: DevicePushDetails
-
-class LocalDevice extends DeviceDetails:\
-resetId()\
-resetUpdateToken() =\> io
 
 class DevicePushDetails:\
 transportType: DevicePushTransportType\
@@ -1853,7 +1861,11 @@ transportId: String\
 transportToken: String?\
 state: .Active \| .Failing \| .Failed\
 errorReason: ErrorInfo?\
-metadata: Dict\<String, String\>
+metadata: JsonObject
+
+class LocalDevice extends DeviceDetails:\
+resetId()\
+resetUpdateToken() =\> io
 
 class Push:\
 publish(params: Dict\<String, String\>, JsonObject) =\> io\
@@ -1939,7 +1951,7 @@ statusCode: Int // HP4\
 success: Bool // HP5\
 errorCode: Int // HP6\
 errorMessage: String // HP7\
-headers: Hash // HP8\
+headers: Dict\<String, String\> // HP8\
 \`\`\`
 
 ## Old specs
