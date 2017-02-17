@@ -1476,7 +1476,7 @@ constructor(tokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RSC5\
 push: Push\
-device: DeviceDetails\
+device() =\> io LocalDevice\
 channels: Channels`<RestChannel>`{=html} // RSN1\
 request(String method, String path, Hash params?, JsonObject \| JsonArray body?, Hash headers?) =\> io HttpPaginatedResponse // RSC19\
 stats(\
@@ -1619,8 +1619,10 @@ unsubscribe(String, (Message) -\>) // RTL8a\
 push: PushChannel
 
 class PushChannel:\
-subscribe(type: .Device \| .ClientId) =\> io\
-unsubscribe(type: .Device \| .ClientId) =\> io\
+subscribeDevice() =\> io\
+subscribeClientId() =\> io\
+unsubscribeDevice() =\> io\
+unsubscribeClientId() =\> io\
 getSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html}
 
 enum ChannelState:\
@@ -1833,16 +1835,17 @@ DAY\
 MONTH
 
 class DeviceDetails:\
-+ fromLocalDevice() =\> io DeviceDetails\
 id: String\
 platform: DevicePlatform\
 formFactor: DeviceFormFactor\
 clientId: String?\
 metadata: Dict\<String, String\>\
 updateToken: String\
-resetId()\
-resetUpdateToken() =\> io\
 push: DevicePushDetails
+
+class LocalDevice extends DeviceDetails:\
+resetId()\
+resetUpdateToken() =\> io
 
 class DevicePushDetails:\
 transportType: DevicePushTransportType\
@@ -1859,11 +1862,9 @@ admin: PushAdmin
 // Only on platforms that support receiving notifications:
 
 activate(\
-DeviceDetails,\
 registerCallback: ((ErrorInfo?, DeviceDetails?) -\> io String)?\
 ) =\> io ErrorInfo? // RSH2c\
 deactivate(\
-deviceId: String,\
 deregisterCallback: ((ErrorInfo?, deviceId: String?) -\> io)?\
 ) =\> io ErrorInfo?
 
@@ -1880,7 +1881,6 @@ get(params: Dict\<String, String\>?) =\> io PaginatedResult`<DeviceDetails>`{=ht
 remove(params: Dict\<String, String\>?) =\> io
 
 class PushChannelSubscriptions:\
-save(\[PushChannelSubscription\]) =\> io\
 save(PushChannelSubscription) =\> io\
 listChannels() =\> io PaginatedResult`<String>`{=html}\
 get(params: Dict\<String, String\>?) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
@@ -1904,9 +1904,11 @@ enum DeviceFormFactor:\
 "embedded" // PDT1
 
 class PushChannelSubscription:\
++forDevice(channel: String, deviceId: String) =\> PushChannelSubscription\
++forClientId(channel: String, clientId: String) =\> PushChannelSubscription\
 deviceId: String? // PCS2, PCS5, PCS6\
 clientId: String? // PCS3, PCS6\
-channelName: String // PCS4
+channel: String // PCS4
 
 class ErrorInfo:\
 code: Int // TI1\
