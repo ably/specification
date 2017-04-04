@@ -1579,6 +1579,7 @@ constructor(tokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RTC4\
 push: Push\
+device() =\> io LocalDevice\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 clientId: String? // proxy for RSA7\
 connection: Connection // RTC2\
@@ -1672,7 +1673,6 @@ iterate() -\> Iterator`<ChannelType>`{=html} // RSN2, RTS2\
 release(String) // RSN4, RTS4
 
 class RestChannel:\
-embeds PushChannel\
 name: String?\
 presence: RestPresence // RSL3\
 history(\
