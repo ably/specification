@@ -1846,4 +1846,4 @@ headers: Hash // HP8\
 
 Use the version navigation to view older versions. References to diffs for each version are maintained below:
 
-- v0.8 deprecated in Jan 2017. [View 0.8 → 1.0 changes](https://github.com/ably/docs/blob/source/content/client-lib-development-guide/versions/features-0-8__1-0.diff)
+- v0.8 deprecated in Jan 2017. [View 0.8 → 1.0 changes](https://github.com/ably/docs/blob/master/content/client-lib-development-guide/versions/features-0-8__1-0.diff)
