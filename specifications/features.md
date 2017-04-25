@@ -1953,7 +1953,8 @@ recipient: JsonObject\
 state: .Active \| .Failing \| .Failed
 
 class LocalDevice extends DeviceDetails:\
-resetUpdateToken(token: String?) =\> io
+setUpdateToken(String)\
+reissueUpdateToken() =\> io
 
 class Push:\
 admin: PushAdmin
@@ -1979,21 +1980,21 @@ class JsonObject:\
 // Platform-dependant, typically a Dict-like object
 
 class PushDeviceRegistrations:\
-get(device: DeviceDetails) =\> io DeviceDetails\
-get(deviceId: String?) =\> io DeviceDetails\
-list(params: Dict\<String, String\>?) =\> io PaginatedResult`<DeviceDetails>`{=html}\
-save(DeviceDetails) =\> io\
-remove(device: DeviceDetails) =\> io\
-remove(deviceId: String?) =\> io\
-removeWhere(params: Dict\<String, String\>?) =\> io
+get(DeviceDetails) =\> io DeviceDetails\
+get(deviceId: String) =\> io DeviceDetails\
+list(params: Dict\<String, String\>) =\> io PaginatedResult`<DeviceDetails>`{=html}\
+save(DeviceDetails) =\> io DeviceDetails\
+remove(DeviceDetails) =\> io\
+remove(deviceId: String) =\> io\
+removeWhere(params: Dict\<String, String\>) =\> io
 
 class PushChannelSubscriptions:\
-get(pushChannelSubscription: PushChannelSubscription) =\> io PushChannelSubscription\
-list(params: Dict\<String, String\>?) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
+get(PushChannelSubscription) =\> io PushChannelSubscription\
+list(params: Dict\<String, String\>) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
 listChannels(params: Dict\<String, String\>?) =\> io PaginatedResult`<String>`{=html}\
 save(PushChannelSubscription) =\> io PushChannelSubscription\
-remove(pushChannelSubscription: PushChannelSubscription) =\> io\
-removeWhere(params: Dict\<String, String\>?) =\> io
+remove(PushChannelSubscription) =\> io\
+removeWhere(params: Dict\<String, String\>) =\> io
 
 enum DevicePushTransportType:\
 "fcm" // PTT1\
