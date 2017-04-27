@@ -1977,7 +1977,7 @@ channelSubscriptions: PushChannelSubscriptions\
 publish(recipient: JsonObject, data: JsonObject) =\> io
 
 class JsonObject:\
-// Platform-dependant, typically a Dict-like object
+// Platform-dependent, typically a Dict-like object
 
 class PushDeviceRegistrations:\
 get(DeviceDetails) =\> io DeviceDetails\
