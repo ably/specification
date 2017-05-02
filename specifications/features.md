@@ -2079,9 +2079,9 @@ channel: String // PCS4
 
 class ErrorInfo:\
 code: Int // TI1\
-href: String // TI4\
+href: String? // TI4\
 message: String // TI1\
-source: ErrorInfo // TI1\
+source: ErrorInfo? // TI1\
 statusCode: Int // TI1
 
 class EventEmitter\<Event, Data\>:\
