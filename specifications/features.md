@@ -1407,7 +1407,7 @@ Presence ops.
 
 - `(TI1)` Provides a generic Ably `ErrorInfo` object that contains Ably `code`, `statusCode` (analogous to HTTP status code) and `message` attributes
 - `(TI2)` Errors returned from the Ably server are compatible with the `ErrorInfo` structure and should result in errors that inherit from `ErrorInfo`
-- `(TE3)` [Ably-common](https://github.com/ably/ably-common) should be included as a submodule so that [consistent error codes](https://github.com/ably/ably-common/blob/master/protocol/errors.json) can be used
+- `(TI3)` [Ably-common](https://github.com/ably/ably-common) should be included as a submodule so that [consistent error codes](https://github.com/ably/ably-common/blob/master/protocol/errors.json) can be used
 
 #### ConnectionStateChange
 
