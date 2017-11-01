@@ -1243,8 +1243,8 @@ Presence ops.
     - `(RHS1b5)` `#removeWhere(params)` issues a `DELETE` request to [/push/deviceRegistrations](/rest-api#delete-device-registrations) and deletes the registered devices matching the provided `params`. A test should exist that deletes devices by `clientId` and by `deviceId` separately, then additionally issues a delete for devices with no matching params and checks the operation still succeeds.
   - `(RHS1c)` `#channelSubscriptions` provides access to the admin `ChannelSubscriptions` object with the following methods:
     - `(RHS1c1)` `#list(params)` performs a request to [/push/channelSubscriptions](/rest-api#list-channel-subscriptions) and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params, as supported by the REST API. A test should exist filtering by `channel` and `deviceId` and/or `clientId`, and then controlling the pagination with the `limit` attribute
-    - `(RHS1c2)` `#listChannels(params)` performs a request to [/push/channels](/rest-api#list-channels) and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params, as supported by the REST API. A test should exist using the `limit` attribute and pagination
-    - `(RHS1c3)` `#save(pushChannelSubscription)` issues a `POST` (this will change to `PUT` soon) request to [/push/channelSubscriptions](/rest-api#put-channel-subscription) using the `PushChannelSubscription` object (and optionally a JSON-encodable object) argument. A test should exist for a successful save, a successful subsequent save with an update, and a failed save operation
+    - `(RHS1c2)` `#listChannels(params)` performs a request to [/push/channels](/rest-api#list-channels) and returns a paginated result with `String` objects filtered by the provided params, as supported by the REST API. A test should exist using the `limit` attribute and pagination
+    - `(RHS1c3)` `#save(pushChannelSubscription)` issues a `POST` (this will change to `PUT` soon) request to [/push/channelSubscriptions](/rest-api#post-channel-subscription) using the `PushChannelSubscription` object (and optionally a JSON-encodable object) argument. A test should exist for a successful save, a successful subsequent save with an update, and a failed save operation
     - `(RHS1c4)` `#remove(push_channel_subscription)` issues a `DELETE` request to [/push/channelSubscriptions](/rest-api#delete-channel-subscription) and deletes the channel subscription using the attributes as params to the `DELETE` request. A test should exist that deletes a `clientId` and `deviceId` channel subscription separately and both succeed, and then also deletes a subscription that does not exist but still succeeds
     - `(RHS1c5)` `#removeWhere(params)` issues a `DELETE` request to [/push/channelSubscriptions](/rest-api#delete-channel-subscription) and deletes the matching channel subscriptions provided in `params`. A test should exist that deletes channel subscriptions by `clientId` and by `deviceId` separately, then additionally issues a delete for subscriptions with no matching params and checks the operation still succeeds.
 - `(RSH2)` The following should only apply to platforms that support receiving push notifications:
@@ -1277,12 +1277,14 @@ Presence ops.
       - `(RSH3a1a)` Makes `Push#deactivate` return or call its callback with no error.
       - `(RSH3a1b)` Transitions to `NotActivated`.
     - `(RSH3a2)` On event `CalledActivate`:
-      - `(RSH3a2a)` If the local device has `id` and `updateToken`, enqueues a `CalledActivate` event and transitions to `WaitingForNewPushDeviceDetails`.
+      - `(RSH3a2a)` If the local device has `id` and `updateToken`, enqueues a `CalledActivate` event and transitions to `WaitingForNewPushDeviceDetails` and #RSH3a2b and #RSH3a2c don't apply.
       - `(RSH3a2b)` If the local device has the necessary push details (registration token, etc.), sends a `GotPushDeviceDetails` event.
       - `(RSH3a2c)` Transitions to `WaitingForPushDeviceDetails`.
+    - `(RSH3a3)` On event `GotPushDeviceDetails`:
+      - `(RSH3a3a)` Transitions to `NotActivated`. (This consumes the event; #RSH3a2 produces it again once `Push#activate` is called.)
   - `(RSH3b)` State `WaitingForPushDeviceDetails`:
     - `(RSH3b1)` On event `CalledActivate`:
-      - `(RSH3b1a)` Transitions ot `CalledActivate`.
+      - `(RSH3b1a)` Transitions to `WaitingForPushDeviceDetails`.
     - `(RSH3b2)` On event `CalledDeactivate`:
       - `(RSH3b2a)` Makes `Push#deactivate` return or call its callback with no error.
       - `(RSH3b2b)` Transitions to `NotActivated`.
@@ -1306,19 +1308,19 @@ Presence ops.
       - `(RSH3d1a)` Makes `Push#activate` return or call its callback with no error.
       - `(RSH3d1b)` Transitions to `WaitingForNewPushDeviceDetails`.
     - `(RSH3d2)` On event `CalledDeactivate`:
-      - `(RSH3d2a)` If a custom `deregisterCallback` was provided to `Push#deactivate`, pass it the local `DeviceDetails`'s id.
-      - `(RSH3d2b)` Otherwise, make an asynchronous DELETE HTTP request to [/push/deviceRegistrations](/rest-api/#delete-device-registration) using the local `DeviceDetails`'s ID.
+      - `(RSH3d2a)` If a custom `deregisterCallback` was provided to `Push#deactivate`, pass it the local `DeviceDetails` 's id.
+      - `(RSH3d2b)` Otherwise, make an asynchronous DELETE HTTP request to [/push/deviceRegistrations](/rest-api/#delete-device-registration) using the local `DeviceDetails` 's ID.
       - `(RSH3d2c)` Either way, when the registration is done, a `Deregistered` or `DeregistrationFailed` event should be fired.
       - `(RSH3d2d)` Transitions to `WaitingForDeregistration`.
     - `(RSH3d3)` On event `GotPushDeviceDetails` (note that this will only happen on platforms whose push device details, after first set, can change, e. g. GCM's registration token refresh):
       - `(RSH3d3a)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails` updated with the push details.
-      - `(RSH3d3b)` Otherwise, make an asynchronous PUT HTTP request to [/push/deviceRegistrations/:deviceId](/rest-api/#update-device-registration) using the local `DeviceDetails` 's push details as body and its `updateToken` as authorization token.
+      - `(RSH3d3b)` Otherwise, make an asynchronous PATCH HTTP request to [/push/deviceRegistrations/:deviceId](/rest-api/#update-device-registration) using the local `DeviceDetails` 's push details as body (but only the changed fields, as described in [the REST endpoint documentation](/rest-api/#update-device-registration)) and its `updateToken` as authorization token.
       - `(RSH3d3c)` Either way, when the registration is done, a `RegistrationUpdated` or `UpdatingRegistrationFailed` event should be fired.
       - `(RSH3d3d)` Transitions to `WaitingForRegistrationUpdate`.
   - `(RSH3e)` State `WaitingForRegistrationUpdate`:
     - `(RSH3e1)` On event `CalledActivate`:
       - `(RSH3e1a)` Makes `Push#activate` return or call its callback with no error.
-      - `(RSH3e1b)` Transitions to `WaitingForNewPushDeviceDetails`.
+      - `(RSH3e1b)` Transitions to `WaitingForRegistrationUpdate`.
     - `(RSH3e2)` On event `RegistrationUpdated`:
       - `(RSH3e2a)` Transitions to `WaitingForNewPushDeviceDetails`.
     - `(RSH3e3)` On event `UpdatingRegistrationFailed`:
@@ -1771,7 +1773,6 @@ release(String) // RSN4, RTS4
 class RestChannel:\
 name: String?\
 presence: RestPresence // RSL3\
-push: PushChannel\
 history(\
 start: Time, // RSL2b1\
 end: Time api-default now(), // RSL2b1\
@@ -1780,6 +1781,9 @@ limit: int api-default 100 // RSL2b3\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
 publish(\[Message\]) =\> io // RSL1\
 publish(name: String?, data: Data?, clientId?: String, extras?: JsonObject) =\> io // RSL1, RSL1h
+
+// Only on platforms that support receiving notifications:\
+push: PushChannel // RSH4
 
 class RealtimeChannel:\
 embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2a, RTL2d, RTL2e\
@@ -2041,7 +2045,7 @@ setUpdateToken(String)\
 reissueUpdateToken() =\> io
 
 class Push:\
-admin: PushAdmin
+admin: PushAdmin // RSH1
 
 // Only on platforms that support receiving notifications:
 
@@ -2050,35 +2054,34 @@ registerCallback: ((ErrorInfo?, DeviceDetails?) -\> io String)?,\
 // Only on platforms that, after first set, can update later its push\
 // device details:\
 updateFailedCallback: ((ErrorInfo) -\>)\
-) =\> io ErrorInfo? // RSH3\
+) =\> io ErrorInfo? // RSH2a\
 deactivate(\
 deregisterCallback: ((ErrorInfo?, deviceId: String?) -\> io)?\
-) =\> io ErrorInfo?
+) =\> io ErrorInfo? // RSH2b
 
 class PushAdmin:\
-deviceRegistrations: PushDeviceRegistrations\
-channelSubscriptions: PushChannelSubscriptions\
-publish(recipient: JsonObject, data: JsonObject) =\> io
+publish(recipient: JsonObject, data: JsonObject) =\> io // RSH1a\
+deviceRegistrations: PushDeviceRegistrations // RSH1b\
+channelSubscriptions: PushChannelSubscriptions // RSH1c
 
 class JsonObject:\
 // Platform-dependent, typically a Dict-like object
 
 class PushDeviceRegistrations:\
-get(DeviceDetails) =\> io DeviceDetails\
-get(deviceId: String) =\> io DeviceDetails\
-list(params: Dict\<String, String\>) =\> io PaginatedResult`<DeviceDetails>`{=html}\
-save(DeviceDetails) =\> io DeviceDetails\
-remove(DeviceDetails) =\> io\
-remove(deviceId: String) =\> io\
-removeWhere(params: Dict\<String, String\>) =\> io
+get(DeviceDetails) =\> io DeviceDetails // RSH1b1\
+get(deviceId: String) =\> io DeviceDetails // RSH1b1\
+list(params: Dict\<String, String\>) =\> io PaginatedResult`<DeviceDetails>`{=html} // RSH1b2\
+save(DeviceDetails) =\> io DeviceDetails // RSH1b3\
+remove(DeviceDetails) =\> io // RSH1b4\
+remove(deviceId: String) =\> io // RSH1b4\
+removeWhere(params: Dict\<String, String\>) =\> io // RSH1b5
 
 class PushChannelSubscriptions:\
-get(PushChannelSubscription) =\> io PushChannelSubscription\
-list(params: Dict\<String, String\>) =\> io PaginatedResult`<PushChannelSubscription>`{=html}\
-listChannels(params: Dict\<String, String\>?) =\> io PaginatedResult`<String>`{=html}\
-save(PushChannelSubscription) =\> io PushChannelSubscription\
-remove(PushChannelSubscription) =\> io\
-removeWhere(params: Dict\<String, String\>) =\> io
+list(params: Dict\<String, String\>) =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH1c1\
+listChannels(params: Dict\<String, String\>?) =\> io PaginatedResult`<String>`{=html} // RSH1c2\
+save(PushChannelSubscription) =\> io PushChannelSubscription // RSH1c3\
+remove(PushChannelSubscription) =\> io // RSH1c4\
+removeWhere(params: Dict\<String, String\>) =\> io // RSH1c5
 
 enum DevicePushTransportType:\
 "fcm" // PTT1\
