@@ -28,6 +28,7 @@ Realtime client library:\
 - State conditions and operations#state-conditions-and-operations\
 Push notifications:\
 - Push notifications#push-notifications\
+- Push channels#push-channels\
 - Activation state machine#activation-state-machine\
 Types:\
 - Data types#types\
@@ -1251,6 +1252,23 @@ Presence ops.
   - `(RSH2b)` `Push#deactivate` sends a `CalledDeactivate` event to [the state machine](#RSH3).
   - `(RSH2c)` Whenever, from the platform's APIs, details for sending push notifications to the local device (e. g. GCM's registration token) is received, a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3).
 
+### Push channels
+
+- `(RSH4)` In platforms that support receiving push notifications, `RestChannel` and `RealtimeChannel` have an additional `push` field, as an object with the following interface:
+  - `(RSH4a)` `#subscribeDevice()`
+    - `(RSH4a1)` Fails if the `LocalDevice` doesn't have an `updateToken`, ie. it isn't registered yet.
+    - `(RSH4a2)` Performs a POST request to [/push/channelSubscriptions](/rest-api#post-channel-subscription) with the device's `id` and the channel name.
+  - `(RSH4b)` `#subscribeClient()`
+    - `(RSH4b1)` Fails if the `LocalDevice` doesn't have a `clientId`.
+    - `(RSH4b2)` Performs a POST request to [/push/channelSubscriptions](/rest-api#post-channel-subscription) with the device's `clientId` and the channel name.
+  - `(RSH4c)` `#unsubscribeDevice()`
+    - `(RSH4c1)` Fails if the `LocalDevice` doesn't have an `updateToken`, ie. it isn't registered yet.
+    - `(RSH4c2)` Performs a DELETE request to [/push/channelSubscriptions](/rest-api#delete-channel-subscription) with the device's `id` and the channel name.
+  - `(RSH4d)` `#unsubscribeClient()`
+    - `(RSH4d1)` Fails if the `LocalDevice` doesn't have a `clientId`.
+    - `(RSH4d2)` Performs a DELETE request to [/push/channelSubscriptions](/rest-api#delete-channel-subscription) with the device's `clientId` and the channel name.
+  - `(RSH4e)` `#listSubscriptions(params)` performs a GET request to [/push/channelSubscriptions](/rest-api#list-channel-subscriptions) and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params, the channel name, the device ID, and the client ID if it exists, as supported by the REST API. A `concatFilters` param needs to be set to `true` as well.
+
 ### Activation state machine
 
 - `(RSH3)` In platforms that support receiving push notifications, in order to connect the device's push features with Ably's, the library must perform the process described in the following abstract state machine. While this process should be implemented in whatever way better fits the concrete platform, it should be taken into account that its lifetime is that of the *app* that runs it, which outlives that of the `Rest` instance or (typically) the process running the app. This typically forces some kind of on-disk storage to which the state machine's state must be persisted, so that it can be recovered later by new instances and processes running the app triggered by external events.
@@ -1788,11 +1806,11 @@ unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a
 
 class PushChannel:\
-subscribeDevice() =\> io\
-subscribeClientId() =\> io\
-unsubscribeDevice() =\> io\
-unsubscribeClientId() =\> io\
-listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html}
+subscribeDevice() =\> io // RSH4a\
+subscribeClientId() =\> io // RSH4b\
+unsubscribeDevice() =\> io // RSH4c\
+unsubscribeClientId() =\> io // RSH4d\
+listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH4e
 
 enum ChannelState:\
 INITIALIZED\
