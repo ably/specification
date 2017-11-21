@@ -190,7 +190,7 @@ We recommend you use the [IDL (Interface Definition Language)](#idl) and refer t
   - `(RSL1d)` Indicates an error if the message was not successfully published to Ably
   - `(RSL1e)` Allows `name` and or `data` to be `null`. If any of the values are `null`, then key is not sent to Ably i.e. a payload with a `null` value for `data` would be sent as follows `{ "name": "click" }`
   - `(RSL1f)` Unidentified clients using [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) (i.e. any `clientId` is permitted as no `clientId` specified):
-  - `(RSL1g)` If the total size of the message or (if publishing an array) messages, calculated per [TO3l7](#TO3l7), exceeds the `maxMessageSize`, then the client library should reject the publish and indicate an error
+  - `(RSL1g)` If the total size of the message or (if publishing an array) messages, calculated per [TO3l8](#TO3l8), exceeds the `maxMessageSize`, then the client library should reject the publish and indicate an error
     - `(RSL1f1)` When a `Message` with a `clientId` value is published, Ably will accept and publish that message with the provided `clientId`. A test should assert via the history API that the `clientId` of the published `Message` is populated
   - `(RSL1g)` Identified clients with a `clientId` (as a result of either an explicitly configured `clientId` in `ClientOptions`, or implicitly through Token Auth):
     - `(RSL1g1)` When publishing a `Message` with the `clientId` attribute set to `null`:
@@ -1453,7 +1453,7 @@ Presence ops.
 - `(CD2)` Attributes available in `ConnectionDetails`:
   - `(CD2a)` `clientId` contains the client ID assigned to the token. If `clientId` is `null` or omitted, then the client is prohibited from assuming a `clientId` in any operations, however if `clientId` is a wildcard string `'*'`, then the client is permitted to assume any `clientId`. Any other string value for `clientId` implies that the `clientId` is both enforced and assumed for all operations from this client
   - `(CD2b)` `connectionKey` is the connection secret key string that is used to resume a connection and its state.
-  - `(CD2c)` `maxMessageSize` overrides the default `maxMessageSize` ([TO3l7](#TO3l7))
+  - `(CD2c)` `maxMessageSize` overrides the default `maxMessageSize` ([TO3l8](#TO3l8))
   - `(CD2d)` `maxFrameSize` overrides the default `maxFrameSize` ([TO3l8](#TO3l8))
   - `(CD2e)` `maxInboundRate` is the maximum allowable number of requests per second from a client or Ably. In the case of a realtime connection, this restriction applies to the number of `ProtocolMessage` objects sent, whereas in the case of REST, it is the total number of REST requests per second
   - `(CD2f)` `connectionStateTtl` is the duration that Ably will persist the connection state when a Realtime client is abruptly disconnected
@@ -1510,12 +1510,12 @@ Presence ops.
     - `(TO3l4)` `httpRequestTimeout` integer - default 10,000 (10s). Timeout for any single HTTP request and response
     - `(TO3l5)` `httpMaxRetryCount` integer - default 3. Max number of fallback hosts to use as a fallback when an HTTP request to the primary host is unreachable or indicates that it is unserviceable
     - `(TO3l6)` `httpMaxRetryDuration` integer - default 15,000 (15s). Max elapsed time in which fallback host retries for HTTP requests will be attempted i.e. if the first default host attempt takes 7s, and then the subsequent fallback retry attempt takes 10s, no further fallback host attempts will be made as the total elapsed time of 17s exceeds the default 15s limit
-    - `(TO3l7)` `maxMessageSize` integer - default 65536 (64kB). The maximum size of messages that can be published in one go. That is, the size of the `ProtocolMessage.messages` or `ProtocolMessage.presence` array for a realtime publish or presence action, or the message or array of messages being published for a REST publish. For realtime publishes, the default will be overridden by the `maxMessageSize` in the `connectionDetails`, see [CD2c](#CD2c)
-      - `(TO3l7a)` The size is defined as the sum over all messages being published of the message `name`, `data`, `clientId`, and `extras`
-      - `(TO3l7b)` The size of an `Object` or `Array` `data` property is its string length after being JSON-stringified
-      - `(TO3l7c)` The size of a `binary` `data` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
-      - `(TO3l7d)` The size of the `extras` property is the string length of its JSON representation
-      - `(TO3l7e)` The size of a `null` or omitted property is zero
+    - `(TO3l8)` `maxMessageSize` integer - default 65536 (64kB). The maximum size of messages that can be published in one go. That is, the size of the `ProtocolMessage.messages` or `ProtocolMessage.presence` array for a realtime publish or presence action, or the message or array of messages being published for a REST publish. For realtime publishes, the default will be overridden by the `maxMessageSize` in the `connectionDetails`, see [CD2c](#CD2c)
+      - `(TO3l8a)` The size is defined as the sum over all messages being published of the message `name`, `data`, `clientId`, and `extras`
+      - `(TO3l8b)` The size of an `Object` or `Array` `data` property is its string length after being JSON-stringified
+      - `(TO3l8c)` The size of a `binary` `data` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+      - `(TO3l8d)` The size of the `extras` property is the string length of its JSON representation
+      - `(TO3l8e)` The size of a `null` or omitted property is zero
     - `(TO3l8)` `maxFrameSize` integer - default 524288 (512kB). The maximum size of a single POST body or WebSocket frame. This is mostly only relevant for \`Rest#request\` (e.g. for batch publishes), since publishes will hit the `maxMessageSize` limit before this
 
 #### TokenParams {#token-params}
@@ -1664,7 +1664,7 @@ httpOpenTimeout: Duration default 4s // TO3l3\
 httpRequestTimeout: Duration default 10s // TO3l4\
 httpMaxRetryCount: Int default 3 // TO3l5\
 httpMaxRetryDuration: Duration default 15s // TO3l6\
-maxMessageSize: Int default 65536 // TO3l7\
+maxMessageSize: Int default 65536 // TO3l8\
 maxFrameSize: Int default 524288 // TO3l8
 
 class AuthOptions: // RSA8e\
