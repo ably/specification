@@ -276,7 +276,7 @@ We recommend you use the [IDL (Interface Definition Language)](#idl) and refer t
 
 ### Forwards compatibility {#rest-compatibility}
 
-- `(RSF1)` THe library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialisation of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+- `(RSF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialisation of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
 
 ## Realtime client library features {#realtime}
 
@@ -631,7 +631,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### Forwards compatibility {#realtime-compatibility}
 
-- `(RTF1)` THe library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialisation of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+- `(RTF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialisation of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
 
 ## State conditions and operations
 
