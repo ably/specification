@@ -1473,7 +1473,7 @@ Presence ops.
 
 #### AuthDetails
 
-- `(AD1)` `AuthDetails` is a type used with an `AUTH` protocol messages to send authentication details
+- `(AD1)` `AuthDetails` is a type used with an `AUTH` protocol message to send authentication details
 - `(AD2)` `AuthDetails#accessToken` attribute contains the token string
 
 #### Stats
