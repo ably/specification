@@ -14,6 +14,7 @@ Help with:\
 - Definition lists\
 - Inline Table of Contents#inline-toc\
 - Language conventions\
+- Minimisables#minimisable\
 - Other custom styles\
 ----
 
@@ -588,6 +589,19 @@ If the block yields a number of variables and they need to be named for clarity,
 
 bq(definition).\
 default: foo -\> yields Object bacon, Object cheese
+
+## Minimisable/expandable sections {#minimisable}
+
+Sections of documentation are able to be minimised/expanded through one of two methods.
+
+### Minimise on the title {#minimise-on-the-title .title .by .minimise .to .how .see .to .minimise=Click}
+
+It is also possible to create a minimisable section with the **minimise. \[Optional minimisable text\]** line, with any following indented lines being included in the minimisable section. If no optional minimise button text is typed, it will default to **View More**.
+
+### Minimise as a block {#minimisable-block}
+
+minimise. Click to see how to minimise by block\
+It is also possible to create a minimisable section with the **minimise. \[Optional minimisable text\]** line, with any following indented lines being included in the minimisable section. If no optional minimise button text is typed, it will default to **View More**.
 
 ## Other custom styles
 
