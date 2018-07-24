@@ -14,7 +14,7 @@ Help with:\
 - Definition lists\
 - Inline Table of Contents#inline-toc\
 - Language conventions\
-- Minimisables#minimisable\
+- minimizables#minimizable\
 - Other custom styles\
 ----
 
@@ -590,18 +590,18 @@ If the block yields a number of variables and they need to be named for clarity,
 bq(definition).\
 default: foo -\> yields Object bacon, Object cheese
 
-## Minimisable/expandable sections {#minimisable}
+## minimizable/expandable sections {#minimizable}
 
-Sections of documentation are able to be minimised/expanded through one of two methods.
+Sections of documentation are able to be minimized/expanded through one of two methods.
 
-### Minimise on the title {#minimise-on-the-title .title .by .minimise .to .how .see .to .minimise=Click}
+### minimize on the title {#minimize-on-the-title .title .by .minimize .to .how .see .to .minimize=Click}
 
-It is also possible to create a minimisable section with the **minimise. \[Optional minimisable text\]** line, with any following indented lines being included in the minimisable section. If no optional minimise button text is typed, it will default to **View More**.
+It is also possible to create a minimizable section with the **minimize. \[Optional minimizable text\]** line, with any following indented lines being included in the minimizable section. If no optional minimize button text is typed, it will default to **View More**.
 
-### Minimise as a block {#minimisable-block}
+### minimize as a block {#minimizable-block}
 
-minimise. Click to see how to minimise by block\
-It is also possible to create a minimisable section with the **minimise. \[Optional minimisable text\]** line, with any following indented lines being included in the minimisable section. If no optional minimise button text is typed, it will default to **View More**.
+minimize. Click to see how to minimize by block\
+It is also possible to create a minimizable section with the **minimize. \[Optional minimizable text\]** line, with any following indented lines being included in the minimizable section. If no optional minimize button text is typed, it will default to **View More**.
 
 ## Other custom styles
 
