@@ -596,7 +596,7 @@ Sections of documentation are able to be minimized/expanded through one of two m
 
 ### minimize on the title {#minimize-on-the-title .title .by .minimize .to .how .see .to .minimize=Click}
 
-It is also possible to create a minimizable section with the **minimize. \[Optional minimizable text\]** line, with any following indented lines being included in the minimizable section. If no optional minimize button text is typed, it will default to **View More**.
+It is possible to create a minimizable section with the **h\[1-5\](minimize=\[Optional minimizable text\]).** line, with any following lines up to the next header being included in the minimizable section. If no optional minimize button text is typed, it will default to **View More**.
 
 ### minimize as a block {#minimizable-block}
 
