@@ -6,7 +6,7 @@ index: 60\
 jump_to:\
 Help with:\
 - Overview and Textile#title\
-- Meta data\
+- Metadata\
 - Markup fundamentals\
 - Code blocks\
 - Language specific content\
@@ -24,9 +24,9 @@ Please see this [documentation repository's README](http://github.com/ably/READM
 
 Detailed below are specific Ably layout techniques that you should be aware of when writing documentation. All standard Textile markup is supported in addition to what is documented below.
 
-## Meta data
+## Metadata {#meta-data}
 
-At the top of each textile page, the following meta data can be included as follows:
+At the top of each textile page, the following metadata can be included as follows:
 
 bc\[yaml\]. ----\
 title: "Enter a title that will appear in the navigation and HTML page title"\
@@ -531,7 +531,7 @@ Inline Table of Contents are typically used at the start of a new section (such 
 bc\[yaml\]. inline-toc.\
 Channel Object Reference:\
 - Example:\
-- Meta data // the anchor link #meta-data will be used automatically\
+- Metadata // the anchor link #meta-data will be used automatically\
 - Manually configured#code-blocks\
 - Language Specific Content#language-specific-content\
 - Conditional navigation shown when anchor is visible#conditional-nav
@@ -541,7 +541,7 @@ The above code produces the following element:
 inline-toc.\
 Channel Object Reference:\
 - Methods:\
-- Meta data\
+- Metadata\
 - Manually configured#code-blocks\
 - Language Specific Content#language-specific-content\
 - Conditional navigation shown when anchor is visible (not Ruby)#conditional-nav
