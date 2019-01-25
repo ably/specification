@@ -1896,7 +1896,7 @@ subscribeDevice() =\> io // RSH4a\
 subscribeClientId() =\> io // RSH4b\
 unsubscribeDevice() =\> io // RSH4c\
 unsubscribeClientId() =\> io // RSH4d\
-listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH4e
+listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH7e
 
 enum ChannelState:\
 INITIALIZED\
