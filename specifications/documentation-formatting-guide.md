@@ -16,6 +16,7 @@ Help with:\
 - Language conventions\
 - minimizables#minimizable\
 - Other custom styles\
+- "Page-specific options"#page-options\
 ----
 
 Keeping documentation relevant, concise and up to date is very important to us. As such, we have ensured that updating and writing documentation for Ably is a simple process for Ably staff and developers, and even our customers and partners. We welcome you to fork [this documentation repository](http://github.com/ably/ably.github.com), update the documentation as you see fit, and send us your pull requests so we can incorporate your changes.
@@ -71,6 +72,7 @@ header: "Link to an image to be the header for the article"\
 Pages in the `/compare` folder can have the following additional metadata:
 
 bc\[yaml\]. ----\
+published_date: January 3000\
 competitors:\
 - "competitor1 ID, which should match the ID used on the website"\
 - "competitor2 ID, which should match the ID used on the website"\
@@ -239,6 +241,31 @@ Example of the above variables being used in a code block below:
     SECONDS_SINCE_EPOCH: "{{SECONDS_SINCE_EPOCH}}"
     RANDOM_CHANNEL_NAME: "{{RANDOM_CHANNEL_NAME}}"
     SIGNED_TOKEN_REQUEST_EXAMPLE: "{{SIGNED_TOKEN_REQUEST_EXAMPLE}}"
+
+### Special page variables {#special-metadata}
+
+Certain pages have additional variable options.
+
+#### Compare pages variables {#compare-metadata}
+
+In pages within the `/compare` folder, it's possible to make use of the following variables:
+
+- {{COMPANY_0}}
+- {{COMPANY_1}}
+- {{COMPANY_URL_0}}
+- {{COMPANY_URL_1}}
+- {{COMPANY_ID_0}}
+- {{COMPANY_ID_1}}
+- {{PUBLISHED_DATE}}
+
+The `{{COMPANY_*}}` variables make use of the correlated company listed in the metadata of the page to insert the relevant piece of information.
+
+Examples of the above variables being used are:
+
+    First company name: {{COMPANY_0}}
+    Second company's home page url: {{COMPANY_URL_1}}
+    First Company's docs ID, as used in '/data/compare.yaml': {{COMPANY_ID_0}}
+    The date this article was published: {{PUBLISHED_DATE}}
 
 ### Isolated language blocks (always present) versus grouped language blocks
 
@@ -639,3 +666,19 @@ It is also possible to create a minimizable section with the **minimize. \[Optio
 ::: tip
 Tips can be shown using the markup `p(tip).`
 :::
+
+## Page-specific options {#page-options}
+
+Certain pages have styles and variables intended specifically for them.
+
+### Compare pages {#compare}
+
+Compare pages make use of the `/data/compare.yaml` file to automatically generate content. This yaml contains company information, and comparison points between all the companies organized under certain categories (i.e. Interoperability).
+
+#### Compare tables {#compare-table}
+
+It's possible to automatically generate a comparison table for any two companies, through the use of:
+
+compare_table(CATEGORY, OPTIONAL_COLUMN_TITLE).
+
+This will check if there are any comparible points between the the companies specified in the metadata of the pages, within the specified `CATEGORY`. If there are, a table will be generated to compare said points. The `OPTIONAL_COLUMN_TITLE`, if specified, will check if the category has an `extras` field, and if so will use that when creating the table as an additional column, using the title specified.
