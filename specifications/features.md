@@ -1311,7 +1311,7 @@ Presence ops.
       - `(RSH3b3d)` Transitions to `WaitingForDeviceRegistration`.
     - `(RSH3b4)` On event `GettingPushDeviceDetailsFailed`:
       - `(RSH3b4a)` Makes `Push#activate` return or call its callback with the error.
-      - `(RSH3b4)` Transitions to `NotActivated`.
+      - `(RSH3b4b)` Transitions to `NotActivated`.
   - `(RSH3c)` State `WaitingForDeviceRegistration`:
     - `(RSH3c1)` On event `CalledActivate`:
       - `(RSH3c1a)` Transitions to `WaitingForDeviceRegistration`.
