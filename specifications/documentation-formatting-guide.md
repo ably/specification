@@ -78,6 +78,34 @@ competitors:\
 - "competitor2 ID, which should match the ID used on the website"\
 ----
 
+#### Tutorial pages metadata {#tutorials-metadata}
+
+Pages in the `/tutorials` folder require certain metadata to make them indexable at Ably's website.\
+*\* denotes required meta fields, but isn't valid yaml. If copy/pasting, don't forget to remove them*
+
+bc\[yaml\]. ----\
+alt_title: an alternative title to display on the website\
+excerpt: A small blurb introduction for your tutorial\
+category\*: introduction \| external-services \| liberaries-integration\
+platform\*: mobile \| browser \| mixed\
+authors\*:
+
+- author_name: Supports multiple authors\
+  author_bio: but must be an array even if single author\
+  author_profile_url: https://authors_website.com\
+  author_image: hosted gravatar or an image present in websites images/tutorials/ folder
+- author_name: Second Author\
+  author_bio: ""\
+  author_profile_url: ""\
+  author_image: ""\
+  level: String (suggestions: medium \| easy \| hard)\
+  reading_time: Number in minutes\
+  tags:\
+  - ably-realtime\
+  - ably-features\
+  - example-apps\
+  ----
+
 ## Markup fundamentals
 
 ### Headings
@@ -682,3 +710,24 @@ It's possible to automatically generate a comparison table for any two companies
 compare_table(CATEGORY, OPTIONAL_COLUMN_TITLE).
 
 This will check if there are any comparible points between the the companies specified in the metadata of the pages, within the specified `CATEGORY`. If there are, a table will be generated to compare said points. The `OPTIONAL_COLUMN_TITLE`, if specified, will check if the category has an `extras` field, and if so will use that when creating the table as an additional column, using the title specified.
+
+### Tutorials pages {#tutorials}
+
+In order to build a stepped view mode of the tutorials, certain markup guidelines must be respected
+
+- Each step is marked by an `h2` heading
+- Heading text will be used to create the TOC menu for navigation
+- You should assign identifiable ids to each tutorial step: otherwise a generated id will be created, but it's name won't be humanized
+- You can add additional piece of help at the end of a step busing the following custom block
+
+\`\`\`\[text\]
+
+## Step 3 title {#step-3}
+
+content...
+
+div(docs-helpbox).\
+**HelpboxTitle**\
+%If you need any extra help just ask [link text](/example%)
+
+## Step 4 title \`\`\` {#step-4}
