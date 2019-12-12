@@ -39,7 +39,7 @@ Section Title: #Title of a section in API separator\
 - Internal Link#internal-link #auto-links to #internal-link\
 jump_to: \# Optional YAML tag that will insert a "jump to" navigation based on YAML\
 "External Links": \# surrounding quotes are not normally needed...\
-- External Link 1:/external/link #Seperate with a ":" to link to /external/link\
+- External Link 1:/external/link #Separate with a ":" to link to /external/link\
 "Help with":\
 - "Item 1#anchor-link-id" \# links to #anchor-link-id\
 "API methods":\
