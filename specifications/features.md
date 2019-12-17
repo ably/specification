@@ -1490,7 +1490,7 @@ Presence ops.
   - `(TR4k)` `messages` Array of `Message` objects
   - `(TR4l)` `presence` Array of `PresenceMessage` objects
   - `(TR4m)` `timestamp` time in milliseconds since epoch
-  - `(TR4n)` `params` `Dict<String, String>` key-value pairs
+  - `(TR4q)` `params` `Dict<String, String>` key-value pairs
 
 #### PaginatedResult
 
@@ -2097,7 +2097,7 @@ messages: \[Message\]? // TR4k\
 msgSerial: Int? // RTN7b, TR4j\
 presence: \[PresenceMessage\]? // TR4l\
 timestamp: Time? // TR4m\
-params: Dict\<String, String\>? // TR4n, RTL4k
+params: Dict\<String, String\>? // TR4q, RTL4k
 
 enum ProtocolMessageAction:\
 HEARTBEAT // TR2\
