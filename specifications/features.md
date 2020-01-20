@@ -1658,7 +1658,6 @@ Presence ops.
   - `(TO3h)` `echoMessages` boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection
   - `(TO3i)` `recover` string - A connection recovery string, specified with the intention of inheriting the state of an earlier connection
   - `(TO3n)` `idempotentRestPublishing` boolean - defaults to false for clients with version \< 1.2, otherwise true. If true, [RSL1k](#RSL1k1) applies
-  - `(TO3o)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
   - `(TO3j)` Auth option attributes:
     - `(TO3j1)` `key` string - Full Ably key string as obtained from dashboard
     - `(TO3j2)` `token` string \| `TokenDetails` \| `TokenRequest` - An authentication token issued for this application, either in the form of a token string, a `TokenDetails` object, or a `TokenRequest` object
@@ -1696,6 +1695,7 @@ Presence ops.
     - `(TO3l9)` `maxFrameSize` integer - default 524288 (512KiB). The maximum size of a single POST body or [WebSocket](/concepts/websockets) frame. This is mostly only relevant for \`Rest#request\` (e.g. for batch publishes), since publishes will hit the `maxMessageSize` limit before this
     - `(TO3l10)` `fallbackRetryTimeout` integer - default 600000 (10 minutes). (After a failed request to the default endpoint, followed by a successful request to a fallback endpoint), the period in milliseconds before HTTP requests are retried against the default endpoint
   - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
+  - `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
 
 #### TokenParams {#token-params}
 
@@ -1863,7 +1863,7 @@ tls: Bool default true // RSC18, TO3d\
 tlsPort: Int default 443 // TO3k5\
 useBinaryProtocol: Bool default true // TO3f\
 transportParams: \[String: Stringifiable\]? // RTC1f\
-addRequestIds: Bool default false // TO3o\
+addRequestIds: Bool default false // TO3p\
 // configurable retry and failure defaults\
 disconnectedRetryTimeout: Duration default 15s // TO3l1\
 suspendedRetryTimeout: Duration default 30s // RTN14d, TO3l2\
@@ -1874,7 +1874,7 @@ httpMaxRetryCount: Int default 3 // TO3l5\
 httpMaxRetryDuration: Duration default 15s // TO3l6\
 maxMessageSize: Int default 65536 // TO3l8\
 maxFrameSize: Int default 524288 // TO3l8\
-plugins: Dict\<PluginType, Plugin\> // TO3o
+plugins: Dict\<PluginType, Plugin\> // TO3p
 
 class AuthOptions: // RSA8e\
 authCallback: ((TokenParams) -\> io (String \| TokenDetails \| TokenRequest \| JsonObject))? // RSA4a, RSA4, TO3j5, AO2b\
