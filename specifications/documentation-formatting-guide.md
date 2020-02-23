@@ -14,7 +14,7 @@ Help with:\
 - Definition lists\
 - Inline Table of Contents#inline-toc\
 - Language conventions\
-- minimizables#minimizable\
+- Minimizable content#minimizable\
 - Other custom styles\
 - "Page-specific options"#page-options\
 ----
@@ -678,15 +678,15 @@ If the block yields a number of variables and they need to be named for clarity,
 bq(definition).\
 default: foo -\> yields Object bacon, Object cheese
 
-## minimizable/expandable sections {#minimizable}
+## Minimizable/expandable content blocks {#minimizable}
 
-Sections of documentation are able to be minimized/expanded through one of two methods.
+Sections of documentation are able to be minimized to help reduce the amount of content presented to developers reading the docs, whilst still allowing them to explore the detail where necessary. This is particularly useful for detailed code examples, for example. You can use this feature in one of two ways:
 
-### minimize on the title {#minimize-on-the-title .title .by .minimize .to .how .see .to .minimize=Click}
+### Minimize on the title {#minimize-on-the-title .title .by .minimize .to .how .see .to .minimize=Click}
 
 It is possible to create a minimizable section with the **h\[1-5\](minimize=\[Optional minimizable text\]).** line, with any following lines up to the next header being included in the minimizable section. If no optional minimize button text is typed, it will default to **View More**.
 
-### minimize as a block {#minimizable-block}
+### Minimize the content block {#minimizable-block}
 
 minimize. Click to see how to minimize by block\
 It is also possible to create a minimizable section with the **minimize. \[Optional minimizable text\]** line, with any following indented lines being included in the minimizable section. If no optional minimize button text is typed, it will default to **View More**.
