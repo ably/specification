@@ -1874,7 +1874,7 @@ httpMaxRetryCount: Int default 3 // TO3l5\
 httpMaxRetryDuration: Duration default 15s // TO3l6\
 maxMessageSize: Int default 65536 // TO3l8\
 maxFrameSize: Int default 524288 // TO3l8\
-plugins: Dict\<PluginType, Plugin\> // TO3p
+plugins: Dict\<PluginType, Plugin\> // TO3o
 
 class AuthOptions: // RSA8e\
 authCallback: ((TokenParams) -\> io (String \| TokenDetails \| TokenRequest \| JsonObject))? // RSA4a, RSA4, TO3j5, AO2b\
