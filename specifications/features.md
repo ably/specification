@@ -1487,7 +1487,6 @@ Presence ops.
   - `(TR3a)` 0: `HAS_PRESENCE`
   - `(TR3b)` 1: `HAS_BACKLOG`
   - `(TR3c)` 2: `RESUMED`
-  - `(TR3d)` 3: `HAS_LOCAL_PRESENCE`
   - `(TR3e)` 4: `TRANSIENT`
   - `(TR3f)` 5: `ATTACH_RESUME`
   - `(TR3q)` 16: `PRESENCE`
