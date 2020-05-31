@@ -14,6 +14,7 @@ REST client library:\
 - Auth#rest-auth\
 - Channels#rest-channels\
 - Channel#rest-channel\
+- Plugins#plugins\
 - Presence#rest-presence\
 - Encryption#rest-encryption\
 - Forwards compatibility#rest-compatibility\
@@ -53,7 +54,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(G1)` Every test should be executed using all supported protocols (i.e. JSON and [MessagePack](http://msgpack.org/) if supported). This includes both sending & receiving data
 - `(G2)` All tests by default are run against a special Ably sandbox environment. This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a `POST` request to `https://sandbox-rest.ably.io/apps` with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see [ably-common test-app-setup.json](https://github.com/ably/ably-common/blob/master/test-resources/test-app-setup.json). Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
 - `(G3)` Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics. As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions. To create stats you must send an authenticated `POST` request to the stats JSON to `https://sandbox-rest.ably.io/stats` with the stats data you wish to create. See the [Javascript stats fixture](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51) and [setup helper](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182) as an example
-- `(G4)` This spec defines API version 1.1. A client library must identify to Ably the version of the spec it uses in all requests and connections, per [RSC7a](#RSC7a) and [RTN2f](#RTN2f). The spec it uses is defined as the latest API version for which the library implements all spec items relating to the wire protocol
+- `(G4)` This spec defines API version 1.2. A client library must identify to Ably the version of the spec it uses in all requests and connections, per [RSC7a](#RSC7a) and [RTN2f](#RTN2f). The spec it uses is defined as the latest API version for which the library implements all spec items relating to the wire protocol
 
 ## REST client library {#rest}
 
@@ -70,15 +71,16 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSC6)` `RestClient#stats` function:
   - `(RSC6a)` Returns a `PaginatedResult` page containing `Stats` objects in the `PaginatedResult#items` attribute returned from the stats request
   - `(RSC6b)` Supports the following params:
-    - `(RSC6b1)` `start` and `end` are timestamp fields represented as milliseconds since epoch, or where suitable to the language, Date or Time objects. `start` must be equal to or less than `end` and is unaffected by the request direction
+    - `(RSC6b1)` `start` and `end` are optional timestamp fields represented as milliseconds since epoch, or where suitable to the language, Date or Time objects. `start`, if provided, must be equal to or less than `end` if provided or to the current time otherwise, and is unaffected by the request direction
     - `(RSC6b2)` `direction` backwards or forwards; if omitted the direction defaults to the REST API default (backwards)
     - `(RSC6b3)` `limit` supports up to 1,000 items; if omitted the limit defaults to the REST API default (100)
     - `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
 - `(RSC16)` `RestClient#time` function sends a get request to `rest.ably.io/time` and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint `rest.ably.io`
-  - `(RSC7a)` The header `X-Ably-Version: 1.1` must be included in all REST requests to the Ably endpoint
+  - `(RSC7a)` The header `X-Ably-Version: 1.2` must be included in all REST requests to the Ably endpoint
   - `(RSC7b)` The header `X-Ably-Lib: [lib][.optional variant]?-[version]` should be included in all REST requests to the Ably endpoint where `[lib]` is the name of the library such as `js` for `ably-js`, `[.optional variant]` is an optional library variant, such as `laravel` for the `php` library, which is always delimited with a period such as `php.laravel`, and where `[version]` is the full client library version using [Semver](http://semver.org/) such as `1.0.2`. For example, the 1.0.0 version of the Javascript library would use the header `X-Ably-Lib: js-1.0.0`
     - `(RSC7b1)` When it is not possible to send the `X-Ably-Lib` header, such as for `JSONP` requests, the library version should be sent as a query param such as `lib=js-1.0.0`
+  - `(RSC7c)` If the `addRequestIds` client option is enabled, every REST request to Ably should include in a `request_id` query string parameter a random string obtained by url-safe base64-encoding a sequence of at least 9 bytes obtained from a source of randomness. This request ID must remain the same if a request is retried to a fallback host per `RSC15`. Any log messages associated with the request should include the request ID. If the request fails, the request ID must be included in the `ErrorInfo` returned to the user.
 - `(RSC18)` If `ClientOptions#tls` is true, then all communication is over HTTPS. If false, all communication is over HTTP however [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) over HTTP will result in an error as private keys cannot be submitted over an insecure connection. See `Auth` below
 - `(RSC8)` Supports two protocols:
   - `(RSC8a)` [MessagePack](http://msgpack.org/) binary protocol (this is the default for environments having a suitable level or support for binary data)
@@ -208,9 +210,9 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSN1)` `Channels` is a collection of `Channel` objects accessible through `Rest#channels`
 - `(RSN2)` Methods should exist to check if a channel exists or iterate through the existing channels
 - `(RSN3)` `Channels#get` function:
-  - `(RSN3a)` Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`
+  - `(RSN3a)` Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be provided in an optional second argument
   - `(RSN3b)` If options are provided, the options are set on the `Channel`
-  - `(RSN3c)` Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `Channel` object
+  - `(RSN3c)` Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `Channel` object. (Note that this is soft-deprecated and may be removed in a future release, so should not be implemented in new client libraries. The supported way to update a set of `ChannelOptions` is `Channel#setOptions`)
 - `(RSN4)` `Channels#release` function:
   - `(RSN4a)` Releases the channel resource i.e. it's deleted and can then be garbage collected
 
@@ -235,8 +237,8 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSL1i)` If the total size of the message or (if publishing an array) messages, calculated per [TO3l8](#TO3l8), exceeds the `maxMessageSize`, then the client library should reject the publish and indicate an error with code 40009
   - `(RSL1j)` When `Message` objects are provided, any valid `Message` attribute (that is, an attribute specified in [TM2](#TM2)) that is supplied by the caller must be included in the encoded message. (This does not mean it must be included *unaltered*; for example the `data` and `encoding` will be subject to processing per [RSL4](#RSL4))
   - `(RSL1k)` Idempotent publishing via REST is supported by populating the `id` attribute of `Message` instances passed to `publish()`:
-    - `(RSL1k1)` Idempotent publishing via library-generated `Message` `id`s is supported if `idempotentRestPublishing` (see [TO3n](#TO3n)) is enabled and one or more `Message` instances are passed to `publish()` and all `Message`s have an empty `id` attribute. The library generates a base `id` string by base64-encoding a sequence of at least 9 bytes obtained from a source of randomness. Each individual `Message` in the set of messages to be published is assigned a unique `id` of the form \<base id&gt;:\<serial&gt; (where `serial` is the zero-based index into the set).
-    - `(RSL1k2)` Idempotent publishing via client-supplied `Message` `id`s is supported where a single `Message` is passed to `publish()` and it contains a non-empty `id`. The `id` is preserved on sending the message.
+    - `(RSL1k1)` Idempotent publishing via library-generated `Message` `id` s is supported if `idempotentRestPublishing` (see [TO3n](#TO3n)) is enabled and one or more `Message` instances are passed to `publish()` and all `Message` s have an empty `id` attribute. The library generates a base `id` string by base64-encoding a sequence of at least 9 bytes obtained from a source of randomness. Each individual `Message` in the set of messages to be published is assigned a unique `id` of the form \<base id&gt;:\<serial&gt; (where `serial` is the zero-based index into the set).
+    - `(RSL1k2)` Idempotent publishing via client-supplied `Message` `id` s is supported where a single `Message` is passed to `publish()` and it contains a non-empty `id`. The `id` is preserved on sending the message.
     - `(RSL1k3)` If more than one `Message` is passed to `publish()` and one or more of those messages contains a non-empty `id` attribute, then all message ids (present or absent) are preserved on sending the batch of messages.
     - `(RSL1k4)` An explicit test for idempotency of publishes with library-generated ids shall exist that simulates an error response to a successful publish of a batch of messages, expects an automatic retry by the library, and verifies that the net outcome is that the batch is published only once.
     - `(RSL1k5)` An explicit test for idempotency of publishes with client-supplied ids shall exist that involves multiple explicit publish requests for a given message and verifies that the net outcome is that the message is published only once.
@@ -270,7 +272,15 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSL6a)` All messages received will be decoded automatically based on the `encoding` field and the payloads will be converted into the format they were originally sent using i.e. binary, string, or JSON
     - `(RSL6a1)` A set of tests must exist to ensure that the client library provides data encoding & decoding interoperability with other client libraries. The tests must use the [set of predefined interoperability message fixtures](https://github.com/ably/ably-common/blob/master/test-resources/messages-encoding.json) to 1) publish a raw message to the REST API using the JSON transport and subscribe to the message using Realtime to ensure the `data` attribute matches the fixture; 2) publish a message using the REST client library and retrieve the raw message using the history REST API using the JSON transport ensuring the `data` matches the fixture; 3) perform the client library operation using both `JSON` and `MsgPack` transports. For reference, see the [Ruby](https://github.com/ably/ably-ruby/pull/94) and [iOS](https://github.com/ably/ably-cocoa/pull/459) implementations
     - `(RSL6a2)` A set of tests must exist to ensure that the client library provides interoperability for the `extras` field which is a JSON-encodable object (ie a value that represents a JSON `object` value and supports serialization to and from JSON text). The test, at a minimum, should publish a message with an `extras` object such as `{"push":[{"title":"Testing"}]}` and ensure it is received with an equivalent JSON-encodable object
-  - `(RSL6b)` If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be encrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc"
+  - `(RSL6b)` If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be decrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc". Additional steps need to be taken if decoding failed on "vcdiff" encoding; see [RTL18](#RTL18)
+- `(RSL7)` `Channel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options, then indicates success
+
+### Plugins
+
+- `(PC1)` Specific client library features that are not commonly used may be supplied as independent libraries, as plugins, in order to avoid excessively bloating the client library. Although such plugins are packaged as independent libraries, they are still considered logically to be part of the client library code and, as such, may be tightly coupled with the client library implementation. The client library can be assumed to be aware of the plugin specific type and capabilities, and such plugins may by design be coupled to a specific version of the client library.
+- `(PC2)` No generic plugin interface is specified, and therefore there is no common API exposed by all plugins. However, for type-safety, the opaque interface `Plugin` should be used in strongly-typed languages as the type of the `ClientOptions.plugins` collection as per [TO3o](#TO3o).
+- `(PC3)` A plugin provided with the `PluginType` enum key value of `vcdiff` should be capable of decoding "vcdiff"-encoded messages. It must implement the `VCDiffDecoder` interface and the client library must be able to use it by casting it to this interface.
+  - `(PC3a)` The base argument of the `VCDiffDecoder.decode` method should receive the stored base payload of the last message on a channel as specified by [RTL19](#RTL19). If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the `VCDiffDecoder.decode` method.
 
 ### Presence {#rest-presence}
 
@@ -423,9 +433,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTN15b1)` `resume` is the `ProtocolMessage#connectionKey` from the most recent `CONNECTED` `ProtocolMessage` received
     - `(RTN15b2)` `connectionSerial` is the most recent `ProtocolMessage#connectionSerial` (from any message, not just a `CONNECTED`) received from Ably (equivalently, the `Connection#serial`)
   - `(RTN15c)` The system's response to a resume request will be one of the following:
-    - `(RTN15c1)` `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client, and no `error`. In this case, the server is indicating that the resume succeeded, all channels are still attached, and all backlog messages are available. The client should not change the state of attached channels, and immediately process any queued messages for that channel
-    - `(RTN15c2)` `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client, and an `error`. In this case, the server is indicating that the resume succeeded but with a non-fatal error, all channels are still attached, and some backlog messages may be unavailable. The `ErrorInfo` received should be set as the `reason` in the `CONNECTED` event, and the `Connection#errorReason` should be set. The client should not change the state of attached channels, and immediately process any queued messages for that channel. Any channels that are not resumed in full may receive an `ATTACHED` `ProtocolMessage` with an `error`, see [RTL12](#RTL12)
-    - `(RTN15c3)` `CONNECTED` `ProtocolMessage` with a new `connectionId`, and an error in `error`. In this case, a new connection has been established, the resume was unsuccessful, the channels are no longer attached, and the error indicates the cause of the unsuccessful resume. The `ErrorInfo` should be set as the `reason` in the `CONNECTED` event, and the `Connection#errorReason` should be set. The client library should initiate an attach for channels that are in the `SUSPENDED` state. For all channels in the `ATTACHING` or `ATTACHED` state, the client library should fail any previously queued messages for that channel and initiate a new attach i.e. a new `ATTACH` `ProtocolMessage` must be sent for each channel. Finally, the internal `msgSerial` counter is reset so that the first message published to Ably will contain a `msgSerial` value of `0`
+    - `(RTN15c1)` `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client, and no `error`. In this case, the server is indicating that the resume succeeded, all channels are still attached, and all backlog messages are available. The client should not change the state of attached channels, and immediately process any messages queued by the connection
+    - `(RTN15c2)` `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client, and an `error`. In this case, the server is indicating that the resume succeeded but with a non-fatal error, all channels are still attached, and some backlog messages may be unavailable. The `ErrorInfo` received should be set as the `reason` in the `CONNECTED` event, and the `Connection#errorReason` should be set. The client should not change the state of attached channels, and immediately process any messages queued by the connection. Any channels that are not resumed in full may receive an `ATTACHED` `ProtocolMessage` with an `error`, see [RTL12](#RTL12)
+    - `(RTN15c3)` `CONNECTED` `ProtocolMessage` with a new `connectionId`, and an error in `error`. In this case, a new connection has been established, the resume was unsuccessful, the channels are no longer attached, and the error indicates the cause of the unsuccessful resume. The `ErrorInfo` should be set as the `reason` in the `CONNECTED` event, and the `Connection#errorReason` should be set. The client library should initiate an attach for channels that are in the `SUSPENDED` state. For all channels in the `ATTACHING` or `ATTACHED` state, the client library should initiate a new attach (i.e. a new `ATTACH` `ProtocolMessage` sent for each channel). Finally, the internal `msgSerial` counter is reset so that the first message published to Ably will contain a `msgSerial` value of `0`
     - `(RTN15c5)` `ERROR` `ProtocolMessage` indicating a failure to authenticate as a result of a token error (see [RTN15h](#RTN15h)). The transport will be closed by the server. The spec described in [RTN15h](#RTN15h) must be followed for a connection being resumed with a token error
     - `(RTN15c4)` Any other `ERROR` `ProtocolMessage` indicating a fatal error in the connection. The server will close the transport immediately after. The client should transition to the `FAILED` state triggering all attached channels to transition to the `FAILED` state as well. Additionally the `Connection#errorReason` will be set should be set with the error received from Ably
   - `(RTN15f)` `ACK` and `NACK` responses for published messages can only ever be received on the transport connection on which those messages were sent. Therefore, once a transport drops, the client library must either fail the publish attempt, or re-attempt by re-sending the messages on a new transport if the resume was successful (i.e. the `CONNECTED` response includes the expected `connectionId`)
@@ -460,9 +470,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTS1)` `Channels` is a collection of `Channel` objects accessible through `Realtime#channels`
 - `(RTS2)` Methods should exist to check if a channel exists or iterate through the existing channels
 - `(RTS3)` `Channels#get` function:
-  - `(RTS3a)` Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be specified when instancing a new `Channel`
+  - `(RTS3a)` Creates a new `Channel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be provided in an optional second argument
   - `(RTS3b)` If options are provided, the options are set on the `Channel` when creating a new `Channel`
-  - `(RTS3c)` Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `Channel` object
+  - `(RTS3c)` Accessing an existing `Channel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `Channel` object. (Note that this is soft-deprecated and may be removed in a future release, so should not be implemented in new client libraries. The supported way to update a set of `ChannelOptions` is `Channel#setOptions`)
+    - `(RTS3c1)` If a new set of `ChannelOptions` is supplied to `Channels#get` that would trigger a reattachment of the channel if supplied to `Channel#setOptions` per [`RTL16a`](#RTL16a), it must raise an error, informing the user that they must use `Channel#setOptions` instead
 - `(RTS4)` `Channels#release` function:
   - `(RTS4a)` Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
 
@@ -494,6 +505,13 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL4f)` Once an `ATTACH` `ProtocolMessage` is sent, if an `ATTACHED` `ProtocolMessage` is not received within the [default realtime request timeout](#defaults), the attach request should be treated as though it has failed and the channel should transition to the `SUSPENDED` state. The channel will then be subsequently automatically re-attached as described in [RTL13](#RTL13)
   - `(RTL4d)` If the language permits, a callback can be provided that is called when the channel is attached successfully or the attach fails and the `ErrorInfo` error is passed as an argument to the callback
   - `(RTL4e)` If the user does not have sufficient permissions to attach to the channel, the channel will transition to `FAILED` and set the `Channel#errorReason`
+  - `(RTL4j)` If the attach is not a clean attach (defined in `RTL4j1`), for example an automatic reattach triggered by [`RTN15c3`](#RTN15c3) or [`RTL13a`](#RTL13a) (non-exhaustive), the library should set the [`ATTACH_RESUME`](#TR3f) flag in the `ATTACH` message
+    - `(RTL4j1)` A 'clean attach' is an attach attempt where the channel has either not previously been attached or has been explicitly detached since the last time it was attached. Note that this is not purely a function of the immediate previous channel state. An example implementation would be to set the flag from an `attachResume` private boolean variable on the channel, that starts out set to `false`, is set to `true` when the channel moves to the `ATTACHED` state, and set to `false` when the channel moves to the `DETACHING` or `FAILED` states.
+    - `(RTL4j2)` The client library can test that the flag is being correctly encoded (and that `RTL4k` channel params are correctly included) by publishing a message on a channel, then having another two clients attach to that channel both specifying a `rewind` channel param of `"1"`, one of which has the `ATTACH_RESUME` flag forcibly set, other doesn't. The client without the flag set should receive the previously-published message once the attach succeeds; the one with that flag set should not
+  - `(RTL4k)` If the user has specified a non-empty `params` object in the `ChannelOptions` ([`TB2c`](#TB2c)), it must be included in a `params` field of the `ATTACH` `ProtocolMessage`
+    - `(RTL4k1)` If any channel parameters are requested (which may be through the `params` field of the `ATTACH` message or some other way opaque to the client library), the `ATTACHED` (and any subsequent `ATTACHED` s) will include a `params` property (also a `Dict<String, String>`) containing the subset of those params that the server has recognised and validated. This should be exposed as a read-only `params` field of the `Channel` (or a `getParams()` method where that is more idiomatic). An `ATTACHED` message with no `params` property must be treated as equivalent to a `params` of `{}` (that is, `Channel.params` should be set to the empty dict)
+  - `(RTL4l)` If the user has specified a `modes` array in the `ChannelOptions` ([`TB2d`](#TB2d)), it must be encoded as a bitfield per [`TR3`](#TR3) and set as the `flags` field of the `ATTACH` `ProtocolMessage`. (For the avoidance of doubt, when multiple different spec items require flags to be set in the `ATTACH`, the final `flags` field should be the bitwise OR of them all)
+  - `(RTL4m)` On receipt of an `ATTACHED`, the client library should decode the `flags` into an array of `ChannelMode` s (that is, the same format as `ChannelOptions.modes`) and expose it as a read-only `modes` field of the `Channel` (or a `getModes()` method where that is more idiomatic). This should only contain `ChannelMode` s: it should not contain flags which are not modes (see [`TB2d`](#TB2d))
 - `(RTL5)` `Channel#detach` function:
   - `(RTL5a)` If the channel state is `INITIALIZED` or `DETACHED` nothing is done
   - `(RTL5i)` If the channel is in a pending state `DETACHING` or `ATTACHING`, do the detach operation after the completion of the pending request
@@ -514,8 +532,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTL6i3)` Allows `name` and or `data` to be `null`. If any of the values are `null`, then key is not sent to Ably i.e. a payload with a `null` value for `data` would be sent as follows `{ "name": "click" }`
   - `(RTL6c)` Connection and channel state conditions:
     - `(RTL6c1)` If the connection is `CONNECTED` and the channel is `INITIALIZED`, `ATTACHED`, `DETACHED`, `ATTACHING`, or `DETACHING` then the messages are published immediately
-    - `(RTL6c2)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`, and `ClientOptions#queueMessages` has not been explicitly set to false, then the message will be queued and delivered as soon as the connection is `CONNECTED` and the channel is in a state in which publishing is permitted per `RTL6c1`
-    - `(RTL6c4)` If the connection is `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`, or the channel is `SUSPENDED` or `FAILED`, the operation will result in an error
+    - `(RTL6c2)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`; and the channel is `INITIALIZED`, `ATTACHED`, `DETACHED`, `ATTACHING`, or `DETACHING`; and `ClientOptions#queueMessages` has not been explicitly set to false; then the message will be placed in a connection-wide message queue to be delivered as soon as the connection is `CONNECTED`. (The recommended implementation is to have the message be sent from the channel to the connection if it fulfils the channel state condition; the connection can then dispatch, queue, or reject it according to its own state and `queueMessages`)
+    - `(RTL6c4)` In any other case the operation should result in an error
     - `(RTL6c5)` A publish should not trigger an implicit attach (in contrast to earlier version of this spec)
   - `(RTL6d)` The protocol permits `Message` s that have been queued to be sent in a single `ProtocolMessage` , by bundling them into the `ProtocolMessage#messages` or `ProtocolMessage#presence` array. In general, the client library SHOULD NOT do this. If it does, it MUST conform to all of the following constraints:
     - `(RTL6d1)` The resulting `ProtocolMessage` must not exceed the `maxMessageSize`
@@ -561,6 +579,19 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL13b)` If the attempt to re-attach fails, or if the channel was already in the `ATTACHING` state, the channel will transition to the `SUSPENDED` state and the error will be emitted in the `ChannelStateChange` event. An attempt to re-attach the channel automatically will then be made after the period defined in `ClientOptions#channelRetryTimeout`. When re-attaching the channel, the channel will transition to the `ATTACHING` state. If that request to attach fails i.e. it times out or a `DETACHED` message is received, then the process described here in `RTL13b` will be repeated, indefinitely
   - `(RTL13c)` If the connection is no longer `CONNECTED`, then the automatic attempts to re-attach the channel described in [RTL13b](#RTL13b) must be cancelled as any implicit channel state changes subsequently will be covered by [RTL3](#RTL3)
 - `(RTL14)` If an `ERROR ProtocolMessage` is received for this channel (the channel attribute matches this channel's name), then the channel should immediately transition to the FAILED state, and the `Channel.errorReason` should be set
+- `(RTL16)` `Channel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options.
+  - `(RTL16a)` If the user has provided either `ChannelOptions.params` or `ChannelOptions.modes` and the channel is in either the `attached` or `attaching` state, `Channel#setOptions` sends an `ATTACH` message to the server with the params & modes encoded per [`RTL4`](#RTL4), and indicates success once the server has replied with an `ATTACHED` (or indicates failure if the channel becomes detached or failed before that happens, as with `Channel#attach`); else it indicates success immediately
+- `(RTL17)` No messages should be passed to subscribers if the channel is in any state other than `ATTACHED`.
+- `(RTL18)` Given "vcdiff"-encoded deltas are applied to the previous message published on a channel, when a "vcdiff" encoding fails to be decoded, it makes it impossible for a client to apply subsequent deltas received from that point of failure forward. As such, the client must automatically execute the following recovery procedure in lieu of [RTL7e](#"RTL7e"):
+  - `(RTL18a)` Log error with code 40018
+  - `(RTL18b)` Discard the message
+  - `(RTL18c)` Send an `ATTACH` `ProtocolMessage` with the `channelSerial` set to the previous message to the message for which "vcdiff" decoding failed to the server, transitioning the channel state to `ATTACHING`, and waiting for a confirmation `ATTACHED`, as per `RTL4c` and `RTL4f`. `ChannelStateChange.reason` should be set to `ErrorInfo` object with with code 40018.
+- `(RTL19)` The data payload of the last message on each channel must be stored at all times since it will be needed to decode any subsequent message that has a "vcdiff" encoding step. The stored value is the "base payload" of the most recent message; this is the `data` member of the message, in string or binary form, once all application-level encoding steps have been applied. The base payload is derived initially by processing a non-delta message; the processing and bookkeeping rules are as follows:
+  - `(RTL19a)` When processing any message (whether a delta or a full message), if the message `encoding` string ends in `base64`, the message `data` should be base64-decoded (and the `encoding` string modified accordingly per [RSL6](#RSL6)).
+  - `(RTL19b)` In the case of a non-delta message, the resulting `data` value is stored as the base payload.
+  - `(RTL19c)` In the case of a delta message with a `vcdiff` `encoding` step, the `vcdiff` decoder must be used to decode the base payload of the of delta message, applying that delta to the stored base payload. The direct result of that vcdiff delta application, before performing any further decoding steps, is stored as the updated base payload.
+- `(RTL20)` The `id` of the last received message on each channel must be stored along with the base payload. When processing a delta message (i.e. one whose `encoding` contains `vcdiff` step) the stored last message `id` must be compared against the delta reference `id`, indicated in the `Message.extras.delta.from` field of the delta message. If the delta reference `id` of the received delta message does not equal the stored `id` corresponding to the base payload, the message decoding must fail. The recovery procedure from [RTL18](#RTL18) must be executed.
+- `(RTL21)` The messages in the `messages` array of a `ProtocolMessage` should each be decoded in ascending order of their index in the array.
 
 ### Presence {#realtime-presence}
 
@@ -588,16 +619,16 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTP17c1)` After a `SYNC` operation has completed, per [`RTP18b`](#RTP18b)
     - `(RTP17c2)` When an `ATTACHED` message is received with no [`HAS_PRESENCE`](#TR3a) flag (so no `SYNC` is expected as the server does not believe anyone is currently present)
   - `(RTP17d)` Automatic re-entry consists of, for each member of the `RTP17` internal `PresenceMap` whose `memberKey` is not also a member of the normal `PresenceMap`, publishing a `PresenceMessage` with an `ENTER` action using the `clientId` and `data` attributes from that member, and removing that member from the internal `PresenceMap`
-  - `(RTP17e)` If the publish attempt fails for an automatic presence `ENTER` (for example, by Ably rejecting it with a `NACK`), an `UPDATE` event should be emitted on the channel with `resumed` set to true and `reason` set to an `ErrorInfo` object with `code` `91004`, a `message` indicating that an automatic re-enter has failed and indicating the `clientId`, and `cause` set to the the reason for the enter failure. The error should also be logged at `warn` level or higher.
+  - `(RTP17e)` If the publish attempt fails for an automatic presence `ENTER` (for example, by Ably rejecting it with a `NACK`), an `UPDATE` event should be emitted on the channel with `resumed` set to true and `reason` set to an `ErrorInfo` object with `code` `91004`, a `message` indicating that an automatic re-enter has failed and indicating the `clientId`, and `cause` set to the reason for the enter failure. The error should also be logged at `warn` level or higher.
 - `(RTP4)` Ensure a test exists that enters 250 members using `Presence#enterClient` on a single connection, and checks for `PRESENT` events to be emitted on another connection for each member, and once sync is complete, all 250 members should be present in a `Presence#get` request
 - `(RTP5)` Channel state change side effects:
   - `(RTP5a)` If the channel enters the `DETACHED` or `FAILED` state then all queued presence messages will fail immediately, and the `PresenceMap` and [internal PresenceMap (see RTP17)](#RTP17) is cleared. The latter ensures members are not automatically re-entered if the `Channel` later becomes attached. Since channels in the `DETACHED` and `FAILED` states will not receive any presence updates from Ably, presence events (specifically `LEAVE`) should not be emitted when the `PresenceMap` is cleared as each presence member's state is unknown
   - `(RTP5f)` If the channel enters the `SUSPENDED` state then all queued presence messages will fail immediately, and the `PresenceMap` is maintained. This ensures that if the channel later becomes `ATTACHED`, it will only publish presence events for the changes in the `PresenceMap` that have occurred whilst the client was disconnected. A test should exist for a channel that is in the `SUSPENDED` state containing presence members to transition to the `ATTACHED` state, and following the `SYNC` process after attaching, any members present before and after the sync should not emit presence events, all other changes should be reflected in the `PresenceMap` and should emit presence events on the channel
   - `(RTP5b)` If a channel enters the `ATTACHED` state then all queued presence messages will be sent immediately. A presence `SYNC` may be initiated per [`RTP1`](#RTP1)
 - `(RTP16)` Connection state conditions:
-  - `(RTP16a)` If the connection is `CONNECTED` and the channel is `ATTACHED` then all presence messages are published immediately
-  - `(RTP16b)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED` or the channel is `ATTACHING` or `INITIALIZED`, and `ClientOptions#queueMessages` has not been explicitly set to false, then all presence messages will be queued and delivered as soon as the connection state returns to `CONNECTED` and the channel is `ATTACHED`
-  - `(RTP16c)` Else publishing presence messages will result in an error
+  - `(RTP16a)` If the channel is `ATTACHED` then the presence messages are handled per `RTL6c2`. (That is: they should be sent to the connection, to be published immediately if the connection is `CONNECTED`, else if the connection state and `queueMessages` option allows they may be placed in a connection-wide queue to be published once the connection becomes `CONNECTED`, else rejected)
+  - `(RTP16b)` If the channel is `ATTACHING` or `INITIALIZED`, then if `ClientOptions.queueMessages` has not been explicitly set to `false`, the presence messages should be queued at a channel level, to be handled per `RTP16a` once the channel becomes `ATTACHED`, or failed if the channel state becomes `SUSPENDED`, `FAILED`, or `DETACHED` first
+  - `(RTP16c)` In any other case the operation should result in an error
 - `(RTP6)` `Presence#subscribe` function:
   - `(RTP6a)` Subscribe with no arguments subscribes a listener to all presence messages
   - `(RTP6b)` Subscribe with a single action argument - such as `ENTER`, `LEAVE`, `UPDATE` or `PRESENT` - subscribes a listener to receive only presence messages with that action
@@ -1428,7 +1459,7 @@ Presence ops.
   - `(TM2g)` `name` string
   - `(TM2d)` `data` string, buffer or JSON-encodable object or array
   - `(TM2e)` `encoding` string
-  - `(TM2i)` `extras` JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The extras field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is `push`, via the `extras.push` member. The processing of any other members is undefined
+  - `(TM2i)` `extras` JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The `extras` field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is `push`, via the `extras.push` member; 1.2 adds the `delta` extension which is of type `DeltaExtras`. The processing of any other members is undefined
   - `(TM2f)` `timestamp` time in milliseconds since epoch. If a message received from Ably does not contain a `timestamp`, it should be set to the `timestamp` of the encapsulating `ProtocolMessage`
 - `(TM3)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `Message`-like object (or array of such objects), and optionally a `channelOptions`, and return a `Message` (or array of such `Messages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves.
 
@@ -1458,6 +1489,7 @@ Presence ops.
   - `(TR3c)` 2: `RESUMED`
   - `(TR3d)` 3: `HAS_LOCAL_PRESENCE`
   - `(TR3e)` 4: `TRANSIENT`
+  - `(TR3f)` 5: `ATTACH_RESUME`
   - `(TR3q)` 16: `PRESENCE`
   - `(TR3r)` 17: `PUBLISH`
   - `(TR3s)` 18: `SUBSCRIBE`
@@ -1473,11 +1505,12 @@ Presence ops.
   - `(TR4o)` `connectionDetails` `ConnectionDetails` object - provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
   - `(TR4g)` `count` integer
   - `(TR4h)` `error` `ErrorInfo` object
-  - `(TR4i)` `flags` integer. Contains one or more of the following bit flags: `HAS_PRESENCE: 1`, `HAS_BACKLOG: 2`, `RESUMED: 4`
+  - `(TR4i)` `flags` integer. Contains one or more of the bit flags specified in `TR3`
   - `(TR4j)` `msgSerial` long
   - `(TR4k)` `messages` Array of `Message` objects
   - `(TR4l)` `presence` Array of `PresenceMessage` objects
   - `(TR4m)` `timestamp` time in milliseconds since epoch
+  - `(TR4q)` `params` `Dict<String, String>` key-value pairs
 
 #### PaginatedResult
 
@@ -1562,7 +1595,7 @@ Presence ops.
 
 #### ErrorInfo
 
-- `(TI1)` Provides a generic Ably `ErrorInfo` object that contains Ably `code`, `statusCode` (analogous to HTTP status code), `message` and `cause` attributes
+- `(TI1)` Provides a generic Ably `ErrorInfo` object that contains Ably `code`, `statusCode` (analogous to HTTP status code), `message`, optional `cause`, optional `href`, and optional `requestId` (`RSC7c`) attributes
 - `(TI2)` Errors returned from the Ably server are compatible with the `ErrorInfo` structure and should result in errors that inherit from `ErrorInfo`
 - `(TI3)` [Ably-common](https://github.com/ably/ably-common) should be included as a submodule so that [consistent error codes](https://github.com/ably/ably-common/blob/master/protocol/errors.json) can be used
 - `(TI4)` Ably may additionally include a `href` attribute with a string value. This is included for REST responses to provide a URL for customers to find more help on the error code
@@ -1661,6 +1694,8 @@ Presence ops.
       - `(TO3l8e)` The size of a `null` or omitted property is zero
     - `(TO3l9)` `maxFrameSize` integer - default 524288 (512KiB). The maximum size of a single POST body or [WebSocket](/concepts/websockets) frame. This is mostly only relevant for \`Rest#request\` (e.g. for batch publishes), since publishes will hit the `maxMessageSize` limit before this
     - `(TO3l10)` `fallbackRetryTimeout` integer - default 600000 (10 minutes). (After a failed request to the default endpoint, followed by a successful request to a fallback endpoint), the period in milliseconds before HTTP requests are retried against the default endpoint
+  - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
+  - `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
 
 #### TokenParams {#token-params}
 
@@ -1692,6 +1727,8 @@ Presence ops.
   - `(TB2b)` `cipher`, which is either:
     - `(TB2b1)` A `CipherParams` instance, or
     - `(TB2b2)` an options hash (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`. In this case, the client library should call `getDefaultParams`, passing it the options hash, to obtain a `CipherParams` instance
+  - `(TB2c)` `params` (for realtime client libraries only) a `Dict<string,string>` of key/value pairs
+  - `(TB2d)` `modes` (for realtime client libraries only) an array of `ChannelMode` s, where a `ChannelMode` is a member of an enum containing the names of those children of [`TR3`](#TR3) whose value is ≥16 (or see the IDL below)
 - `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
 
 #### CipherParams
@@ -1776,7 +1813,7 @@ JsonObject \| JsonArray body?,\
 Dict\<String, String\> headers\
 ) =\> io HttpPaginatedResponse // RSC19\
 stats(\
-start: Time, // RSC6b1\
+start: Time api-default epoch(), // RSC6b1\
 end: Time api-default now(), // RSC6b1\
 direction: .Backwards \| .Forwards api-default .Backwards, // RSC6b2\
 limit: int api-default 100, // RSC6b3\
@@ -1826,6 +1863,7 @@ tls: Bool default true // RSC18, TO3d\
 tlsPort: Int default 443 // TO3k5\
 useBinaryProtocol: Bool default true // TO3f\
 transportParams: \[String: Stringifiable\]? // RTC1f\
+addRequestIds: Bool default false // TO3p\
 // configurable retry and failure defaults\
 disconnectedRetryTimeout: Duration default 15s // TO3l1\
 suspendedRetryTimeout: Duration default 30s // RTN14d, TO3l2\
@@ -1835,7 +1873,9 @@ httpRequestTimeout: Duration default 10s // TO3l4\
 httpMaxRetryCount: Int default 3 // TO3l5\
 httpMaxRetryDuration: Duration default 15s // TO3l6\
 maxMessageSize: Int default 65536 // TO3l8\
-maxFrameSize: Int default 524288 // TO3l8
+maxFrameSize: Int default 524288 // TO3l8\
+plugins: Dict\<PluginType, Plugin\> // TO3o\
+idempotentRestPublishing: bool default true // RSL1k1, RTL6a1, TO3n
 
 class AuthOptions: // RSA8e\
 authCallback: ((TokenParams) -\> io (String \| TokenDetails \| TokenRequest \| JsonObject))? // RSA4a, RSA4, TO3j5, AO2b\
@@ -1898,7 +1938,9 @@ limit: int api-default 100 // RSL2b3\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
 publish(Message, params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
 publish(\[Message\], params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
-publish(name: String?, data: Data?) =\> io // RSL1
+publish(name: String?, data: Data?) =\> io // RSL1\
+setOptions(options: ChannelOptions) =\> io // RSL7 - note asynchronous return value for\
+// compatibility with RealtimeChannel#setOptions; not required for REST-only libraries
 
 // Only on platforms that support receiving notifications:\
 push: PushChannel // RSH4
@@ -1910,6 +1952,8 @@ state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
 properties: ChannelProperties // CP1, RTL15\
 push: PushChannel\
+modes: readonly \[ChannelMode\] // RTL4m\
+params: readonly Dict\<String, String\> // RTL4k1\
 attach() =\> io // RTL4d\
 detach() =\> io // RTL5e\
 history(\
@@ -1926,7 +1970,8 @@ subscribe((Message) -\>) =\> io // RTL7a\
 subscribe(String, (Message) -\>) =\> io // RTL7b\
 unsubscribe() // RTL8a, RTE5\
 unsubscribe((Message) -\>) // RTL8a\
-unsubscribe(String, (Message) -\>) // RTL8a
+unsubscribe(String, (Message) -\>) // RTL8a\
+setOptions(options: ChannelOptions) =\> io // RTL16
 
 class PushChannel:\
 subscribeDevice() =\> io // RSH7a\
@@ -1948,6 +1993,12 @@ enum ChannelEvent:\
 embeds ChannelState\
 UPDATE // RTL2g
 
+enum ChannelMode: // TB2d\
+PRESENCE\
+PUBLISH\
+SUBSCRIBE\
+PRESENCE_SUBSCRIBE
+
 class ChannelStateChange:\
 current: ChannelState // RTL2a, RTL2b\
 event: ChannelEvent // TH5\
@@ -1957,7 +2008,9 @@ resumed: Boolean // RTL2f, TH4
 
 class ChannelOptions:\
 +withCipherKey(key: Binary \| String)? -\> ChannelOptions // TB3\
-cipher: (CipherParams \| Params)? // RSL5a, TB2b
+cipher: (CipherParams \| Params)? // RSL5a, TB2b\
+params?: Dict\<String, String\> // TB2c\
+modes?: \[ChannelMode\] // TB2d
 
 class CipherParams:\
 algorithm: String default "AES" // TZ2a\
@@ -2063,12 +2116,13 @@ connectionId: String? // RTN15c1, TR4d\
 connectionSerial: Int? // RTN10c, TR4f\
 count: Int? // TR4g\
 error: ErrorInfo? // RTN15c2, TR4h\
-flags: .HAS_PRESENCE & .HAS_BACKLOG & .RESUMED ? // RTP1, TR3, TR4i, RTL2f\
+flags: Int? // TR4i; bitfield containing zero or more boolean flags specified in TR3\
 id: String? // TR4b\
 messages: \[Message\]? // TR4k\
 msgSerial: Int? // RTN7b, TR4j\
 presence: \[PresenceMessage\]? // TR4l\
-timestamp: Time? // TR4m
+timestamp: Time? // TR4m\
+params: Dict\<String, String\>? // TR4q, RTL4k
 
 enum ProtocolMessageAction:\
 HEARTBEAT // TR2\
@@ -2238,7 +2292,8 @@ code: Int // TI1\
 href: String? // TI4\
 message: String // TI1\
 cause: ErrorInfo? // TI1\
-statusCode: Int // TI1
+statusCode: Int // TI1\
+requestId: String? // RSC7c
 
 class EventEmitter\<Event, Data\>:\
 on((Data...) -\>) // RTE4\
@@ -2264,12 +2319,27 @@ statusCode: Int // HP4\
 success: Bool // HP5\
 errorCode: Int // HP6\
 errorMessage: String // HP7\
-headers: Dict\<String, String\> // HP8\
+headers: Dict\<String, String\> // HP8
+
+class Plugin // PC2\
+// Empty class/interface. Plugins are not expected to share any common interface.\
+// An opaque base interface type for plugins is defined for type-safety in statically-typed languages.
+
+enum PluginType\
+"vcdiff"
+
+class VCDiffDecoder\
+decode(\[byte\] delta, \[byte\] base) -\> \[byte\]
+
+class DeltaExtras\
+from: String // the id of the message the delta was generated from\
+format: String //the delta format. Only vcdiff is supported as at API version 1.2\
 \`\`\`
 
 ## Old specs
 
 Use the version navigation to view older versions. References to diffs for each version are maintained below:
 
+- v1.1 deprecated in Mar 2020. [View 1.1 → 1.2 changes](https://github.com/ably/docs/blob/master/content/client-lib-development-guide/versions/features-1-1__1-2.diff)
 - v1.0 deprecated in Jan 2019. [View 1.0 → 1.1 changes](https://github.com/ably/docs/blob/master/content/client-lib-development-guide/versions/features-1-0__1-1.diff)
 - v0.8 deprecated in Jan 2017. [View 0.8 → 1.0 changes](https://github.com/ably/docs/blob/master/content/client-lib-development-guide/versions/features-0-8__1-0.diff)
