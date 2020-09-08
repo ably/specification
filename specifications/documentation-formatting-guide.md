@@ -56,17 +56,6 @@ Note that if you have referenced an anchor that has language specific content, t
 
 Certain pages have additional pieces of metadata which can be used to help the website display unique information.
 
-#### Concepts & Design Patterns page metadata {#concepts-metadata}
-
-Pages in the `/concepts` and `/design-pattern` folders can have the following additional metadata:
-
-bc\[yaml\]. ----\
-author_name: "Name of the author who wrote the concept piece"\
-author_bio: "The biography for the author who wrote the concept piece"\
-author_image: "Link to the image to use for the author"\
-header: "Link to an image to be the header for the article"\
-----
-
 #### Compare pages metadata {#concepts-metadata}
 
 Pages in the `/compare` folder can have the following additional metadata:
