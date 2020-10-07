@@ -2318,7 +2318,7 @@ from: String // the id of the message the delta was generated from\
 format: String //the delta format. Only vcdiff is supported as at API version 1.2\
 \`\`\`
 
-h3(#idl-private) Private interface
+### Private interface {#idl-private}
 
 Those elements are specified for client-server compatibility and to keep codebases uniform but, since there is no way to use them with the public interface, it would be useless to have them exposed and constrained by semantic versioning.
 
