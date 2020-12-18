@@ -56,17 +56,6 @@ Note that if you have referenced an anchor that has language specific content, t
 
 Certain pages have additional pieces of metadata which can be used to help the website display unique information.
 
-#### Concepts & Design Patterns page metadata {#concepts-metadata}
-
-Pages in the `/concepts` and `/design-pattern` folders can have the following additional metadata:
-
-bc\[yaml\]. ----\
-author_name: "Name of the author who wrote the concept piece"\
-author_bio: "The biography for the author who wrote the concept piece"\
-author_image: "Link to the image to use for the author"\
-header: "Link to an image to be the header for the article"\
-----
-
 #### Compare pages metadata {#concepts-metadata}
 
 Pages in the `/compare` folder can have the following additional metadata:
@@ -217,10 +206,10 @@ a = 2;\
 ### Try it now code editor {#code-editor}
 
 ::: tip
-In order to publish code examples to JSBin, your [/config/jsbin_config.yaml](https://github.com/ably/docs/blob/master/config/jsbin_config.example.yaml) must be set up with a valid JSBin API key.
+In order to publish code examples to JSBin, your [/config/jsbin_config.yaml](https://github.com/ably/docs/blob/main/config/jsbin_config.example.yaml) must be set up with a valid JSBin API key.
 :::
 
-Code examples that run in your browser can be included in this documentation repo within the [/content/code folder](https://github.com/ably/docs/tree/master/content/code). Every code example must contain Javascript, HTML and CSS that will be launched in our [custom Ably JSBin](https://jsbin.ably.io).
+Code examples that run in your browser can be included in this documentation repo within the [/content/code folder](https://github.com/ably/docs/tree/main/content/code). Every code example must contain Javascript, HTML and CSS that will be launched in our [custom Ably JSBin](https://jsbin.ably.io).
 
 The following example shows how you can easily add a "Try it" button to your code example that will launch the code from the path you provide in our Ably JSBin code editor:
 
