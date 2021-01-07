@@ -153,7 +153,7 @@ a += 1
 bc\[csharp\]. Integer a = 1;\
 a += 1;
 
-Note that if you don't include a full set of languages, or at least provide a `default` language, then a language selector will appear. In the example below, no language has been specified for `javascript` or `nodejs`. Select Javascript in the top nav to see what happens when a language is not available.
+Note that if you don't include a full set of languages, or at least provide a `default` language, then a language selector will appear. In the example below, no language has been specified for `javascript` or `nodejs`. Select JavaScript in the top nav to see what happens when a language is not available.
 
 bc\[ruby\]. \# this is ruby
 
@@ -209,7 +209,7 @@ a = 2;\
 In order to publish code examples to JSBin, your [/config/jsbin_config.yaml](https://github.com/ably/docs/blob/main/config/jsbin_config.example.yaml) must be set up with a valid JSBin API key.
 :::
 
-Code examples that run in your browser can be included in this documentation repo within the [/content/code folder](https://github.com/ably/docs/tree/main/content/code). Every code example must contain Javascript, HTML and CSS that will be launched in our [custom Ably JSBin](https://jsbin.ably.io).
+Code examples that run in your browser can be included in this documentation repo within the [/content/code folder](https://github.com/ably/docs/tree/main/content/code). Every code example must contain JavaScript, HTML and CSS that will be launched in our [custom Ably JSBin](https://jsbin.ably.io).
 
 The following example shows how you can easily add a "Try it" button to your code example that will launch the code from the path you provide in our Ably JSBin code editor:
 
@@ -288,7 +288,7 @@ Examples of the above variables being used are:
 
 ### Isolated language blocks (always present) versus grouped language blocks
 
-For both code blocks, if a single language code block appears without another contiguous language block before or after it, then it will always be shown regardless of the current language selected by the viewer. This is to ensure that should you wish to show a simple HTML block or a Javascript code block with formatting for example, this can be done without worrying it will be hidden. For example:
+For both code blocks, if a single language code block appears without another contiguous language block before or after it, then it will always be shown regardless of the current language selected by the viewer. This is to ensure that should you wish to show a simple HTML block or a JavaScript code block with formatting for example, this can be done without worrying it will be hidden. For example:
 
 \`\`\`\[text\]\
 bc\[html\].
@@ -323,7 +323,7 @@ will generate a box styled as follows:
 
 h2(#language-specific-content).\
 default: Language specific (default)\
-javascript: Language specific (Javascript)\
+javascript: Language specific (JavaScript)\
 nodejs: Language specific (Node.js)\
 csharp: Language specific (C#)\
 ruby: Language specific (Ruby)\
@@ -509,7 +509,7 @@ javascript second
 
 </div>
 
-:= a Javascript specific definition\
+:= a JavaScript specific definition\
 \`\`\`
 
 will render as:
@@ -554,7 +554,7 @@ javascript second
 
 </div>
 
-:= a Javascript specific definition
+:= a JavaScript specific definition
 
 ### Code within definitions
 
@@ -621,9 +621,9 @@ Note that if you have referenced an anchor that has language specific content, t
 
 ## Language conventions
 
-### Javascript
+### JavaScript
 
-Although Javascript is not a typed language, to avoid ambiguity, types are preferred before the argument name in method definitions, and the type should be linked to the type definition where available. As argument names are irrelevant when invoking a function (only the order matters), it is better to use a meaningful name in method definitions. Example:
+Although JavaScript is not a typed language, to avoid ambiguity, types are preferred before the argument name in method definitions, and the type should be linked to the type definition where available. As argument names are irrelevant when invoking a function (only the order matters), it is better to use a meaningful name in method definitions. Example:
 
 bq(definition).\
 default: new Ably.Realtime([ClientOptions](/realtime/usage#client-options) clientOptions)
