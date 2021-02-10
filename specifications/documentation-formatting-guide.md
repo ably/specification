@@ -59,7 +59,8 @@ The following metadata attributes are supported:
 bc\[yaml\]. ----\
 meta_description: "Description for this page rendeded in HTML meta description field"\
 meta_keywords: "Keywords for this page rendeded in HTML meta keywords field"\
-meta_image: "/images/path/to/file/in/assets/folder.png"
+meta_image: "/images/path/to/file/in/assets/folder.png"\
+----
 
 ### Special Metadata
 
