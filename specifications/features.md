@@ -376,7 +376,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### Connection {#realtime-connection}
 
-- `(RTN1)` `Connection` connects to the Ably service using a [websocket](https://ably.com/topic/websockets) connection. The [ably-js library](https://github.ably.io/ably/ably-js) supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
+- `(RTN1)` `Connection` connects to the Ably service using a [websocket](https://ably.com/topic/websockets) connection. The [ably-js library](https://github.com/ably/ably-js) supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
 - `(RTN2)` The default host used for realtime [websocket](https://ably.com/topic/websockets) connections is `realtime.ably.io`, and the following query string params should be used when opening a new connection:
   - `(RTN2a)` `format` should be `msgpack` (default) or `json`
   - `(RTN2b)` `echo` should be `true` by default; `false` will prevent messages published by the client being echoed back
