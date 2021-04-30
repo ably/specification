@@ -2178,7 +2178,7 @@ errorReason: ErrorInfo? // RTN14a\
 id: String? // RTN8\
 key: String? // RTN9\
 recoveryKey: String? // RTN16b, RTN16c\
-serial: Int // RTN10\
+serial: Int? // RTN10\
 state: ConnectionState // RTN4d\
 close() // RTN12\
 connect() // RTC1b, RTN3, RTN11\
