@@ -2131,7 +2131,7 @@ id: String // TP3a\
 timestamp: Time // TP3g\
 memberKey() -\> String // TP3h
 
-class ProtocolMessage:\
+class ProtocolMessage: // internal\
 action: ProtocolMessageAction // TR2, TR4a\
 auth: AuthDetails? //\
 channel: String? // TR4b\
@@ -2149,7 +2149,7 @@ presence: \[PresenceMessage\]? // TR4l\
 timestamp: Time? // TR4m\
 params: Dict\<String, String\>? // TR4q, RTL4k
 
-enum ProtocolMessageAction:\
+enum ProtocolMessageAction: // internal\
 HEARTBEAT // TR2\
 ACK // TR2\
 NACK // TR2\
