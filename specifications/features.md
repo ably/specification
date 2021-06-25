@@ -497,7 +497,6 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTS3c1)` If a new set of `ChannelOptions` is supplied to `Channels#get` that would trigger a reattachment of the channel if supplied to `Channel#setOptions` per [`RTL16a`](#RTL16a), it must raise an error, informing the user that they must use `Channel#setOptions` instead
 - `(RTS4)` `Channels#release` function:
   - `(RTS4a)` Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
-  - `(RTS4b)` Calling `release()` with a channel name that corresponds to a channel that is in any state other than `INITIALIZED`, `DETACHED`, or `FAILED` must, instead of releasing the channel, raise an error with code `90001`
 
 ### Channel {#realtime-channel}
 
