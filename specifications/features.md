@@ -236,6 +236,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSN4)` `Channels#release` function:
   - `(RSN4a)` Takes one argument, the channel name, and releases the corresponding channel entity (that is, deletes it to allow it to be garbage collected)
   - `(RSN4b)` Calling `release()` with a channel name that does not correspond to an extant channel entity must return without error
+  - `(RSN4c)` This clause has been deleted
 
 ### Channel {#rest-channel}
 
