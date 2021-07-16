@@ -2234,8 +2234,7 @@ clientId: String?\
 formFactor: DeviceFormFactor\
 metadata: JsonObject\
 platform: DevicePlatform\
-push: DevicePushDetails\
-deviceSecret: String?
+push: DevicePushDetails
 
 class DevicePushDetails:\
 errorReason: ErrorInfo?\
@@ -2243,7 +2242,8 @@ recipient: JsonObject\
 state: .Active \| .Failing \| .Failed
 
 class LocalDevice extends DeviceDetails:\
-deviceIdentityToken: String
+deviceIdentityToken: String\
+deviceSecret: String
 
 class Push:\
 admin: PushAdmin // RSH1
