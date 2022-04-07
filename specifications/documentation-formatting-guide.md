@@ -670,7 +670,7 @@ default: Realtime.new([ClientOptions](#client-options) client_options)
 Where methods yield blocks and/or return valueas, the following syntax is the standard:
 
 bq(definition).\
-default: [EventMachine::Deferrable](/realtime/types#deferrable) connect -\> yields [`Connection`](/realtime/connection)
+default: [EventMachine::Deferrable](/realtime/types#deferrable) connect -\> yields [`Connection`](/api/realtime-sdk/connection)
 
 If the block yields a number of variables and they need to be named for clarity, then the following is recommended:
 
