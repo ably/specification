@@ -128,7 +128,7 @@ Use `bq(definition).` for method definitions after `h6.` method anchors. See [bl
 Absolute reference links such as `"Google":http://www.google.com` can be used as normal.
 
 All links to other documentation pages must follow the format `"REST Channels":/rest/channels"` and must resolve to a relative path for this repository. When imported into the main Ably website, the links will be automatically modified to link to the correct page in the Ably webite documentation.\
-Anchor links can be used as follows `"REST spec stats":/rest/statistics#stats`.
+Anchor links can be used as follows `"REST spec stats":/api/rest-sdk/statistics#stats`.
 
 Links can also contain mono-spaced code references within the link using the format \<code\>\"@mono-spaced-link-text@\":/rest/channels\</code\>, which would appear as [`mono-spaced-link-text`](/rest/channels)
 
