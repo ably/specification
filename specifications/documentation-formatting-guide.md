@@ -641,7 +641,7 @@ default: new Ably.Realtime([ClientOptions](/api/realtime-sdk#client-options) cli
 Callbacks and their method signatures should be included in code definitions. Where possible, instead of simply naming the function callback, a meaningful name should be used. Example:
 
 bq(definition).\
-default: subscribe(listener([Message](/realtime/types#message) message))
+default: subscribe(listener([Message](/api/realtime-sdk/types#message) message))
 
 ### Java
 
@@ -670,7 +670,7 @@ default: Realtime.new([ClientOptions](#client-options) client_options)
 Where methods yield blocks and/or return valueas, the following syntax is the standard:
 
 bq(definition).\
-default: [EventMachine::Deferrable](/realtime/types#deferrable) connect -\> yields [`Connection`](/api/realtime-sdk/connection)
+default: [EventMachine::Deferrable](/api/realtime-sdk/types#deferrable) connect -\> yields [`Connection`](/api/realtime-sdk/connection)
 
 If the block yields a number of variables and they need to be named for clarity, then the following is recommended:
 
