@@ -301,6 +301,9 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
     - `(RSL6a2)` A set of tests must exist to ensure that the client library provides interoperability for the `extras` field which is a JSON-encodable object (ie a value that represents a JSON `object` value and supports serialization to and from JSON text). The test, at a minimum, should publish a message with an `extras` object such as `{"push":[{"title":"Testing"}]}` and ensure it is received with an equivalent JSON-encodable object
   - `(RSL6b)` If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be decrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc". Additional steps need to be taken if decoding failed on "vcdiff" encoding; see [RTL18](#RTL18)
 - `(RSL7)` `Channel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options, then indicates success
+- `(RSL8)` `Channel#status` function:
+  - `(RSL8a)` Returns a `ChannelDetails` object
+  - `(RSL8b)` A side-effect of this request, is that it will cause the channel in question to become activated
 
 ### Plugins
 
@@ -1670,6 +1673,10 @@ Presence ops.
 - `(CP1)` properties of a channel and its state
 - `(CP2)` The attributes of `ChannelProperties` consist of:
   - `(CP2a)` `attachSerial` string - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMesage` for the channel, see [RTL15a](#RTL15a)
+
+#### ChannelDetails
+
+- `(CHD1)` A `ChannelDetails` is a type that represents information for a channel including channelID, name, status and occupancy
 
 ### Option types {#options}
 
