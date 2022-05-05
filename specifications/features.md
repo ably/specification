@@ -1680,7 +1680,7 @@ Presence ops.
 - `(CHD2)` The attributes of `ChannelDetails` consist of:
   - `(CHD2a)` `channelID` string - the identifier of the channel
   - `(CHD2b)` `name` string - the name of the channel
-  - `(CHD2c)` `status` `ChannelStatus` - status an object containing channel status information
+  - `(CHD2c)` `status` `ChannelStatus` - the status of the channel
 
 #### ChannelStatus
 
