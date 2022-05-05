@@ -1686,7 +1686,11 @@ Presence ops.
 - `(CHS1)` `ChannelStatus` is a type that contains status and occupancy for a channel
 - `(CHS2)` The attributes of `ChannelStatus` consist of:
   - `(CHS2a)` `isActive` boolean - represents if the channel is active
-  - `(CHS2b)` `occupancy` `ChannelMetrics` - occupancy is an object containing the metrics for the channel
+  - `(CHS2b)` `occupancy` `ChannelOccupancy` - occupancy is an object containing the metrics for the channel
+
+#### ChannelOccupancy
+
+- `(CHO1)` `metrics` `ChannelMetrics`
 
 #### ChannelMetrics
 
