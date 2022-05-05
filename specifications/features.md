@@ -303,7 +303,6 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSL7)` `Channel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options, then indicates success
 - `(RSL8)` `Channel#status` function:
   - `(RSL8a)` Returns a `ChannelDetails` object
-  - `(RSL8b)` A side-effect of this request, is that it will cause the channel in question to become activated
 
 ### Plugins
 
