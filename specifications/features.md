@@ -1690,8 +1690,8 @@ Presence ops.
 
 #### ChannelOccupancy
 
-- `(CHO1)` is a type that contain channel metrics
-- `(CH02)` the attributes of `ChannelOccupancy` consist of:
+- `(CHO1)` Is a type that contain channel metrics
+- `(CH02)` The attributes of `ChannelOccupancy` consist of:
   - `(CHO2a)`metrics@ `ChannelMetrics`
 
 #### ChannelMetrics
@@ -2002,7 +2002,7 @@ end: Time api-default now(), // RSL2b1\
 direction: .Backwards \| .Forwards api-default .Backwards, // RSL2b2\
 limit: int api-default 100 // RSL2b3\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
-status() =\> ChannelDetails //RSL8\
+status() =\> ChannelDetails // RSL8\
 publish(Message, params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
 publish(\[Message\], params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
 publish(name: String?, data: Data?) =\> io // RSL1\
