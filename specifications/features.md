@@ -302,7 +302,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSL6b)` If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be decrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc". Additional steps need to be taken if decoding failed on "vcdiff" encoding; see [RTL18](#RTL18)
 - `(RSL7)` `Channel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options, then indicates success
 - `(RSL8)` `Channel#status` function: makes a http get request to `<restHost>/channels/<channelId>` where `<restHost>` represents the current rest host as described by [`RSC11`](#RSC11)
-  - `(RSL8a)` Returns a `ChannelDetails` object or an `ErrorInfo` object with details of the error that has occurred
+  - `(RSL8a)` Returns a `ChannelDetails` object
 
 ### Plugins
 
