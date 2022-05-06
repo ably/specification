@@ -1690,7 +1690,9 @@ Presence ops.
 
 #### ChannelOccupancy
 
-- `(CHO1)` `metrics` `ChannelMetrics`
+- `(CHO1)` is a type that contain channel metrics
+- `(CH02)` the attributes of `ChannelOccupancy` consist of:
+  - `(CHO2a)`metrics@ `ChannelMetrics`
 
 #### ChannelMetrics
 
@@ -2000,6 +2002,7 @@ end: Time api-default now(), // RSL2b1\
 direction: .Backwards \| .Forwards api-default .Backwards, // RSL2b2\
 limit: int api-default 100 // RSL2b3\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
+status() =\> ChannelDetails //RSL8\
 publish(Message, params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
 publish(\[Message\], params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
 publish(name: String?, data: Data?) =\> io // RSL1\
@@ -2075,6 +2078,26 @@ class ChannelOptions:\
 cipher: (CipherParams \| Params)? // RSL5a, TB2b\
 params?: Dict\<String, String\> // TB2c\
 modes?: \[ChannelMode\] // TB2d
+
+class ChannelDetails:\
+channelId: String //CHD2a\
+name: String //CHD2b\
+status: ChannelStatus //CHD2c
+
+class ChannelStatus:\
+isActive Boolean //CHS2a\
+occupancy ChannelOccupancy //CHS2b
+
+class ChannelOccupancy\
+metrics ChannelMetrics //CHO2a
+
+class ChannelMetrics\
+connections Int //CHM2a\
+presenceConnections Int //CHM2b\
+presenceMembers Int //CHM2c\
+presenceSubscribers Int //CHM2d\
+publishers Int //CHM2e\
+subscribers Int //CHM2f
 
 class CipherParams:\
 algorithm: String default "AES" // TZ2a\
