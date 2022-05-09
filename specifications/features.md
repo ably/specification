@@ -1671,6 +1671,36 @@ Presence ops.
 - `(CP2)` The attributes of `ChannelProperties` consist of:
   - `(CP2a)` `attachSerial` string - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMesage` for the channel, see [RTL15a](#RTL15a)
 
+#### BatchResult
+
+- `(BPA1)` Contains the results from the batch operation
+- `(BPA2)` `BatchResult` has the following attributes:
+  - `(BPA2a)` `responses` is an array of batch response objects. undefined if the request failed completely (e.g. for an invalid key)
+  - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed
+
+#### BatchPublishResponse
+
+- `(BPB1)` Contains information for each batch publish request within a `BatchResult`
+- `(BPB2)` `BatchPublishResponse` has the following attributes:
+  - (`BPB2a)` `channel` is the channel name which this publish request was directed to
+  - (`BPB2b)` `messageId` contains the resultant message ID, if the request succeeds and is undefined if `error` is present
+  - (`BPB2c)` `error` contains an `ErrorInfo` object if this publish request failed, and is undefined if it succeeded
+
+#### BatchPresenceResponse
+
+- `(BPD1)` Contains information for each batch presence request within a `BatchResult`
+- `(BPD2)` `BatchPresenceResponse` contains the following attributes:
+  - `(BPD2a)` `channel` is the channel name which this presence request
+  - `(BPD2b)` `presence` is an array of presence data for the `channel`
+
+#### BatchPresence
+
+- `(BPE1)` Is a partial `PresenceMessage` object containing `clientId` and `action`, or `error` if the presence failed
+- `(PBE2)` `BatchPresence` contains the following attributes:
+  - `(PBE2a)` `clientId` - identical to #TP3c
+  - `(PBE2a)` `action` - identical to #TP3b - undefined if `error` is present
+  - `(PBE2a)` `error` - an `ErrorInfo` object representing the failure reason for this channel - undefined if `action` is present
+
 ### Option types {#options}
 
 #### ClientOptions
@@ -2007,27 +2037,23 @@ unsubscribe(String, (Message) -\>) // RTL8a\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
 class BatchOperations:\
-publish(\[Channel\], \[Message\]) =\> BatchPublishResult\
-publish(Channel, \[Message\]) =\> BatchPublishResult\
-publish(\[Channel\], Message) =\> BatchPublishResult\
-getPresence(\[Channel\]) =\> BatchPresenceResult
+publish(\[Channel\], \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html}\
+publish(Channel, \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html}\
+publish(\[Channel\], Message) =\> BatchResult`<BatchPublishResponse>`{=html}\
+getPresence(\[Channel\]) =\> BatchResult`<BatchPresenceResponse>`{=html}
 
-class BatchPublishResult:\
-error: ErrorInfo?\
-responses: \[\]BatchPublishResponse?
+class BatchResult`<T>`{=html}:\
+error: ErrorInfo? // BPA2b\
+responses: \[\]T? // BPA2a
 
 class BatchPublishResponse:\
-channel: String\
-messageId: String?\
-error: ErrorInfo?
+channel: String // BPB2a\
+messageId: String? // BPB2b\
+error: ErrorInfo? // BPB2c
 
-class BatchPresenceResult:\
-error: ErrorInfo?\
-responses: \[\]BatchPresenceResponse?
-
-class BatchPresenceResponse\
-channel: String\
-presence: \[\]BatchPresence
+class BatchPresenceResponse:\
+channel: String // BPD2a\
+presence: \[\]BatchPresence // PBD2b
 
 class BatchPresence:\
 clientId: string\
