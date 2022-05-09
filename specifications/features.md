@@ -1859,6 +1859,7 @@ constructor(ClientOptions) // RSC1\
 auth: Auth // RTC4\
 push: Push\
 device() =\> io LocalDevice\
+batch: BatchOperations\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 clientId: String? // proxy for RSA7\
 connection: Connection // RTC2\
@@ -2004,6 +2005,34 @@ unsubscribe() // RTL8a, RTE5\
 unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a\
 setOptions(options: ChannelOptions) =\> io // RTL16
+
+class BatchOperations:\
+publish(\[Channel\], \[Message\]) =\> BatchPublishResult\
+publish(Channel, \[Message\]) =\> BatchPublishResult\
+publish(\[Channel\], Message) =\> BatchPublishResult\
+getPresence(\[Channel\]) =\> BatchPresenceResult
+
+class BatchPublishResult:\
+error: ErrorInfo?\
+responses: \[\]BatchPublishResponse?
+
+class BatchPublishResponse:\
+channel: String\
+messageId: String?\
+error: ErrorInfo?
+
+class BatchPresenceResult:\
+error: ErrorInfo?\
+responses: \[\]BatchPresenceResponse?
+
+class BatchPresenceResponse\
+channel: String\
+presence: \[\]BatchPresence
+
+class BatchPresence:\
+clientId: string\
+action: string?\
+error: ErrorInfo?
 
 class PushChannel:\
 subscribeDevice() =\> io // RSH7a\
