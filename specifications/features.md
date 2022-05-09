@@ -1671,6 +1671,21 @@ Presence ops.
 - `(CP2)` The attributes of `ChannelProperties` consist of:
   - `(CP2a)` `attachSerial` string - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMesage` for the channel, see [RTL15a](#RTL15a)
 
+#### BatchPublishResult
+
+- `(BPS1)` the error object is populated if an error is returned from the API, and left undefined if not
+- `(BPS2)` an array of `BatchPublishResponse` objects. undefined if the request failed completely
+
+#### BatchPublishResponse
+
+- `(BPR1)`
+
+#### BatchPresenceResult
+
+#### BatchPresenceResponse
+
+#### BatchPresence
+
 ### Option types {#options}
 
 #### ClientOptions
