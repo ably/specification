@@ -18,6 +18,7 @@ REST client library:\
 - Presence#rest-presence\
 - Encryption#rest-encryption\
 - Forwards compatibility#rest-compatibility\
+- Batch Operations#batch-operations\
 Realtime client library:\
 - RealtimeClient\
 - Connection#realtime-connection\
@@ -341,6 +342,15 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 ### Forwards compatibility {#rest-compatibility}
 
 - `(RSF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+
+### Batch Operations
+
+- `(BO1)` The batch operations functions must use the REST endpoints in Batch Mode, sending a single request containing all specified data
+- `(BO2)` Batch operations must be able to be performed for the following:
+  - `(BO2a)` Publishing messages against one or more channels with one or more messages
+    - `(B02a1)` Functions should be provided to pass either an array or a single object for both Message and Channel
+  - `(BO2b)` Retrieving the presence data for one or more channels
+- `(BO3)` When all passed arrays contain a single object, the underlying request is functionally identical to it's non-batch equivalent, but the returned result should be a `BatchResponse` object.
 
 ## Realtime client library features {#realtime}
 
@@ -1864,6 +1874,7 @@ constructor(tokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RSC5\
 push: Push\
+batch: BatchOperations // BO1\
 device() =\> io LocalDevice\
 channels: Channels`<RestChannel>`{=html} // RSN1\
 request(\
@@ -1889,7 +1900,6 @@ constructor(ClientOptions) // RSC1\
 auth: Auth // RTC4\
 push: Push\
 device() =\> io LocalDevice\
-batch: BatchOperations\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 clientId: String? // proxy for RSA7\
 connection: Connection // RTC2\
@@ -2024,6 +2034,7 @@ start: Time, // RTL10a\
 end: Time api-default now(), // RTL10a\
 direction: .Backwards \| .Forwards api-default .Backwards, // RTL10a\
 limit: int api-default 100, // RTL10a\
+limit: int api-default 100, // RTL10a\
 untilAttach: Bool default false // RTL10b\
 ) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
 publish(Message) =\> io // RTL6i\
@@ -2037,10 +2048,10 @@ unsubscribe(String, (Message) -\>) // RTL8a\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
 class BatchOperations:\
-publish(\[Channel\], \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html}\
-publish(Channel, \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html}\
-publish(\[Channel\], Message) =\> BatchResult`<BatchPublishResponse>`{=html}\
-getPresence(\[Channel\]) =\> BatchResult`<BatchPresenceResponse>`{=html}
+publish(\[Channel\], \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
+publish(Channel, \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
+publish(\[Channel\], Message) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
+getPresence(\[Channel\]) =\> BatchResult`<BatchPresenceResponse>`{=html} // BO2b
 
 class BatchResult`<T>`{=html}:\
 error: ErrorInfo? // BPA2b\
