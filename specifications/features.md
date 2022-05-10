@@ -1742,8 +1742,8 @@ Presence ops.
 - `(BPE1)` Is a partial `PresenceMessage` object containing `clientId` and `action`, or `error` if the presence failed
 - `(PBE2)` `BatchPresence` contains the following attributes:
   - `(PBE2a)` `clientId` - identical to #TP3c
-  - `(PBE2a)` `action` - identical to #TP3b - undefined if `error` is present
-  - `(PBE2a)` `error` - an `ErrorInfo` object representing the failure reason for this channel - undefined if `action` is present
+  - `(PBE2b)` `action` - identical to #TP3b - undefined if `error` is present
+  - `(PBE2c)` `error` - an `ErrorInfo` object representing the failure reason for this channel - undefined if `action` is present
 
 ### Option types {#options}
 
