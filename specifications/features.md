@@ -1719,7 +1719,7 @@ Presence ops.
 
 - `(BPA1)` Contains the results from the batch operation
 - `(BPA2)` `BatchResult` has the following attributes:
-  - `(BPA2a)` `responses` is an array of batch response objects. undefined if the request failed completely (e.g. for an invalid key)
+  - `(BPA2a)` `responses` is an array of batch response objects. null if the request failed completely (e.g. for an invalid key)
   - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed
 
 #### BatchPublishResponse
@@ -1727,8 +1727,8 @@ Presence ops.
 - `(BPB1)` Contains information for each batch publish request within a `BatchResult`
 - `(BPB2)` `BatchPublishResponse` has the following attributes:
   - (`BPB2a)` `channel` is the channel name which this publish request was directed to
-  - (`BPB2b)` `messageId` contains the resultant message ID, if the request succeeds and is undefined if `error` is present
-  - (`BPB2c)` `error` contains an `ErrorInfo` object if this publish request failed, and is undefined if it succeeded
+  - (`BPB2b)` `messageId` contains the resultant message ID, if the request succeeds and is null if `error` is present
+  - (`BPB2c)` `error` contains an `ErrorInfo` object if this publish request failed, and is null if it succeeded
 
 #### BatchPresenceResponse
 
@@ -1742,8 +1742,8 @@ Presence ops.
 - `(BPE1)` Is a partial `PresenceMessage` object containing `clientId` and `action`, or `error` if the presence failed
 - `(PBE2)` `BatchPresence` contains the following attributes:
   - `(PBE2a)` `clientId` - identical to #TP3c
-  - `(PBE2b)` `action` - identical to #TP3b - undefined if `error` is present
-  - `(PBE2c)` `error` - an `ErrorInfo` object representing the failure reason for this channel - undefined if `action` is present
+  - `(PBE2b)` `action` - identical to #TP3b - null if `error` is present
+  - `(PBE2c)` `error` - an `ErrorInfo` object representing the failure reason for this channel - null if `action` is present
 
 ### Option types {#options}
 
