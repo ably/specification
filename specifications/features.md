@@ -350,7 +350,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(BO1)` The batch operations functions must use the REST endpoints in Batch Mode, sending a single request containing all specified data
 - `(BO2)` Batch operations must be able to be performed for the following:
   - `(BO2a)` `BatchOperations::publish` publishes messages against one or more channels with one or more messages
-    - `(B02a1)` Functions should be provided to pass either an array or a single object for both Message and Channel ID
+    - `(B02a1)` Functions should be provided to pass either an array or a single object for both Message and Channel ID, or an array of `BatchSpec` objects
   - `(BO2b)` `BatchOperations::getPresence` retrieves the presence data for one or more channels
 - `(BO3)` When all passed arrays contain a single object, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
 
@@ -2085,6 +2085,7 @@ class BatchOperations:\
 publish(\[String\], \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
 publish(String, \[Message\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
 publish(\[String\], Message) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
+publish(\[BatchSpec\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
 getPresence(\[String\]) =\> BatchResult`<BatchPresenceResponse>`{=html} // BO2b
 
 class BatchResult`<T>`{=html}:\
@@ -2111,6 +2112,10 @@ subscribeClient() =\> io // RSH7b\
 unsubscribeDevice() =\> io // RSH7c\
 unsubscribeClient() =\> io // RSH7d\
 listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH7e
+
+class BatchSpec:\
+channels: \[String\]\
+messages: \[Message\]
 
 enum ChannelState:\
 INITIALIZED\
