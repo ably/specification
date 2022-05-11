@@ -352,7 +352,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(BO2a)` Publishing messages against one or more channels with one or more messages
     - `(B02a1)` Functions should be provided to pass either an array or a single object for both Message and Channel
   - `(BO2b)` Retrieving the presence data for one or more channels
-- `(BO3)` When all passed arrays contain a single object, the underlying request is functionally identical to it's non-batch equivalent, but the returned result should be a `BatchResponse` object.
+- `(BO3)` When all passed arrays contain a single object, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
 
 ## Realtime client library features {#realtime}
 
