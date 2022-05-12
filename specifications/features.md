@@ -1719,8 +1719,9 @@ Presence ops.
 
 - `(BPA1)` Contains the results from the batch operation
 - `(BPA2)` `BatchResult` has the following attributes:
-  - `(BPA2a)` `responses` is an array of batch response objects. null if the request failed completely (e.g. for an invalid key)
-  - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed
+  - `(BPA2a)` `responses` is an array of batch response objects.
+  - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed.
+    - `(BPA2b1)` This error should only be set if it relates to a partial success. All fatal errors should be handled via language appropriate error handling.
 
 #### BatchPublishResponse
 
