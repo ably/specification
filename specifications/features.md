@@ -352,7 +352,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(BO2a)` `BatchOperations::publish` publishes messages against one or more channels with one or more messages
     - `(B02a1)` Functions should be provided to pass either an array or a single `BatchSpec` object. In languages where function overloading is not possible, an array is preferred.
   - `(BO2b)` `BatchOperations::getPresence` retrieves the presence data for one or more channels
-- `(BO3)` When all passed arrays contain a single object, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
+- `(BO3)` When a batch operation only contains one batch, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
 
 ## Realtime client library features {#realtime}
 
