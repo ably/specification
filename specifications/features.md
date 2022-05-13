@@ -1934,6 +1934,7 @@ constructor(tokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RTC4\
 push: Push\
+batch: BatchOperations // BO1\
 device() =\> io LocalDevice\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 clientId: String? // proxy for RSA7\
