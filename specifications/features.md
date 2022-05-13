@@ -18,6 +18,7 @@ REST client library:\
 - Presence#rest-presence\
 - Encryption#rest-encryption\
 - Forwards compatibility#rest-compatibility\
+- Batch Operations#batch-operations\
 Realtime client library:\
 - RealtimeClient\
 - Connection#realtime-connection\
@@ -343,6 +344,15 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 ### Forwards compatibility {#rest-compatibility}
 
 - `(RSF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+
+### Batch Operations
+
+- `(BO1)` The batch operations functions must use the REST endpoints in Batch Mode, sending a single request containing all specified data
+- `(BO2)` Batch operations must be able to be performed for the following:
+  - `(BO2a)` `BatchOperations::publish` publishes messages against one or more channels with one or more messages
+    - `(B02a1)` Functions should be provided to pass either an array or a single `BatchSpec` object. In languages where function overloading is not possible, an array is preferred.
+  - `(BO2b)` `BatchOperations::getPresence` retrieves the presence data for one or more channels
+- `(BO3)` When a batch operation only contains one batch, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
 
 ## Realtime client library features {#realtime}
 
@@ -1705,6 +1715,37 @@ Presence ops.
   - `(CHM2e)` `publishers` integer - the total number of publishers to the channel
   - `(CHM2f)` `subscribers` integer - the total number of subscribers to the channel
 
+#### BatchResult
+
+- `(BPA1)` Contains the results from the batch operation
+- `(BPA2)` `BatchResult` has the following attributes:
+  - `(BPA2a)` `responses` is an array of batch response objects.
+  - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed.
+    - `(BPA2b1)` This error should only be set if it relates to a partial success. All fatal errors should be handled via language appropriate error handling.
+
+#### BatchPublishResponse
+
+- `(BPB1)` Contains information for each batch publish request within a `BatchResult`
+- `(BPB2)` `BatchPublishResponse` has the following attributes:
+  - (`BPB2a)` `channel` is the channel name which this publish request was directed to
+  - (`BPB2b)` `messageId` contains the resultant message ID, if the request succeeds and is null if `error` is present
+  - (`BPB2c)` `error` contains an `ErrorInfo` object if this publish request failed, and is null if it succeeded
+
+#### BatchPresenceResponse
+
+- `(BPD1)` Contains information for each batch presence request within a `BatchResult`
+- `(BPD2)` `BatchPresenceResponse` contains the following attributes:
+  - `(BPD2a)` `channel` is the channel name which this presence request
+  - `(BPD2b)` `presence` is an array of presence data for the `channel`
+
+#### BatchPresence
+
+- `(BPE1)` Is a partial `PresenceMessage` object containing `clientId` and `action`, or `error` if the presence failed
+- `(PBE2)` `BatchPresence` contains the following attributes:
+  - `(PBE2a)` `clientId` - identical to #TP3c
+  - `(PBE2b)` `action` - identical to #TP3b - null if `error` is present
+  - `(PBE2c)` `error` - an `ErrorInfo` object representing the failure reason for this channel - null if `action` is present
+
 ### Option types {#options}
 
 #### ClientOptions
@@ -1868,6 +1909,7 @@ constructor(tokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RSC5\
 push: Push\
+batch: BatchOperations // BO1\
 device() =\> io LocalDevice\
 channels: Channels`<RestChannel>`{=html} // RSN1\
 request(\
@@ -2040,12 +2082,39 @@ unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
+class BatchOperations:\
+publish(\[BatchSpec\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
+publish(BatchSpec) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
+getPresence(\[String\]) =\> BatchResult`<BatchPresenceResponse>`{=html} // BO2b
+
+class BatchResult`<T>`{=html}:\
+error: ErrorInfo? // BPA2b\
+responses: \[\]T? // BPA2a
+
+class BatchPublishResponse:\
+channel: String // BPB2a\
+messageId: String? // BPB2b\
+error: ErrorInfo? // BPB2c
+
+class BatchPresenceResponse:\
+channel: String // BPD2a\
+presence: \[\]BatchPresence // PBD2b
+
+class BatchPresence:\
+clientId: string\
+action: string?\
+error: ErrorInfo?
+
 class PushChannel:\
 subscribeDevice() =\> io // RSH7a\
 subscribeClient() =\> io // RSH7b\
 unsubscribeDevice() =\> io // RSH7c\
 unsubscribeClient() =\> io // RSH7d\
 listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH7e
+
+class BatchSpec:\
+channels: \[String\]\
+messages: \[Message\]
 
 enum ChannelState:\
 INITIALIZED\
