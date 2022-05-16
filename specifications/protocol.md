@@ -281,7 +281,7 @@ The members are as follows.
 
 <!-- -->
 
-- Action state := The presence action (`ABSENT`, `PRESENT`, `ENTER`, `LEAVE`, or `UPDATE`) encoded as the ordinal in the [PresenceMessage Action](/realtime/types#presence-action) enum.
+- Action state := The presence action (`ABSENT`, `PRESENT`, `ENTER`, `LEAVE`, or `UPDATE`) encoded as the ordinal in the [PresenceMessage Action](/api/realtime-sdk/types#presence-action) enum.
 
 <!-- -->
 

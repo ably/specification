@@ -128,7 +128,7 @@ Use `bq(definition).` for method definitions after `h6.` method anchors. See [bl
 Absolute reference links such as `"Google":http://www.google.com` can be used as normal.
 
 All links to other documentation pages must follow the format `"REST Channels":/rest/channels"` and must resolve to a relative path for this repository. When imported into the main Ably website, the links will be automatically modified to link to the correct page in the Ably webite documentation.\
-Anchor links can be used as follows `"REST spec stats":/rest/statistics#stats`.
+Anchor links can be used as follows `"REST spec stats":/api/rest-sdk/statistics#stats`.
 
 Links can also contain mono-spaced code references within the link using the format \<code\>\"@mono-spaced-link-text@\":/rest/channels\</code\>, which would appear as [`mono-spaced-link-text`](/rest/channels)
 
@@ -636,12 +636,12 @@ Note that if you have referenced an anchor that has language specific content, t
 Although JavaScript is not a typed language, to avoid ambiguity, types are preferred before the argument name in method definitions, and the type should be linked to the type definition where available. As argument names are irrelevant when invoking a function (only the order matters), it is better to use a meaningful name in method definitions. Example:
 
 bq(definition).\
-default: new Ably.Realtime([ClientOptions](/realtime/usage#client-options) clientOptions)
+default: new Ably.Realtime([ClientOptions](/api/realtime-sdk#client-options) clientOptions)
 
 Callbacks and their method signatures should be included in code definitions. Where possible, instead of simply naming the function callback, a meaningful name should be used. Example:
 
 bq(definition).\
-default: subscribe(listener([Message](/realtime/types#message) message))
+default: subscribe(listener([Message](/api/realtime-sdk/types#message) message))
 
 ### Java
 
@@ -670,7 +670,7 @@ default: Realtime.new([ClientOptions](#client-options) client_options)
 Where methods yield blocks and/or return valueas, the following syntax is the standard:
 
 bq(definition).\
-default: [EventMachine::Deferrable](/realtime/types#deferrable) connect -\> yields [`Connection`](/realtime/connection)
+default: [EventMachine::Deferrable](/api/realtime-sdk/types#deferrable) connect -\> yields [`Connection`](/api/realtime-sdk/connection)
 
 If the block yields a number of variables and they need to be named for clarity, then the following is recommended:
 
