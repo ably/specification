@@ -1688,7 +1688,7 @@ Presence ops.
 - `(CHD1)` `ChannelDetails` is a type that represents information for a channel including channelId, name, status and occupancy
 - `(CHD2)` The attributes of `ChannelDetails` consist of:
   - `(CHD2a)` `channelId` string - the identifier of the channel
-  - `(CHD2c)` `status` `ChannelStatus` - the status of the channel
+  - `(CHD2b)` `status` `ChannelStatus` - the status of the channel
 
 #### ChannelStatus
 
@@ -2149,7 +2149,7 @@ modes?: \[ChannelMode\] // TB2d
 
 class ChannelDetails:\
 channelId: String // CHD2a\
-status: ChannelStatus // CHD2c
+status: ChannelStatus // CHD2b
 
 class ChannelStatus:\
 isActive: Boolean // CHS2a\
