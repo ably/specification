@@ -605,6 +605,18 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL7d)` Messages delivered are automatically decoded based on the `encoding` attribute; see REST `Channel` encoding features. Tests should exist to publish and subscribe to encoded messages using the [AES 128](https://github.com/ably/ably-common/blob/main/test-resources/crypto-data-128.json) and [AES 256](https://github.com/ably/ably-common/blob/main/test-resources/crypto-data-256.json) fixture test data
   - `(RTL7e)` If a message cannot be decoded or decrypted successfully, it should be delivered to the listener with the `encoding` attribute set indicating the residual encoding state, and an error should be logged
   - `(RTL7f)` A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `Realtime` library constructor
+  - `(RTL7g)` Subscribe with a dictionary argument subscribes a listener which filters which messages to accept based on the dictionary values
+    - `(RTL7g1)` An empty dictionary functions identically to [RTL7a](#RTL7a)
+    - `(RTL7g2)` A dictionary with multiple key/value pairs should require each entry to be satisfied in order to accept the Message
+    - `(RTL7g3)` Keys currently must be one of `ref` or `type` or a negated version of these (`-ref` and `-type`)
+      - `(RTL7g3a)` `ref` and `type` refer to `ref.timeserial` and `ref.type` in the Message body respectively
+      - `(RTL7g3b)` Consideration should be made to allow for easy expansion of the allowed fields here in the future
+    - `(RTL7g4)` Keys which are negated (starting with a `-`) should be treated as a NOT and not accept any Messages which match that value
+    - `(RTL7g5)` A value should be matched exactly, unless it is `*` which should match any value that is not null
+    - `(RTL7g6)` A Message which matches multiple listeners should be sent to all matched listeners
+
+<!-- -->
+
 - `(RTL8)` `Channel#unsubscribe` function:
   - `(RTL8a)` Unsubscribe with no arguments unsubscribes the provided listener to all messages if subscribed
   - `(RTL8b)` Unsubscribe with a single name argument unsubscribes the provided listener if previously subscribed with a name-specific subscription
@@ -2077,6 +2089,7 @@ publish(\[Message\]) =\> io // RTL6i\
 publish(name: String?, data: Data?) =\> io // RTL6i\
 subscribe((Message) -\>) =\> io // RTL7a\
 subscribe(String, (Message) -\>) =\> io // RTL7b\
+subscribe(Dict\<String, String\>, (Message) -\>) // RTL7g\
 unsubscribe() // RTL8a, RTE5\
 unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a\
@@ -2233,6 +2246,10 @@ maxMessageSize: Int // CD2c\
 serverId: String // CD2g\
 maxIdleInterval: Duration // CD2h
 
+class MessageReference:\
+timeserial: string\
+type: string
+
 class Message:\
 constructor(name: String?, data: Data?) // TM2\
 constructor(name: String?, data: Data?, clientId: String?) // TM2\
@@ -2245,7 +2262,8 @@ encoding: String? // TM2e\
 extras: JsonObject? // TM2i\
 id: String // TM2a\
 name: String? // TM2g\
-timestamp: Time // TM2f
+timestamp: Time // TM2f\
+ref: MessageReference?
 
 class PresenceMessage\
 +fromEncoded(JsonObject, ChannelOptions?) -\> PresenceMessage // TP4\
