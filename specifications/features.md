@@ -738,6 +738,12 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTE6)` `EventEmitter#emit` emits an event, calling registered listeners with the given event name and any other given arguments. If an exception is raised in any of the listeners, the exception is caught by the `EventEmitter` and the exception is logged to the Ably logger. Tests must exist to ensure exceptions raised in client code do not propagate and inhibit other event processing within the client library
   - `(RTE6a)` The set of listeners called by `emit` must not change over the course of the `emit`. That is: If a listener being called by `emit` registers another listener, that second listener should not be called by that invocation of `emit` (even if it would have been called had it already been present); and if a listener being called by `emit` removes other listeners, but those other listeners would otherwise have been called during that `emit` invocation, they should still be called. Tests should exist for both adding and removing. See <https://goo.gl/OVTtjO>
 
+### Incremental backoff and jitter {#backoff-jitter}
+
+- `(RTB1)` For connections in the `DISCONNECTED` state and realtime channels in the `SUSPENDED` state the time until retry is calculated as the product of the initial retry timeout (for `DISCONNECTED` connections this is the `disconnectedRetryTimeout`, for `SUSPENDED` channels this is the `channelRetryTimeout`), the backoff coefficient as defined by [`RTB1a`](#RTB1a), and the jitter coefficient as defined by [`RTB1b`](#RTB1b).
+  - `(RTB1a)` The backoff coefficient for the nth retry is calculated as the minimum of `(n + 2) / 3` and `2`.
+  - `(RTB1b)` The jitter coefficient is a random number between 0.9 and 1. The randomness of this number doesn't need to be cryptographically secure but should be approximately uniformly distributed.
+
 ### Forwards compatibility {#realtime-compatibility}
 
 - `(RTF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
