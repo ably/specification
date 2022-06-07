@@ -742,7 +742,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 - `(RTB1)` For connections in the `DISCONNECTED` state and realtime channels in the `SUSPENDED` state the time until retry is calculated as the product of the initial retry timeout (for `DISCONNECTED` connections this is the `disconnectedRetryTimeout`, for `SUSPENDED` channels this is the `channelRetryTimeout`), the backoff coefficient as defined by [`RTB1a`](#RTB1a), and the jitter coefficient as defined by [`RTB1b`](#RTB1b).
   - `(RTB1a)` The backoff coefficient for the nth retry is calculated as the minimum of `(n + 2) / 3` and `2`.
-  - `(RTB1b)` The jitter coefficient is a random number between 0.9 and 1. The randomness of this number doesn't need to be cryptographically secure but should be approximately uniformly distributed.
+  - `(RTB1b)` The jitter coefficient is a random number between 0.8 and 1. The randomness of this number doesn't need to be cryptographically secure but should be approximately uniformly distributed.
 
 ### Forwards compatibility {#realtime-compatibility}
 
