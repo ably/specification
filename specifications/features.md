@@ -1685,7 +1685,7 @@ Presence ops.
 
 #### ChannelDetails
 
-- `(CHD1)` `ChannelDetails` is a type that represents information for a channel including channelId, name, status and occupancy
+- `(CHD1)` `ChannelDetails` is a type that represents information for a channel including channelId, status and occupancy
 - `(CHD2)` The attributes of `ChannelDetails` consist of:
   - `(CHD2a)` `channelId` string - the identifier of the channel
   - `(CHD2b)` `status` `ChannelStatus` - the status of the channel
