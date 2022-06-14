@@ -1931,7 +1931,7 @@ String method,\
 String path,\
 Dict\<String, String\> params?,\
 JsonObject \| JsonArray body?,\
-Dict\<String, String\> headers\
+Dict\<String, String\> headers?\
 ) =\> io HttpPaginatedResponse // RSC19\
 stats(\
 start: Time api-default epoch(), // RSC6b1\
