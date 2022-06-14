@@ -1919,8 +1919,7 @@ Please note the following conventions:
 
 \`\`\`\
 class RestClient:\
-constructor(keyStr: String) // RSC1\
-constructor(tokenStr: String) // RSC1\
+constructor(keyOrTokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RSC5\
 push: Push\
@@ -1944,8 +1943,7 @@ unit: .Minute \| .Hour \| .Day \| .Month api-default .Minute // RSC6b4\
 time() =\> io Time // RSC16
 
 class RealtimeClient:\
-constructor(keyStr: String) // RSC1\
-constructor(tokenStr: String) // RSC1\
+constructor(keyOrTokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RTC4\
 push: Push\
