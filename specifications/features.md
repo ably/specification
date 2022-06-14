@@ -2026,7 +2026,8 @@ class Auth:\
 clientId: String? // RSA7, RSC17, RSA12\
 authorize(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA10\
 createTokenRequest(TokenParams?, AuthOptions?) =\> io TokenRequest // RSA9\
-requestToken(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA8e
+requestToken(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA8e\
+tokenDetails: TokenDetails? // RSA16
 
 class TokenDetails:\
 +fromJson(String \| JsonObject) -\> TokenDetails// TD7\
