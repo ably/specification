@@ -636,9 +636,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL19c)` In the case of a delta message with a `vcdiff` `encoding` step, the `vcdiff` decoder must be used to decode the base payload of the of delta message, applying that delta to the stored base payload. The direct result of that vcdiff delta application, before performing any further decoding steps, is stored as the updated base payload.
 - `(RTL20)` The `id` of the last received message on each channel must be stored along with the base payload. When processing a delta message (i.e. one whose `encoding` contains `vcdiff` step) the stored last message `id` must be compared against the delta reference `id`, indicated in the `Message.extras.delta.from` field of the delta message. If the delta reference `id` of the received delta message does not equal the stored `id` corresponding to the base payload, the message decoding must fail. The recovery procedure from [RTL18](#RTL18) must be executed.
 - `(RTL21)` The messages in the `messages` array of a `ProtocolMessage` should each be decoded in ascending order of their index in the array.
-- `(RTL22)` A method must be provided for creating a listener which only fires when the message matches a set of criteria
-  - `(RTL22a)` The method must allow for filters matching one or more of: `extras.refId`, `extras.refType` or `name`
-  - `(RTL22b)` The method must allow for matching only messages which contain no `extras.refId`
+- `(RTL22)` Methods must be provided for creating and destroying a listener which only fires when the message matches a set of criteria
+  - `(RTL22a)` The method must allow for filters matching one or more of: `extras.reference.id`, `extras.reference.type` or `name`
+  - `(RTL22b)` The method must allow for matching only messages which contain no `extras.reference.type`
   - `(RTL22c)` If multiple filters are supplied, each must be satisfied to fire the listener
 
 ### Presence {#realtime-presence}
@@ -2085,7 +2085,7 @@ subscribe(MessageFilterObject, (Message) -\>) // RTL22\
 unsubscribe() // RTL8a, RTE5\
 unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a\
-unsubscribe(MessageFilterObject, (Message) -\>)\
+unsubscribe(MessageFilterObject, (Message) -\>) // RTL22\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
 class MessageFilterObject:\
