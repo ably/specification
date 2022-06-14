@@ -1998,6 +1998,7 @@ httpMaxRetryCount: Int default 3 // TO3l5\
 httpMaxRetryDuration: Duration default 15s // TO3l6\
 maxMessageSize: Int default 65536 // TO3l8\
 maxFrameSize: Int default 524288 // TO3l8\
+fallbackRetryTimeout: Duration default 600s // TO3l10\
 plugins: Dict\<PluginType, Plugin\> // TO3o\
 idempotentRestPublishing: bool default true // RSL1k1, RTL6a1, TO3n\
 agents: \[String: String?\]? // RSC7d6 - interface only offered by some libraries
