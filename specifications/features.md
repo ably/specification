@@ -2106,6 +2106,9 @@ unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
+class ChannelProperties:\
+attachSerial: String // CP2a
+
 class BatchOperations:\
 publish(\[BatchSpec\]) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
 publish(BatchSpec) =\> BatchResult`<BatchPublishResponse>`{=html} // BO2a\
