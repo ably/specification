@@ -2256,7 +2256,7 @@ ENTER // TP2\
 LEAVE // TP2\
 UPDATE // TP2
 
-class ConnectionDetails:\
+class ConnectionDetails: // internal\
 clientId: String? // RSA12a, CD2a\
 connectionKey: String // RTN15e, CD2b\
 connectionStateTtl: Duration // CD2f, RTN14e, DF1a\
