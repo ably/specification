@@ -2344,7 +2344,7 @@ serial: Int? // RTN10\
 state: ConnectionState // RTN4d\
 close() // RTN12\
 connect() // RTC1b, RTN3, RTN11\
-ping() =\> io // RTN13
+ping() =\> io Duration // RTN13
 
 enum ConnectionState:\
 INITIALIZED\
