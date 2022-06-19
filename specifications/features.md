@@ -1847,7 +1847,7 @@ Presence ops.
 - `(TZ1)` params to configure encryption for a channel
 - `(TZ2)` The attributes of `CipherParams` consist of anything necessary to implement the supported algorithms, in addition to the following standardised attributes:
   - `(TZ2a)` `algorithm` string - Default is `AES`. Optionally specify the algorithm to use for encryption, currently only `AES` is supported
-  - `(TZ2b)` `keyLength` integer - the length in bits of the `key`
+  - `(TZ2b)` `keyLength` integer - the length in bits of the `key`; for example 128 or 256
   - `(TZ2d)` `key` binary - private key used to encrypt and decrypt payloads
   - `(TZ2c)` `mode` string - Default is `CBC`. Optionally specify cipher mode, currently only `CBC` is supported
 
@@ -1857,7 +1857,7 @@ Presence ops.
 - `(CO2)` The attributes of `CipherParamOptions` consist of:
   - `(CO2a)` `algorithm` (optional) string - the algorithm to use for encryption; currently the only supported non-null value is `AES`
   - `(CO2b)` `key` binary or string - private key used to encrypt and decrypt payloads
-  - `(CO2c)` `keyLength` (optional) integer - the length in bits of the `key`
+  - `(CO2c)` `keyLength` (optional) integer - the length in bits of the `key`; for example 128 or 256
   - `(C02d)` `mode` (optional) string -- the cipher mode; currently the only supported non-null value is `CBC`
 
 ### Push notifications {#types-push}
