@@ -77,6 +77,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
     - `(RSC6b3)` `limit` supports up to 1,000 items; if omitted the limit defaults to the REST API default (100)
     - `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
 - `(RSC16)` `RestClient#time` function sends a get request to `rest.ably.io/time` and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
+- `(RSC21)` `RestClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint `rest.ably.io`
   - `(RSC7a)` The header `X-Ably-Version: 1.2` must be included in all REST requests to the Ably endpoint
   - `(RSC7b)` (Please note this clause and the associated header have now been superseded by [RCS7d](#RSC7d)) The header `X-Ably-Lib: [lib][.optional variant]?-[version]` should be included in all REST requests to the Ably endpoint where `[lib]` is the name of the library such as `js` for `ably-js`, `[.optional variant]` is an optional library variant, such as `laravel` for the `php` library, which is always delimited with a period such as `php.laravel`, and where `[version]` is the full client library version using [Semver](http://semver.org/) such as `1.0.2`. For example, the 1.0.0 version of the JavaScript library would use the header `X-Ably-Lib: js-1.0.0`.
@@ -382,6 +383,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTC5b)` Accepts all the same params as `RestClient#stats` and provides all the same functionality
 - `(RTC6)` `RealtimeClient#time` function:
   - `(RTC6a)` Proxy to `RestClient#time` presented with an async or threaded interface as appropriate
+- `(RTC13)` `RealtimeClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
 - `(RTC7)` The client library must use the configured timeouts specified in the `ClientOptions`, falling back to the [client library defaults](#defaults) and defaults described in `ClientOptions` below
 - `(RTC8)` For a realtime client, `Auth#authorize` instructs the library to obtain a token using the provided `tokenParams` and `authOptions` and alter the current connection to use that token; or if not currently connected, to connect with the token.
   - `(RTC8a)` If the connection is in the `CONNECTED` state and `auth#authorize` is called or Ably requests a re-authentication (see [RTN22](#RTN22)), the client must obtain a new token, then send an `AUTH` `ProtocolMessage` to Ably with an `auth` attribute containing an `AuthDetails` object with the token string
@@ -1988,7 +1990,7 @@ class RestClient: // RSC\*\
 constructor(keyOrTokenStr: String) // RSC1\
 constructor(ClientOptions) // RSC1\
 auth: Auth // RSC5\
-push: Push\
+push: Push // RSC21\
 batch: BatchOperations // BO1\
 device() =\> io LocalDevice // RSH8\
 channels: Channels`<RestChannel>`{=html} // RSN1\
@@ -2012,7 +2014,7 @@ class RealtimeClient: // RTC\*\
 constructor(keyOrTokenStr: String) // RTC12\
 constructor(ClientOptions) // RTC12\
 auth: Auth // RTC4\
-push: Push\
+push: Push // RTC13\
 batch: BatchOperations // BO1\
 device() =\> io LocalDevice // RSH8\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
