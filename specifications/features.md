@@ -2132,7 +2132,7 @@ iterate() -\> Iterator`<ChannelType>`{=html} // RSN2, RTS2\
 release(String) // RSN4, RTS4
 
 class RestChannel: // RSL\*\
-name: String?\
+name: String\
 presence: RestPresence // RSL3\
 history(\
 start: Time, // RSL2b1\
