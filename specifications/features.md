@@ -252,6 +252,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 ### RestChannel {#rest-channel}
 
+- `(RSL9)` `RestChannel#name` attribute is a string containing the channel's name
 - `(RSL1)` `RestChannel#publish` function:
   - `(RSL1a)` Expects either a `Message` object, an array of `Message` objects, or a `name` string and `data` payload
   - `(RSL1b)` When `name` and `data` (or a `Message`) is provided, a single message is published to Ably
@@ -2132,7 +2133,7 @@ iterate() -\> Iterator`<ChannelType>`{=html} // RSN2, RTS2\
 release(String) // RSN4, RTS4
 
 class RestChannel: // RSL\*\
-name: String\
+name: String // RSL9\
 presence: RestPresence // RSL3\
 history(\
 start: Time, // RSL2b1\
