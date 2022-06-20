@@ -333,7 +333,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 - `(RSE1)` `Crypto::getDefaultParams` function:
   - `(RSE1a)` Returns a complete `CipherParams` instance, using the default values for any field not supplied
-  - `(RSE1b)` Takes a hashmap (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`
+  - `(RSE1b)` Takes a `CipherParamOptions` instance.
   - `(RSE1c)` The `key` must be either a binary (e.g. a byte array, depending on the language), or a base64-encoded string. If the key is a string, the function should base64-decode it into a binary. Since the conversion to base64 is not under Ably control, this should be done leniently --- in particular, it should work with base64url (RFC 4648 s.5, which uses `-` and `_` instead of `+` and `/`) as well as base64 (RFC 4648 s.4)
   - `(RSE1d)` Calculates a `keyLength` from the key (its size in bits).
   - `(RSE1e)` Checks that the provided options are valid and self-consistent as best it can, raises an exception if not. At a minimum, this should include checking the calculated `keyLength` is a valid key length for the encryption algorithm (for example, 128 or 256 for `AES`)
@@ -1838,7 +1838,7 @@ Presence ops.
 - `(TB2)` The attributes of `ChannelOptions` consist of:
   - `(TB2b)` `cipher`, which is either:
     - `(TB2b1)` A `CipherParams` instance, or
-    - `(TB2b2)` an options hash (or language equivalent) consisting of any subset of `CipherParams` fields that includes a `key`. In this case, the client library should call `getDefaultParams`, passing it the options hash, to obtain a `CipherParams` instance
+    - `(TB2b2)` A `CipherParamOptions` instance. In this case, the client library should call `getDefaultParams`, passing it the options hash, to obtain a `CipherParams` instance
   - `(TB2c)` `params` (for realtime client libraries only) a `Dict<string,string>` of key/value pairs
   - `(TB2d)` `modes` (for realtime client libraries only) an array of `ChannelMode` s, where a `ChannelMode` is a member of an enum containing the names of those children of [`TR3`](#TR3) whose value is ≥16 (or see the IDL below)
 - `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
@@ -1848,9 +1848,18 @@ Presence ops.
 - `(TZ1)` params to configure encryption for a channel
 - `(TZ2)` The attributes of `CipherParams` consist of anything necessary to implement the supported algorithms, in addition to the following standardised attributes:
   - `(TZ2a)` `algorithm` string - Default is `AES`. Optionally specify the algorithm to use for encryption, currently only `AES` is supported
-  - `(TZ2b)` `keyLength` integer - the length in bits of the `key`
+  - `(TZ2b)` `keyLength` integer - the length in bits of the `key`; for example 128 or 256
   - `(TZ2d)` `key` binary - private key used to encrypt and decrypt payloads
   - `(TZ2c)` `mode` string - Default is `CBC`. Optionally specify cipher mode, currently only `CBC` is supported
+
+#### CipherParamOptions
+
+- `(CO1)` Values used for creating a `CipherParams` instance. Depending on the language, may be implemented as a hashmap or a class.
+- `(CO2)` The attributes of `CipherParamOptions` consist of:
+  - `(CO2a)` `algorithm` (optional) string - the algorithm to use for encryption; currently the only supported non-null value is `AES`
+  - `(CO2b)` `key` binary or string - private key used to encrypt and decrypt payloads
+  - `(CO2c)` `keyLength` (optional) integer - the length in bits of the `key`; for example 128 or 256
+  - `(C02d)` `mode` (optional) string -- the cipher mode; currently the only supported non-null value is `CBC`
 
 ### Push notifications {#types-push}
 
@@ -2152,7 +2161,7 @@ resumed: Boolean // RTL2f, TH4
 
 class ChannelOptions:\
 +withCipherKey(key: Binary \| String)? -\> ChannelOptions // TB3\
-cipher: (CipherParams \| Params)? // RSL5a, TB2b\
+cipher: (CipherParams \| CipherParamOptions)? // RSL5a, TB2b\
 params?: Dict\<String, String\> // TB2c\
 modes?: \[ChannelMode\] // TB2d
 
@@ -2181,8 +2190,14 @@ key: Binary // TZ2d\
 keyLength: Int // TZ2b\
 mode: String default "CBC" // TZ2c
 
+class CipherParamOptions: // CO1 (may be implemented as a hashmap or a class depending on language)\
+algorithm?: String // CO2a\
+key: Binary \| String // CO2b\
+keyLength?: Int // CO2c\
+mode?: String // CO2d
+
 class Crypto:\
-+getDefaultParams(Params) -\> CipherParams // RSE1\
++getDefaultParams(CipherParamOptions) -\> CipherParams // RSE1\
 +generateRandomKey(keyLength: Int?) =\> io Binary // RSE2
 
 class RestPresence:\
