@@ -527,6 +527,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### RealtimeChannel {#realtime-channel}
 
+- `(RTL23)` `RealtimeChannel#name` attribute is a string containing the channel's name
 - `(RTL1)` As soon as a `RealtimeChannel` becomes attached, all incoming messages and presence messages (where 'incoming' is defined as 'received from Ably over the realtime transport') are processed and emitted where applicable. `PRESENCE` and `SYNC` messages are passed to the `RealtimePresence` object ensuring it maintains a map of current members on a channel in realtime
 - `(RTL2)` The `RealtimeChannel` implements `EventEmitter` and emits `ChannelEvent` events, where a `ChannelEvent` is either a `ChannelState` or `UPDATE`, and a `ChannelState` is either `INITIALIZED`, `ATTACHING`, `ATTACHED`, `DETACHING`, `DETACHED`, `SUSPENDED` and `FAILED`
   - `(RTL2a)` It emits a `ChannelState` `ChannelEvent` for every channel state change
@@ -2153,6 +2154,7 @@ push: PushChannel // RSH7
 
 class RealtimeChannel: // RTL\*\
 embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2, RTL2a, RTL2d\
+name: String // RTL23\
 errorReason: ErrorInfo? // RTL4e\
 state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
