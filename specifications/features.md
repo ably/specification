@@ -638,7 +638,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL21)` The messages in the `messages` array of a `ProtocolMessage` should each be decoded in ascending order of their index in the array.
 - `(RTL22)` Methods must be provided for creating and destroying a listener which only fires when the message matches a set of criteria
   - `(RTL22a)` The method must allow for filters matching one or more of: `extras.reference.id`, `extras.reference.type` or `name`
-  - `(RTL22b)` The method must allow for matching only messages which contain no `extras.reference.type`
+  - `(RTL22b)` The method must allow for matching only messages which do not have `extras.reference`
   - `(RTL22c)` If multiple filters are supplied, each must be satisfied to fire the listener
 
 ### Presence {#realtime-presence}
