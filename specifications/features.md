@@ -2081,15 +2081,15 @@ publish(\[Message\]) =\> io // RTL6i\
 publish(name: String?, data: Data?) =\> io // RTL6i\
 subscribe((Message) -\>) =\> io // RTL7a\
 subscribe(String, (Message) -\>) =\> io // RTL7b\
-subscribe(MessageFilterObject, (Message) -\>) // RTL22\
+subscribe(MessageFilter, (Message) -\>) // RTL22\
 unsubscribe() // RTL8a, RTE5\
 unsubscribe((Message) -\>) // RTL8a\
 unsubscribe(String, (Message) -\>) // RTL8a\
-unsubscribe(MessageFilterObject, (Message) -\>) // RTL22\
+unsubscribe(MessageFilter, (Message) -\>) // RTL22\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
-class MessageFilterObject:\
-hasRef: bool // RTL22b\
+class MessageFilter:\
+isRef: bool // RTL22b\
 refId: string // RTL22a\
 refType: string // RTL22a\
 name: string // RTL22a
