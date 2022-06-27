@@ -637,8 +637,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL20)` The `id` of the last received message on each channel must be stored along with the base payload. When processing a delta message (i.e. one whose `encoding` contains `vcdiff` step) the stored last message `id` must be compared against the delta reference `id`, indicated in the `Message.extras.delta.from` field of the delta message. If the delta reference `id` of the received delta message does not equal the stored `id` corresponding to the base payload, the message decoding must fail. The recovery procedure from [RTL18](#RTL18) must be executed.
 - `(RTL21)` The messages in the `messages` array of a `ProtocolMessage` should each be decoded in ascending order of their index in the array.
 - `(RTL22)` Methods must be provided for creating and destroying a listener which only fires when the message matches a set of criteria
-  - `(RTL22a)` The method must allow for filters matching one or more of: `extras.reference.id`, `extras.reference.type` or `name`
-  - `(RTL22b)` The method must allow for matching only messages which do not have `extras.reference`
+  - `(RTL22a)` The method must allow for filters matching one or more of: `extras.ref.timeserial`, `extras.ref.type` or `name`
+  - `(RTL22b)` The method must allow for matching only messages which do not have `extras.ref`
   - `(RTL22c)` If multiple filters are supplied, each must be satisfied to fire the listener
 
 ### Presence {#realtime-presence}
@@ -2090,7 +2090,7 @@ setOptions(options: ChannelOptions) =\> io // RTL16
 
 class MessageFilter:\
 isRef: bool // RTL22b\
-refId: string // RTL22a\
+refTimeserial: string // RTL22a\
 refType: string // RTL22a\
 name: string // RTL22a
 
