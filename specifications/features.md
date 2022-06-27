@@ -1577,7 +1577,7 @@ Presence ops.
 - `(TG6)` `PaginatedResult#hasNext` function returns `true` if there are further pages
 - `(TG7)` `PaginatedResult#isLast` function returns `true` if this page is the last page i.e. `!hasNext`
 
-#### HttpPaginatedResponse // RSC19b
+#### HttpPaginatedResponse
 
 - `(HP1)` A `HttpPaginatedResponse` is a type that represents the response from an HTTP request containing an empty or JSON-encodable object response. [Paginated queries](/rest-api/#pagination) are supported
 - `(HP2)` `HttpPaginatedResponse` inherits from `PaginatedResult` and overrides `next` and `first` so that a new `HttpPaginatedResponse` is returned
