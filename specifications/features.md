@@ -377,6 +377,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTC1f)` `transportParams` map or equivalent, additional parameters to be sent in the querystring when initiating a realtime connection. Keys are `Strings`, values are `Stringifiable` (a value that can be coerced to a string in order to be sent as a querystring parameter. Supported values should be at least strings, numbers, and booleans, with booleans stringified as `true` and `false`. If this is unidiomatic to the language, the implementer may consider this as equivalent to `String`).
     - `(RTC1f1)` If a key in `transportParams` is one the library sends by default (for example, `v` or `heartbeats`), the value in `transportParams` takes precedence.
 - `(RTC2)` `RealtimeClient#connection` attribute provides access to the underlying `Connection` object
+- `(RTC15)` `RealtimeClient#connect` function:
+  - `(RTC15a)` Calls `#connect` on the underlying `Connection` object
+- `(RTC16)` `RealtimeClient#close` function:
+  - `(RTC16a)` Calls `#close` on the underlying `Connection` object
 - `(RTC3)` `RealtimeClient#channels` attribute provides access to the underlying `Channels` object
 - `(RTC4)` `RealtimeClient#auth` attribute provides access to the `Auth` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
   - `(RTC4a)` Unlike the stateless REST client library, the `Auth#clientId` is populated when the connection is established. The `CONNECTED` `ProtocolMessage` contains the confirmed `clientId` for this connected client i.e. the client is considered identified. See [`RSA7b`](#RSA7b) and [`RSA12`](#RSA12) for further info
@@ -2040,8 +2044,8 @@ direction: .Backwards \| .Forwards api-default .Backwards,\
 limit: int api-default 100,\
 unit: .Minute \| .Hour \| .Day \| .Month api-default .Minute\
 ) =\> io PaginatedResult`<Stats>`{=html} // Same as RestClient.stats, RTC5\
-close() // proxy for RTN12\
-connect() // proxy for RTN11\
+close() // RTC16\
+connect() // RTC15\
 time() =\> io Time // RTC6
 
 class ClientOptions: // TO\*\
