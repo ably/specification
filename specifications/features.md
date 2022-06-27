@@ -2568,26 +2568,20 @@ save(PushChannelSubscription) =\> io PushChannelSubscription // RSH1c3\
 remove(PushChannelSubscription) =\> io // RSH1c4\
 removeWhere(params: Dict\<String, String\>) =\> io // RSH1c5
 
-enum DevicePushTransportType:\
-"fcm" // PTT1\
-"gcm" // PTT1\
-"apns" // PTT1\
-"web" // PTT1
-
 enum DevicePlatform: // PCD6\
-"android" // PPT1\
-"ios" // PPT1\
-"browser" // PPT1
+"android"\
+"ios"\
+"browser"
 
 enum DeviceFormFactor: // PCD4\
-"phone" // PDT1\
-"tablet" // PDT1\
-"desktop" // PDT1\
-"tv" // PDT1\
-"watch" // PDT1\
-"car" // PDT1\
-"embedded" // PDT1\
-"other" // PDT1
+"phone"\
+"tablet"\
+"desktop"\
+"tv"\
+"watch"\
+"car"\
+"embedded"\
+"other"
 
 class PushChannelSubscription: // PCS\*\
 +forDevice(channel: String, deviceId: String) =\> PushChannelSubscription\
