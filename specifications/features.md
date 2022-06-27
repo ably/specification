@@ -2153,7 +2153,7 @@ publish(name: String?, data: Data?) =\> io // RSL1\
 setOptions(options: ChannelOptions) =\> io // RSL7 - note asynchronous return value for\
 // compatibility with RealtimeChannel#setOptions; not required for REST-only libraries
 
-// Only on platforms that support receiving notifications:\
+// Only on platforms that support receiving push notifications:\
 push: PushChannel // RSH7
 
 class RealtimeChannel: // RTL\*\
@@ -2163,6 +2163,7 @@ errorReason: ErrorInfo? // RTL4e\
 state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
 properties: ChannelProperties // RTL15\
+// Only on platforms that support receiving push notifications:\
 push: PushChannel // RSH7\
 modes: readonly \[ChannelMode\] // RTL4m\
 params: readonly Dict\<String, String\> // RTL4k1\
@@ -2219,6 +2220,7 @@ clientId: string // BPE2a\
 action: string? // BPE2b\
 error: ErrorInfo? // BPE2c
 
+// Only on platforms that support receiving push notifications:\
 class PushChannel: // RSH7\
 subscribeDevice() =\> io // RSH7a\
 subscribeClient() =\> io // RSH7b\
@@ -2550,7 +2552,7 @@ deviceSecret: String
 class Push: RSH1, RSH2\
 admin: PushAdmin // RSH1
 
-// Only on platforms that support receiving notifications:
+// Only on platforms that support receiving push notifications:
 
 activate(\
 registerCallback: ((ErrorInfo?, DeviceDetails?) -\> io String)?,\
