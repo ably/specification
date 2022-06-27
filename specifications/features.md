@@ -1990,7 +1990,7 @@ constructor(ClientOptions) // RSC1\
 auth: Auth // RSC5\
 push: Push\
 batch: BatchOperations // BO1\
-device() =\> io LocalDevice\
+device() =\> io LocalDevice // RSH8\
 channels: Channels`<RestChannel>`{=html} // RSN1\
 request(\
 String method,\
@@ -2014,7 +2014,7 @@ constructor(ClientOptions) // RTC12\
 auth: Auth // RTC4\
 push: Push\
 batch: BatchOperations // BO1\
-device() =\> io LocalDevice\
+device() =\> io LocalDevice // RSH8\
 channels: Channels`<RealtimeChannel>`{=html} // RTC3, RTS1\
 clientId: String? // proxy for RSA7\
 connection: Connection // RTC2\
@@ -2031,18 +2031,18 @@ end: Time api-default now(),\
 direction: .Backwards \| .Forwards api-default .Backwards,\
 limit: int api-default 100,\
 unit: .Minute \| .Hour \| .Day \| .Month api-default .Minute\
-) =\> io PaginatedResult`<Stats>`{=html} // Same as RestClient.stats, RTC5a\
+) =\> io PaginatedResult`<Stats>`{=html} // Same as RestClient.stats, RTC5\
 close() // proxy for RTN12\
 connect() // proxy for RTN11\
-time() =\> io Time // RTC6a
+time() =\> io Time // RTC6
 
 class ClientOptions: // TO\*\
 embeds AuthOptions // TO3j\
 autoConnect: Bool default true // RTC1b, TO3e\
-clientId: String? // RSC17, RSA4, RSA15, TO3a\
+clientId: String? // RSC17, RSA15, TO3a\
 defaultTokenParams: TokenParams? // TO3j11\
 echoMessages: Bool default true // RTC1a, TO3h\
-environment: String? // RSC15b, TO3k1\
+environment: String? // RSC15e, TO3k1\
 logHandler: // platform specific - TO3c\
 logLevel: // platform specific - TO3b\
 logExceptionReportingUrl: String default "\[library specific\]" // TO3m (deprecated)\
@@ -2068,7 +2068,7 @@ realtimeRequestTimeout: Duration default 10s // TO3l11\
 httpMaxRetryCount: Int default 3 // TO3l5\
 httpMaxRetryDuration: Duration default 15s // TO3l6\
 maxMessageSize: Int default 65536 // TO3l8\
-maxFrameSize: Int default 524288 // TO3l8\
+maxFrameSize: Int default 524288 // TO3l9\
 fallbackRetryTimeout: Duration default 600s // TO3l10\
 plugins: Dict\<PluginType, Plugin\> // TO3o\
 idempotentRestPublishing: bool default true // RSL1k1, RTL6a1, TO3n\
@@ -2081,27 +2081,27 @@ authMethod: .GET \| .POST default .GET // RSA8c, TO3j7, AO2d\
 authParams: \[String: Stringifiable\]? // RSA8c3, RSA8c1, TO3j9, AO2f\
 authUrl: String? // RSA4a, RSA4, RSA8c, TO3j6, AO2c\
 key: String? // RSA11, RSA14, TO3j1, AO2a\
-queryTime: Bool default false // RSA9d, TO3j10, AO2a\
-token: String? \| TokenDetails? \| TokenRequest? // RSA4a, RSA4, TO3j2\
-tokenDetails: TokenDetails? // RSA4a, RSA4, TO3j3\
+queryTime: Bool default false // RSA9d, TO3j10, AO2g\
+token: String? \| TokenDetails? \| TokenRequest? // RSA4a, RSA4, TO3j2, AO2h\
+tokenDetails: TokenDetails? // RSA4a, RSA4, TO3j3, AO2i\
 useTokenAuth: Bool? // RSA4, RSA14, TO3j4
 
 class TokenParams: // TK\*\
 capability: String api-default '{"**":\["**"\]}' // RSA9f, TK2b\
 clientId: String? // TK2c\
 nonce: String? // RSA9c, Tk2d\
-timestamp: Time? // RSA9d, Tk2d\
+timestamp: Time? // RSA9d, TK2d\
 ttl: Duration api-default 60min // RSA9e, TK2a
 
 class Auth: // RSA\*\
 clientId: String? // RSA7, RSC17, RSA12\
 authorize(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA10\
 createTokenRequest(TokenParams?, AuthOptions?) =\> io TokenRequest // RSA9\
-requestToken(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA8e\
+requestToken(TokenParams?, AuthOptions?) =\> io TokenDetails // RSA8\
 tokenDetails: TokenDetails? // RSA16
 
 class TokenDetails: // TD\*\
-+fromJson(String \| JsonObject) -\> TokenDetails// TD7\
++fromJson(String \| JsonObject) -\> TokenDetails // TD7\
 capability: String // TD5\
 clientId: String? // TD6\
 expires: Time // TD3\
@@ -2120,7 +2120,7 @@ ttl: Duration? api-default 60min // TE4
 
 class Channels`<ChannelType>`{=html}: // RSN\*, RTS\*\
 exists(String) -\> Bool // RSN2, RTS2\
-get(String) -\> ChannelType // RSN3a, RTS3a\
+get(String) -\> ChannelType // RSN3, RTS3\
 get(String, ChannelOptions) -\> ChannelType // RSN3c, RTS3c\
 iterate() -\> Iterator`<ChannelType>`{=html} // RSN2, RTS2\
 release(String) // RSN4, RTS4
@@ -2133,7 +2133,7 @@ start: Time, // RSL2b1\
 end: Time api-default now(), // RSL2b1\
 direction: .Backwards \| .Forwards api-default .Backwards, // RSL2b2\
 limit: int api-default 100 // RSL2b3\
-) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
+) =\> io PaginatedResult`<Message>`{=html} // RSL2\
 status() =\> ChannelDetails // RSL8\
 publish(Message, params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
 publish(\[Message\], params?: Dict\<String, Stringifiable\>) =\> io // RSL1\
@@ -2142,35 +2142,35 @@ setOptions(options: ChannelOptions) =\> io // RSL7 - note asynchronous return va
 // compatibility with RealtimeChannel#setOptions; not required for REST-only libraries
 
 // Only on platforms that support receiving notifications:\
-push: PushChannel // RSH4
+push: PushChannel // RSH7
 
 class RealtimeChannel: // RTL\*\
-embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2a, RTL2d, RTL2e\
+embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2, RTL2a, RTL2d\
 errorReason: ErrorInfo? // RTL4e\
 state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
-properties: ChannelProperties // CP1, RTL15\
-push: PushChannel\
+properties: ChannelProperties // RTL15\
+push: PushChannel // RSH7\
 modes: readonly \[ChannelMode\] // RTL4m\
 params: readonly Dict\<String, String\> // RTL4k1\
-attach() =\> io // RTL4d\
-detach() =\> io // RTL5e\
+attach() =\> io // RTL4\
+detach() =\> io // RTL5\
 history(\
 start: Time, // RTL10a\
 end: Time api-default now(), // RTL10a\
 direction: .Backwards \| .Forwards api-default .Backwards, // RTL10a\
 limit: int api-default 100, // RTL10a\
 untilAttach: Bool default false // RTL10b\
-) =\> io PaginatedResult`<Message>`{=html} // RSL2a\
-publish(Message) =\> io // RTL6i\
-publish(\[Message\]) =\> io // RTL6i\
-publish(name: String?, data: Data?) =\> io // RTL6i\
-subscribe((Message) -\>) =\> io // RTL7a\
-subscribe(String, (Message) -\>) =\> io // RTL7b\
+) =\> io PaginatedResult`<Message>`{=html} // RTL10\
+publish(Message) =\> io // RTL6, RTL6i\
+publish(\[Message\]) =\> io // RTL6, RTL6i\
+publish(name: String?, data: Data?) =\> io // RTL6, RTL6i\
+subscribe((Message) -\>) =\> io // RTL7, RTL7a\
+subscribe(String, (Message) -\>) =\> io // RTL7, RTL7b\
 subscribe(MessageFilter, (Message) -\>) // RTL22\
-unsubscribe() // RTL8a, RTE5\
-unsubscribe((Message) -\>) // RTL8a\
-unsubscribe(String, (Message) -\>) // RTL8a\
+unsubscribe() // RTL8\
+unsubscribe((Message) -\>) // RTL8, RTL8a\
+unsubscribe(String, (Message) -\>) // RTL8, RTL8b\
 unsubscribe(MessageFilter, (Message) -\>) // RTL22\
 setOptions(options: ChannelOptions) =\> io // RTL16
 
@@ -2202,9 +2202,9 @@ channel: String // BPD2a\
 presence: \[\]BatchPresence // PBD2b
 
 class BatchPresence: // BPE\*\
-clientId: string\
-action: string?\
-error: ErrorInfo?
+clientId: string // BPE2a\
+action: string? // BPE2b\
+error: ErrorInfo? // BPE2c
 
 class PushChannel: // RSH7\
 subscribeDevice() =\> io // RSH7a\
@@ -2237,10 +2237,10 @@ SUBSCRIBE\
 PRESENCE_SUBSCRIBE
 
 class ChannelStateChange: // TH\*\
-current: ChannelState // RTL2a, RTL2b\
+current: ChannelState // TH2, RTL2a, RTL2b\
 event: ChannelEvent // TH5\
-previous: ChannelState // RTL2a, RTL2b\
-reason: ErrorInfo? // RTL2e, TH3\
+previous: ChannelState // TH2, RTL2a, RTL2b\
+reason: ErrorInfo? // TH3\
 resumed: Boolean // RTL2f, TH4
 
 class ChannelOptions: // TB\*\
@@ -2289,13 +2289,13 @@ get(\
 limit: int api-default 100, // RSP3a\
 clientId: String?, // RSP3a2\
 connectionId: String?, // RSP3a3\
-) =\> io PaginatedResult`<PresenceMessage>`{=html} // RSPa\
+) =\> io PaginatedResult`<PresenceMessage>`{=html} // RSP3\
 history(\
 start: Time, // RSP4b1\
 end: Time api-default now(), // RSP4b1\
 direction: .Backwards \| .Forwards api-default .Backwards, // RSP4b2\
 limit: int api-default 100, // RSP4b3\
-) =\> io PaginatedResult`<PresenceMessage>`{=html} // RSP4a
+) =\> io PaginatedResult`<PresenceMessage>`{=html} // RSP4
 
 class RealtimePresence: // RTP\*\
 syncComplete: Bool // RTP13\
@@ -2309,7 +2309,7 @@ start: Time, // RTP12a\
 end: Time, // RTP12a\
 direction: .Backwards \| .Forwards api-default .Backwards, // RTP12a\
 limit: int api-default 100, // RTP12a\
-) =\> io PaginatedResult`<PresenceMessage>`{=html} // RTP12c\
+) =\> io PaginatedResult`<PresenceMessage>`{=html} // RTP12\
 subscribe((PresenceMessage) -\>) =\> io // RTP6a\
 subscribe(PresenceAction, (PresenceMessage) -\>) =\> io // RTP6b\
 unsubscribe() // RTP7a, RTE5\
@@ -2345,7 +2345,7 @@ constructor(name: String?, data: Data?) // TM2\
 constructor(name: String?, data: Data?, clientId: String?) // TM2\
 +fromEncoded(JsonObject, ChannelOptions?) -\> Message // TM3\
 +fromEncodedArray(JsonArray, ChannelOptions?) -\> \[Message\] // TM3\
-clientId: String? // RSL1g1, TM2b\
+clientId: String? // TM2b\
 connectionId: String? // TM2c\
 data: Data? // TM2d\
 encoding: String? // TM2e\
@@ -2406,10 +2406,10 @@ SYNC // TR2\
 AUTH // TR2
 
 class AuthDetails: // AD\*\
-accessToken: String // AD2
+accessToken: String // AD2, RTC8a
 
 class Connection: // RTN\*\
-embeds EventEmitter\<ConnectionEvent, ConnectionStateChange\> // RTN4a, RTN4e, RTN4g\
+embeds EventEmitter\<ConnectionEvent, ConnectionStateChange\> // RTN4a, RTN4e\
 errorReason: ErrorInfo? // RTN14a\
 id: String? // RTN8\
 key: String? // RTN9\
@@ -2518,17 +2518,17 @@ inbound: MessageTraffic // TS14b\
 outbound: MessageTraffic // TS14c
 
 class DeviceDetails: // PCD\*\
-id: String\
-clientId: String?\
-formFactor: DeviceFormFactor\
-metadata: JsonObject\
-platform: DevicePlatform\
-push: DevicePushDetails
+id: String // PCD2\
+clientId: String? // PCD3\
+formFactor: DeviceFormFactor // PCD4\
+metadata: JsonObject // PCD5\
+platform: DevicePlatform // PCD6\
+push: DevicePushDetails // PCD7
 
 class DevicePushDetails: // PCP\*\
-errorReason: ErrorInfo?\
-recipient: JsonObject\
-state: .Active \| .Failing \| .Failed
+errorReason: ErrorInfo? // PCP2\
+recipient: JsonObject // PCP3\
+state: .Active \| .Failing \| .Failed // PCP4
 
 class LocalDevice extends DeviceDetails: // RSH8\*\
 deviceIdentityToken: String\
@@ -2586,21 +2586,21 @@ enum DeviceFormFactor: // PCD4\
 class PushChannelSubscription: // PCS\*\
 +forDevice(channel: String, deviceId: String) =\> PushChannelSubscription\
 +forClientId(channel: String, clientId: String) =\> PushChannelSubscription\
-deviceId: String? // PCS2, PCS5, PCS6\
-clientId: String? // PCS3, PCS6\
+deviceId: String? // PCS2\
+clientId: String? // PCS3\
 channel: String // PCS4
 
 class ErrorInfo: // TI\*\
 code: Int // TI1\
-href: String? // TI4\
+href: String? // TI1, TI4\
 message: String // TI1\
 cause: ErrorInfo? // TI1\
 statusCode: Int // TI1\
-requestId: String? // RSC7c
+requestId: String? // TI1, RSC7c
 
 class EventEmitter\<Event, Data\>: // RTE\*\
-on((Data...) -\>) // RTE4\
-on(Event, (Data...) -\>) // RTE4\
+on((Data...) -\>) // RTE3\
+on(Event, (Data...) -\>) // RTE3\
 once((Data...) -\>) // RTE4\
 once(Event, (Data...) -\>) // RTE4\
 off() // RTE5\
@@ -2629,10 +2629,10 @@ class Plugin // PC2\
 // An opaque base interface type for plugins is defined for type-safety in statically-typed languages.
 
 enum PluginType\
-"vcdiff"
+"vcdiff" // PC3
 
 class VCDiffDecoder\
-decode(\[byte\] delta, \[byte\] base) -\> \[byte\]
+decode(\[byte\] delta, \[byte\] base) -\> \[byte\] // PC3a
 
 class DeltaExtras\
 from: String // the id of the message the delta was generated from\
