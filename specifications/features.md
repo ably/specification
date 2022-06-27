@@ -364,6 +364,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### RealtimeClient
 
+- `(RTC12)` Has the same constructors as `RestClient`, as defined in [RSC1](#RSC1)
 - `(RTC1)` Supports all the same `ClientOptions` as the `RestClient` in addition to:
   - `(RTC1a)` `echoMessages` boolean is true by default. If false, it prevents messages originating from this connection being echoed back on the same connection
   - `(RTC1b)` `autoConnect` boolean is true by default. If true, as soon as the client library is instantiated, it will connect to Ably. If false, the client library will wait for an explicit `Connection#connect` to be called before connecting
@@ -2003,8 +2004,8 @@ unit: .Minute \| .Hour \| .Day \| .Month api-default .Minute // RSC6b4\
 time() =\> io Time // RSC16
 
 class RealtimeClient: // RTC\*\
-constructor(keyOrTokenStr: String) // RSC1\
-constructor(ClientOptions) // RSC1\
+constructor(keyOrTokenStr: String) // RTC12\
+constructor(ClientOptions) // RTC12\
 auth: Auth // RTC4\
 push: Push\
 batch: BatchOperations // BO1\
