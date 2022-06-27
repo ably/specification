@@ -2549,9 +2549,6 @@ publish(recipient: JsonObject, data: JsonObject) =\> io // RSH1a\
 deviceRegistrations: PushDeviceRegistrations // RSH1b\
 channelSubscriptions: PushChannelSubscriptions // RSH1c
 
-class JsonObject:\
-// Platform-dependent, typically a Dict-like object
-
 class PushDeviceRegistrations: // RSH1b\
 get(deviceId: String) =\> io DeviceDetails // RSH1b1\
 list(params: Dict\<String, String\>) =\> io PaginatedResult`<DeviceDetails>`{=html} // RSH1b2\
