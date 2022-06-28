@@ -1887,6 +1887,7 @@ Presence ops.
     - `(TO3l10)` `fallbackRetryTimeout` integer - default 600000 (10 minutes). (After a failed request to the default endpoint, followed by a successful request to a fallback endpoint), the period in milliseconds before HTTP requests are retried against the default endpoint
   - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
   - `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
+  - `(TO3q)` `transportParams` \[String: Stringifiable\]? - defaults to null. Described in [RTC1f](#RTC1f)
 
 #### TokenParams {#token-params}
 
@@ -2072,7 +2073,7 @@ recover: String? // RTC1c, TO3i\
 tls: Bool default true // RSC18, TO3d\
 tlsPort: Int default 443 // TO3k5\
 useBinaryProtocol: Bool default true // TO3f\
-transportParams: \[String: Stringifiable\]? // RTC1f\
+transportParams: \[String: Stringifiable\]? // TO3q, RTC1f\
 addRequestIds: Bool default false // TO3p\
 // configurable retry and failure defaults\
 disconnectedRetryTimeout: Duration default 15s // TO3l1\
