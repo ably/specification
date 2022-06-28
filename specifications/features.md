@@ -1897,6 +1897,7 @@ Presence ops.
   - `(TK2b)` `capability` string - Capability requirements JSON stringified for the token. When omitted, Ably will default to the capabilities of the underlying key
   - `(TK2c)` `clientId` string - A `clientId` string to associate with this token. If `clientId` is `null` or omitted, then the token is prohibited from assuming a `clientId` in any operations, however if `clientId` is a wildcard string `'*'`, then the token is permitted to assume any `clientId`. Any other string value for `clientId` implies that the `clientId` is both enforced and assumed for all operations for this token
   - `(TK2d)` `timestamp` long - The timestamp (in milliseconds since the epoch) of this request. Timestamps, in conjunction with the `nonce`, are used to prevent requests from being replayed. `timestamp` is a "one-time" value, and is valid in a request, but is not validly a member of any default token params such as `ClientOptions#defaultTokenParams`
+  - `(TK2e)` `nonce` optional string - Used to prevent against replay attacks. If not provided, then the library will automatically generate one if needed, as described by [RSA9c](#RSA9c).
 
 #### AuthOptions
 
@@ -2107,7 +2108,7 @@ useTokenAuth: Bool? // RSA4, RSA14, TO3j4, AO2j
 class TokenParams: // TK\*\
 capability: String api-default '{"**":\["**"\]}' // RSA9f, TK2b\
 clientId: String? // TK2c\
-nonce: String? // RSA9c, Tk2d\
+nonce: String? // RSA9c, Tk2e\
 timestamp: Time? // RSA9d, TK2d\
 ttl: Duration api-default 60min // RSA9e, TK2a
 
