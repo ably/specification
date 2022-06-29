@@ -2087,7 +2087,7 @@ connect() // RTC15\
 time() =\> io Time // RTC6
 
 class ClientOptions: // TO\*\
-embeds AuthOptions // TO3j\
+embeds AuthOptions // This is not currently documented in the spec and needs to be -- see https://github.com/ably/docs/issues/1476\
 autoConnect: Bool default true // RTC1b, TO3e\
 clientId: String? // RSC17, RSA15, TO3a\
 defaultTokenParams: TokenParams? // TO3j11\
