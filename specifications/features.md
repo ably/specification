@@ -667,6 +667,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL22b)` The method must allow for matching only messages which do not have `extras.ref`.
   - `(RTL22c)` The listener must only execute if all provided criteria are met.
   - `(RTL22d)` The method should use the `MessageFilter` object if possible and idiomatic for the language.
+- `(RTL24)` `RealtimeChannel#errorReason` attribute is an optional `ErrorInfo` object which is set by the library when an error occurs on the channel, as described by [RTN11d](#RTN11d), [RTL3a](#RTL3a), [RTL4e](#RTL4e), [RTL4g](#RTL4g), [RTL14](#RTL14).
 
 ### RealtimePresence {#realtime-presence}
 
@@ -2195,7 +2196,7 @@ push: PushChannel // RSH7
 class RealtimeChannel: // RTL\*\
 embeds EventEmitter\<ChannelEvent, ChannelStateChange?\> // RTL2, RTL2a, RTL2d\
 name: String // RTL23\
-errorReason: ErrorInfo? // RTL4e\
+errorReason: ErrorInfo? // RTL24\
 state: ChannelState // RTL2b\
 presence: RealtimePresence // RTL9\
 properties: ChannelProperties // RTL15\
