@@ -1549,6 +1549,13 @@ Presence ops.
 - `(TM4)` `Message` has constructors `constructor(name: String?, data: Data?)` and `constructor(name: String?, data: Data?, clientId: String?)`.
 - `(TM3)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `Message`-like object (or array of such objects), and optionally a `channelOptions`, and return a `Message` (or array of such `Messages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves.
 
+#### DeltaExtras
+
+- `(DE1)` `DeltaExtras` describes a message whose payload is a "vcdiff"-encoded delta generated with respect to a base message.
+- `(DE2)` `DeltaExtras` has the following attributes:
+- `(DE2a)` `from` string - the ID of the base message the delta was generated from
+- `(DE2b)` `format` string -- the delta format; currently only "vcdiff" is allowed
+
 #### PresenceMessage
 
 - `(TP1)` A `PresenceMessage` represents an individual presence message to be sent or received via the Ably Realtime service. See the [Ruby PresenceMessage documentation](https://www.rubydoc.info/gems/ably/Ably/Models/PresenceMessage), but bear in mind the attributes following underscore naming in Ruby
@@ -2678,9 +2685,9 @@ enum PluginType // PT\*\
 class VCDiffDecoder // VD\*\
 decode(\[byte\] delta, \[byte\] base) -\> \[byte\] // VD2a, PC3a
 
-class DeltaExtras\
-from: String // the id of the message the delta was generated from\
-format: String //the delta format. Only vcdiff is supported as at API version 1.2
+class DeltaExtras // DE\*\
+from: String // DE2a\
+format: String // DE2b
 
 class ReferenceExtras: // REX\*\
 timeserial: String // REX2a\
