@@ -639,7 +639,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL22)` Methods must be provided for attaching and removing a listener which only executes when the message matches a set of criteria.
   - `(RTL22a)` The method must allow for filters matching one or more of: `extras.ref.timeserial`, `extras.ref.type` or `name`.
   - `(RTL22b)` The method must allow for matching only messages which do not have `extras.ref`.
-  - `(RTL22c)` The listener must only execute if all criteria defined in the provided `MessageFilter` object are met.
+  - `(RTL22c)` The listener must only execute if all provided criteria are met.
   - `(RTL22d)` The method should use the `MessageFilter` object if possible and idiomatic for the language.
 
 ### RealtimePresence {#realtime-presence}
