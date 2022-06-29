@@ -321,6 +321,12 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(PT2)` `PluginType` takes one of the following values:
   - `(PT2a)` `vcdiff` -- see [PC3](#PC3).
 
+### VCDiffDecoder {#vcdiff-decoder}
+
+- `(VD1)` `VCDiffDecoder` provides an interface for decoding "vcdiff"-encoded message payloads.
+- `(VD2)` `VCDiffDecoder` has the following interface:
+  - `(VD2a)` class method `decode([byte] delta, [byte] base) -> [byte]` - as described by [PC3a](#PC3a), given a base payload and the delta provided by a subsequent message, this returns the payload of that message
+
 ### RestPresence {#rest-presence}
 
 - `(RSP1)` RestPresence object is associated with a single channel and is accessible through `RestChannel#presence`
@@ -2669,8 +2675,8 @@ class Plugin // PC2\
 enum PluginType // PT\*\
 "vcdiff" // PT2a
 
-class VCDiffDecoder\
-decode(\[byte\] delta, \[byte\] base) -\> \[byte\] // PC3a
+class VCDiffDecoder // VD\*\
+decode(\[byte\] delta, \[byte\] base) -\> \[byte\] // VD2a, PC3a
 
 class DeltaExtras\
 from: String // the id of the message the delta was generated from\
