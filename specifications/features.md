@@ -315,6 +315,12 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(PC3)` A plugin provided with the `PluginType` enum key value of `vcdiff` should be capable of decoding "vcdiff"-encoded messages. It must implement the `VCDiffDecoder` interface and the client library must be able to use it by casting it to this interface.
   - `(PC3a)` The base argument of the `VCDiffDecoder.decode` method should receive the stored base payload of the last message on a channel as specified by [RTL19](#RTL19). If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the `VCDiffDecoder.decode` method.
 
+### PluginType {#plugin-type}
+
+- `(PT1)` `PluginType` is an enum describing the different types of plugins that the library supports. See the `ClientOptions#plugins` property ([TO3o](#TO3o)).
+- `(PT2)` `PluginType` takes one of the following values:
+  - `(PT2a)` `vcdiff` -- see [PC3](#PC3).
+
 ### RestPresence {#rest-presence}
 
 - `(RSP1)` RestPresence object is associated with a single channel and is accessible through `RestChannel#presence`
@@ -2660,8 +2666,8 @@ class Plugin // PC2\
 // Empty class/interface. Plugins are not expected to share any common interface.\
 // An opaque base interface type for plugins is defined for type-safety in statically-typed languages.
 
-enum PluginType\
-"vcdiff" // PC3
+enum PluginType // PT\*\
+"vcdiff" // PT2a
 
 class VCDiffDecoder\
 decode(\[byte\] delta, \[byte\] base) -\> \[byte\] // PC3a
