@@ -1851,6 +1851,7 @@ Presence ops.
   - `(MFI2b)` `refTimeserial` - A string for checking if a message's `extras.ref.timeserial` matches the supplied value
   - `(MFI2c)` `refType` - A string for checking if a message's `extras.ref.type` matches the supplied value
   - `(MFI2d)` `name` - A string for checking if a message's `name` matches the supplied value
+  - `(MFI2e)` `clientId` - A string checking for messages sent by a specific client ID
 
 #### ReferenceExtras
 
