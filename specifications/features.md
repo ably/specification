@@ -2265,7 +2265,7 @@ subscribeDevice() =\> io // RSH7a\
 subscribeClient() =\> io // RSH7b\
 unsubscribeDevice() =\> io // RSH7c\
 unsubscribeClient() =\> io // RSH7d\
-listSubscriptions() =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH7e
+listSubscriptions(params?: Dict\<String, String\>) =\> io PaginatedResult`<PushChannelSubscription>`{=html} // RSH7e
 
 class BatchSpec: // BSP\*\
 channels: \[String\] // BSP2a\
