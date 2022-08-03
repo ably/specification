@@ -708,7 +708,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP16c)` In any other case the operation should result in an error
 - `(RTP6)` `RealtimePresence#subscribe` function:
   - `(RTP6a)` Subscribe with a single listener argument subscribes a listener to all presence messages
-  - `(RTP6b)` Subscribe with an action argument and a listener argument - such as `ENTER`, `LEAVE`, `UPDATE` or `PRESENT` - subscribes a listener to receive only presence messages with that action
+  - `(RTP6b)` Subscribe with an action argument and a listener argument - such as `ENTER`, `LEAVE`, `UPDATE` or `PRESENT` - subscribes a listener to receive only presence messages with that action. In lanuages where method overloading is supported the action argument may also be an array of actions to receive only presence messages with an action included in the supplied array.
   - `(RTP6c)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. The optional callback, if provided, is called according to [`RTL4d`](#RTL4d) based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
 - `(RTP7)` `RealtimePresence#unsubscribe` function:
   - `(RTP7c)` Unsubscribe with no arguments unsubscribes all listeners
@@ -2365,7 +2365,7 @@ direction: .Backwards \| .Forwards api-default .Backwards, // RTP12a\
 limit: int api-default 100, // RTP12a\
 ) =\> io PaginatedResult`<PresenceMessage>`{=html} // RTP12\
 subscribe((PresenceMessage) -\>) =\> io // RTP6a\
-subscribe(PresenceAction, (PresenceMessage) -\>) =\> io // RTP6b\
+subscribe(PresenceAction \| \[PresenceAction\], (PresenceMessage) -\>) =\> io // RTP6b\
 unsubscribe() // RTP7c\
 unsubscribe((PresenceMessage) -\>) // RTP7a\
 unsubscribe(PresenceAction, (PresenceMessage) -\>) // RTP7b\
