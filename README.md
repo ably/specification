@@ -8,6 +8,11 @@ _[Ably](https://ably.com) is the platform that powers synchronized digital exper
 
 This repository has been created as the new home for the 'features spec' that describes the interfaces, implementation details and behaviours of SDKs (sometimes referred to as client libraries) that provide application developers with support to integrate and leverage the Ably platform in their solutions.
 
+## Versioning
+
+The version for all source contained within this repository as well as all artifacts generated or built from it is defined in [package.json](package.json).
+See [Release Process](CONTRIBUTING.md#release-process) for more details.
+
 ## Future Direction for Specification Point Adherence Tracking
 
 We have
