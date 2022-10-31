@@ -453,9 +453,11 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN8)` `Connection#id` attribute:
   - `(RTN8a)` Is unset until connected
   - `(RTN8b)` Is a unique string provided by Ably. You should have a test to ensure multiple connected clients have unique connection IDs
+  - `(RTN8c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
 - `(RTN9)` `Connection#key` attribute:
   - `(RTN9a)` Is unset until connected
   - `(RTN9b)` Is a unique private connection key provided by Ably that is used to reconnect and retain connection state following an unexpected disconnection. You should have a test to ensure multiple connected clients have unique connection keys
+  - `(RTN9c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
 - `(RTN10)` This clause has been removed as of the 2.0 spec.
 - `(RTN11)` `Connection#connect` function:
   - `(RTN11a)` Explicitly connects to the Ably service if not already connected
