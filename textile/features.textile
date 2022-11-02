@@ -429,7 +429,7 @@ h3(#realtime-connection). Connection
 ** @(RTN2b)@ @echo@ should be @true@ by default; @false@ will prevent messages published by the client being echoed back
 ** @(RTN2d)@ @clientId@ contains the provided @clientId@ option of @ClientOptions@, unless @clientId@ is @null@
 ** @(RTN2e)@ Depending on the authentication scheme, either @accessToken@ contains the token string, or @key@ contains the API key
-** @(RTN2h)@ Protocol version param @v@ must be the populated, where the value to be sent is defined in "@G5a@":#G5a
+** @(RTN2h)@ Protocol version param @v@ must be populated, where the value to be sent is defined in "@G5a@":#G5a
 ** @(RTN2g)@ The library and version (in the form described in "RSC7b":#RSC7b) should be included as the value of a @lib@ querystring param. For example, the 1.0.0 version of the JavaScript library would use the param @lib=js-1.0.0@
 ** @(RTN2f)@ This clause has been replaced by "@RTN2h@":#RTN2h as of version 2.0 of this specification
 * @(RTN3)@ If connection option @autoConnect@ is true, a connection is initiated immediately; otherwise a connection is only initiated following an explicit call to @connect()@
