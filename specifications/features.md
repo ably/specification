@@ -36,6 +36,7 @@ Types:\
 - Data types#types\
 - Options#options\
 - Push notifications#types-push\
+- Client library introspection#introspection\
 Interface Definition:\
 - Complete API IDL#idl\
 Previous version:\
@@ -2007,6 +2008,14 @@ Presence ops.
 - `(PCP3)` recipient - a map of string key/value pairs containing details of the push transport and address
 - `(PCP4)` state - the state of the push registration, one of `Active`, `Failing`, `Failed`
 
+### Client library introspection {#introspection}
+
+#### ClientInformation
+
+- `(CR1)` Provides information about the client library and the environment in which it's running.
+- `(CR2)` `agents` static property:
+  - `(CR2a)` Returns a `Dict<String, String?>` that lists the default key-value entries that the library uses to populate the `Agent` library identifier, as described by [`RSC7d1`](#RSC7d1). An example would be `{ "ably-java": "1.2.1", "android": "24" }`.
+
 ### Client Library defaults {#defaults}
 
 The following default values are configured for the client library:
@@ -2699,6 +2708,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class ReferenceExtras: // REX*
       timeserial: String // REX2a
       type: String //REX2b
+
+    class ClientInformation: // CR*
+      +agents: Dict<String, String?> // CR2
 
 ## Old specs
 
