@@ -2015,6 +2015,11 @@ Presence ops.
 - `(CR1)` Provides information about the client library and the environment in which it's running.
 - `(CR2)` `agents` static property:
   - `(CR2a)` Returns a `Dict<String, String?>` that lists the default key-value entries that the library uses to populate the `Agent` library identifier, as described by [`RSC7d1`](#RSC7d1). An example would be `{ "ably-java": "1.2.1", "android": "24" }`.
+- `(CR3)` `agentIdentifier` static method:
+  - `(CR3a)` The client library must only offer this method if it offers the `ClientOptions#agents` property described by [`RSC7d6`](#RSC7d6).
+  - `(CR3b)` Returns the `Agent` library identifier described by [`RSC7d`](#RSC7d).
+  - `(CR3c)` Accepts an `additionalAgents` parameter of type `Dict<String, String?>?`, whose value is to be interpreted with the same semantics as the `ClientOptions#agents` property. The `agentIdentifier` method will inject these agents into the `Agent` library identifier that it returns.
+  - `(CR3d)` An API commentary must be provided for this method. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
 
 ### Client Library defaults {#defaults}
 
@@ -2711,6 +2716,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
 
     class ClientInformation: // CR*
       +agents: Dict<String, String?> // CR2
+      +agentIdentifier(additionalAgents: Dict<String, String?>?) => String // CR3; interface only offered by some libraries
 
 ## Old specs
 
