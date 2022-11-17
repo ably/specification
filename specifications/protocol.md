@@ -200,42 +200,50 @@ Error contains the following fields.
 
 In transports that support JSON encoding, Strings and the JSON Object and Array types are represented as their natural JSON value in the enclosing type. For example, a Message with a string payload would be encoded in JSON (with white-space added here for clarity) as:
 
-bc\[json\]. {\
-"name": "my_event",\
-"data": "my_string_payload"\
+``` {lang="json"}
+{
+  "name": "my_event",
+  "data": "my_string_payload"
 }
+```
 
 For string and binary payload types, an `encoded` member is optionally added to the enclosing type. The only supported encodings are "utf8" for strings, "json" for JSON and "base64" for binary. If the encoding member is omitted it defaults to "utf8".
 
 Therefore, the following encoded messages each have string type:
 
-bc\[json\]. {\
-"name": "my_event",\
-"data": "my string payload"\
-}\
-{\
-"name": "my_event",\
-"data": "my string payload",\
-"encoding": "utf8"\
+``` {lang="json"}
+{
+  "name": "my_event",
+  "data": "my string payload"
 }
+{
+  "name": "my_event",
+  "data": "my string payload",
+  "encoding": "utf8"
+}
+```
 
 The following encoded message has binary type:
 
-bc\[json\]. {\
-"name": "my_event",\
-"data": "bXkgYmluYXJ5IHBheWxvYWQ=",\
-"encoding": "base64"\
+``` {lang="json"}
+{
+  "name": "my_event",
+  "data": "bXkgYmluYXJ5IHBheWxvYWQ=",
+  "encoding": "base64"
 }
+```
 
 The base64 encoding used is RFC4648 and clients must accept and process values with or without linefeeds.
 
 The following encoded message has JSON type:
 
-bc\[json\]. {\
-"name": "my_event",\
-"data": "{\\"id\\":\\"value\\"}",\
-"encoding": "json"\
+``` {lang="json"}
+{
+  "name": "my_event",
+  "data": "{\"id\":\"value\"}",
+  "encoding": "json"
 }
+```
 
 ### Message
 
@@ -306,13 +314,17 @@ In the [WebSocket](https://ably.com/topic/websockets) transport, the service ind
 
 An `ACK` message contains a `msgSerial` and `count` value. Receipt of this message signifies that the messages whose serial numbers are:
 
-bc\[json\]. { msgSerial ... msgSerial + count - 1 }
+``` {lang="json"}
+{ msgSerial ... msgSerial + count - 1 }
+```
 
 have been processed successfully.
 
 Similarly, a `NACK` message contains a `msgSerial` and `count` value and usually also an `error` value. Receipt of this message signifies that the messages whose serial numbers are:
 
-bc\[json\]. { msgSerial ... msgSerial + count - 1 }
+``` {lang="json"}
+{ msgSerial ... msgSerial + count - 1 }
+```
 
 have encountered processing failures. The client library must call the callback, if supplied, with the contained error value, or with an error value that indicates an internal error.
 

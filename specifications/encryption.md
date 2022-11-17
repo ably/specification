@@ -40,15 +40,15 @@ In the case of a JSON encoded encrypted message the `data` member always carries
 
 Therefore in the JSON encoding, an encrypted message is represented as follows:
 
-bc\[json\]. {\
-"id": "`<unique message ID string>`{=html}",\
-"name": "`<name>`{=html}",\
-"timestamp": `<timestamp>`{=html},\
-"data": "`<string containing base64-encoded representation of encrypted data>`{=html}",\
-"encoding": "cipher+aes-128-cbc/base64"\
+``` {lang="json"}
+{
+  "id": "<unique message ID string>",
+  "name": "<name>",
+  "timestamp": <timestamp>,
+  "data": "<string containing base64-encoded representation of encrypted data>",
+  "encoding": "cipher+aes-128-cbc/base64"
 }
-
-</pre>
+```
 
 ### Plaintext
 
