@@ -23,55 +23,57 @@ Provisioning a new app in the sandbox environment does not require any authentic
 
 The request body contains message details and is an object of the form:
 
-bc\[javascript\]. {\
-keys: \[\
-/\* Array of requested API keys & capabilities\
-See https://ably.com/docs/core-features/authentication \*/\
-\],\
-namespaces: \[\
-/\* Array of channel namespace rules\
-See https://ably.com/docs/general/channel-rules-namespaces \*/\
-\],\
-channels: \[\
-/\* Array of fixture data to persist in history for tests \*/\
-{\
-"name": /\* channel name String \*/\
-"presence":\[\
-/\* Array of member hashes on the channel with clientId and optional data \*/\
-\]\
-}\
-\]\
+``` {lang="javascript"}
+{
+  keys: [
+    /* Array of requested API keys & capabilities
+       See https://ably.com/docs/core-features/authentication */
+  ],
+  namespaces: [
+    /* Array of channel namespace rules
+       See https://ably.com/docs/general/channel-rules-namespaces */
+  ],
+  channels: [
+    /* Array of fixture data to persist in history for tests */
+    {
+      "name": /* channel name String */
+      "presence":[
+        /* Array of member hashes on the channel with clientId and optional data */
+      ]
+    }
+  ]
 }
+```
 
 Example request:
 
-bc\[sh\]. curl -X POST https://sandbox-rest.ably.io/apps \\\
--H "Content-Type: application/json" \\\
----data '\
-{\
-"keys":\[\
-{},\
-{\
-"capability": "{ \\"\*\\":\[\\"subscribe\\",\\"publish\\"\] }"\
-},\
-{\
-"capability": "{ \\"private\\":\[\\"subscribe\\",\\"publish\\"\], \\"chat\\":\[\\"presence\\"\] }"\
-}\
-\],\
-"namespaces":\[\
-{ [id]("persisted"), [persisted](true) },\
-{ [id]("chat"), [persisted](true) }\
-\],\
-"channels":\[\
-{\
-[name]("chat"),\
-"presence":\[\
-{ [clientId]("John"), [data]("john@test.com") },\
-{ [clientId]("Dave"), [data]("dave@test.com") }\
-\]\
-}\
-\]\
-}'
+    curl -X POST https://sandbox-rest.ably.io/apps \
+     -H "Content-Type: application/json" \
+     --data '
+      {
+        "keys":[
+          {},
+          {
+            "capability": "{ \"*\":[\"subscribe\",\"publish\"] }"
+          },
+          {
+            "capability": "{ \"private\":[\"subscribe\",\"publish\"], \"chat\":[\"presence\"] }"
+          }
+        ],
+        "namespaces":[
+          { "id":"persisted", "persisted":true },
+          { "id":"chat", "persisted":true }
+        ],
+        "channels":[
+          {
+            "name":"chat",
+            "presence":[
+              { "clientId":"John", "data":"john@test.com" },
+              { "clientId":"Dave", "data":"dave@test.com" }
+            ]
+          }
+        ]
+      }'
 
 ##### Options
 
@@ -85,90 +87,92 @@ Once the app, keys and associated fixture data is provisioned within the sandbox
 
 Example `json_result`:
 
-bc\[json\]. {\
-"status": 1,\
-"created": 1427027306492,\
-"modified": 1427027306492,\
-"tlsOnly": false,\
-"labels": "autodelete",\
-"id": "RvMHnA:mO_fpQ",\
-"appId": "mO_fpQ",\
-"accountId": "RvMHnA",\
-"keys": \[\
-{\
-"id": "TfycQA",\
-"scopeId": "app:mO_fpQ",\
-"status": 0,\
-"type": 0,\
-"value": "z_Qclvo2g5hoZS49",\
-"created": 1427027306880,\
-"modified": 1427027306880,\
-"capability": "{\\"**\\":\[\\"**\\"\]}",\
-"expires": 1427030906880,\
-"privileged": false\
-},\
-{\
-"id": "JpfL9Q",\
-"scopeId": "app:mO_fpQ",\
-"status": 0,\
-"type": 0,\
-"value": "IgcN3ppcaB6STi8i",\
-"created": 1427027306956,\
-"modified": 1427027306956,\
-"capability": "{\\"\*\\":\[\\"publish\\",\\"subscribe\\"\]}",\
-"expires": 1427030906956,\
-"privileged": false\
-},\
-{\
-"id": "y_BGvA",\
-"scopeId": "app:mO_fpQ",\
-"status": 0,\
-"type": 0,\
-"value": "VDAzscwkqMG3k6lF",\
-"created": 1427027306957,\
-"modified": 1427027306957,\
-"capability": "{\\"chat\\":\[\\"presence\\"\],\\"private\\":\[\\"publish\\",\\"subscribe\\"\]}",\
-"expires": 1427030906957,\
-"privileged": false\
-}\
-\],\
-"namespaces": \[\
-{\
-"id": "persisted",\
-"created": 1427027307112,\
-"modified": 1427027307112,\
-"persisted": true\
-},\
-{\
-"id": "chat",\
-"created": 1427027307117,\
-"modified": 1427027307117,\
-"persisted": true\
-}\
-\],\
-"connections": \[\
-{\
-"name": "sole",\
-"key": "SxWts_hwr1vTKXWY"\
-}\
-\],\
-"channels": \[\
-{\
-"name": "chat",\
-"presence": \[\
-{\
-"clientId": "John",\
-"data": "john@test.com"\
-},\
-{\
-"clientId": "Dave",\
-"data": "dave@test.com"\
-}\
-\],\
-"connection": "sole"\
-}\
-\]\
+``` {lang="json"}
+{
+  "status": 1,
+  "created": 1427027306492,
+  "modified": 1427027306492,
+  "tlsOnly": false,
+  "labels": "autodelete",
+  "id": "RvMHnA:mO_fpQ",
+  "appId": "mO_fpQ",
+  "accountId": "RvMHnA",
+  "keys": [
+    {
+      "id": "TfycQA",
+      "scopeId": "app:mO_fpQ",
+      "status": 0,
+      "type": 0,
+      "value": "z_Qclvo2g5hoZS49",
+      "created": 1427027306880,
+      "modified": 1427027306880,
+      "capability": "{\"*\":[\"*\"]}",
+      "expires": 1427030906880,
+      "privileged": false
+    },
+    {
+      "id": "JpfL9Q",
+      "scopeId": "app:mO_fpQ",
+      "status": 0,
+      "type": 0,
+      "value": "IgcN3ppcaB6STi8i",
+      "created": 1427027306956,
+      "modified": 1427027306956,
+      "capability": "{\"*\":[\"publish\",\"subscribe\"]}",
+      "expires": 1427030906956,
+      "privileged": false
+    },
+    {
+      "id": "y_BGvA",
+      "scopeId": "app:mO_fpQ",
+      "status": 0,
+      "type": 0,
+      "value": "VDAzscwkqMG3k6lF",
+      "created": 1427027306957,
+      "modified": 1427027306957,
+      "capability": "{\"chat\":[\"presence\"],\"private\":[\"publish\",\"subscribe\"]}",
+      "expires": 1427030906957,
+      "privileged": false
+    }
+  ],
+  "namespaces": [
+    {
+      "id": "persisted",
+      "created": 1427027307112,
+      "modified": 1427027307112,
+      "persisted": true
+    },
+    {
+      "id": "chat",
+      "created": 1427027307117,
+      "modified": 1427027307117,
+      "persisted": true
+    }
+  ],
+  "connections": [
+    {
+      "name": "sole",
+      "key": "SxWts_hwr1vTKXWY"
+    }
+  ],
+  "channels": [
+    {
+      "name": "chat",
+      "presence": [
+        {
+          "clientId": "John",
+          "data": "john@test.com"
+        },
+        {
+          "clientId": "Dave",
+          "data": "dave@test.com"
+        }
+      ],
+      "connection": "sole"
+    }
+  ]
 }
+```
 
 ### Creating stats fixture data {#stats-data}
 
@@ -180,38 +184,38 @@ See [application statistics](/general/statistics) for more information on the me
 
 Example request:
 
-bc\[sh\]. curl https://sandbox-rest.ably.io/stats \\\
--H "Content-Type: application/json" \\\
--u "\[\[API_KEY_FROM_APP_CREATION\]\]" \\\
----data '\[\
-{\
-[intervalId]("2014-02-03:15:03"),\
-"inbound": {\
-"realtime": {\
-"messages": {[count](50), [data](5000})\
-}\
-},\
-"outbound": {\
-"realtime": {\
-"messages": {[count](20), [data](2000})\
-}\
-}\
-},\
-{\
-[intervalId]("2014-02-03:15:04"),\
-"inbound": {\
-"realtime": {\
-"messages": {[count](70), [data](7000})\
-}\
-},\
-"persisted": {\
-"presence": {[count](20), [data](2000})\
-},\
-"connections": {\
-"tls": {[peak](20), [opened](10})\
-}\
-}\
-\]'
+    curl https://sandbox-rest.ably.io/stats \
+      -H "Content-Type: application/json" \
+      -u "[[API_KEY_FROM_APP_CREATION]]" \
+      --data '[
+      {
+        "intervalId":"2014-02-03:15:03",
+        "inbound": {
+          "realtime": {
+            "messages": {"count":50, "data":5000}
+          }
+        },
+        "outbound": {
+          "realtime": {
+            "messages": {"count":20, "data":2000}
+          }
+        }
+      },
+      {
+        "intervalId":"2014-02-03:15:04",
+        "inbound": {
+          "realtime": {
+            "messages": {"count":70, "data":7000}
+          }
+        },
+        "persisted": {
+          "presence": {"count":20, "data":2000}
+        },
+        "connections": {
+          "tls": {"peak":20, "opened":10}
+        }
+      }
+    ]'
 
 ##### Options
 
