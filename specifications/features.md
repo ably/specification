@@ -516,14 +516,15 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN16f)` When a library is instantiated with the `recover` client option, it should initialize its internal `msgSerial` counter to the `msgSerial` component of the `recoveryKey`. (If the recover fails, the counter should be reset to 0 per [RTN15c7](#RTN15c7) )
   - `(RTN16j)` When a library is instantiated with the `recover` client option, for every channel/channelSerial pair in the `recoveryKey`, it should instantiate a corresponding channel and set its [RTL15b](#RTL15b) `channelSerial`.
   - `(RTN16k)` When the library first connects to Ably after being instantiated with a `recover` client option, it should add an additional `recover` querystring param to the websocket request, set from the `connectionKey` component of the `recoveryKey`. Once the library has successfully connected to Ably, it should never again supply a `recover` querystring param.
-  - `(RTN16g)` `Connection#createRecoveryKey` is function that returns a string which incorporates the `connectionKey`, the current `msgSerial`, and a collection of pairs of channel `name` and current `channelSerial` for every currently attached channel.
+  - `(RTN16g)` `Connection#createRecoveryKey` is a function that returns a string which incorporates the `connectionKey`, the current `msgSerial`, and a collection of pairs of channel `name` and current `channelSerial` for every currently attached channel.
     - `(RTN16g1)` It must be serialized in a way which is able to encode any unicode channel name. The SDK may assume that the recovery key will only be consumed by the same type of SDK, so this spec does not specify any particular serialization; however, the format should be forward-compatible through the same major version of the SDK.
     - `(RTN16g2)` It should return `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states, or when it does not have a `connectionKey` (for example, it has not yet become connected).
-  - `(RTN16d)` The library may wish to test that after a connection has been successfully recovered, the `Connection#id` should be identical to the `id` of the connection that was recovered, and `Connection#key` should have been updated to the `ConnectionDetails#connectionKey` provided in the `CONNECTED` `ProtocolMessage`.
+  - `(RTN16m)` `Connection#recoveryKey` is a deprecated property that, when read, contains the same value that would be returned by calling `Connection#createRecoveryKey`. If the implementation languague allows, it should be implemented in a way that does not require that it be recalculated on every message. If this is not possible, it should be recalculated on every incoming message.
+    - `(RTN16m1)` `Connection#recoveryKey` must be removed on the next major release of the SDK.
   - `(RTN16l)` Recovery failures should be handled identically to resume failures, per [RTN15c7](#RTN15c7), [RTN15c5](#RTN15c5), and [RTN15c4](#RTN15c4).
   - `(RTN16a)` This clause has been replaced by RTN16i as of the 2.0 spec.
-  - `(RTN16b)` This clause has been removed as of the 2.0 spec and replaced with `RTN16g`.
-  - `(RTN16c)` This clause has been replaced by RTN16h as of the 2.0 spec.
+  - `(RTN16b)` This clause has been removed as of the 2.0 spec and replaced with `RTN16g` and `RTN16m`.
+  - `(RTN16c)` This clause has been replaced by RTN16g2 as of the 2.0 spec.
   - `(RTN16e)` This clause has been replaced by RTN16l as of the 2.0 spec.
 - `(RTN17)` Host Fallback
   - `(RTN17b)` The fallback behavior described by this section, [RTN17](#RTN17), only applies when either:
@@ -2501,7 +2502,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       errorReason: ErrorInfo? // RTN25
       id: String? // RTN8
       key: String? // RTN9
-      createRecoveryKey(): String? // RTN16g, RTN16c
+      createRecoveryKey(): String? // RTN16g
+      recoveryKey: String? // RTN16m
       state: ConnectionState // RTN4d
       close() // RTN12
       connect() // RTC1b, RTN3, RTN11
