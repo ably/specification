@@ -470,7 +470,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN9a)` Is unset until connected
   - `(RTN9b)` Is a unique private connection key provided by Ably that is used to reconnect and retain connection state following an unexpected disconnection. You should have a test to ensure multiple connected clients have unique connection keys
   - `(RTN9c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
-- `(RTN10)` This clause has been removed as of the 2.0 spec.
+- `(RTN10)` This clause has been deleted. It was valid up to and including specification version 1.2.
 - `(RTN11)` `Connection#connect` function:
   - `(RTN11a)` Explicitly connects to the Ably service if not already connected
   - `(RTN11b)` If the state is `CLOSING`, the client should make a new connection with a new transport instance and remove all references to the old one. In particular, it should make sure that, when the `CLOSED` `ProtocolMessage` arrives for the old connection, it doesn't affect the new one.
@@ -508,16 +508,16 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTN15g3)` When a connection attempt succeeds after the connection state has been cleared in this way, channels that were previously `ATTACHED`, `ATTACHING`, or `SUSPENDED` must be automatically reattached, just as if the connection was a resume attempt which failed per [RTN15c7](#RTN15c7)
   - `(RTN15b)` In order for a connection to be resumed and connection state to be recovered, the client must have received a `CONNECTED` ProtocolMessage which will include a private connection key. To resume that connection, the library reconnects to the [websocket](https://ably.com/topic/websockets) endpoint with an additional querystring param:
     - `(RTN15b1)` `resume` is the `ProtocolMessage#connectionKey` from the most recent `CONNECTED` `ProtocolMessage` received
-    - `(RTN15b2)` This clause has been removed as of the 2.0 spec.
+    - `(RTN15b2)` This clause has been deleted. It was valid up to and including specification version 1.2.
   - `(RTN15c)` The system's response to a resume request will be one of the following:
     - `(RTN15c6)` A `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client (and no `error` property). This indicates that the resume attempt was valid. The client library should move all channels that were in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states to the `ATTACHING` state, and initiate an `RTL4c` attach sequence for each. The connection should also process any messages queued per `RTL6c2` (there is no need to wait for the attaches to finish before processing queued messages).
     - `(RTN15c7)` `CONNECTED` `ProtocolMessage` with a new `connectionId` and an `ErrorInfo` in the `error` field. In this case, the resume was invalid, and the error indicates the cause. The `error` should be set as the `reason` in the `CONNECTED` event, and as the `Connection#errorReason`. The internal `msgSerial` counter should be reset so that the first message published to Ably will contain a `msgSerial` of `0`. The rest of the process is the same as for `RTN16c6`: The client library should move all channels that were in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states to the `ATTACHING` state, and initiate an `RTL4c` attach sequence for each. The connection should also process any messages queued per `RTL6c2`.
     - `(RTN15c5)` `ERROR` `ProtocolMessage` indicating a failure to authenticate as a result of a token error (see [RTN15h](#RTN15h)). The transport will be closed by the server. The spec described in [RTN15h](#RTN15h) must be followed for a connection being resumed with a token error
     - `(RTN15c4)` Any other `ERROR` `ProtocolMessage` indicating a fatal error in the connection. The server will close the transport immediately after. The client should transition to the `FAILED` state triggering all attached channels to transition to the `FAILED` state as well. Additionally the `Connection#errorReason` will be set should be set with the error received from Ably
-    - `(RTN15c1)` This clause has been replaced by RTN15c6 as of the 2.0 spec.
-    - `(RTN15c2)` This clause has been replaced by RTN15c7 as of the 2.0 spec.
-    - `(RTN15c3)` This clause has been replaced by RTN15c7 as of the 2.0 spec.
-  - `(RTN15f)` This clause has been removed of the 2.0 spec (redundant to [RTN19a](#RTN19a)).
+    - `(RTN15c1)` This clause has been replaced by [`RTN15c6`](#RTN15c6). It was valid up to and including specification version `1.2`.
+    - `(RTN15c2)` This clause has been replaced by [`RTN15c7`](#RTN15c7). It was valid up to and including specification version `1.2`.
+    - `(RTN15c3)` This clause has been replaced by [`RTN15c7`](#RTN15c7). It was valid up to and including specification version `1.2`.
+  - `(RTN15f)` This clause has been deleted (redundant to [RTN19a](#RTN19a)). It was valid up to and including specification version 1.2.
   - `(RTN15d)` Client libraries should have test coverage to ensure connection state recovery is working as expected by forcibly disconnecting a client and checking that messages published on channels are delivered once the connection is resumed
   - `(RTN15e)` When a connection is resumed, the `Connection#key` may change and will be provided in the first `CONNECTED` `ProtocolMessage#connectionDetails` when the connection is established. The client library must update the `Connection#key` value with the new `connectionKey` value every time
 - `(RTN20)` When the client library can subscribe to the Operating System events for network/internet connectivity changes:
@@ -534,10 +534,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN16m)` `Connection#recoveryKey` is a deprecated property that, when read, contains the same value that would be returned by calling `Connection#createRecoveryKey`. If the implementation languague allows, it should be implemented in a way that does not require that it be recalculated on every message. If this is not possible, it should be recalculated on every incoming message.
     - `(RTN16m1)` `Connection#recoveryKey` must be removed on the next major release of the SDK.
   - `(RTN16l)` Recovery failures should be handled identically to resume failures, per [RTN15c7](#RTN15c7), [RTN15c5](#RTN15c5), and [RTN15c4](#RTN15c4).
-  - `(RTN16a)` This clause has been replaced by RTN16i as of the 2.0 spec.
-  - `(RTN16b)` This clause has been removed as of the 2.0 spec and replaced with `RTN16g` and `RTN16m`.
-  - `(RTN16c)` This clause has been replaced by RTN16g2 as of the 2.0 spec.
-  - `(RTN16e)` This clause has been replaced by RTN16l as of the 2.0 spec.
+  - `(RTN16a)` This clause has been replaced by [`RTN16i`](#RTN16i). It was valid up to and including specification version `1.2`.
+  - `(RTN16b)` This clause has been replaced by [`RTN16g`](#RTN16g) and [`RTN16m`](#RTN16m). It was valid up to and including specification version `1.2`.
+  - `(RTN16c)` This clause has been replaced by [`RTN16g2`](#RTN16g2). It was valid up to and including specification version `1.2`.
+  - `(RTN16e)` This clause has been replaced by [`RTN16l`](#RTN16l). It was valid up to and including specification version `1.2`.
 - `(RTN17)` Host Fallback
   - `(RTN17b)` The fallback behavior described by this section, [RTN17](#RTN17), only applies when either:
     - `(RTN17b1)` `ClientOptions#realtimeHost` has not been set to an explicit value (see [RTC1d](#RTC1d)) and `ClientOptions#port` is not set and `ClientOptions#tlsPort` is not set
@@ -723,8 +723,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP17h)` Unlike the main `PresenceMap`, which is keyed by [memberKey](#TP3h) , the `RTP17` `PresenceMap` must be keyed only by `clientId`. (Otherwise, entries associated with old `connectionId`s would never be removed, even if the user deliberately leaves presence).
   - `(RTP17f)` The RealtimePresence object should perform automatic re-entry whenever a channel moves into the `ATTACHED` state. (It does not need to do so for `RTL12` `ATTACHED` events received on already-`ATTACHED` channels).
   - `(RTP17g)` Automatic re-entry consists of, for each member of the `RTP17` internal `PresenceMap`, publishing a `PresenceMessage` with an `ENTER` action using the `clientId`, `data`, and `id` attributes from that member.
-  - `(RTP17c)` This clause and its subclauses have been replaced by `RTP17f` as of the 2.0 spec.
-  - `(RTP17d)` This clause has been replaced by `RTP17g` as of the 2.0 spec.
+  - `(RTP17c)` This clause has been replaced by [`RTP17f`](#RTP17f). It was valid up to and including specification version `1.2`.
+  - `(RTP17d)` This clause has been replaced by [`RTP17g`](#RTP17g). It was valid up to and including specification version `1.2`.
   - `(RTP17e)` If the publish attempt fails for an automatic presence `ENTER` (for example, by Ably rejecting it with a `NACK`), an `UPDATE` event should be emitted on the channel with `resumed` set to true and `reason` set to an `ErrorInfo` object with `code` `91004`, a `message` indicating that an automatic re-enter has failed and indicating the `clientId`, and `cause` set to the reason for the enter failure. The error should also be logged at `warn` level or higher.
 - `(RTP4)` Ensure a test exists that enters 250 members using `RealtimePresence#enterClient` on a single connection, and checks for `PRESENT` events to be emitted on another connection for each member, and once sync is complete, all 250 members should be present in a `RealtimePresence#get` request
 - `(RTP5)` RealtimeChannel state change side effects:
@@ -1629,7 +1629,7 @@ Presence ops.
   - `(TR4b)` `channel` string
   - `(TR4c)` `channelSerial` string
   - `(TR4d)` `connectionId` string
-  - `(TR4f)` This attribute has been removed as of the 2.0 spec
+  - `(TR4f)` This clause has been deleted. It was valid up to and including specification version 1.2.
   - `(TR4o)` `connectionDetails` `ConnectionDetails` object - provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
   - `(TR4g)` `count` integer
   - `(TR4h)` `error` `ErrorInfo` object
