@@ -51,13 +51,25 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 *Please note we maintain a separate Google Sheet that keeps track of which features are implemented and matching test coverage for each client library. If you intend to work on an Ably client library, please [contact us](https://ably.com/contact) for access to this Google Sheet as it is useful as a reference and also needs to be kept up to date*
 
+## Client and Service Versions {#versions}
+
+- `(CSV1)` **Specification Version**: This document defines the Ably client library features specification ('features spec').
+  - `(CSV1a)` The specification version is a SemVer value (from specification version `2.0.0` onwards).
+  - `(CSV1b)` This document defines specification version `{{ SPECIFICATION_VERSION }}`.
+- `(CSV2)` **Service Version**: This document describes requirements for client libraries that are compatible with Ably endpoints at a specific service version (also referred to as the 'wire protocol' version).
+  - `(CSV2a)` The service version is an Integer value (from service version `2` onwards - it was a Decimal prior to that, for example `1.2`).
+  - `(CSV2b)` This document is compatible with service version `{{ SERVICE_VERSION }}`.
+  - `(CSV2c)` A client library must identify to Ably the service version it uses in all requests and connections, per [`RSC7a`](#RSC7a) and [`RTN2f`](#RTN2f).
+  - `(CSV2d)` It is expected, very likely required, that client libraries which implement most or all of this specification at the version defined in this document ([`CSV1b`](CSV1b)) will need to identify with Ably at the service version defined in this document ([`CSV2b`](#CSV2b)). There may, from time to time, be edge cases where this is not the case but these must be considered very carefully (for example a client library using an older service version until fully implemented).
+  - `(CSV2e)` Client libraries that need to send a Decimal service version must send the exact string specified in [`CSV2b`](#CSV2b) (previously `G4`). Therefore, it is recommended that client library implementations treat the version opaquely, as a string, not a float.
+
 ## Test guidelines
 
 - `(G1)` Every test should be executed using all supported protocols (i.e. JSON and [MessagePack](https://msgpack.org/) if supported). This includes both sending & receiving data
 - `(G2)` All tests by default are run against a special Ably sandbox environment. This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a `POST` request to `https://sandbox-rest.ably.io/apps` with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see [ably-common test-app-setup.json](https://github.com/ably/ably-common/blob/main/test-resources/test-app-setup.json). Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
 - `(G3)` Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics. As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions. To create stats you must send an authenticated `POST` request to the stats JSON to `https://sandbox-rest.ably.io/stats` with the stats data you wish to create. See the [JavaScript stats fixture](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51) and [setup helper](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182) as an example
-- `(G4)` This version of the spec conforms to version `2` of the Ably wire protocol. A client library must identify to Ably the version of the wire protocol it uses in all requests and connections, per [RSC7a](#RSC7a) and [RTN2f](#RTN2f).
-  - `(G4a)` When sending the API version to Ably, the SDK must send the exact string specified in `G4`. Therefore, it is recommended that the SDK treat the version opaquely, as a string, not a float.
+- `(G4)` This clause has been replaced by [`CSV1`](#CSV1) and [`CSV2`](#CSV2). It was valid up to and including specification version 1.2.
+  - `(G4a)` This clause has been replaced by [`CSV2d`](#CSV2d). It was valid up to and including specification version 1.2.
 
 ## REST client library {#rest}
 
@@ -82,7 +94,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSC21)` `RestClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
 - `(RSC22)` `RestClient#batch` attribute provides access to the `BatchOperations` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint `rest.ably.io`
-  - `(RSC7a)` The header `X-Ably-Version: 2` must be included in all REST requests to the Ably endpoint
+  - `(RSC7a)` The `X-Ably-Version` HTTP header must be included in all REST requests to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
   - `(RSC7b)` (Please note this clause and the associated header have now been superseded by [RCS7d](#RSC7d)) The header `X-Ably-Lib: [lib][.optional variant]?-[version]` should be included in all REST requests to the Ably endpoint where `[lib]` is the name of the library such as `js` for `ably-js`, `[.optional variant]` is an optional library variant, such as `laravel` for the `php` library, which is always delimited with a period such as `php.laravel`, and where `[version]` is the full client library version using [Semver](http://semver.org/) such as `1.0.2`. For example, the 1.0.0 version of the JavaScript library would use the header `X-Ably-Lib: js-1.0.0`.
     - `(RSC7b1)` When it is not possible to send the `X-Ably-Lib` header, such as for `JSONP` requests, the library version should be sent as a query param such as `lib=js-1.0.0`
   - `(RSC7c)` If the `addRequestIds` client option is enabled, every REST request to Ably should include in a `request_id` query string parameter a random string obtained by url-safe base64-encoding a sequence of at least 9 bytes obtained from a source of randomness. This request ID must remain the same if a request is retried to a fallback host per `RSC15`. Any log messages associated with the request should include the request ID. If the request fails, the request ID must be included in the `ErrorInfo` returned to the user.
@@ -429,7 +441,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN2b)` `echo` should be `true` by default; `false` will prevent messages published by the client being echoed back
   - `(RTN2d)` `clientId` contains the provided `clientId` option of `ClientOptions`, unless `clientId` is `null`
   - `(RTN2e)` Depending on the authentication scheme, either `accessToken` contains the token string, or `key` contains the API key
-  - `(RTN2f)` API version param `v` should be the API version per [G4](#G4)
+  - `(RTN2f)` The API version param `v` must be included in all connections to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
   - `(RTN2g)` The library and version (in the form described in [RSC7b](#RSC7b)) should be included as the value of a `lib` querystring param. For example, the 1.0.0 version of the JavaScript library would use the param `lib=js-1.0.0`
 - `(RTN3)` If connection option `autoConnect` is true, a connection is initiated immediately; otherwise a connection is only initiated following an explicit call to `connect()`
 - `(RTN4)` The `Connection` implements `EventEmitter` and emits `ConnectionEvent` events, where a `ConnectionEvent` is either a `ConnectionState` or `UPDATE`, and a `ConnectionState` is either `INITIALIZED`, `CONNECTING`, `CONNECTED`, `DISCONNECTED`, `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`
