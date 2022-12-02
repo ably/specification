@@ -470,7 +470,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN9a)` Is unset until connected
   - `(RTN9b)` Is a unique private connection key provided by Ably that is used to reconnect and retain connection state following an unexpected disconnection. You should have a test to ensure multiple connected clients have unique connection keys
   - `(RTN9c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
-- `(RTN10)` This clause has been deleted. It was valid up to and including specification version 1.2.
+- `(RTN10)` This clause has been deleted. It was valid up to and including specification version `1.2`.
 - `(RTN11)` `Connection#connect` function:
   - `(RTN11a)` Explicitly connects to the Ably service if not already connected
   - `(RTN11b)` If the state is `CLOSING`, the client should make a new connection with a new transport instance and remove all references to the old one. In particular, it should make sure that, when the `CLOSED` `ProtocolMessage` arrives for the old connection, it doesn't affect the new one.
