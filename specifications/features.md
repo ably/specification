@@ -51,7 +51,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 *Please note we maintain a separate Google Sheet that keeps track of which features are implemented and matching test coverage for each client library. If you intend to work on an Ably client library, please [contact us](https://ably.com/contact) for access to this Google Sheet as it is useful as a reference and also needs to be kept up to date*
 
-## Client and Service Versions {#versions}
+## Specification and Service Versions {#versions}
 
 - `(CSV1)` **Specification Version**: This document defines the Ably client library features specification ('features spec').
   - `(CSV1a)` The specification version is a SemVer value (from specification version `2.0.0` onwards).
