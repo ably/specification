@@ -1629,7 +1629,7 @@ Presence ops.
   - `(TR4b)` `channel` string
   - `(TR4c)` `channelSerial` string
   - `(TR4d)` `connectionId` string
-  - `(TR4f)` This clause has been deleted. It was valid up to and including specification version 1.2.
+  - `(TR4f)` This clause has been deleted. It was valid up to and including specification version `1.2`.
   - `(TR4o)` `connectionDetails` `ConnectionDetails` object - provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
   - `(TR4g)` `count` integer
   - `(TR4h)` `error` `ErrorInfo` object
