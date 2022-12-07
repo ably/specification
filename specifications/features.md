@@ -51,17 +51,17 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 *Please note we maintain a separate Google Sheet that keeps track of which features are implemented and matching test coverage for each client library. If you intend to work on an Ably client library, please [contact us](https://ably.com/contact) for access to this Google Sheet as it is useful as a reference and also needs to be kept up to date*
 
-## Specification and Service Versions {#versions}
+## Specification and Protocol Versions {#versions}
 
 - `(CSV1)` **Specification Version**: This document defines the Ably client library features specification ('features spec').
   - `(CSV1a)` The specification version is a SemVer value (from specification version `2.0.0` onwards).
   - `(CSV1b)` This document defines specification version `{{ SPECIFICATION_VERSION }}`.
-- `(CSV2)` **Service Version**: This document describes requirements for client libraries that are compatible with Ably endpoints at a specific service version (also referred to as the 'wire protocol' version).
-  - `(CSV2a)` The service version is an Integer value (from service version `2` onwards - it was a Decimal prior to that, for example `1.2`).
-  - `(CSV2b)` This document is compatible with service version `{{ SERVICE_VERSION }}`.
-  - `(CSV2c)` A client library must identify to Ably the service version it uses in all requests and connections, per [`RSC7a`](#RSC7a) and [`RTN2f`](#RTN2f).
-  - `(CSV2d)` It is expected, very likely required, that client libraries which implement most or all of this specification at the version defined in this document ([`CSV1b`](CSV1b)) will need to identify with Ably at the service version defined in this document ([`CSV2b`](#CSV2b)). There may, from time to time, be edge cases where this is not the case but these must be considered very carefully (for example a client library using an older service version until fully implemented).
-  - `(CSV2e)` Client libraries that need to send a Decimal service version must send the exact string specified in [`CSV2b`](#CSV2b) (previously `G4`). Therefore, it is recommended that client library implementations treat the version opaquely, as a string, not a float.
+- `(CSV2)` **Protocol Version**: This document describes requirements for client libraries that are compatible with Ably endpoints at a specific protocol version (also referred to as the 'wire protocol' version).
+  - `(CSV2a)` The protocol version is an Integer value (from protocol version `2` onwards - it was a Decimal prior to that, for example `1.2`).
+  - `(CSV2b)` This document is compatible with protocol version `{{ PROTOCOL_VERSION }}`.
+  - `(CSV2c)` A client library must identify to Ably the protocol version it uses in all requests and connections, per [`RSC7a`](#RSC7a) and [`RTN2f`](#RTN2f).
+  - `(CSV2d)` It is expected, very likely required, that client libraries which implement most or all of this specification at the version defined in this document ([`CSV1b`](CSV1b)) will need to identify with Ably at the protocol version defined in this document ([`CSV2b`](#CSV2b)). There may, from time to time, be edge cases where this is not the case but these must be considered very carefully (for example a client library using an older protocol version until fully implemented).
+  - `(CSV2e)` Client libraries that need to send a Decimal protocol version must send the exact string specified in [`CSV2b`](#CSV2b) (previously `G4`). Therefore, it is recommended that client library implementations treat the version opaquely, as a string, not a float.
 
 ## Test guidelines
 
