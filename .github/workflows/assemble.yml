@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: ably/github-event-context-action@v1
+      - uses: ably/github-event-context-action@fix-ref-null-property-access
         id: context
 
       - name: Read Tool Versions
