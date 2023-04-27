@@ -577,6 +577,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTS3c1)` If a new set of `ChannelOptions` is supplied to `Channels#get` that would trigger a reattachment of the channel if supplied to `RealtimeChannel#setOptions` per [`RTL16a`](#RTL16a), it must raise an error, informing the user that they must use `RealtimeChannel#setOptions` instead
 - `(RTS4)` `Channels#release` function:
   - `(RTS4a)` Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
+- `(RTS5)` `Channels#getDerived` function:
+  - `(RTS5a)` Takes `RealtimeChannel` name and `DeriveOptions` object as argument, to create a synthetic or derived channel. `ChannelOptions` can be provided as an optional third argument.
+    - `(RTS5a1)` If there is an existing valid channel param as `ChannelOptions`, they should be included in the derived channel.
 
 ### RealtimeChannel {#realtime-channel}
 
@@ -2361,6 +2364,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       cipher: (CipherParams | CipherParamOptions)? // RSL5a, TB2b
       params?: Dict<String, String> // TB2c
       modes?: [ChannelMode] // TB2d
+
+    class DeriveOptions: // RTS*
+      filter: String // RTS5a (<The filter string is a valid JMESPath String Expression>)
 
     class ChannelDetails: // CHD*
       channelId: String // CHD2a
