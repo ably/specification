@@ -578,8 +578,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTS4)` `Channels#release` function:
   - `(RTS4a)` Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
 - `(RTS5)` `Channels#getDerived` function:
-  - `(RTS5a)` Takes `RealtimeChannel` name and `DeriveOptions` object as argument, to create a synthetic or derived channel. `ChannelOptions` can be provided as an optional third argument.
-    - `(RTS5a1)` If there is an existing valid channel param as `ChannelOptions`, they should be included in the derived channel.
+  - `(RTS5a)` Takes `RealtimeChannel` name and `DeriveOptions` object as argument, to create a derived channel. `ChannelOptions` can be provided as an optional third argument.
+    - `(RTS5a1)` The provided derive option (e.g filter, which is the only supported derive options at the moment) should be synthesized to the channel as \[filter=`<base64 encoded JMESPath string>`{=html}\]channelName.
+    - `(RTS5a2)` If channel options are provided on the channel (e.g rewind channel param), the options are set on the derived channel upon creation as \[filter=`<base64 encoded JMESPath string>`{=html}?rewind=1\]channelName.
 
 ### RealtimeChannel {#realtime-channel}
 
@@ -2366,7 +2367,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       modes?: [ChannelMode] // TB2d
 
     class DeriveOptions: // RTS*
-      filter: String // RTS5a (<The filter string is a valid JMESPath String Expression>)
+      filter: String // RTS5a (The filter string is a valid JMESPath String Expression)
 
     class ChannelDetails: // CHD*
       channelId: String // CHD2a
