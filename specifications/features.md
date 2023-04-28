@@ -257,6 +257,13 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSA16b)` If the library is provided with a token without the corresponding `TokenDetails`, then this holds a `TokenDetails` instance in which only the `token` attribute is populated with that token string
   - `(RSA16c)` Is set with the current token (if applicable) on instantiation and each time it is replaced, whether the result of an explicit `Auth#authorize` operation, or a library-initiated renewal resulting from expiry or a token error response
   - `(RSA16d)` Is `null` if there is no current token, including after a previous token has been determined to be invalid or expired, or if the library is using basic auth
+- `(RSA17)` `Auth#revokeTokens` function:
+  - `(RSA17a)` Takes a `TokenRevocationTargetSpecifier` or an array of `TokenRevocationTargetSpecifier`s and sends them in a POST request to /keys/{API_KEY_NAME}/revokeTokens, with the newBatchResponse query param set to "true", where `API_KEY_NAME` is the API key name obtained by reading `AuthOptions#key` up until the first `:` character.
+  - `(RSA17b)` The `TokenRevocationTargetSpecifier`s should be mapped to strings by joining the `type` and `value` with a ":" character and sent in the `targets` field of the request body
+  - `(RSA17c)` Returns an array of `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `TokenRevocationTargetSpecifier` and return a single `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+  - `(RSA17d)` If called from a client using token authentication, should raise an `ErrorInfo` with a `40162` error code and `401` status code
+  - `(RSA17e)` Accepts an optional `issuedBefore` timestamp, represented as milliseconds since the epoch, or a \`Time\` object if idiomatic to the language
+  - `(RSA17f)` If an `allowReauthMargin` boolean is supplied, it should be included in the `allowReauthMargin` field of the request body
 
 ### Channels {#rest-channels}
 
@@ -1891,6 +1898,28 @@ Presence ops.
   - `(BGF2a)` `channel` string - the name of the channel
   - `(BGF2b)` `error` `ErrorInfo` - `ErrorInfo` indicating the reason the presence request failed for the given channel
 
+#### TokenRevocationTargetSpecifier
+
+- `(TRT1)` Describes which tokens should be affected by a token revocation request
+- `(TRT2)` The attributes of `TokenRevocationTargetSpecifier` consist of:
+  - `(TRT2a)` `type` string - the type of token revocation target specifier (eg. "clientId", "revocationKey", "channel")
+  - `(TRT2b)` `value` string - the value of the token revocation target specifier
+
+#### TokenRevocationSuccessResult
+
+- `(TRS1)` Contains information about the result of a successful token revocation request for a single target specifier
+- `(TRS2)` The attributes of `TokenRevocationSuccessResult` consist of:
+  - `(TRS2a)` `target` string - the target specifier
+  - `(TRS2b)` `appliesAt` Time - a timestamp at which the token revocation will take effect
+  - `(TRS2c)` `issuedBefore` Time - a timestamp for which tokens previously issued will be revoked
+
+#### TokenRevocationFailureResult
+
+- `(TRF1)` Contains information about the result of an unsuccessful token revocation request for a single target specifier
+- `(TRF2)` The attributes of `TokenRevocationFailureResult` consist of:
+  - `(TRF2a)` `target` string - the target specifier
+  - `(TRF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the token revocation request failed for the given specified
+
 #### MessageFilter
 
 - `(MFI1)` Supplies filter options to subscribe as defined in #RTL22
@@ -2220,6 +2249,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       createTokenRequest(TokenParams?, AuthOptions?) => io TokenRequest // RSA9
       requestToken(TokenParams?, AuthOptions?) => io TokenDetails // RSA8
       tokenDetails: TokenDetails? // RSA16
+      revokeTokens(TokenRevocationTargetSpecifier, issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult> // RSA17
+      revokeTokens(TokenRevocationTargetSpecifier[], issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>[] // RSA17
 
     class TokenDetails: // TD*
       +fromJson(String | JsonObject) -> TokenDetails // TD7
@@ -2772,6 +2803,19 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class BatchPresenceFailureResult
       channel: string // BGF2a
       error: ErrorInfo // BGF2b
+
+    class TokenRevocationTargetSpecifier:
+      type: string // TRT2a
+      value: string // TRT2b
+
+    class TokenRevocationSuccessResult:
+      target: string // TRS2a
+      appliesAt: Time // TRS2b
+      issuedBefore: Time // TRS2c
+
+    class TokenRevocationFailureResult:
+      target: string // TRF2a
+      error: ErrorInfo // TRF2b
 
 ## Old specs
 
