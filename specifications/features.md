@@ -160,6 +160,9 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSC20d)` All personally identifiable information, as much as is practicable, must be redacted or stripped completely before being submitted to Ably. Our intent is only to capture necessary information to debug issues in our own code
   - `(RSC20e)` Failures to log exceptions to the `errors.ably.io` endpoint must be handled gracefully. This includes for example DNS failures, TCP/HTTP requests rejected, slow requests and internal failure errors. Additionally, as specified in `RSC20b2`, a failure to log an exception is logged with log level `info` i.e. an exception reporting failure is not consider a client library `error` or `warning`
   - `(RSC20f)` Any errors emitted by the library as a result of an internal failure must contain a status code `500`, an error code in the range `51000` to `51999` and a suitable error message. The error code must match one of [our common error codes](https://github.com/ably/ably-common/blob/main/protocol/errors.json)
+- `(RSC22)` `RestClient#batchPublish` function:
+  - `(RSC22a)` Takes a `BatchPublishSpec` or an array of `BatchPublishSpec`s and sends then in a POST request to `/messages` with the `newBatchResponse` query param set to "true".
+  - `(RSC22b)` Returns an array of `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `BatchPublishSpec` and return a single `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
 
 ### Auth {#rest-auth}
 
@@ -1844,6 +1847,35 @@ Presence ops.
   - `(CHM2e)` `publishers` integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the \`publish\` capability and have not specified a `ChannelMode` that excludes `PUBLISH`)
   - `(CHM2f)` `subscribers` integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the \`subscribe\` capability and have not specified a `ChannelMode` that excludes `SUBSCRIBE`)
 
+#### BatchResult
+
+- `(BAR1)` Contains information about the results of a batch operation
+  - `(BAR2)` The attributes of `BatchResult` consist of:
+  - `(BAR2a)` `successCount` number - the number of successful operations
+  - `(BAR2b)` `failureCount` number - the number of unsuccessful operations
+  - `(BAR2c)` `results` array - an array of results for the batch operation
+
+#### BatchPublishSpec
+
+- `(BSP1)` Describes the messages that should be published by a batch publish operation, and the channels to which they should be published
+- `(BSP2)` The attributes of `BatchPublishSpec` consist of:
+  - `(BSP2a)` `channels` an array of strings - the names of the channels to which all of the messages contained in the `messages` attribute should be published
+  - `(BSP2b)` `messages` an array of `Message` objects - the messages which should be published to all of the channels named by the `channels` array
+
+#### BatchPublishSuccessResult
+
+- `(BPR1)` Contains information about the result of successful publishes to a channel requested by a single `BatchPublishSpec`
+- `(BPR2)` The attributes of `BatchPublishSuccessResult` consist of:
+  - `(BPR2a)` `channel` string - the name of the channel
+  - `(BPR2b)` `messageId` string - a string containing the `messageId` prefix for the published message(s)
+
+#### BatchPublishFailureResult
+
+- `(BPF1)` Contains information about the result of unsuccessful publishes to a channel requested by a single `BatchPublishSpec`
+- `(BPF2)` The attributes of `BatchPublishFailureResult` consist of:
+  - `(BPF2a)` `channel` string - the name of the channel
+  - `(BPF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the message(s) failed to publish
+
 #### MessageFilter
 
 - `(MFI1)` Supplies filter options to subscribe as defined in #RTL22
@@ -2076,6 +2108,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
         unit: .Minute | .Hour | .Day | .Month api-default .Minute // RSC6b4
       ) => io PaginatedResult<Stats> // RSC6a
       time() => io Time // RSC16
+      batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
+      batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
 
     class RealtimeClient: // RTC*
       constructor(keyOrTokenStr: String) // RTC12
@@ -2103,6 +2137,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       close() // RTC16
       connect() // RTC15
       time() => io Time // RTC6
+      batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
+      batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
 
     class ClientOptions: // TO*
       embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
@@ -2694,6 +2730,23 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class ClientInformation: // CR*
       +agents: Dict<String, String?> // CR2
       +agentIdentifier(additionalAgents: Dict<String, String?>?) => String // CR3; interface only offered by some libraries
+
+    class BatchResult<T>
+      successCount: number // BAR2a
+      failureCount: number // BAR2b
+      results: [T] // BAR2c
+
+    class BatchPublishSpec:
+      channels: [String] // BSP2a
+      messages: [Message] //BSP2b
+
+    class BatchPublishSuccessResult:
+      channel: string // BPR2a
+      messageId: string // BPR2b
+
+    class BatchPublishFailureResult:
+      channel: string // BPF2a
+      error: ErrorInfo // BPF2c
 
 ## Old specs
 
