@@ -18,7 +18,6 @@ REST client library:\
 - RestPresence#rest-presence\
 - Encryption#rest-encryption\
 - Forwards compatibility#rest-compatibility\
-- Batch Operations#batch-operations\
 Realtime client library:\
 - RealtimeClient\
 - Connection#realtime-connection\
@@ -92,7 +91,6 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
     - `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
 - `(RSC16)` `RestClient#time` function sends a get request to `rest.ably.io/time` and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
 - `(RSC21)` `RestClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
-- `(RSC22)` `RestClient#batch` attribute provides access to the `BatchOperations` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint `rest.ably.io`
   - `(RSC7a)` The `X-Ably-Version` HTTP header must be included in all REST requests to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
   - `(RSC7b)` (Please note this clause and the associated header have now been superseded by [RCS7d](#RSC7d)) The header `X-Ably-Lib: [lib][.optional variant]?-[version]` should be included in all REST requests to the Ably endpoint where `[lib]` is the name of the library such as `js` for `ably-js`, `[.optional variant]` is an optional library variant, such as `laravel` for the `php` library, which is always delimited with a period such as `php.laravel`, and where `[version]` is the full client library version using [Semver](http://semver.org/) such as `1.0.2`. For example, the 1.0.0 version of the JavaScript library would use the header `X-Ably-Lib: js-1.0.0`.
@@ -379,15 +377,6 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 - `(RSF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
 
-### Batch Operations
-
-- `(BO1)` The batch operations functions must use the REST endpoints in Batch Mode, sending a single request containing all specified data
-- `(BO2)` Batch operations must be able to be performed for the following:
-  - `(BO2a)` `BatchOperations::publish` publishes messages against one or more channels with one or more messages
-    - `(B02a1)` Functions should be provided to pass either an array or a single `BatchSpec` object. In languages where function overloading is not possible, an array is preferred.
-  - `(BO2b)` `BatchOperations::getPresence` retrieves the presence data for one or more channels
-- `(BO3)` When a batch operation only contains one batch, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
-
 ## Realtime client library features {#realtime}
 
 The Ably Realtime client libraries establish and maintain a persistent connection to Ably and provide methods to publish and subscribe to messages over a low latency realtime connection.
@@ -421,7 +410,6 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTC6)` `RealtimeClient#time` function:
   - `(RTC6a)` Proxy to `RestClient#time` presented with an async or threaded interface as appropriate
 - `(RTC13)` `RealtimeClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
-- `(RTC14)` `RealtimeClient#batch` attribute provides access to the `BatchOperations` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
 - `(RTC7)` The client library must use the configured timeouts specified in the `ClientOptions`, falling back to the [client library defaults](#defaults) and defaults described in `ClientOptions` below
 - `(RTC8)` For a realtime client, `Auth#authorize` instructs the library to obtain a token using the provided `tokenParams` and `authOptions` and alter the current connection to use that token; or if not currently connected, to connect with the token.
   - `(RTC8a)` If the connection is in the `CONNECTED` state and `auth#authorize` is called or Ably requests a re-authentication (see [RTN22](#RTN22)), the client must obtain a new token, then send an `AUTH` `ProtocolMessage` to Ably with an `auth` attribute containing an `AuthDetails` object with the token string
@@ -1856,48 +1844,6 @@ Presence ops.
   - `(CHM2e)` `publishers` integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the \`publish\` capability and have not specified a `ChannelMode` that excludes `PUBLISH`)
   - `(CHM2f)` `subscribers` integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the \`subscribe\` capability and have not specified a `ChannelMode` that excludes `SUBSCRIBE`)
 
-#### BatchSpec
-
-- `(BSP1)` Describes the messages that should be published by a batch publish operation, and the channels to which they should be published
-- `(BSP2)` `BatchSpec` has the following attributes:
-  - `(BSP2a)` `channels` an array of strings -- the names of the channels to which all of the messages contained in the `messages` attribute should be published
-  - `(BSP2b)` `messages` an array of `Message` objects -- the messages that should be published
-
-#### BatchResult
-
-- `(BPA1)` Contains the results from the batch operation
-- `(BPA2)` `BatchResult` has the following attributes:
-  - `(BPA2a)` `responses` is an array of batch response objects.
-  - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed.
-    - `(BPA2b1)` This error should only be set if it relates to a partial success. All fatal errors should be handled via language appropriate error handling.
-
-#### BatchPublishResponse
-
-- `(BPB1)` Contains information for each batch publish request within a `BatchResult`
-- `(BPB2)` `BatchPublishResponse` has the following attributes:
-  - (`BPB2a)` `channel` is the channel name which this publish request was directed to
-  - (`BPB2b)` `messageId` contains the resultant message ID, if the request succeeds and is null if `error` is present
-  - (`BPB2c)` `error` contains an `ErrorInfo` object if this publish request failed, and is null if it succeeded
-
-#### BatchPresenceResponse
-
-- `(BPD1)` Contains information for each batch presence request within a `BatchResult`
-- `(BPD2)` `BatchPresenceResponse` contains the following attributes:
-  - `(BPD2a)` `channel` is the channel name which this presence request
-  - `(BPD2b)` `presence` is an array of presence data for the `channel`
-
-#### BatchPresence
-
-- `(BPE1)` Is a partial `PresenceMessage` object containing `clientId` and `action`, or `error` if the presence failed
-- `(PBE2)` This clause has been renamed to #BPE2.
-  - `(PBE2a)` This clause has been renamed to #BPE2a.
-  - `(PBE2b)` This clause has been renamed to #BPE2b.
-  - `(PBE2c)` This clause has been renamed to #BPE2c.
-- `(BPE2)` `BatchPresence` contains the following attributes:
-  - `(BPE2a)` `clientId` - identical to #TP3c
-  - `(BPE2b)` `action` - identical to #TP3b - null if `error` is present
-  - `(BPE2c)` `error` - an `ErrorInfo` object representing the failure reason for this channel - null if `action` is present
-
 #### MessageFilter
 
 - `(MFI1)` Supplies filter options to subscribe as defined in #RTL22
@@ -2113,7 +2059,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       constructor(ClientOptions) // RSC1
       auth: Auth // RSC5
       push: Push // RSC21
-      batch: BatchOperations // BO1
       device() => io LocalDevice // RSH8
       channels: Channels<RestChannel> // RSN1
       request(
@@ -2137,7 +2082,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       constructor(ClientOptions) // RTC12
       auth: Auth // RTC4
       push: Push // RTC13
-      batch: BatchOperations // BO1
       device() => io LocalDevice // RSH8
       channels: Channels<RealtimeChannel> // RTC3, RTS1
       clientId: String? // RTC17
@@ -2310,29 +2254,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       attachSerial: String // CP2a
       channelSerial: String // CP2b
 
-    class BatchOperations: // BO*
-      publish([BatchSpec]) => BatchResult<BatchPublishResponse> // BO2a
-      publish(BatchSpec) => BatchResult<BatchPublishResponse> // BO2a
-      getPresence([String]) => BatchResult<BatchPresenceResponse> // BO2b
-
-    class BatchResult<T>: // BPA*
-      error: ErrorInfo? // BPA2b
-      responses: []T? // BPA2a
-
-    class BatchPublishResponse: // BPB*
-      channel: String // BPB2a
-      messageId: String? // BPB2b
-      error: ErrorInfo? // BPB2c
-
-    class BatchPresenceResponse: // BPD*
-      channel: String // BPD2a
-      presence: []BatchPresence // PBD2b
-
-    class BatchPresence: // BPE*
-      clientId: string // BPE2a
-      action: string? // BPE2b
-      error: ErrorInfo? // BPE2c
-
     // Only on platforms that support receiving push notifications:
     class PushChannel: // RSH7
       subscribeDevice() => io // RSH7a
@@ -2340,10 +2261,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       unsubscribeDevice() => io // RSH7c
       unsubscribeClient() => io // RSH7d
       listSubscriptions(params?: Dict<String, String>) => io PaginatedResult<PushChannelSubscription> // RSH7e
-
-    class BatchSpec: // BSP*
-      channels: [String] // BSP2a
-      messages: [Message] // BSP2b
 
     enum ChannelState: // RTL2
       INITIALIZED
