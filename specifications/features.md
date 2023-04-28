@@ -163,6 +163,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSC22)` `RestClient#batchPublish` function:
   - `(RSC22a)` Takes a `BatchPublishSpec` or an array of `BatchPublishSpec`s and sends then in a POST request to `/messages` with the `newBatchResponse` query param set to "true".
   - `(RSC22b)` Returns an array of `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `BatchPublishSpec` and return a single `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+- `(RSC23)` `RestClient#batchPresence` function takes an array of channel name strings and sends them as a comma separated string in the `channels` query parameter in a GET request to `/presence` with the `newBatchResponse` query param set to "true", returning a `BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>` object.
 
 ### Auth {#rest-auth}
 
@@ -1876,6 +1877,20 @@ Presence ops.
   - `(BPF2a)` `channel` string - the name of the channel
   - `(BPF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the message(s) failed to publish
 
+#### BatchPresenceSuccessResult
+
+- `(BGR1)` Contains information about the result of a successful batch presence request for a single channel
+- `(BGR2)` The attributes of `BatchPresenceSuccessResult` consist of:
+  - `(BGR2a)` `channel` string - the name of the channel
+  - `(BGR2b)` `presence` `PresenceMessage[]` - an array containing all members present on the channel
+
+#### BatchPresenceFailureResult
+
+- `(BGF1)` Contains information about the result of an unsuccessful batch presence request for a single channel
+- `(BGF2)` The attributes of `BatchPresenceFailureResult` consist of:
+  - `(BGF2a)` `channel` string - the name of the channel
+  - `(BGF2b)` `error` `ErrorInfo` - `ErrorInfo` indicating the reason the presence request failed for the given channel
+
 #### MessageFilter
 
 - `(MFI1)` Supplies filter options to subscribe as defined in #RTL22
@@ -2110,6 +2125,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       time() => io Time // RSC16
       batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
       batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
+      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>[] // RSC23
 
     class RealtimeClient: // RTC*
       constructor(keyOrTokenStr: String) // RTC12
@@ -2139,6 +2155,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       time() => io Time // RTC6
       batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
       batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
+      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>[] // RSC23
 
     class ClientOptions: // TO*
       embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
@@ -2747,6 +2764,14 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class BatchPublishFailureResult:
       channel: string // BPF2a
       error: ErrorInfo // BPF2c
+
+    class BatchPresenceSuccessResult:
+      channel: string // BGR2a
+      presence: [PresenceMessage] // BGR2b
+
+    class BatchPresenceFailureResult
+      channel: string // BGF2a
+      error: ErrorInfo // BGF2b
 
 ## Old specs
 
