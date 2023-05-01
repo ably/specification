@@ -1,7 +1,7 @@
 versions:
   # Must conform to Semantic Versioning (https://semver.org/).
   # Should never need to use a pre-release suffix.
-  specification: 2.0.0
+  specification: 3.0.0
 
   # Must be an Integer value.
   # Previously, prior to version 2 (i.e. versions 0.8, 1.0, 1.1 and 1.2) it was a Decimal value.

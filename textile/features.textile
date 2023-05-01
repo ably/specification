@@ -531,8 +531,8 @@ h3(#realtime-connection). Connection
 ** @(RTN16g)@ @Connection#createRecoveryKey@ is a function that returns a string which incorporates the @connectionKey@, the current @msgSerial@, and a collection of pairs of channel @name@ and current @channelSerial@ for every currently attached channel.
 *** @(RTN16g1)@ It must be serialized in a way which is able to encode any unicode channel name. The SDK may assume that the recovery key will only be consumed by the same type of SDK, so this spec does not specify any particular serialization; however, the format should be forward-compatible through the same major version of the SDK.
 *** @(RTN16g2)@ It should return @Null@ when the SDK is in the @CLOSED@, @CLOSING@, @FAILED@, or @SUSPENDED@ states, or when it does not have a @connectionKey@ (for example, it has not yet become connected).
-** @(RTN16m)@ @Connection#recoveryKey@ is a deprecated property that, when read, contains the same value that would be returned by calling @Connection#createRecoveryKey@. If the implementation languague allows, it should be implemented in a way that does not require that it be recalculated on every message. If this is not possible, it should be recalculated on every incoming message.
-*** @(RTN16m1)@ @Connection#recoveryKey@ must be removed on the next major release of the SDK.
+** @(RTN16m)@ This clause has been deleted. It was valid up to and including specification version @2.0@.
+*** @(RTN16m1)@ This clause has been deleted. It was valid up to and including specification version @2.0@.
 ** @(RTN16l)@ Recovery failures should be handled identically to resume failures, per "RTN15c7":#RTN15c7, "RTN15c5":#RTN15c5, and "RTN15c4":#RTN15c4.
 ** @(RTN16a)@ This clause has been replaced by "@RTN16i@":#RTN16i. It was valid up to and including specification version @1.2@.
 ** @(RTN16b)@ This clause has been replaced by "@RTN16g@":#RTN16g and "@RTN16m@":#RTN16m. It was valid up to and including specification version @1.2@.
@@ -2174,7 +2174,6 @@ class Connection: // RTN*
   id: String? // RTN8
   key: String? // RTN9
   createRecoveryKey(): String? // RTN16g
-  recoveryKey: String? // RTN16m
   state: ConnectionState // RTN4d
   close() // RTN12
   connect() // RTC1b, RTN3, RTN11
