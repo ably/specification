@@ -2007,6 +2007,12 @@ Presence ops.
   - `(TB2d)` `modes` (for realtime client libraries only) an array of `ChannelMode` s, where a `ChannelMode` is a member of an enum containing the names of those children of [`TR3`](#TR3) whose value is ≥16 (or see the IDL below)
 - `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
 
+#### DeriveOptions
+
+- `(DO1)` options provided to create a derive channel
+- `(DO2)` The attributes of derive `DeriveOptions` consists of:
+  - `(DO2a)` `filter` (string) - A JMESPath string for filter expression.
+
 #### CipherParams
 
 - `(TZ1)` params to configure encryption for a channel
@@ -2366,8 +2372,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       params?: Dict<String, String> // TB2c
       modes?: [ChannelMode] // TB2d
 
-    class DeriveOptions: // RTS*
-      filter: String // RTS5a (The filter string is a valid JMESPath String Expression)
+    class DeriveOptions: // DO*
+      filter: String // DO2a (The filter string is a valid JMESPath String Expression)
 
     class ChannelDetails: // CHD*
       channelId: String // CHD2a
