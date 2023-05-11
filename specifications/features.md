@@ -578,6 +578,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTS3c1)` If a new set of `ChannelOptions` is supplied to `Channels#get` that would trigger a reattachment of the channel if supplied to `RealtimeChannel#setOptions` per [`RTL16a`](#RTL16a), it must raise an error, informing the user that they must use `RealtimeChannel#setOptions` instead
 - `(RTS4)` `Channels#release` function:
   - `(RTS4a)` Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
+- `(RTS5)` `Channels#getDerived` function:
+  - `(RTS5a)` Takes `RealtimeChannel` name and `DeriveOptions` object as argument, to create a derived channel. `ChannelOptions` can be provided as an optional third argument.
+    - `(RTS5a1)` The provided derive option (e.g filter, which is the only supported derive options at the moment) should be synthesized to the channel as \[filter=`<base64 encoded JMESPath string>`{=html}\]channelName.
+    - `(RTS5a2)` If channel options are provided on the channel (e.g rewind channel param), the options are set on the derived channel upon creation as \[filter=`<base64 encoded JMESPath string>`{=html}?rewind=1\]channelName.
 
 ### RealtimeChannel {#realtime-channel}
 
@@ -2004,6 +2008,12 @@ Presence ops.
   - `(TB2d)` `modes` (for realtime client libraries only) an array of `ChannelMode` s, where a `ChannelMode` is a member of an enum containing the names of those children of [`TR3`](#TR3) whose value is ≥16 (or see the IDL below)
 - `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
 
+#### DeriveOptions
+
+- `(DO1)` options provided to create a derive channel
+- `(DO2)` The attributes of derive `DeriveOptions` consists of:
+  - `(DO2a)` `filter` (string) - A JMESPath string for filter expression.
+
 #### CipherParams
 
 - `(TZ1)` params to configure encryption for a channel
@@ -2362,6 +2372,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       cipher: (CipherParams | CipherParamOptions)? // RSL5a, TB2b
       params?: Dict<String, String> // TB2c
       modes?: [ChannelMode] // TB2d
+
+    class DeriveOptions: // DO*
+      filter: String // DO2a (The filter string is a valid JMESPath String Expression)
 
     class ChannelDetails: // CHD*
       channelId: String // CHD2a
