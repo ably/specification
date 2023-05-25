@@ -1374,66 +1374,26 @@ h4. Stats
 
 * @(TS1)@ @Stats@ is a type encapsulating a statistics datapoint retrieved from the "REST stats endpoint":/rest-api/#stats.  See "example statistics in JSON format":/general/statistics/
 * @(TS2)@ All stats values default to zero when no underlying JSON value exists. We send sparse JSON to stats requests omitting fields where the value is zero to reduce bandwidth and optimize JSON parsing, however the API exposed to developers ensures that all properties of the @Stats@ object such as @stats.all.messages.count@ will always return an @Integer@ value i.e. all attributes are non-nullable
+* @(TS15)@ The attributes of a @Stats@ object consist of:
+** @(TS15a)@ @intervalId@ (property present in the JSON) - a @String@
+** @(TS15b)@ @unit@ (property present in the JSON) - a @String@ or (if idiomatic) a value of the enumerable type @StatsIntervalGranularity@ whose permitted values are @minute@, @hour@, @day@, and @month@. This must be from the @unit@ property of the JSON, not calculated from the @intervalId@
+** @(TS15c)@ @inProgress@ (property present in the JSON) - an optional @String@ containing the last sub-interval included in this entry (in format yyyy-mm-dd:hh:mm) for entries that are still in progress, such as the current month
+** @(TS15d)@ @entries@ (property present in the JSON) - a @Dict<String, int>@ containing statistics entries
+** @(TS15e)@ @schema@ (property present in the JSON) - a @String@ containing the JSON schema URI
+** @(TS15f)@ @appId@ (property present in the JSON) - a @String@ containing the ID of the Ably application the statistics are for.
+** @(TS15g)@ @intervalTime@ - a language-idiomatic @Time@ object, parsed from the @intervalId@
 * @(TS3)@ This clause has been deleted.
-* @(TS12)@ The attributes of a @Stats@ object consist of:
-** @(TS12a)@ @intervalId@ (property present in the JSON) - a @String@
-** @(TS12b)@ @intervalTime@ (optional) - a language-idiomatic @Time@ object, parsed from the @intervalId@
-** @(TS12c)@ @unit@ (property present in the JSON) - a @String@ or (if idiomatic) a value of the enumerable type @StatsIntervalGranularity@ whose permitted values are @minute@, @hour@, @day@, and @month@. This must be from the @unit@ property of the JSON, not calculated from the @intervalId@
-** @(TS12d)@ @intervalGranularity@ (deprecated) - an alias for @unit@, only for 1.x versions of client libraries that had such a property in a previous 1.x version, to avoid breaking compatibility. As above, this must be from the @unit@ property of the JSON, not calculated from the @intervalId@
-** @(TS12e)@ @all@ (property present in the JSON) - a @MessageTypes@ object
-** @(TS12f)@ @inbound@ (property present in the JSON) - a @MessageTraffic@ object
-** @(TS12g)@ @outbound@ (property present in the JSON) - a @MessageTraffic@ object
-** @(TS12h)@ @persisted@ (property present in the JSON) - a @MessageTypes@ object
-** @(TS12i)@ @connections@ (property present in the JSON) - a @ConnectionTypes@ object
-** @(TS12j)@ @channels@ (property present in the JSON) - a @ResourceCount@ object
-** @(TS12k)@ @apiRequests@ (property present in the JSON) - a @RequestCount@ object
-** @(TS12l)@ @tokenRequests@ (property present in the JSON) - a @RequestCount@ object
-** @(TS12m)@ @push@ (property present in the JSON) - a @PushStats@ object
-** @(TS12n)@ @xchgProducer@ (property present in the JSON) - an @XchgMessages@ object
-** @(TS12o)@ @xchgConsumer@ (property present in the JSON) - an @XchgMessages@ object
-* @(TS4)@ @Stats.ConnectionTypes@ - contains a breakdown of summary stats data for different (TLS vs non-TLS) connection types. Has the following attributes:
-** @(TS4a)@ @tls@ - a @ResourceCount@. The number of TLS connections.
-** @(TS4b)@ @plain@ - a @ResourceCount@. The number of non-TLS connections.
-** @(TS4c)@ @all@ - a @ResourceCount@. The number of all connections (both TLS & non-TLS).
-* @(TS5)@ @Stats.MessageCount@ - contains aggregate counts for messages and data transferred. Has the following attributes:
-** @(TS5a)@ @count@ - integer. The count of all messages.
-** @(TS5b)@ @data@ - integer. The total number of bytes transferred for all messages.
-* @(TS6)@ @Stats.MessageTypes@ - contains a breakdown of summary stats data for different (channel vs presence) message types. Has the following attributes:
-** @(TS6a)@ @messages@ - a @MessageCount@. The count of channel messages.
-** @(TS6b)@ @presence@ - a @MessageCount@. The count of presence messages.
-** @(TS6c)@ @all@ - a @MessageCount@. The count of all messages (channel & presence).
-* @(TS7)@ @Stats.MessageTraffic@ - contains a breakdown of summary stats data for traffic over various transport types. Has the following attributes:
-** @(TS7a)@ @realtime@ - a @MessageTypes@. The count of messages transferred over a realtime transport such as WebSocket.
-** @(TS7b)@ @rest@ - a @MessageTypes@. The count of messages transferred over a realtime transport such as WebSocket.
-** @(TS7c)@ @webhook@ - a @MessageTypes@. The count of messages delivered using webhooks.
-** @(TS7d)@ @all@ - a @MessageTypes@. The count of all messages (includes realtime, rest and webhook messages).
-* @(TS8)@ @Stats.RequestCount@ - contains aggregate counts for requests made. Has the following attributes:
-** @(TS8a)@ @succeeded@ - integer. The number of requests that succeeded.
-** @(TS8b)@ @failed@ - integer. The number of requests that failed.
-** @(TS8c)@ @refused@ - integer. The number of requests that were refused, typically as a result of permissions or a limit being exceeded.
-* @(TS9)@ @Stats.ResourceCount@ - contains aggregate data for usage of a resource in a specific scope. Has the following attributes:
-** @(TS9a)@ @opened@ - integer. The total number of resources opened of this type.
-** @(TS9b)@ @peak@ - integer. The peak number of resources of this type used for this period.
-** @(TS9c)@ @mean@ - float. The average number of resources of this type used for this period.
-** @(TS9d)@ @min@ - integer. The minimum total resources of this type used for this period.
-** @(TS9e)@ @refused@ - integer. The number of resource requests refused within this period.
-* @(TS10)@ @Stats.PushStats@ - detailed stats on push notifications. Has the following attributes:
-** @(TS10a)@ @messages@ - integer. Total number of push channel messages.
-** @(TS10b)@ @directPublishes@ - integer. Total number of direct publishes.
-** @(TS10c)@ @notifications@ - a @PushNotificationCount@. The count of push notifications.
-* @(TS13)@ @Stats.PushNotificationCount@ - Contains a count of push notifications published broken down by outcome. Has the following attributes:
-** @(TS13a)@ @invalid@ - integer. Total number of attempted push notifications which were rejected due to invalid request data.
-** @(TS13b)@ @attempted@ - integer. Total number of attempted push notifications including notifications which were rejected as invalid or failed to publish.
-** @(TS13c)@ @successful@ - integer. Total number of delivered push notifications.
-** @(TS13d)@ @failed@ - integer. Total number of refused push notifications.
-* @(TS11)@ @Stats.XchgMessages@ - contains data about usage of Ably API Streamer as a producer or consumer. Has the following attributes:
-** @(TS11a)@ @all@ - a @MessageTypes@. Data about all Ably API Streamer usage.
-** @(TS11b)@ @producerPaid@ - a @MessageDirections@. Data about Ably API Streamer usage which was charged to the producer.
-** @(TS11c)@ @consumerPaid@ - a @MessageDirections@. Data about Ably API Streamer usage which was charged to the consumer.
-* @(TS14)@ @Stats.MessageDirections@ - contains data about published and received messages. Has the following attributes:
-** @(TS14a)@ @all@ - a @MessageTypes@. Data about both received and published messages.
-** @(TS14b)@ @inbound@ - a @MessageTraffic@. Data about received messages.
-** @(TS14c)@ @outbound@ - a @MessageTraffic@. Data about published messages.
+* @(TS4)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS5)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS6)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS7)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS8)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS9)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS10)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS12)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS11)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS13)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS14)@ This clause has been deleted. It was valid up to and including specification version 2.0.
 
 h4. ErrorInfo
 
@@ -2204,81 +2164,20 @@ class ConnectionStateChange: // TA*
   reason: ErrorInfo? // RTN4f, TA3
   retryIn: Duration? // RTN14d, TA2
 
-class Stats: // TS12
-  intervalId: String // TS12a
-  intervalTime: Time // TS12b (calculated clientside)
-  unit: Stats.IntervalGranularity // TS12c
-  intervalGranularity: Stats.IntervalGranularity? // TS12d (deprecated)
-  all: Stats.MessageTypes // TS12e
-  inbound: Stats.MessageTraffic // TS12f
-  outbound: Stats.MessageTraffic // TS12g
-  persisted: Stats.MessageTypes // TS12h
-  connections: Stats.ConnectionTypes // TS12i
-  channels: Stats.ResourceCount // TS12j
-  apiRequests: Stats.RequestCount // TS12k
-  tokenRequests: Stats.RequestCount // TS12l
-  push: Stats.PushStats // TS12m
-  xchgProducer: Stats.XchgMessages // TS12n
-  xchgConsumer: Stats.XchgMessages // TS12o
+class Stats: // TS15
+  intervalId: String // TS15a
+  unit: Stats.IntervalGranularity // TS15b
+  inProgress: String? // TS15c
+  entries: Dict<String, Int> // TS15d
+  schema: String // TS15e
+  appId: String // TS15f
+  intervalTime: Time // TS15g (calculated client-side)
 
-enum StatsIntervalGranularity: // TS12c
+enum StatsIntervalGranularity: // TS15c
   MINUTE
   HOUR
   DAY
   MONTH
-
-class Stats.ConnectionTypes // TS4
-  tls: Stats.ResourceCount // TS4a
-  plain: Stats.ResourceCount // TS4b
-  all: Stats.ResourceCount // TS4c
-
-class Stats.MessageCount // TS5
-  count: Int // TS5a
-  data: Int // TS5b
-
-class Stats.MessageTypes // TS6
-  messages: Stats.MessageCount // TS6a
-  presence: Stats.MessageCount // TS6b
-  all: Stats.MessageCount // TS6c
-
-class Stats.MessageTraffic // TS7
-  realtime: Stats.MessageTypes // TS7a
-  rest: Stats.MessageTypes // TS7b
-  webhook: Stats.MessageTypes // TS7c
-  all: Stats.MessageTypes // TS7d
-
-class Stats.RequestCount // TS8
-  succeeded: Int // TS8a
-  failed: Int // TS8b
-  refused: Int // TS8c
-
-class Stats.ResourceCount // TS9
-  opened: Int // TS9a
-  peak: Int // TS9b
-  mean: Float // TS9c
-  min: Int // TS9d
-  refused: Int // TS9e
-
-class Stats.PushStats // TS10
-  messages: Int // TS10a
-  directPublishes: Int // TS10b
-  notifications: Stats.PushNotificationCount // TS10c
-
-class Stats.PushNotificationCount // TS13
-  invalid: Int // TS13a
-  attempted: Int // TS13b
-  successful: Int // TS13c
-  failed: Int // TS13d
-
-class Stats.XchgMessages // TS11
-  all: Stats.MessageTypes // TS11a
-  producerPaid: Stats.MessageDirections // TS11b
-  consumerPaid: Stats.MessageDirections // TS11c
-
-class Stats.MessageDirections // TS14
-  all: MessageTypes // TS14a
-  inbound: MessageTraffic // TS14b
-  outbound: MessageTraffic // TS14c
 
 class DeviceDetails: // PCD*
   id: String // PCD2
