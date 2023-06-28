@@ -595,6 +595,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL2d)` A `ChannelStateChange` object is emitted as the first argument for every `ChannelEvent` (including both `RTL2a` state changes and `RTL2g` `UPDATE` events). It may optionally contain a `reason` consisting of an `ErrorInfo` object; any state change triggered by a `ProtocolMessage` that contains an `error` member should populate the `reason` with that error in the corresponding state change event
   - `(RTL2f)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a `RESUMED` bit flag indicating that the channel has been resumed. The corresponding `ChannelStateChange` (either `ATTACHED` per `RTL2a`, or `UPDATE` per `RTL12`) will contain a `resumed` boolean attribute with value `true` if the bit flag `RESUMED` was included. When `resumed` is `true`, this indicates that the channel attach resumed the channel state from an existing connection and there has been no loss of message continuity. In all other cases, `resumed` is false. A test should exist to ensure that `resumed` is always false when a channel first becomes `ATTACHED`, it is `true` when the channel is `ATTACHED` following a successful [connection recovery](#RTN16), and is `false` when the channel is `ATTACHED` following a failed [connection recovery](#RTN16)
   - `(RTL2h)` Optionally, for backwards compatibility with 0.8 libraries, the `RealtimeChannel` `EventEmitter` can provide an overloaded method that supports `on(ChannelState)`, but must issue a deprecation warning
+  - `(RTL2i)` `ChannelStateChange` may optionally expose a boolean `hasBacklog` property. This property should be set to `true` if and only if the state change corresponds to an `ATTACHED` `ProtocolMessage` containing a `HAS_BACKLOG` bit flag.
 - `(RTL3)` Connection state change side effects:
   - `(RTL3e)` If the connection state enters the `DISCONNECTED` state, it will have no effect on the channel states.
   - `(RTL3a)` If the connection state enters the `FAILED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `FAILED` and set the `RealtimeChannel#errorReason`
@@ -1795,6 +1796,7 @@ Presence ops.
 - `(TH5)` The `ConnectionStateChange` object contains the `event` that generated the channel state change
 - `(TH3)` If the channel state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
 - `(TH4)` The `ChannelStateChange` object contains an attribute `resumed` which in combination with an `ATTACHED` state, indicates whether the channel attach successfully resumed its state following the connection being resumed or recovered. If `resumed` is true, then the attribute indicates that the attach within Ably successfully recovered the state for the channel, and as such there is no loss of message continuity. In all other cases, `resumed` is false, and may be accompanied with a [channel state change error reason](#TH3)
+- `(TH6)` The `ChannelStateChange` object may contain an attribute `hasBacklog` which, upon transitioning to `ATTACHED`, indicates whether the channel should expect a backlog of messages from a resume or rewind. This attribute should be set as defined by `RTL2i`.
 
 #### Capability - **API not defined yet**
 
@@ -2367,6 +2369,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       previous: ChannelState // TH2, RTL2a, RTL2b
       reason: ErrorInfo? // TH3
       resumed: Boolean // RTL2f, TH4
+      hasBacklog: Boolean // RTL2i, TH6
 
     class ChannelOptions: // TB*
       +withCipherKey(key: Binary | String)? -> ChannelOptions // TB3
