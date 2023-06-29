@@ -595,6 +595,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL2d)` A `ChannelStateChange` object is emitted as the first argument for every `ChannelEvent` (including both `RTL2a` state changes and `RTL2g` `UPDATE` events). It may optionally contain a `reason` consisting of an `ErrorInfo` object; any state change triggered by a `ProtocolMessage` that contains an `error` member should populate the `reason` with that error in the corresponding state change event
   - `(RTL2f)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a `RESUMED` bit flag indicating that the channel has been resumed. The corresponding `ChannelStateChange` (either `ATTACHED` per `RTL2a`, or `UPDATE` per `RTL12`) will contain a `resumed` boolean attribute with value `true` if the bit flag `RESUMED` was included. When `resumed` is `true`, this indicates that the channel attach resumed the channel state from an existing connection and there has been no loss of message continuity. In all other cases, `resumed` is false. A test should exist to ensure that `resumed` is always false when a channel first becomes `ATTACHED`, it is `true` when the channel is `ATTACHED` following a successful [connection recovery](#RTN16), and is `false` when the channel is `ATTACHED` following a failed [connection recovery](#RTN16)
   - `(RTL2h)` Optionally, for backwards compatibility with 0.8 libraries, the `RealtimeChannel` `EventEmitter` can provide an overloaded method that supports `on(ChannelState)`, but must issue a deprecation warning
+  - `(RTL2i)` `ChannelStateChange` may optionally expose a boolean `hasBacklog` property. This property should be set to `true` if and only if the state change corresponds to an `ATTACHED` `ProtocolMessage` containing a `HAS_BACKLOG` bit flag.
 - `(RTL3)` Connection state change side effects:
   - `(RTL3e)` If the connection state enters the `DISCONNECTED` state, it will have no effect on the channel states.
   - `(RTL3a)` If the connection state enters the `FAILED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `FAILED` and set the `RealtimeChannel#errorReason`
@@ -614,6 +615,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTL4c1)` The `ATTACH` ProtocolMessage `channelSerial` field must be set to the `channelSerial` of the most recent message/presence ProtocolMessage received on that channel (which will have been stored in the channel per `RTL15b`). If no messages have been received on the channel, the field may be set to `null` or omitted.
   - `(RTL4f)` Once an `ATTACH` `ProtocolMessage` is sent, if an `ATTACHED` `ProtocolMessage` is not received within the [default realtime request timeout](#defaults), the attach request should be treated as though it has failed and the channel should transition to the `SUSPENDED` state. The channel will then be subsequently automatically re-attached as described in [RTL13](#RTL13)
   - `(RTL4d)` A callback (or other language-idiomatic equivalent) can be provided that is called when the channel next moves to one of `ATTACHED`, `DETACHED`, `SUSPENDED`, or `FAILED` states. In the case of `ATTACHED` the callback is called with no argument. In all other cases it is called with an `ErrorInfo` corresponding to the `ChannelStateChange.reason` of the state change (or a fallback if there is no `reason`) to indicate that the attach has failed. (Note: when combined with RTL4f, this means that if the connection is `CONNECTED`, the callback is guaranteed to be called within `realtimeRequestTimeout` of the `attach()` call)
+    - `(RTL4d1)` Optionally, upon success, the callback may be invoked with the `ChannelStateChange` object once the channel is attached. If the channel is already attached, it should be invoked with `null`.
   - `(RTL4e)` If the user does not have sufficient permissions to attach to the channel, the channel will transition to `FAILED` and set the `RealtimeChannel#errorReason`
   - `(RTL4j)` If the attach is not a clean attach (defined in `RTL4j1`), for example an automatic reattach triggered by [`RTN15c3`](#RTN15c3) or [`RTL13a`](#RTL13a) (non-exhaustive), the library should set the [`ATTACH_RESUME`](#TR3f) flag in the `ATTACH` message
     - `(RTL4j1)` A 'clean attach' is an attach attempt where the channel has either not previously been attached or has been explicitly detached since the last time it was attached. Note that this is not purely a function of the immediate previous channel state. An example implementation would be to set the flag from an `attachResume` private boolean variable on the channel, that starts out set to `false`, is set to `true` when the channel moves to the `ATTACHED` state, and set to `false` when the channel moves to the `DETACHING` or `FAILED` states.
@@ -1795,6 +1797,7 @@ Presence ops.
 - `(TH5)` The `ConnectionStateChange` object contains the `event` that generated the channel state change
 - `(TH3)` If the channel state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
 - `(TH4)` The `ChannelStateChange` object contains an attribute `resumed` which in combination with an `ATTACHED` state, indicates whether the channel attach successfully resumed its state following the connection being resumed or recovered. If `resumed` is true, then the attribute indicates that the attach within Ably successfully recovered the state for the channel, and as such there is no loss of message continuity. In all other cases, `resumed` is false, and may be accompanied with a [channel state change error reason](#TH3)
+- `(TH6)` The `ChannelStateChange` object may contain an attribute `hasBacklog` which, upon transitioning to `ATTACHED`, indicates whether the channel should expect a backlog of messages from a resume or rewind. This attribute should be set as defined by `RTL2i`.
 
 #### Capability - **API not defined yet**
 
@@ -2276,7 +2279,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       push: PushChannel // RSH7
       modes: readonly [ChannelMode] // RTL4m
       params: readonly Dict<String, String> // RTL4k1
-      attach() => io // RTL4
+      attach() => io ChannelStateChange // RTL4
       detach() => io // RTL5
       history(
         start: Time, // RTL10a
@@ -2288,9 +2291,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       publish(Message) => io // RTL6, RTL6i
       publish([Message]) => io // RTL6, RTL6i
       publish(name: String?, data: Data?) => io // RTL6, RTL6i
-      subscribe((Message) ->) => io // RTL7, RTL7a
-      subscribe(String, (Message) ->) => io // RTL7, RTL7b
-      subscribe(MessageFilter, (Message) ->) // RTL22
+      subscribe((Message) ->) => io ChannelStateChange // RTL7, RTL7a
+      subscribe(String, (Message) ->) => io ChannelStateChange // RTL7, RTL7b
+      subscribe(MessageFilter, (Message) ->) io ChannelStateChange // RTL22
       unsubscribe() // RTL8, RTL8c
       unsubscribe((Message) ->) // RTL8, RTL8a
       unsubscribe(String, (Message) ->) // RTL8, RTL8b
@@ -2367,6 +2370,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       previous: ChannelState // TH2, RTL2a, RTL2b
       reason: ErrorInfo? // TH3
       resumed: Boolean // RTL2f, TH4
+      hasBacklog: Boolean // RTL2i, TH6
 
     class ChannelOptions: // TB*
       +withCipherKey(key: Binary | String)? -> ChannelOptions // TB3
