@@ -2479,6 +2479,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       +fromEncodedArray(JsonArray, ChannelOptions?) -> [Message] // TM3
       clientId: String? // TM2b
       connectionId: String? // TM2c
+      connectionKey: String? // TM2h
       data: Data? // TM2d
       encoding: String? // TM2e
       extras: JsonObject? // TM2i
