@@ -50,6 +50,10 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 __Please note we maintain a separate Google Sheet that keeps track of which features are implemented and matching test coverage for each client library. If you intend to work on an Ably client library, please "contact us":https://ably.com/contact for access to this Google Sheet as it is useful as a reference and also needs to be kept up to date__
 
+h2(#protocol-documentation). Protocol Documentation
+
+- In this document, the term @Message@ refers to the @Message@ data type "described in the Ably protocol documentation":protocol#Message.
+
 h2(#versions). Specification and Protocol Versions
 
 * @(CSV1)@ **Specification Version**: This document defines the Ably client library features specification ('features spec').
@@ -275,26 +279,26 @@ h3(#rest-channel). RestChannel
 
 * @(RSL9)@ @RestChannel#name@ attribute is a string containing the channel’s name
 * @(RSL1)@ @RestChannel#publish@ function:
-** @(RSL1a)@ Expects either a @Message@ object, an array of @Message@ objects, or a @name@ string and @data@ payload
-** @(RSL1b)@ When @name@ and @data@ (or a @Message@) is provided, a single message is published to Ably
-** @(RSL1c)@ When an array of @Message@ objects is provided, a single request is made to Ably
+** @(RSL1a)@ Expects either an @OutgoingMessage@ object, an array of @OutgoingMessage@ objects, or a @name@ string and @data@ payload
+** @(RSL1b)@ When @name@ and @data@ (or an @OutgoingMessage@) is provided, a single message is published to Ably
+** @(RSL1c)@ When an array of @OutgoingMessage@ objects is provided, a single request is made to Ably
 ** @(RSL1d)@ Indicates an error if the message was not successfully published to Ably
 ** @(RSL1e)@ Allows @name@ and/or @data@ to be @null@.  If any of the values are @null@, that property is not sent to Ably, e.g. a payload with a @null@ value for @data@ would be sent as @{"name":"click"}@
-** @(RSL1m)@ The @Message.clientId@ must be left alone (that is, it will be there if it was set in the @Message@ object passed to @publish()@, else left unset). The client library must not try and set it from the client-library-wide @clientId@; that is achieved by @RSA7e@ for basic auth or implicit in the credentials for token auth. The following tests can be used to check for correct clientId handling:
-*** @(RSL1m1)@ Publishing a @Message@ with no clientId when the clientId is set to some value in the client options should result in a message received with the @clientId@ property set to that value
-*** @(RSL1m2)@ Publishing a @Message@ with a clientId set to the same value as the clientId in the client options should result in a message received with the @clientId@ property set to that value
-*** @(RSL1m3)@ Publishing a @Message@ with a clientId set to a value from an unidentified client (no clientId in the client options and credentials that can assume any clientId) should result in a message received with the @clientId@ property set to that value
-*** @(RSL1m4)@ Publishing a @Message@ with a clientId set to a different value from the clientId in the client options should result in a message being rejected by the server
+** @(RSL1m)@ The @Message.clientId@ must be left alone (that is, it will be there if it was set in the @OutgoingMessage@ object passed to @publish()@, else left unset). The client library must not try and set it from the client-library-wide @clientId@; that is achieved by @RSA7e@ for basic auth or implicit in the credentials for token auth. The following tests can be used to check for correct clientId handling:
+*** @(RSL1m1)@ Publishing an @OutgoingMessage@ with no clientId when the clientId is set to some value in the client options should result in a message received with the @clientId@ property set to that value
+*** @(RSL1m2)@ Publishing an @OutgoingMessage@ with a clientId set to the same value as the clientId in the client options should result in a message received with the @clientId@ property set to that value
+*** @(RSL1m3)@ Publishing an @OutgoingMessage@ with a clientId set to a value from an unidentified client (no clientId in the client options and credentials that can assume any clientId) should result in a message received with the @clientId@ property set to that value
+*** @(RSL1m4)@ Publishing an @OutgoingMessage@ with a clientId set to a different value from the clientId in the client options should result in a message being rejected by the server
 ** @(RSL1h)@ The @publish(name, data)@ form should not take any additional arguments. If a client library has supported additional arguments to the @(name, data)@ form (e.g. separate arguments for @clientId@ and @extras@, or a single @attributes@ argument) in any 1.x version, it should continue to do so until version 2.0.
 ** @(RSL1i)@ If the total size of the message or (if publishing an array) messages, calculated per "TO3l8":#TO3l8, exceeds the @maxMessageSize@, then the client library should reject the publish and indicate an error with code 40009
-** @(RSL1j)@ When @Message@ objects are provided, any valid @Message@ attribute (that is, an attribute specified in "TM2":#TM2) that is supplied by the caller must be included in the encoded message. (This does not mean it must be included _unaltered_; for example the @data@ and @encoding@ will be subject to processing per "RSL4":#RSL4)
-** @(RSL1k)@ Idempotent publishing via REST is supported by populating the @id@ attribute of @Message@ instances passed to @publish()@:
-*** @(RSL1k1)@ Idempotent publishing via library-generated @Message@ @id@ s is supported if @idempotentRestPublishing@ (see "TO3n":#TO3n) is enabled and one or more @Message@ instances are passed to @publish()@ and all @Message@ s have an empty @id@ attribute. The library generates a base @id@ string by base64-encoding  a sequence of at least 9 bytes obtained from a source of randomness. Each individual @Message@ in the set of messages to be published is assigned a unique @id@ of the form &lt;base id&gt;:&lt;serial&gt; (where @serial@ is the zero-based index into the set).
-*** @(RSL1k2)@ Idempotent publishing via client-supplied @Message@ @id@ s is supported where a single @Message@ is passed to @publish()@ and it contains a non-empty @id@. The @id@ is preserved on sending the message.
-*** @(RSL1k3)@ If more than one @Message@ is passed to @publish()@ and one or more of those messages contains a non-empty @id@ attribute, then all message ids (present or absent) are preserved on sending the batch of messages.
+** @(RSL1j)@ When @OutgoingMessage@ objects are provided, any valid @OutgoingMessage@ attribute (that is, an attribute specified in "TM2":#TM2) that is supplied by the caller must be included in the encoded message. (This does not mean it must be included _unaltered_; for example the @data@ and @encoding@ will be subject to processing per "RSL4":#RSL4)
+** @(RSL1k)@ Idempotent publishing via REST is supported by populating the @id@ attribute of @OutgoingMessage@ instances passed to @publish()@:
+*** @(RSL1k1)@ Idempotent publishing via library-generated @Message@ @id@ s is supported if @idempotentRestPublishing@ (see "TO3n":#TO3n) is enabled and one or more @OutgoingMessage@ instances are passed to @publish()@ and all @OutgoingMessage@ s have an empty @id@ attribute. The library generates a base @id@ string by base64-encoding  a sequence of at least 9 bytes obtained from a source of randomness. Each individual @Message@ in the set of messages to be published is assigned a unique @id@ of the form &lt;base id&gt;:&lt;serial&gt; (where @serial@ is the zero-based index into the set).
+*** @(RSL1k2)@ Idempotent publishing via client-supplied @OutgoingMessage@ @id@ s is supported where a single @OutgoingMessage@ is passed to @publish()@ and it contains a non-empty @id@. The @id@ is preserved on sending the message.
+*** @(RSL1k3)@ If more than one @OutgoingMessage@ is passed to @publish()@ and one or more of those messages contains a non-empty @id@ attribute, then all message ids (present or absent) are preserved on sending the batch of messages.
 *** @(RSL1k4)@ An explicit test for idempotency of publishes with library-generated ids shall exist that simulates an error response to a successful publish of a batch of messages, expects an automatic retry by the library, and verifies that the net outcome is that the batch is published only once.
 *** @(RSL1k5)@ An explicit test for idempotency of publishes with client-supplied ids shall exist that involves multiple explicit publish requests for a given message and verifies that the net outcome is that the message is published only once.
-** @(RSL1l)@ The @publish(Message)@ and @publish(Message[])@ forms of the method should take an extra @Dict<String, Stringifiable>@ argument. These parameters should be encoded using normal querystring-encoding and sent as part of the query string of the REST publish. (@Stringifiable@ is defined in @RTC1f@)
+** @(RSL1l)@ The @publish(OutgoingMessage)@ and @publish(OutgoingMessage[])@ forms of the method should take an extra @Dict<String, Stringifiable>@ argument. These parameters should be encoded using normal querystring-encoding and sent as part of the query string of the REST publish. (@Stringifiable@ is defined in @RTC1f@)
 *** @(RSL1l1)@ Publish params can be tested by publishing with a @_forceNack=true@ parameter, which will result in the publish being rejected with a @40099@ error code
 * @(RSL2)@ @RestChannel#history@ function:
 ** @(RSL2a)@ Returns a @PaginatedResult@ page containing the first page of messages in the @PaginatedResult#items@ attribute returned from the history request
@@ -634,11 +638,11 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL5e)@ If the language permits, a callback can be provided that is called when the channel is detached successfully or the detach fails and the @ErrorInfo@ error is passed as an argument to the callback
 * @(RTL6)@ @RealtimeChannel#publish@ function:
 ** @(RTL6a)@ Messages are encoded in the same way as the @RestChannel#publish@ method, and "RSL1g":#RSL1g (size limit) applies similarly
-*** @(RTL6a1)@ "RSL1k":#RSL1k (@idempotentRestPublishing@ option), "RSL1j1":#RSL1j1 (idempotent publishing test), and "RSL1l":#RSL1l (@publish(Message, params)@ form) do not apply to realtime publishes
+*** @(RTL6a1)@ "RSL1k":#RSL1k (@idempotentRestPublishing@ option), "RSL1j1":#RSL1j1 (idempotent publishing test), and "RSL1l":#RSL1l (@publish(OutgoingMessage, params)@ form) do not apply to realtime publishes
 ** @(RTL6b)@ An optional callback can be provided to the @#publish@ method that is called when the message is successfully delivered or upon failure with the appropriate @ErrorInfo@ error. A test should exist to publish lots of messages on a few connections to ensure all message success callbacks are called for all messages published
-** @(RTL6i)@ Expects either a @Message@ object, an array of @Message@ objects, or a @name@ string and @data@ payload:
-*** @(RTL6i1)@ When @name@ and @data@ (or a @Message@) is provided, a single @ProtocolMessage@ containing one @Message@ is published to Ably
-*** @(RTL6i2)@ When an array of @Message@ objects is provided, a single @ProtocolMessage@ is used to publish all @Message@ objects in the array.
+** @(RTL6i)@ Expects either a @OutgoingMessage@ object, an array of @OutgoingMessage@ objects, or a @name@ string and @data@ payload:
+*** @(RTL6i1)@ When @name@ and @data@ (or a @OutgoingMessage@) is provided, a single @ProtocolMessage@ containing one @Message@ is published to Ably
+*** @(RTL6i2)@ When an array of @OutgoingMessage@ objects is provided, a single @ProtocolMessage@ is used to publish all @OutgoingMessage@ objects in the array.
 *** @(RTL6i3)@ Allows @name@ and or @data@ to be @null@.  If any of the values are @null@, then key is not sent to Ably i.e. a payload with a @null@ value for @data@ would be sent as follows @{ "name": "click" }@
 ** @(RTL6c)@ Connection and channel state conditions:
 *** @(RTL6c1)@ If the connection is @CONNECTED@ and the channel is @INITIALIZED@, @ATTACHED@, @DETACHED@, @ATTACHING@, or @DETACHING@ then the messages are published immediately
@@ -652,7 +656,7 @@ h3(#realtime-channel). RealtimeChannel
 *** @(RTL6d4)@ Messages can only be bundled together if they are of the same type (that is, @Message@ versus @PresenceMessage@)
 *** @(RTL6d5)@ Only contiguous messages in the queue can be bundled together. For example, if the user publishes three messages, A, B, and C, of which A and C could be bundled together under @RTL6d1-4@ but B could not, then no bundling should occur
 *** @(RTL6d6)@ The order of messages in the resulting @ProtocolMessage@ Messages must match the publish order. For example, if the user publishes @Message@ D, then the @Message@ array [E, F], then @Message@ G, the final @messages@ array should be [D, E, F, G]
-*** @(RTL6d7)@ Messages must not be bundled if any have had had their @Message.id@ property set
+*** @(RTL6d7)@ Messages must not be bundled if any have had had their @OutgoingMessage.id@ property set
 ** @(RTL6e)@ Unidentified clients using "Basic Auth":https://en.wikipedia.org/wiki/Basic_access_authentication (i.e. any @clientId@ is permitted as no @clientId@ specified):
 *** @(RTL6e1)@ When a @Message@ with a @clientId@ value is published, Ably will accept and publish that message with the provided @clientId@. A test should assert that the @clientId@ of the published @Message@ is populated
 ** @(RTL6g)@ Identified clients with a @clientId@ (as a result of either an explicitly configured @clientId@ in @ClientOptions@, or implicitly through Token Auth):
@@ -1256,10 +1260,10 @@ h2. Types
 
 h3(#types). Data types
 
-h4. Message
+h4. OutgoingMessage
 
-* @(TM1)@ A @Message@ represents an individual message to be sent or received via the Ably Realtime service.  See the "Ruby Message documentation":https://www.rubydoc.info/gems/ably/Ably/Models/Message, but bear in mind the attributes following underscore naming in Ruby
-* @(TM2)@ Attributes available in a @Message@, see the "Ruby Message documentation":https://www.rubydoc.info/gems/ably/Ably/Models/Message for an explanation of each attribute:
+* @(TM1)@ An @OutgoingMessage@ represents an individual message to be sent via the Ably Realtime service.  See the "Ruby Message documentation":https://www.rubydoc.info/gems/ably/Ably/Models/Message, but bear in mind the attributes following underscore naming in Ruby
+* @(TM2)@ Attributes available in an @OutgoingMessage@, see the "Ruby Message documentation":https://www.rubydoc.info/gems/ably/Ably/Models/Message for an explanation of each attribute:
 ** @(TM2a)@ @id@ string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an @id@, it should be set to @protocolMsgId:index@, where @protocolMsgId@ is the id of the @ProtocolMessage@ encapsulating it, and @index@ is the index of the message inside the @messages@ array of the @ProtocolMessage@
 ** @(TM2b)@ @clientId@ string
 ** @(TM2c)@ @connectionId@ string. If a message received from Ably does not contain a @connectionId@, it should be set to the @connectionId@ of the encapsulating @ProtocolMessage@
@@ -1269,7 +1273,7 @@ h4. Message
 ** @(TM2e)@ @encoding@ string
 ** @(TM2i)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is @push@, via the @extras.push@ member; 1.2 adds the @delta@ extension whose keys and values are described by the attributes of the type @DeltaExtras@, and the @headers@ extension, which contains arbitrary @string->string@ key-value pairs, settable at publish time, and @ref@ whose keys and values are described by the attributes of the type @ReferenceExtras@. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
 ** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
-* @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
+* @(TM4)@ @OutgoingMessage@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
 
 h4. DeltaExtras
@@ -1331,7 +1335,7 @@ h4. PaginatedResult
 
 * @(TG1)@ A @PaginatedResult@ is a type that represents a page of results from a "paginated query":/rest-api/#pagination. The response is accompanied by metadata that indicates the relative queries available
 * @(TG2)@ @PaginatedResult@ wraps all message and presence history, stats and REST presence requests. Instantiating this type should not result in an error if paging headers are not returned from the REST API
-* @(TG3)@ @PaginatedResult#items@ attribute contains a page of results (for example an Array of @Message@ objects for a channel history request)
+* @(TG3)@ @PaginatedResult#items@ attribute contains a page of results (for example an Array of @IncomingMessage@ objects for a channel history request)
 * @(TG4)@ @PaginatedResult#next@ function returns a new @PaginatedResult@ loaded with the next page of results. If there are no further pages, then @null@ is returned
 * @(TG5)@ @PaginatedResult#first@ function returns a new @PaginatedResult@ for the first page of results
 * @(TG6)@ @PaginatedResult#hasNext@ function returns @true@ if there are further pages
@@ -1487,7 +1491,7 @@ h4. BatchSpec
 * @(BSP1)@ Describes the messages that should be published by a batch publish operation, and the channels to which they should be published
 * @(BSP2)@ @BatchSpec@ has the following attributes:
 ** @(BSP2a)@ @channels@ an array of strings – the names of the channels to which all of the messages contained in the @messages@ attribute should be published
-** @(BSP2b)@ @messages@ an array of @Message@ objects – the messages that should be published
+** @(BSP2b)@ @messages@ an array of @OutgoingMessage@ objects – the messages that should be published
 
 h4. BatchResult
 * @(BPA1)@ Contains the results from the batch operation
@@ -1868,10 +1872,10 @@ class RestChannel: // RSL*
     end: Time api-default now(), // RSL2b1
     direction: .Backwards | .Forwards api-default .Backwards, // RSL2b2
     limit: int api-default 100 // RSL2b3
-  ) => io PaginatedResult<Message> // RSL2
+  ) => io PaginatedResult<IncomingMessage> // RSL2
   status() => ChannelDetails // RSL8
-  publish(Message, params?: Dict<String, Stringifiable>) => io // RSL1
-  publish([Message], params?: Dict<String, Stringifiable>) => io // RSL1
+  publish(OutgoingMessage, params?: Dict<String, Stringifiable>) => io // RSL1
+  publish([OutgoingMessage], params?: Dict<String, Stringifiable>) => io // RSL1
   publish(name: String?, data: Data?) => io // RSL1
   setOptions(options: ChannelOptions) => io // RSL7 - note asynchronous return value for
     // compatibility with RealtimeChannel#setOptions; not required for REST-only libraries
@@ -1898,17 +1902,17 @@ class RealtimeChannel: // RTL*
     direction: .Backwards | .Forwards api-default .Backwards, // RTL10a
     limit: int api-default 100, // RTL10a
     untilAttach: Bool default false // RTL10b
-  ) => io PaginatedResult<Message> // RTL10
-  publish(Message) => io // RTL6, RTL6i
-  publish([Message]) => io // RTL6, RTL6i
+  ) => io PaginatedResult<IncomingMessage> // RTL10
+  publish(OutgoingMessage) => io // RTL6, RTL6i
+  publish([OutgoingMessage]) => io // RTL6, RTL6i
   publish(name: String?, data: Data?) => io // RTL6, RTL6i
-  subscribe((Message) ->) => io ChannelStateChange // RTL7, RTL7a
-  subscribe(String, (Message) ->) => io ChannelStateChange // RTL7, RTL7b
-  subscribe(MessageFilter, (Message) ->) io ChannelStateChange // RTL22
+  subscribe((IncomingMessage) ->) => io ChannelStateChange // RTL7, RTL7a
+  subscribe(String, (IncomingMessage) ->) => io ChannelStateChange // RTL7, RTL7b
+  subscribe(MessageFilter, (IncomingMessage) ->) io ChannelStateChange // RTL22
   unsubscribe() // RTL8, RTL8c
-  unsubscribe((Message) ->) // RTL8, RTL8a
-  unsubscribe(String, (Message) ->) // RTL8, RTL8b
-  unsubscribe(MessageFilter, (Message) ->) // RTL22
+  unsubscribe((IncomingMessage) ->) // RTL8, RTL8a
+  unsubscribe(String, (IncomingMessage) ->) // RTL8, RTL8b
+  unsubscribe(MessageFilter, (IncomingMessage) ->) // RTL22
   setOptions(options: ChannelOptions) => io // RTL16
 
 class MessageFilter: // MFI*
@@ -1954,7 +1958,7 @@ class PushChannel: // RSH7
 
 class BatchSpec: // BSP*
   channels: [String] // BSP2a
-  messages: [Message] // BSP2b
+  messages: [OutgoingMessage] // BSP2b
 
 enum ChannelState: // RTL2
   INITIALIZED
@@ -2083,11 +2087,22 @@ class ConnectionDetails: // CD*, internal
   serverId: String // CD2g
   maxIdleInterval: Duration // CD2h
 
-class Message: // TM*
+class OutgoingMessage: // TM*
   constructor(name: String?, data: Data?) // TM4
   constructor(name: String?, data: Data?, clientId: String?) // TM4
-  +fromEncoded(JsonObject, ChannelOptions?) -> Message // TM3
-  +fromEncodedArray(JsonArray, ChannelOptions?) -> [Message] // TM3
+  clientId: String? // TM2b
+  connectionId: String? // TM2c
+  connectionKey: String? // TM2h
+  data: Data? // TM2d
+  encoding: String? // TM2e
+  extras: JsonObject? // TM2i
+  id: String? // TM2a
+  name: String? // TM2g
+  timestamp: Time? // TM2f
+
+class IncomingMessage: // TM*
+  +fromEncoded(JsonObject, ChannelOptions?) -> IncomingMessage // TM3
+  +fromEncodedArray(JsonArray, ChannelOptions?) -> [IncomingMessage] // TM3
   clientId: String? // TM2b
   connectionId: String? // TM2c
   connectionKey: String? // TM2h
