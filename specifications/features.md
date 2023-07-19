@@ -1519,10 +1519,11 @@ Presence ops.
       - `(RSH3e1b)` Transitions to `WaitingForRegistrationSync`.
     - `(RSH3e2)` On event `RegistrationSynced`:
       - `(RSH3e2b)` If the machine is in state `WaitingForRegistrationSync` as a result of a `CalledActivate` event, make `Push#activate` return or call its callback with no error.
+      - `(RSH3e2c)` Otherwise, calls the `updatedCallback` provided to `Push#activate` with no error.
       - `(RSH3e2a)` Transitions to `WaitingForNewPushDeviceDetails`.
     - `(RSH3e3)` On event `SyncRegistrationFailed`:
       - `(RSH3e3c)` If the machine is in state `WaitingForRegistrationSync` as a result of a `CalledActivate` event, make `Push#activate` return or call its callback with the error.
-      - `(RSH3e3a)` Otherwise, calls the `updateFailedCallback` provided to `Push#activate` with the error.
+      - `(RSH3e3a)` Otherwise, calls the `updatedCallback` provided to `Push#activate` with the error.
       - `(RSH3e3b)` Transitions to `AfterRegistrationSyncFailed`.
   - `(RSH3f)` State `AfterRegistrationSyncFailed`:
     - `(RSH3f1)` On events `CalledActivate` or `GotPushDeviceDetails`:
