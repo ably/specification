@@ -461,7 +461,8 @@ h3(#realtime-connection). Connection
 * @(RTN7)@ @ACK@ and @NACK@:
 ** @(RTN7a)@ All @ProtocolMessage@ @Presence@ and @Message@ objects sent to Ably expect either an @ACK@ or @NACK@ from Ably to confirm successful receipt and acceptance or failure respectively. For clarity, it is unnecessary to fail the publish operation of a message using a timer. Instead the client library can rely on: the realtime system will send an @ACK@ or @NACK@ when connected; the client library will fail all awaiting messages once @SUSPENDED@ (see "RTN7c":#RTN7c); upon reconnecting, the client will resend all message awaiting a response, and the realtime system in turn will respond with an @ACK@ or @NACK@ (see "RTN19a":#RTN19a)
 ** @(RTN7b)@ Every @ProtocolMessage@ that expects an @ACK@ or @NACK@ sent must contain a unique serially incrementing @msgSerial@ integer value starting at zero. The @msgSerial@ along with the @count@ for incoming @ACK@ and @NACK@ @ProtocolMessages@ indicates which messages succeeded or failed to be delivered
-** @(RTN7c)@ If a connection enters the @SUSPENDED@, @CLOSED@ or @FAILED@ state, or if the connection state is lost, and an @ACK@ or @NACK@ has not yet been received for a message, the client should consider the delivery of those messages as failed
+** @(RTN7c)@ If a connection enters the @SUSPENDED@, @CLOSED@ or @FAILED@ state, or if the connection state is lost, and an @ACK@ or @NACK@ has not yet been received for a message, the client should consider the delivery of those messages as failed, meaning their callback (or language equivalent) should be called with an error representing the reason for the state change, and they should be removed from any @RTN9a@ retry queue
+** @(RTN7d)@ If the @queueMessages@ client option (@TO3g@) has been set to @false@, then when a connection enters the @DISCONNECTED@ state, any messages which have not yet been @ACK@d should be considered to have failed, with the same effect as in @RTN7c@
 * @(RTN22)@ Ably can request that a connected client re-authenticates by sending the client an @AUTH@ @ProtocolMessage@. The client must then immediately start a new authentication process as described in "RTC8":#RTC8
 ** @(RTN22a)@ Ably reserves the right to forcibly disconnect a client that does not re-authenticate within an acceptable period of time, or at any time the token is deemed no longer valid. A client is forcibly disconnected following a @DISCONNECTED@ message containing an error code in the range @40140 <= code < 40150@. This will in effect force the client to re-authenticate and resume the connection immediately, see "RTN15h":#RTN15h
 * @(RTN8)@ @Connection#id@ attribute:
@@ -523,7 +524,7 @@ h3(#realtime-connection). Connection
 ** @(RTN15d)@ Client libraries should have test coverage to ensure connection state recovery is working as expected by forcibly disconnecting a client and checking that messages published on channels are delivered once the connection is resumed
 ** @(RTN15e)@ When a connection is resumed, the @Connection#key@ may change and will be provided in the first @CONNECTED@ @ProtocolMessage#connectionDetails@ when the connection is established. The client library must update the @Connection#key@ value with the new @connectionKey@ value every time
 * @(RTN20)@ When the client library can subscribe to the Operating System events for network/internet connectivity changes:
-** @(RTN20a)@ When @CONNECTED@, @CONNECTING@ or @DISCONNECTING@, if the operating system indicates that the underlying internet connection is no longer available, then the client library should immediately transition the state to @DISCONNECTED@ with emit a state change with an appropriate @reason@. This state change will automatically trigger the client library to attempt to reconnect, see @RTN15@ above
+** @(RTN20a)@ When @CONNECTED@ or @CONNECTING@, if the operating system indicates that the underlying internet connection is no longer available, then the client library should immediately transition the state to @DISCONNECTED@ with emit a state change with an appropriate @reason@. This state change will automatically trigger the client library to attempt to reconnect, see @RTN15@ above
 ** @(RTN20b)@ When @DISCONNECTED@ or @SUSPENDED@, if the operating system indicates that the underlying internet connection is now available, the client library should immediately attempt to connect
 ** @(RTN20c)@ When @CONNECTING@, if the operating system indicates that the underlying internet connection is now available, the client should restart the pending connection attempt
 * @(RTN16)@ @Connection@ recovery:
@@ -534,6 +535,7 @@ h3(#realtime-connection). Connection
 ** @(RTN16g)@ @Connection#createRecoveryKey@ is a function that returns a string which incorporates the @connectionKey@, the current @msgSerial@, and a collection of pairs of channel @name@ and current @channelSerial@ for every currently attached channel.
 *** @(RTN16g1)@ It must be serialized in a way which is able to encode any unicode channel name. The SDK may assume that the recovery key will only be consumed by the same type of SDK, so this spec does not specify any particular serialization; however, the format should be forward-compatible through the same major version of the SDK.
 *** @(RTN16g2)@ It should return @Null@ when the SDK is in the @CLOSED@, @CLOSING@, @FAILED@, or @SUSPENDED@ states, or when it does not have a @connectionKey@ (for example, it has not yet become connected).
+** @(RTN16d)@ The library may wish to test that after a connection has been successfully recovered, the @Connection#id@ should be identical to the @id@ of the connection that was recovered, and @Connection#key@ should have been updated to the @ConnectionDetails#connectionKey@ provided in the @CONNECTED@ @ProtocolMessage@.
 ** @(RTN16m)@ This clause has been deleted. It was valid up to and including specification version @2.0@.
 *** @(RTN16m1)@ This clause has been deleted. It was valid up to and including specification version @2.0@.
 ** @(RTN16l)@ Recovery failures should be handled identically to resume failures, per "RTN15c7":#RTN15c7, "RTN15c5":#RTN15c5, and "RTN15c4":#RTN15c4.
@@ -553,7 +555,7 @@ h3(#realtime-connection). Connection
 *** @(RTN17f1)@ a @DISCONNECTED@ response with an @error.statusCode@ in the range @500 <= code <= 504@
 ** @(RTN17e)@ If the realtime client is connected to a fallback host endpoint, then for the duration that the transport is connected to that host, all HTTP requests, such as history or token requests, should be first attempted to the same datacenter the realtime connection is established with i.e. the same fallback host must be used as the default HTTP request host. If however the HTTP request against that fallback host fails, then the normal fallback host behavior should be followed attempting the request against another fallback host as described in "RSC15":#RSC15
 * @(RTN19)@ Transport state side effects - when a transport is disconnected for any reason:
-** @(RTN19a)@ Any @ProtocolMessage@ that is awaiting an @ACK@/@NACK@ on the old transport will not receive the @ACK@/@NACK@ on the new transport. The client library must therefore resend any @ProtocolMessage@ that is awaiting a @ACK@/@NACK@ to Ably in order to receive the expected @ACK@/@NACK@ for that message. The Ably service is responsible for keeping track of messages, ignoring duplicates and responding with suitable @ACK@/@NACK@ messages
+** @(RTN19a)@ Any @ProtocolMessage@ that is awaiting an @ACK@/@NACK@ on the old transport will not receive the @ACK@/@NACK@ on the new transport. The client library must therefore resend any @ProtocolMessage@ that is awaiting a @ACK@/@NACK@ to Ably in order to receive the expected @ACK@/@NACK@ for that message (subject to @RTN7c@/@RTN7d@). The Ably service is responsible for keeping track of messages, ignoring duplicates and responding with suitable @ACK@/@NACK@ messages
 *** @(RTN19a1)@ One possible implementation of this requirement would be to add any in-flight messages to the @RTL6c2@ connection-wide queue of messages that will be sent once the connection next becomes @CONNECTED@
 *** @(RTN19a2)@ In the case of an @RTN15c6@ successful resume, the @msgSerial@ of the reattempted @ProtocolMessage@s should remain the same as for the original attempt. In the case of an @RTN15c7@ failed resume, the message must be assigned a new @msgSerial@ from the SDK's internal counter.
 ** @(RTN19b)@ If there are any pending channels i.e. in the @ATTACHING@ or @DETACHING@ state, the respective @ATTACH@ or @DETACH@ message should be resent to Ably
@@ -574,6 +576,10 @@ h3(#realtime-channels). Channels
 *** @(RTS3c1)@ If a new set of @ChannelOptions@ is supplied to @Channels#get@ that would trigger a reattachment of the channel if supplied to @RealtimeChannel#setOptions@ per "@RTL16a@":#RTL16a, it must raise an error, informing the user that they must use @RealtimeChannel#setOptions@ instead
 * @(RTS4)@ @Channels#release@ function:
 ** @(RTS4a)@ Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
+* @(RTS5)@ @Channels#getDerived@ function:
+** @(RTS5a)@ Takes @RealtimeChannel@ name and @DeriveOptions@ object as argument, to create a derived channel. @ChannelOptions@ can be provided as an optional third argument.
+*** @(RTS5a1)@ The provided derive option (e.g filter, which is the only supported derive options at the moment) should be synthesized to the channel as [filter=<base64 encoded JMESPath string>]channelName.
+*** @(RTS5a2)@ If channel options are provided on the channel (e.g rewind channel param), the options are set on the derived channel upon creation as [filter=<base64 encoded JMESPath string>?rewind=1]channelName.
 
 h3(#realtime-channel). RealtimeChannel
 
@@ -586,6 +592,7 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL2d)@ A @ChannelStateChange@ object is emitted as the first argument for every @ChannelEvent@ (including both @RTL2a@ state changes and @RTL2g@ @UPDATE@ events). It may optionally contain a @reason@ consisting of an @ErrorInfo@ object; any state change triggered by a @ProtocolMessage@ that contains an @error@ member should populate the @reason@ with that error in the corresponding state change event
 ** @(RTL2f)@ When a channel @ATTACHED@ @ProtocolMessage@ is received, the @ProtocolMessage@ may contain a @RESUMED@ bit flag indicating that the channel has been resumed. The corresponding @ChannelStateChange@ (either @ATTACHED@ per @RTL2a@, or @UPDATE@ per @RTL12@) will contain a @resumed@ boolean attribute with value @true@ if the bit flag @RESUMED@ was included. When @resumed@ is @true@, this indicates that the channel attach resumed the channel state from an existing connection and there has been no loss of message continuity. In all other cases, @resumed@ is false. A test should exist to ensure that @resumed@ is always false when a channel first becomes @ATTACHED@, it is @true@ when the channel is @ATTACHED@ following a successful "connection recovery":#RTN16, and is @false@ when the channel is @ATTACHED@ following a failed "connection recovery":#RTN16
 ** @(RTL2h)@ Optionally, for backwards compatibility with 0.8 libraries, the @RealtimeChannel@ @EventEmitter@ can provide an overloaded method that supports @on(ChannelState)@, but must issue a deprecation warning
+** @(RTL2i)@ @ChannelStateChange@ may optionally expose a boolean @hasBacklog@ property. This property should be set to @true@ if and only if the state change corresponds to an @ATTACHED@ @ProtocolMessage@ containing a @HAS_BACKLOG@ bit flag.
 * @(RTL3)@ Connection state change side effects:
 ** @(RTL3e)@ If the connection state enters the @DISCONNECTED@ state, it will have no effect on the channel states.
 ** @(RTL3a)@ If the connection state enters the @FAILED@ state, then an @ATTACHING@ or @ATTACHED@ channel state will transition to @FAILED@ and set the @RealtimeChannel#errorReason@
@@ -605,6 +612,7 @@ h3(#realtime-channel). RealtimeChannel
 *** @(RTL4c1)@ The @ATTACH@ ProtocolMessage @channelSerial@ field must be set to the @channelSerial@ of the most recent message/presence ProtocolMessage received on that channel (which will have been stored in the channel per @RTL15b@). If no messages have been received on the channel, the field may be set to @null@ or omitted.
 ** @(RTL4f)@ Once an @ATTACH@ @ProtocolMessage@ is sent, if an @ATTACHED@ @ProtocolMessage@ is not received within the "default realtime request timeout":#defaults, the attach request should be treated as though it has failed and the channel should transition to the @SUSPENDED@ state. The channel will then be subsequently automatically re-attached as described in "RTL13":#RTL13
 ** @(RTL4d)@ A callback (or other language-idiomatic equivalent) can be provided that is called when the channel next moves to one of @ATTACHED@, @DETACHED@, @SUSPENDED@, or @FAILED@ states. In the case of @ATTACHED@ the callback is called with no argument. In all other cases it is called with an @ErrorInfo@ corresponding to the @ChannelStateChange.reason@ of the state change (or a fallback if there is no @reason@) to indicate that the attach has failed. (Note: when combined with RTL4f, this means that if the connection is @CONNECTED@, the callback is guaranteed to be called within @realtimeRequestTimeout@ of the @attach()@ call)
+*** @(RTL4d1)@ Optionally, upon success, the callback may be invoked with the @ChannelStateChange@ object once the channel is attached. If the channel is already attached, it should be invoked with @null@.
 ** @(RTL4e)@ If the user does not have sufficient permissions to attach to the channel, the channel will transition to @FAILED@ and set the @RealtimeChannel#errorReason@
 ** @(RTL4j)@ If the attach is not a clean attach (defined in @RTL4j1@), for example an automatic reattach triggered by "@RTN15c3@":#RTN15c3 or "@RTL13a@":#RTL13a (non-exhaustive), the library should set the "@ATTACH_RESUME@":#TR3f flag in the @ATTACH@ message
 *** @(RTL4j1)@ A 'clean attach' is an attach attempt where the channel has either not previously been attached or has been explicitly detached since the last time it was attached. Note that this is not purely a function of the immediate previous channel state. An example implementation would be to set the flag from an @attachResume@ private boolean variable on the channel, that starts out set to @false@, is set to @true@ when the channel moves to the @ATTACHED@ state, and set to @false@ when the channel moves to the @DETACHING@ or @FAILED@ states.
@@ -1417,6 +1425,7 @@ h4. ChannelStateChange
 * @(TH5)@ The @ConnectionStateChange@ object contains the @event@ that generated the channel state change
 * @(TH3)@ If the channel state change includes error information, then the @reason@ attribute will contain an @ErrorInfo@ object describing the reason for the error
 * @(TH4)@ The @ChannelStateChange@ object contains an attribute @resumed@ which in combination with an @ATTACHED@ state, indicates whether the channel attach successfully resumed its state following the connection being resumed or recovered. If @resumed@ is true, then the attribute indicates that the attach within Ably successfully recovered the state for the channel, and as such there is no loss of message continuity. In all other cases, @resumed@ is false, and may be accompanied with a "channel state change error reason":#TH3
+* @(TH6)@ The @ChannelStateChange@ object may contain an attribute @hasBacklog@ which, upon transitioning to @ATTACHED@, indicates whether the channel should expect a backlog of messages from a resume or rewind. This attribute should be set as defined by @RTL2i@.
 
 h4. Capability - *API not defined yet*
 * @(TC1)@ This type represents a capability for a key or token
@@ -1618,6 +1627,11 @@ h4. ChannelOptions
 ** @(TB2c)@ @params@ (for realtime client libraries only) a @Dict<string,string>@ of key/value pairs
 ** @(TB2d)@ @modes@ (for realtime client libraries only) an array of @ChannelMode@ s, where a @ChannelMode@ is a member of an enum containing the names of those children of "@TR3@":#TR3 whose value is ≥16 (or see the IDL below)
 * @(TB3)@ The client lib may optionally provide an alternative constructor @withCipherKey@ for ChannelOptions that takes a @key@ only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
+
+h4. DeriveOptions
+* @(DO1)@ options provided to create a derive channel
+* @(DO2)@ The attributes of derive @DeriveOptions@ consists of:
+** @(DO2a)@ @filter@ (string) - A JMESPath string for filter expression.
 
 h4. CipherParams
 * @(TZ1)@ params to configure encryption for a channel
@@ -1876,7 +1890,7 @@ class RealtimeChannel: // RTL*
   push: PushChannel // RSH7
   modes: readonly [ChannelMode] // RTL4m
   params: readonly Dict<String, String> // RTL4k1
-  attach() => io // RTL4
+  attach() => io ChannelStateChange // RTL4
   detach() => io // RTL5
   history(
     start: Time, // RTL10a
@@ -1888,9 +1902,9 @@ class RealtimeChannel: // RTL*
   publish(Message) => io // RTL6, RTL6i
   publish([Message]) => io // RTL6, RTL6i
   publish(name: String?, data: Data?) => io // RTL6, RTL6i
-  subscribe((Message) ->) => io // RTL7, RTL7a
-  subscribe(String, (Message) ->) => io // RTL7, RTL7b
-  subscribe(MessageFilter, (Message) ->) // RTL22
+  subscribe((Message) ->) => io ChannelStateChange // RTL7, RTL7a
+  subscribe(String, (Message) ->) => io ChannelStateChange // RTL7, RTL7b
+  subscribe(MessageFilter, (Message) ->) io ChannelStateChange // RTL22
   unsubscribe() // RTL8, RTL8c
   unsubscribe((Message) ->) // RTL8, RTL8a
   unsubscribe(String, (Message) ->) // RTL8, RTL8b
@@ -1967,12 +1981,16 @@ class ChannelStateChange: // TH*
   previous: ChannelState // TH2, RTL2a, RTL2b
   reason: ErrorInfo? // TH3
   resumed: Boolean // RTL2f, TH4
+  hasBacklog: Boolean // RTL2i, TH6
 
 class ChannelOptions: // TB*
   +withCipherKey(key: Binary | String)? -> ChannelOptions // TB3
   cipher: (CipherParams | CipherParamOptions)? // RSL5a, TB2b
   params?: Dict<String, String> // TB2c
   modes?: [ChannelMode] // TB2d
+
+class DeriveOptions: // DO*
+  filter: String // DO2a (The filter string is a valid JMESPath String Expression)
 
 class ChannelDetails: // CHD*
   channelId: String // CHD2a
@@ -2072,6 +2090,7 @@ class Message: // TM*
   +fromEncodedArray(JsonArray, ChannelOptions?) -> [Message] // TM3
   clientId: String? // TM2b
   connectionId: String? // TM2c
+  connectionKey: String? // TM2h
   data: Data? // TM2d
   encoding: String? // TM2e
   extras: JsonObject? // TM2i
