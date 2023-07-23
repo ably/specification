@@ -2677,8 +2677,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
         registerCallback: ((ErrorInfo?, DeviceDetails?) -> io String)?,
         // Only on platforms that, after first set, can update later its push
         // device details:
-        updatedCallback: ((ErrorInfo) ->)?,
-        updateFailedCallback: ((ErrorInfo) ->) // Deprecated, see RSH3e3a and RSH3e3d
+        updateFailedCallback: ((ErrorInfo) ->), // Deprecated, see RSH3e3a and RSH3e3d
+        updatedCallback: ((ErrorInfo?) ->)?
       ) => io ErrorInfo? // RSH2a
       deactivate(
         deregisterCallback: ((ErrorInfo?, deviceId: String?) -> io)?
