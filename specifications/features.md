@@ -18,7 +18,6 @@ REST client library:\
 - RestPresence#rest-presence\
 - Encryption#rest-encryption\
 - Forwards compatibility#rest-compatibility\
-- Batch Operations#batch-operations\
 Realtime client library:\
 - RealtimeClient\
 - Connection#realtime-connection\
@@ -92,7 +91,6 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
     - `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
 - `(RSC16)` `RestClient#time` function sends a get request to `rest.ably.io/time` and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
 - `(RSC21)` `RestClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
-- `(RSC22)` `RestClient#batch` attribute provides access to the `BatchOperations` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint `rest.ably.io`
   - `(RSC7a)` The `X-Ably-Version` HTTP header must be included in all REST requests to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
   - `(RSC7b)` (Please note this clause and the associated header have now been superseded by [RCS7d](#RSC7d)) The header `X-Ably-Lib: [lib][.optional variant]?-[version]` should be included in all REST requests to the Ably endpoint where `[lib]` is the name of the library such as `js` for `ably-js`, `[.optional variant]` is an optional library variant, such as `laravel` for the `php` library, which is always delimited with a period such as `php.laravel`, and where `[version]` is the full client library version using [Semver](http://semver.org/) such as `1.0.2`. For example, the 1.0.0 version of the JavaScript library would use the header `X-Ably-Lib: js-1.0.0`.
@@ -162,6 +160,10 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSC20d)` All personally identifiable information, as much as is practicable, must be redacted or stripped completely before being submitted to Ably. Our intent is only to capture necessary information to debug issues in our own code
   - `(RSC20e)` Failures to log exceptions to the `errors.ably.io` endpoint must be handled gracefully. This includes for example DNS failures, TCP/HTTP requests rejected, slow requests and internal failure errors. Additionally, as specified in `RSC20b2`, a failure to log an exception is logged with log level `info` i.e. an exception reporting failure is not consider a client library `error` or `warning`
   - `(RSC20f)` Any errors emitted by the library as a result of an internal failure must contain a status code `500`, an error code in the range `51000` to `51999` and a suitable error message. The error code must match one of [our common error codes](https://github.com/ably/ably-common/blob/main/protocol/errors.json)
+- `(RSC22)` `RestClient#batchPublish` function:
+  - `(RSC22a)` Takes a `BatchPublishSpec` or an array of `BatchPublishSpec`s and sends then in a POST request to `/messages` with the `newBatchResponse` query param set to "true".
+  - `(RSC22b)` Returns an array of `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `BatchPublishSpec` and return a single `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+- `(RSC23)` `RestClient#batchPresence` function takes an array of channel name strings and sends them as a comma separated string in the `channels` query parameter in a GET request to `/presence` with the `newBatchResponse` query param set to "true", returning a `BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>` object.
 
 ### Auth {#rest-auth}
 
@@ -255,6 +257,13 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSA16b)` If the library is provided with a token without the corresponding `TokenDetails`, then this holds a `TokenDetails` instance in which only the `token` attribute is populated with that token string
   - `(RSA16c)` Is set with the current token (if applicable) on instantiation and each time it is replaced, whether the result of an explicit `Auth#authorize` operation, or a library-initiated renewal resulting from expiry or a token error response
   - `(RSA16d)` Is `null` if there is no current token, including after a previous token has been determined to be invalid or expired, or if the library is using basic auth
+- `(RSA17)` `Auth#revokeTokens` function:
+  - `(RSA17a)` Takes a `TokenRevocationTargetSpecifier` or an array of `TokenRevocationTargetSpecifier`s and sends them in a POST request to /keys/{API_KEY_NAME}/revokeTokens, with the newBatchResponse query param set to "true", where `API_KEY_NAME` is the API key name obtained by reading `AuthOptions#key` up until the first `:` character.
+  - `(RSA17b)` The `TokenRevocationTargetSpecifier`s should be mapped to strings by joining the `type` and `value` with a ":" character and sent in the `targets` field of the request body
+  - `(RSA17c)` Returns an array of `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `TokenRevocationTargetSpecifier` and return a single `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+  - `(RSA17d)` If called from a client using token authentication, should raise an `ErrorInfo` with a `40162` error code and `401` status code
+  - `(RSA17e)` Accepts an optional `issuedBefore` timestamp, represented as milliseconds since the epoch, or a \`Time\` object if idiomatic to the language
+  - `(RSA17f)` If an `allowReauthMargin` boolean is supplied, it should be included in the `allowReauthMargin` field of the request body
 
 ### Channels {#rest-channels}
 
@@ -379,15 +388,6 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 - `(RSF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
 
-### Batch Operations
-
-- `(BO1)` The batch operations functions must use the REST endpoints in Batch Mode, sending a single request containing all specified data
-- `(BO2)` Batch operations must be able to be performed for the following:
-  - `(BO2a)` `BatchOperations::publish` publishes messages against one or more channels with one or more messages
-    - `(B02a1)` Functions should be provided to pass either an array or a single `BatchSpec` object. In languages where function overloading is not possible, an array is preferred.
-  - `(BO2b)` `BatchOperations::getPresence` retrieves the presence data for one or more channels
-- `(BO3)` When a batch operation only contains one batch, the underlying request is functionally identical to its non-batch equivalent, but the returned result should be a `BatchResponse` object.
-
 ## Realtime client library features {#realtime}
 
 The Ably Realtime client libraries establish and maintain a persistent connection to Ably and provide methods to publish and subscribe to messages over a low latency realtime connection.
@@ -421,7 +421,6 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTC6)` `RealtimeClient#time` function:
   - `(RTC6a)` Proxy to `RestClient#time` presented with an async or threaded interface as appropriate
 - `(RTC13)` `RealtimeClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
-- `(RTC14)` `RealtimeClient#batch` attribute provides access to the `BatchOperations` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
 - `(RTC7)` The client library must use the configured timeouts specified in the `ClientOptions`, falling back to the [client library defaults](#defaults) and defaults described in `ClientOptions` below
 - `(RTC8)` For a realtime client, `Auth#authorize` instructs the library to obtain a token using the provided `tokenParams` and `authOptions` and alter the current connection to use that token; or if not currently connected, to connect with the token.
   - `(RTC8a)` If the connection is in the `CONNECTED` state and `auth#authorize` is called or Ably requests a re-authentication (see [RTN22](#RTN22)), the client must obtain a new token, then send an `AUTH` `ProtocolMessage` to Ably with an `auth` attribute containing an `AuthDetails` object with the token string
@@ -1856,47 +1855,70 @@ Presence ops.
   - `(CHM2e)` `publishers` integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the \`publish\` capability and have not specified a `ChannelMode` that excludes `PUBLISH`)
   - `(CHM2f)` `subscribers` integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the \`subscribe\` capability and have not specified a `ChannelMode` that excludes `SUBSCRIBE`)
 
-#### BatchSpec
-
-- `(BSP1)` Describes the messages that should be published by a batch publish operation, and the channels to which they should be published
-- `(BSP2)` `BatchSpec` has the following attributes:
-  - `(BSP2a)` `channels` an array of strings -- the names of the channels to which all of the messages contained in the `messages` attribute should be published
-  - `(BSP2b)` `messages` an array of `Message` objects -- the messages that should be published
-
 #### BatchResult
 
-- `(BPA1)` Contains the results from the batch operation
-- `(BPA2)` `BatchResult` has the following attributes:
-  - `(BPA2a)` `responses` is an array of batch response objects.
-  - `(BPA2b)` `error` is an `ErrorInfo` object which is populated if one or more batch publish requests failed.
-    - `(BPA2b1)` This error should only be set if it relates to a partial success. All fatal errors should be handled via language appropriate error handling.
+- `(BAR1)` Contains information about the results of a batch operation
+  - `(BAR2)` The attributes of `BatchResult` consist of:
+  - `(BAR2a)` `successCount` number - the number of successful operations
+  - `(BAR2b)` `failureCount` number - the number of unsuccessful operations
+  - `(BAR2c)` `results` array - an array of results for the batch operation
 
-#### BatchPublishResponse
+#### BatchPublishSpec
 
-- `(BPB1)` Contains information for each batch publish request within a `BatchResult`
-- `(BPB2)` `BatchPublishResponse` has the following attributes:
-  - (`BPB2a)` `channel` is the channel name which this publish request was directed to
-  - (`BPB2b)` `messageId` contains the resultant message ID, if the request succeeds and is null if `error` is present
-  - (`BPB2c)` `error` contains an `ErrorInfo` object if this publish request failed, and is null if it succeeded
+- `(BSP1)` Describes the messages that should be published by a batch publish operation, and the channels to which they should be published
+- `(BSP2)` The attributes of `BatchPublishSpec` consist of:
+  - `(BSP2a)` `channels` an array of strings - the names of the channels to which all of the messages contained in the `messages` attribute should be published
+  - `(BSP2b)` `messages` an array of `Message` objects - the messages which should be published to all of the channels named by the `channels` array
 
-#### BatchPresenceResponse
+#### BatchPublishSuccessResult
 
-- `(BPD1)` Contains information for each batch presence request within a `BatchResult`
-- `(BPD2)` `BatchPresenceResponse` contains the following attributes:
-  - `(BPD2a)` `channel` is the channel name which this presence request
-  - `(BPD2b)` `presence` is an array of presence data for the `channel`
+- `(BPR1)` Contains information about the result of successful publishes to a channel requested by a single `BatchPublishSpec`
+- `(BPR2)` The attributes of `BatchPublishSuccessResult` consist of:
+  - `(BPR2a)` `channel` string - the name of the channel
+  - `(BPR2b)` `messageId` string - a string containing the `messageId` prefix for the published message(s)
 
-#### BatchPresence
+#### BatchPublishFailureResult
 
-- `(BPE1)` Is a partial `PresenceMessage` object containing `clientId` and `action`, or `error` if the presence failed
-- `(PBE2)` This clause has been renamed to #BPE2.
-  - `(PBE2a)` This clause has been renamed to #BPE2a.
-  - `(PBE2b)` This clause has been renamed to #BPE2b.
-  - `(PBE2c)` This clause has been renamed to #BPE2c.
-- `(BPE2)` `BatchPresence` contains the following attributes:
-  - `(BPE2a)` `clientId` - identical to #TP3c
-  - `(BPE2b)` `action` - identical to #TP3b - null if `error` is present
-  - `(BPE2c)` `error` - an `ErrorInfo` object representing the failure reason for this channel - null if `action` is present
+- `(BPF1)` Contains information about the result of unsuccessful publishes to a channel requested by a single `BatchPublishSpec`
+- `(BPF2)` The attributes of `BatchPublishFailureResult` consist of:
+  - `(BPF2a)` `channel` string - the name of the channel
+  - `(BPF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the message(s) failed to publish
+
+#### BatchPresenceSuccessResult
+
+- `(BGR1)` Contains information about the result of a successful batch presence request for a single channel
+- `(BGR2)` The attributes of `BatchPresenceSuccessResult` consist of:
+  - `(BGR2a)` `channel` string - the name of the channel
+  - `(BGR2b)` `presence` `PresenceMessage[]` - an array containing all members present on the channel
+
+#### BatchPresenceFailureResult
+
+- `(BGF1)` Contains information about the result of an unsuccessful batch presence request for a single channel
+- `(BGF2)` The attributes of `BatchPresenceFailureResult` consist of:
+  - `(BGF2a)` `channel` string - the name of the channel
+  - `(BGF2b)` `error` `ErrorInfo` - `ErrorInfo` indicating the reason the presence request failed for the given channel
+
+#### TokenRevocationTargetSpecifier
+
+- `(TRT1)` Describes which tokens should be affected by a token revocation request
+- `(TRT2)` The attributes of `TokenRevocationTargetSpecifier` consist of:
+  - `(TRT2a)` `type` string - the type of token revocation target specifier (eg. "clientId", "revocationKey", "channel")
+  - `(TRT2b)` `value` string - the value of the token revocation target specifier
+
+#### TokenRevocationSuccessResult
+
+- `(TRS1)` Contains information about the result of a successful token revocation request for a single target specifier
+- `(TRS2)` The attributes of `TokenRevocationSuccessResult` consist of:
+  - `(TRS2a)` `target` string - the target specifier
+  - `(TRS2b)` `appliesAt` Time - a timestamp at which the token revocation will take effect
+  - `(TRS2c)` `issuedBefore` Time - a timestamp for which tokens previously issued will be revoked
+
+#### TokenRevocationFailureResult
+
+- `(TRF1)` Contains information about the result of an unsuccessful token revocation request for a single target specifier
+- `(TRF2)` The attributes of `TokenRevocationFailureResult` consist of:
+  - `(TRF2a)` `target` string - the target specifier
+  - `(TRF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the token revocation request failed for the given specified
 
 #### MessageFilter
 
@@ -2113,7 +2135,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       constructor(ClientOptions) // RSC1
       auth: Auth // RSC5
       push: Push // RSC21
-      batch: BatchOperations // BO1
       device() => io LocalDevice // RSH8
       channels: Channels<RestChannel> // RSN1
       request(
@@ -2131,13 +2152,15 @@ Each type, method, and attribute is labelled with the name of one or more clause
         unit: .Minute | .Hour | .Day | .Month api-default .Minute // RSC6b4
       ) => io PaginatedResult<Stats> // RSC6a
       time() => io Time // RSC16
+      batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
+      batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
+      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>[] // RSC23
 
     class RealtimeClient: // RTC*
       constructor(keyOrTokenStr: String) // RTC12
       constructor(ClientOptions) // RTC12
       auth: Auth // RTC4
       push: Push // RTC13
-      batch: BatchOperations // BO1
       device() => io LocalDevice // RSH8
       channels: Channels<RealtimeChannel> // RTC3, RTS1
       clientId: String? // RTC17
@@ -2159,6 +2182,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       close() // RTC16
       connect() // RTC15
       time() => io Time // RTC6
+      batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
+      batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
+      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>[] // RSC23
 
     class ClientOptions: // TO*
       embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
@@ -2223,6 +2249,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       createTokenRequest(TokenParams?, AuthOptions?) => io TokenRequest // RSA9
       requestToken(TokenParams?, AuthOptions?) => io TokenDetails // RSA8
       tokenDetails: TokenDetails? // RSA16
+      revokeTokens(TokenRevocationTargetSpecifier, issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult> // RSA17
+      revokeTokens(TokenRevocationTargetSpecifier[], issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>[] // RSA17
 
     class TokenDetails: // TD*
       +fromJson(String | JsonObject) -> TokenDetails // TD7
@@ -2310,29 +2338,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       attachSerial: String // CP2a
       channelSerial: String // CP2b
 
-    class BatchOperations: // BO*
-      publish([BatchSpec]) => BatchResult<BatchPublishResponse> // BO2a
-      publish(BatchSpec) => BatchResult<BatchPublishResponse> // BO2a
-      getPresence([String]) => BatchResult<BatchPresenceResponse> // BO2b
-
-    class BatchResult<T>: // BPA*
-      error: ErrorInfo? // BPA2b
-      responses: []T? // BPA2a
-
-    class BatchPublishResponse: // BPB*
-      channel: String // BPB2a
-      messageId: String? // BPB2b
-      error: ErrorInfo? // BPB2c
-
-    class BatchPresenceResponse: // BPD*
-      channel: String // BPD2a
-      presence: []BatchPresence // PBD2b
-
-    class BatchPresence: // BPE*
-      clientId: string // BPE2a
-      action: string? // BPE2b
-      error: ErrorInfo? // BPE2c
-
     // Only on platforms that support receiving push notifications:
     class PushChannel: // RSH7
       subscribeDevice() => io // RSH7a
@@ -2340,10 +2345,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       unsubscribeDevice() => io // RSH7c
       unsubscribeClient() => io // RSH7d
       listSubscriptions(params?: Dict<String, String>) => io PaginatedResult<PushChannelSubscription> // RSH7e
-
-    class BatchSpec: // BSP*
-      channels: [String] // BSP2a
-      messages: [Message] // BSP2b
 
     enum ChannelState: // RTL2
       INITIALIZED
@@ -2777,6 +2778,44 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class ClientInformation: // CR*
       +agents: Dict<String, String?> // CR2
       +agentIdentifier(additionalAgents: Dict<String, String?>?) => String // CR3; interface only offered by some libraries
+
+    class BatchResult<T>
+      successCount: number // BAR2a
+      failureCount: number // BAR2b
+      results: [T] // BAR2c
+
+    class BatchPublishSpec:
+      channels: [String] // BSP2a
+      messages: [Message] //BSP2b
+
+    class BatchPublishSuccessResult:
+      channel: string // BPR2a
+      messageId: string // BPR2b
+
+    class BatchPublishFailureResult:
+      channel: string // BPF2a
+      error: ErrorInfo // BPF2c
+
+    class BatchPresenceSuccessResult:
+      channel: string // BGR2a
+      presence: [PresenceMessage] // BGR2b
+
+    class BatchPresenceFailureResult
+      channel: string // BGF2a
+      error: ErrorInfo // BGF2b
+
+    class TokenRevocationTargetSpecifier:
+      type: string // TRT2a
+      value: string // TRT2b
+
+    class TokenRevocationSuccessResult:
+      target: string // TRS2a
+      appliesAt: Time // TRS2b
+      issuedBefore: Time // TRS2c
+
+    class TokenRevocationFailureResult:
+      target: string // TRF2a
+      error: ErrorInfo // TRF2b
 
 ## Old specs
 
