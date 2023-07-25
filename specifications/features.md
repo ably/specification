@@ -260,7 +260,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(RSA17)` `Auth#revokeTokens` function:
   - `(RSA17a)` Takes a `TokenRevocationTargetSpecifier` or an array of `TokenRevocationTargetSpecifier`s and sends them in a POST request to /keys/{API_KEY_NAME}/revokeTokens, with the newBatchResponse query param set to "true", where `API_KEY_NAME` is the API key name obtained by reading `AuthOptions#key` up until the first `:` character.
   - `(RSA17b)` The `TokenRevocationTargetSpecifier`s should be mapped to strings by joining the `type` and `value` with a ":" character and sent in the `targets` field of the request body
-  - `(RSA17c)` Returns an array of `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `TokenRevocationTargetSpecifier` and return a single `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+  - `(RSA17c)` Returns a `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`s.
   - `(RSA17d)` If called from a client using token authentication, should raise an `ErrorInfo` with a `40162` error code and `401` status code
   - `(RSA17e)` Accepts an optional `issuedBefore` timestamp, represented as milliseconds since the epoch, or a \`Time\` object if idiomatic to the language
   - `(RSA17f)` If an `allowReauthMargin` boolean is supplied, it should be included in the `allowReauthMargin` field of the request body
@@ -2251,8 +2251,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       createTokenRequest(TokenParams?, AuthOptions?) => io TokenRequest // RSA9
       requestToken(TokenParams?, AuthOptions?) => io TokenDetails // RSA8
       tokenDetails: TokenDetails? // RSA16
-      revokeTokens(TokenRevocationTargetSpecifier, issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult> // RSA17
-      revokeTokens(TokenRevocationTargetSpecifier[], issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>[] // RSA17
+      revokeTokens(TokenRevocationTargetSpecifier[], issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult> // RSA17
 
     class TokenDetails: // TD*
       +fromJson(String | JsonObject) -> TokenDetails // TD7
