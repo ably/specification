@@ -2156,7 +2156,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       time() => io Time // RSC16
       batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
       batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
-      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>[] // RSC23
+      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC23
 
     class RealtimeClient: // RTC*
       constructor(keyOrTokenStr: String) // RTC12
