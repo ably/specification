@@ -2186,7 +2186,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       time() => io Time // RTC6
       batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
       batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
-      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>[] // RSC23
+      batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC23
 
     class ClientOptions: // TO*
       embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
