@@ -1591,8 +1591,8 @@ Presence ops.
 
 #### Message
 
-- `(TM1)` A `Message` represents an individual message to be sent or received via the Ably Realtime service. See the [Ruby Message documentation](https://www.rubydoc.info/gems/ably/Ably/Models/Message), but bear in mind the attributes following underscore naming in Ruby
-- `(TM2)` Attributes available in a `Message`, see the [Ruby Message documentation](https://www.rubydoc.info/gems/ably/Ably/Models/Message) for an explanation of each attribute:
+- `(TM1)` A `Message` represents an individual message to be sent or received via the Ably Realtime service.
+- `(TM2)` The attributes available in a `Message` are:
   - `(TM2a)` `id` string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId` is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of the message inside the `messages` array of the `ProtocolMessage`
   - `(TM2b)` `clientId` string
   - `(TM2c)` `connectionId` string. If a message received from Ably does not contain a `connectionId`, it should be set to the `connectionId` of the encapsulating `ProtocolMessage`
@@ -1614,9 +1614,9 @@ Presence ops.
 
 #### PresenceMessage
 
-- `(TP1)` A `PresenceMessage` represents an individual presence message to be sent or received via the Ably Realtime service. See the [Ruby PresenceMessage documentation](https://www.rubydoc.info/gems/ably/Ably/Models/PresenceMessage), but bear in mind the attributes following underscore naming in Ruby
+- `(TP1)` A `PresenceMessage` represents an individual presence message to be sent or received via the Ably Realtime service.
 - `(TP2)` `PresenceMessage` `Action` enum has the following values in order from zero: `ABSENT`, `PRESENT`, `ENTER`, `LEAVE`, `UPDATE`
-- `(TP3)` Attributes available in a `PresenceMessage`, see the [Ruby PresenceMessage documentation](https://www.rubydoc.info/gems/ably/Ably/Models/PresenceMessage) for an explanation of each attribute:
+- `(TP3)` The attributes available in a `PresenceMessage` are:
   - `(TP3a)` `id` string - unique ID for this presence message. This attribute is always populated for presence messages received over REST. For presence messages received over Realtime, if the presence message does not contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId` is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of the presence message inside the `presence` array of the `ProtocolMessage`
   - `(TP3b)` `action` enum
   - `(TP3c)` `clientId` string
@@ -1630,7 +1630,7 @@ Presence ops.
 
 #### ProtocolMessage
 
-- `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol. A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages. See the [Ruby ProtocolMessage documentation](https://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage), but bear in mind the attributes following underscore naming in Ruby
+- `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol. A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages.
 - `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`
 - `(TR3)` `ProtocolMessage` `Flag` enum has the following values, where a flag with value `n` is defined to be set if the bitwise AND of the `flags` field with `2ⁿ` is nonzero
   - `(TR3a)` 0: `HAS_PRESENCE`
@@ -1642,7 +1642,7 @@ Presence ops.
   - `(TR3r)` 17: `PUBLISH`
   - `(TR3s)` 18: `SUBSCRIBE`
   - `(TR3t)` 19: `PRESENCE_SUBSCRIBE`
-- `(TR4)` Attributes available in a `ProtocolMessage`, see the [Ruby ProtocolMessage documentation](https://www.rubydoc.info/gems/ably/Ably/Models/ProtocolMessage) for an explanation of each attribute:
+- `(TR4)` The attributes available in a `ProtocolMessage` are:
   - `(TR4a)` `action` enum
   - `(TR4n)` `id` string, which will generally be of the form `connectionId:msgSerial`
   - `(TR4p)` `auth` AuthDetails object used for auth, see [RTC8](#RTC8)
