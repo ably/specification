@@ -1373,7 +1373,7 @@ h4. AuthDetails
 h4. Stats
 
 * @(TS1)@ @Stats@ is a type encapsulating a statistics datapoint retrieved from the "REST stats endpoint":/rest-api/#stats.  See "example statistics in JSON format":/general/statistics/
-* @(TS2)@ All stats values default to zero when no underlying JSON value exists. We send sparse JSON to stats requests omitting fields where the value is zero to reduce bandwidth and optimize JSON parsing, however the API exposed to developers ensures that all properties of the @Stats@ object such as @stats.all.messages.count@ will always return an @Integer@ value i.e. all attributes are non-nullable
+* @(TS2)@ This clause has been deleted. It was valid up to and including specification version 2.0.
 * @(TS15)@ The attributes of a @Stats@ object consist of:
 ** @(TS15a)@ @intervalId@ (property present in the JSON) - a @String@
 ** @(TS15b)@ @unit@ (property present in the JSON) - a @String@ or (if idiomatic) a value of the enumerable type @StatsIntervalGranularity@ whose permitted values are @minute@, @hour@, @day@, and @month@. This must be from the @unit@ property of the JSON, not calculated from the @intervalId@
