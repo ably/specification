@@ -51,4 +51,7 @@
   th {
     @apply bg-slate-200;
   }
+  a {
+    @apply text-blue-700;
+  }
 }
