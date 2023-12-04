@@ -163,9 +163,11 @@ h3(#restclient). RestClient
 ** @(RSC20e)@ Failures to log exceptions to the @errors.ably.io@ endpoint must be handled gracefully. This includes for example DNS failures, TCP/HTTP requests rejected, slow requests and internal failure errors. Additionally, as specified in @RSC20b2@, a failure to log an exception is logged with log level @info@ i.e. an exception reporting failure is not consider a client library @error@ or @warning@
 ** @(RSC20f)@ Any errors emitted by the library as a result of an internal failure must contain a status code @500@, an error code in the range @51000@ to @51999@ and a suitable error message. The error code must match one of "our common error codes":https://github.com/ably/ably-common/blob/main/protocol/errors.json
 * @(RSC22)@ @RestClient#batchPublish@ function:
-** @(RSC22a)@ Takes a @BatchPublishSpec@ or an array of @BatchPublishSpec@s and sends then in a POST request to @/messages@ with the @newBatchResponse@ query param set to "true".
+** @(RSC22a)@ This clause has been replaced by "@RSC22c@":#RSC22c. It was valid up to and including specification @2.1@.
+** @(RSC22c)@ Takes a @BatchPublishSpec@ or an array of @BatchPublishSpec@s and sends then in a POST request to @/messages@.
 ** @(RSC22b)@ Returns an array of @BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>@s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single @BatchPublishSpec@ and return a single @BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>@. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
-* @(RSC23)@ @RestClient#batchPresence@ function takes an array of channel name strings and sends them as a comma separated string in the @channels@ query parameter in a GET request to @/presence@ with the @newBatchResponse@ query param set to "true", returning a @BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>@ object.
+** @(RSC23)@ This clause has been replaced by "@RSC24@":#RSC24. It was valid up to and including specification @2.1@.
+** @(RSC24)@ @RestClient#batchPresence@ function takes an array of channel name strings and sends them as a comma separated string in the @channels@ query parameter in a GET request to @/presence@, returning a @BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>@ object.
 
 h3(#rest-auth). Auth
 
@@ -260,7 +262,8 @@ h3(#rest-auth). Auth
 ** @(RSA16c)@ Is set with the current token (if applicable) on instantiation and each time it is replaced, whether the result of an explicit @Auth#authorize@ operation, or a library-initiated renewal resulting from expiry or a token error response
 ** @(RSA16d)@ Is @null@ if there is no current token, including after a previous token has been determined to be invalid or expired, or if the library is using basic auth
 * @(RSA17)@ @Auth#revokeTokens@ function:
-** @(RSA17a)@ Takes a @TokenRevocationTargetSpecifier@ or an array of @TokenRevocationTargetSpecifier@s and sends them in a POST request to /keys/{API_KEY_NAME}/revokeTokens, with the newBatchResponse query param set to "true", where @API_KEY_NAME@ is the API key name obtained by reading @AuthOptions#key@ up until the first @:@ character.
+** @(RSA17a)@ This clause has been replaced by "@RSA17g@":#RSA17g. It was valid up to and including specification version @2.1@.
+** @(RSA17g)@ Takes a @TokenRevocationTargetSpecifier@ or an array of @TokenRevocationTargetSpecifier@s and sends them in a POST request to /keys/{API_KEY_NAME}/revokeTokens, where @API_KEY_NAME@ is the API key name obtained by reading @AuthOptions#key@ up until the first @:@ character.
 ** @(RSA17b)@ The @TokenRevocationTargetSpecifier@s should be mapped to strings by joining the @type@ and @value@ with a ":" character and sent in the @targets@ field of the request body
 ** @(RSA17c)@ Returns a @BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>@s.
 ** @(RSA17d)@ If called from a client using token authentication, should raise an @ErrorInfo@ with a @40162@ error code and @401@ status code
@@ -1784,7 +1787,7 @@ class RestClient: // RSC*
   time() => io Time // RSC16
   batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
   batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
-  batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC23
+  batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC24
 
 class RealtimeClient: // RTC*
   constructor(keyOrTokenStr: String) // RTC12
@@ -1814,7 +1817,7 @@ class RealtimeClient: // RTC*
   time() => io Time // RTC6
   batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
   batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
-  batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC23
+  batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC24
 
 class ClientOptions: // TO*
   embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
