@@ -91,7 +91,7 @@ h3(#restclient). RestClient
 * @(RSC16)@ @RestClient#time@ function sends a get request to @rest.ably.io/time@ and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
 * @(RSC21)@ @RestClient#push@ attribute provides access to the @Push@ object that was instantiated with the @ClientOptions@ provided in the @RestClient@ constructor
 * @(RSC7)@ Sends REST requests over HTTP and HTTPS to the REST endpoint @rest.ably.io@
-** @(RSC7a)@ This clause has been replaced by "@RSC7e@":#RSC7e. It was valid up to and including specification version @2.0@.
+** @(RSC7a)@ This clause has been replaced by "@RSC7e@":#RSC7e. It was valid up to and including specification version @2.1@.
 ** @(RSC7e)@ The @X-Ably-Version@ HTTP header must be included in all REST requests to Ably endpoints. The value to be sent is defined by "@CSV2@":#CSV2, except in the case where the user directly calls @RestClient#request@, in which case the value to be sent is defined by "@RSC19f1@":#RSC19f1.
 ** @(RSC7b)@ (Please note this clause and the associated header have now been superseded by "RCS7d":#RSC7d) The header @X-Ably-Lib: [lib][.optional variant]?-[version]@ should be included in all REST requests to the Ably endpoint where @[lib]@ is the name of the library such as @js@ for @ably-js@, @[.optional variant]@ is an optional library variant, such as @laravel@ for the @php@ library, which is always delimited with a period such as @php.laravel@, and where @[version]@ is the full client library version using "Semver":http://semver.org/ such as @1.0.2@. For example, the 1.0.0 version of the JavaScript library would use the header @X-Ably-Lib: js-1.0.0@.
 *** @(RSC7b1)@ When it is not possible to send the @X-Ably-Lib@ header, such as for @JSONP@ requests, the library version should be sent as a query param such as @lib=js-1.0.0@
@@ -146,7 +146,7 @@ h3(#restclient). RestClient
 ** @(RSC15f)@ Once/if a given fallback host succeeds, the client should store that successful fallback host for @ClientOptions.fallbackRetryTimeout@. Future HTTP requests during that period should use that host. If during this period a "qualifying errors":#RSC15d occurs on that host, or after @fallbackRetryTimeout@ has expired, it should be un-stored, and the fallback sequence begun again from scratch, starting with the default primary host (@rest.ably.io@ or @ClientOptions#restHost@) or, in the case of an existing fallback realtime connection as per (RTN17e), with the current fallback realtime host.
 * @(RSC17)@ When instantiating a @RestClient@, if a @clientId@ attribute is set in @ClientOptions@, then the @Auth#clientId@ attribute will contain the provided @clientId@
 * @(RSC19)@ @RestClient#request@ function is provided as a convenience for customers who wish to use REST API functionality that is either not documented or is not included in the API for our client libraries. The REST client library provides a function to issue HTTP requests to the Ably endpoints with all the built in functionality of the library such as authentication, paging, fallback hosts, MsgPack and JSON support etc. The function:
-** @(RSC19a)@ This clause has been replaced by "@RSC19f@":#RSC19f. It was valid up to and including specification version @2.0@.
+** @(RSC19a)@ This clause has been replaced by "@RSC19f@":#RSC19f. It was valid up to and including specification version @2.1@.
 ** @(RSC19f)@ Method signature is @request(String method, String path, Int version, Dict<String, String> params?, JsonObject | JsonArray body?, Dict<String, String> headers?) -> HttpPaginatedResponse@ with arguments: @method@ is a valid "HTTP verb":https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html (must support @"GET"@, @"POST"@, and @"PUT"@, should support @"PATCH"@ and @"DELETE", may support others); @path@ is the path component of the URL such as @"/channels"@; @params@ and @headers@ are optional arguments containing key-value pairs of strings (multi-valued headers are not supported) that will respectively result in querystring params and HTTP headers being added to the request (the argument types can be idiomatic for the language such as @Object@ in the case of JavaScript); @body@ is an optional @JsonObject@ or @JsonArray@ like object argument that can be easily serialized to MsgPack or JSON
 *** @(RSC19f1)@ The @version@ parameter specifies the protocol version that the Ably service should use when interpreting the request. The library must include an @X-Ably-Version@ header in the request that it sends, with value given by this argument.
 ** @(RSC19b)@ All requests will unconditionally use the default authentication mechanism configured for the REST client i.e. basic or token authentication (see "Auth":#rest-auth)
@@ -536,8 +536,8 @@ h3(#realtime-connection). Connection
 *** @(RTN16g1)@ It must be serialized in a way which is able to encode any unicode channel name. The SDK may assume that the recovery key will only be consumed by the same type of SDK, so this spec does not specify any particular serialization; however, the format should be forward-compatible through the same major version of the SDK.
 *** @(RTN16g2)@ It should return @Null@ when the SDK is in the @CLOSED@, @CLOSING@, @FAILED@, or @SUSPENDED@ states, or when it does not have a @connectionKey@ (for example, it has not yet become connected).
 ** @(RTN16d)@ The library may wish to test that after a connection has been successfully recovered, the @Connection#id@ should be identical to the @id@ of the connection that was recovered, and @Connection#key@ should have been updated to the @ConnectionDetails#connectionKey@ provided in the @CONNECTED@ @ProtocolMessage@.
-** @(RTN16m)@ This clause has been deleted. It was valid up to and including specification version @2.0@.
-*** @(RTN16m1)@ This clause has been deleted. It was valid up to and including specification version @2.0@.
+** @(RTN16m)@ This clause has been deleted. It was valid up to and including specification version @2.1@.
+*** @(RTN16m1)@ This clause has been deleted. It was valid up to and including specification version @2.1@.
 ** @(RTN16l)@ Recovery failures should be handled identically to resume failures, per "RTN15c7":#RTN15c7, "RTN15c5":#RTN15c5, and "RTN15c4":#RTN15c4.
 ** @(RTN16a)@ This clause has been replaced by "@RTN16i@":#RTN16i. It was valid up to and including specification version @1.2@.
 ** @(RTN16b)@ This clause has been replaced by "@RTN16g@":#RTN16g and "@RTN16m@":#RTN16m. It was valid up to and including specification version @1.2@.
@@ -1383,7 +1383,7 @@ h4. AuthDetails
 h4. Stats
 
 * @(TS1)@ @Stats@ is a type encapsulating a statistics datapoint retrieved from the "REST stats endpoint":/rest-api/#stats.  See "example statistics in JSON format":/general/statistics/
-* @(TS2)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS2)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS15)@ The attributes of a @Stats@ object consist of:
 ** @(TS15a)@ @intervalId@ (property present in the JSON) - a @String@
 ** @(TS15b)@ @unit@ (property present in the JSON) - a @String@ or (if idiomatic) a value of the enumerable type @StatsIntervalGranularity@ whose permitted values are @minute@, @hour@, @day@, and @month@. This must be from the @unit@ property of the JSON, not calculated from the @intervalId@
@@ -1393,17 +1393,17 @@ h4. Stats
 ** @(TS15f)@ @appId@ (property present in the JSON) - a @String@ containing the ID of the Ably application the statistics are for.
 ** @(TS15g)@ @intervalTime@ - a language-idiomatic @Time@ object, parsed from the @intervalId@
 * @(TS3)@ This clause has been deleted.
-* @(TS4)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS5)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS6)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS7)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS8)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS9)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS10)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS12)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS11)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS13)@ This clause has been deleted. It was valid up to and including specification version 2.0.
-* @(TS14)@ This clause has been deleted. It was valid up to and including specification version 2.0.
+* @(TS4)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS5)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS6)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS7)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS8)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS9)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS10)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS12)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS11)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS13)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+* @(TS14)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 
 h4. ErrorInfo
 
