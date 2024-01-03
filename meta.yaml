@@ -5,4 +5,4 @@ versions:
 
   # Must be an Integer value.
   # Previously, prior to version 2 (i.e. versions 0.8, 1.0, 1.1 and 1.2) it was a Decimal value.
-  protocol: 2
+  protocol: 3
