@@ -1384,14 +1384,27 @@ h4. Stats
 
 * @(TS1)@ @Stats@ is a type encapsulating a statistics datapoint retrieved from the "REST stats endpoint":/rest-api/#stats.  See "example statistics in JSON format":/general/statistics/
 * @(TS2)@ This clause has been deleted. It was valid up to and including specification version 2.1.
-* @(TS15)@ The attributes of a @Stats@ object consist of:
-** @(TS15a)@ @intervalId@ (property present in the JSON) - a @String@
-** @(TS15b)@ @unit@ (property present in the JSON) - a @String@ or (if idiomatic) a value of the enumerable type @StatsIntervalGranularity@ whose permitted values are @minute@, @hour@, @day@, and @month@. This must be from the @unit@ property of the JSON, not calculated from the @intervalId@
-** @(TS15c)@ @inProgress@ (property present in the JSON) - an optional @String@ containing the last sub-interval included in this entry (in format yyyy-mm-dd:hh:mm) for entries that are still in progress, such as the current month
-** @(TS15d)@ @entries@ (property present in the JSON) - a @Dict<String, int>@ containing statistics entries
-** @(TS15e)@ @schema@ (property present in the JSON) - a @String@ containing the JSON schema URI
-** @(TS15f)@ @appId@ (property present in the JSON) - a @String@ containing the ID of the Ably application the statistics are for.
-** @(TS15g)@ @intervalTime@ - a language-idiomatic @Time@ object, parsed from the @intervalId@
+* @(TS12)@ The attributes of a @Stats@ object consist of:
+** @(TS12a)@ @intervalId@ (property present in the JSON) - a @String@
+** @(TS12b)@ This clause has been replaced by "@TS12p@":#TS12p. It was valid up to and including specification version 2.1.
+** @(TS12p)@ @intervalTime@ - a language-idiomatic @Time@ object, parsed from the @intervalId@
+** @(TS12c)@ @unit@ (property present in the JSON) - a @String@ or (if idiomatic) a value of the enumerable type @StatsIntervalGranularity@ whose permitted values are @minute@, @hour@, @day@, and @month@. This must be from the @unit@ property of the JSON, not calculated from the @intervalId@
+** @(TS12q)@ @inProgress@ (property present in the JSON) - an optional @String@ containing the last sub-interval included in this entry (in format yyyy-mm-dd:hh:mm) for entries that are still in progress, such as the current month
+** @(TS12r)@ @entries@ (property present in the JSON) - a @Dict<String, int>@ containing statistics entries
+** @(TS12s)@ @schema@ (property present in the JSON) - a @String@ containing the JSON schema URI
+** @(TS12t)@ @appId@ (property present in the JSON) - a @String@ containing the ID of the Ably application the statistics are for.
+** @(TS12d)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12e)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12f)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12g)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12h)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12i)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12j)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12k)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12l)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12m)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12n)@ This clause has been deleted. It was valid up to and including specification version 2.1.
+** @(TS12o)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS3)@ This clause has been deleted.
 * @(TS4)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS5)@ This clause has been deleted. It was valid up to and including specification version 2.1.
@@ -1400,7 +1413,6 @@ h4. Stats
 * @(TS8)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS9)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS10)@ This clause has been deleted. It was valid up to and including specification version 2.1.
-* @(TS12)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS11)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS13)@ This clause has been deleted. It was valid up to and including specification version 2.1.
 * @(TS14)@ This clause has been deleted. It was valid up to and including specification version 2.1.
@@ -2190,16 +2202,16 @@ class ConnectionStateChange: // TA*
   reason: ErrorInfo? // RTN4f, TA3
   retryIn: Duration? // RTN14d, TA2
 
-class Stats: // TS15
-  intervalId: String // TS15a
-  unit: Stats.IntervalGranularity // TS15b
-  inProgress: String? // TS15c
-  entries: Dict<String, Int> // TS15d
-  schema: String // TS15e
-  appId: String // TS15f
-  intervalTime: Time // TS15g (calculated client-side)
+class Stats: // TS12
+  intervalId: String // TS12a
+  intervalTime: Time // TS12p (calculated client-side)
+  unit: Stats.IntervalGranularity // TS12c
+  inProgress: String? // TS12q
+  entries: Dict<String, Int> // TS12r
+  schema: String // TS12s
+  appId: String // TS12t
 
-enum StatsIntervalGranularity: // TS15c
+enum StatsIntervalGranularity: // TS12c
   MINUTE
   HOUR
   DAY
