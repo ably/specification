@@ -568,6 +568,9 @@ h3(#realtime-connection). Connection
 ** @(RTN23b)@ When initiating a connection, the client may send a @heartbeats@ param in the querystring, with value @true@ or @false@. If the value is true, the server will use Ably protocol messages (for example, a message with a @HEARTBEAT@ action) to satisfy the @maxIdleInterval@ requirement. If it is false or unspecified, the server is permitted to use any transport-level mechanism (for example, "websocket":https://ably.com/topic/websockets ping frames) to satisfy this. So for example, for "websocket transports":https://ably.com/topic/websockets, if the client is able to observe websocket pings, then it should send @heartbeats=false@. If not, it should send @heartbeats=true@.
 * @(RTN24)@ A connected client may receive a @CONNECTED@ @ProtocolMessage@ from Ably at any point (though is typically triggered by a reauth, see @RTC8a@). The @connectionDetails@ in the @ProtocolMessage@ must override any stored details, see @RTN21@. The @Connection@ should emit an @UPDATE@ event with a @ConnectionStateChange@ object, which should have both @previous@ and @current@ attributes set to @CONNECTED@, and the @reason@ attribute set to to the @error@ member of the @CONNECTED@ @ProtocolMessage@ (if any). (Note that @UPDATE@ should be the only event emitted: in particular, the library must not emit an @CONNECTED@ event if the client was already connected, see @RTN4h@).
 * @(RTN25)@ @Connection#errorReason@ attribute is an optional @ErrorInfo@ object which is set by the library when an error occurs on the connection, as described by "RSA4c1":#RSA4c1, "RSA4d":#RSA4d, "RTN11d":#RTN11d, "RTN14a":#RTN14a, "RTN14b":#RTN14b, "RTN14e":#RTN14e, "RTN14g":#RTN14g, "RTN15c7":#RTN15c7, "RTN15c4":#RTN15c4, "RTN15d":#RTN15d, "RTN15h":#RTN15h, "RTN15i":#RTN15i,  "RTN16e":#RTN16e.
+* @(RTN26)@ @Connection#whenState@ function:
+** @(RTN26a)@ If the connection is already in the given state, calls the listener with a `null` argument.
+** @(RTN26b)@ Else, calls @#once@ with the given state and listener.
 
 h3(#realtime-channels). Channels
 
@@ -714,6 +717,9 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL22c)@ The listener must only execute if all provided criteria are met.
 ** @(RTL22d)@ The method should use the @MessageFilter@ object if possible and idiomatic for the language.
 * @(RTL24)@ @RealtimeChannel#errorReason@ attribute is an optional @ErrorInfo@ object which is set by the library when an error occurs on the channel, as described by "RTN11d":#RTN11d, "RTL3a":#RTL3a, "RTL4e":#RTL4e, "RTL4g":#RTL4g, "RTL14":#RTL14.
+* @(RTL25)@ @RealtimeChannel#whenState@ function:
+** @(RTL25a)@ If the channel is already in the given state, calls the listener with a `null` argument.
+** @(RTL25b)@ Else, calls @#once@ with the given state and listener.
 
 h3(#realtime-presence). RealtimePresence
 
@@ -1935,6 +1941,7 @@ class RealtimeChannel: // RTL*
   name: String // RTL23
   errorReason: ErrorInfo? // RTL24
   state: ChannelState // RTL2b
+  whenState(ChannelState, (ChannelStateChange?) ->) // RTL25
   presence: RealtimePresence // RTL9
   properties: ChannelProperties // RTL15
   // Only on platforms that support receiving push notifications:
@@ -2182,6 +2189,7 @@ class Connection: // RTN*
   key: String? // RTN9
   createRecoveryKey(): String? // RTN16g
   state: ConnectionState // RTN4d
+  whenState(ConnectionState, (ConnectionStateChange?) ->) // RTN26
   close() // RTN12
   connect() // RTC1b, RTN3, RTN11
   ping() => io Duration // RTN13
