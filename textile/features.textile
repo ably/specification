@@ -346,6 +346,7 @@ h3(#plugins). Plugins
 * @(PC2)@ No generic plugin interface is specified, and therefore there is no common API exposed by all plugins. However, for type-safety, the opaque interface @Plugin@ should be used in strongly-typed languages as the type of the @ClientOptions.plugins@ collection as per "TO3o":#TO3o.
 * @(PC3)@ A plugin provided with the @PluginType@ enum key value of @vcdiff@ should be capable of decoding "vcdiff"-encoded messages. It must implement the @VCDiffDecoder@ interface and the client library must be able to use it by casting it to this interface.
 ** @(PC3a)@ The base argument of the @VCDiffDecoder.decode@ method should receive the stored base payload of the last message on a channel as specified by "RTL19":#RTL19. If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the @VCDiffDecoder.decode@ method.
+* @(PC4)@ A client library is allowed to accept plugins other than those specified in this specification, through the use of additional @ClientOptions.plugins@ keys defined by that library. The library is responsible for defining the interface of these plugins, and for making sure that these keys do not clash with the keys defined in this specification.
 
 h3(#plugin-type). PluginType
 
