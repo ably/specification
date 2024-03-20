@@ -1141,8 +1141,10 @@ h3(#activation-state-machine). Activation State Machine
 * @(RSH3)@ In platforms that support receiving push notifications, in order to connect the device's push features with Ably's, the library must perform the process described in the following abstract state machine. While this process should be implemented in whatever way better fits the concrete platform, it should be taken into account that its lifetime is that of the _app_ that runs it, which outlives that of the @RestClient@ instance or (typically) the process running the app. This typically forces some kind of on-disk storage to which the state machine's state must be persisted, so that it can be recovered later by new instances and processes running the app triggered by external events.
 ** @(RSH3a)@ State @NotActivated@ (the initial one).
 *** @(RSH3a1)@ On event @CalledDeactivate@:
-**** @(RSH3a1a)@ Makes @Push#deactivate@ return or call its callback with no error.
-**** @(RSH3a1b)@ Transitions to @NotActivated@.
+**** @(RSH3a1a)@ This clause has been deleted. It was valid up to and including specification version @3.0.0@.
+**** @(RSH3a1b)@ This clause has been deleted. It was valid up to and including specification version @3.0.0@.
+**** @(RSH3a1c)@ If the local device has @deviceIdentityToken@, does the same as @(RSH3d2)@.
+**** @(RSH3a1d)@ Otherwise, does the same as @(RSH3g2)@.
 *** @(RSH3a2)@ On event @CalledActivate@:
 **** @(RSH3a2a)@ If the local device has @deviceIdentityToken@, performs a validation of the local DeviceDetails via the following steps. "@(RSH3a2b)@":#RSH3a2b onwards then don't apply.
 ***** @(RSH3a2a1)@ Checks the compatibilty of the present client with the existing registration: if the @LocalDevice@ has a non-empty @clientId@, and the present identified client has a different (non-null) @clientId@, then a @SyncRegistrationFailed@ event should be fired containing an error with @code@ 61002, and skips to "@(RSH3a2a4)@":#RSH3a2a4.
@@ -1185,8 +1187,9 @@ h3(#activation-state-machine). Activation State Machine
 **** @(RSH3d1b)@ Transitions to @WaitingForNewPushDeviceDetails@.
 *** @(RSH3d2)@ On event @CalledDeactivate@:
 **** @(RSH3d2a)@ If a custom @deregisterCallback@ was provided to @Push#deactivate@, pass it the local @DeviceDetails@ 's id.
-**** @(RSH3d2b)@ Otherwise, make an asynchronous DELETE HTTP request to "/push/deviceRegistrations":/rest-api/#delete-device-registration using the local @DeviceDetails@ 's ID. This operation requires "push device authentication":#push-device-authentication.
+**** @(RSH3d2b)@ Otherwise, make an asynchronous DELETE HTTP request to "/push/deviceRegistrations":/rest-api/#delete-device-registration using the local @DeviceDetails@ 's ID. This operation requires "push device authentication":#push-device-authentication without other token or key authentication.
 **** @(RSH3d2c)@ Either way, when the registration is done, a @Deregistered@ or @DeregistrationFailed@ event should be fired.
+**** @(RSH3d2c1)@ @Deregistered@ event should be fired if the HTTP request returns a status code in the 2xx range, 401 (unauthorized), or code 40005 (invalid credentials). Otherwise @DeregistrationFailed@ event should be fired.
 **** @(RSH3d2d)@ Transitions to @WaitingForDeregistration@.
 *** @(RSH3d3)@ On event @GotPushDeviceDetails@ (note that this will only happen on platforms whose push device details, after first set, can change, e. g. FCM's registration token refresh):
 **** @(RSH3d3a)@ If a custom @registerCallback@ was provided to @Push#activate@, pass it the local @DeviceDetails@ updated with the push details.
