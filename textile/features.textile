@@ -1163,7 +1163,7 @@ h3(#activation-state-machine). Activation State Machine
 **** @(RSH3b2b)@ Transitions to @NotActivated@.
 *** @(RSH3b3)@ On event @GotPushDeviceDetails@:
 **** @(RSH3b3a)@ If a custom @registerCallback@ was provided to @Push#activate@, pass it the local @DeviceDetails@ updated with the push details.
-**** @(RSH3b3b)@ Otherwise, make an asynchronous HTTP @POST@ request to "/push/deviceRegistrations":/rest-api/#post-device-registration using the local @DeviceDetails@ updated with the push details as body.
+**** @(RSH3b3b)@ Otherwise, make an asynchronous HTTP @POST@ request to "/push/deviceRegistrations":/rest-api/#post-device-registration using the @LocalDevice@ updated with the push details as body (together with the @deviceSecret@).
 **** @(RSH3b3c)@ Either way, when the registration is done, a @GotDeviceRegistration@ or @GettingDeviceRegistrationFailed@ event should be fired.
 **** @(RSH3b3d)@ Transitions to @WaitingForDeviceRegistration@.
 *** @(RSH3b4)@ On event @GettingPushDeviceDetailsFailed@:
