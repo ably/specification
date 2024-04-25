@@ -1,0 +1,13 @@
+------------------------------------------------------------------------
+
+title: Chat Protocol\
+section: client-lib-development-guide\
+index: 50\
+jump_to:\
+Help with:\
+- Chat Protocol Overview#overview\
+----
+
+## Overview
+
+Section dedicated to new chat protocol development. TBC
