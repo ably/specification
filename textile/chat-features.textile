@@ -1,0 +1,13 @@
+---
+title: Chat Features
+section: client-lib-development-guide
+index: 55
+jump_to:
+  Help with:
+    - Chat Features Overview#overview
+---
+
+h2(#overview). Overview
+
+Section dedicated to new chat feature development. TBC
+
