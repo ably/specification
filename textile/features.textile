@@ -1606,7 +1606,7 @@ h4. ClientOptions
 ** @(TO3d)@ @tls@ boolean - defaults to true. If false, will not use TLS for all connections
 ** @(TO3e)@ @autoConnect@ boolean - defaults to true. If false, suppresses the automatic initiation of a connection when the library is instantiated
 ** @(TO3f)@ @useBinaryProtocol@ boolean - defaults to true. If false, forces the library to use the JSON encoding for REST and Realtime operations, instead of the default binary msgpack encoding
-** @(TO3g)@ @queueMessages@ boolean - defaults to true. If false, suppresses the default queueing of @MESSAGE@ or @PRESENCE@ @ProtocolMessage@s when connection is either in the @CONNECTING@ or @DISCONNECTED@ states. Otherwise those messages should be failed immediately if not in the @CONNECTED@ state.
+** @(TO3g)@ @queueMessages@ boolean - defaults to true. If false, suppresses the default queueing of @MESSAGE@ or @PRESENCE@ @ProtocolMessage@s See @RTL6c@ for connection and channel state condition details
 ** @(TO3h)@ @echoMessages@ boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection
 ** @(TO3i)@ @recover@ string - A connection recovery string, specified with the intention of inheriting the state of an earlier connection
 ** @(TO3n)@ @idempotentRestPublishing@ boolean - defaults to false for clients with version &lt; 1.2, otherwise true. If true, "RSL1k":#RSL1k1 applies
