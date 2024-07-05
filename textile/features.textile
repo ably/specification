@@ -203,7 +203,7 @@ h3(#rest-auth). Auth
 * @(RSA6)@ The @capability@ for new tokens is JSON stringified. If If the user-provided @tokenParams@ does not specify capabilities, the @capability@ field should be omitted from the @tokenRequest@, and Ably will supply a token with the capabilities of the underlying key. See "TK2b":#TK2b
 * @(RSA7)@ @clientId@ and authenticated clients:
 ** @(RSA7d)@ If @clientId@ is provided in @ClientOptions@ and @RSA4@ indicates that token auth is to be used, the @clientId@ field in the @TokenParams@ (@TK2c@) should be set to that @clientId@ when requesting a token
-** @(RSA7e)@ If @clientId@ is provided in @ClientOptions@ and @RSA4@ indicates that basic auth is to be used, then:
+** @(RSA7e)@ If a valid (per @RSA7c@) @clientId@ is provided in @ClientOptions@, then:
 *** @(RSA7e1)@ For realtime clients, the connect request should include the @clientId@ as a querystring parameter, @clientId@
 *** @(RSA7e2)@ For REST clients, all requests should include an @X-Ably-ClientId@ header with value set to the @clientId@, Base64 encoded
 ** @(RSA7a)@ A client is considered to be identified if a @clientId@ is implicit in either the connection or the authentication scheme; that is, is present in the current authentication token (with the exception of the wildcard @clientId@ @'*'@), is set by a header per @RSA7e2@, or is specified when initiating a realtime connection per @RSA7e1@. The following applies to identified clients:
