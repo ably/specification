@@ -767,7 +767,7 @@ h3(#realtime-presence). RealtimePresence
 * @(RTP6)@ @RealtimePresence#subscribe@ function:
 ** @(RTP6a)@ Subscribe with a single listener argument subscribes a listener to all presence messages
 ** @(RTP6b)@ Subscribe with an action argument and a listener argument - such as @ENTER@, @LEAVE@, @UPDATE@ or @PRESENT@ - subscribes a listener to receive only presence messages with that action. In lanuages where method overloading is supported the action argument may also be an array of actions to receive only presence messages with an action included in the supplied array.
-** @(RTP6c)@ Implicitly attaches the @RealtimeChannel@ if the channel is in the @INITIALIZED@ state. The optional callback, if provided, is called according to "@RTL4d@":#RTL4d based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
+** @(RTP6c)@ Implicitly attaches the @RealtimeChannel@ if the channel is in the @INITIALIZED@, @DETACHING@, or @DETACHED@ states. The optional callback, if provided, is called according to "@RTL4d@":#RTL4d based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
 * @(RTP7)@ @RealtimePresence#unsubscribe@ function:
 ** @(RTP7c)@ Unsubscribe with no arguments unsubscribes all listeners
 ** @(RTP7a)@ Unsubscribe with a single listener argument unsubscribes the listener if previously subscribed with an action-specific subscription
