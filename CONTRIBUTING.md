@@ -42,6 +42,8 @@ by adding a local development HTTP server.
 When making changes to [the spec](textile/features.textile), please follow these guidelines:
 
 - **Ordering**: Spec items should generally appear in ID order, but priority should be placed on ordering them in a way that makes coherent sense, even if that results in them being numbered out-of-order. For example, if `XXX1`, `XXX2` and `XXX3` exist but it would make more sense for `XXX3` to follow `XXX1`, then just move the spec items accordingly without changing their IDs
+- **Structuring**: When structuring the specification and defining the relationships between clauses and subclauses, generally avoid placing behavior descriptions and implementation details in the parent clause. The parent clause should primarily serve as an informational header for its subclauses. However, if it improves coherence, including behavior descriptions in the parent clause is permissible.
+- **Clarity**: Refrain from using conditional statements and multiple behavior descriptions within a single spec item. These should be separated into distinct subclauses for clarity.
 - **Addition**: When adding a new spec item, choose an ID that is greater than all others that exist in the given section, even if there is a gap in the currently assigned IDs.
 - **Modification**: Spec items should never be mutated, except to patch a mistake that doesn't change the semantics for SDK implementations. Follow the guidance outlined here in respect of _Replacement_ if the meaning or scope of a spec point needs to change.
 - **Removal**: When removing a spec item, it must remain but replace all text with `This clause has been deleted. It was valid up to and including specification version @X.Y@.` (uses textile markup).
