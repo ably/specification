@@ -9,5 +9,114 @@ jump_to:
 
 h2(#overview). Overview
 
-Section dedicated to new chat feature development. TBC
+This document outlines the feature specification for the Ably Chat product.
 
+The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended",  "may", and "optional" (whether lowercased or uppercased) in this document are to be interpreted as described in "RFC 2119":https://tools.ietf.org/html/rfc2119.
+
+The over-the-wire protocol for Chat, as well as implementation details, may be found on the chat protocol page.
+
+h2(#overview). Chat Specification Version
+
+* @(CHA-V1)@ **Specification Version**: This document defines the Ably chat library features specification ('features spec').
+** @(CHA-V1a)@ The current verison of the Chat library feature specification is version @0.1.0@.
+
+h2(#general). General Principles
+
+* @(CHA-GP1)@ As far as is practicable, the implementation details such as underlying Realtime Channels should be hidden from the public API. This allows developers to interact with Chat without having to understand many low-level primitives.
+* @(CHA-GP2)@ The public API should avoid implicit operations as a side-effect to some other operation. For example, adding a subscriber to messages in a Chat Room should not automatically trigger that Room to attach. This is in contrast to the current core SDKs. Avoiding side-effects provides a clean, easy to understand API.
+* @(CHA-GP3)@ Wherever possible, Chat features should be exposed in the public API as properties of their parent. For example, @messages@ would be considered a property of a @room@ object. This allows for greater composability and extensibility in the future.
+
+h2(#rooms). Rooms
+
+h3(#rooms-general). General Information
+
+A Room is the atomic unit of Chat. All chat operations are performed in the context of a room that a client is currently attached to. As the Room is the atomic unit, its state should be considered as the combination of the states of underlying resources.
+
+h3(#rooms-status). Room Statuses
+
+The status of any given Chat Room is the combination of the states of all of its constituent contributors. For more information on this, see "@Room Lifecycle@":#rooms-lifecycle.
+
+* @(CHA-RS1)@ Every room has a @status@, which describes the current status of the room. 
+** @(CHA-RS1a)@ The @INITIALIZED@ status is the initial status before any attachment operations have taken place.
+** @(CHA-RS1b)@ The @ATTACHING@ status is used when the room is in the process of attaching to Ably.
+** @(CHA-RS1c)@ The @ATTACHED@ status means that the room is fully connected to Ably and functioning normally.
+** @(CHA-RS1d)@ The @DETACHING@ status is used when the room is in the process of detaching from Ably.
+** @(CHA-RS1e)@ The @DETACHED@ status means that the room has been detached from Ably by a user-initiated request. It will not attempt to re-connect without explicit intervention.
+** @(CHA-RS1f)@ The @SUSPENDED@ status is when the room has been detached from Ably for an extended period of time. The room will periodically attempt to reconnect.
+** @(CHA-RS1g)@ The @FAILED@ status means that something has gone wrong with the room (such as lack of permissions). The room will not attempt to connect to Ably and will require user intervention.
+** @(CHA-RS1h)@ The @RELEASING@ status means that the room is being released and the underlying resources are being cleaned up.
+** @(CHA-RS1i)@ The @RELEASED@ status means that the room has been cleaned up and the object can no longer be used.
+* @(CHA-RS2)@ A room must expose its current status.
+** @(CHA-RS2a)@ @[Testable]@ A room must expose its current status, a single value from the list provided above.
+** @(CHA-RS2b)@ A room must expose the latest error, if any, associated with its current status.
+*** @(CHA-RS2b1)@ @[Testable]@ If an error is associated with the current status, then this must be exposed.
+*** @(CHA-RS2b2)@ @[Testable]@ If there is no error is associated with the current status, then the room status should not expose any errors.
+* @(CHA-RS3)@ @[Testable]@ A newly created room must have a current status of @INITIALIZED@.
+* @(CHA-RS4)@ A room must allow changes to room status to be observed by clients.
+** @(CHA-RS4a)@ @[Testable]@ Room status update events must contain the newly entered room status.
+** @(CHA-RS4b)@ @[Testable]@ Room status update events must contain the previous room status.
+** @(CHA-RS4c)@ @[Testable]@ Room status update events must not contain an error, where that error pertains to the current status.
+** @(CHA-RS4d)@ @[Testable]@ Room status update events must contain an error, where that error pertains to the current status.
+** @(CHA-RS4e)@ @[Testable]@ Clients must be able to register a listener for room status updates and receive such events.
+** @(CHA-RS4f)@ @[Testable]@ Clients must be able to unregstier a listener for room status updates and from that point onwards, cease to receive such events on that listener only.
+** @(CHA-RS4g)@ @[Testable]@ Clients must be able to unregstier all listeners for room status updates and from that point onwards, cease to receive such events on all listeners.
+
+h3(#rooms-lifecycle). Room Lifecycle
+
+Rooms are considered the atomic unit of chat and comprise of potentially multiple underlying realtime channels. The status of the room is, broadly speaking, the combination of the respective underlying channel states (the rooms @contributors@). We present one unified status, rather than statuses for multiple individual features, as this is easier for developers to reason about.
+
+Chat features are spread across multiple Realtime Channels. For the purpose of this section, a @contributor@ is a feature in Chat that is considered as part of the overall room status, as well as its lifecycle. A @contributor@ might share its realtime channel with another (e.g. messages and occupancy), or it might be entirely standalone (room reactions). In that sense, implementations of Room Lifecycle @MUST@ make no assumptions over which realtime channels are in use or being shared, and treat every @contributor@ as being entirely standalone.
+
+There are four room lifecycle operations: @ATTACH@, @DETACH@, @RELEASE@ and @RETRY@. @RETRY@ is an internal-only operation. In order to ensure the integrity of the chat room status, these operations are carried out atomically.
+
+* @(CHA-RL1)@ A room must be explicitly @ATTACHED@ to.
+** @(CHA-RL1a)@ @[Testable]@ If the room is already in the @ATTACHED@ status, then this operation is no-op.
+** @(CHA-RL1b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with error code @102102@.
+** @(CHA-RL1c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with error code @102103@.
+TODO: Transient timeouts
+** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing.
+** @(CHA-RL1e)@ @[Testable]@ Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the @ATTACHING@ status.
+** @(CHA-RL1f)@ @[Testable]@ The underlying @contributors@ will have their Realtime Channels attached in sequence.
+** @(CHA-RL1g)@ When all @contributors@ Realtime Channels successfully attach, the operation is now complete and the room is considered attached.
+*** @(CHA-RL1g1)@ @[Testable]@ The room status shall be transitioned to @ATTACHED@.
+*** @(CHA-RL1g2)@ @[Testable]@ Any contributors to room that have experienced a discontinuity must be notified of this fact, using the error that caused the original discontinuity.
+** @(CHA-RL1h)@ If a one of the @contributors@ Realtime Channels fails to attach, then the operation has failed and must be rolled back.
+*** @(CHA-RL1h1)@ @[Testable]@ The @attach@ call must throw an @ErrorInfo@. The code for this error is determined by the feature that failed (see the @ErrorCodes@ enum in the JS SDK for more information).
+*** @(CHA-RL1h2)@ @[Testable]@ If the underlying Realtime Channel entered the @SUSPENDED@ state, then the room status will transition to @SUSPENDED@, using the Realtime Channel error as the @cause@ field of the @ErrorInfo@.
+*** @(CHA-RL1h3)@ @[Testable]@ When the room enters the @SUSPENDED@ status, the room lifecycle shall enter the recovery loop (TODO: REF) and attempt to re-establish attachment. The attach operation shall fail using the @ErrorInfo@ associated with the @SUSPENDED@ room status as the error.
+*** @(CHA-RL1h4)@ @[Testable]@ If the underlying Realtime Channel entered the @FAILED@ state, then the room status will transition to @FAILED@, using the Realtime Channel error as the @cause@ field of the @ErrorInfo@.
+*** @(CHA-RL1h5)@ @[Testable]@ When the room enters the @FAILED@ status, then the room will detached all channels that are not in the @FAILED@ state.
+*** @(CHA-RL1h6)@ @[Testable]@ When the room enters the @FAILED@ status, and a channel fails to detach on command, then the detach operation will be repeated until such a time that all channels have detached successfully.
+* @(CHA-RL2)@ A room must be explicitly @DETACHED@ from.
+** @(CHA-RL2a)@ @[Testable]@ If the room status is already @DETACHED@, then this operation is a no-op.
+** @(CHA-RL2b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with error code @102102@.
+** @(CHA-RL2c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with error code @102103@.
+** @(CHA-RL2d)@ @[Testable]@ If the room is in the @FAILED@ status, the operation shall be rejected with error code @102101@.
+** @(CHA-RL2e)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status.
+** @(CHA-RL2f)@ @[Testable]@ The underlying @contributors@ Realtime Channels will be detached in sequence.
+** @(CHA-RL2g)@ @[Testable]@ If all channel detachments complete successfully, then the room shall transition to the @DETACHED@ status.
+** @(CHA-RL2h)@ If during detachment, a channel fails to detach, different operations are performed based on the nature of the detach.
+*** @(CHA-RL2h1)@ @[Testable]@ If a channel enters the @FAILED@ state during detachment, then the room will transition to the @FAILED@ status. The detach operation continues until all channels are either @DETACHED@ or @FAILED@, with the operation throwing an @ErrorInfo@ with the feature-specific error code of the first feature to fail, using the underlying channel error as the @cause@. The same @ErrorInfo@ must accompany the @FAILED@ room status.
+*** @(CHA-RL2h2)@ @[Testable]@ If the room is already in a @FAILED@ status during the detach operation and another channel fails, the @FAILED@ status will not be emitted twice.
+*** @(CHA-RL2h3)@ @[Testable]@ If a channel enters another state during detachment (namely @ATTACHED@, which happens when detach times out). Then the detachment cycle will be retried after a short pause. The rooms status will not change during this process.
+* @(CHA-RL3)@ A room must be explicitly @RELEASED@. This operation is not performed directly on a Room object by the client, but is described here.
+** @(CHA-RL3a)@ @[Testable]@ If the room is already in the @RELEASED@ status, this operation is no-op.
+** @(CHA-RL3b)@ @[Testable]@ If the room is in the @DETACHED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
+** @(CHA-RL3c)@ @[Testable]@ If the room is in the @RELEASING@ status, then the operation will return the result of the pending @release@ operation, or throw any exception that it throws.
+** @(CHA-RL3c)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status.
+** @(CHA-RL3d)@ @[Testable]@ All features channels are detached in sequence.
+** @(CHA-RL3e)@ @[Testable]@ If a channel is in the @FAILED@ state when it is time to detach, it shall be ignored.
+** @(CHA-RL3f)@ @[Testable]@ If a channel fails to detach, the channel detach sequence will be retried after a short wait.
+** @(CHA-RL3g)@ @[Testable]@ Once all channels have entered the @DETACHED@ state, then the room state is transitioned to @RELEASED@ and the operation completes.
+** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
+* @(CHA-RL4)@ A room must monitor the state of its @contributors@ Realtime Channels and act upon any changes.
+* @(CHA-RL5)@ A room must @RETRY@ whenever it leaves the @ATTACHED@ status unexpectedly.
+* @(CHA-RL6)@ A room must notify its contributors if they have experienced a discontinuity in Realtime messages.
+
+
+
+h2(#room-configuration). Room Configuration
+
+* @(CHA-RC1)@ Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
+* @(CHA-RC2)@ @[Testable]@ Requesting a room from the Chat Client will provide an instance of a room.
+* @(CHA-RC3)@ @[Testable]@ Once a room has been created on the Chat Client, assuming it is not subsequently released, then the client will return the same room instance on subsequent calls.
