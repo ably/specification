@@ -450,6 +450,15 @@ h3(#realtime-connection). Connection
 ** @(RTN2f)@ The API version param @v@ must be included in all connections to Ably endpoints. The value to be sent is defined by "@CSV2@":#CSV2.
 ** @(RTN2g)@ The library and version (in the form described in "RSC7b":#RSC7b) should be included as the value of a @lib@ querystring param. For example, the 1.0.0 version of the JavaScript library would use the param @lib=js-1.0.0@
 * @(RTN3)@ If connection option @autoConnect@ is true, a connection is initiated immediately; otherwise a connection is only initiated following an explicit call to @connect()@
+* @(RTN27)@ The Connection is a state machine and implements the following states, which are mutually exclusive and exhaustive:
+** @(RTN27a)@ @INITIALIZED@ - the initial state of the connection. The library never transitions back to @INITIALIZED@ from any other state.
+** @(RTN27b)@ @CONNECTING@ - the state whenever the library is actively attempting to connect to the server (whether trying to obtain a token, trying to open a transport, or waiting for a @CONNECTED@ event).
+** @(RTN27c)@ @DISCONNECTED@ - a state where the library is not connected to the server and is not actively attempting to become connected, but where a reconnect attempt is scheduled in the future after the @TO3l1@ @disconnectedRetryTimeout@ elapses, and where if the library was previously connected, the next connect attempt  will be an @RTN15b@ resume attempt.
+** @(RTN27d)@ @SUSPENDED@ - a state where the library is not connected to the server and is not actively attempting to become connected, but where a reconnect attempt is scheduled in the future after the @TO3l2@ @suspendedRetryTimeout@ elapses, and where next connect attempt is a clean connection (not a resume attempt).
+** @(RTN27e)@ @CONNECTED@ - the state whenever the library is connected to the server (there is a transport currently active which has received a @CONNECTED@ @ProtocolMessage@).
+** @(RTN27f)@ @CLOSING@ - the state when the user has requested the library @close()@, and the library is waiting for a @CLOSE@ to be received on the active transport.
+** @(RTN27g)@ @CLOSED@ - the state when the library has been explicitly closed by the user, and there is no active transport.
+** @(RTN27h)@ @FAILED@ - the state when the library has encountered a failure condition it cannot recover from. It will remain in this state indefinitely, unless and until an explicit call to @connect()@ is made.
 * @(RTN4)@ The @Connection@ implements @EventEmitter@ and emits @ConnectionEvent@ events, where a @ConnectionEvent@ is either a @ConnectionState@ or @UPDATE@, and a @ConnectionState@ is either @INITIALIZED@, @CONNECTING@, @CONNECTED@, @DISCONNECTED@, @SUSPENDED@, @CLOSING@, @CLOSED@, or @FAILED@
 ** @(RTN4a)@ It emits a @ConnectionState@ @ConnectionEvent@ for every connection state change
 ** @(RTN4h)@ It emits an @UPDATE@ @ConnectionEvent@ for changes to connection conditions for which the @ConnectionState@ (e.g. @CONNECTED@) does not change. (The library must never emit a @ConnectionState@ @ConnectionEvent@ for a state equal to the previous state)
