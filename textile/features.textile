@@ -1299,6 +1299,7 @@ h4. Message
 ** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
+* @(TM5)@ When decoding a @Message@, if the SDK encounters any fields it does not recognise, it must silently ignore them, and not print any kind of error or warning log.
 
 h4. DeltaExtras
 
@@ -1322,6 +1323,7 @@ h4. PresenceMessage
 ** @(TP3g)@ @timestamp@ time in milliseconds since epoch. If a presence message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TP3h)@ @memberKey@ string function that combines the @connectionId@ and @clientId@ ensuring multiple connected clients with the same clientId are uniquely identifiable
 * @(TP4)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @PresenceMessage@-like object (or array of such objects), and optionally a @channelOptions@, and return a @PresenceMessage@ (or array of such @PresenceMessages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves. This behaviour is the same as in @(TM3)@.
+* @(TP5)@ When decoding a @PresenceMessage@, if the SDK encounters any fields it does not recognise, it must silently ignore them, and not print any kind of error or warning log.
 
 h4. ProtocolMessage
 
@@ -1354,6 +1356,7 @@ h4. ProtocolMessage
 ** @(TR4l)@ @presence@ Array of @PresenceMessage@ objects
 ** @(TR4m)@ @timestamp@ time in milliseconds since epoch
 ** @(TR4q)@ @params@ @Dict<String, String>@ key-value pairs
+* @(TR5)@ When decoding a @ProtocolMessage@, if the SDK encounters any fields it does not recognise, it must silently ignore them, and not print any kind of error or warning log.
 
 h4. PaginatedResult
 
