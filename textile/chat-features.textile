@@ -25,6 +25,7 @@ h2(#general). General Principles
 * @(CHA-GP1)@ As far as is practicable, the implementation details such as underlying Realtime Channels should be hidden from the public API. This allows developers to interact with Chat without having to understand many low-level primitives.
 * @(CHA-GP2)@ The public API should avoid implicit operations as a side-effect to some other operation. For example, adding a subscriber to messages in a Chat Room should not automatically trigger that Room to attach. This is in contrast to the current core SDKs. Avoiding side-effects provides a clean, easy to understand API.
 * @(CHA-GP3)@ Wherever possible, Chat features should be exposed in the public API as properties of their parent. For example, @messages@ would be considered a property of a @room@ object. This allows for greater composability and extensibility in the future.
+* @(CHA-GP4)@ Avoid overloading methods and optional parameters. Prefer object-type parameters wherever practical and idiomatic.
 
 h2(#rooms). Rooms
 
@@ -162,6 +163,155 @@ h2(#room-configuration). Room Configuration
 * @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain features. When requesting a room, options as to which features should be enabled, and the configuration they should take, must be provided.
 ** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
 ** @(CHA-RC2b)@ @[Testable]@ If a room is configured to have a given feature disabled, then attempting to use that feature must result in an @ErrorInfo@ with code @40000@ being thrown.
+
+h2(#messages). Messages
+
+Messages are the quintessential component of a chat room - the purpose of chat is for users to talk to each other!
+
+Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.
+
+@Messages@ shall be exposed to consumers via the @messages@ property of a @Room@.
+
+* @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then then messages channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
+** @(CHA-M2a)@ @[Testable]@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
+** @(CHA-M2b)@ @[Testable]@ A @Message@ is considered after another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes second.
+** @(CHA-M2c)@ @[Testable]@ A @Message@ is considered to be equal to another @Message@ if they have the same timeserial.
+* @(CHA-M3)@ Messages are sent to Ably via the Chat REST API, using the @send@ method.
+** @(CHA-M3a)@ @[Testable]@ When a message is sent successfully, the caller shall receive a struct representing the "@Message@":#chat-structs-message in response (as if it were received via Realtime event).
+** @(CHA-M3b)@ @[Testable]@ A message may be sent without @metadata@ or @headers@. When these are not specified by the user, they must be omitted from the REST payload.
+** @(CHA-M3c)@ @[Testable]@ @metadata@ must not contain the key @ably-chat@. This is reserved for future internal use. If this key is present, the send call shall terminate by throwing an @ErrorInfo@ with code @40001@.
+** @(CHA-M3d)@ @[Testable]@ @headers@ must not contain a key prefixed with @ably-chat@. This is reserved for future internal use. If this key is present, the send call shall terminate by throwing an @ErrorInfo@ with code @40001@.
+** @(CHA-M3e)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
+* @(CHA-M4)@ Messages can be received via a subscription in realtime.
+** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
+** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
+** @(CHA-M4c)@ @[Testable]@ When a realtime message with @name@ set to @message.created@ is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
+** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
+* @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
+** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
+** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
+** @(CHA-M5c)@ @[Testable]@ If a channel leaves the @ATTACHED@ state and then re-enters @ATTACHED@ with @resumed=false@, then it must be assumed that messages have been missed. The @subscription point@ of any subscribers must be reset to the @attachSerial@.
+** @(CHA-M5d)@ @[Testable]@ If a channel @UPDATE@ event is received and @resumed=false@, then it must be assumed that messages have been missed. The @subscription point@ of any subscribers must be reset to the @attachSerial@.
+** @(CHA-M5e)@ Each subscription shall expose a method or callback that allows for messages to be queried. These messages are queried via the "REST API"#rest-fetching-messages.
+** @(CHA-M5f)@ @[Testable]@ This method must accept any of the standard history query options, except for @direction@, which must always be @backwards@.
+** @(CHA-M5g)@ @[Testable]@ The subscribers @subscription point@ must be additionally specified (internally, by us) in the @fromSerial@ query parameter.
+** @(CHA-M5h)@ @[Testable]@ The method must return a standard @PaginatedResult@ , which can be further inspected to paginate across results.
+** @(CHA-M5i)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
+** @(CHA-M5j)@ @[Testable]@ If the @end@ parameter is specified and is more recent than the @subscription point@ timeserial, the method must throw an @ErrorInfo@ with code @40000@.
+* @(CHA-M6)@ Messages should be queryable from a paginated REST API.
+* @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through.
+* @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
+
+
+
+h2(#rest-api). Chat HTTP REST API
+
+h3(#rest-general). General
+
+* @(CHA-RST1)@ REST API requests shall be made via the @request()@ method on the underling Ably SDK.
+* @(CHA-RST2)@ REST API requests shall use API Protocol Version @3@
+* @(CHA-RST3)@ @[Testable]@ REST API requests must be supported using @JSON@ and @msgpack@ as a @Content-Type@ (@useBinaryProtocol@ on the underlying Ably SDK)
+
+h3(#rest-sending-messages). Sending Messages
+
+h4(#rest-sending-messages-request). Request
+
+Below is the full REST payload format. The @metadata@ and @headers@ keys are optional.
+
+<pre>
+  POST /chat/v1/rooms/<roomId>/messages
+  {
+    "text": "the message text",
+    "metadata": {
+      "foo": {
+        "bar": 1
+      }
+    },
+    "headers": {
+      "baz": "qux"
+    }
+  }
+</pre>
+
+h4(#rest-sending-messages-request). Response
+
+A successful request shall result in status code @201 Created@.
+
+The response body is as follows.
+
+<pre>
+  {
+    "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
+    "createdAt": 1726232498871
+  }
+</pre>
+
+h4(#rest-sending-messages-request). Corresponding Realtime Event
+
+<pre>
+  {
+    "name": "message.created"
+    "encoding": "json"
+    "data": {
+      "text": "the message text",
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      }
+    },
+    "timestamp": "1726232498871",
+    "extras": {
+      "headers": {
+        "baz": "qux"
+      },
+      "timeserial": "cbfqxperABgItU52203559@1726232498871-0"
+    }
+  }
+</pre>
+
+h3(#rest-fetching-messages). Fetching Message History
+
+h4(#rest-fetching-messages-request). Request
+
+<pre>
+  GET /chat/v1/rooms/<roomId>/messages
+</pre>
+
+The method accepts query parameters identical to the standard Ably REST API.
+
+h4(#rest-fetching-messages-response). Response
+
+An array of "@Message@ structs":#chat-structs-message
+
+
+h2(#chat-structs). Chat Structs and Types
+
+This section contains an overview of the key types in Chat. This is not intended to be prescriptive to implementation and different ecosystems may expose the underlying properties
+in whichever format is most idiomatic to the platform.
+
+h3(#chat-structs-message). Messages
+
+<pre>
+  {
+    "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
+    "roomId": "my-room",
+    "clientId": "who-sent-the-message",
+    "text": "my-message",
+    "createdAt": DateTime(),
+    "metadata": {
+      "foo": {
+        "bar": 1
+      }
+    },
+    "headers": {
+      "baz": "qux"
+    }
+  }
+</pre>
+
+Determining the global order of messages may be achieved vi
 
 h2(#error-codes). Chat-specific Error Codes
 
