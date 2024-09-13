@@ -172,7 +172,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 @Messages@ shall be exposed to consumers via the @messages@ property of a @Room@.
 
-* @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then then messages channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the messages channel will be @my-room::$chat::$chatMessages@.
 * @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 ** @(CHA-M2a)@ @[Testable]@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
 ** @(CHA-M2b)@ @[Testable]@ A @Message@ is considered after another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes second.
@@ -188,6 +188,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4c)@ @[Testable]@ When a realtime message with @name@ set to @message.created@ is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
+** @(CHA-M5d)@ @[Testable]@ Incoming realtime events that are malformed (unknown field should be ignored) shall not be emitted to subscribers.
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
 ** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
 ** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
@@ -202,15 +203,72 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M6)@ Messages should be queryable from a paginated REST API.
 * @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through.
 * @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
+* @(CHA-M7)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in messages that they need to resolve. Their listener will be called when a discontinuity event is triggered from the room lifecycle.
 
+h2(#reactions). Ephemeral Room Reactions
 
+Ephemeral room reactions are one-time events that are sent to the room, such as thumbs-up or heart emojis. They are supposed to capture the current emotions in the room (e.g. everyone spamming the :tada: emoji when a team scores the winning goal).
+
+They are ephemeral as we do not currently store these messages do not support server-authoritative counting.
+
+All ephemeral room reactions are handled over the Realtime connection.
+
+@Reactions@ shall be exposed to consumers via the @reactions@ property of a @Room@.
+
+* @(CHA-ER1)@ Reactions for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$roomReactions@. For example, if your room id is @my-room@ then the reactions channel will be @my-room::$chat::$roomReactions@.
+* @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
+* @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
+** @(CHA-ER3a)@ @[Testable]@ Reactions are sent on the channel using a message in "this format":#realtime-room-reactions.
+** @(CHA-ER3b)@ @[Testable]@ @metadata@ must not contain the key @ably-chat@. This is reserved for future internal use. If this key is present, the @send@ call shall terminate by throwing an @ErrorInfo@ with code @40001@.
+** @(CHA-ER3c)@ @[Testable]@ @headers@ must not contain a key prefixed with @ably-chat@. This is reserved for future internal use. If this key is present, the send call shall terminate by throwing an @ErrorInfo@ with code @40001@.
+* @(CHA-ER4)@ A user may subscribe to reaction events in Realtime.
+** @(CHA-ER4a)@ @[Testable]@ A user may provide a listener to subscribe to reaction events. This operation must have no side-effects in relation to room or underlying status. When a "realtime message":#realtime-room-reactions with name @roomReaction@ is received, this message is converted into a "reaction object":#chat-structs-ephemeral-reactions and emitted to subscribers.
+** @(CHA-ER4b)@ @[Testable]@ A user may unsubscribe a registered listener. This operation must have no side-effects in relation to room or underlying status. Once unsubscribed, subsequent reaction events must not be emitted to this listener.
+** @(CHA-ER4c)@ @[Testable]@ Realtime events with an unknown @name@ shall be silently discarded.
+** @(CHA-ER4d)@ @[Testable]@ Realtime events that are malformed (unknown fields should be ignored) shall not be emitted to listeners.
+* @(CHA-ER5)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in reactions that they need to resolve. Their listener will be called when a discontinuity event is triggered from the room lifecycle.
+
+h2(#presence). Online Status (Presence)
+
+Presence allows chat room users to indicate to others that they're online, as well as other information including their profile picture URL etc.
+
+@Presence@ shall be exposed to consumers via the @presence@ property of a @Room@.
+
+* @(CHA-PR1)@ Presence for a Room is exposed on the realtime channel used for chat messages, in the format @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-PR2)@ The presence payload for Chat is opinionated, so that we may add or change fields later without needing to consider how customers are using presence.
+** @(CHA-PR2a)@ @[Testable]@ The presence data format is a JSON object as described below. Customers may specify content of an arbitrary type to be placed in the @userCustomData@ field.
+
+<pre>
+  {
+    "userCustomData": {
+      // Some user specified type, does not have to be object.
+    }
+  }
+</pre>
+
+* @(CHA-PR3)@ Users may enter presence.
+** @(CHA-PR3a)@ @[Testable]@ Users may choose to enter presence, optionally providing custom data to enter with. The overall presence data must retain the format specified in @CHA-PR2@.
+** @(CHA-PR3b)@ @[Testable]@ If the underlying realtime channel is not attached at the time of the @enter@ call, then the @enter@ call must not call @enter@ on the realtime channel, as this triggers an implicit attach. The call must either be delayed until such a time that the channel is already attached.
+* @(CHA-PR3)@ Users may update their presence data.
+** @(CHA-PR3a)@ @[Testable]@ Users may choose to update their presence data, optionally providing custom data to update with. The overall presence data must retain the format specified in @CHA-PR2@.
+** @(CHA-PR3b)@ @[Testable]@ If the underlying realtime channel is not attached at the time of the @update@ call, then the @update@ call must not call @update@ on the realtime channel, as this triggers an implicit attach. The call must either be delayed until such a time that the channel is already attached.
+* @(CHA-PR4)@ Users may leave presence.
+** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set.
+* @(CHA-PR5)@ @[Testable]@ It must be possible to query if a given clientId is in the presence set.
+* @(CHA-PR6)@ @[Testable]@ It must be possible to retrieve all the "@Members":#chat-structs-presence-member of the presence set.
+** @(CHA-PR6a)@ @[Testable] As the underlying @presence.get@ operation performs an implicit attach, this operation must not return or call @presence.get@ until the underlying channel is in the attached state.
+* @(CHA-PR7)@ Users may subscribe to presence events.
+** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event in a room.
+** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
+** @(CHA-PR7b)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
+* @(CHA-PR8)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in presence. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For presence, there shouldn't need to be user action as the underlying core SDK will heal the presence set.
 
 h2(#rest-api). Chat HTTP REST API
 
 h3(#rest-general). General
 
 * @(CHA-RST1)@ REST API requests shall be made via the @request()@ method on the underling Ably SDK.
-* @(CHA-RST2)@ REST API requests shall use API Protocol Version @3@
+* @(CHA-RST2)@ REST API requests shall use the API Protocol Version of the underlying core SDK.
 * @(CHA-RST3)@ @[Testable]@ REST API requests must be supported using @JSON@ and @msgpack@ as a @Content-Type@ (@useBinaryProtocol@ on the underlying Ably SDK)
 
 h3(#rest-sending-messages). Sending Messages
@@ -285,6 +343,33 @@ h4(#rest-fetching-messages-response). Response
 
 An array of "@Message@ structs":#chat-structs-message
 
+h2(#realtime-api). Chat Realtime API
+
+This section describes the message formats for chat events that occur over a Realtime connection.
+
+h3(#realtime-room-reactions). Ephemeral Room Reactions
+
+<pre>
+  {
+    "name": "roomReaction"
+    "encoding": "json"
+    "data": {
+      "type": ":heart:",
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      }
+    },
+    "timestamp": "1726232498871", // Only on incoming messages
+    "extras": {
+      "headers": {
+        "baz": "qux"
+      },
+    }
+  }
+</pre>
+
 
 h2(#chat-structs). Chat Structs and Types
 
@@ -311,7 +396,53 @@ h3(#chat-structs-message). Messages
   }
 </pre>
 
-Determining the global order of messages may be achieved vi
+Determining the global order of messages may be achieved by comparing the timeserials. See @CHA-M2@ for more information.
+
+h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reactions
+
+<pre>
+  {
+    "type": ":heart:",
+    "roomId": "my-room",
+    "clientId": "who-sent-the-message",
+    "createdAt": DateTime(),
+    "metadata": {
+      "foo": {
+        "bar": 1
+      }
+    },
+    "headers": {
+      "baz": "qux"
+    }
+  }
+</pre>
+
+h3(#chat-structs-presence-member). Presence Member
+
+<pre>
+  {
+    "clientId": "who-sent-the-message",
+    "action": "enter",
+    "updatedAt": DateTime(),
+    "data": {}, // Whatever the user-provided data is. It must be destructured from the internal format we use.
+    "extras": {
+      "headers": {
+        "baz": "qux"
+      }
+    }
+  }
+</pre>
+
+h3(#chat-structs-presence-event). Presence Event
+
+<pre>
+  {
+    "clientId": "who-is-in-presence",
+    "action": "enter",
+    "timestamp": DateTime(),
+    "data": {}, // Whatever the user-provided data is. It must be destructured from the internal format we use.
+  }
+</pre>
 
 h2(#error-codes). Chat-specific Error Codes
 
