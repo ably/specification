@@ -2316,7 +2316,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       push: PushChannel // RSH7
       modes: readonly [ChannelMode] // RTL4m
       params: readonly Dict<String, String> // RTL4k1
-      attach() => io ChannelStateChange // RTL4
+      attach() => io ChannelStateChange? // RTL4
       detach() => io // RTL5
       history(
         start: Time, // RTL10a
@@ -2328,9 +2328,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       publish(Message) => io // RTL6, RTL6i
       publish([Message]) => io // RTL6, RTL6i
       publish(name: String?, data: Data?) => io // RTL6, RTL6i
-      subscribe((Message) ->) => io ChannelStateChange // RTL7, RTL7a
-      subscribe(String, (Message) ->) => io ChannelStateChange // RTL7, RTL7b
-      subscribe(MessageFilter, (Message) ->) io ChannelStateChange // RTL22
+      subscribe((Message) ->) => io ChannelStateChange? // RTL7, RTL7a
+      subscribe(String, (Message) ->) => io ChannelStateChange? // RTL7, RTL7b
+      subscribe(MessageFilter, (Message) ->) io ChannelStateChange? // RTL22
       unsubscribe() // RTL8, RTL8c
       unsubscribe((Message) ->) // RTL8, RTL8a
       unsubscribe(String, (Message) ->) // RTL8, RTL8b
