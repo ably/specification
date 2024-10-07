@@ -2452,8 +2452,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
         direction: .Backwards | .Forwards api-default .Backwards, // RTP12a
         limit: int api-default 100, // RTP12a
       ) => io PaginatedResult<PresenceMessage> // RTP12
-      subscribe((PresenceMessage) ->) => io // RTP6a
-      subscribe(PresenceAction | [PresenceAction], (PresenceMessage) ->) => io // RTP6b
+      subscribe((PresenceMessage) ->) => io ChannelStateChange? // RTP6a
+      subscribe(PresenceAction | [PresenceAction], (PresenceMessage) ->) => io ChannelStateChange? // RTP6b
       unsubscribe() // RTP7c
       unsubscribe((PresenceMessage) ->) // RTP7a
       unsubscribe(PresenceAction, (PresenceMessage) ->) // RTP7b
