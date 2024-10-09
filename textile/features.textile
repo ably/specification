@@ -688,7 +688,9 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL7b)@ Subscribe with a name argument and a listener argument subscribes a listener to only messages whose @name@ member matches the string name
 ** @(RTL7c)@ This clause has been replaced by "@RTL7g@":#RTL7g. It was valid up to and including specification version @3.0@.
 ** @(RTL7g)@ If the @attachOnSubscribe@ channel option is @true@, implicitly attaches the @RealtimeChannel@ if the channel is in the @INITIALIZED@, @DETACHING@, or @DETACHED@ states. The optional callback, if provided, is called according to "@RTL4d@":#RTL4d based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
-** @(RTL7h)@ If the @attachOnSubscribe@ channel option is @false@, the optional callback must not be called.
+** @(RTL7h)@ If the @attachOnSubscribe@ channel option is @false@, then the behaviour depends on the public API that a given SDK uses to communicate the result of an "@RTL7g@":#RTL7g implicit attach:
+*** If the SDK’s API accepts an optional callback to communicate the result of an "@RTL7g@":#RTL7g implicit attach, then it is a programmer error to provide such a callback when the @attachOnSubscribe@ channel option is @false@. This programmer error should be handled in an idiomatic fashion; if this means that the @#subscribe@ call should throw an error, then this error should be an @ErrorInfo@ with @statusCode@ 400 and @code@ 40000.
+*** If the SDK’s API communicates the result of an "@RTL7g@"#RTL7g implicit attach in some other fashion (for example by returning a @ChannelStateChange?@), then, when the @attachOnSubscribe@ channel option is @false@, @#subscribe@ should respond in the same way as it would if an "@RTL7g@"#RTL7g implicit attach had been performed on an already-@ATTACHED@ channel (for example by returning a @null@ state change).
 ** @(RTL7d)@ Messages delivered are automatically decoded based on the @encoding@ attribute; see @RestChannel@ encoding features. Tests should exist to publish and subscribe to encoded messages using the "AES 128":https://github.com/ably/ably-common/blob/main/test-resources/crypto-data-128.json and "AES 256":https://github.com/ably/ably-common/blob/main/test-resources/crypto-data-256.json fixture test data
 ** @(RTL7e)@ If a message cannot be decoded or decrypted successfully, it should be delivered to the listener with the @encoding@ attribute set indicating the residual encoding state, and an error should be logged
 ** @(RTL7f)@ A test should exist ensuring published messages are not echoed back to the subscriber when @echoMessages@ is set to false in the @RealtimeClient@ library constructor
@@ -782,7 +784,9 @@ h3(#realtime-presence). RealtimePresence
 ** @(RTP6b)@ Subscribe with an action argument and a listener argument - such as @ENTER@, @LEAVE@, @UPDATE@ or @PRESENT@ - subscribes a listener to receive only presence messages with that action. In lanuages where method overloading is supported the action argument may also be an array of actions to receive only presence messages with an action included in the supplied array.
 ** @(RTP6c)@ This clause has been replaced by "@RTP6d@":#RTP6d. It was valid up to and including specification version @3.0@.
 ** @(RTP6d)@ If the @attachOnSubscribe@ channel option is @true@, implicitly attaches the @RealtimeChannel@ if the channel is in the @INITIALIZED@, @DETACHING@, or @DETACHED@ states. The optional callback, if provided, is called according to "@RTL4d@":#RTL4d based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
-** @(RTP6e)@ If the @attachOnSubscribe@ channel option is @false@, the optional callback must not be called.
+** @(RTP6e)@ If the @attachOnSubscribe@ channel option is @false@, then the behaviour depends on the public API that a given SDK uses to communicate the result of an "@RTP6d@":#RTP6d implicit attach:
+*** If the SDK’s API accepts an optional callback to communicate the result of an "@RTP6d@":#RTP6d implicit attach, then it is a programmer error to provide such a callback when the @attachOnSubscribe@ channel option is @false@. This programmer error should be handled in an idiomatic fashion; if this means that the @#subscribe@ call should throw an error, then this error should be an @ErrorInfo@ with @statusCode@ 400 and @code@ 40000.
+*** If the SDK’s API communicates the result of an "@RTP6d@"#RTP6d implicit attach in some other fashion (for example by returning a @ChannelStateChange?@), then, when the @attachOnSubscribe@ channel option is @false@, @#subscribe@ should respond in the same way as it would if an "@RTP6d@"#RTP6d implicit attach had been performed on an already-@ATTACHED@ channel (for example by returning a @null@ state change).
 * @(RTP7)@ @RealtimePresence#unsubscribe@ function:
 ** @(RTP7c)@ Unsubscribe with no arguments unsubscribes all listeners
 ** @(RTP7a)@ Unsubscribe with a single listener argument unsubscribes the listener if previously subscribed with an action-specific subscription
@@ -1968,7 +1972,7 @@ class RealtimeChannel: // RTL*
   push: PushChannel // RSH7
   modes: readonly [ChannelMode] // RTL4m
   params: readonly Dict<String, String> // RTL4k1
-  attach() => io ChannelStateChange // RTL4
+  attach() => io ChannelStateChange? // RTL4
   detach() => io // RTL5
   history(
     start: Time, // RTL10a
@@ -1980,9 +1984,9 @@ class RealtimeChannel: // RTL*
   publish(Message) => io // RTL6, RTL6i
   publish([Message]) => io // RTL6, RTL6i
   publish(name: String?, data: Data?) => io // RTL6, RTL6i
-  subscribe((Message) ->) => io ChannelStateChange // RTL7, RTL7a
-  subscribe(String, (Message) ->) => io ChannelStateChange // RTL7, RTL7b
-  subscribe(MessageFilter, (Message) ->) io ChannelStateChange // RTL22
+  subscribe((Message) ->) => io ChannelStateChange? // RTL7, RTL7a
+  subscribe(String, (Message) ->) => io ChannelStateChange? // RTL7, RTL7b
+  subscribe(MessageFilter, (Message) ->) io ChannelStateChange? // RTL22
   unsubscribe() // RTL8, RTL8c
   unsubscribe((Message) ->) // RTL8, RTL8a
   unsubscribe(String, (Message) ->) // RTL8, RTL8b
@@ -2104,8 +2108,8 @@ class RealtimePresence: // RTP*
     direction: .Backwards | .Forwards api-default .Backwards, // RTP12a
     limit: int api-default 100, // RTP12a
   ) => io PaginatedResult<PresenceMessage> // RTP12
-  subscribe((PresenceMessage) ->) => io // RTP6a
-  subscribe(PresenceAction | [PresenceAction], (PresenceMessage) ->) => io // RTP6b
+  subscribe((PresenceMessage) ->) => io ChannelStateChange? // RTP6a
+  subscribe(PresenceAction | [PresenceAction], (PresenceMessage) ->) => io ChannelStateChange? // RTP6b
   unsubscribe() // RTP7c
   unsubscribe((PresenceMessage) ->) // RTP7a
   unsubscribe(PresenceAction, (PresenceMessage) ->) // RTP7b
