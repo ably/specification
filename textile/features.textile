@@ -300,6 +300,7 @@ h3(#rest-channel). RestChannel
 ** @(RSL1h)@ The @publish(name, data)@ form should not take any additional arguments. If a client library has supported additional arguments to the @(name, data)@ form (e.g. separate arguments for @clientId@ and @extras@, or a single @attributes@ argument) in any 1.x version, it should continue to do so until version 2.0.
 ** @(RSL1i)@ If the total size of the message or (if publishing an array) messages, calculated per "TO3l8":#TO3l8, exceeds the @maxMessageSize@, then the client library should reject the publish and indicate an error with code 40009
 ** @(RSL1j)@ When @Message@ objects are provided, any valid @Message@ attribute (that is, an attribute specified in "TM2":#TM2) that is supplied by the caller must be included in the encoded message. (This does not mean it must be included _unaltered_; for example the @data@ and @encoding@ will be subject to processing per "RSL4":#RSL4)
+*** @(RSL1j1)@ On calling @publish@ and if @Message@ objects are provided, the library should set the @action@ field of each @Message@ to @message_create@.
 ** @(RSL1k)@ Idempotent publishing via REST is supported by populating the @id@ attribute of @Message@ instances passed to @publish()@:
 *** @(RSL1k1)@ Idempotent publishing via library-generated @Message@ @id@ s is supported if @idempotentRestPublishing@ (see "TO3n":#TO3n) is enabled and one or more @Message@ instances are passed to @publish()@ and all @Message@ s have an empty @id@ attribute. The library generates a base @id@ string by base64-encoding  a sequence of at least 9 bytes obtained from a source of randomness. Each individual @Message@ in the set of messages to be published is assigned a unique @id@ of the form &lt;base id&gt;:&lt;serial&gt; (where @serial@ is the zero-based index into the set).
 *** @(RSL1k2)@ Idempotent publishing via client-supplied @Message@ @id@ s is supported where a single @Message@ is passed to @publish()@ and it contains a non-empty @id@. The @id@ is preserved on sending the message.
@@ -654,6 +655,7 @@ h3(#realtime-channel). RealtimeChannel
 * @(RTL6)@ @RealtimeChannel#publish@ function:
 ** @(RTL6a)@ Messages are encoded in the same way as the @RestChannel#publish@ method, and "RSL1g":#RSL1g (size limit) applies similarly
 *** @(RTL6a1)@ "RSL1k":#RSL1k (@idempotentRestPublishing@ option), "RSL1j1":#RSL1j1 (idempotent publishing test), and "RSL1l":#RSL1l (@publish(Message, params)@ form) do not apply to realtime publishes
+*** @(RTL6a2)@ Just like "RSL1j1":#RSL1j1 (publishing via REST), @Message@ objects should have the "TM2j2":#TM2j2 (message action field) set to @message_create@.
 ** @(RTL6b)@ An optional callback can be provided to the @#publish@ method that is called when the message is successfully delivered or upon failure with the appropriate @ErrorInfo@ error. A test should exist to publish lots of messages on a few connections to ensure all message success callbacks are called for all messages published
 ** @(RTL6i)@ Expects either a @Message@ object, an array of @Message@ objects, or a @name@ string and @data@ payload:
 *** @(RTL6i1)@ When @name@ and @data@ (or a @Message@) is provided, a single @ProtocolMessage@ containing one @Message@ is published to Ably
@@ -1305,6 +1307,23 @@ h4. Message
 ** @(TM2e)@ @encoding@ string
 ** @(TM2i)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is @push@, via the @extras.push@ member; 1.2 adds the @delta@ extension whose keys and values are described by the attributes of the type @DeltaExtras@, and the @headers@ extension, which contains arbitrary @string->string@ key-value pairs, settable at publish time, and @ref@ whose keys and values are described by the attributes of the type @ReferenceExtras@. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
 ** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
+** @(TM2j)@ @action@ enum - the type of the message. Any message received from Ably must have an @action@ field set to one of the following values:
+*** @(TM2j1)@ 0: @message_unset@
+*** @(TM2j2)@ 1: @message_create@
+*** @(TM2j3)@ 2: @message_update@
+*** @(TM2j4)@ 3: @message_delete@
+*** @(TM2j5)@ 4: @message_annotation_create@
+*** @(TM2j6)@ 5: @message_annotation_update@
+*** @(TM2j7)@ 6: @message_meta_occupancy@
+** @(TM2K)@ @serial@ string - the origin timeserial of the message. This will be set, after publish, to the @channelSerial@ of the @ProtocolMessage@ that encapsulated the @Message@, with an additional offset that locates the @Message@ in the @ProtocolMessage@ messages array. If the message is received from Ably, this must be set.
+** @(TM2L)@ @refSerial@ string - if this message is an annotation that references another message, this must be set to the @serial@ of the referenced message. If the @refSerial@ is set, the @refType@ must also be set.
+** @(TM2M)@ @refType@ string - if the @refSerial@ is set, this must be set. If describes the type of the reference.
+** @(TM2N)@ @updatedAt@ time in milliseconds since epoch. If a message received from Ably has the @action@ field set to "MESSAGE_UPDATE" then the @updatedAt@ field must be set to the time the message was updated.
+** @(TM2O)@ @deletedAt@ time in milliseconds since epoch. If a message received from Ably has the @action@ field set to "MESSAGE_DELETE" then the @deleteAt@ field must be set to the time the message was deleted.
+** @(TM2P)@ @operation@ operation is an JSON-encodable object that contains the following `optional` fields;
+*** @(TM2P1)@ @clientId@ string - the clientId, if any, that the operation is associated with.
+*** @(TM2P2)@ @description@ string - the description of the operation.
+*** @(TM2P3)@ @metadata@ JSON-encodable object, used to contain any arbitrary key value pairs of type string.
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
 
@@ -2152,6 +2171,13 @@ class Message: // TM*
   id: String // TM2a
   name: String? // TM2g
   timestamp: Time // TM2f
+  action: enum // TM2j
+  serial: string // TM2K
+  refSerial: string? // TM2L
+  refType: string? // TM2M
+  updatedAt: Time? // TM2N
+  deletedAt: Time? // TM2O
+  operation: JsonObject? // TM2P
 
 class PresenceMessage // TP*
   +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
