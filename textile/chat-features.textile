@@ -264,6 +264,9 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
 ** @(CHA-PR7b)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
 * @(CHA-PR8)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in presence. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For presence, there shouldn't need to be user action as the underlying core SDK will heal the presence set.
+* @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
+** @(CHA-PR9a)@ @[Testable]@ Setting @enter@ to false prevents the user from entering presence by means of the @ChannelMode@ on the underlying realtime channel. Entering presence will result in an error. The default is true.
+** @(CHA-PR9b)@ @[Testable]@ Setting @subscribe@ to false prevents the user from subscribing to presence by means of the @ChannelMode@ on the underlying realtime channel. This does not prevent them from receiving their own presence messages, but they will not receive them from others. The default is true.
 
 h2(#typing). Typing Indicators
 
