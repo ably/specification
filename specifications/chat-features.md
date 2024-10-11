@@ -276,7 +276,7 @@ Typing Indicators allow chat room users to indicate to others that they are typi
 
 - `(CHA-T1)` Typing Indicators for a Room is exposed on a dedicated Realtime channel. These channels use the format `<roomId>::$chat::$typingIndicators`. For example, if your room id is `my-room` then the typing channel will be `my-room::$chat::$typingIndicators`.
 - `(CHA-T2)` `[Testable]` Users may retrieve a list of the currently typing client IDs.
-- `(CHA-T3)` `[Testable]` Users may configure a timeout interval for when they are typing. This configuration is provided as part of the `RoomOptions` `typing.timeoutMs` property, or idiomatic equivalent.
+- `(CHA-T3)` `[Testable]` Users may configure a timeout interval for when they are typing. This configuration is provided as part of the `RoomOptions` `typing.timeoutMs` property, or idiomatic equivalent. The default is 5000ms.
 - `(CHA-T4)` Users may indicate that they have started typing.
   - `(CHA-T4a)` `[Testable]` If typing is not already in progress, per explicit cancellation or the timeout interval in (`CHA-T3`), then a new typing session is started.
     - `(CHA-T4a1)` `[Testable]` When a typing session is started, the client is entered into presence on the typing channel.
@@ -395,6 +395,22 @@ This section describes the message formats for chat events that occur over a Rea
 This section contains an overview of the key types in Chat. This is not intended to be prescriptive to implementation and different ecosystems may expose the underlying properties\
 in whichever format is most idiomatic to the platform.
 
+### RoomOptions {#chat-structs-room-options}
+
+The RoomOptions struct describes configuration options for a Chat room. A property being set to a non-null value means that the feature is enabled. Some features have specific configuration.
+
+      {
+        "presence": {
+          "enter": boolean,
+          "subscribe": boolean,
+        },
+        "typing": {
+          "timeoutMs": number
+        },
+        "reactions": {}, // No properties, but must be non-null to enable feature.
+        "occupancy": {} 
+      }
+
 ### Messages {#chat-structs-message}
 
       {
@@ -459,9 +475,6 @@ Determining the global order of messages may be achieved by comparing the timese
 
       {
         "currentlyTyping": ["clientId-1", "clientID-2"],
-        "action": "enter",
-        "timestamp": DateTime(),
-        "data": {}, // Whatever the user-provided data is. It must be destructured from the internal format we use.
       }
 
 ## Chat-specific Error Codes {#error-codes}
