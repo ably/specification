@@ -38,6 +38,7 @@ h3(#rooms-status). Room Statuses
 The status of any given Chat Room is the combination of the states of all of its constituent contributors. For more information on this, see "@Room Lifecycle@":#rooms-lifecycle.
 
 * @(CHA-RS1)@ Every room has a @status@, which describes the current status of the room. 
+** @(CHA-RS1j)@ The @INITIALIZING@ status is the initial status as the room is setting itself up.
 ** @(CHA-RS1a)@ The @INITIALIZED@ status is the initial status before any attachment operations have taken place.
 ** @(CHA-RS1b)@ The @ATTACHING@ status is used when the room is in the process of attaching to Ably.
 ** @(CHA-RS1c)@ The @ATTACHED@ status means that the room is fully connected to Ably and functioning normally.
@@ -78,6 +79,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 
 * @(CHA-RL1)@ A room must be explicitly attached via the @ATTACH@ operation.
 ** @(CHA-RL1a)@ @[Testable]@ If the room is already in the @ATTACHED@ status, then this operation is no-op.
+** @(CHA-RL1h)@ If the room is in the @INITIALIZING@ status, then it must wait for the in-progress @RELEASING@ operation from a previous room instance to complete before proceeding.
 ** @(CHA-RL1b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleasing@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL1c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing.
@@ -111,6 +113,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 * @(CHA-RL3)@ A room must be explicitly released via the @RELEASE@ operation.. This operation is not performed directly on a Room object by the client, but is described here.
 ** @(CHA-RL3a)@ @[Testable]@ If the room is already in the @RELEASED@ status, this operation is no-op.
 ** @(CHA-RL3b)@ @[Testable]@ If the room is in the @DETACHED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
+** @(CHA-RL3i)@ @[Testable]@ If the room is in the @INITIALIZING@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
+** @(CHA-RL3i)@ @[Testable]@ If the room is in the @INITIALIZED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
 ** @(CHA-RL3c)@ @[Testable]@ If the room is in the @RELEASING@ status, then the operation will return the result of the pending @release@ operation, or throw any exception that it throws.
 ** @(CHA-RL3c)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status any any transient disconnect timeouts shall be cleared.
 ** @(CHA-RL3d)@ @[Testable]@ All features channels are detached in sequence.
@@ -128,6 +132,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL5f1)@ @[Testable]@ If the attachment cycle succeeds, then the room is transitioned to @ATTACHED@ and any discontinuity errors are broadcast to contributors.
 *** @(CHA-RL5f2)@ @[Testable]@ If the attachment cycle fails because a channel entered @FAILED@, then the room is transitioned to @FAILED@ and the retry loop terminates.
 *** @(CHA-RL5f3)@ @[Testable]@ If the attachment cycle fails because a channel entered @SUSPENDED@, then the room is transitioned to @SUSPENDED@ and the retry loop restarted using the @SUSPENDED@ channel as the subject.
+* @(CHA-RL6)@ @[Testable]@ A room begins its lifetime in the @INTIIALIZING@ state.
+* @(CHA-RL6a)@ @[Testable]@ It enters @INITIALIZED@ when any @RELEASE@ operations for a previous instance of a room are completed.
 
 h4(#rooms-lifecycle-monitoring). Room Lifecycle Monitoring
 
@@ -161,6 +167,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 ** @(CHA-RC1b)@ @[Testable]@ Once a room has been created on the Chat Client, assuming it is not subsequently released, then the client will return the same room instance on subsequent calls for the same room ID.
 ** @(CHA-RC1c)@ @[Testable]@ If a room is requested with different options to an existing room of the same id, then an @ErrorInfo@ with code @40000@ is thrown.
 ** @(CHA-RC1d)@ @[Testable]@ If a room is requested to be released, it is immediately removed from the SDKs room map - meaning subsequent calls to get an instance of a room for the same ID shall produce a new object.
+*** @(CHA-RC1d1)@ Any attach operations on the new room instance must not commence until the release operation fully completes (including any Realtime channel releasing). This is to avoid resource leakage and accidentally removing the underlying channels during transition.
 ** @(CHA-RC1e)@ @[Testable]@ Pursuant to @CHA-RC1d@, the room releasing lifecycle operations (see "@CHA-RL3@"#CHA-RL3) shall occur @AFTER@ the room is removed from the room map, but shall complete before the call to release the room completes.
 * @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain features. When requesting a room, options as to which features should be enabled, and the configuration they should take, must be provided (@RoomOptions@).
 ** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
