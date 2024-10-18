@@ -82,7 +82,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL1h)@ If the room is in the @INITIALIZING@ status, then it must wait for the in-progress @RELEASING@ operation from a previous room instance to complete before proceeding.
 ** @(CHA-RL1b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleasing@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL1c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
-** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing.
+** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 ** @(CHA-RL1e)@ @[Testable]@ Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the @ATTACHING@ status.
 ** @(CHA-RL1f)@ @[Testable]@ The underlying @contributors@ will have their Realtime Channels attached in sequence - an attach call must complete successfully before the next is started.
 ** @(CHA-RL1g)@ When all @contributors@ Realtime Channels successfully attach (the calls to @attach()@ complete successfully), the operation is now complete and the room is considered attached.
@@ -110,6 +110,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL2h1)@ @[Testable]@ If a channel enters the @FAILED@ state during detachment, then the room will transition to the @FAILED@ status. The detach operation continues until all channels are either @DETACHED@ or @FAILED@, with the operation throwing an @ErrorInfo@ with the feature-specific error code of the first feature to fail, using the underlying channel error as the @cause@. The same @ErrorInfo@ must accompany the @FAILED@ room status.
 *** @(CHA-RL2h2)@ @[Testable]@ If the room is already in a @FAILED@ status during the detach operation and another channel fails, the @FAILED@ status will not be emitted twice.
 *** @(CHA-RL2h3)@ @[Testable]@ If a channel enters another state during detachment (namely @ATTACHED@, which happens when detach times out). Then the detachment cycle will be retried after a short pause. The rooms status will not change during this process.
+** @(CHA-RL2i)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 * @(CHA-RL3)@ A room must be explicitly released via the @RELEASE@ operation.. This operation is not performed directly on a Room object by the client, but is described here.
 ** @(CHA-RL3a)@ @[Testable]@ If the room is already in the @RELEASED@ status, this operation is no-op.
 ** @(CHA-RL3b)@ @[Testable]@ If the room is in the @DETACHED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
@@ -122,6 +123,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3f)@ @[Testable]@ If a channel fails to detach, the channel detach sequence will be retried after a short wait.
 ** @(CHA-RL3g)@ @[Testable]@ Once all channels have entered the @DETACHED@ state, then the room state is transitioned to @RELEASED@ and the operation completes.
 ** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
+** @(CHA-RL3i)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 * @(CHA-RL5)@ A room must @RETRY@ whenever it enters the @SUSPENDED@ state.
 ** @(CHA-RL5a)@ @[Testable]@ When entering a retry-loop, the room must first @DETACH@ all contributors underlying realtime channels.
 ** @(CHA-RL5b)@ @[Testable]@ If the operation above fails, then it must be retried after a short wait.
@@ -134,6 +136,11 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL5f3)@ @[Testable]@ If the attachment cycle fails because a channel entered @SUSPENDED@, then the room is transitioned to @SUSPENDED@ and the retry loop restarted using the @SUSPENDED@ channel as the subject.
 * @(CHA-RL6)@ @[Testable]@ A room begins its lifetime in the @INTIIALIZING@ state.
 * @(CHA-RL6a)@ @[Testable]@ It enters @INITIALIZED@ when any @RELEASE@ operations for a previous instance of a room are completed.
+* @(CHA-RL7)@ Room lifecycle operations are atomic and exclusive operations: one operation must complete (whether that's failure or success) before the next one may begin.
+** @(CHA-RL7a)@ @[Testable]@ Room lifecycle operations have a precedence. If multiple operations are scheduled to run, they run in the following order:
+*** @(CHA-RL7a1)@ The @RETRY@ operation - an internal process.
+*** @(CHA-RL7a2)@ The @RELEASE@ operation.
+*** @(CHA-RL7a3)@ The @ATTACH@ and @DETACH@ operations have equal precedence.
 
 h4(#rooms-lifecycle-monitoring). Room Lifecycle Monitoring
 
