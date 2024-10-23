@@ -196,9 +196,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M3)@ Messages are sent to Ably via the Chat REST API, using the @send@ method.
 ** @(CHA-M3a)@ @[Testable]@ When a message is sent successfully, the caller shall receive a struct representing the "@Message@":#chat-structs-message in response (as if it were received via Realtime event).
 ** @(CHA-M3b)@ @[Testable]@ A message may be sent without @metadata@ or @headers@. When these are not specified by the user, they must be omitted from the REST payload.
-** @(CHA-M3c)@ @[Testable]@ @metadata@ must not contain the key @ably-chat@. This is reserved for future internal use. If this key is present, the send call shall terminate by throwing an @ErrorInfo@ with code @40001@.
-** @(CHA-M3d)@ @[Testable]@ @headers@ must not contain a key prefixed with @ably-chat@. This is reserved for future internal use. If this key is present, the send call shall terminate by throwing an @ErrorInfo@ with code @40001@.
-** @(CHA-M3e)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
+** @(CHA-M3c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
@@ -235,8 +233,6 @@ All ephemeral room reactions are handled over the Realtime connection.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ @[Testable]@ Reactions are sent on the channel using a message in "this format":#realtime-room-reactions.
-** @(CHA-ER3b)@ @[Testable]@ @metadata@ must not contain the key @ably-chat@. This is reserved for future internal use. If this key is present, the @send@ call shall terminate by throwing an @ErrorInfo@ with code @40001@.
-** @(CHA-ER3c)@ @[Testable]@ @headers@ must not contain a key prefixed with @ably-chat@. This is reserved for future internal use. If this key is present, the send call shall terminate by throwing an @ErrorInfo@ with code @40001@.
 * @(CHA-ER4)@ A user may subscribe to reaction events in Realtime.
 ** @(CHA-ER4a)@ @[Testable]@ A user may provide a listener to subscribe to reaction events. This operation must have no side-effects in relation to room or underlying status. When a "realtime message":#realtime-room-reactions with name @roomReaction@ is received, this message is converted into a "reaction object":#chat-structs-ephemeral-reactions and emitted to subscribers.
 ** @(CHA-ER4b)@ @[Testable]@ A user may unsubscribe a registered listener. This operation must have no side-effects in relation to room or underlying status. Once unsubscribed, subsequent reaction events must not be emitted to this listener.
