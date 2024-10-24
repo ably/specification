@@ -1677,7 +1677,8 @@ Presence ops.
   - `(TR3f)` 5: `ATTACH_RESUME`
   - `(TR3q)` 16: `PRESENCE`
   - `(TR3r)` 17: `PUBLISH`
-  - `(TR3s)` 18: `SUBSCRIBE`
+  - `(TR3s)` 18: `SUBSCRIBE` Synonymous with `MESSAGE_SUBSCRIBE`. Retained for backward compatibility.
+  - `(TR3u)` 18: `MESSAGE_SUBSCRIBE` Synonymous with `SUBSCRIBE`. This variant should be preferred.
   - `(TR3t)` 19: `PRESENCE_SUBSCRIBE`
 - `(TR4)` The attributes available in a `ProtocolMessage` are:
   - `(TR4a)` `action` enum
@@ -1864,7 +1865,7 @@ Presence ops.
   - `(CHM2c)` `presenceMembers` integer - the number of members in the presence set of channel (note: may be larger than presenceConnections since a given connection may enter the presence set multiple times with different clientIds)
   - `(CHM2d)` `presenceSubscribers` integer - the number of realtime attachments which are receiving presence messages on the channel (that is, they have the \`subscribe\` capability and have not specified a `ChannelMode` that excludes `PRESENCE_SUBSCRIBE`)
   - `(CHM2e)` `publishers` integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the \`publish\` capability and have not specified a `ChannelMode` that excludes `PUBLISH`)
-  - `(CHM2f)` `subscribers` integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the \`subscribe\` capability and have not specified a `ChannelMode` that excludes `SUBSCRIBE`)
+  - `(CHM2f)` `subscribers` integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the \`subscribe\` capability and have not specified a `ChannelMode` that excludes `SUBSCRIBE` or synonymously `MESSAGE_SUBSCRIBE`)
 
 #### BatchResult
 
@@ -2376,6 +2377,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       PRESENCE
       PUBLISH
       SUBSCRIBE
+      MESSAGE_SUBSCRIBE
       PRESENCE_SUBSCRIBE
 
     class ChannelStateChange: // TH*
