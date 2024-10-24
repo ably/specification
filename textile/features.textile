@@ -99,6 +99,10 @@ h2(#endpoint-configuration). Client library endpoint configuration
 *** @(REC2c5)@ Otherwise, if the @primary domain@ is determined to be a routing policy name via @(REC1c2)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime.com@, @[name].b.fallback.ably-realtime.com@, @[name].c.fallback.ably-realtime.com@, @[name].d.fallback.ably-realtime.com@, @[name].e.fallback.ably-realtime.com@.
 *** @(REC2c6)@ Otherwise, if the @primary domain@ is determined by the deprecated @restHost@ or @realtimeHost@ option via @(REC1d)@ then the set of fallback domains is empty.
 
+* @(REC3)@ Client options determine a @connectivity check URL@.
+** @(REC3a)@ The default values of the @connectivity check URL@ is @https://internet-up.ably-realtime.com/is-the-internet-up.txt@.
+** @(REC3b)@ The @connectivity check URL@ may be specified explicitly by the @connectivityCheckUrl@ option.
+
 h2(#rest). REST client library
 
 h3(#restclient). RestClient
@@ -588,7 +592,7 @@ h3(#realtime-connection). Connection
 ** @(RSC17b)@ This clause has been replaced by "@RSC17h@":#RSC17h. It was valid up to and including specification version @TBD@.
 ** @(RTN17i)@ By default, every connection attempt is first attempted to the @primary domain@ as specified in "@REC1@"#REC1. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed. (That is, @RSC15f@ does not apply)
 ** @(RTN17a)@ This clause has been replaced by "@RSC17i@":#RSC17i. It was valid up to and including specification version @TBD@.
-** @(RTN17j)@ In the case of an error necessitating use of an alternative host (see "RTN17f":#RTN17f), the @Connection@ manager should first check if an internet connection is available by issuing a @GET@ request to @https://internet-up.ably-realtime.com/is-the-internet-up.txt@. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against @fallback domains@ in random order to find an alternative healthy datacenter.
+** @(RTN17j)@ In the case of an error necessitating use of an alternative host (see "RTN17f":#RTN17f), the @Connection@ manager should first check if an internet connection is available by issuing a @GET@ request to the @connectivityCheckUrl@ as determined via "@REC3@"#REC3. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against @fallback domains@ in random order to find an alternative healthy datacenter.
 ** @(RTN17c)@ This clause has been replaced by "@RSC17j@":#RSC17j. It was valid up to and including specification version @TBD@.
 ** @(RTN17d)@ This clause has been replaced by "@RTN17f@":#RTN17f.
 ** @(RTN17f)@ Errors that necessitate use of an alternative host include any of the failure conditions specified in "@RSC15l@":#RSC15l, and additionally also:
