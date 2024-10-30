@@ -196,7 +196,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M3)@ Messages are sent to Ably via the Chat REST API, using the @send@ method.
 ** @(CHA-M3a)@ @[Testable]@ When a message is sent successfully, the caller shall receive a struct representing the "@Message@":#chat-structs-message in response (as if it were received via Realtime event).
 ** @(CHA-M3b)@ @[Testable]@ A message may be sent without @metadata@ or @headers@. When these are not specified by the user, they must be omitted from the REST payload.
-** @(CHA-M3c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
+** @(CHA-M3e)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
