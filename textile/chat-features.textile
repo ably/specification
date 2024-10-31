@@ -158,7 +158,7 @@ As well as user-initiated operations, the room must monitor its underlying resou
 *** @(CHA-RL4b3)@ This specification point has been removed.
 *** @(CHA-RL4b4)@ This specification point has been removed.
 *** @(CHA-RL4b5)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @FAILED@, then the room status shall be transitioned to @FAILED@, using the @reason@ for the channel state change as the @error@ for the room status change. All @transient disconnect timeouts@ are cancelled and any non-detached contributors are detached.
-*** @(CHA-RL4b6)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHING@ and a transient disconnect timeout exists for the contributor, then no action is needed.
+*** @(CHA-RL4b6)@ This specification point has been removed.
 *** @(CHA-RL4b7)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHING@ and no transient disconnect timeout exists for the contributor, then a transient disconnect timeout with a 5 second limit is created for the contributor. Upon timeout, the room status is transitioned to @ATTACHING@, using the @reason@ from the initial channel state change as the error for the transition.
 *** @(CHA-RL4b10)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHED@ and a transient disconnect timeout exists for the contributor, the timeout is cleared.
 *** @(CHA-RL4b8)@ @[Testable]@ If a room lifecycle operation is not in progress, the channel state is @ATTACHED@, the room status is NOT @ATTACHED@ and all contibutors channel are now @ATTACHED@, the room status is transitioned to @ATTACHED@.
