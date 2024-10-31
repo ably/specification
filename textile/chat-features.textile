@@ -586,56 +586,74 @@ h2(#error-codes). Chat-specific Error Codes
 
 This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used. For example @400xx@ for client errors or @500xx@ for server errors.
 
+For non-chat-specific codes, the status code for the error should align with the error code. For example, error code @40000@ should hav status code @400@.
+
 <pre>
   // The messages feature failed to attach.
+  // To be accompanied with status code 500.
   MessagesAttachmentFailed = 102001
 
   // The presence feature failed to attach.
+  // To be accompanied with status code 500.
   PresenceAttachmentFailed = 102002
 
   // The reactions feature failed to attach.
+  // To be accompanied with status code 500.
   ReactionsAttachmentFailed = 102003
 
   // The occupancy feature failed to attach.
+  // To be accompanied with status code 500.
   OccupancyAttachmentFailed = 102004
 
   // The typing feature failed to attach.
+  // To be accompanied with status code 500.
   TypingAttachmentFailed = 102005
   // 102006 - 102049 reserved for future use for attachment errors
 
   // The messages feature failed to detach.
+  // To be accompanied with status code 500.
   MessagesDetachmentFailed = 102050
 
   // The presence feature failed to detach.
+  // To be accompanied with status code 500.
   PresenceDetachmentFailed = 102051
 
   // The reactions feature failed to detach.
+  // To be accompanied with status code 500.
   ReactionsDetachmentFailed = 102052
 
   // The occupancy feature failed to detach.
+  // To be accompanied with status code 500.
   OccupancyDetachmentFailed = 102053
 
   // The typing feature failed to detach.
+  // To be accompanied with status code 500.
   TypingDetachmentFailed = 102054
   // 102055 - 102099 reserved for future use for detachment errors
 
   // The room has experienced a discontinuity.
+  // To be accompanied with status code 500.
   RoomDiscontinuity = 102100
 
   // Unable to perform operation;
 
   // Cannot perform operation because the room is in a failed state.
+  // To be accompanied with status code 400.
   RoomInFailedState = 102101
 
   // Cannot perform operation because the room is in a releasing state.
+  // To be accompanied with status code 400.
   RoomIsReleasing = 102102
 
   // Cannot perform operation because the room is in a released state.
+  // To be accompanied with status code 400.
   RoomIsReleased = 102103
 
   // Cannot perform operation because the previous operation failed.
+  // To be accompanied with status code 500.
   PreviousOperationFailed = 102104
 
   // An unknown error has happened in the room lifecycle.
+  // To be accompanied with status code 500.
   RoomLifecycleError = 102105
 </pre>
