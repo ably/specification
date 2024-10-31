@@ -149,7 +149,7 @@ As well as user-initiated operations, the room must monitor its underlying resou
 * @(CHA-RL4)@ A room must monitor the state of its @contributors@ Realtime Channels and act upon any changes.
 ** @(CHA-RL4a)@ The state monitor must handle @UPDATE@ events from each contributors underlying Realtime Channel
 *** @(CHA-RL4a1)@ @[Testable]@ If the @resumed@ flag of the update is set to @true@, then no action should be taken.
-*** @(CHA-RL4a2)@ @[Testable]@ If the given contributor has not yet successfully managed to attach its Realtime Channel, then no action should be taken.
+*** @(CHA-RL4a2)@ @[Testable]@ If the given contributor has not yet successfully managed to attach its Realtime Channel (i.e. a call to @attach()@ on the channel, per @CHA-RL1f@, has succeeded), then no action should be taken.
 *** @(CHA-RL4a3)@ @[Testable]@ If a room lifecycle operation is in progress, then a pending discontinuity event shall be recorded for this contributor. The @ErrorInfo@ associated with the discontinuity shall be the @reason@ for the underlying channel state change. The event will be notified to the contributor at a later point, as noted in this specification.
 *** @(CHA-RL4a4)@ @[Testable]@ If a room lifecycle operation is not in progress, then a discontinuity event will immediately be emitted to the contributor. The @ErrorInfo@ associated with the discontinuity shall be the @reason@ for the underlying channel state change.
 ** @(CHA-RL4b)@ The state monitor must handle other channel state events.
