@@ -121,7 +121,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3d)@ @[Testable]@ All features channels must be detached in sequence.
 ** @(CHA-RL3e)@ @[Testable]@ If a channel is in the @FAILED@ state when it is time to detach, it shall be ignored.
 ** @(CHA-RL3f)@ @[Testable]@ If a channel fails to detach (i.e. the call to @detach()@ returns an error), the @CHA-RL3d@ channel detach sequence will be retried after a 250ms delay. Retries are continued until @CHA-RL3g@ is met.
-** @(CHA-RL3g)@ @[Testable]@ Once all channels have entered the @DETACHED@ or @FAILED@ state, then the room state is transitioned to @RELEASED@ and the operation completes.
+** @(CHA-RL3g)@ @[Testable]@ Once all channels have entered the @DETACHED@ (i.e. the call to @detach()@ succeeds) or @FAILED@ (i.e. the call to @detach()@ fails and the channel state is subsequently @FAILED@) state, then the room state is transitioned to @RELEASED@ and the operation completes.
 ** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
 ** @(CHA-RL3k)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 * @(CHA-RL5)@ A room must @RETRY@ whenever it enters the @SUSPENDED@ state.
