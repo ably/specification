@@ -87,7 +87,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL1f)@ @[Testable]@ The underlying @contributors@ will have their Realtime Channels attached in sequence - an attach call must complete successfully before the next is started.
 ** @(CHA-RL1g)@ When all @contributors@ Realtime Channels successfully attach (the calls to @attach()@ complete successfully), the operation is now complete and the room is considered attached.
 *** @(CHA-RL1g1)@ @[Testable]@ The room status shall be transitioned to @ATTACHED@.
-*** @(CHA-RL1g2)@ @[Testable]@ Any contributors to room that have a pending discontinuity event against them, must be notified of this fact, using the error that caused the original discontinuity.
+*** @(CHA-RL1g2)@ @[Testable]@ Any contributors to room that have a pending discontinuity event against them, must be notified of this fact, using the error that caused the original discontinuity. These are then cleared to prevent double-notification.
 *** @(CHA-RL1g3)@ @[Testable]@ Any transient disconnect timeouts shall be cleared.
 ** @(CHA-RL1h)@ If a one of the @contributors@ Realtime Channels fails to attach (i.e. the call to @attach()@ returns an error), then the operation has failed and must be rolled back. The procedure to roll back is described in subsequent points.
 *** @(CHA-RL1h1)@ The @attach@ call must throw an @ErrorInfo@. The code for this error is determined by the feature that failed and the status of the underlying channel (see "here":#error-codes for more information on error codes).
