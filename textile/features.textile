@@ -1293,8 +1293,8 @@ h2. Types
 h3(#types). Data types
 
 h4. Message
-
 * @(TM1)@ A @Message@ represents an individual message to be sent or received via the Ably Realtime service.
+* @(TM5)@ @Message@ @Action@ enum has the following values in order from zero: @MESSAGE_UNSET@, @MESSAGE_CREATE@, @MESSAGE_UPDATE@, @MESSAGE_DELETE@, @ANNOTATION_CREATE@, @ANNOTATION_DELETE@, @META_OCCUPANCY@
 * @(TM2)@ The attributes available in a @Message@ are:
 ** @(TM2a)@ @id@ string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an @id@, it should be set to @protocolMsgId:index@, where @protocolMsgId@ is the id of the @ProtocolMessage@ encapsulating it, and @index@ is the index of the message inside the @messages@ array of the @ProtocolMessage@
 ** @(TM2b)@ @clientId@ string
@@ -1306,15 +1306,15 @@ h4. Message
 ** @(TM2i)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is @push@, via the @extras.push@ member; 1.2 adds the @delta@ extension whose keys and values are described by the attributes of the type @DeltaExtras@, and the @headers@ extension, which contains arbitrary @string->string@ key-value pairs, settable at publish time, and @ref@ whose keys and values are described by the attributes of the type @ReferenceExtras@. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
 ** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TM2j)@ @action@ enum
-** @(TM2K)@ @serial@ string - an opaque string that uniquely identifies the message.
-** @(TM2L)@ @refSerial@ string - an opaque string that uniquely identifies some referenced message.
-** @(TM2M)@ @refType@ string - an opaque string that identifies the type of this reference.
-** @(TM2N)@ @updatedAt@ time in milliseconds since epoch. This field is always populated on messages received with an @action@ of @MESSAGE_UPDATE@.
-** @(TM2O)@ @deletedAt@ time in milliseconds since epoch. This field is always populated on messages received with an @action@ of @MESSAGE_DELETE@.
-** @(TM2P)@ @operation@ optional object that may contain the following `optional` attributes;
-*** @(TM2P1)@ @clientId@ string
-*** @(TM2P2)@ @description@ string
-*** @(TM2P3)@ @metadata@ object - used to contain any arbitrary key value pairs of type string.
+** @(TM2k)@ @serial@ string - an opaque string that uniquely identifies the message.
+** @(TM2l)@ @refSerial@ string - an opaque string that uniquely identifies some referenced message.
+** @(TM2m)@ @refType@ string - an opaque string that identifies the type of this reference.
+** @(TM2n)@ @operation@ - object that may contain the following `optional` attributes;
+*** @(TM2n1)@ @clientId@ string
+*** @(TM2n2)@ @description@ string
+*** @(TM2n3)@ @metadata@ object - used to contain any arbitrary key value pairs of type string.
+** @(TM2o)@ @updatedAt@ time in milliseconds since epoch at which an operation occurred. This field is always populated on messages received with an @action@ of @MESSAGE_UPDATE@ or @MESSAGE_DELETE@..
+** @(TM2p)@ @updateSerial@ string - an opaque string that uniquely identifies the operation. This field is always populated on messages received with an @action@ of @MESSAGE_UPDATE@ or @MESSAGE_DELETE@.
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
 
@@ -2149,8 +2149,6 @@ enum MessageAction: // TM5
     ANNOTATION_DELETE // TM5
     META_OCCUPANCY // TM5
 
-
-
 class ConnectionDetails: // CD*, internal
   clientId: String? // RSA12a, CD2a
   connectionKey: String // RTN15e, CD2b
@@ -2179,9 +2177,9 @@ class Message: // TM*
   serial: string // TM2K
   refSerial: string? // TM2L
   refType: string? // TM2M
-  updatedAt: Time? // TM2N
-  deletedAt: Time? // TM2O
-  operation: JsonObject? // TM2P
+  operation: Object // TM2N
+  updatedAt: Time? // TM2O
+  updateSerial: string? // TM2P
 
 class PresenceMessage // TP*
   +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
