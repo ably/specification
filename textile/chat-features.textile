@@ -130,10 +130,10 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL5c)@ @[Testable]@ If the operation above fails such that the room enters the @FAILED@ state, then the retry loop must stop.
 ** @(CHA-RL5d)@ Once all channels have been detached, the room waits until the original channel that caused the retry loop naturally enters the @ATTACHED@ state.
 ** @(CHA-RL5e)@ @[Testable]@ If the channel state becomes @FAILED@, then the room status is transitioned to @FAILED@ and the retry loop stops. The error associated with the transition is the error from the Realtime @ChannelStateChange@.
-** @(CHA-RL5f)@ @[Testable]@ If the channel state becomes @ATTACHED@, then the room status is transitioned to @ATTACHING@ to begin a new attachment cycle.
+** @(CHA-RL5f)@ @[Testable]@ If the channel state becomes @ATTACHED@, then the room status is transitioned to @ATTACHING@ to begin a new @CHA-RL1e@ attachment cycle.
 *** @(CHA-RL5f1)@ @[Testable]@ If the attachment cycle succeeds, then the room is transitioned to @ATTACHED@ and any discontinuity errors are broadcast to contributors.
-*** @(CHA-RL5f2)@ @[Testable]@ If the attachment cycle fails because a channel entered @FAILED@, then the room is transitioned to @FAILED@ and the retry loop terminates.
-*** @(CHA-RL5f3)@ @[Testable]@ If the attachment cycle fails because a channel entered @SUSPENDED@, then the room is transitioned to @SUSPENDED@ and the retry loop restarted using the @SUSPENDED@ channel as the subject.
+*** @(CHA-RL5f2)@ @[Testable]@ If the attachment cycle fails because a channel entered @FAILED@, then the room is transitioned to @FAILED@ and the retry loop terminates. The error associated with the transition is the error from the Realtime @ChannelStateChange@.
+*** @(CHA-RL5f3)@ @[Testable]@ If the attachment cycle fails because a channel entered @SUSPENDED@, then the room is transitioned to @SUSPENDED@ and the retry loop restarted using the @SUSPENDED@ channel as the subject. The error associated with the transition is the error from the Realtime @ChannelStateChange@.
 * @(CHA-RL6)@ @[Testable]@ A room begins its lifetime in the @INTIIALIZING@ state.
 * @(CHA-RL6a)@ @[Testable]@ It enters @INITIALIZED@ when any @RELEASE@ operations for a previous instance of a room are completed.
 * @(CHA-RL7)@ Room lifecycle operations are atomic and exclusive operations: one operation must complete (whether that's failure or success) before the next one may begin.
