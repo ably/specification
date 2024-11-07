@@ -24,6 +24,7 @@ h2(#general). General Principles
 
 * @(CHA-GP1)@ As far as is practicable, the implementation details such as underlying Realtime Channels should be hidden from the public API. This allows developers to interact with Chat without having to understand many low-level primitives.
 * @(CHA-GP2)@ The public API should avoid implicit operations as a side-effect to some other operation. For example, adding a subscriber to messages in a Chat Room should not automatically trigger that Room to attach. This is in contrast to the current core SDKs. Avoiding side-effects provides a clean, easy to understand API.
+** @(CHA-GP2a)@ @[Testable]@ Whenever the Chat SDK fetches a realtime channel, it must do so with the @attachOnSubscribe@ channel option set to @false@.
 * @(CHA-GP3)@ Wherever possible, Chat features should be exposed in the public API as properties of their parent. For example, @messages@ would be considered a property of a @room@ object. This allows for greater composability and extensibility in the future.
 * @(CHA-GP4)@ Avoid overloading methods and optional parameters. Prefer object-type parameters wherever practical and idiomatic.
 
