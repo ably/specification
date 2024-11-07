@@ -763,7 +763,8 @@ h3(#realtime-presence). RealtimePresence
 ** @(RTP17h)@ Unlike the main @PresenceMap@, which is keyed by "memberKey":#TP3h , the @RTP17@ @PresenceMap@ must be keyed only by @clientId@. (Otherwise, entries associated with old @connectionId@s would never be removed, even if the user deliberately leaves presence).
 ** @(RTP17f)@ This clause has been replaced by "@RTP17i@":#RTP17i. It was valid up to and including specification version @3.0@.
 ** @(RTP17i)@ The @RealtimePresence@ object should perform automatic re-entry whenever the channel receives an @ATTACHED@ @ProtocolMessage@, except in the case where the channel is already attached and the @ProtocolMessage@ has the @RESUMED@ bit flag set.
-** @(RTP17g)@ Automatic re-entry consists of, for each member of the @RTP17@ internal @PresenceMap@, publishing a @PresenceMessage@ with an @ENTER@ action using the @clientId@, @data@, and @id@ attributes from that member.
+** @(RTP17g)@ Automatic re-entry consists of, for each member of the @RTP17@ internal @PresenceMap@, publishing a @PresenceMessage@ with an @ENTER@ action using the @clientId@, @data@, and @id@ (subject to @RTP17g1) attributes from that member.
+*** @(RTP17g1)@ If the current connection @id@ is different from the @connectionId@ attribute of the stored member, the published @PresenceMessage@ must not have its @id@ set.
 ** @(RTP17c)@ This clause has been replaced by "@RTP17f@":#RTP17f. It was valid up to and including specification version @1.2@.
 *** @(RTP17c1)@ This clause has been deleted. It was valid up to and including specification version @1.2@.
 *** @(RTP17c2)@ This clause has been deleted. It was valid up to and including specification version @1.2@.
