@@ -265,7 +265,7 @@ The members are as follows.
 
 <!-- -->
 
-- i64 timestamp := This is the timestamp indicating the time at which the message was received by the system from the publishing client. The timestamp is included in messages sent by the service to the client. The field is expected to be empty in messages sent from a client to the service.
+- i64 timestamp := This is the timestamp indicating the time at which the message was first received by the system from a publishing client. Subsequent updates to this message shall not update the timestamp. The timestamp is included in messages sent by the service to the client. The field is expected to be empty in messages sent from a client to the service.
 
 <!-- -->
 
