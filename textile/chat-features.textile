@@ -125,7 +125,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
 ** @(CHA-RL3k)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 * @(CHA-RL5)@ A room must @RETRY@ whenever it enters the @SUSPENDED@ state. This specification point describes the behavior that is executed as a result of @CHA-RL4b9@ and @CHA-RL1h3@.
-** @(CHA-RL5a)@ @[Testable]@ When entering a retry-loop, the room must first @DETACH@ all contributors underlying realtime channels using a @CHA-RL2f@ detachment cycle, with the exception of the channel that became @SUSPENDED@.
+** @(CHA-RL5a)@ @[Testable]@ When entering a @RETRY@ operation, the room must first @DETACH@ all contributors underlying realtime channels using a @CHA-RL2f@ detachment cycle, with the exception of the channel that became @SUSPENDED@.
+*** @(CHA-RL5a1)@ NOTE: As many chat features share channels, the equality of contributors when deciding not to detach is based on their realtime channel, and not the contributor themselves. i.e. if two features share a realtime channel, and that channel is suspended, then that channel should not be detached.
 ** @(CHA-RL5b)@ @[Testable]@ If the operation above fails, then it must be retried after a short wait of 250ms.
 ** @(CHA-RL5c)@ @[Testable]@ If the operation above fails such that the room enters the @FAILED@ state, then the retry loop must stop.
 ** @(CHA-RL5d)@ Once all channels have been detached, the room waits until the original channel that caused the retry loop naturally enters the @ATTACHED@ state.
