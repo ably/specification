@@ -480,7 +480,7 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
           "timeoutMs": number
         },
         "reactions": {}, // No properties, but must be non-null to enable feature.
-        "occupancy": {} 
+        "occupancy": {}
       }
 
 ### Messages {#chat-structs-message}
