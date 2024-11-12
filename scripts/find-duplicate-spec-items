@@ -3,20 +3,33 @@
 # Script to detect duplicate spec IDs in the client library spec
 # This tends to happen when concurrent spec PRs are merged
 
-SPEC_PATH = File.expand_path('../../textile/features.textile', __FILE__)
+SPEC_FILES = ["features", "chat-features"]
 
-File.read(SPEC_PATH).scan(/\*\s\@\((\w+)\)\@/).group_by do |match|
-  match
-end.select do |spec_id, matches|
-  matches.count > 1
-end.each do |spec_id, matches|
-  puts "#{spec_id.first} has #{matches.count - 1} duplicate(s)"
-end.tap do |matches|
-  if matches.empty?
-    puts "✓ Spec is valid. No duplicates found"
-  else
-    puts "\n✘ INVALID SPEC: #{matches.count} duplicate(s) found"
-    exit 1
+has_errors = false
+
+SPEC_FILES.each_with_index do |spec_file, i|
+  file_name = "#{spec_file}.textile"
+
+  puts "Checking #{file_name}"
+
+  spec_path = File.expand_path("../../textile/#{file_name}", __FILE__)
+
+  File.read(spec_path).scan(/\*\s\@\(([\w-]+)\)\@/).group_by do |match|
+    match
+  end.select do |spec_id, matches|
+    matches.count > 1
+  end.each do |spec_id, matches|
+    puts "#{spec_id.first} has #{matches.count - 1} duplicate(s)"
+  end.tap do |matches|
+    if matches.empty?
+      puts "✓ Spec is valid. No duplicates found"
+    else
+      puts "\n✘ INVALID SPEC: #{matches.count} duplicate(s) found"
+      has_errors = true
+    end
   end
+
+  puts if i < SPEC_FILES.count - 1
 end
 
+exit 1 if has_errors

@@ -2,7 +2,8 @@
   "name": "@ably/specification-build",
   "version": "1.0.0",
   "scripts": {
-    "build": "npm-run-all build:generate build:tailwind",
+    "clean": "rm -rf ./output",
+    "build": "npm-run-all clean build:generate build:tailwind",
     "build:generate": "./scripts/build",
     "build:tailwind": "tailwindcss -i ./templates/main.css -o ./output/tailwind.css --minify",
     "lint": "npm-run-all format:*:check",
