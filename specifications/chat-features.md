@@ -210,6 +210,13 @@ Messages are the quintessential component of a chat room - the purpose of chat i
 
 Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.
 
+`Serial` is used to provide a global ordering for messages. A `Serial` is a unique lexicographically sortable string.
+
+- `(CHA-S1)` `[Testable]` In the context of lexicographical sorting, the following applies:
+  - `(CHA-S1a)` `[Testable]` A `Serial` is considered before another `Serial` in the global order if it comes first in a lexicographical sort.
+  - `(CHA-S1b)` `[Testable]` A `Serial` is considered after another `Serial` in the global order if it comes second in a lexicographical sort.
+  - `(CHA-S1c)` `[Testable]` A `Serial` is considered to be equal to another `Serial` if both `Serial` strings are identical.
+
 `Messages` shall be exposed to consumers via the `messages` property of a `Room`.
 
 \* `(CHA-M1)` Chat messages for a Room are sent on a corresponding realtime channel `<roomId>::$chat::$chatMessages`. For example, if your room id is `my-room` then the messages channel will be `my-room::$chat::$chatMessages`.
@@ -218,49 +225,86 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 <div class=deprecated>
 
-`(CHA-M2a)` `[Testable]` `[Deprecated]` A `Message` is considered before another `Message` in the global order if the `timeserial` of the corresponding realtime channel message comes first.
+`(CHA-M2a)` `[Testable]` `(deprecated)` A `Message` is considered before another `Message` in the global order if the `timeserial` of the corresponding realtime channel message comes first.
 
-`(CHA-M2b)` `[Testable]` `[Deprecated]` A `Message` is considered after another `Message` in the global order if the `timeserial` of the corresponding realtime channel message comes second.
+`(CHA-M2b)` `[Testable]` `(deprecated)` A `Message` is considered after another `Message` in the global order if the `timeserial` of the corresponding realtime channel message comes second.
 
-`(CHA-M2c)` `[Testable]` `[Deprecated]` A `Message` is considered to be equal to another `Message` if they have the same timeserial.
+`(CHA-M2c)` `[Testable]` `(deprecated)` A `Message` is considered to be equal to another `Message` if they have the same timeserial.
 
 </div>
 
-`(CHA-M2d)` `[Testable]` A `Message` is considered before another `Message` in the global order if the `serial` of the corresponding realtime channel message comes first.
+`(CHA-M2d)` `[Testable]` A `Message` contains a unique, immutable `serial`, which is a lexicographically sortable string.
 
-`(CHA-M2e)` `[Testable]` A `Message` is considered after another `Message` in the global order if the `serial` of the corresponding realtime channel message comes second.
+`(CHA-M2e)` `[Testable]` In global ordering, a `Message` is considered to occur before another `Message` if the `serial` of the first `Message` is before the latter when lexicographically sorted.
 
-`(CHA-M2f)` `[Testable]` A `Message` is considered to be equal to another `Message` if they have the same serial.
+`(CHA-M2f)` `[Testable]` In global ordering, a `Message` is considered after another `Message` if the `serial` of the first `Message` is after the latter when lexicographically sorted.
 
-- `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Doing so would result in a new `Message` with a different `latestActionSerial`, but the same `serial` as the original message.
-  - `(CHA-M10a)` `[Testable]` An `action` is considered before another `action` in the global order if the `latestActionSerial` of the corresponding realtime channel message comes first.
-  - `(CHA-M10b)` `[Testable]` An `action` is considered after another `action` in the global order if the `latestActionSerial` of the corresponding realtime channel message comes second.
-  - `(CHA-M10c)` `[Testable]` An `action` is considered to be equal to another `action` if they have the same `latestActionSerial`.
-- `(CHA-M3)` Messages are sent to Ably via the Chat REST API, using the `send` method.
-  - `(CHA-M3a)` `[Testable]` When a message is sent successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message) in response (as if it were received via Realtime event).
-  - `(CHA-M3b)` `[Testable]` A message may be sent without `metadata` or `headers`. When these are not specified by the user, they must be omitted from the REST payload.
-  - `(CHA-M3c)` This clause has been deleted.
-  - `(CHA-M3d)` This clause has been deleted.
-  - `(CHA-M3e)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `send` call.
-- `(CHA-M8)` Message updates are sent to Ably via the Chat REST API, using the `update` method.
-  - `(CHA-M8a)` `[Testable]` When a message is updated successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response (as if it were received via Realtime event).
-  - `(CHA-M8b)` `[Testable]` An update is treated as a whole single change (PUT). If a field is not specified in the update, it is assumed to be removed.
-  - `(CHA-M8c)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `update` call.
-- `(CHA-M9)` Messages deletions are sent to Ably via the Chat REST API, using the `delete` method.
-  - `(CHA-M9a)` `[Testable]` When a message is deleted successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response (as if it were received via Realtime event).
-  - `(CHA-M9b)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `delete` call.
-- `(CHA-M4)` Messages can be received via a subscription in realtime.
-  - `(CHA-M4a)` `[Testable]` A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
-  - `(CHA-M4b)` `[Testable]` A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
-  - `(CHA-M4c)` `[Testable]` `[Deprecated]` When a realtime message with `name` set to `message.created` is received, it is translated into a message event, which contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message). This event is then broadcast to all subscribers.
-  - `(CHA-M4l)` `[Testable]` When a realtime message with `name` set to `chat.message` is received, it is translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message). This event is then broadcast to all subscribers.
-  - `(CHA-M4m)` `[Testable]` The `action` field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
-    - `(CHA-M4m1)` `[Testable]` If `action` is set to `MESSAGE_CREATE`, then an event with `type` set to `message.created` will be emitted.
-    - `(CHA-M4m2)` `[Testable]` If `action` is set to `MESSAGE_UPDATE`, then an event with `type` set to `message.updated` will be emitted.
-    - `(CHA-M4m3)` `[Testable]` If `action` is set to `MESSAGE_DELETE`, then an event with `type` set to `message.deleted` will be emitted.
-    - `(CHA-M4m4)` `[Testable]` If a realtime message with an unknown `action` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
-  - `(CHA-M4d)` `[Testable]` If a realtime message with an unknown `name` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
-  - `(CHA-M5k)` `[Testable]` Incoming realtime events that are malformed (unknown field should be ignored) shall not be emitted to subscribers.
+`(CHA-M2g)` `[Testable]` Two `Messages` are considered to be the same if they have the same `serial`, that is to say, both `Serial` strings are identical.
+
+\* `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` generates a new `Message` instance with an updated `latestActionSerial`, while the original Message's `serial` remains unchanged.
+
+`(CHA-M10a)` `[Testable]` The `latestActionSerial` of a `Message` is a lexicographically sortable, unique identifier for each action applied to the `Message`. Unlike `serial`, `latestActionSerial` is mutable and is updated each time an `action` is applied.
+
+`(CHA-M10a)` `[Testable]` In global ordering, an `action` is considered to occur before another `action` if the `latestActionSerial` of the first `action` is lexicographically smaller than that of the latter.
+
+`(CHA-M10b)` `[Testable]` In global ordering, an `action` is considered to occur after another `action` if the `latestActionSerial` of the first `action` is lexicographically greater than that of the latter.
+
+`(CHA-M10c)` `[Testable]` Two `actions` are considered to be the same if they have the same `latestActionSerial`, that is to say, both `latestActionSerial` strings are identical.
+
+\* `(CHA-M3)` A client must be able to send a message to a room via the Chat REST API.
+
+`(CHA-M3a)` `[Testable]` When a message is sent successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message) in response, as if it were received via Realtime event.
+
+`(CHA-M3b)` `[Testable]` A message may be sent without `metadata` or `headers`. When these are not specified by the user, they must be omitted from the REST payload.
+
+`(CHA-M3c)` This clause has been deleted.
+
+`(CHA-M3d)` This clause has been deleted.
+
+`(CHA-M3e)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `send` call.
+
+\* `(CHA-M8)` Message updates are sent to Ably via the Chat REST API, using the `update` method.
+
+`(CHA-M8a)` `[Testable]` When a message is updated successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response, as if it were received via Realtime event.
+
+`(CHA-M8b)` `[Testable]` An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
+
+`(CHA-M8c)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `update` call.
+
+\* `(CHA-M9)` Messages deletions are sent to Ably via the Chat REST API, using the `delete` method.
+
+`(CHA-M9a)` `[Testable]` When a message is deleted successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response (as if it were received via Realtime event).
+
+`(CHA-M9b)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `delete` call.
+
+\* `(CHA-M4)` Messages can be received via a subscription in realtime.
+
+`(CHA-M4a)` `[Testable]` A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
+
+`(CHA-M4b)` `[Testable]` A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
+
+<div class=deprecated>
+
+`(CHA-M4c)` `[Testable]` `(deprecated)` When a realtime message with `name` set to `message.created` is received, it is translated into a message event, which contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message). This event is then broadcast to all subscribers.
+
+</div>
+
+`(CHA-M4l)` `[Testable]` When a realtime message with the `name` field set to `chat.message` is received, it is translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message-v2). This event is then broadcast to all subscribers.
+
+`(CHA-M4d)` `[Testable]` If a realtime message with an unknown `name` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
+
+`(CHA-M4m)` `[Testable]` The `action` field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
+
+\* `(CHA-M4m1)` `[Testable]` If `action` is set to `MESSAGE_CREATE`, then an event with `type` set to `message.created` will be emitted.
+
+\* `(CHA-M4m2)` `[Testable]` If `action` is set to `MESSAGE_UPDATE`, then an event with `type` set to `message.updated` will be emitted.
+
+\* `(CHA-M4m3)` `[Testable]` If `action` is set to `MESSAGE_DELETE`, then an event with `type` set to `message.deleted` will be emitted.
+
+\* `(CHA-M4m4)` `[Testable]` If a realtime message with an unknown `action` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
+
+`(CHA-M5k)` `[Testable]` Incoming realtime events that are malformed (unknown field should be ignored) shall not be emitted to subscribers.
+
 - `(CHA-M5)` For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow `(subscription point)` at which the subscription was made, NOT the channel attachment point.
   - `(CHA-M5a)` `[Testable]` If a subscription is added when the underlying realtime channel is `ATTACHED`, then the `subscription point` is the current `channelSerial` of the realtime channel.
   - `(CHA-M5b)` `[Testable]` If a subscription is added when the underlying realtime channel is in any other state, then its `subscription point` becomes the `attachSerial` at the the point of channel attachment.
@@ -419,7 +463,7 @@ the overhead of having everyone in presence.
 
 ### Sending Messages {#rest-sending-messages}
 
-#### Request V1 `[Deprecated]` {#rest-sending-messages-request-v1}
+#### Request V1 `(deprecated)` {#rest-sending-messages-request-v1}
 
 Below is the full REST payload format for the V1 endpoint. The `metadata` and `headers` keys are optional.
 
@@ -436,7 +480,7 @@ Below is the full REST payload format for the V1 endpoint. The `metadata` and `h
         }
       }
 
-#### Response V1 `[Deprecated]` {#rest-sending-messages-request-v1}
+#### Response V1 `(deprecated)` {#rest-sending-messages-request-v1}
 
 A successful request shall result in status code `201 Created`.
 
@@ -447,7 +491,7 @@ The response body is as follows.
         "createdAt": 1726232498871
       }
 
-#### Corresponding Realtime Event V1 `[Deprecated]` {#rest-sending-messages-request-v1}
+#### Corresponding Realtime Event V1 `(deprecated)` {#rest-sending-messages-request-v1}
 
       {
         "name": "chat.message"
@@ -493,7 +537,7 @@ A successful request shall result in status code `201 Created`.
 The response body is as follows.
 
       {
-        "serial": "cbfqxperABgItU52203559@1726232498871-0:0",
+        "serial": "01726585978590-001@abcdefghij:001",
         "createdAt": 1726232498871
       }
 
@@ -516,7 +560,7 @@ The response body is as follows.
             "baz": "qux"
           },
         },
-        "serial": "cbfqxperABgItU52203559@1726232498871-0:0"
+        "serial": "01726585978590-001@abcdefghij:001"
         "action": "message.create"
         "updatedAt": undefined
         "updateSerial": undefined
@@ -555,7 +599,7 @@ A successful request shall result in status code `200 Ok`.
 The response body is as follows.
 
       {
-        "serial": "cbfqxperABgItU52203559@1826232498871-0:0",
+        "serial": "01826232498871-001@abcdefghij:001",
         "updatedAt": 1726232498871
       }
 
@@ -580,10 +624,10 @@ The serial in the body corresponds to the `updateSerial` of the corresponding re
             "baz": "qux"
           },
         }
-        "serial": "cbfqxperABgItU52203559@1726232498871-0:0",
+        "serial": "01726585978590-001@abcdefghij:001",
         "action": "message.update"
         "updatedAt": 1826232498871
-        "updateSerial": "cbfqxperABgItU52203559@1826232498871-0:0"
+        "updateSerial": "01826232498871-001@abcdefghij:001"
         "operation": {
           "clientId": "who-performed-the-action",
           "description": "why-the-action-was-performed"
@@ -614,7 +658,7 @@ A successful request shall result in status code `200 Ok`.
 The response body is as follows.
 
       {
-        "serial": "cbfqxperABgItU52203559@1826232498871-0:0",
+        "serial": "01826232498871-001@abcdefghij:001",
         "deletedAt": 1826232498871
       }
 
@@ -639,10 +683,10 @@ The serial in the body corresponds to the `updateSerial` of the corresponding re
             "baz": "qux"
           },
         }
-        "serial": "cbfqxperABgItU52203559@1726232498871-0:0",
+        "serial": "01726585978590-001@abcdefghij:001",
         "action": "message.deleted"
         "updatedAt": 1826232498871
-        "updateSerial": "cbfqxperABgItU52203559@1826232498871-0:0"
+        "updateSerial": "01826232498871-001@abcdefghij:001",
         "operation": {
           "clientId": "who-performed-the-action",
           "description": "why-the-action-was-performed"
@@ -654,13 +698,13 @@ The serial in the body corresponds to the `updateSerial` of the corresponding re
 
 ### Fetching Message History {#rest-fetching-messages}
 
-#### Request V1 `[Deprecated]` {#rest-fetching-messages-request-v1}
+#### Request V1 `(deprecated)` {#rest-fetching-messages-request-v1}
 
       GET /chat/v1/rooms/<roomId>/messages
 
 The method accepts query parameters identical to the standard Ably REST API.
 
-#### Response V1 `[Deprecated]` {#rest-fetching-messages-response}
+#### Response V1 `(deprecated)` {#rest-fetching-messages-response}
 
 An array of [`Message` structs](#chat-structs-message)
 
@@ -732,7 +776,7 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
 
 ### Messages {#chat-structs-message}
 
-#### Messages V1 `[Deprecated]` {#chat-structs-message-v1}
+#### Messages V1 `(deprecated)` {#chat-structs-message-v1}
 
       {
         "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
@@ -750,12 +794,12 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
         }
       }
 
-`[Deprecated]` Determining the global order of messages may be achieved by comparing the timeserials. See `CHA-M2` for more information.
+`(deprecated)` Determining the global order of messages may be achieved by comparing the timeserials. See `CHA-M2` for more information.
 
 #### Messages V2 {#chat-structs-message-v2}
 
       {
-        "serial": "cbfqxperABgItU52203559@1726232498871-0",
+        "serial": "01726585978590-001@abcdefghij:001",
         "roomId": "my-room",
         "clientId": "who-sent-the-message",
         "text": "my-message",
@@ -769,7 +813,7 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
           "baz": "qux"
         }
         "latestAction": "message.created",
-        "latestActionSerial": "cbfqxperABgItU52203559@1726232498871-0",
+        "latestActionSerial": "01726585978590-001@abcdefghij:001",
         "deletedAt": DateTime() | undefined,
         "updatedAt": DateTime() | undefined,
         "latestActionDetails": {
@@ -783,9 +827,9 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
         }
       }
 
-Determining the global order of messages may be achieved by comparing the serials. See `CHA-M2` for more information.
+Determining the global order of messages may be achieved by lexicographically comparing the serials. See `CHA-M2` for more information.
 
-Determining the global order of message actions may be achieved by comparing the `latestActionSerial`. See `CHA-M10` for more information.
+Determining the global order of message actions may be achieved by lexicographically comparing the `latestActionSerial`. See `CHA-M10` for more information.
 
 ### Ephemeral Room Reactions {#chat-structs-ephemeral-reactions}
 
