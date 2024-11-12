@@ -208,15 +208,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 
 Messages are the quintessential component of a chat room - the purpose of chat is for users to talk to each other!
 
-Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.
-
-`Serial` is used to provide a global ordering for messages. A `Serial` is a unique lexicographically sortable string.
-
-- `(CHA-S1)` `[Testable]` In the context of lexicographical sorting, the following applies:
-  - `(CHA-S1a)` `[Testable]` A `Serial` is considered before another `Serial` in the global order if it comes first in a lexicographical sort.
-  - `(CHA-S1b)` `[Testable]` A `Serial` is considered after another `Serial` in the global order if it comes second in a lexicographical sort.
-  - `(CHA-S1c)` `[Testable]` A `Serial` is considered to be equal to another `Serial` if both `Serial` strings are identical.
-
+Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.\
 `Messages` shall be exposed to consumers via the `messages` property of a `Room`.
 
 \* `(CHA-M1)` Chat messages for a Room are sent on a corresponding realtime channel `<roomId>::$chat::$chatMessages`. For example, if your room id is `my-room` then the messages channel will be `my-room::$chat::$chatMessages`.
@@ -241,47 +233,27 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 `(CHA-M2g)` `[Testable]` Two `Messages` are considered to be the same if they have the same `serial`, that is to say, both `Serial` strings are identical.
 
-\* `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` generates a new `Message` instance with an updated `latestActionSerial`, while the original Message's `serial` remains unchanged.
-
-`(CHA-M10a)` `[Testable]` The `latestActionSerial` of a `Message` is a lexicographically sortable, unique identifier for each action applied to the `Message`. Unlike `serial`, `latestActionSerial` is mutable and is updated each time an `action` is applied.
-
-`(CHA-M10a)` `[Testable]` In global ordering, an `action` is considered to occur before another `action` if the `latestActionSerial` of the first `action` is lexicographically smaller than that of the latter.
-
-`(CHA-M10b)` `[Testable]` In global ordering, an `action` is considered to occur after another `action` if the `latestActionSerial` of the first `action` is lexicographically greater than that of the latter.
-
-`(CHA-M10c)` `[Testable]` Two `actions` are considered to be the same if they have the same `latestActionSerial`, that is to say, both `latestActionSerial` strings are identical.
-
-\* `(CHA-M3)` A client must be able to send a message to a room via the Chat REST API.
-
-`(CHA-M3a)` `[Testable]` When a message is sent successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message) in response, as if it were received via Realtime event.
-
-`(CHA-M3b)` `[Testable]` A message may be sent without `metadata` or `headers`. When these are not specified by the user, they must be omitted from the REST payload.
-
-`(CHA-M3c)` This clause has been deleted.
-
-`(CHA-M3d)` This clause has been deleted.
-
-`(CHA-M3e)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `send` call.
-
-\* `(CHA-M8)` Message updates are sent to Ably via the Chat REST API, using the `update` method.
-
-`(CHA-M8a)` `[Testable]` When a message is updated successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response, as if it were received via Realtime event.
-
-`(CHA-M8b)` `[Testable]` An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
-
-`(CHA-M8c)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `update` call.
-
-\* `(CHA-M9)` Messages deletions are sent to Ably via the Chat REST API, using the `delete` method.
-
-`(CHA-M9a)` `[Testable]` When a message is deleted successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response (as if it were received via Realtime event).
-
-`(CHA-M9b)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `delete` call.
-
-\* `(CHA-M4)` Messages can be received via a subscription in realtime.
-
-`(CHA-M4a)` `[Testable]` A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
-
-`(CHA-M4b)` `[Testable]` A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
+- `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` generates a new `Message` instance with an updated `latestActionSerial`, while the original Message's `serial` remains unchanged.
+  - `(CHA-M10a)` `[Testable]` The `latestActionSerial` of a `Message` is a lexicographically sortable, unique identifier for each action applied to the `Message`. Unlike `serial`, `latestActionSerial` is mutable and is updated each time an `action` is applied.
+  - `(CHA-M10b)` `[Testable]` In global ordering, an `action` is considered to occur before another `action` if the `latestActionSerial` of the first `action` is lexicographically smaller than that of the latter.
+  - `(CHA-M10c)` `[Testable]` In global ordering, an `action` is considered to occur after another `action` if the `latestActionSerial` of the first `action` is lexicographically greater than that of the latter.
+  - `(CHA-M10d)` `[Testable]` Two `actions` are considered to be the same if they have the same `latestActionSerial`, that is to say, both `latestActionSerial` strings are identical.
+- `(CHA-M3)` A client must be able to send a message to a room via the Chat REST API.
+  - `(CHA-M3a)` `[Testable]` When a message is sent successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message) in response, as if it were received via Realtime event.
+  - `(CHA-M3b)` `[Testable]` A message may be sent without `metadata` or `headers`. When these are not specified by the user, they must be omitted from the REST payload.
+  - `(CHA-M3c)` This clause has been deleted.
+  - `(CHA-M3d)` This clause has been deleted.
+  - `(CHA-M3e)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `send` call.
+- `(CHA-M8)` Message updates are sent to Ably via the Chat REST API, using the `update` method.
+  - `(CHA-M8a)` `[Testable]` When a message is updated successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response, as if it were received via Realtime event.
+  - `(CHA-M8b)` `[Testable]` An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
+  - `(CHA-M8c)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `update` call.
+- `(CHA-M9)` Messages deletions are sent to Ably via the Chat REST API, using the `delete` method.
+  - `(CHA-M9a)` `[Testable]` When a message is deleted successfully, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response (as if it were received via Realtime event).
+  - `(CHA-M9b)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `delete` call.
+- `(CHA-M4)` Messages can be received via a subscription in realtime.
+  - `(CHA-M4a)` `[Testable]` A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
+  - `(CHA-M4b)` `[Testable]` A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
 
 <div class=deprecated>
 
