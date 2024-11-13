@@ -233,7 +233,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M5i)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 ** @(CHA-M5j)@ @[Testable]@ If the @end@ parameter is specified and is more recent than the @subscription point@ timeserial, the method must throw an @ErrorInfo@ with code @40000@.
 * @(CHA-M6)@ Messages should be queryable from a paginated REST API.
-* @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through.
+* @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through. Each message must be represented by the standard @Message@ object.
 * @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 * @(CHA-M7)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in messages that they need to resolve. Their listener will be called when a discontinuity event is triggered from the room lifecycle.
 
