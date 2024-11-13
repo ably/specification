@@ -233,13 +233,13 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M3c)@ This clause has been deleted.
 ** @(CHA-M3d)@ This clause has been deleted.
 ** @(CHA-M3e)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
-* @(CHA-M8)@ Message updates are sent to Ably via the Chat REST API, using the @update@ method.
+* @(CHA-M8)@ Message updates shall be sent to Ably via the Chat REST API, using the @update@ method.
 ** @(CHA-M8a)@ @[Testable]@ When a message is updated successfully, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
 ** @(CHA-M8b)@ @[Testable]@ An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
 ** @(CHA-M8c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @update@ call.
-* @(CHA-M9)@ Messages deletions are sent to Ably via the Chat REST API, using the @delete@ method.
-** @(CHA-M9a)@ @[Testable]@ When a message is deleted successfully, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response (as if it were received via Realtime event).
-** @(CHA-M9b)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @delete@ call.
+* @(CHA-M9)@ Messages deletions shall be sent to Ably via the Chat REST API, using the @delete@ method.
+** @(CHA-M9a)@ @[Testable]@ When a message is deleted successfully, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
+** @(CHA-M9b)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
@@ -248,12 +248,12 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M4c)@ @[Testable]@ @(deprecated)@ When a realtime message with @name@ set to @message.created@  is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
 </div>
 
-** @(CHA-M4l)@ @[Testable]@ When a realtime message with the @name@ field set to @chat.message@ is received, it is translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event is then broadcast to all subscribers.
+** @(CHA-M4l)@ @[Testable]@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M4m)@ @[Testable]@ The @action@ field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
-*** @(CHA-M4m1)@ @[Testable]@ If @action@ is set to @MESSAGE_CREATE@, then an event with @type@ set to @message.created@ will be emitted.
-*** @(CHA-M4m2)@ @[Testable]@ If @action@ is set to @MESSAGE_UPDATE@, then an event with @type@ set to @message.updated@ will be emitted.
-*** @(CHA-M4m3)@ @[Testable]@ If @action@ is set to @MESSAGE_DELETE@, then an event with @type@ set to @message.deleted@ will be emitted.
+*** @(CHA-M4m1)@ @[Testable]@ If @action@ is set to @MESSAGE_CREATE@, then an event with @type@ set to @message.created@ shall be emitted.
+*** @(CHA-M4m2)@ @[Testable]@ If @action@ is set to @MESSAGE_UPDATE@, then an event with @type@ set to @message.updated@ shall be emitted.
+*** @(CHA-M4m3)@ @[Testable]@ If @action@ is set to @MESSAGE_DELETE@, then an event with @type@ set to @message.deleted@ shall be emitted.
 *** @(CHA-M4m4)@ @[Testable]@ If a realtime message with an unknown @action@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M5k)@ @[Testable]@ Incoming realtime events that are malformed (unknown field should be ignored) shall not be emitted to subscribers.
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
