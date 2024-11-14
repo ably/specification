@@ -115,9 +115,9 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 * @(CHA-RL3)@ A room must be explicitly released via the @RELEASE@ operation. This operation is not performed directly on a Room object by the client, but is described here.
 ** @(CHA-RL3a)@ @[Testable]@ If the room is already in the @RELEASED@ status, this operation is no-op.
 ** @(CHA-RL3b)@ @[Testable]@ If the room is in the @DETACHED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
-** @(CHA-RL3i)@ This specification point has been removed.
 ** @(CHA-RL3j)@ @[Testable]@ If the room is in the @INITIALIZED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
 ** @(CHA-RL3c)@ @[Testable]@ If the room is in the @RELEASING@ status, then the operation will return the result of the pending @release@ operation, or throw any exception that it throws.
+** @(CHA-RL3i)@ This specification point has been removed.
 ** @(CHA-RL3l)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status and any transient disconnect timeouts shall be cleared.
 ** @(CHA-RL3d)@ @[Testable]@ All features channels must be detached in sequence.
 ** @(CHA-RL3e)@ @[Testable]@ If a channel is in the @FAILED@ state when it is time to detach, it shall be ignored.
