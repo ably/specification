@@ -174,6 +174,10 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL7a1)@ The @RETRY@ operation - an internal process.
 *** @(CHA-RL7a2)@ The @RELEASE@ operation.
 *** @(CHA-RL7a3)@ The @ATTACH@ and @DETACH@ operations have equal precedence.
+* @(CHA-RL9)@ Many operations in the Chat SDK will still attempt to proceed if the room is in an @ATTACHING@ status. However, their ability to proceed will depend on the subsequent status that the room takes. This specification point is defined here to avoid unnecessary repetition. It is primarily testable via the points that refer to it.
+** @(CHA-RL9a)@ @[Testable]@ When the room status is @ATTACHING@ at the point of operation commencement, the caller will subscribe a one-time listener to the room status.
+** @(CHA-RL9b)@ @[Testable]@ If the next room status received by the caller is @ATTACHED@, the operation shall proceed as normal.
+** @(CHA-RL9c)@ @[Testable]@ If the next room status received is any other value, the operation must throw an error. The @ErrorInfo@ shall have the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes, with a status code of @500@. The @cause@ field must contain any error associated with the room status change, if present.
 * @(CHA-RL10)@ @[Testable]@ When a specification point refers to operations on the underlying realtime channels (i.e. calls to attach and delete) being performed in sequence, the precedence of contributors must follow the order specified by @CHA-RC2e@.
 
 h4(#rooms-lifecycle-monitoring). Room Lifecycle Monitoring
@@ -352,20 +356,22 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR3c)@ This specification point has been removed.
 *** @(CHA-PR3c1) This specification point has been removed.
 *** @(CHA-PR3c2)@ This specification point has been removed.
-** @(CHA-PR3d)@ @[Testable]@ If the room status is @Attaching@, then the @enter@ call will wait for the attach operation to succeed and then call the underlying presence @enter@ operation. It will throw an error if the attach fails.
+** @(CHA-PR3d)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.enter()@ call.
+** @(CHA-PR3h)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
 ** @(CHA-PR3e)@ @[Testable]@ If the room status is @Attached@, then the @enter@ call will invoke the underlying @presence.enter()@ call.
-** @(CHA-PR3f)@ @[Testable]@ If the room status is @Detached@, an @ErrorInfo@ with code 40000, explaining that attach must be called first, will be thrown.
-** @(CHA-PR3g)@ @[Testable]@ For any other room status, an @ErrorInfo@ with code 40000 will be thrown.
+** @(CHA-PR3f)@ This specification point has been removed. It was superseded by @CHA-PR3h@.
+** @(CHA-PR3g)@ This specification point has been removed. It was superseded by @CHA-PR3h@.
 * @(CHA-PR10)@ Users may update their presence data. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
 ** @(CHA-PR10a)@ @[Testable]@ Users may choose to update their presence data, optionally providing custom data to update with. The overall presence data must retain the format specified in @CHA-PR2@.
 ** @(CHA-PR10b)@ This clause has been replaced by @CHA-PR10c - CHA-PR10g@.
 ** @(CHA-PR10c)@ This specification point has been removed.
 *** @(CHA-PR10c1)@ This specification point has been removed.
 *** @(CHA-PR10c2)@ This specification point has been removed.
-** @(CHA-PR10d)@ @[Testable]@ If the room status is @Attaching@, then the @update@ call will wait for the attach operation to succeed and then call the underlying presence @update@ operation. It will throw an error if the attach fails.
+** @(CHA-PR10d)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.update()@ call.
+** @(CHA-PR10h)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
 ** @(CHA-PR10e)@ @[Testable]@ If the room status is @Attached@, then the @update@ call will invoke the underlying @presence.enter()@ call.
-** @(CHA-PR10f)@ @[Testable]@ If the room status is @Detached@, an @ErrorInfo@ with code 40000, explaining that attach must be called first, will be thrown.
-** @(CHA-PR10g)@ @[Testable]@ For any other room status, an @ErrorInfo@ with code 40000 will be thrown.
+** @(CHA-PR10f)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
+** @(CHA-PR10g)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 * @(CHA-PR4)@ Users may leave presence.
 ** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set.
 * @(CHA-PR5)@ @[Testable]@ It must be possible to query if a given clientId is in the presence set.
@@ -374,10 +380,11 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR6b)@ This specification point has been removed.
 *** @(CHA-PR6b1)@ This specification point has been removed.
 *** @(CHA-PR6b2)@ This specification point has been removed.
-** @(CHA-PR6c)@ @[Testable]@ If the room status is @Attaching@, then the @get@ call will wait for the attach operation to succeed and then call the underlying presence @get@ operation. It will throw an error if the attach fails.
-** @(CHA-PR6d)@ @[Testable]@ If the room status is @Attached@, then the @get@ call will invoke the underlying @presence.enter()@ call.
-** @(CHA-PR6e)@ @[Testable]@ If the room status is @Detached@, an @ErrorInfo@ with code 40000, explaining that attach must be called first, will be thrown.
-** @(CHA-PR6f)@ @[Testable]@ For any other room status, an @ErrorInfo@ with code 40000 will be thrown.
+** @(CHA-PR6c)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.get()@ call.
+** @(CHA-PR6h)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
+** @(CHA-PR6d)@ @[Testable]@ If the room status is @Attached@, then the @get@ call will invoke the underlying @presence.get()@ call.
+** @(CHA-PR6e)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
+** @(CHA-PR6f)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 * @(CHA-PR7)@ Users may subscribe to presence events.
 ** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event in a room.
 ** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
@@ -398,10 +405,11 @@ Typing Indicators allow chat room users to indicate to others that they are typi
 ** @(CHA-T2b)@ This specification point has been removed.
 *** @(CHA-T2b1)@ This specification point has been removed.
 *** @(CHA-T2b2)@ This specification point has been removed.
-** @(CHA-T2c)@ @[Testable]@ If the room status is @ATTACHING@, then the @get@ call shall wait for the attach operation to succeed and then call the underlying presence @get@ operation. It must throw an error if the attach fails.
+** @(CHA-T2c)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.get()@ call.
+** @(CHA-T2g)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
 ** @(CHA-T2d)@ @[Testable]@ If the room status is @Attached@, then the @get@ call shall invoke the underlying @presence.enter()@ call.
-** @(CHA-T2e)@ @[Testable]@ If the room status is @Detached@, an @ErrorInfo@ with code 40000, explaining that attach must be called first, will be thrown.
-** @(CHA-T2f)@ @[Testable]@ For any other room status, an @ErrorInfo@ with code 40000 will be thrown.
+** @(CHA-T2e)@ This specification point has been removed. It was superseded by @CHA-T2g@.
+** @(CHA-T2f)@ This specification point has been removed. It was superseded by @CHA-T2g@.
 * @(CHA-T3)@ @[Testable]@ Users may configure a timeout interval for when they are typing. This configuration is provided as part of the @RoomOptions@ @typing.timeoutMs@ property, or idiomatic equivalent. The default is 5000ms.
 * @(CHA-T4)@ Users may indicate that they have started typing.
 ** @(CHA-T4a)@ @[Testable]@ If typing is not already in progress, per explicit cancellation or the timeout interval in (@CHA-T3@), then a new typing session is started.
@@ -1001,5 +1009,9 @@ For non-chat-specific codes, the status code for the error should align with the
 
   // Room was released before the operation could complete.
   // To be accompanied with status code 400.
-  RoomReleasedBeforeOperationCompleted = 102106,
+  RoomReleasedBeforeOperationCompleted = 102106
+
+  // The room operation failed because the room was in an invalid state
+  // This error may be accompanied with status code 400 or 500, depending on the source of the error.
+  RoomInInvalidState = 102107
 </pre>
