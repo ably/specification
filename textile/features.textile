@@ -64,10 +64,43 @@ h2(#versions). Specification and Protocol Versions
 h2(#test-guidelines). Test guidelines
 
 * @(G1)@ Every test should be executed using all supported protocols (i.e. JSON and "MessagePack":https://msgpack.org/ if supported).  This includes both sending & receiving data
-* @(G2)@ All tests by default are run against a special Ably sandbox environment.  This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a @POST@ request to @https://sandbox-rest.ably.io/apps@ with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see "ably-common test-app-setup.json":https://github.com/ably/ably-common/blob/main/test-resources/test-app-setup.json. Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
-* @(G3)@ Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics.  As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions.  To create stats you must send an authenticated @POST@ request to the stats JSON to @https://sandbox-rest.ably.io/stats@ with the stats data you wish to create. See the "JavaScript stats fixture":https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51 and "setup helper":https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182 as an example
+* @(G2)@ All tests by default are run against a special Ably sandbox environment.  This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a @POST@ request to @https://sandbox.realtime.ably-nonprod.net/apps@ with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see "ably-common test-app-setup.json":https://github.com/ably/ably-common/blob/main/test-resources/test-app-setup.json. Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
+* @(G3)@ Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics.  As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions.  To create stats you must send an authenticated @POST@ request to the stats JSON to @https://sandbox.realtime.ably-nonprod.net/stats@ with the stats data you wish to create. See the "JavaScript stats fixture":https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51 and "setup helper":https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182 as an example
 * @(G4)@ This clause has been replaced by "@CSV1@":#CSV1 and "@CSV2@":#CSV2. It was valid up to and including specification version 1.2.
 ** @(G4a)@ This clause has been replaced by "@CSV2d@":#CSV2d. It was valid up to and including specification version 1.2.
+
+h2(#endpoint-configuration). Client library endpoint configuration
+
+* @(REC1)@ Various client options collectively determine a @primary domain@.
+** @(REC1a)@ The @primary domain@ is @main.realtime.ably.net@ unless overridden by specifying an @endpoint@ option or any of the deprecated options @environment@, @restHost@, @realtimeHost@.
+** @(REC1b)@ If the @endpoint@ option is specified then:
+*** @(REC1b1)@ If any one of the deprecated options @environment@, @restHost@, @realtimeHost@ are also specified then the options as a set are invalid.
+*** @(REC1b2)@ If the @endpoint@ option is a domain name, determined by it containing at least one period (@.@) then the @primary domain@ is the value of the @endpoint@ option.
+*** @(REC1b3)@ Otherwise, if the @endpoint@ option is a non-production routing policy name of the form @nonprod:[name]@ then the @primary domain@ is @[name].realtime.ably-nonprod.net@.
+*** @(REC1b4)@ Otherwise, if the @endpoint@ option is a production routing policy name of the form @[name]@ then the @primary domain@ is @[name].realtime.ably.net@.
+** @(REC1c)@ If the deprecated @environment@ option is specified then it defines a production routing policy name @[name]@:
+*** @(REC1c1)@ If any one of the deprecated options @restHost@, @realtimeHost@ are also specified then the options as a set are invalid.
+*** @(REC1c2)@ Otherwise, the primary domain is @[name].realtime.ably.net@.
+** @(REC1d)@ If either the @restHost@ or @realtimeHost@ option is specified then:
+*** @(REC1d1)@ If the @restHost@ option is specified the @primary domain@ is the value of the @restHost@ option.
+*** @(REC1d2)@ Otherwise, if the @realtimeHost@ option is specified the @primary domain@ is the value of the @realtimeHost@ option.
+
+* @(REC2)@ Various client options collectively determine a set of @fallback domains@.
+** @(REC2a)@ If the @fallbackHosts@ client option is specified then:
+*** @(REC2a1)@ If the deprecated @fallbackHostsUseDefault@ option is specified then the options as a set are invalid.
+*** @(REC2a2)@ Otherwise, the set of @fallback domains@ is given by the value of the @fallbackHosts@ option.
+** @(REC2b)@ Otherwise, if the deprecated @fallbackHostsUseDefault@ option is specified then the set of @fallback domains@ is the default set defined in @(REC2c1)@.
+** @(REC2c)@ Otherwise, the set of @fallback domains@ is defined implicitly by the options used to define the @primary domain@ as specified in @(REC1)@:
+*** @(REC2c1)@ If the @primary domain@ is determined to be the default via @(REC1a)@ then the set of @fallback domains@ is the default @a.ably-realtime.com@, @b.ably-realtime.com@, @c.ably-realtime.com@, @d.ably-realtime.com@, and @e.ably-realtime.com@.
+*** @(REC2c2)@ Otherwise, if the @primary domain@ is determined to be an explicit domain name via @(REC1b2)@ then the set of @fallback domains@ is empty.
+*** @(REC2c3)@ Otherwise, if the @primary domain@ is determined to be a non-production routing policy name via @(REC1b3)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime-nonprod.com@, @[name].b.fallback.ably-realtime-nonprod.com@, @[name].c.fallback.ably-realtime-nonprod.com@, @[name].d.fallback.ably-realtime-nonprod.com@, @[name].e.fallback.ably-realtime-nonprod.com@.
+*** @(REC2c4)@ Otherwise, if the @primary domain@ is determined to be a production routing policy name via @(REC1b4)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime.com@, @[name].b.fallback.ably-realtime.com@, @[name].c.fallback.ably-realtime.com@, @[name].d.fallback.ably-realtime.com@, @[name].e.fallback.ably-realtime.com@.
+*** @(REC2c5)@ Otherwise, if the @primary domain@ is determined to be a routing policy name via @(REC1c2)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime.com@, @[name].b.fallback.ably-realtime.com@, @[name].c.fallback.ably-realtime.com@, @[name].d.fallback.ably-realtime.com@, @[name].e.fallback.ably-realtime.com@.
+*** @(REC2c6)@ Otherwise, if the @primary domain@ is determined by the deprecated @restHost@ or @realtimeHost@ option via @(REC1d)@ then the set of fallback domains is empty.
+
+* @(REC3)@ Client options determine a @connectivity check URL@.
+** @(REC3a)@ The default values of the @connectivity check URL@ is @https://internet-up.ably-realtime.com/is-the-internet-up.txt@.
+** @(REC3b)@ The @connectivity check URL@ may be specified explicitly by the @connectivityCheckUrl@ option.
 
 h2(#rest). REST client library
 
@@ -88,9 +121,9 @@ h3(#restclient). RestClient
 *** @(RSC6b2)@ @direction@ backwards or forwards; if omitted the direction defaults to the REST API default (backwards)
 *** @(RSC6b3)@ @limit@ supports up to 1,000 items; if omitted the limit defaults to the REST API default (100)
 *** @(RSC6b4)@ @unit@ is the period for which the stats will be aggregated by, values supported are @minute@, @hour@, @day@ or @month@; if omitted the unit defaults to the REST API default (@minute@)
-* @(RSC16)@ @RestClient#time@ function sends a get request to @rest.ably.io/time@ and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
+* @(RSC16)@ @RestClient#time@ function sends a get request to the REST endpoint as specified in "@RSC25@":#RSC25 and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
 * @(RSC21)@ @RestClient#push@ attribute provides access to the @Push@ object that was instantiated with the @ClientOptions@ provided in the @RestClient@ constructor
-* @(RSC7)@ Sends REST requests over HTTP and HTTPS to the REST endpoint @rest.ably.io@
+* @(RSC7)@ Sends REST requests over HTTP and HTTPS to the REST endpoint as specified in "@RSC25@":#RSC25.
 ** @(RSC7a)@ This clause has been replaced by "@RSC7e@":#RSC7e. It was valid up to and including specification version @2.1@.
 ** @(RSC7e)@ The @X-Ably-Version@ HTTP header must be included in all REST requests to Ably endpoints. The value to be sent is defined by "@CSV2@":#CSV2, except in the case where the user directly calls @RestClient#request@, in which case the value to be sent is defined by "@RSC19f1@":#RSC19f1.
 ** @(RSC7b)@ (Please note this clause and the associated header have now been superseded by "RCS7d":#RSC7d) The header @X-Ably-Lib: [lib][.optional variant]?-[version]@ should be included in all REST requests to the Ably endpoint where @[lib]@ is the name of the library such as @js@ for @ably-js@, @[.optional variant]@ is an optional library variant, such as @laravel@ for the @php@ library, which is always delimited with a period such as @php.laravel@, and where @[version]@ is the full client library version using "Semver":http://semver.org/ such as @1.0.2@. For example, the 1.0.0 version of the JavaScript library would use the header @X-Ably-Lib: js-1.0.0@.
@@ -116,34 +149,27 @@ h3(#restclient). RestClient
 *** @(RSC8e2)@ In the case of a response with a @statusCode@ less than 400, an error must be propagated back to the caller with a @statusCode@ of 400, a @code@ of @40013@ and an error message containing the original @statusCode@ with an error message indicating that the content type is unsupported. In order to help to diagnose the cause of the error, the error message should also include text obtained by truncating the response body to a maximum of 512 bytes followed by base64-encoding.
 * @(RSC9)@ Uses @Auth@ to establish what authentication scheme to use, how to authenticate, and automatic issuing of tokens when necessary
 * @(RSC10)@ If a REST request responds with a token error (401 HTTP status code and an Ably error value @40140 <= code < 40150@), then the Auth class is responsible for reissuing a token and the request should be reattempted, see "RSA4a":#RSA4a and "RSA4b":#RSA4b
-* @(RSC11)@ Requests are sent to the default endpoint @rest.ably.io@. However, this endpoint can be overriden by setting either the @restHost@ or @environment@ option. See "TO3k2":#TO3k2 for constraints.
-** @(RSC11a)@ If @restHost@ is set, send requests to the specified host
-** @(RSC11b)@ If @environment@ is set to a value other than "production", send requests to @[environment]-rest.ably.io@. For example, if the @environment@ is set to @sandbox@, send requests to @sandbox-rest.ably.io@
-* @(RSC12)@ REST endpoint host is configurable in the Client constructor with the option @restHost@
+* @(RSC25)@ Requests are sent to the @primary domain@ as determined by "@REC1@":#REC1". New HTTP requests (except where @RSC15f@ applies and a cached fallback host is in effect) are first attempted against the @primary domain@.
+* @(RSC11)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
+* @(RSC12)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
 * @(RSC13)@ The client library must use the connection and request timeouts specified in the @ClientOptions@, falling back to the defaults described in @ClientOptions@ below
 * @(RSC15)@ Host Fallback
-** @(RSC15b)@ The fallback behavior described by this section, "RSC15":#RSC15, only applies when either:
-*** @(RSC15b1)@ @ClientOptions#restHost@ has not been set to an explicit value (see "RSC11a":#RSC11a) and @ClientOptions#port@ is not set and @ClientOptions#tlsPort@ is not set
-*** @(RSC15b2)@ An array of @ClientOptions#fallbackHosts@ is provided
-*** @(RSC15b3)@ the deprecated @ClientOptions#fallbackHostsUseDefault@ option is set to @true@
-** @(RSC15k)@ When none of the statements in "RSC15b":#RSC15b are true then host fallback does not apply, and failing HTTP requests that would have "qualified for a retry against a fallback host (see RSC15d)":#RSC15d will instead result in an error immediately
-** @(RSC15e)@ The primary host is by default @rest.ably.io@ (unless overriden in @ClientOptions#environment@ or @ClientOptions#restHost@), which, through DNS, is automatically routed to the client's closest datacenter. New HTTP requests (except where @RSC15f@ applies and a cached fallback host is in effect) are first attempted against the primary host.
-** @(RSC15a)@ In the case of an error necessitating use of an alternative host (see "RSC15d":#RSC15d), try fallback hosts in random order, continuing to try further hosts if "qualifying errors":#RSC15d occur, failing when all have been tried or the configured @httpMaxRetryCount@ has been reached (see "TO3l@":#TO3l5). This ensures that a client library is able to work around routing or other problems for the user's closest datacenter. For example, if a @POST@ request to @rest.ably.io@ fails because the default endpoint is unreachable or unserviceable, then the @POST@ request should be retried again against the fallback hosts in attempt to find an alternate healthy datacenter to service the request
-** @(RSC15g)@ When the use of fallbacks applies, the set of fallback hosts is chosen as follows:
-*** @(RSC15g1)@ If @ClientOptions#fallbackHosts@ is set to an array, use those as the fallback hosts. See "TO3k6":#TO3k6 for constraints
-*** @(RSC15g2)@ If @ClientOptions#environment@ is set to a value other than "production" and @ClientOptions#fallbackHosts@ is not set, use the environment fallback hosts (see "RSC15i":#RSC15i)
-*** @(RSC15g3)@ If both @ClientOptions#fallbackHosts@ and @ClientOptions#environment@ are not set, use the default fallback hosts (see "RSC15h":#RSC15h)
-*** @(RSC15g4)@ For backwards-compatibility only, if @ClientOptions#fallbackHostsUseDefault@ is set to @true@ and @ClientOptions#fallbackHosts@ is not set, do not consider the value of the @ClientOptions#environment@ option and use the default fallback hosts (see "RSC15h":#RSC15h)
-** @(RSC15h)@ The default fallback hosts are @a.ably-realtime.com@, @b.ably-realtime.com@, @c.ably-realtime.com@, @d.ably-realtime.com@, and @e.ably-realtime.com@
-** @(RSC15i)@ The environment fallback hosts have the format @[environment]-[a-e]-fallback.ably-realtime.com@. For example, if @ClientOptions#environment@ is set to @sandbox@, the environment fallback hosts are @sandbox-a-fallback.ably-realtime.com@, @sandbox-b-fallback.ably-realtime.com@, @sandbox-c-fallback.ably-realtime.com@, @sandbox-d-fallback.ably-realtime.com@, and @sandbox-e-fallback.ably-realtime.com@
-** @(RSC15j)@ Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to @rest.ably.io@ fails and will be retried to @c.ably-realtime.com@, the Host header must be set to @c.ably-realtime.com@ in the retried request
+** @(RSC15m)@ The fallback behavior described by this section, "RSC15":#RSC15, only applies when the set of @fallback domains@, as determined by "@REC2@":#REC2 is not empty. When the set of @fallback domains@ is empty, failing HTTP requests that would have "qualified for a retry against a fallback host (see RSC15d)":#RSC15d will instead result in an error immediately.
+** @(RSC15n)@ When the use of fallbacks applies, the set of @fallback domains@ is determined by "@REC2@":#REC2.
+** @(RSC15b)@ This clause has been replaced by "@RSC15j@":#RSC15j. It was valid up to and including specification version @TBD@.
+** @(RSC15e)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
+** @(RSC15a)@ In the case of an error necessitating use of an alternative host (see "RSC15d":#RSC15d), try @fallback domains@ in random order, continuing to try further domains if "qualifying errors":#RSC15d occur, failing when all have been tried or the configured @httpMaxRetryCount@ has been reached (see "TO3l@":#TO3l5). This ensures that a client library is able to work around routing or other problems for the user's closest datacenter. For example, if a @POST@ request to @main.realtime.ably.net@ fails because the default endpoint is unreachable or unserviceable, then the @POST@ request should be retried again against the fallback hosts in attempt to find an alternate healthy datacenter to service the request
+** @(RSC15g)@ This clause has been replaced by "@RSC15n@":#RSC15n. It was valid up to and including specification version @TBD@.
+** @(RSC15h)@ This clause has been replaced by "@REC2@":#REC2. It was valid up to and including specification version @TBD@.
+** @(RSC15i)@ This clause has been replaced by "@REC2@":#REC2. It was valid up to and including specification version @TBD@.
+** @(RSC15j)@ Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to @main.realtime.ably.net@ fails and will be retried to @c.ably-realtime.com@, the Host header must be set to @c.ably-realtime.com@ in the retried request
 ** @(RSC15d)@ This clause has been replaced by "@RSC15l@":#RSC15l.
 ** @(RSC15l)@ Errors that necessitate use of an alternative host include any of the following conditions. (Resending requests that have failed for other failure conditions will not fix the problem and will simply increase the load on other datacenters unnecessarily).
 *** @(RSC15l1)@ host unresolvable or unreachable
 *** @(RSC15l2)@ request timeout
 *** @(RSC15l3)@ a response with an HTTP status code in the range @500 <= code <= 504@
 *** @(RSC15l4)@ a response with a `Server: CloudFront` header and an HTTP status code @>= 400@
-** @(RSC15f)@ Once/if a given fallback host succeeds, the client should store that successful fallback host for @ClientOptions.fallbackRetryTimeout@. Future HTTP requests during that period should use that host. If during this period a "qualifying errors":#RSC15d occurs on that host, or after @fallbackRetryTimeout@ has expired, it should be un-stored, and the fallback sequence begun again from scratch, starting with the default primary host (@rest.ably.io@ or @ClientOptions#restHost@) or, in the case of an existing fallback realtime connection as per (RTN17e), with the current fallback realtime host.
+** @(RSC15f)@ Once/if a given fallback host succeeds, the client should store that successful fallback host for @ClientOptions.fallbackRetryTimeout@. Future HTTP requests during that period should use that host. If during this period a "qualifying errors":#RSC15d occurs on that host, or after @fallbackRetryTimeout@ has expired, it should be un-stored, and the fallback sequence begun again from scratch, starting with the "@REC1@":#REC1 primary domain or, in the case of an existing fallback realtime connection as per (RTN17e), with the current fallback realtime host.
 * @(RSC17)@ When instantiating a @RestClient@, if a @clientId@ attribute is set in @ClientOptions@, then the @Auth#clientId@ attribute will contain the provided @clientId@
 * @(RSC19)@ @RestClient#request@ function is provided as a convenience for customers who wish to use REST API functionality that is either not documented or is not included in the API for our client libraries. The REST client library provides a function to issue HTTP requests to the Ably endpoints with all the built in functionality of the library such as authentication, paging, fallback hosts, MsgPack and JSON support etc. The function:
 ** @(RSC19a)@ This clause has been replaced by "@RSC19f@":#RSC19f. It was valid up to and including specification version @2.1@.
@@ -153,7 +179,7 @@ h3(#restclient). RestClient
 ** @(RSC19c)@ The library will configure the @Accept@ and @Content-Type@ type headers to reflect whether the client is configured to use a binary or JSON based protocol (see "RSC8":#RSC8). All requests are encoded and decoded into Json or MsgPack as appropriate automatically by the library. Binary @body@ payloads are not supported at this time
 ** @(RSC19d)@ @request@ method returns an @HttpPaginatedResponse@ object that inherits from the @PaginatedResult@ object to provide details on the response plus paging support where applicable. See "HP1":#HP1 for more details
 ** @(RSC19e)@ If the HTTP network request fails for reasons such as a timeout (after the underlying fallback host attempts have failed where applicable, see "RSC15":#RSC15), then the @request@ method should indicate an error in an idiomatic way for the platform
-* @(RSC20)@ (deprectated) Unexpected internal library exception handling:
+* @(RSC20)@ (deprecated) Unexpected internal library exception handling:
 ** @(RSC20a)@ The library must make every attempt to handle unexpected internal exceptions as gracefully as possible. For the avoidance of doubt, unexpected internal exceptions do not include request timeouts, invalid argument values, invalid responses from third parties or exceptions in code run in callbacks registered by applications. However, any unexpected failures or unhandled exceptions in our own code that typically could trigger a crash or raise an exception in our customer's code, is considered an unexpected internal exception
 ** @(RSC20b)@ The library may optionally report unexpected internal exceptions to the Ably exception reporting service. Exception reporting, when supported, is enabled by default, but can be disabled using the @logExceptionReportingUrl@ @ClientOption@ documented in "@TO3m@":#TO3m. When enabled, the client library must:
 *** @(RSC20b1)@ At startup log a message with the equivalent of @info@ log level with the message "Ably client library exception reporting enabled. Unhandled failures will be automatically submitted to errors.ably.io to help improve our service. To find out more about this feature, see https://help.ably.io/exceptions". The @info@ log level is preferred as customers can hide this entry by configuring the client library log level to @warning@, yet will, by default, see this notice when using a client library with exception reporting enabled
@@ -405,8 +431,8 @@ h3(#realtimeclient). RealtimeClient
 ** @(RTC1a)@ @echoMessages@ boolean is true by default. If false, it prevents messages originating from this connection being echoed back on the same connection; see "RTN2b":#RTN2b.
 ** @(RTC1b)@ @autoConnect@ boolean is true by default. If true, as soon as the client library is instantiated, it will connect to Ably. If false, the client library will wait for an explicit @Connection#connect@ to be called before connecting
 ** @(RTC1c)@ @recover@ string, when set, will attempt to recover the connection state of a previous connection
-** @(RTC1d)@ @realtimeHost@ string, when set, will modify the realtime endpoint host used by this client library
-** @(RTC1e)@ @environment@ string, when set to a value other than "production", use @[environment]-rest.ably.io@ as the REST endpoint and @[environment]-realtime.ably.io@ as the realtime endpoint. For example, a @RealtimeClient@ with an @environment@ of "sandbox" would use "sandbox-rest.ably.io" as the REST endpoint and @sandbox-realtime.ably.io@ as the realtime endpoint. See "TO3k3":#TO3k3 for constraints.
+** @(RTC1d)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
+** @(RTC1e)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
 ** @(RTC1f)@ @transportParams@ map or equivalent, additional parameters to be sent in the querystring when initiating a realtime connection. Keys are @Strings@, values are @Stringifiable@ (a value that can be coerced to a string in order to be sent as a querystring parameter. Supported values should be at least strings, numbers, and booleans, with booleans stringified as @true@ and @false@. If this is unidiomatic to the language, the implementer may consider this as equivalent to @String@).
 *** @(RTC1f1)@ If a key in @transportParams@ is one the library sends by default (for example, @v@ or @heartbeats@), the value in @transportParams@ takes precedence.
 * @(RTC2)@ @RealtimeClient#connection@ attribute provides access to the underlying @Connection@ object
@@ -442,7 +468,7 @@ h3(#realtimeclient). RealtimeClient
 h3(#realtime-connection). Connection
 
 * @(RTN1)@ @Connection@ connects to the Ably service using a "websocket":https://ably.com/topic/websockets connection. The "ably-js library":https://github.com/ably/ably-js supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
-* @(RTN2)@ The default host used for realtime "websocket":https://ably.com/topic/websockets connections is @realtime.ably.io@, and the following query string params should be used when opening a new connection:
+* @(RTN2)@ The default host used for realtime "websocket":https://ably.com/topic/websockets connections is the "@REC1@":#REC1 primary domain and the following query string params should be used when opening a new connection:
 ** @(RTN2a)@ @format@ should be @msgpack@ (default) or @json@
 ** @(RTN2b)@ @echo@ should be @true@ if the @echoMessages@ client option is true; else it should be @false@, which will prevent messages published by the client being echoed back
 ** @(RTN2d)@ @clientId@ contains the provided @clientId@ option of @ClientOptions@, unless @clientId@ is @null@
@@ -559,13 +585,14 @@ h3(#realtime-connection). Connection
 ** @(RTN16b)@ This clause has been replaced by "@RTN16g@":#RTN16g and "@RTN16m@":#RTN16m. It was valid up to and including specification version @1.2@.
 ** @(RTN16c)@ This clause has been replaced by "@RTN16g2@":#RTN16g2. It was valid up to and including specification version @1.2@.
 ** @(RTN16e)@ This clause has been replaced by "@RTN16l@":#RTN16l. It was valid up to and including specification version @1.2@.
-* @(RTN17)@ Host Fallback
-** @(RTN17b)@ The fallback behavior described by this section, "RTN17":#RTN17, only applies when either:
-*** @(RTN17b1)@ @ClientOptions#realtimeHost@ has not been set to an explicit value (see "RTC1d":#RTC1d) and @ClientOptions#port@ is not set and @ClientOptions#tlsPort@ is not set
-*** @(RTN17b2)@ An array of @ClientOptions#fallbackHosts@ is provided
-*** @(RTN17b3)@ The deprecated @ClientOptions#fallbackHostsUseDefault@ option is set to @true@
-** @(RTN17a)@ By default, every connection attempt is first attempted to the default primary host @realtime.ably.io@ (unless overriden in @ClientOptions#environment@ or @ClientOptions#realtimeHost@), which, through DNS, is automatically routed to the client's closest datacenter. The client library must always prefer the default endpoint (closest datacenter), even if a previous connection attempt to that endpoint has failed. (That is, @RSC15f@ does not apply)
-** @(RTN17c)@ In the case of an error necessitating use of an alternative host (see "RTN17d":#RTN17d), the @Connection@ manager should first check if an internet connection is available by issuing a @GET@ request to @https://internet-up.ably-realtime.com/is-the-internet-up.txt@. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against fallback hosts in random order to find an alternative healthy datacenter. Fallback hosts are chosen as per "RSC15g":#RSC15g, and must use a matching Host header as per "RSC15j":#RSC15j
+* @(RTN17)@ Domain selection and fallback behaiviour
+** @(RTN17g)@ The fallback behavior described by this section, "RTN17":#RTN17, only applies when the set of @fallback domains@, as determined by "@REC2@":#REC2 is not empty. When the set of @fallback domains@ is empty, failing HTTP requests that would have "qualified for a retry against a fallback host (see RSC15d)":#RSC15d will instead result in an error immediately.
+** @(RTN17h)@ When the use of fallbacks applies, the set of @fallback domains@ is determined by "@REC2@":#REC2.
+** @(RTN17b)@ This clause has been replaced by "@RSC17h@":#RSC17h. It was valid up to and including specification version @TBD@.
+** @(RTN17i)@ By default, every connection attempt is first attempted to the @primary domain@ as specified in "@REC1@"#REC1. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed. (That is, @RSC15f@ does not apply)
+** @(RTN17a)@ This clause has been replaced by "@RSC17i@":#RSC17i. It was valid up to and including specification version @TBD@.
+** @(RTN17j)@ In the case of an error necessitating use of an alternative host (see "RTN17f":#RTN17f), the @Connection@ manager should first check if an internet connection is available by issuing a @GET@ request to the @connectivityCheckUrl@ as determined via "@REC3@"#REC3. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against @fallback domains@ in random order to find an alternative healthy datacenter.
+** @(RTN17c)@ This clause has been replaced by "@RSC17j@":#RSC17j. It was valid up to and including specification version @TBD@.
 ** @(RTN17d)@ This clause has been replaced by "@RTN17f@":#RTN17f.
 ** @(RTN17f)@ Errors that necessitate use of an alternative host include any of the failure conditions specified in "@RSC15l@":#RSC15l, and additionally also:
 *** @(RTN17f1)@ a @DISCONNECTED@ response with an @error.statusCode@ in the range @500 <= code <= 504@
@@ -666,6 +693,7 @@ h3(#realtime-channel). RealtimeChannel
 *** @(RTL6c5)@ A publish should not trigger an implicit attach (in contrast to earlier version of this spec)
 ** @(RTL6d)@ The protocol permits @Message@ s that have been queued to be sent in a single @ProtocolMessage@ , by bundling them into the @ProtocolMessage#messages@ or @ProtocolMessage#presence@ array. In general, the client library SHOULD NOT do this. If it does, it MUST conform to all of the following constraints:
 *** @(RTL6d1)@ The resulting @ProtocolMessage@ must not exceed the @maxMessageSize@
+*** @(RTL6d8)@ The resulting @ProtocolMessage@ must not contain more than 999 @Messages@
 *** @(RTL6d2)@ Messages can only be bundled together if they have the same @clientId@ value (or both have no @clientId@ set). (Note that this constraint only applies to what the client library can autonomously do as part of queuing messages, not to what the user can do by publishing an array of @Messages@. It exists because if any @Message@ in a @ProtocolMessage@ has an invalid @clientId@, the entire @ProtocolMessage@ is rejected. This is fine if the user has deliberately published the @Messages@ together – they requested atomicity – but not if the client library has bundled them without the user's knowledge)
 *** @(RTL6d3)@ Messages can only be bundled together if they are for the same @channel@
 *** @(RTL6d4)@ Messages can only be bundled together if they are of the same type (that is, @Message@ versus @PresenceMessage@)
@@ -1305,17 +1333,17 @@ h4. Message
 ** @(TM2d)@ @data@ string, buffer or JSON-encodable object or array
 ** @(TM2e)@ @encoding@ string
 ** @(TM2i)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is @push@, via the @extras.push@ member; 1.2 adds the @delta@ extension whose keys and values are described by the attributes of the type @DeltaExtras@, and the @headers@ extension, which contains arbitrary @string->string@ key-value pairs, settable at publish time, and @ref@ whose keys and values are described by the attributes of the type @ReferenceExtras@. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
-** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
+** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably over a realtime transport does not contain a @timestamp@, the SDK must set it to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TM2j)@ @action@ enum
-** @(TM2k)@ @serial@ string - an opaque string that uniquely identifies the message.
+** @(TM2p)@ @version@ string - an opaque string that uniquely identifies the message, and is different for different versions. If a message received from Ably over a realtime transport does not contain a @version@, the SDK must set it to @<channelSerial>:<padded_index>@ from the @channelSerial@ field of the enclosing @ProtocolMessage@, and @padded_index@ is the index of the message inside the @messages@ array of the @ProtocolMessage@, left-padded with 0s to three digits (for example, the second entry might be @foo:001@).
+** @(TM2k)@ @serial@ string - an opaque string that uniquely identifies the message. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @serial@, the SDK must set it equal to its @TM2p@ @version@.
+** @(TM2o)@ @createdAt@ time in milliseconds since epoch. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @createdAt@, the SDK must set it equal to the @TM2f@ @timestamp@.
 ** @(TM2l)@ @refSerial@ string - an opaque string that uniquely identifies some referenced message.
 ** @(TM2m)@ @refType@ string - an opaque string that identifies the type of this reference.
 ** @(TM2n)@ @operation@ - object that may contain the following `optional` attributes;
 *** @(TM2n1)@ @clientId@ string
 *** @(TM2n2)@ @description@ string
 *** @(TM2n3)@ @metadata@ object - used to contain any arbitrary key value pairs of type string.
-** @(TM2o)@ @updatedAt@ time in milliseconds since epoch at which an operation occurred. This field is always populated on messages received with an @action@ of @MESSAGE_UPDATE@ or @MESSAGE_DELETE@..
-** @(TM2p)@ @updateSerial@ string - an opaque string that uniquely identifies the operation. This field is always populated on messages received with an @action@ of @MESSAGE_UPDATE@ or @MESSAGE_DELETE@.
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
 
@@ -1653,10 +1681,11 @@ h4. ClientOptions
 *** @(TO3j9)@ @authParams@ - Additional params to be included in any request made by the library to the @authUrl@, either as query params added to the URL in the case of @GET@, or form-encoded in the body in the case of @POST@
 *** @(TO3j10)@ @queryTime@ - If true, the library will when issuing a token request query the Ably system for the current time instead of relying on a locally-available time of day
 *** @(TO3j11)@ @defaultTokenParams@ - When a "TokenParams":#token-params object is provided, it will override the client library defaults described in "TokenParams":#token-params
-** @(TO3k)@ Development environment attributes:
-*** @(TO3k1)@ @environment@ string - for development environments only; allows a non-default Ably environment to be used such as @sandbox@
-*** @(TO3k2)@ @restHost@ string - for development environments only; allows a non-default Ably REST host to be specified. It is never valid to provide both a @restHost@ and @environment@ value
-*** @(TO3k3)@ @realtimeHost@ string - for development environments only; allows a non-default Ably Realtime host to be specified. It is never valid to provide both a @realtimeHost@ and @environment@ value
+** @(TO3k)@ Endpoint and connectivity-related attributes:
+*** @(TO3k8)@ @endpoint@ string - allows a non-default Ably endpoint to be used
+*** @(TO3k1)@ @environment@ string (deprecated) - allows a non-default Ably endpoint to be used
+*** @(TO3k2)@ @restHost@ string (deprecated) - for development environments only; allows a non-default Ably REST host to be specified. It is never valid to provide both a @restHost@ and @environment@ value
+*** @(TO3k3)@ @realtimeHost@ string (deprecated) - for development environments only; allows a non-default Ably Realtime host to be specified. It is never valid to provide both a @realtimeHost@ and @environment@ value
 *** @(TO3k6)@ @fallbackHosts@ string array - optionally allows one or more fallback hosts to be used instead of the default fallback hosts. If an empty array is specified, then fallback host functionality is disabled
 *** @(TO3k7)@ @fallbackHostsUseDefault@ boolean (deprecated) - optionally allows the default fallback hosts @[a-e].ably-realtime.com@ to be used when @environment@ is not production or a custom realtime or REST host endpoint is being used. It is never valid to configure @fallbackHost@ and set @fallbackHostsUseDefault@ to @true@. The @fallbackHostsUseDefault@ option is deprecated and future library releases will ignore any supplied value
 *** @(TO3k4)@ @port@ integer - for development environments only; allows a non-default Ably non-TLS port to be specified
@@ -1870,13 +1899,14 @@ class ClientOptions: // TO*
   defaultTokenParams: TokenParams? // TO3j11
   echoMessages: Bool default true // RTC1a, TO3h
   environment: String? // RSC15e, TO3k1
+  endpoint: String? // RSC15e, TO3k8
   logHandler: // platform specific - TO3c
   logLevel: // platform specific - TO3b
   logExceptionReportingUrl: String default "[library specific]" // TO3m (deprecated)
   port: Int default 80 // TO3k4
   queueMessages: Bool default true // RTP16b, TO3g
-  restHost: String default "rest.ably.io" // RSC12, TO3k2
-  realtimeHost: String default "realtime.ably.io" // RTC1d, TO3k3
+  restHost: String default "main.realtime.ably.net" // RSC12, TO3k2
+  realtimeHost: String default "main.realtime.ably.net" // RTC1d, TO3k3
   fallbackHosts: String[] default nil // RSC15b, RSC15a, TO3k6
   fallbackHostsUseDefault: Bool default false // TO3k7 (deprecated)
   recover: String? // RTC1c, TO3i
@@ -2142,13 +2172,13 @@ enum PresenceAction: // TP2
   UPDATE // TP2
 
 enum MessageAction: // TM5
-    MESSAGE_UNSET // TM5
-    MESSAGE_CREATE // TM5
-    MESSAGE_UPDATE // TM5
-    MESSAGE_DELETE // TM5
-    ANNOTATION_CREATE // TM5
-    ANNOTATION_DELETE // TM5
-    META_OCCUPANCY // TM5
+  MESSAGE_UNSET // TM5
+  MESSAGE_CREATE // TM5
+  MESSAGE_UPDATE // TM5
+  MESSAGE_DELETE // TM5
+  ANNOTATION_CREATE // TM5
+  ANNOTATION_DELETE // TM5
+  META_OCCUPANCY // TM5
 
 class ConnectionDetails: // CD*, internal
   clientId: String? // RSA12a, CD2a
@@ -2175,12 +2205,12 @@ class Message: // TM*
   name: String? // TM2g
   timestamp: Time // TM2f
   action: MessageAction // TM2j
-  serial: string // TM2K
-  refSerial: string? // TM2L
-  refType: string? // TM2M
-  operation: Object // TM2N
-  updatedAt: Time? // TM2O
-  updateSerial: string? // TM2P
+  serial: string // TM2k
+  version: string? // TM2p
+  refSerial: string? // TM2l
+  refType: string? // TM2m
+  operation: Object? // TM2n
+  createdAt: Time? // TM2o
 
 class PresenceMessage // TP*
   +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
