@@ -144,6 +144,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL7a1)@ The @RETRY@ operation - an internal process.
 *** @(CHA-RL7a2)@ The @RELEASE@ operation.
 *** @(CHA-RL7a3)@ The @ATTACH@ and @DETACH@ operations have equal precedence.
+* @(CHA-RL10)@ @[Testable]@ When a specification point refers to operations on the underlying realtime channels (i.e. calls to attach and delete) being performed in sequence, the precedence of contributors must follow the order specified by @CHA-RC2e@.
 
 h4(#rooms-lifecycle-monitoring). Room Lifecycle Monitoring
 
@@ -194,7 +195,11 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1g5)@ @[Testable]@ The room is removed from the room map and a @CHA-RL3@ release operation is initiated for the room object. A future is returned which resolves when the release operation completes.
 * @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain features. When requesting a room, options as to which features should be enabled, and the configuration they should take, must be provided (@RoomOptions@).
 ** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
+** @(CHA-RC2c)@ @[Testable]@ A room’s messages feature (@CHA-M*@) can not be disabled.
 ** @(CHA-RC2b)@ @[Testable]@ If a room is configured to have a given feature disabled, then attempting to use that feature must result in an @ErrorInfo@ with code @40000@ being thrown.
+** @(CHA-RC2d)@ @[Testable]@ A room must create a lifecycle contributor for each of its enabled features and must not create a lifecycle contributor for any of its disabled features.
+** @(CHA-RC2e)@ @[Testable]@ The room lifecycle contributors have an order of precedence, which is the order in which operation sequences (e.g. attaches are applied to them). The order of precedence shall be: messages, presence, typing, reactions, occupancy.
+** @(CHA-RC2f)@ @[Testable]@ A room must only fetch a realtime channel if this channel is required by one of its lifecycle contributors.
 * @(CHA-RC3)@ Multiple features may share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
 ** @(CHA-RC3a)@ @[Testable]@ When retrieving a channel via @channels.get()@, features that share a channel must merge together their respective options/modes and pass the merged result to the call to @channels.get()@.
 ** @(CHA-RC3b)@ Note: SDKs shall not rely on updating the value progressively via feature spec item @RTS3c@ - as this has been soft-deprecated and may be removed in the future.
