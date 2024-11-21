@@ -225,7 +225,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 </div>
 
-`(CHA-M2d)` `[Testable]` A `Message` contains a unique, immutable `serial`, which is a lexicographically sortable string.
+`(CHA-M2d)` `[Testable]` A `Message` contains a unique, immutable `serial`, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
 
 `(CHA-M2e)` `[Testable]` In global ordering, a `Message` is considered to occur before another `Message` if the `serial` of the first `Message` is before the latter when lexicographically sorted.
 
@@ -264,7 +264,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 </div>
 
-`(CHA-M4l)` `[Testable]` When a realtime message with the `name` field set to `chat.message` is received, it shall be translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message-v2). This event shall then broadcast to all subscribers.
+`(CHA-M4l)` When a realtime message with the `name` field set to `chat.message` is received, it shall be translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message-v2). This event shall then broadcast to all subscribers.
 
 `(CHA-M4d)` `[Testable]` If a realtime message with an unknown `name` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
 
