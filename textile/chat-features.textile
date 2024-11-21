@@ -218,7 +218,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M2b)@ @[Testable]@ @(deprecated)@ A @Message@ is considered after another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes second.
 ** @(CHA-M2c)@ @[Testable]@ @(deprecated)@ A @Message@ is considered to be equal to another @Message@ if they have the same timeserial.
 </div>
-** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string.
+** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
 ** @(CHA-M2e)@ @[Testable]@ In global ordering, a @Message@ is considered to occur before another @Message@ if the @serial@ of the first @Message@ is before the latter when lexicographically sorted.
 ** @(CHA-M2f)@ @[Testable]@ In global ordering, a @Message@ is considered after another @Message@ if the @serial@ of the first @Message@ is after the latter when lexicographically sorted.
 ** @(CHA-M2g)@ @[Testable]@ Two @Messages@ are considered to be the same if they have the same @serial@, that is to say, both @Serial@ strings are identical.
@@ -251,7 +251,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M4c)@ @[Testable]@ @(deprecated)@ When a realtime message with @name@ set to @message.created@  is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
 </div>
 
-** @(CHA-M4l)@ @[Testable]@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
+** @(CHA-M4l)@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M4m)@ @[Testable]@ The @action@ field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
 *** @(CHA-M4m1)@ @[Testable]@ If @action@ is set to @MESSAGE_CREATE@, then an event with @type@ set to @message.created@ shall be emitted.
