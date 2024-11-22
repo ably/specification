@@ -54,4 +54,7 @@
   a {
     @apply text-blue-700;
   }
+  .deprecated {
+    @apply text-gray-600;
+  }
 }
