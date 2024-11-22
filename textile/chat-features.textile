@@ -98,7 +98,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL1h5)@ @[Testable]@ When the room enters the @FAILED@ status as a result of @CHA-RL1h4@, asynchronously with respect to @CHA-RL1h4@, then the room will detach all channels that are not in the @FAILED@ state.
 *** @(CHA-RL1h6)@ @[Testable]@ If, when performing @CHA-RL1h5@, a channel fails to detach on command, then the detach operation will be repeated until such a time that all channels have detached successfully.
 ** @(CHA-RL1i)@ This specification point has been removed. It was superseded by CHA-RC1f.
-*** @(CHA-RL1i1)@ @[Testable]@ This specification point has been removed, since it's not needed as per CHA-RC1.
+*** @(CHA-RL1i1)@ @[Testable]@ This specification point has been removed. It was made redundant by the introduction of @CHA-RC1@.
 * @(CHA-RL2)@ A room must be explicitly detached via the @DETACH@ operation.
 ** @(CHA-RL2a)@ @[Testable]@ If the room status is already @DETACHED@, then this operation is a no-op.
 ** @(CHA-RL2b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleasing@ error code from the "chat-specific error codes":#error-codes.
