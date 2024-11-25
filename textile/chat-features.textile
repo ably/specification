@@ -402,7 +402,7 @@ Typing Indicators allow chat room users to indicate to others that they are typi
 ** @(CHA-T2d)@ @[Testable]@ If the room status is @Attached@, then the @get@ call shall invoke the underlying @presence.enter()@ call.
 ** @(CHA-T2e)@ @[Testable]@ If the room status is @Detached@, an @ErrorInfo@ with code 40000, explaining that attach must be called first, will be thrown.
 ** @(CHA-T2f)@ @[Testable]@ For any other room status, an @ErrorInfo@ with code 40000 will be thrown.
-* @(CHA-T3)@ @[Testable]@ Users may configure a timeout interval for when they are typing. This configuration is provided as part of the @RoomOptions@ @typing.timeoutMs@ property, or idiomatic equivalent. The default is 5000ms.
+* @(CHA-T3)@ @[Testable]@ Users may configure a timeout interval for when they are typing. This configuration is provided as part of the @RoomOptions@ @typing.timeoutMs@ property, or idiomatic equivalent. The default is 1000ms.
 * @(CHA-T4)@ Users may indicate that they have started typing.
 ** @(CHA-T4a)@ @[Testable]@ If typing is not already in progress, per explicit cancellation or the timeout interval in (@CHA-T3@), then a new typing session is started.
 *** @(CHA-T4a1)@ @[Testable]@ When a typing session is started, the client is entered into presence on the typing channel.
