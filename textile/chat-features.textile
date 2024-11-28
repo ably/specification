@@ -369,11 +369,14 @@ Presence allows chat room users to indicate to others that they're online, as we
 *** @(CHA-PR10c2)@ This specification point has been removed.
 ** @(CHA-PR10d)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.update()@ call.
 ** @(CHA-PR10h)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
-** @(CHA-PR10e)@ @[Testable]@ If the room status is @Attached@, then the @update@ call will invoke the underlying @presence.enter()@ call.
+** @(CHA-PR10e)@ @[Testable]@ If the room status is @Attached@, then the @update@ call will invoke the underlying @presence.update()@ call.
 ** @(CHA-PR10f)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 ** @(CHA-PR10g)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 * @(CHA-PR4)@ Users may leave presence.
 ** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set.
+** @(CHA-PR4b)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.leave()@ call.
+** @(CHA-PR4c)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
+** @(CHA-PR4d)@ @[Testable]@ If the room status is @Attached@, then the @enter@ call will invoke the underlying @presence.leave()@ call.
 * @(CHA-PR5)@ @[Testable]@ It must be possible to query if a given clientId is in the presence set.
 * @(CHA-PR6)@ @[Testable]@ It must be possible to retrieve all the "@Members":#chat-structs-presence-member of the presence set. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
 ** @(CHA-PR6a)@ This clause has been replaced by @CHA-PR6b - CHA-PR6f@.
