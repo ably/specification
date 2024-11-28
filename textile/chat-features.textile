@@ -416,12 +416,17 @@ Typing Indicators allow chat room users to indicate to others that they are typi
 * @(CHA-T3)@ @[Testable]@ Users may configure a timeout interval for when they are typing. This configuration is provided as part of the @RoomOptions@ @typing.timeoutMs@ property, or idiomatic equivalent. The default is 5000ms.
 * @(CHA-T4)@ Users may indicate that they have started typing.
 ** @(CHA-T4a)@ @[Testable]@ If typing is not already in progress, per explicit cancellation or the timeout interval in (@CHA-T3@), then a new typing session is started.
-*** @(CHA-T4a1)@ @[Testable]@ When a typing session is started, the client is entered into presence on the typing channel.
-*** @(CHA-T4a2)@ @[Testable]@ When a typing session is started, a timeout is set according to the @CHA-T3@ timeout interval. When this timeout expires, the typing session is automatically ended by leaving presence.
+*** @(CHA-T4a3)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library will proceed per @CHA-T4a1@.
+*** @(CHA-T4a4)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
+*** @(CHA-T4a1)@ @[Testable]@ If the room status is @Attached@, then the @start@ call will invoke the underlying @presence.enter()@ call.
+*** @(CHA-T4a2)@ @[Testable]@ When a typing session is started per @CHA-T4a1@, a timeout is set according to the @CHA-T3@ timeout interval. When this timeout expires, the typing session is automatically ended by leaving presence.
 ** @(CHA-T4b)@ @[Testable]@ If typing is already in progress, the @CHA-T3@ timeout is extended to be @timeoutMs@ from now.
 * @(CHA-T5)@ Users may indicate that they have stopped typing.
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress, this operation is no-op.
-** @(CHA-T5b)@ @[Testable]@ If typing is in progress, he @CHA-T3@ timeout is cancelled. The client then leaves presence.
+** @(CHA-T5b)@ This specification point has been removed. It was superseded by @CHA-T5e@.
+** @(CHA-T5c)@ @[Testable]@ If typing is in progress, and the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library will proceed per @CHA-T5b@.
+** @(CHA-T5d)@ @[Testable]@ If typing is in progress, and the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
+** @(CHA-T5e)@ @[Testable]@ If typing is in progress, and the room status is @Attached@, the client leaves presence and the @CHA-T3@ timeout is cancelled.
 * @(CHA-T6)@ Users may subscribe to typing events - updates to a set of clientIDs that are typing. This operation, like all subscription operations, has no side-effects in relation to room lifecycle.
 ** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing events":#chat-structs-typing-event in a room.
 ** @(CHA-T6b)@ @[Testable]@ A subscription to typing may be removed, after which it shall receive no further events.
