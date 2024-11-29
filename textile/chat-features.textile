@@ -168,7 +168,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL5f3)@ This specification point has been removed. Refer to the @CHA-RL1e@ attachment cycle.
 * @(CHA-RL6)@ This specification point has been removed. It was superseded by @CHA-RL8@.
 * @(CHA-RL6a)@ This specification point has been removed. It was superseded by @CHA-RL8@.
-* @(CHA-RL8)@ @[Testable]@ A room begins its lifetime in the @INITIALIZED@ state.
+* @(CHA-RL8)@ This specification point has been removed. It was a duplicate of @CHA-RS3@.
 * @(CHA-RL7)@ Room lifecycle operations are atomic and exclusive operations: one operation must complete (whether that's failure or success) before the next one may begin.
 ** @(CHA-RL7a)@ @[Testable]@ Room lifecycle operations have a precedence. If multiple operations are scheduled to run, they run in the following order:
 *** @(CHA-RL7a1)@ The @RETRY@ operation - an internal process.
