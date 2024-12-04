@@ -215,7 +215,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1f3)@ @[Testable]@ If no @CHA-RC1g@ release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
 *** @(CHA-RC1f4)@ @[Testable]@ If a @CHA-RC1g@ release operation is in progress, the entry shall be added to the room map, but the new room instance must not be created until the release operation has resolved. The future shall then subsequently resolve with the new room value.
 *** @(CHA-RC1f5)@ In relation to @CHA-RC1f4@, we recommend storing a future in the room map.
-*** @(CHA-RC1f6)@ It should be noted that the "get" operations in this section are interruptible by a @CHA-RC1f@ release call.
+*** @(CHA-RC1f6)@ It should be noted that the "get" operations in this section are interruptible by a @CHA-RC1g@ release call.
 ** @(CHA-RC1b)@ This specification point has been removed, it was superseded by @CHA-RC1f2@
 ** @(CHA-RC1c)@ This specification point has been removed, it was superseded by @CHA-RC1f3@
 ** @(CHA-RC1d)@ This specification point has been removed.
