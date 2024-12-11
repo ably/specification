@@ -885,7 +885,7 @@ Determining the global order of message versions may be achieved by lexicographi
         "clientId": "who-sent-the-message",
         "action": "enter",
         "updatedAt": DateTime(),
-        "data": {}, // Whatever the user-provided data is. It must be destructured from the internal format we use.
+        "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
         "extras": {
           "headers": {
             "baz": "qux"
@@ -899,7 +899,7 @@ Determining the global order of message versions may be achieved by lexicographi
         "clientId": "who-is-in-presence",
         "action": "enter",
         "timestamp": DateTime(),
-        "data": {}, // Whatever the user-provided data is. It must be destructured from the internal format we use.
+        "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
       }
 
 ### Typing Event {#chat-structs-typing-event}
