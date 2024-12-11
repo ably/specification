@@ -381,9 +381,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 <!-- -->
 
       {
-        "userCustomData": {
-          // Some user specified type, does not have to be object.
-        }
+        "userCustomData": // Some user specified type, does not have to be object.
       }
 
 - `(CHA-PR3)` Users may enter presence. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
