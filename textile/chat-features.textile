@@ -359,9 +359,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 
 <pre>
   {
-    "userCustomData": {
-      // Some user specified type, does not have to be object.
-    }
+    "userCustomData": // Some user specified type, does not have to be object.
   }
 </pre>
 
