@@ -359,10 +359,11 @@ Presence allows chat room users to indicate to others that they're online, as we
 
 <pre>
   {
-    "userCustomData": // Any JSON `value`, does not have to be `object`.
+    "userCustomData": // Any JSON `value`, does not have to be `object`. This field may be absent; see CHA-PR2b.
   }
 </pre>
 
+** @(CHA-PR2b)@ @[Testable]@ If the user performs a presence operation (@CHA-PR3a@, @CHA-PR10a@, or @CHA-PR4a@) without providing any custom data (which, for the sake of clarity, we emphasise is _not_ the same as providing the JSON @value@ of @null@ as custom data, which is handled like any other JSON @value@ per @CHA-PR2a@), then the @userCustomData@ field must be omitted from the @CHA-PR2a@ presence data that gets sent.
 * @(CHA-PR3)@ Users may enter presence. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
 ** @(CHA-PR3a)@ @[Testable]@ Users may choose to enter presence, optionally providing custom data to enter with. The overall presence data must retain the format specified in @CHA-PR2@.
 ** @(CHA-PR3b)@ This clause has been replaced by @CHA-PR3c - CHA-PR3g@.
