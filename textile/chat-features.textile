@@ -355,11 +355,11 @@ Presence allows chat room users to indicate to others that they're online, as we
 
 * @(CHA-PR1)@ Presence for a Room is exposed on the realtime channel used for chat messages, in the format @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat::$chatMessages@.
 * @(CHA-PR2)@ The presence payload for Chat is opinionated, so that we may add or change fields later without needing to consider how customers are using presence.
-** @(CHA-PR2a)@ @[Testable]@ The presence data format is a JSON object as described below. Customers may specify content of an arbitrary type to be placed in the @userCustomData@ field.
+** @(CHA-PR2a)@ @[Testable]@ The presence data format is a JSON object as described below. Customers may specify an arbitrary "JSON @value@":https://www.json.org to be placed in the @userCustomData@ field.
 
 <pre>
   {
-    "userCustomData": // Some user specified type, does not have to be object.
+    "userCustomData": // Any JSON `value`, does not have to be `object`.
   }
 </pre>
 
