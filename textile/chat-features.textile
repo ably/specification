@@ -386,7 +386,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR10f)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 ** @(CHA-PR10g)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 * @(CHA-PR4)@ Users may leave presence.
-** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set.
+** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set. The user may optionally provide custom data to leave with. The overall presence data must retain the format specified in @CHA-PR2@.
 * @(CHA-PR5)@ @[Testable]@ It must be possible to query if a given clientId is in the presence set.
 * @(CHA-PR6)@ @[Testable]@ It must be possible to retrieve all the "@Members":#chat-structs-presence-member of the presence set. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
 ** @(CHA-PR6a)@ This clause has been replaced by @CHA-PR6b - CHA-PR6f@.
