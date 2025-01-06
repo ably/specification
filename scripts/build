@@ -7,7 +7,7 @@ gemfile do
   source 'https://rubygems.org'
   gem 'RedCloth', '~> 4.3.2'
   gem 'ruby-handlebars', '~> 0.4.1'
-  gem 'redcarpet', '~> 3.6.0'
+  gem 'kramdown', '~> 2.4.0'
 end
 puts 'Gems installed and loaded.'
 
@@ -121,8 +121,6 @@ textile_file_names.each do |file_name|
   puts "✓"
 end
 
-markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, autolink: true, tables: true)
-
 markdown_file_names.each do |file_name|
   print "#{file_name} ... "
 
@@ -130,7 +128,7 @@ markdown_file_names.each do |file_name|
     .gsub(/\{\{\s*SPECIFICATION_VERSION\s*\}\}/, versions['specification'].to_s)
     .gsub(/\{\{\s*PROTOCOL_VERSION\s*\}\}/, versions['protocol'].to_s)
 
-  bodyHtml = markdown.render(markdown_content)
+  bodyHtml = Kramdown::Document.new(markdown_content).to_html
   plain_file_name = file_name.delete_suffix(MARKDOWN_EXTENSION)
   is_root = (plain_file_name == ROOT_SOURCE_NAME)
   html = template.call({
