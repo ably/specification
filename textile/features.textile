@@ -1332,7 +1332,7 @@ h3(#types). Data types
 
 h4. Message
 * @(TM1)@ A @Message@ represents an individual message to be sent or received via the Ably Realtime service.
-* @(TM5)@ @Message@ @Action@ enum has the following values in order from zero: @MESSAGE_UNSET@, @MESSAGE_CREATE@, @MESSAGE_UPDATE@, @MESSAGE_DELETE@, @ANNOTATION_CREATE@, @ANNOTATION_DELETE@, @META_OCCUPANCY@
+* @(TM5)@ @Message@ @Action@ enum has the following values in order from zero: @MESSAGE_CREATE@, @MESSAGE_UPDATE@, @MESSAGE_DELETE@, @META_OCCUPANCY@, @MESSAGE_SUMMARY@
 * @(TM2)@ The attributes available in a @Message@ are:
 ** @(TM2a)@ @id@ string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an @id@, it should be set to @protocolMsgId:index@, where @protocolMsgId@ is the id of the @ProtocolMessage@ encapsulating it, and @index@ is the index of the message inside the @messages@ array of the @ProtocolMessage@
 ** @(TM2b)@ @clientId@ string
@@ -2181,13 +2181,11 @@ enum PresenceAction: // TP2
   UPDATE // TP2
 
 enum MessageAction: // TM5
-  MESSAGE_UNSET // TM5
   MESSAGE_CREATE // TM5
   MESSAGE_UPDATE // TM5
   MESSAGE_DELETE // TM5
-  ANNOTATION_CREATE // TM5
-  ANNOTATION_DELETE // TM5
   META_OCCUPANCY // TM5
+  MESSAGE_SUMMARY // TM5
 
 class ConnectionDetails: // CD*, internal
   clientId: String? // RSA12a, CD2a
