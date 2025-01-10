@@ -104,7 +104,7 @@ There are four room lifecycle operations: @ATTACH@, @DETACH@, @RELEASE@ and @RET
 
 Discontinuities in Realtime connections happen - whereby continuity of message delivery is disrupted. Therefore each feature may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves. As such are events are normally associated with something going wrong, we only want to tell them that a discontinuity happened when everything has fixed itself. Therefore, when a discontinuity is noticed by us, we might not notify the user immediately, instead preferring to hold the event in pending until the right time. For more information on how to handle discontinuities, consult the room lifecycle specification points.
 
-In the same sense as discontinuities, sometimes connections drop momentarily - due to connection balancing by the Realtime system or simply bad internet connections. In Chat we try to avoid broadcasting these transient disconnects to users, so long as they don't affect continuity. Therefore, we tend to handle disconnections at first - hoping that they will resolve themselves, and only informing the user when it is clear that it may take longer than anticipated.
+In the same sense as discontinuities, sometimes connections drop momentarily - due to connection balancing by the Realtime system or simply bad internet connections. In Chat we try to avoid broadcasting these transient disconnects to users, so long as they don't affect continuity. Therefore, we tend to handle disconnections optimistically at first - hoping that they will resolve themselves, and only informing the user when it is clear that it may take longer than anticipated.
 
 h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 
@@ -119,7 +119,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL1g)@ When all @contributors@ Realtime Channels successfully attach (the calls to @attach()@ complete successfully), the operation is now complete and the room is considered attached.
 *** @(CHA-RL1g1)@ @[Testable]@ The room status shall be transitioned to @ATTACHED@.
 *** @(CHA-RL1g2)@ @[Testable]@ Any contributors to rooms that have a pending discontinuity event against them, must be notified of this fact, using the error that caused the original discontinuity. These are then cleared to prevent double-notification.
-*** @(CHA-RL1g3)@ @[Testable]@ This spec point has been removed.
+*** @(CHA-RL1g3)@ @[Testable]@ This specification point has been removed.
 ** @(CHA-RL1h)@ If a one of the @contributors@ Realtime Channels fails to attach (i.e. the call to @attach()@ returns an error), then the operation has failed and must be rolled back. The procedure to roll back is described in subsequent points.
 *** @(CHA-RL1h1)@ This clause has been deleted.
 *** @(CHA-RL1h2)@ @[Testable]@ If the underlying Realtime Channel entered the @SUSPENDED@ state (i.e. the @attach()@ operation fails and upon subsequently checking the channel state, it is @SUSPENDED@), then the room status will transition to @SUSPENDED@. The state transition @ErrorInfo@ will use the error from the realtime channels `attach()` as the @cause@. The status code shall be @500@ and the error code whatever attachment error code corresponds to the feature that has failed, per "the error code list":#error-codes.
