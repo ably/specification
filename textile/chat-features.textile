@@ -134,7 +134,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL2b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleasing@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL2c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL2d)@ @[Testable]@ If the room is in the @FAILED@ status, the operation shall be rejected with an @ErrorInfo@ with @RoomInFailedState@ error code from the "chat-specific error codes":#error-codes.
-** @(CHA-RL2e)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status.
+** @(CHA-RL2e)@ @[Testable]@ This specification point has been removed. It was superseded by CHA-RC1j.
+** @(CHA-RL2j)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status.
 ** @(CHA-RL2f)@ @[Testable]@ The underlying @contributors@ Realtime Channels will be detached in sequence - a call to @detach()@ must complete before the next call begins.
 ** @(CHA-RL2g)@ @[Testable]@ If all channel detachments complete successfully (all calls @detach()@ return successfully), then the room shall transition to the @DETACHED@ status.
 ** @(CHA-RL2h)@ If during detachment, a channel fails to detach (i.e. the call to @detach()@ returns an error), different operations are performed based on the nature of the detach.
@@ -148,7 +149,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3j)@ @[Testable]@ If the room is in the @INITIALIZED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
 ** @(CHA-RL3c)@ This specification point has been removed.
 ** @(CHA-RL3i)@ This specification point has been removed.
-** @(CHA-RL3l)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status.
+** @(CHA-RL3l)@ @[Testable]@ This specification point has been removed. It was superseded by CHA-RL3m.
+** @(CHA-RL3m)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status.
 ** @(CHA-RL3d)@ @[Testable]@ All features channels must be detached in sequence.
 ** @(CHA-RL3e)@ @[Testable]@ If a channel is in the @FAILED@ state when it is time to detach, it shall be ignored.
 ** @(CHA-RL3f)@ @[Testable]@ If a channel fails to detach (i.e. the call to @detach()@ returns an error), the @CHA-RL3d@ channel detach sequence will be retried after a 250ms delay. Retries are continued until @CHA-RL3g@ is met.
@@ -195,12 +197,15 @@ As well as user-initiated operations, the room must monitor its underlying resou
 *** @(CHA-RL4b2)@ This specification point has been removed.
 *** @(CHA-RL4b3)@ This specification point has been removed.
 *** @(CHA-RL4b4)@ This specification point has been removed.
-*** @(CHA-RL4b5)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @FAILED@, then the room status shall be transitioned to @FAILED@, using the @reason@ for the channel state change as the @error@ for the room status change and @CHA-RL2f@ detach procedure is performed.
+*** @(CHA-RL4b5)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-RL4b11@.
+*** @(CHA-RL4b11)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @FAILED@, then the room status shall be transitioned to @FAILED@ if not @FAILED@, using the @reason@ for the channel state change as the @error@ for the room status change and @CHA-RL2f@ detach procedure is performed.
 *** @(CHA-RL4b6)@ This specification point has been removed.
-*** @(CHA-RL4b7)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHING@ then the room status is immediately transitioned to @ATTACHING@ if not @ATTACHING@, using the @reason@ from the initial channel state change as the error for the transition.
+*** @(CHA-RL4b7)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-RL4b12@.
+*** @(CHA-RL4b12)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHING@ then the room status is immediately transitioned to @ATTACHING@ if not @ATTACHING@, using the @reason@ from the initial channel state change as the error for the transition.
 *** @(CHA-RL4b10)@ @[Testable]@ This specification point has been removed.
 *** @(CHA-RL4b8)@ @[Testable]@ If a room lifecycle operation is not in progress, the channel state is @ATTACHED@, the room status is NOT @ATTACHED@ and all contibutors channel are now @ATTACHED@, the room status is transitioned to @ATTACHED@.
-*** @(CHA-RL4b9)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @SUSPENDED@, then the room status is transitioned to @SUSPENDED@, using the @reason@ of the channel state change as the error and the room enters the @RETRY@ loop.
+*** @(CHA-RL4b9)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-RL4b13@.
+*** @(CHA-RL4b13)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @SUSPENDED@, then the room status is transitioned to @SUSPENDED@ if not @SUSPENDED@, using the @reason@ of the channel state change as the error and the room enters the @RETRY@ loop.
 
 
 h2(#room-configuration). Room Configuration
