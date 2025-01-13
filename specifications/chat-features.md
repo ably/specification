@@ -267,11 +267,15 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 `(CHA-M2g)` `[Testable]` Two `Messages` are considered to be the same if they have the same `serial`, that is to say, both `Serial` strings are identical.
 
-- `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` generates a new `Message` instance with an updated `latestActionSerial`, while the original Message's `serial` remains unchanged.
-  - `(CHA-M10a)` `[Testable]` The `latestActionSerial` of a `Message` is a lexicographically sortable, unique identifier for each action applied to the `Message`. Unlike `serial`, `latestActionSerial` is mutable and is updated each time an `action` is applied.
-  - `(CHA-M10b)` `[Testable]` In global ordering, an `action` is considered to occur before another `action` if the `latestActionSerial` of the first `action` is before the latter when lexicographically sorted.
-  - `(CHA-M10c)` `[Testable]` In global ordering, an `action` is considered to occur after another `action` if the `latestActionSerial` of the first `action` is after the latter when lexicographically sorted.
-  - `(CHA-M10d)` `[Testable]` Two `actions` are considered to be the same if they have the same `latestActionSerial`, that is to say, both `latestActionSerial` strings are identical.
+- `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` must generate a new `Message` instance with the same `serial` and an updated `version`.
+  - `(CHA-M10a)` `[Testable]` The `version` of a `Message` is a lexicographically sortable, unique identifier for each version of the `Message`.
+  - `(CHA-M10b)` This clause has been deleted.
+  - `(CHA-M10c)` This clause has been deleted.
+  - `(CHA-M10d)` This clause has been deleted.
+  - `(CHA-M10e)` `[Testable]` To sort `Message` `versions` of the same `Message` (instances with the same `serial`) in global order, sort `Message` instances lexicographically by their `version` property.
+    - `(CHA-M10e1)` `[Testable]` Two `Message` instances of the same `serial` are considered the same version if they have the same `version` property.
+    - `(CHA-M10e2)` `[Testable]` Among `Message` instances of the same `serial`, the one with a lexicographically higher `version` is newer.
+    - `(CHA-M10e3)` `[Testable]` Among `Message` instances of the same `serial`, the one with a lexicographically lower `version` is older.
 - `(CHA-M3)` A client must be able to send a message to a room.
   - `(CHA-M3f)` `[Testable]` A client may send a message via the Chat REST API.
   - `(CHA-M3a)` `[Testable]` When a message is sent successfully via the Chat REST API, the caller shall receive a struct representing the [`Message`](#chat-structs-message) in response, as if it were received via Realtime event.
@@ -567,16 +571,16 @@ The response body is as follows.
             }
           }
         },
-        "timestamp": "1726232498871",
+        "timestamp": 1726232498871,
+        "createdAt": 1726232498871,
         "extras": {
           "headers": {
             "baz": "qux"
           },
         },
-        "serial": "01726585978590-001@abcdefghij:001"
-        "action": "message.create"
-        "updatedAt": undefined
-        "updateSerial": undefined
+        "serial": "01726585978590-001@abcdefghij:001",
+        "action": "message.create",
+        "version": "01726585978590-001@abcdefghij:001",
         "operation": {}
       }
 
@@ -612,11 +616,9 @@ A successful request shall result in status code `200 Ok`.
 The response body is as follows.
 
       {
-        "serial": "01826232498871-001@abcdefghij:001",
-        "updatedAt": 1726232498871
+        "version": "01726585978590-001@abcdefghij:001",
+        "timestamp": 1726585978590
       }
-
-The serial in the body corresponds to the `updateSerial` of the corresponding realtime event.
 
 #### Corresponding Realtime Event {#rest-updating-messages-request}
 
@@ -631,22 +633,22 @@ The serial in the body corresponds to the `updateSerial` of the corresponding re
             }
           }
         },
-        "timestamp": "1726232498871",
+        "createdAt": 1726232498871,
+        "timestamp": 1726585978590,
         "extras": {
           "headers": {
             "baz": "qux"
-          },
+          }
         }
-        "serial": "01726585978590-001@abcdefghij:001",
+        "serial": "01726232498871-001@abcdefghij:001",
+        "version": "01726585978590-001@abcdefghij:001"
         "action": "message.update"
-        "updatedAt": 1826232498871
-        "updateSerial": "01826232498871-001@abcdefghij:001"
         "operation": {
           "clientId": "who-performed-the-action",
           "description": "why-the-action-was-performed"
           "metadata": {
             "foo": "bar"
-          },
+          }
         }
       }
 
@@ -671,11 +673,9 @@ A successful request shall result in status code `200 Ok`.
 The response body is as follows.
 
       {
-        "serial": "01826232498871-001@abcdefghij:001",
-        "deletedAt": 1826232498871
+        "version": "01826232498871-001@abcdefghij:001",
+        "timestamp": 1826232498871
       }
-
-The serial in the body corresponds to the `updateSerial` of the corresponding realtime event.
 
 #### Corresponding Realtime Event {#rest-deleting-messages-request}
 
@@ -698,8 +698,9 @@ The serial in the body corresponds to the `updateSerial` of the corresponding re
         }
         "serial": "01726585978590-001@abcdefghij:001",
         "action": "message.deleted"
-        "updatedAt": 1826232498871
-        "updateSerial": "01826232498871-001@abcdefghij:001",
+        "timestamp": 1826232498871
+        "createdAt": 1726585978590,
+        "version": "01826232498871-001@abcdefghij:001",
         "operation": {
           "clientId": "who-performed-the-action",
           "description": "why-the-action-was-performed"
@@ -825,11 +826,10 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
         "headers": {
           "baz": "qux"
         }
-        "latestAction": "message.created",
-        "latestActionSerial": "01726585978590-001@abcdefghij:001",
-        "deletedAt": DateTime() | undefined,
-        "updatedAt": DateTime() | undefined,
-        "latestActionDetails": {
+        "action": "message.created",
+        "version": "01726585978590-001@abcdefghij:001",
+        "timestamp": DateTime(),
+        "operation": {
             "clientId": "who-performed-the-action",
             "description": "why-the-action-was-performed"
             "metadata": {
@@ -840,9 +840,18 @@ The RoomOptions struct describes configuration options for a Chat room. A proper
         }
       }
 
+There are getters provided in the `Message` object to provide easy access to updated/deleted information:
+
+- `isUpdated` returns `true` if the message is updated
+- `isDeleted` returns `true` if the message is deleted
+- `updatedBy` returns the clientId from `operation.clientId` if the message is updated, `undefined` otherwise
+- `deletedBy` returns the clientId from `operation.clientId` if the message is deleted, `undefined` otherwise
+- `updatedAt` returns the `timestamp` from the operation if the message is updated, `undefined` otherwise
+- `deletedAt` returns the `timestamp` from the operation if the message is deleted, `undefined` otherwise
+
 Determining the global order of messages may be achieved by lexicographically comparing the serials. See `CHA-M2` for more information.
 
-Determining the global order of message actions may be achieved by lexicographically comparing the `latestActionSerial`. See `CHA-M10` for more information.
+Determining the global order of message versions may be achieved by lexicographically comparing the `version`. See `CHA-M10` for more information.
 
 ### Ephemeral Room Reactions {#chat-structs-ephemeral-reactions}
 
