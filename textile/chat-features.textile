@@ -174,10 +174,19 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL7a1)@ The @RETRY@ operation - an internal process.
 *** @(CHA-RL7a2)@ The @RELEASE@ operation.
 *** @(CHA-RL7a3)@ The @ATTACH@ and @DETACH@ operations have equal precedence.
-* @(CHA-RL9)@ Many operations in the Chat SDK will still attempt to proceed if the room is in an @ATTACHING@ status. However, their ability to proceed will depend on the subsequent status that the room takes. This specification point is defined here to avoid unnecessary repetition. It is primarily testable via the points that refer to it.
-** @(CHA-RL9a)@ @[Testable]@ When the room status is @ATTACHING@ at the point of operation commencement, the caller will subscribe a one-time listener to the room status.
-** @(CHA-RL9b)@ @[Testable]@ If the next room status received by the caller is @ATTACHED@, the operation shall proceed as normal.
-** @(CHA-RL9c)@ @[Testable]@ If the next room status received is any other value, the operation must throw an error. The @ErrorInfo@ shall have the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes, with a status code of @500@. The @cause@ field must contain any error associated with the room status change, if present.
+* @(CHA-RL9)@ This specification point has been removed. It was superseded by @CHA-RL11@.
+** @(CHA-RL9a)@ This specification point has been removed.
+** @(CHA-RL9b)@ This specification point has been removed.
+** @(CHA-RL9c)@ This specification point has been removed.
+* @(CHA-RL11)@ Any room operation triggered using public API over a realtime channel will have it's result dependent on the given RoomStatus. This specification point is defined here to avoid unnecessary repetition. It is primarily testable via the points that refer to it.
+** @(CHA-RL11a)@ @[Testable]@ When the room status is @ATTACHED@ at the point of operation commencement,
+*** @(CHA-RL11a1)@ @[Testable]@ If underlying realtime connection state is not @CONNECTED@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that the realtime connection is not active.
+*** @(CHA-RL11a2)@ @[Testable]@ At this point, connection state is @CONNECTED@ and room status is @ATTACHED@, so operation should proceed as normal.
+** @(CHA-RL11b)@ @[Testable]@ Operation will still attempt to proceed if the room is in an @ATTACHING@ status. However, it's ability to proceed will depend on the subsequent status that the room takes.
+*** @(CHA-RL11b1)@ @[Testable]@ When the room status is @ATTACHING@ at the point of operation commencement, the caller will subscribe a one-time listener to the room status.
+*** @(CHA-RL11b2)@ @[Testable]@ If the next room status received by the caller is @ATTACHED@, the operation shall proceed as normal.
+*** @(CHA-RL11b3)@ @[Testable]@ If the next room status received is any other value, the operation must throw an error. The @ErrorInfo@ shall have the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes, with a status code of @500@. The message shall explain the given room status with error as per @CHA-RS2@.
+** @(CHA-RL11c)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain the given room status with error as per @CHA-RS2@.
 * @(CHA-RL10)@ @[Testable]@ When a specification point refers to operations on the underlying realtime channels (i.e. calls to attach and delete) being performed in sequence, the precedence of contributors must follow the order specified by @CHA-RC2e@.
 
 h4(#rooms-lifecycle-monitoring). Room Lifecycle Monitoring
