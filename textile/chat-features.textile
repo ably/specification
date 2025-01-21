@@ -518,7 +518,7 @@ h4(#rest-sending-messages-request-v1). Corresponding Realtime Event V1 @(depreca
 h4(#rest-sending-messages-request-v2). Request V2
 
 Below is the full REST payload format for the V2 endpoint. The @metadata@ and @headers@ keys are optional.
-
+Please note that @metadata@ is of type map<string, any> or jsonObject.
 <pre>
   POST /chat/v2/rooms/<roomId>/messages
   {
@@ -580,7 +580,7 @@ h3(#rest-updating-messages). Updating Messages
 h4(#rest-updating-messages-request). Request
 
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
-
+Please note that outer @metadata@ is of type map<string, string>.
 <pre>
   PUT /chat/v2/rooms/<roomId>/messages/<serial>
   {
@@ -654,7 +654,7 @@ h3(#rest-deleting-messages). Deleting Messages
 h4(#rest-deleting-messages-request). Request
 
 Below is the full REST payload format for the endpoint.
-
+Please note that @metadata@ is of type map<string, string>.
 <pre>
   POST /chat/v2/rooms/<roomId>/messages/<serial>/delete
   {
@@ -849,9 +849,7 @@ h4(#chat-structs-message-v2). Messages V2
         "clientId": "who-performed-the-action",
         "description": "why-the-action-was-performed"
         "metadata": {
-          "foo": {
-            "bar": 1
-          }
+          "foo": "bar"
         },
     }
   }
