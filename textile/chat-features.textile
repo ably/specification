@@ -247,12 +247,10 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 * @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the messages channel will be @my-room::$chat::$chatMessages@.
 * @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
-<div class=deprecated>
-** @(CHA-M2a)@ @[Testable]@ @(deprecated)@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
-** @(CHA-M2b)@ @[Testable]@ @(deprecated)@ A @Message@ is considered after another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes second.
-** @(CHA-M2c)@ @[Testable]@ @(deprecated)@ A @Message@ is considered to be equal to another @Message@ if they have the same timeserial.
-</div>
-** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
+** @(CHA-M2a)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M2e@.
+** @(CHA-M2b)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M2f@.
+** @(CHA-M2c)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M2g@.
+** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse @serial@ strings.
 ** @(CHA-M2e)@ @[Testable]@ In global ordering, a @Message@ is considered to occur before another @Message@ if the @serial@ of the first @Message@ is before the latter when lexicographically sorted.
 ** @(CHA-M2f)@ @[Testable]@ In global ordering, a @Message@ is considered after another @Message@ if the @serial@ of the first @Message@ is after the latter when lexicographically sorted.
 ** @(CHA-M2g)@ @[Testable]@ Two @Messages@ are considered to be the same if they have the same @serial@, that is to say, both @Serial@ strings are identical.
@@ -284,11 +282,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
-
-<div class=deprecated>
-** @(CHA-M4c)@ @[Testable]@ @(deprecated)@ When a realtime message with @name@ set to @message.created@  is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
-</div>
-
+** @(CHA-M4c)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M4l@.
 ** @(CHA-M4l)@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M4m)@ @[Testable]@ The @action@ field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
