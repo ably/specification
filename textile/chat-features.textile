@@ -512,7 +512,7 @@ h4(#rest-sending-messages-request-v1). Corresponding Realtime Event V1 @(depreca
 h4(#rest-sending-messages-request-v2). Request V2
 
 Below is the full REST payload format for the V2 endpoint. The @metadata@ and @headers@ keys are optional.
-Please note that @metadata@ is of type map<string, any> or jsonObject.
+Note that @metadata@ is of type map<string, any> or jsonObject.
 <pre>
   POST /chat/v2/rooms/<roomId>/messages
   {
@@ -574,7 +574,7 @@ h3(#rest-updating-messages). Updating Messages
 h4(#rest-updating-messages-request). Request
 
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
-Please note that outer @metadata@ is of type map<string, string>.
+Note that outer @metadata@ is of type map<string, string>.
 <pre>
   PUT /chat/v2/rooms/<roomId>/messages/<serial>
   {
@@ -604,8 +604,8 @@ The response body is as follows.
 
 <pre>
   {
-    "version": "01726585978590-001@abcdefghij:001",
-    "timestamp": 1726585978590
+    "version": "01729085978590-001@abcdefghij:001",
+    "timestamp": 1729085978590
   }
 </pre>
 
@@ -624,14 +624,14 @@ h4(#rest-updating-messages-request). Corresponding Realtime Event
       }
     },
     "createdAt": 1726232498871,
-    "timestamp": 1726585978590,
+    "timestamp": 1729085978590,
     "extras": {
       "headers": {
         "baz": "qux"
       }
     }
-    "serial": "01726232498871-001@abcdefghij:001",
-    "version": "01726585978590-001@abcdefghij:001"
+    "serial": "01726585978590-001@abcdefghij:001",
+    "version": "01729085978590-001@abcdefghij:001"
     "action": "message.update"
     "operation": {
       "clientId": "who-performed-the-action",
@@ -648,7 +648,7 @@ h3(#rest-deleting-messages). Deleting Messages
 h4(#rest-deleting-messages-request). Request
 
 Below is the full REST payload format for the endpoint.
-Please note that @metadata@ is of type map<string, string>.
+Note that @metadata@ is of type map<string, string>.
 <pre>
   POST /chat/v2/rooms/<roomId>/messages/<serial>/delete
   {
@@ -686,16 +686,15 @@ h4(#rest-deleting-messages-request). Corresponding Realtime Event
         }
       }
     },
-    "timestamp": "1726232498871",
     "extras": {
       "headers": {
         "baz": "qux"
       },
     }
+    "createdAt": 1726232498871,
     "serial": "01726585978590-001@abcdefghij:001",
-    "action": "message.deleted"
-    "timestamp": 1826232498871
-    "createdAt": 1726585978590,
+    "action": "message.deleted",
+    "timestamp": 1826232498871,
     "version": "01826232498871-001@abcdefghij:001",
     "operation": {
       "clientId": "who-performed-the-action",
