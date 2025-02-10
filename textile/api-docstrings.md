@@ -47,6 +47,9 @@ A client that offers a simple stateless API to interact directly with Ably's RES
 | batchPresence([String]) => io `BatchResult<BatchPresenceSuccessResult \| BatchPresenceFailureResult>` ||| RSC23 | Retrieves the presence state for one or more channels, up to a maximum of 100 channels. Presence state includes the `clientId` of members and their current [`PresenceAction`]{@link PresenceAction}. |
 || [String] ||| An array of one or more channel names, up to a maximum of 100 channels. |
 ||| `BatchResult<BatchPresenceSuccessResult \| BatchPresenceFailureResult>` || A [`BatchResult`]{@link BatchResult} object containing information about the result of the batch presence request for each requested channel. |
+| createWrapperSDKProxy(WrapperSDKProxyOptions) => RestClientInterface ||| RSC26 | Creates a proxy client to be used to supply analytics information for Ably-authored SDKs. The proxy client shares the state of the `RestClient` instance on which this method is called. This method should only be called by Ably-authored SDKs. |
+|| `WrapperSDKProxyOptions` ||| Options for controlling the creation of the proxy client. |
+||| `RestClientInterface` || A `RestClient`-like object, whose usage will be attributed to the wrapper SDK. |
 
 ## class RealtimeClient
 
@@ -92,6 +95,9 @@ A client that extends the functionality of the [`RestClient`]{@link RestClient} 
 | batchPresence([String]) => io `BatchResult<BatchPresenceSuccessResult \| BatchPresenceFailureResult>` ||| RSC23 | Retrieves the presence state for one or more channels, up to a maximum of 100 channels. Presence state includes the `clientId` of members and their current [`PresenceAction`]{@link PresenceAction}. |
 || [String] ||| An array of one or more channel names, up to a maximum of 100 channels. |
 ||| `BatchResult<BatchPresenceSuccessResult \| BatchPresenceFailureResult>` || A [`BatchResult`]{@link BatchResult} object containing information about the result of the batch presence request for each requested channel. |
+| createWrapperSDKProxy(WrapperSDKProxyOptions) => RealtimeClientInterface ||| RSC26 | Creates a proxy client to be used to supply analytics information for Ably-authored SDKs. The proxy client shares the state of the `RealtimeClient` instance on which this method is called. This method should only be called by Ably-authored SDKs. |
+|| `WrapperSDKProxyOptions` ||| Options for controlling the creation of the proxy client. |
+||| `RealtimeClientInterface` || A `RealtimeClient`-like object, whose usage will be attributed to the wrapper SDK. |
 
 ## class ClientOptions
 
@@ -1138,3 +1144,11 @@ Contains information about the result of an unsuccessful token revocation reques
 |---|---|---|---|---|
 | target: String ||| TRF2a | The target specifier. |
 | error: ErrorInfo ||| TRF2b | Describes the reason for which token revocation failed for the given `target` as an [`ErrorInfo`]{@link ErrorInfo} object. |
+
+## class `WrapperSDKProxyOptions`
+
+A set of options for controlling the creation of a wrapper SDK proxy client. This class should only be used by Ably-authored SDKs.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| agents: [String: String?]? ||| WPO2a | A set of additional entries for the Ably agent header and the `agent` realtime channel param. |
