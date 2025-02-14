@@ -1344,8 +1344,8 @@ h4. Message
 ** @(TM2i)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is @push@, via the @extras.push@ member; 1.2 adds the @delta@ extension whose keys and values are described by the attributes of the type @DeltaExtras@, and the @headers@ extension, which contains arbitrary @string->string@ key-value pairs, settable at publish time, and @ref@ whose keys and values are described by the attributes of the type @ReferenceExtras@. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
 ** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably over a realtime transport does not contain a @timestamp@, the SDK must set it to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TM2j)@ @action@ enum
-** @(TM2p)@ @version@ string - an opaque string that uniquely identifies the message, and is different for different versions. If a message received from Ably over a realtime transport does not contain a @version@, the SDK must set it to @<channelSerial>:<padded_index>@ from the @channelSerial@ field of the enclosing @ProtocolMessage@, and @padded_index@ is the index of the message inside the @messages@ array of the @ProtocolMessage@, left-padded with 0s to three digits (for example, the second entry might be @foo:001@).
-** @(TM2k)@ @serial@ string - an opaque string that uniquely identifies the message. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @serial@, the SDK must set it equal to its @TM2p@ @version@.
+** @(TM2p)@ @version@ string - an opaque string that uniquely identifies the message, and is different for different versions. (May not be populated).
+** @(TM2k)@ @serial@ string - an opaque string that uniquely identifies the message. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @serial@ but does contain a @version@, the SDK must set it equal to the @TM2p@ @version@. (May not be populated).
 ** @(TM2o)@ @createdAt@ time in milliseconds since epoch. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @createdAt@, the SDK must set it equal to the @TM2f@ @timestamp@.
 ** @(TM2l)@ @refSerial@ string - an opaque string that uniquely identifies some referenced message.
 ** @(TM2m)@ @refType@ string - an opaque string that identifies the type of this reference.
@@ -2212,7 +2212,7 @@ class Message: // TM*
   name: String? // TM2g
   timestamp: Time // TM2f
   action: MessageAction // TM2j
-  serial: string // TM2k
+  serial: string? // TM2k
   version: string? // TM2p
   refSerial: string? // TM2l
   refType: string? // TM2m
