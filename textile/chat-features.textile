@@ -28,6 +28,14 @@ h2(#general). General Principles
 * @(CHA-GP3)@ Wherever possible, Chat features should be exposed in the public API as properties of their parent. For example, @messages@ would be considered a property of a @room@ object. This allows for greater composability and extensibility in the future.
 * @(CHA-GP4)@ Avoid overloading methods and optional parameters. Prefer object-type parameters wherever practical and idiomatic.
 
+h2(#initialization). Initialization
+
+* @(CHA-IN1)@ In order to initialize a chat client, the user must supply an instance of @RealtimeClient@. Upon initialization, the chat client must configure this client in order to allow Ably to track usage of the Chat SDK, as described in the sub-items below.
+** @(CHA-IN1a)@ @[Testable]@ Upon initialization of the chat client, it must create a wrapper SDK proxy client by calling @createWrapperSDKProxy@ on the @RealtimeClient@.
+** @(CHA-IN1b)@ @[Testable]@ When creating the @CHA-IN1a@ wrapper SDK proxy client, the chat client must pass a @WrapperSDKProxyOptions@ whose @agents@ describe the Chat SDK and its version. For example, @{ "agents": { "chat-js": "1.0.1" } }@.
+** @(CHA-IN1c)@ SDK authors must ensure that they have registered the agents used by @CHA-IN1b@ in the common repository, per "@RSC7d5@":../features#RSC7d5.
+** @(CHA-IN1d)@ @[Testable]@ The chat client must use the wrapper SDK proxy client created in @CHA-IN1a@ as the realtime client on which it performs all subsequent actions (for example, fetching channels or calling @#request@).
+
 h2(#rooms). Rooms
 
 h3(#rooms-general). General Information
