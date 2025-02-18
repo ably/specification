@@ -143,6 +143,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
     - `(RSC7d6)` Libraries may offer a `ClientOptions#agents` property, for use only by other Ably-authored SDKs, on a need-to-have basis.
       - `(RSC7d6a)` The product/version key-value pairs supplied to that property should be injected into all `Agent` library identifiers emitted by connections made as a result of REST or Realtime instances created using those `ClientOptions`.
       - `(RSC7d6b)` An API commentary must be provided for this property. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
+    - `(RSC7d7)` To *attribute a given REST request to a given wrapper SDK* means to, given a `WrapperSDKProxyOptions` object describing the wrapper SDK, inject the product/version key-value pairs contained in these options' `agents` property into the `Agent` library identifier emitted for that REST request. [`WP6`](#WP6) defines the circumstances in which a REST request must be attributed to a wrapper SDK.
 - `(RSC18)` If `ClientOptions#tls` is true, then all communication is over HTTPS. If false, all communication is over HTTP however [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) over HTTP will result in an error as private keys cannot be submitted over an insecure connection. See `Auth` below
 - `(RSC8)` Supports two protocols:
   - `(RSC8a)` [MessagePack](https://msgpack.org/) binary protocol (this is the default for environments having a suitable level or support for binary data)
@@ -199,6 +200,10 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSC22b)` Returns an array of `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `BatchPublishSpec` and return a single `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
   - `(RSC23)` This clause has been replaced by [`RSC24`](#RSC24). It was valid up to and including specification `2.1`.
   - `(RSC24)` `RestClient#batchPresence` function takes an array of channel name strings and sends them as a comma separated string in the `channels` query parameter in a GET request to `/presence`, returning a `BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>` object.
+- `(RSC26)` `RestClient#createWrapperSDKProxy`:
+  - `(RSC26a)` Returns a wrapper SDK proxy client whose underlying client is this `RestClient`. See [`WP1`](#WP1) for definitions of these terms.
+  - `(RSC26b)` Accepts a single argument, a `WrapperSDKProxyOptions`.
+  - `(RSC26c)` An API commentary must be provided for this method. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
 
 ### Auth {#rest-auth}
 
@@ -473,6 +478,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTC17a)` Returns the current value of the `#clientId` attribute of the `RealtimeClient` object's `#auth` attribute
 - `(RTC10)` The client library should never register any listeners for internal use with the public `EventEmitter` interfaces (such as `Connection#on`) or message/event subscription interfaces (such as `RealtimeChannel#subscribe`) in such a way that a user of the library calling `Connection#off()` or `RealtimeChannel#unsubscribe()` to remove all listeners would result in the library not working as expected
 - `(RTC11)` Unexpected internal exceptions, as defined in [`RSC20`](#RSC20), must be handled as gracefully as possible and reported to Ably's error reporting service when enabled. The aim when handling unexpected exceptions should be to ensure that no invalid or inconsistent state can potentially be left after handling the exception; depending on circumstances the remedial action could include failing the transport, failing the connection, rejecting a message, reinitialising the library completely, etc.
+- `(RTC14)` `RealtimeClient#createWrapperSDKProxy`:
+  - `(RTC14a)` Returns a wrapper SDK proxy client whose underlying client is this `RealtimeClient`. See [`WP1`](#WP1) for definitions of these terms.
+  - `(RTC14b)` Accepts a single argument, a `WrapperSDKProxyOptions`.
+  - `(RTC14c)` An API commentary must be provided for this method. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
 
 ### Connection {#realtime-connection}
 
@@ -909,6 +918,24 @@ The threading and/or asynchronous model for each realtime library will vary by l
 ### Forwards compatibility {#realtime-compatibility}
 
 - `(RTF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+
+### Wrapper SDK proxy client {#wrapper-sdk-proxy}
+
+A *wrapper SDK* is an Ably-authored non-core SDK.
+
+The core SDK provides an API for wrapper SDKs to supply Ably with analytics information that allows us track the usage of these SDKs.
+
+- `(WP1)` A *wrapper SDK proxy client* is a client that is created by calling the `createWrapperSDKProxy` method on an instance (hereafter referred to as the *underlying client*) of `RestClient` ([`RSC26`](#RSC26)) or `RealtimeClient` ([`RTC14`](#RTC14)). It is expected that a wrapper SDK proxy client will only be created by a wrapper SDK.
+- `(WP2)` A wrapper SDK proxy client must provide the same public API (that is, methods and properties) as its underlying client. Calling a method or accessing a property of a wrapper SDK proxy client should behave as if the same action had been performed directly on the underlying client, except for some modified usage tracking behaviour which is described in [`WP6`](#WP6) and [`WP7`](#WP7).
+- `(WP3)` This specification does not prescribe how a wrapper SDK proxy client should be implemented nor its concrete type. An implementation may choose to replace the return value of methods and properties with an implementation-defined type that differs from that returned by the underlying client; for example, a wrapper SDK proxy client's `channels` property may return an object of some class which wraps the underlying `Channels` instance and forwards all method calls to it. And, in turn, this type's `#get` method may return an object of a class which wraps the underlying `RestChannel` or `RealtimeChannel` class and forwards all method calls to it.
+- `(WP4)` A wrapper SDK proxy client does not need to provide a `createWrapperSDKProxy` method.
+- `(WP5)` A wrapper SDK proxy client does not have any state of its own; rather, it shares all state with its underlying client.
+- `(WP6)` All REST requests that are initiated via a wrapper SDK proxy client must be attributed to the wrapper SDK (as defined in [`RSC7d7`](#RSC7d7)), using the `WrapperSDKProxyOptions` that were used to create the wrapper SDK proxy client. This excludes the following REST requests, which should never be attributed to a wrapper SDK proxy client:
+  - `(WP6a)` Requesting an auth token or a token request ([`RSA8a`](#RSA8a) and [`RSA8c`](#RSA8c))
+  - `(WP6b)` Fetching the server time in order to create a token request ([`RSA9d`](#RSA9d) and [`RSA10k`](#RSA10k))
+  - `(WP6c)` Any of the push activation requests described under [`RSH3`](#RSH3)
+  - `(WP6d)` The [`RTN17j`](#RTN17j) Internet connectivity check
+- `(WP7)` If the `WrapperSDKProxyOptions` that were used to create the wrapper SDK proxy client has a non-null `agents` property, then, when the [`RTS3`](#RTS3) `#channels#get` method is called on a wrapper SDK proxy client whose underlying client is a `RealtimeClient`, the wrapper SDK proxy client should behave as if `#get` had been called with a channel options formed by adding an additional `agent` key to the `params` of the passed channel options. The value for this key should be formed using the same algorithm as used to form the `Agent` library identifier in [`RSC7d1`](RSC7d1), using the key-value entries from the `agents` property of the `WrapperSDKProxyOptions` that were used to create the wrapper SDK proxy client, and *no other entries* (i.e. disregard the "this must include at least the ..." from RSC7d1).
 
 ## State conditions and operations
 
@@ -2125,6 +2152,12 @@ Presence ops.
   - `(CO2c)` `keyLength` (optional) integer - the length in bits of the `key`; for example 128 or 256
   - `(C02d)` `mode` (optional) string -- the cipher mode; currently the only supported non-null value is `CBC`
 
+#### WrapperSDKProxyOptions
+
+- `(WPO1)` Options for controlling the creation of a wrapper SDK proxy client ([`WP1`](#WP1)).
+- `(WPO2)` Has the following attributes:
+  - `(WPO2a)` `agents` `[String: String?]?` - a set of agents describing the wrapper SDK which is creating the proxy client. This property has the same semantics as the `ClientOptions#agents` property.
+
 ### Push notifications {#types-push}
 
 #### PushChannelSubscription
@@ -2223,6 +2256,10 @@ Each type, method, and attribute is labelled with the name of one or more clause
       batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
       batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
       batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC24
+      createWrapperSDKProxy(WrapperSDKProxyOptions) => RestClientInterface // RSC26
+
+    interface RestClientInterface // WP*
+      // This is an interface that has the same instance methods as RestClient, except for createWrapperSDKProxy.
 
     class RealtimeClient: // RTC*
       constructor(keyOrTokenStr: String) // RTC12
@@ -2253,6 +2290,10 @@ Each type, method, and attribute is labelled with the name of one or more clause
       batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
       batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
       batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC24
+      createWrapperSDKProxy(WrapperSDKProxyOptions) => RealtimeClientInterface // RTC14
+
+    interface RealtimeClientInterface // WP*
+      // This is an interface that has the same instance methods as RealtimeClient, except for createWrapperSDKProxy.
 
     class ClientOptions: // TO*
       embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
@@ -2840,6 +2881,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class TokenRevocationFailureResult:
       target: string // TRF2a
       error: ErrorInfo // TRF2b
+
+    class WrapperSDKProxyOptions:
+      agents: [String: String?]? // WPO2a
 
 ## Old specs
 
