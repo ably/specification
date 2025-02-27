@@ -670,6 +670,7 @@ Contains an individual message that is sent to, or received from, Ably.
 | refType: String? ||| TM2m | If this message references another, the type of reference that is. |
 | createdAt: Time? ||| TM2o | The timestamp of the very first version of a given message (will differ from `timestamp` only if the message has been updated or deleted). |
 | operation: Operation? ||| TM2n | In the case of an updated or deleted message, this will contain metadata about the update or delete operation. |
+| connectionKey: String? ||| TM2h | Allows a REST client to publish a message on behalf of a Realtime client. If you set this to the [private connection key]{@link Connection.key} of a Realtime connection when publishing a message using a [`RestClient`]{@link RestClient}, the message will be published on behalf of that Realtime client. This property is only populated by a client performing a publish, and will never be populated on an inbound message. |
 
 ## class Operation
 
