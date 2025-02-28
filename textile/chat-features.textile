@@ -410,35 +410,57 @@ Presence allows chat room users to indicate to others that they're online, as we
 
 h2(#typing). Typing Indicators
 
-Typing Indicators allow chat room users to indicate to others that they are typing. This is most common in 1:1 and community chat, where the client would display "Alice and Bob are typing..." to users. This system is presence-based, to avoid the cost of heartbeat/polling messages, with entering presence deemed to mean "started typing" and leaving presence deemed to mean "stopped typing".
+Typing Indicators allow chat room users to indicate to others that they are typing. This is most common in 1:1 and community chat, where the client would display "Alice and Bob are typing..." to users.
+@(deprecated)@ This system is presence-based, to avoid the cost of heartbeat/polling messages, with entering presence deemed to mean "started typing" and leaving presence deemed to mean "stopped typing".
+
+This system uses heartbeat messages, alongside specific message metadata (TBD) which disables persistence for them, reducing the cost of servicing the heartbeats.
 
 @Typing Indicators@ shall be exposed to consumers via the @typing@ property of a @Room@.
 
-* @(CHA-T1)@ Typing Indicators for a Room is exposed on a dedicated Realtime channel. These channels use the format @<roomId>::$chat::$typingIndicators@. For example, if your room id is @my-room@ then the typing channel will be @my-room::$chat::$typingIndicators@.
-* @(CHA-T2)@ @[Testable]@ Users may retrieve a list of the currently typing client IDs. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
+* @(CHA-T1)@ @(deprecated)@ Typing Indicators for a Room is exposed on a dedicated Realtime channel. These channels use the format @<roomId>::$chat::$typingIndicators@. For example, if your room id is @my-room@ then the typing channel will be @my-room::$chat::$typingIndicators@.
+* @(CHA-T2)@ @(deprecated)@ @[Testable]@ Users may retrieve a list of the currently typing client IDs. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
+* @(CHA-T8)@ Typing Indicators for a Room is exposed on the channel used for chat messages, in the format @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-T9)@ @[Testable]@ Users may retrieve a list of the currently typing client IDs.
 ** @(CHA-T2b)@ This specification point has been removed.
 *** @(CHA-T2b1)@ This specification point has been removed.
 *** @(CHA-T2b2)@ This specification point has been removed.
-** @(CHA-T2c)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.get()@ call.
-** @(CHA-T2g)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
-** @(CHA-T2d)@ @[Testable]@ If the room status is @Attached@, then the @get@ call shall invoke the underlying @presence.enter()@ call.
+** @(CHA-T2c)@ @(deprecated)@ @[Testable]@ If the room status is @Attaching@, then the operation shall invoke a @CHA-RL9@ pending room status operation and wait for it to complete. If this operation fails, then the error from @CHA-RL9@ must be raised. If this succeeds (i.e the room becomes @ATTACHED@), the library must invoke the underlying @presence.get()@ call.
+** @(CHA-T2g)@ @(deprecated)@ @[Testable]@ If the room status is anything other than @Attached@ or @Attaching@, an @ErrorInfo@ using the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ must be thrown. The message shall explain that attach must be called first.
+** @(CHA-T2d)@ @(deprecated)@ @[Testable]@ If the room status is @Attached@, then the @get@ call shall invoke the underlying @presence.enter()@ call.
+
 ** @(CHA-T2e)@ This specification point has been removed. It was superseded by @CHA-T2g@.
 ** @(CHA-T2f)@ This specification point has been removed. It was superseded by @CHA-T2g@.
 * @(CHA-T3)@ @[Testable]@ Users may configure a timeout interval for when they are typing. This configuration is provided as part of the @RoomOptions@ @typing.timeoutMs@ property, or idiomatic equivalent. The default is 5000ms.
+* @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval for when they are typing. This configuration is provided as part of the @RoomOptions@ @typing.heartbeatIntervalMs@ property, or idiomatic equivalent. The default is 15000ms.
+* @(CHA-T11)@ @[Testable]@ Users may configure an inactivity timeout interval for when they are receiving heartbeats from other users. This configuration is provided as part of the @RoomOptions@ @typing.inactivityTimeoutMs@ property, or idiomatic equivalent. The default is 2000ms.
 * @(CHA-T4)@ Users may indicate that they have started typing.
 ** @(CHA-T4a)@ @[Testable]@ If typing is not already in progress, per explicit cancellation or the timeout interval in (@CHA-T3@), then a new typing session is started.
-*** @(CHA-T4a1)@ @[Testable]@ When a typing session is started, the client is entered into presence on the typing channel.
-*** @(CHA-T4a2)@ @[Testable]@ When a typing session is started, a timeout is set according to the @CHA-T3@ timeout interval. When this timeout expires, the typing session is automatically ended by leaving presence.
+*** @(CHA-T4a1)@ @(deprecated)@ @[Testable]@ When a typing session is started, the client is entered into presence on the typing channel.
+*** @(CHA-T4a2)@ @(deprecated)@ @[Testable]@ When a typing session is started, a timeout is set according to the @CHA-T3@ timeout interval. When this timeout expires, the typing session is automatically ended by leaving presence.
+
+*** @(CHA-T4a3)@ @[Testable]@ When a typing session is started, the client shall publish a heartbeat message with the name field set to `typing.started`, the format of which is detailed "here":#realtime-typing-heartbeat.
+*** @(CHA-T4a4)@ @[Testable]@ When a typing session is started, a timeout shall be set according to the @CHA-T3@ timeout interval, if the interval is undefined, no timout shall be set. When this timeout expires, the client shall publish a heartbeat message with the name field set to `typing.stopped`, the format of which is detailed "here":#realtime-typing-heartbeat.
+*** @(CHA-T4a5)@ @[Testable]@ When a typing session is started, a timeout shall be set according to the @CHA-T10@ timeout interval. Until this timeout expires, the client shall not publish any further `typing.started` "heartbeats":#realtime-typing-heartbeat.
+
 ** @(CHA-T4b)@ @[Testable]@ If typing is already in progress, the @CHA-T3@ timeout is extended to be @timeoutMs@ from now.
+** @(CHA-T4c)@ @[Testable]@ If typing is already in progress, the client shall not publish any further `typing.started` heartbeats until the @CHA-T10@ timeout expires. After expiration, if the client is still typing, it shall publish a `typing.started` "heartbeat":#realtime-typing-heartbeat and restart the @CHA-T10@ timeout.
+
 * @(CHA-T5)@ Users may indicate that they have stopped typing.
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress, this operation is no-op.
-** @(CHA-T5b)@ @[Testable]@ If typing is in progress, he @CHA-T3@ timeout is cancelled. The client then leaves presence.
+** @(CHA-T5b)@ @(deprecated)@ @[Testable]@ If typing is in progress, the @CHA-T3@ timeout is cancelled. The client then leaves presence.
+** @(CHA-T5b)@ @(deprecated)@ @[Testable]@ If typing is in progress, the @CHA-T3@ and @CHA-T10@ timeouts shall be cancelled, and the client shall publish a heartbeat message with the name field set to `typing.stopped`.
 * @(CHA-T6)@ Users may subscribe to typing events - updates to a set of clientIDs that are typing. This operation, like all subscription operations, has no side-effects in relation to room lifecycle.
-** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing events":#chat-structs-typing-event in a room.
+** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing event V1":#chat-structs-typing-event in a room. Note, "typing event V1":#chat-structs-typing-event is a deprecated, please use "typing event V2":#chat-structs-typing-event-V2.
 ** @(CHA-T6b)@ @[Testable]@ A subscription to typing may be removed, after which it shall receive no further events.
-** @(CHA-T6c)@ @[Testable]@ When a presence event is received from the realtime client, the Chat client will perform a @presence.get()@ operation to get the current presence set. This guarantees that we get a fully synced presence set. This is then used to emit the typing clients to the subscriber.
-*** @(CHA-T6c1)@ @[Testable]@ If the @presence.get()@ operation fails, then it shall be retried using a backoff with jitter, up to a timeout of 30 seconds.
-*** @(CHA-T6c2)@ @[Testable]@ If multiple presence events are received resulting in concurrent @presence.get()@ calls, then we guarantee that only the "latest" event is emitted. That is to say, if presence event A and B occur in that order, then only the typing event generated by B's call to @presence.get()@ will be emitted to typing subscribers.
+** @(CHA-T6c)@ @(deprecated)@ @[Testable]@ When a presence event is received from the realtime client, the Chat client will perform a @presence.get()@ operation to get the current presence set. This guarantees that we get a fully synced presence set. This is then used to emit the typing clients to the subscriber.
+*** @(CHA-T6c1)@ @(deprecated)@ @[Testable]@ If the @presence.get()@ operation fails, then it shall be retried using a backoff with jitter, up to a timeout of 30 seconds.
+*** @(CHA-T6c2)@ @(deprecated)@ @[Testable]@ If multiple presence events are received resulting in concurrent @presence.get()@ calls, then we guarantee that only the "latest" event is emitted. That is to say, if presence event A and B occur in that order, then only the typing event generated by B's call to @presence.get()@ will be emitted to typing subscribers.
+** @(CHA-T6d) @[Testable]@ When a typing heartbeat is received from the realtime client, the Chat client shall emit the updated set of typing clients to the subscriber, along with the clientId of the client that started/stopped typing.
+** @(CHA-T6d1) @[Testable]@ If the typing heartbeat is malformed (unknown fields should be ignored), then it shall not be emitted to the subscriber.
+** @(CHA-T6d2) @[Testable]@ When a typing heartbeat is received from the realtime client;
+*** @(CHA-T6d2a) @[Testable]@ If the heartbeat represents a new client typing, then the chat client shall add the typer to the typing set and a emit the updated set to any subscribers. It shall also begin a @(CHA-T10)@ timeout for the typing client.
+*** @(CHA-T6d2b) @[Testable]@ Each additional typing heartbeat from the same client shall reset the @(CHA-T10)@ timeout for the typing client. If the timeout expires, the client shall wait for a further @(CHA-T11)@ time before removing the client from the typing set and emitting the updated set to any subscribers.
+*** @(CHA-T6d2c) @[Testable]@ If the heartbeat represents a client that has stopped typing, then the chat client shall remove the typer from the typing set and emit the updated set to any subscribers. It shall also cancel the @(CHA-T10)@ timeout for the typing client.
 * @(CHA-T7)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in typing indicators. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For typing, there shouldn't need to be user action as the underlying core SDK will heal the presence set.
 
 h2(#occupancy). Occupancy
@@ -776,6 +798,19 @@ h3(#realtime-room-reactions). Ephemeral Room Reactions
   }
 </pre>
 
+h3(#realtime-typing-heartbeats). Typing Heartbeats
+
+<pre>
+  {
+    "name": "typing.started" | "typing.stopped"
+    "encoding": "json"
+    "data": {}
+    },
+    "timestamp": "1726232498871", // Only on incoming messages
+    "extras": {}
+  }
+</pre>
+
 h3(#rest-occupancy). Occupancy
 
 h4(#rest-occupancy-request). Request
@@ -925,10 +960,20 @@ h3(#chat-structs-presence-event). Presence Event
   }
 </pre>
 
-h3(#chat-structs-typing-event). Typing Event
+h3(#chat-structs-typing-event). Typing Event @(deprecated)@
 
 <pre>
   {
+    "currentlyTyping": ["clientId-1", "clientID-2"],
+  }
+</pre>
+
+h3(#chat-structs-typing-event-V2). Typing Event V2
+
+<pre>
+  {
+    "event": "typing.started" | "typing.stopped",
+    "clientId": "clientId-2",
     "currentlyTyping": ["clientId-1", "clientID-2"],
   }
 </pre>
