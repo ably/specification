@@ -420,7 +420,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 
 * @(CHA-T1)@ This specification point has been removed. It was superseded by @CHA-T8@.
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
-* @(CHA-T8)@ Typing Indicators for a Room are exposed on the main rom channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the channel will be @my-room::$chat@.
+* @(CHA-T8)@ Typing Indicators for a Room are exposed on the main room channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the channel will be @my-room::$chat@.
 * @(CHA-T9)@ @[Testable]@ Users may retrieve a list of the currently typing client IDs.
 * @(CHA-T3)@ @[Testable]@ Users may configure a typing timeout interval (the time after which the client will assume the user has stopped typing). This configuration is provided at the @RoomOptions.typing.timeoutMs@ property, or idiomatic equivalent. The default value is unset.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the period between typing heartbeats sent by the client). This configuration is provided at the @RoomOptions.typing.heartbeatIntervalMs@ property, or idiomatic equivalent. The default is 15000ms.
@@ -462,6 +462,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T13b2)@ @[Testable]@ Each additional typing heartbeat from the same client shall reset the @(CHA-T13b1)@ timeout.
 *** @(CHA-T13b3)@ @[Testable]@ If the @(CHA-T13b1)@ timeout expires, the client shall remove the subject from the typing set and emitting the updated set to any subscribers.
 *** @(CHA-T13b4)@ @[Testable]@ If the heartbeat represents a client that has stopped typing, then the chat client shall remove the typer from the typing set and emit the updated set to any subscribers. It shall also cancel the @(CHA-T13b1)@ timeout for the typing client.
+*** @(CHA-T13b5)@ @[Testable]@ If the heartbeat represents a client that has stopped typing, but the client is not known to be currently typing, the event is ignored.
 * @(CHA-T7)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in typing indicators. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For typing, there shouldn't need to be user action as the underlying core SDK will heal the presence set.
 
 h2(#occupancy). Occupancy
