@@ -965,8 +965,10 @@ h3(#chat-structs-typing-event-V2). Typing Event V2
 
 <pre>
   {
-    "event": "typing.started" | "typing.stopped",
-    "clientId": "clientId-2",
+    "change": {
+        "event": "typing.started",
+        "clientId": "clientId-2",
+    },
     "currentlyTyping": ["clientId-1", "clientID-2"],
   }
 </pre>
