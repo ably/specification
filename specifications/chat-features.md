@@ -939,8 +939,10 @@ Determining the global order of message versions may be achieved by lexicographi
 ### Typing Event V2 {#chat-structs-typing-event-V2}
 
       {
-        "event": "typing.started" | "typing.stopped",
-        "clientId": "clientId-2",
+        "change": {
+            "event": "typing.started",
+            "clientId": "clientId-2",
+        },
         "currentlyTyping": ["clientId-1", "clientID-2"],
       }
 
