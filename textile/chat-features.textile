@@ -273,6 +273,9 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M10e1)@ @[Testable]@ Two @Message@ instances of the same @serial@ are considered the same version if they have the same @version@ property.
 *** @(CHA-M10e2)@ @[Testable]@ Among @Message@ instances of the same @serial@, the one with a lexicographically higher @version@ is newer.
 *** @(CHA-M10e3)@ @[Testable]@ Among @Message@ instances of the same @serial@, the one with a lexicographically lower @version@ is older.
+** @(CHA-M10f) @[Testable]@ A message version may be deemed older than another via the @isOlderVersionOf@ convenience method. This method returns true IFF the two messages have the same serial, and the given message is "older" by @(CHA-M10e3)@.
+** @(CHA-M10g) @[Testable]@ A message version may be deemed newer than another via the @isNewerVersionOf@ convenience method. This method returns true IFF the two messages have the same serial, and the given message is "newer" by @(CHA-M10e2)@.
+** @(CHA-M10h) @[Testable]@ A message version may be deemed to be the same as another via the @isSameVersionAs@ convenience method. This method returns true IFF the two messages have the same serial, and are the same version by @(CHA-M10e1)@.
 * @(CHA-M3)@ A client must be able to send a message to a room.
 ** @(CHA-M3f)@ @[Testable]@ A client may send a message via the Chat REST API.
 ** @(CHA-M3a)@ @[Testable]@ When a message is sent successfully via the Chat REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message in response, as if it were received via Realtime event.
