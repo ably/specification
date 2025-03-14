@@ -422,9 +422,9 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
 * @(CHA-T8)@ Typing Indicators for a Room are exposed on the main room channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the channel will be @my-room::$chat@.
 * @(CHA-T9)@ @[Testable]@ Users may retrieve a list of the currently typing client IDs.
-* @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the period between typing heartbeats sent by the client). This configuration is provided at the @RoomOptions.typing.heartbeatIntervalMs@ property, or idiomatic equivalent. The default is 15000ms.
+* @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the period between typing heartbeats sent by the client). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
 ** @(CHA-T10a)@ @[Testable]@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving heartbeats). The value shall be set to 2000ms.
-*** @(CHA-T10a1)@ @[Testable]@ If a heartbeat is not received within this period, the client shall assume that the user has stopped typing. For example, if the client has not received a heartbeat within 17000ms of the last heartbeat (15s heartbeat interval plus 2s grace period), the client shall assume that the user has stopped typing.
+*** @(CHA-T10a1)@ @[Testable]@ If a heartbeat is not received within this period, the client shall assume that the user has stopped typing. For example, if the client has not received a heartbeat within 12000ms of the last heartbeat (10s heartbeat interval plus 2s grace period), the client shall assume that the user has stopped typing.
 * @(CHA-T4)@ Users may indicate that they have started typing.
 ** @(CHA-T4d)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T4a)@ If typing is not already in progress (i.e. a @CHA-T10@ timeout has not been defined):
