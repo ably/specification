@@ -75,7 +75,7 @@ The connection status of the Chat client closely reflects the status of the unde
 
 ### Room Statuses {#rooms-status}
 
-The status of any given Chat Room is the combination of the states of all of its constituent contributors. For more information on this, see [`Room Lifecycle`](#rooms-lifecycle).
+The status of any given Chat Room is determined by the state of the underlying realtime channel. For more information on this, see [`Room Lifecycle`](#rooms-lifecycle).
 
 - `(CHA-RS1)` Every room has a `status`, which describes the current status of the room.
   - `(CHA-RS1a)` The `INITIALIZED` status is the initial status before any attachment operations have taken place.
@@ -106,8 +106,6 @@ The status of any given Chat Room is the combination of the states of all of its
 ### Room Lifecycle {#rooms-lifecycle}
 
 Rooms are considered the atomic unit of chat underpinned by a realtime channel.
-
-Chat features are spread across multiple Realtime Channels. For the purpose of this section, a `contributor` is a feature in Chat that is considered as part of the overall room status, as well as its lifecycle. A `contributor` might share its realtime channel with another (e.g. messages and occupancy), or it might be entirely standalone (room reactions). In that sense, implementations of Room Lifecycle `MUST` make no assumptions over which realtime channels are in use or being shared, and treat every `contributor` as being entirely standalone.
 
 There are three room lifecycle operations: `ATTACH`, `DETACH`, `RELEASE`.
 
