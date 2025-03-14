@@ -104,18 +104,18 @@ The status of any given Chat Room is the combination of the states of all of its
 
 h3(#rooms-lifecycle). Room Lifecycle
 
-Rooms are considered the atomic unit of chat and comprise of potentially multiple underlying realtime channels. The status of the room is, broadly speaking, the combination of the respective underlying channel states (the rooms @contributors@). We present one unified status, rather than statuses for multiple individual features, as this is easier for developers to reason about.
+Rooms are considered the atomic unit of chat underpinned by a realtime channel.
 
 Chat features are spread across multiple Realtime Channels. For the purpose of this section, a @contributor@ is a feature in Chat that is considered as part of the overall room status, as well as its lifecycle. A @contributor@ might share its realtime channel with another (e.g. messages and occupancy), or it might be entirely standalone (room reactions). In that sense, implementations of Room Lifecycle @MUST@ make no assumptions over which realtime channels are in use or being shared, and treat every @contributor@ as being entirely standalone.
 
-There are four room lifecycle operations: @ATTACH@, @DETACH@, @RELEASE@ and @RETRY@. @RETRY@ is an internal-only operation. These operations are intended to be atomic and not interfere with each other, in order to preserve chat room integrity. How this is achieved is described in further specification items.
+There are three room lifecycle operations: @ATTACH@, @DETACH@, @RELEASE@.
 
-Discontinuities in Realtime connections happen - whereby continuity of message delivery is disrupted. Therefore each feature may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves. As such are events are normally associated with something going wrong, we only want to tell them that a discontinuity happened when everything has fixed itself. Therefore, when a discontinuity is noticed by us, we might not notify the user immediately, instead preferring to hold the event in pending until the right time. For more information on how to handle discontinuities, consult the room lifecycle specification points.
-
-In the same sense as discontinuities, sometimes connections drop momentarily - due to connection balancing by the Realtime system or simply bad internet connections. In Chat we try to avoid broadcasting these transient disconnects to users, so long as they don't affect continuity. Therefore, we tend to handle disconnections or detachments optimistically at first - hoping that they will resolve themselves, and only informing the user when it is clear that it may take longer than anticipated.
+Discontinuities in Realtime connections happen - whereby continuity of message delivery is disrupted. Therefore each feature may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves.
 
 h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 
+* @(CHA-RL13)@ The room lifecycle shall maintain a @isFirstAttach@ flag, which represents whether or not the next @ATTACHED@ channel state change is the first one received (i.e. the product of a call to @ATTACH@). It defaults to @false@.
+* @(CHA-RL14)@ The room lifecycle shall maintain a @isPostExplicitDetach@ flag, which represents whether or not the current room @DETACHED@ status is the result of a user-initiated @detach@ operation.
 * @(CHA-RL1)@ A room must be explicitly attached via the @ATTACH@ operation.
 ** @(CHA-RL1a)@ @[Testable]@ If the room is already in the @ATTACHED@ status, then this operation is no-op.
 ** @(CHA-RL1j)@ This specification point has been removed.
@@ -177,20 +177,6 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3e)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL3f)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL3g)@ This specification point has been removed. It was valid up until the single-channel migration.
-* @(CHA-RL5)@ A room must @RETRY@ whenever it enters the @SUSPENDED@ state. This specification point describes the behavior that is executed as a result of @CHA-RL4b9@ and @CHA-RL1h3@. The @RETRY@ operation is summarized as a loop that terminates either when a realtime channel enters the @FAILED@ state, or all channels are back in @ATTACHED@.
-** @(CHA-RL5a)@ @[Testable]@ When entering a @RETRY@ operation, the room must first @DETACH@ all contributors underlying realtime channels using a @CHA-RL2f@ detachment cycle, with the exception of the channel that became @SUSPENDED@.
-*** @(CHA-RL5a1)@ @[Testable]@ As many chat features share channels, the equality of contributors when deciding not to detach is based on their realtime channel, and not the contributor themselves. i.e. if two features share a realtime channel, and that channel is suspended, then that channel should not be detached.
-** @(CHA-RL5b)@ This specification point has been removed.
-** @(CHA-RL5c)@ @[Testable]@ If the operation above fails (i.e. the call to the @CHA-RL2f@ detach procedure fails), such that the room enters the @FAILED@ state, then the retry loop must stop.
-** @(CHA-RL5d)@ Once all channels (except the channel that entered @SUSPENDED@, per @CHA-RL5a@) have been detached, the room waits until the original channel that caused the retry loop naturally enters the @ATTACHED@ state. Automatic re-attachment is handled by the underlying Realtime SDK. Upon completion of the @CHA-RL5a@ detach procedure, the SDK must check if the channel has already entered a new state. If not, it shall subscribe to channel state updates to be notified.
-** @(CHA-RL5e)@ @[Testable]@ If, during the @CHA-RL5d@ wait, the channel state becomes @FAILED@ (either by being in that state after the @CHA-RL5a@ detach procedure completes, or via a state change event), then the room status is transitioned to @FAILED@ and the retry loop stops. The error associated with the transition is the error from the Realtime @ChannelStateChange@.
-** @(CHA-RL5f)@ @[Testable]@ If, during the @CHA-RL5d@ wait, the channel state becomes @ATTACHED@ (either by being in that state after the @CHA-RL5a@ detach procedure completes, or via a state change event), then the room status is transitioned to @ATTACHING@ to begin a new @CHA-RL1e@ attachment cycle. On successful completion, or terminal condition (room status is @FAILED@) the @RETRY@ loop terminates.
-*** @(CHA-RL5f1)@ This specification point has been removed. Refer to the @CHA-RL1e@ attachment cycle.
-*** @(CHA-RL5f2)@ This specification point has been removed. Refer to the @CHA-RL1e@ attachment cycle.
-*** @(CHA-RL5f3)@ This specification point has been removed. Refer to the @CHA-RL1e@ attachment cycle.
-* @(CHA-RL6)@ This specification point has been removed. It was superseded by @CHA-RL8@.
-* @(CHA-RL6a)@ This specification point has been removed. It was superseded by @CHA-RL8@.
-* @(CHA-RL8)@ This specification point has been removed. It was a duplicate of @CHA-RS3@.
 * @(CHA-RL7)@ Room lifecycle operations are atomic and exclusive operations: one operation must complete (whether that's failure or success) before the next one may begin.
 ** @(CHA-RL7a)@ @[Testable]@ Room lifecycle operations have a precedence. If multiple operations are scheduled to run, they run in the following order:
 *** @(CHA-RL7a1)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -200,30 +186,55 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL9a)@ @[Testable]@ When the room status is @ATTACHING@ at the point of operation commencement, the caller will subscribe a one-time listener to the room status.
 ** @(CHA-RL9b)@ @[Testable]@ If the next room status received by the caller is @ATTACHED@, the operation shall proceed as normal.
 ** @(CHA-RL9c)@ @[Testable]@ If the next room status received is any other value, the operation must throw an error. The @ErrorInfo@ shall have the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes, with a status code of @500@. The @cause@ field must contain any error associated with the room status change, if present.
-* @(CHA-RL10)@ @[Testable]@ When a specification point refers to operations on the underlying realtime channels (i.e. calls to attach and delete) being performed in sequence, the precedence of contributors must follow the order specified by @CHA-RC2e@.
+** @(CHA-RL9d)@ @[Testable]@ Once execution has resumed, the client MAY check the room status again, to handle spurious changes or race conditions.
+* @(CHA-RL10)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-RL5)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL5a)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL5a1)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL5b)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL5c)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL5d)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL5e)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL5f)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL5f1)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL5f2)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL5f3)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-RL6)@ This specification point has been removed. It was superseded by @CHA-RL8@.
+* @(CHA-RL6a)@ This specification point has been removed. It was superseded by @CHA-RL8@.
+* @(CHA-RL8)@ This specification point has been removed. It was a duplicate of @CHA-RS3@.
 
 h4(#rooms-lifecycle-monitoring). Room Lifecycle Monitoring
 
-As well as user-initiated operations, the room must monitor its underlying resources and act accordingly. This includes handling transient or long-term disconnection from Ably, as well as discontinuities in channel messages.
+As well as user-initiated operations, the room must monitor its underlying resources and act accordingly. This includes handling disconnections from the server, as well as discontinuities in channel messages.
 
-* @(CHA-RL4)@ A room must monitor the state of its @contributors@ Realtime Channels and act upon any changes.
-** @(CHA-RL4a)@ The state monitor must handle @UPDATE@ events from each contributors underlying Realtime Channel
-*** @(CHA-RL4a1)@ @[Testable]@ If the @resumed@ flag of the update is set to @true@, then no action should be taken (i.e. @CHA-RL4a3@ and @CHA-RL4a4@ behaviours are not performed).
-*** @(CHA-RL4a2)@ @[Testable]@ If the given contributor has not yet successfully managed to attach its Realtime Channel (i.e. no call to @attach()@ on the channel, per @CHA-RL1f@, has succeeded), then no action should be taken (i.e. @CHA-RL4a3@ and @CHA-RL4a4@ behaviours are not performed).
-*** @(CHA-RL4a3)@ @[Testable]@ If a room lifecycle operation is in progress, then a pending discontinuity event shall be recorded for this contributor - though it must not overwrite any existing discontinuity event. The @ErrorInfo@ associated with the discontinuity shall be the @reason@ for the underlying channel state change. The event will be notified to the contributor at a later point, as noted in this specification.
-*** @(CHA-RL4a4)@ @[Testable]@ If a room lifecycle operation is not in progress, then a discontinuity event will immediately be emitted to the contributor. The @ErrorInfo@ associated with the discontinuity shall be the @reason@ for the underlying channel state change.
-** @(CHA-RL4b)@ The state monitor must handle non-@UPDATE@ channel state events.
-*** @(CHA-RL4b1)@ @[Testable]@ If a room lifecycle operation is in progress, and the new channel state is @ATTACHED@, and the @resumed@ flag is false, @and@ the particular contributor has been attached previously (i.e. a previous call to @attach()@ on the channel, per @CHA-RL1f@, has succeeded), then a pending discontinuity event will be recorded for the contributor. The error associated with this event shall be the @reason@ for the channel state change.
-*** @(CHA-RL4b2)@ This specification point has been removed.
-*** @(CHA-RL4b3)@ This specification point has been removed.
-*** @(CHA-RL4b4)@ This specification point has been removed.
-*** @(CHA-RL4b5)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @FAILED@, then the room status shall be transitioned to @FAILED@, using the @reason@ for the channel state change as the @error@ for the room status change. All @transient disconnect timeouts@ are cancelled and a @CHA-RL2f@ detach procedure is performed.
-*** @(CHA-RL4b6)@ This specification point has been removed.
-*** @(CHA-RL4b7)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHING@ and no transient disconnect timeout exists for the contributor, then a transient disconnect timeout with a 5 second limit is created for the contributor. Upon timeout, the room status is transitioned to @ATTACHING@, using the @reason@ from the initial channel state change as the error for the transition.
-*** @(CHA-RL4b10)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @ATTACHED@ and a transient disconnect timeout exists for the contributor, the timeout is cleared.
-*** @(CHA-RL4b8)@ @[Testable]@ If a room lifecycle operation is not in progress, the channel state is @ATTACHED@, the room status is NOT @ATTACHED@ and all contibutors channel are now @ATTACHED@, the room status is transitioned to @ATTACHED@.
-*** @(CHA-RL4b9)@ @[Testable]@ If a room lifecycle operation is not in progress and the channel state is @SUSPENDED@, then the room status is transitioned to @SUSPENDED@, using the @reason@ of the channel state change as the error. Any transient disconnect timeouts are cancelled and the room enters the @RETRY@ loop.
-
+* @(CHA-RL4)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL4a)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4a1)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4a2)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4a3)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4a4)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL4b)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b1)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b2)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b3)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b4)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b5)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b6)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b7)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b8)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b9)@ This specification point has been removed. It was valid up until the single-channel migration.
+*** @(CHA-RL4b10)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-RL11)@ The room must monitor the underlying realtime channel state, and update the room status accordingly.
+** @(CHA-RL11a)@ @[Testable]@ The room will subscribe to channel state changes on the underlying realtime channel.
+** @(CHA-RL11b)@ @[Testable]@ If a room lifecycle operation is in progress and a channel state change is received, the operation is no-op.
+** @(CHA-RL11b)@ @[Testable]@ If a room lifecycle operation is not in progress and a channel state change is received, the operation is no-op, the room status is set according to the underlying channel state, along with any associated error.
+* @(CHA-RL12)@ The room must monitor the underlying realtime channel state and emit notifications of discontinuity.
+** @(CHA-RL12a)@ @[Testable]@ The room will subscribe to channel state changes on the underlying realtime channel, specifically @UPDATE@ and @ATTACHED@.
+** @(CHA-RL12b)@ @[Testable]@ If a channel state change is received, and the @resume@ flag is @false@, and the @isFirstAttach@ property is @false@ and the @isPostExplicitDetach@ flag is @false@, then a discontinuity event will be emitted, using an @ErrorInfo@ with the @RoomDiscontinuity@ code from the "error codes":#error-codes and the error from the @ChannelStateChange@ as the cause.
+* @(CHA-RL13)@ The room must allow users to subscribe to discontinuity events.
+** @(CHA-RL13a)@ @[Testable]@ The room must allow users to supply a listener that shall receive events when a room discontinuity is detected.
+** @(CHA-RL13b)@ @[Testable]@ Users must be able to unsubscribe a previously added listener, after which point events shall no longer be received.
+** @(CHA-RL13b)@ @[Testable]@ Attempting to unsubscribe a previously removed listener shall result in a no-op.
 
 h2(#room-configuration). Room Configuration
 
@@ -231,7 +242,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 
 * @(CHA-RC1)@ Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
 ** @(CHA-RC1a)@ This specification point has been removed. It was superseded by CHA-RC1f.
-** @(CHA-RC1f)@ @[Testable]@ Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and options.
+** @(CHA-RC1f)@ @[Testable]@ Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
 *** @(CHA-RC1f1)@ @[Testable]@ If the room id exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with code @40000@ is thrown.
 *** @(CHA-RC1f2)@ @[Testable]@ If the room id exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
 *** @(CHA-RC1f3)@ @[Testable]@ If no @CHA-RC1g@ release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
@@ -251,14 +262,18 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1g5)@ @[Testable]@ The room is removed from the room map and a @CHA-RL3@ release operation is initiated for the room object. A future is returned which resolves when the release operation completes.
 * @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain features. When requesting a room, options as to which features should be enabled, and the configuration they should take, must be provided (@RoomOptions@).
 ** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
-** @(CHA-RC2c)@ @[Testable]@ A room’s messages feature (@CHA-M*@) can not be disabled.
-** @(CHA-RC2b)@ @[Testable]@ If a room is configured to have a given feature disabled, then attempting to use that feature must result in an @ErrorInfo@ with code @40000@ being thrown.
-** @(CHA-RC2d)@ @[Testable]@ A room must create a lifecycle contributor for each of its enabled features and must not create a lifecycle contributor for any of its disabled features.
-** @(CHA-RC2e)@ @[Testable]@ The room lifecycle contributors have an order of precedence, which is the order in which operation sequences (e.g. attaches are applied to them). The order of precedence shall be: messages, presence, typing, reactions, occupancy.
-** @(CHA-RC2f)@ @[Testable]@ A room must only fetch a realtime channel if this channel is required by one of its lifecycle contributors.
-* @(CHA-RC3)@ Multiple features may share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
-** @(CHA-RC3a)@ @[Testable]@ When retrieving a channel via @channels.get()@, features that share a channel must merge together their respective options/modes and pass the merged result to the call to @channels.get()@.
+** @(CHA-RC2c)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RC2b)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RC2d)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RC2e)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RC2f)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-RC3)@ Multiple features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
+** @(CHA-RC3a)@ @[Testable]@ When retrieving a channel via @channels.get()@, features must merge together their respective options/modes and pass the merged result to the call to @channels.get()@.
 ** @(CHA-RC3b)@ Note: SDKs shall not rely on updating the value progressively via feature spec item @RTS3c@ - as this has been soft-deprecated and may be removed in the future.
+* @(CHA-RC4)@ Users may provide room options to the @rooms.get()@ call to control the behaviour of the room.
+** @(CHA-RC4a)@ @[Testable]@ Where room options have not been provided, the client shall provide defaults.
+** @(CHA-RC4b)@ @[Testable]@ Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
+* @(CHA-RC5)@ @[Testable]@ All chat feature properties (e.g. @room.messages@) are enabled by default. The specific behaviour of each feature is controlled by its respective room options.
 
 h2(#messages). Messages
 
@@ -267,7 +282,7 @@ Messages are the quintessential component of a chat room - the purpose of chat i
 Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.
 @Messages@ shall be exposed to consumers via the @messages@ property of a @Room@.
 
-* @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the messages channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat@. For example, if your room id is @my-room@ then the messages channel will be @my-room::$chat@.
 * @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 <div class=deprecated>
 ** @(CHA-M2a)@ @[Testable]@ @(deprecated)@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
@@ -336,7 +351,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M6)@ Messages should be queryable from a paginated REST API.
 * @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through. Each message must be represented by the standard @Message@ object.
 * @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
-* @(CHA-M7)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in messages that they need to resolve. Their listener will be called when a discontinuity event is triggered from the room lifecycle.
+* @(CHA-M7)@ This specification point has been removed. It was valid up until the single-channel migration.
 
 h2(#reactions). Ephemeral Room Reactions
 
@@ -348,10 +363,11 @@ All ephemeral room reactions are handled over the Realtime connection.
 
 @Reactions@ shall be exposed to consumers via the @reactions@ property of a @Room@.
 
-* @(CHA-ER1)@ Reactions for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$reactions@. For example, if your room id is @my-room@ then the reactions channel will be @my-room::$chat::$reactions@.
+* @(CHA-ER1)@ Reactions for a Room are sent on the realtime channel @<roomId>::$chat@. For example, if your room id is @my-room@ then the reactions channel will be @my-room::$chat@.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
-** @(CHA-ER3a)@ @[Testable]@ Reactions are sent on the channel using a message in "this format":#realtime-room-reactions.
+** @(CHA-ER3a)@ This specification point was removed. It was valid until the single-channel migration.
+** @(CHA-ER3d)@ @[Testable]@ Reactions are sent on the channel using an @ephemeral@ message in "this format":#realtime-room-reactions.
 ** @(CHA-ER3b)@ This clause has been deleted.
 ** @(CHA-ER3c)@ This clause has been deleted.
 * @(CHA-ER4)@ A user may subscribe to reaction events in Realtime.
@@ -359,7 +375,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 ** @(CHA-ER4b)@ @[Testable]@ A user may unsubscribe a registered listener. This operation must have no side-effects in relation to room or underlying status. Once unsubscribed, subsequent reaction events must not be emitted to this listener.
 ** @(CHA-ER4c)@ @[Testable]@ Realtime events with an unknown @name@ shall be silently discarded.
 ** @(CHA-ER4d)@ @[Testable]@ Realtime events that are malformed (unknown fields should be ignored) shall not be emitted to listeners.
-* @(CHA-ER5)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in reactions that they need to resolve. Their listener will be called when a discontinuity event is triggered from the room lifecycle.
+* @(CHA-ER5)@ This specification point has been removed. It was valid up until the single-channel migration.
 
 h2(#presence). Online Status (Presence)
 
@@ -367,7 +383,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 
 @Presence@ shall be exposed to consumers via the @presence@ property of a @Room@.
 
-* @(CHA-PR1)@ Presence for a Room is exposed on the realtime channel used for chat messages, in the format @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-PR1)@ Presence for a Room is exposed on a realtime channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat@.
 * @(CHA-PR2)@ The presence payload for Chat is opinionated, so that we may add or change fields later without needing to consider how customers are using presence.
 ** @(CHA-PR2a)@ @[Testable]@ The presence data format is a JSON object as described below. Customers may specify an arbitrary "JSON @value@":https://www.json.org to be placed in the @userCustomData@ field.
 
@@ -417,7 +433,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event in a room.
 ** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
 ** @(CHA-PR7c)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
-* @(CHA-PR8)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in presence. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For presence, there shouldn't need to be user action as the underlying core SDK will heal the presence set.
+* @(CHA-PR8)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
 ** @(CHA-PR9a)@ @[Testable]@ If @enter@ is set to true, then the presence feature must set the @PRESENCE@ mode on the underlying Realtime channel. The default value is true.
 ** @(CHA-PR9b)@ @[Testable]@ If @subscribe@ is set to true, then presence feature must set the @PRESENCE_SUBSCRIBE@ mode on the underlying realtime channel. The default value is true. Note that setting this to false does not prevent the client from receiving its own presence messages, but it will not receive them from others.
@@ -465,6 +481,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T6c)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c1)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c2)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
+* @(CHA-T7)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to all registered listeners @(CHA-T15)@.
 ** @(CHA-T13a)@ @[Testable]@ Typing events received from the server must have a valid @clientId@ and must not be malformed, i.e they must conform to the expected "payload":#realtime-typing-message (unknown fields should be ignored). Invalid events shall not be handled or emitted to any registered listeners (@CHA-T15@).
 ** @(CHA-T13b)@ @[Testable]@ When a typing event is received on the realtime client:
@@ -487,7 +504,7 @@ the overhead of having everyone in presence.
 
 @Occupancy@ shall be exposed to consumers via the @occupancy@ property of a @Room@.
 
-* @(CHA-O1)@ Occupancy for a room is exposed on the realtime channel used for chat messages, in the format @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat::$chatMessages@.
+* @(CHA-O1)@ Occupancy for a room is exposed on a realtime channel in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat@.
 * @(CHA-O2)@ The occupancy event format is shown "here":#chat-structs-occupancy-event
 * @(CHA-O3)@ @[Testable]@ Users can request an instantaneous occupancy check via the REST API. The request is detailed "here":#rest-occupancy-request, with the response format being a simple "occupancy event":#chat-structs-occupancy-event
 * @(CHA-O4)@ Users can subscribe to in-band, realtime occupancy updates.
@@ -496,7 +513,11 @@ the overhead of having everyone in presence.
 ** @(CHA-O4c)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event":#chat-structs-occupancy-event format and broadcast it to subscribers.
 ** @(CHA-O4d)@ @[Testable]@ If an invalid occupancy event is received on the channel, it shall be dropped.
 to typing subscribers.
-* @(CHA-O5)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in occupancy. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For occupancy, there shouldn't need to be user action as most channels will send occupancy updates regularly as clients churn.
+* @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-O6)@ Enabling inband occupancy causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
+** @(CHA-O6a)@ @[Testable]@ If the @occupancy.enableInboundOccupancy@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
+** @(CHA-O6b)@ @[Testable]@ If the @occupancy.enableInboundOccupancy@ is set to @false@, then the client shall not set the @options.params.occupancy@ channel parameter.
+** @(CHA-O6c)@ @[Testable]@ The default value of @occupancy.enableInboundOccupancy@ is @false@.
 
 h2(#rest-api). Chat HTTP REST API
 
@@ -508,12 +529,12 @@ h3(#rest-general). General
 
 h3(#rest-sending-messages). Sending Messages
 
-h4(#rest-sending-messages-request-v1). Request V1 @(deprecated)@
+h4(#rest-sending-messages-request-v3). Request V3
 
-Below is the full REST payload format for the V1 endpoint. The @metadata@ and @headers@ keys are optional.
+Below is the full REST payload format for the V3 endpoint. The @metadata@ and @headers@ keys are optional.
 
 <pre>
-  POST /chat/v1/rooms/<roomId>/messages
+  POST /chat/v3/rooms/<roomId>/messages
   {
     "text": "the message text",
     "metadata": {
@@ -527,63 +548,7 @@ Below is the full REST payload format for the V1 endpoint. The @metadata@ and @h
   }
 </pre>
 
-h4(#rest-sending-messages-request-v1). Response V1 @(deprecated)@
-
-A successful request shall result in status code @201 Created@.
-
-The response body is as follows.
-
-<pre>
-  {
-    "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
-    "createdAt": 1726232498871
-  }
-</pre>
-
-h4(#rest-sending-messages-request-v1). Corresponding Realtime Event V1 @(deprecated)@
-
-<pre>
-  {
-    "name": "chat.message"
-    "encoding": "json"
-    "data": {
-      "text": "the message text",
-      "metadata": {
-        "foo": {
-          "bar": 1
-        }
-      }
-    },
-    "timestamp": "1726232498871",
-    "extras": {
-      "headers": {
-        "baz": "qux"
-      },
-      "timeserial": "cbfqxperABgItU52203559@1726232498871-0"
-    }
-  }
-</pre>
-
-h4(#rest-sending-messages-request-v2). Request V2
-
-Below is the full REST payload format for the V2 endpoint. The @metadata@ and @headers@ keys are optional.
-
-<pre>
-  POST /chat/v2/rooms/<roomId>/messages
-  {
-    "text": "the message text",
-    "metadata": {
-      "foo": {
-        "bar": 1
-      }
-    },
-    "headers": {
-      "baz": "qux"
-    }
-  }
-</pre>
-
-h4(#rest-sending-messages-request-v2). Response V2
+h4(#rest-sending-messages-response-v3). Response V3
 
 A successful request shall result in status code @201 Created@.
 
@@ -596,7 +561,7 @@ The response body is as follows.
   }
 </pre>
 
-h4(#rest-sending-messages-request-v2). Corresponding Realtime Event V2
+h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3
 
 <pre>
   {
@@ -631,7 +596,7 @@ h4(#rest-updating-messages-request). Request
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
 
 <pre>
-  PUT /chat/v2/rooms/<roomId>/messages/<serial>
+  PUT /chat/v3/rooms/<roomId>/messages/<serial>
   {
     "message": {
       "text": "the new message text",
@@ -705,7 +670,7 @@ h4(#rest-deleting-messages-request). Request
 Below is the full REST payload format for the endpoint.
 
 <pre>
-  POST /chat/v2/rooms/<roomId>/messages/<serial>/delete
+  POST /chat/v3/rooms/<roomId>/messages/<serial>/delete
   {
     "description": "why-the-action-was-performed"
     "metadata": {
@@ -764,27 +729,15 @@ h4(#rest-deleting-messages-request). Corresponding Realtime Event
 
 h3(#rest-fetching-messages). Fetching Message History
 
-h4(#rest-fetching-messages-request-v1). Request V1 @(deprecated)@
+h4(#rest-fetching-messages-request). Request V3
 
 <pre>
-  GET /chat/v1/rooms/<roomId>/messages
+  GET /chat/v3/rooms/<roomId>/messages
 </pre>
 
 The method accepts query parameters identical to the standard Ably REST API.
 
-h4(#rest-fetching-messages-response). Response V1 @(deprecated)@
-
-An array of "@Message@ structs":#chat-structs-message
-
-h4(#rest-fetching-messages-request). Request V2
-
-<pre>
-  GET /chat/v2/rooms/<roomId>/messages
-</pre>
-
-The method accepts query parameters identical to the standard Ably REST API.
-
-h4(#rest-fetching-messages-response). Response V2
+h4(#rest-fetching-messages-response). Response V3
 
 An array of V2 "@Message@ structs":#chat-structs-message-v2
 
@@ -811,6 +764,7 @@ h3(#realtime-room-reactions). Ephemeral Room Reactions
       "headers": {
         "baz": "qux"
       },
+      "ephemeral": true, // This is set by the Chat SDK
     }
   }
 </pre>
@@ -830,7 +784,7 @@ h3(#rest-occupancy). Occupancy
 h4(#rest-occupancy-request). Request
 
 <pre>
-  GET /chat/v1/rooms/<roomId>/occupancy
+  GET /chat/v3/rooms/<roomId>/occupancy
 </pre>
 
 h4(#rest-occupancy-response). Response
@@ -1010,6 +964,10 @@ This section contains error codes that are specific to Chat. If a specific error
 For non-chat-specific codes, the status code for the error should align with the error code. For example, error code @40000@ should hav status code @400@.
 
 <pre>
+
+  // The request was invalid.
+  BadRequest = 40000,
+
   // The message was rejected before publishing by a rule on the chat room.
   // To be accompanied by status code 422
   MessageRejectedByBeforePublishRule = 42211
@@ -1017,48 +975,6 @@ For non-chat-specific codes, the status code for the error should align with the
   // The message was rejected before publishing by a moderation rule on the chat room.
   // To be accompanied by status code 422
   MessageRejectedByModeration = 42213
-
-  // The messages feature failed to attach.
-  // To be accompanied with status code 500.
-  MessagesAttachmentFailed = 102001
-
-  // The presence feature failed to attach.
-  // To be accompanied with status code 500.
-  PresenceAttachmentFailed = 102002
-
-  // The reactions feature failed to attach.
-  // To be accompanied with status code 500.
-  ReactionsAttachmentFailed = 102003
-
-  // The occupancy feature failed to attach.
-  // To be accompanied with status code 500.
-  OccupancyAttachmentFailed = 102004
-
-  // The typing feature failed to attach.
-  // To be accompanied with status code 500.
-  TypingAttachmentFailed = 102005
-  // 102006 - 102049 reserved for future use for attachment errors
-
-  // The messages feature failed to detach.
-  // To be accompanied with status code 500.
-  MessagesDetachmentFailed = 102050
-
-  // The presence feature failed to detach.
-  // To be accompanied with status code 500.
-  PresenceDetachmentFailed = 102051
-
-  // The reactions feature failed to detach.
-  // To be accompanied with status code 500.
-  ReactionsDetachmentFailed = 102052
-
-  // The occupancy feature failed to detach.
-  // To be accompanied with status code 500.
-  OccupancyDetachmentFailed = 102053
-
-  // The typing feature failed to detach.
-  // To be accompanied with status code 500.
-  TypingDetachmentFailed = 102054
-  // 102055 - 102099 reserved for future use for detachment errors
 
   // The room has experienced a discontinuity.
   // To be accompanied with status code 500.
@@ -1089,8 +1005,4 @@ For non-chat-specific codes, the status code for the error should align with the
   // Room was released before the operation could complete.
   // To be accompanied with status code 400.
   RoomReleasedBeforeOperationCompleted = 102106
-
-  // The room operation failed because the room was in an invalid state
-  // This error may be accompanied with status code 400 or 500, depending on the source of the error.
-  RoomInInvalidState = 102107
 </pre>
