@@ -418,6 +418,8 @@ Describes the possible flags used to configure client capabilities, using [`Chan
 | PUBLISH || The client can publish messages. |
 | SUBSCRIBE || The client can subscribe to messages. |
 | PRESENCE_SUBSCRIBE || The client can receive presence messages. |
+| OBJECT_PUBLISH || The client can publish object messages. |
+| OBJECT_SUBSCRIBE || The client can receive object messages. |
 
 ## class ChannelStateChange
 
@@ -492,6 +494,8 @@ Contains the metrics associated with a [`RestChannel`]{@link RestChannel} or [`R
 | presenceSubscribers: Int ||| CHM2d | The number of realtime attachments receiving presence messages on the channel. This requires the `subscribe` capability and for a client to not have specified a [`ChannelMode`]{@link ChannelMode} flag that excludes [`PRESENCE_SUBSCRIBE`]{@link ChannelMode#PRESENCE_SUBSCRIBE}. |
 | publishers: Int ||| CHM2e | The number of realtime attachments permitted to publish messages to the channel. This requires the `publish` capability and for a client to not have specified a [`ChannelMode`]{@link ChannelMode} flag that excludes [`PUBLISH`]{@link ChannelMode#PUBLISH}. |
 | subscribers: Int ||| CHM2f | The number of realtime attachments receiving messages on the channel. This requires the `subscribe` capability and for a client to not have specified a [`ChannelMode`]{@link ChannelMode} flag that excludes [`SUBSCRIBE`]{@link ChannelMode#SUBSCRIBE}. |
+| objectPublishers: Int ||| CHM2g | The number of realtime attachments permitted to publish object messages to the channel. This requires the `object-publish` capability and for a client to have specified a [`ChannelMode`]{@link ChannelMode} flag that includes [`OBJECT_PUBLISH`]{@link ChannelMode#OBJECT_PUBLISH}. |
+| objectSubscribers: Int ||| CHM2h | The number of realtime attachments receiving object messages on the channel. This requires the `object-subscribe` capability and for a client to have specified a [`ChannelMode`]{@link ChannelMode} flag that includes [`OBJECT_SUBSCRIBE`]{@link ChannelMode#OBJECT_SUBSCRIBE}. |
 
 ## class CipherParams
 
