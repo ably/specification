@@ -334,7 +334,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 
 @Reactions@ shall be exposed to consumers via the @reactions@ property of a @Room@.
 
-* @(CHA-ER1)@ Reactions for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$roomReactions@. For example, if your room id is @my-room@ then the reactions channel will be @my-room::$chat::$roomReactions@.
+* @(CHA-ER1)@ Reactions for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$reactions@. For example, if your room id is @my-room@ then the reactions channel will be @my-room::$chat::$reactions@.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ @[Testable]@ Reactions are sent on the channel using a message in "this format":#realtime-room-reactions.
