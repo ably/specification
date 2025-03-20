@@ -427,13 +427,13 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T10a1)@ @[Testable]@ If a heartbeat is not received within this period, the client shall assume that the user has stopped typing. For example, if the client has not received a heartbeat within 12000ms of the last heartbeat (10s heartbeat interval plus 2s grace period), the client shall assume that the user has stopped typing.
 * @(CHA-T4)@ Users may indicate that they have started typing.
 ** @(CHA-T4d)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
-** @(CHA-T4a)@ If typing is not already in progress (i.e. a @CHA-T10@ timeout has not been defined):
+** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer using @CHA-T10@ as a timeout has not been defined):
 *** @(CHA-T4a1)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
 *** @(CHA-T4a2)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
 *** @(CHA-T4a3)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.started@, the format of which is detailed "here":#realtime-typing-heartbeat.
-*** @(CHA-T4a4)@ @[Testable]@ Upon successful publish, a timeout shall be set according to the @CHA-T10@ timeout interval.
+*** @(CHA-T4a4)@ @[Testable]@ Upon successful publish, a heartbeat timer shall be set according to the @CHA-T10@ timeout interval.
 ** @(CHA-T4b)@ This specification point has been removed. It was superseded by @CHA-T4c@.
-** @(CHA-T4c)@ If typing is already in progress (i.e. a @CHA-T10@ timeout has been defined):
+** @(CHA-T4c)@ If typing is already in progress (i.e. a heartbeat timer set according to @CHA-T4a4@ not expired yet):
 *** @(CHA-T4c1)@ @[Testable]@ The client must not send a @typing.started@ event.
 * @(CHA-T5)@ Users may explicitly indicate that they have stopped typing.
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. no @CHA-T10@ timeout has been defined), this operation is no-op.
@@ -455,6 +455,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T13b3)@ @[Testable]@ If the @(CHA-T13b1)@ timeout expires, the client shall remove the subject from the typing set and emitting the updated set to any subscribers.
 *** @(CHA-T13b4)@ @[Testable]@ If the heartbeat represents a client that has stopped typing, then the chat client shall remove the typer from the typing set and emit the updated set to any subscribers. It shall also cancel the @(CHA-T13b1)@ timeout for the typing client.
 *** @(CHA-T13b5)@ @[Testable]@ If the heartbeat represents a client that has stopped typing, but the client is not known to be currently typing, the event is ignored.
+* @(CHA-T14)@ @[Testable]@ Handling multiple asynchronous calls to start/stop typing must converge to a consistent state. For example, a user begins typing, but publishing an event to the server takes some time, and the user calls @stop()@ typing before the first call completes. The client shall not send a @typing.stopped@ event and then a subsequent @typing.started@ event, it shall wait for the successful completion or failure of the first call before proceeding.
 * @(CHA-T7)@ @[Testable]@ Users may subscribe to discontinuity events to know when there's been a break in typing indicators. Their listener will be called when a discontinuity event is triggered from the room lifecycle. For typing, there shouldn't need to be user action as the underlying core SDK will heal the presence set.
 
 h2(#occupancy). Occupancy
