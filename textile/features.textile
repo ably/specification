@@ -746,7 +746,7 @@ h3(#realtime-channel). RealtimeChannel
 * @(RTL12)@ An attached channel may receive an additional @ATTACHED@ @ProtocolMessage@ from Ably at any point. (This is typically triggered following a transport being resumed to indicate a partial loss of message continuity on that channel, in which case the @ProtocolMessage@ will have a @resumed@ flag set to false). If and only if the @resumed@ flag is false, this should result in the channel emitting an @UPDATE@ event with a @ChannelStateChange@ object. The @ChannelStateChange@ object should have both @previous@ and @current@ attributes set to @attached@, the @reason@ attribute set to to the @error@ member of the @ATTACHED@ @ProtocolMessage@ (if any), and the @resumed@ attribute set per the @RESUMED@ bitflag of the @ATTACHED@ @ProtocolMessage@. (Note that @UPDATE@ should be the only event emitted: in particular, the library must not emit an @ATTACHED@ event if the channel was already attached, see @RTL2g@).
 * @(RTL15)@ @RealtimeChannel#properties@ attribute is a @ChannelProperties@ object representing properties of the channel state. @properties@ is a publicly accessible member of the channel, but it is an experimental and unstable API. It has the following attributes:
 ** @(RTL15a)@ @attachSerial@ is unset when the channel is instantiated, and is updated with the @channelSerial@ from each @ATTACHED@ @ProtocolMessage@ received from Ably with a matching @channel@ attribute. The @attachSerial@ value is used for @untilAttach@ queries, see "RTL10b":#RTL10b
-** @(RTL15b)@ @channelSerial@ is updated whenever a @ProtocolMessage@ with either @MESSAGE@, @PRESENCE@, or @ATTACHED@ actions is received on a channel, and is set to the @TR4c@ @channelSerial@ of that @ProtocolMessage@, if and only if that field (@ProtocolMessage.channelSerial@) is populated.
+** @(RTL15b)@ @channelSerial@ is updated whenever a @ProtocolMessage@ with either @MESSAGE@, @PRESENCE@, @OBJECT@, or @ATTACHED@ actions is received on a channel, and is set to the @TR4c@ @channelSerial@ of that @ProtocolMessage@, if and only if that field (@ProtocolMessage.channelSerial@) is populated.
 * @(RTL13)@ If the channel receives a server initiated @DETACHED@ message when it is in the @ATTACHING@, @ATTACHED@ or @SUSPENDED@ state (i.e. the client has not explicitly requested a detach putting the channel into the @DETACHING@ state), then the following applies:
 ** @(RTL13a)@ If the channel is in the @ATTACHED@ or @SUSPENDED@ states, an attempt to reattach the channel should be made immediately by sending a new @ATTACH@ message and the channel should transition to the @ATTACHING@ state with the error emitted in the @ChannelStateChange@ event.
 ** @(RTL13b)@ If the attempt to re-attach fails, or if the channel was already in the @ATTACHING@ state, the channel will transition to the @SUSPENDED@ state and the error will be emitted in the @ChannelStateChange@ event. An attempt to re-attach the channel automatically will then be made after the period defined by "@RTB1@":#RTB1. When re-attaching the channel, the channel will transition to the @ATTACHING@ state. If that request to attach fails i.e. it times out or a @DETACHED@ message is received, then the process described here in @RTL13b@ will be repeated, indefinitely
@@ -1383,6 +1383,12 @@ h4. Message
 *** @(TM2n3)@ @metadata@ object - used to contain any arbitrary key value pairs of type string.
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
+* @(TM6)@ The size of the @Message@ for "TO3l8":#TO3l8 is calculated as follows:
+** @(TM6a)@ The size is the sum of the sizes of the @name@, @data@, @clientId@, and @extras@ properties
+** @(TM6b)@ The size of an @Object@ or @Array@ @data@ property is its string length after being JSON-stringified
+** @(TM6c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+** @(TM6d)@ The size of the @extras@ property is the string length of its JSON representation
+** @(TM6e)@ The size of a @null@ or omitted property is zero
 
 h4. DeltaExtras
 
@@ -1406,22 +1412,153 @@ h4. PresenceMessage
 ** @(TP3g)@ @timestamp@ time in milliseconds since epoch. If a presence message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TP3h)@ @memberKey@ string function that combines the @connectionId@ and @clientId@ ensuring multiple connected clients with the same clientId are uniquely identifiable
 * @(TP4)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @PresenceMessage@-like object (or array of such objects), and optionally a @channelOptions@, and return a @PresenceMessage@ (or array of such @PresenceMessages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves. This behaviour is the same as in @(TM3)@.
+* @(TP5)@ The size of the @PresenceMessage@ for "TO3l8":#TO3l8 is calculated in the same way as for @Message@; see "TM6":#TM6
+
+h4. ObjectMessage
+
+* @(OM1)@ An @ObjectMessage@ represents an individual object message to be sent or received via the Ably Realtime service
+* @(OM2)@ The attributes available in an @ObjectMessage@ are:
+** @(OM2a)@ @id@ string - unique ID for this object message. This attribute is always populated for object messages received over REST. For object messages received over Realtime, if the object message does not contain an @id@, it should be set to @protocolMsgId:index@, where @protocolMsgId@ is the id of the @ProtocolMessage@ encapsulating it, and @index@ is the index of the object message inside the @state@ array of the @ProtocolMessage@
+** @(OM2b)@ @clientId@ string
+** @(OM2c)@ @connectionId@ string. If an object message received from Ably does not contain a @connectionId@, it should be set to the @connectionId@ of the encapsulating @ProtocolMessage@
+** @(OM2d)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality. For 3.1 no specific functionality is specified for @extras@ in object messages. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered
+** @(OM2e)@ @timestamp@ time in milliseconds since epoch. If an object message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
+** @(OM2f)@ @operation@ @ObjectOperation@ object. Mutually exclusive with the @object@ field. This field is only set on object messages if the @action@ field of the @ProtocolMessage@ encapsulating it is @OBJECT@
+** @(OM2g)@ @object@ @ObjectState@ object. Mutually exclusive with the @operation@ field. This field is only set on object messages if the @action@ field of the @ProtocolMessage@ encapsulating it is @OBJECT_SYNC@
+** @(OM2h)@ @serial@ string - an opaque string that uniquely identifies this object message
+** @(OM2i)@ @siteCode@ string - an opaque string used as a key to update the map of @serial@ values on an object
+* @(OM3)@ The size of the @ObjectMessage@ for "TO3l8":#TO3l8 is calculated as follows:
+** @(OM3a)@ The size is the sum of the sizes of the @clientId@, @operation@, @object@, and @extras@ properties
+** @(OM3b)@ The size of the @operation@ property is calculated per "OOP4":#OOP4
+** @(OM3c)@ The size of the @object@ property is calculated per "OST3":#OST3
+** @(OM3d)@ The size of the @extras@ property is the string length of its JSON representation
+** @(OM3e)@ The size of a @null@ or omitted property is zero
+
+h4. ObjectOperation
+
+* @(OOP1)@ An @ObjectOperation@ describes an operation to be applied to an object on a channel
+* @(OOP2)@ @ObjectOperation@ @Action@ enum has the following values in order from zero: @MAP_CREATE@, @MAP_SET@, @MAP_REMOVE@, @COUNTER_CREATE@, @COUNTER_INC@, @OBJECT_DELETE@
+* @(OOP3)@ The attributes available in an @ObjectOperation@ are:
+** @(OOP3a)@ @action@ enum - defines the operation to be applied to the object
+** @(OOP3b)@ @objectId@ string - the object ID of the object on a channel to which the operation should be applied
+** @(OOP3c)@ @mapOp@ @MapOp@ object - the payload for the operation if it is an operation on a @Map@ object type
+** @(OOP3d)@ @counterOp@ @CounterOp@ object - the payload for the operation if it is an operation on a @Counter@ object type
+** @(OOP3e)@ @map@ @Map@ object - the payload for the operation if the operation is @MAP_CREATE@. Defines the initial value for the @Map@ object
+** @(OOP3f)@ @counter@ @Counter@ object - the payload for the operation if the operation is @COUNTER_CREATE@. Defines the initial value for the @Counter@ object
+** @(OOP3g)@ @nonce@ string - the nonce, must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server
+** @(OOP3h)@ @initialValue@ binary - the initial value bytes for the object
+** @(OOP3i)@ @initialValueEncoding@ string - defines how the @initialValue@ should be interpreted. Should be @msgpack@ or @json@
+* @(OOP4)@ The size of the @ObjectOperation@ is calculated as follows:
+** @(OOP4a)@ The size is the sum of the sizes of the @mapOp@, @counterOp@, @map@, and @counter@ properties
+** @(OOP4b)@ The size of the @mapOp@ property is calculated per "MOP3":#MOP3
+** @(OOP4c)@ The size of the @counterOp@ property is calculated per "COP3":#COP3
+** @(OOP4d)@ The size of the @map@ property is calculated per "MAP4":#MAP4
+** @(OOP4e)@ The size of the @counter@ property is calculated per "CNT3":#CNT3
+** @(OOP4f)@ The size of a @null@ or omitted property is zero
+
+h4. ObjectState
+
+* @(OST1)@ An @ObjectState@ describes the instantaneous state of an object on a channel
+* @(OST2)@ The attributes available in an @ObjectState@ are:
+** @(OST2a)@ @objectId@ string - the identifier of the object
+** @(OST2b)@ @siteTimeserials@ @Dict<String, String>@ - a map of "serials":#OM2h keyed by "siteCode":#OM2i, representing the last operations applied to this object
+** @(OST2c)@ @tombstone@ boolean - true if the object has been tombstoned
+** @(OST2d)@ @createOp@ @ObjectOperation@ object - the operation that created the object
+** @(OST2e)@ @map@ @Map@ object - the data that represents the state of the object if it is a @Map@ object type
+** @(OST2f)@ @counter@ @Counter@ object - the data that represents the state of the object if it is a @Counter@ object type
+* @(OST3)@ The size of the @ObjectState@ is calculated as follows:
+** @(OST3a)@ The size is the sum of the sizes of the @map@, @counter@, and @createOp@ properties
+** @(OST3b)@ The size of the @map@ property is calculated per "MAP4":#MAP4
+** @(OST3c)@ The size of the @counter@ property is calculated per "CNT3":#CNT3
+** @(OST3d)@ The size of the @createOp@ property is calculated per "OOP4":#OOP4
+** @(OST3e)@ The size of a @null@ or omitted property is zero
+
+h4. MapOp
+
+* @(MOP1)@ A @MapOp@ describes an operation to be applied to a @Map@ object
+* @(MOP2)@ The attributes available in a @MapOp@ are:
+** @(MOP2a)@ @key@ string - the key of the map entry to which the operation should be applied
+** @(MOP2b)@ @data@ @ObjectData@ object - the data that the map entry should contain if the operation is a @MAP_SET@ operation
+* @(MOP3)@ The size of the @MapOp@ is calculated as follows:
+** @(MOP3a)@ The size is the sum of the sizes of the @key@ and @data@ properties
+** @(MOP3b)@ The size of the @data@ property is calculated per "OD3":#OD3
+** @(MOP3c)@ The size of a @null@ or omitted property is zero
+
+h4. CounterOp
+
+* @(COP1)@ A @CounterOp@ describes an operation to be applied to a @Counter@ object
+* @(COP2)@ The attributes available in a @CounterOp@ are:
+** @(COP2a)@ @amount@ number - the data value that should be added to the counter
+* @(COP3)@ The size of the @CounterOp@ is calculated as follows:
+** @(COP3a)@ The size is 8 if @amount@ is a number
+** @(COP3b)@ The size is 0 if @amount@ is a @null@ or omitted
+
+h4. Map
+
+* @(MAP1)@ A @Map@ object represents a map of key-value pairs
+* @(MAP2)@ @Map@ @Semantics@ enum has the following values in order from zero: @LWW@
+* @(MAP3)@ The attributes available in a @Map@ are:
+** @(MAP3a)@ @semantics@ @Semantics@ enum - the conflict-resolution semantics used by the map object
+** @(MAP3b)@ @map@ @Dict<String, MapEntry>@ - the map entries, indexed by key
+* @(MAP4)@ The size of the @Map@ is calculated as follows:
+** @(MAP4a)@ The size is the sum of the sizes of all map entries in @map@ property
+*** @(MAP4a1)@ Includes the size of the @String@ key for the map entry
+*** @(MAP4a2)@ Includes the size of the @MapEntry@ object for the map entry, calculated per "ME3":#ME3
+** @(MAP4b)@ The size of a @null@ or omitted property is zero
+
+h4. Counter
+
+* @(CNT1)@ A @Counter@ object represents an incrementable and decrementable value
+* @(CNT2)@ The attributes available in a @Counter@ are:
+** @(CNT2a)@ @count@ number - the value of the counter
+* @(CNT3)@ The size of the @Counter@ is calculated as follows:
+** @(CNT3a)@ The size is 8 if @count@ is a number
+** @(CNT3b)@ The size is 0 if @count@ is a @null@ or omitted
+
+h4. MapEntry
+
+* @(ME1)@ A @MapEntry@ represents the value at a given key in a @Map@ object
+* @(ME2)@ The attributes available in a @MapEntry@ are:
+** @(ME2a)@ @tombstone@ boolean - indicates whether the map entry has been removed
+** @(ME2b)@ @timeserial@ string - the @serial@#OM2h value of the last operation that was applied to the map entry
+** @(ME2c)@ @data@ @ObjectData@ object - the data that represents the value of the map entry.
+* @(ME3)@ The size of the @MapEntry@ is calculated as follows:
+** @(ME3a)@ It is equal to the size of the @data@ property
+** @(ME3b)@ The size of the @data@ property is calculated per "OD3":#OD3
+** @(ME3c)@ The size of a @null@ or omitted property is zero
+
+h4. ObjectData
+
+* @(OD1)@ An @ObjectData@ represents a value in an object on a channel
+* @(OD2)@ The attributes available in an @ObjectData@ are:
+** @(OD2a)@ @objectId@ string - a reference to another object
+** @(OD2b)@ @encoding@ string - the encoding the client library should use to interpret the @value@
+** @(OD2c)@ @value@ string, number, boolean or binary - a concrete value of the object
+* @(OD3)@ The size of the @ObjectData@ is calculated as follows:
+** @(OD3a)@ It is equal to the size of the @value@ property
+** @(OD3b)@ The size of a @binary@ @value@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+** @(OD3c)@ The size of a @number@ @value@ property is 8
+** @(OD3d)@ The size of a @boolean@ @value@ property is 1
+** @(OD3e)@ The size of a @null@ or omitted property is zero
 
 h4. ProtocolMessage
 
 * @(TR1)@ A @ProtocolMessage@ represents the type used to send and receive messages over the Realtime protocol.  A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages.
-* @(TR2)@ @ProtocolMessage@ @Action@ enum has the following values in order from zero: @HEARTBEAT@, @ACK@, @NACK@, @CONNECT@, @CONNECTED@, @DISCONNECT@, @DISCONNECTED@, @CLOSE@, @CLOSED@, @ERROR@, @ATTACH@, @ATTACHED@, @DETACH@, @DETACHED@, @PRESENCE@, @MESSAGE@, @SYNC@, @AUTH@, @ACTIVATE@
+* @(TR2)@ @ProtocolMessage@ @Action@ enum has the following values in order from zero: @HEARTBEAT@, @ACK@, @NACK@, @CONNECT@, @CONNECTED@, @DISCONNECT@, @DISCONNECTED@, @CLOSE@, @CLOSED@, @ERROR@, @ATTACH@, @ATTACHED@, @DETACH@, @DETACHED@, @PRESENCE@, @MESSAGE@, @SYNC@, @AUTH@, @ACTIVATE@, @OBJECT@, @OBJECT_SYNC@
 * @(TR3)@ @ProtocolMessage@ @Flag@ enum has the following values, where a flag with value @n@ is defined to be set if the bitwise AND of the @flags@ field with @2ⁿ@ is nonzero
 ** @(TR3a)@ 0: @HAS_PRESENCE@
 ** @(TR3b)@ 1: @HAS_BACKLOG@
 ** @(TR3c)@ 2: @RESUMED@
 ** @(TR3e)@ 4: @TRANSIENT@
 ** @(TR3f)@ 5: @ATTACH_RESUME@
+** @(TR3h)@ 7: @HAS_OBJECTS@
 ** @(TR3q)@ 16: @PRESENCE@
 ** @(TR3r)@ 17: @PUBLISH@
 ** @(TR3s)@ 18: @SUBSCRIBE@ Synonymous with @MESSAGE_SUBSCRIBE@. Retained for backward compatibility.
 ** @(TR3u)@ 18: @MESSAGE_SUBSCRIBE@ Synonymous with @SUBSCRIBE@. This variant should be preferred.
 ** @(TR3t)@ 19: @PRESENCE_SUBSCRIBE@
+** @(TR3v)@ 24: @OBJECT_SUBSCRIBE@
+** @(TR3w)@ 25: @OBJECT_PUBLISH@
 * @(TR4)@ The attributes available in a @ProtocolMessage@ are:
 ** @(TR4a)@ @action@ enum
 ** @(TR4n)@ @id@ string, which will generally be of the form @connectionId:msgSerial@
@@ -1439,6 +1576,7 @@ h4. ProtocolMessage
 ** @(TR4l)@ @presence@ Array of @PresenceMessage@ objects
 ** @(TR4m)@ @timestamp@ time in milliseconds since epoch
 ** @(TR4q)@ @params@ @Dict<String, String>@ key-value pairs
+** @(TR4r)@ @state@ Array of @ObjectMessage@ objects
 
 h4. PaginatedResult
 
@@ -1573,7 +1711,7 @@ h4. ChannelProperties
 * @(CP1)@ properties of a channel and its state
 * @(CP2)@ The attributes of @ChannelProperties@ consist of:
 ** @(CP2a)@ @attachSerial@ string - contains the last @channelSerial@ received in an @ATTACHED@ @ProtocolMessage@ for the channel, see "RTL15a":#RTL15a
-** @(CP2b)@ @channelSerial@ string - contains the last @channelSerial@ received in any @MESSAGE@, @PRESENCE@, or @ATTACHED@ @ProtocolMesage@ on the channel, see "RTL15b":#RTL15b
+** @(CP2b)@ @channelSerial@ string - contains the last @channelSerial@ received in any @MESSAGE@, @PRESENCE@, @OBJECT@, or @ATTACHED@ @ProtocolMessage@ on the channel, see "RTL15b":#RTL15b
 
 h4. ChannelDetails
 
@@ -1598,14 +1736,16 @@ h4. ChannelOccupancy
 
 h4. ChannelMetrics
 
-* @(CHM1)@ @ChannelMetrics@ is a type that contains the count of publishers and subscribers, connections and presenceConnections, presenceMembers and presenceSubscribers
+* @(CHM1)@ @ChannelMetrics@ is a type that contains the count of publishers and subscribers, connections and presenceConnections, presenceMembers and presenceSubscribers, objectPublishers and objectSubscribers
 * @(CHM2)@ The attributes of @ChannelMetrics@ consist of:
 ** @(CHM2a)@ @connections@ integer - the total number of realtime attachments, that is, realtime connections which are attached to the channel
 ** @(CHM2b)@ @presenceConnections@ integer - the number of realtime attachments which are permitted to enter presence, whether or not they have currently done so
 ** @(CHM2c)@ @presenceMembers@ integer - the number of members in the presence set of channel (note: may be larger than presenceConnections since a given connection may enter the presence set multiple times with different clientIds)
-** @(CHM2d)@ @presenceSubscribers@ integer - the number of realtime attachments which are receiving presence messages on the channel (that is, they have the `subscribe` capability and have not specified a @ChannelMode@ that excludes @PRESENCE_SUBSCRIBE@)
-** @(CHM2e)@ @publishers@ integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the `publish` capability and have not specified a @ChannelMode@ that excludes @PUBLISH@)
-** @(CHM2f)@ @subscribers@ integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the `subscribe` capability and have not specified a @ChannelMode@ that excludes @SUBSCRIBE@ or synonymously @MESSAGE_SUBSCRIBE@)
+** @(CHM2d)@ @presenceSubscribers@ integer - the number of realtime attachments which are receiving presence messages on the channel (that is, they have the @subscribe@ capability and have not specified a @ChannelMode@ that excludes @PRESENCE_SUBSCRIBE@)
+** @(CHM2e)@ @publishers@ integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the @publish@ capability and have not specified a @ChannelMode@ that excludes @PUBLISH@)
+** @(CHM2f)@ @subscribers@ integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the @subscribe@ capability and have not specified a @ChannelMode@ that excludes @SUBSCRIBE@ or synonymously @MESSAGE_SUBSCRIBE@)
+** @(CHM2g)@ @objectPublishers@ integer - the number of realtime attachments which are able to publish object messages to the channel (that is, they have the @object-publish@ capability and have specified a @ChannelMode@ that includes @OBJECT_PUBLISH@)
+** @(CHM2h)@ @objectSubscribers@ integer - the number of realtime attachments which are receiving object messages on the channel (that is, they have the @object-subscribe@ capability and have specified a @ChannelMode@ that includes @OBJECT_SUBSCRIBE@)
 
 h4. BatchResult
 
@@ -1702,7 +1842,7 @@ h4. ClientOptions
 ** @(TO3d)@ @tls@ boolean - defaults to true. If false, will not use TLS for all connections
 ** @(TO3e)@ @autoConnect@ boolean - defaults to true. If false, suppresses the automatic initiation of a connection when the library is instantiated
 ** @(TO3f)@ @useBinaryProtocol@ boolean - defaults to true. If false, forces the library to use the JSON encoding for REST and Realtime operations, instead of the default binary msgpack encoding
-** @(TO3g)@ @queueMessages@ boolean - defaults to true. If false, suppresses the default queueing of @MESSAGE@ or @PRESENCE@ protocol messages. See "RTL6c":#RTL6c for connection and channel state condition details
+** @(TO3g)@ @queueMessages@ boolean - defaults to true. If false, suppresses the default queueing of @MESSAGE@, @PRESENCE@ or @OBJECT@ protocol messages. See "RTL6c":#RTL6c for connection and channel state condition details
 ** @(TO3h)@ @echoMessages@ boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection
 ** @(TO3i)@ @recover@ string - A connection recovery string, specified with the intention of inheriting the state of an earlier connection
 ** @(TO3n)@ @idempotentRestPublishing@ boolean - defaults to false for clients with version &lt; 1.2, otherwise true. If true, "RSL1k":#RSL1k1 applies
@@ -1736,12 +1876,13 @@ h4. ClientOptions
 *** @(TO3l11)@ @realtimeRequestTimeout@ integer - default 10,000 (10s). When a realtime client library is establishing a connection with Ably, or sending a @HEARTBEAT@, @CONNECT@, @ATTACH@, @DETACH@ or @CLOSE@ @ProtocolMessage@ to Ably, this is the amount of time that the client library will wait before considering that request as failed and triggering a suitable failure condition
 *** @(TO3l5)@ @httpMaxRetryCount@ integer - default 3. Max number of fallback hosts to use as a fallback when an HTTP request to the primary host is unreachable or indicates that it is unserviceable
 *** @(TO3l6)@ @httpMaxRetryDuration@ integer - default 15,000 (15s). Max elapsed time in which fallback host retries for HTTP requests will be attempted i.e. if the first default host attempt takes 7s, and then the subsequent fallback retry attempt takes 10s, no further fallback host attempts will be made as the total elapsed time of 17s exceeds the default 15s limit
-*** @(TO3l8)@ @maxMessageSize@ integer - default 65536 (64KiB). The maximum size of messages that can be published in one go. That is, the size of the @ProtocolMessage.messages@ or @ProtocolMessage.presence@ array for a realtime publish or presence action, or the message or array of messages being published for a REST publish. For realtime publishes, the default will be overridden by the @maxMessageSize@ in the @connectionDetails@, see "CD2c":#CD2c
-**** @(TO3l8a)@ The size is defined as the sum over all messages being published of the message @name@, @data@, @clientId@, and @extras@
-**** @(TO3l8b)@ The size of an @Object@ or @Array@ @data@ property is its string length after being JSON-stringified
-**** @(TO3l8c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
-**** @(TO3l8d)@ The size of the @extras@ property is the string length of its JSON representation
-**** @(TO3l8e)@ The size of a @null@ or omitted property is zero
+*** @(TO3l8)@ @maxMessageSize@ integer - default 65536 (64KiB). The maximum size of messages that can be published in one go. That is, the size of the @ProtocolMessage.messages@, @ProtocolMessage.presence@ or @ProtocolMessage.state@ array for a realtime publish, presence action or object operation, or the message or array of messages being published for a REST publish. For realtime publishes, the default will be overridden by the @maxMessageSize@ in the @connectionDetails@, see "CD2c":#CD2c
+**** @(TO3l8a)@ This clause has been replaced by "TO3l8f":#TO3l8f
+**** @(TO3l8b)@ This clause has been replaced by "TM6b":#TM6b
+**** @(TO3l8c)@ This clause has been replaced by "TM6c":#TM6c
+**** @(TO3l8d)@ This clause has been replaced by "TM6d":#TM6d
+**** @(TO3l8e)@ This clause has been replaced by "TM6e":#TM6e
+**** @(TO3l8f)@ The size is defined as the sum of all message sizes being published, calculated based on "TM6":#TM6, "TP5":#TP5 and "OM3":#OM3
 *** @(TO3l9)@ @maxFrameSize@ integer - default 524288 (512KiB). The maximum size of a single POST body or "WebSocket":https://ably.com/topic/websockets frame. This is mostly only relevant for `RestClient#request` (e.g. for batch publishes), since publishes will hit the @maxMessageSize@ limit before this
 *** @(TO3l10)@ @fallbackRetryTimeout@ integer - default 600000 (10 minutes). (After a failed request to the default endpoint, followed by a successful request to a fallback endpoint), the period in milliseconds before HTTP requests are retried  against the default endpoint
 ** @(TO3o)@ @plugins@ @Dict<PluginType:Plugin>@ A map between a @PluginType@ and a @Plugin@ object. The client library might downcast a @Plugin@ to particular plugin type.
@@ -2122,6 +2263,8 @@ enum ChannelMode: // TB2d
   SUBSCRIBE
   MESSAGE_SUBSCRIBE
   PRESENCE_SUBSCRIBE
+  OBJECT_SUBSCRIBE
+  OBJECT_PUBLISH
 
 class ChannelStateChange: // TH*
   current: ChannelState // TH2, RTL2a, RTL2b
@@ -2158,6 +2301,8 @@ class ChannelMetrics: // CHM*
   presenceSubscribers: Int // CHM2d
   publishers: Int // CHM2e
   subscribers: Int // CHM2f
+  objectPublishers: Int // CHM2g
+  objectSubscribers: Int // CHM2h
 
 class CipherParams: // TZ*
   algorithm: String default "AES" // TZ2a
@@ -2228,6 +2373,17 @@ enum MessageAction: // TM5
   META_OCCUPANCY // TM5
   MESSAGE_SUMMARY // TM5
 
+enum ObjectOperationAction: // OOP2, internal
+  MAP_CREATE // OOP2
+  MAP_SET // OOP2
+  MAP_REMOVE // OOP2
+  COUNTER_CREATE // OOP2
+  COUNTER_INC // OOP2
+  OBJECT_DELETE // OOP2
+
+enum MapSemantics: // MAP2, internal
+  LWW // MAP2
+
 class ConnectionDetails: // CD*, internal
   clientId: String? // RSA12a, CD2a
   connectionKey: String // RTN15e, CD2b
@@ -2273,6 +2429,60 @@ class PresenceMessage // TP*
   timestamp: Time // TP3g
   memberKey() -> String // TP3h
 
+class ObjectMessage // OM*, internal
+  id: String // OM2a
+  clientId: String // OM2b
+  connectionId: String // OM2c
+  extras: JsonObject? // OM2d
+  timestamp: Time // OM2e
+  operation: ObjectOperation? // OM2f
+  object: ObjectState? // OM2g
+  serial: String // OM2h
+  siteCode: String // OM2i
+
+class ObjectOperation // OOP*, internal
+  action: ObjectOperationAction // OOP3a
+  objectId: String // OOP3b
+  mapOp: MapOp? // OOP3c
+  counterOp: CounterOp? // OOP3d
+  map: Map? // OOP3e
+  counter: Counter? // OOP3f
+  nonce: String? // OOP3g
+  initialValue: Binary? // OOP3h
+  initialValueEncoding: String? // OOP3i
+
+class ObjectState // OST*, internal
+  objectId: String // OST2a
+  siteTimeserials: Dict<String, String> // OST2b
+  tombstone: Boolean // OST2c
+  createOp: ObjectOperation? // OST2d
+  map: Map? // OST2e
+  counter: Counter? // OST2f
+
+class MapOp // MOP*, internal
+  key: String // MOP2a
+  data: ObjectData? // MOP2b
+
+class CounterOp // COP*, internal
+  amount: Number // COP2a
+
+class Map // MAP*, internal
+  semantics: MapSemantics // MAP3a
+  map: Dict<String, MapEntry>? // MAP3b
+
+class Counter // CNT*, internal
+  count: Number? // CNT2a
+
+class MapEntry // ME*, internal
+  tombstone: Boolean? // ME2a
+  timeserial: String? // ME2b
+  data: ObjectData // ME2c
+
+class ObjectData // OD*, internal
+  objectId: String? // OD2a
+  encoding: String? // OD2b
+  value: (String | Number | Boolean | Binary)? // OD2c
+
 class ProtocolMessage: // internal
   action: ProtocolMessageAction // TR2, TR4a
   auth: AuthDetails? //
@@ -2289,6 +2499,7 @@ class ProtocolMessage: // internal
   presence: [PresenceMessage]? // TR4l
   timestamp: Time? // TR4m
   params: Dict<String, String>? // TR4q, RTL4k
+  state: [ObjectMessage]? // TR4r
 
 enum ProtocolMessageAction: // internal
   HEARTBEAT // TR2
@@ -2310,6 +2521,8 @@ enum ProtocolMessageAction: // internal
   SYNC // TR2
   AUTH // TR2
   ACTIVATE // TR2
+  OBJECT // TR2
+  OBJECT_SYNC // TR2
 
 class AuthDetails: // AD*
   accessToken: String // AD2, RTC8a
