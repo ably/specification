@@ -109,7 +109,7 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 <!-- -->
 
-- SYNC (16) := Currently reserved for us with presence member synchronization following a channel `ATTACHED` Protocol Message being received by the client. Once a channel becomes attached, the server will automatically send a list of all members present on the channel to the client. Every `SYNC` Protocol Message received will contain a channelSerial value and one or more PresenceMessages for each member currently present on the channel i.e. they are in the `PRESENT` state. The channelSerial serves two purposes, it provides a way for the client library to resume a `SYNC` should the transport be disconnected, and it also provides a means for the client library to know when the sync is complete. A channelSerial that is being synced will contian an ID with followed by a cursor after a colon such as "cf30e75054887:psl_7g:client:189", however the final page of `SYNC` messages will have a serial with an empty cursor such as "cf30e75054887:". A client can explicitly request a SYNC with an optional channelSerial; if no channelSerial is provided the server will send a complete set of members on the channel; if a channelSerial is provided, the server will resume the `SYNC` operation.
+- SYNC (16) := Currently reserved for us with presence member synchronization following a channel `ATTACHED` Protocol Message being received by the client. Once a channel becomes attached, the server will automatically send a list of all members present on the channel to the client. Every `SYNC` Protocol Message received will contain a channelSerial value and one or more PresenceMessages for each member currently present on the channel i.e. they are in the `PRESENT` state. The channelSerial serves two purposes, it provides a way for the client library to resume a `SYNC` should the transport be disconnected, and it also provides a means for the client library to know when the sync is complete. A channelSerial that is being synced will contain an ID followed by a cursor after a colon such as "cf30e75054887:psl_7g:client:189", however the final page of `SYNC` messages will have a serial with an empty cursor such as "cf30e75054887:". A client can explicitly request a SYNC with an optional channelSerial; if no channelSerial is provided the server will send a complete set of members on the channel; if a channelSerial is provided, the server will resume the `SYNC` operation.
 
 <!-- -->
 
@@ -118,6 +118,17 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 <!-- -->
 
 - ACTIVATE (18) := Reserved for a deprecated use.
+
+<!-- -->
+
+- OBJECT (19) := Indicates that the Protocol Message has a payload of one or more ObjectMessages associated with a single channel. `OBJECT` messages may be sent in either direction. The channel associated with these messages is indicated in the channel field.`<br>`{=html}`<br>`{=html}\
+  The serial number of the message must be included in the `msgSerial` field (in the client → service direction). Further information on message serial numbering is given below.
+
+<!-- -->
+
+- OBJECT_SYNC (20) := Currently reserved for us with objects synchronization following a channel `ATTACHED` Protocol Message being received by the client. Once a channel becomes attached, the server will automatically send a snapshot of objects persisted on the channel to the client. Every `OBJECT_SYNC` Protocol Message received will contain a channelSerial value and one or more ObjectMessages for each object currently persisted on the channel.\
+  The channelSerial serves two purposes, it provides a way for the client library to resume a `OBJECT_SYNC` should the transport be disconnected, and it also provides a means for the client library to know when the sync is complete. A channelSerial that is being synced will contain an ID followed by a cursor after a colon such as "cf30e75054887:map:3DYRjGoon2rfGav1VdWVruZ3pX6TQSt8UYYsmo6CqfY@1742208124981", however the final page of `OBJECT_SYNC` messages will have a serial with an empty cursor such as "cf30e75054887:". The channelSerial ID is guaranteed to not include a colon, but the cursor might. Therefore, if the client library needs to extract the ID and cursor value, it must split the channelSerial at the first colon.\
+  A client can explicitly request a OBJECT_SYNC with an optional channelSerial; if no channelSerial is provided the server will send a complete snapshot of all objects on the channel; if a channelSerial is provided, the server will resume the `OBJECT_SYNC` operation.
 
 ## Protocol Message fields
 
