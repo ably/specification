@@ -1,0 +1,12 @@
+---
+title: Objects Features
+section: client-lib-development-guide
+index: 65
+jump_to:
+  Help with:
+    - Objects Features Overview#overview
+---
+
+h3(#objects). Objects
+
+Objects is a feature of Realtime Channels that provides "LiveObjects":https://ably.com/docs/liveobjects functionality on a channel.
