@@ -121,10 +121,10 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL1c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 ** @(CHA-RL1e)@ @[Testable]@ Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the @ATTACHING@ status.
-** @(CHA-RL1j)@ @[Testable]@ Following the @CHA-RL1e@ transition, the client shall initiate and await the attachment of the realtime channel.
-*** @(CHA-RL1j1)@ @[Testable]@ If the attachment is successful, the room status shall be transitioned to @ATTACHED@, and the @isPostExplicitDetach@ and @isFirstAttach@ flags set to @false@.
-*** @(CHA-RL1j2)@ @[Testable]@ If the attachment is unsuccessful (i.e. @channel.attach()@ throws an error), the attach error is the @ErrorInfo@ from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the attach error.
-*** @(CHA-RL1j3)@ @[Testable]@ If the attachment is unsuccessful (i.e. @channelattach()@ throws an error), the attach error will be thrown as the result of the room @attach()@ operation.
+** @(CHA-RL1k)@ @[Testable]@ Following the @CHA-RL1e@ transition, the client shall initiate and await the attachment of the realtime channel.
+*** @(CHA-RL1k1)@ @[Testable]@ If the attachment is successful, the room status shall be transitioned to @ATTACHED@, and the @isPostExplicitDetach@ and @isFirstAttach@ flags set to @false@.
+*** @(CHA-RL1k2)@ @[Testable]@ If the attachment is unsuccessful (i.e. @channel.attach()@ throws an error), the attach error is the @ErrorInfo@ from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the attach error.
+*** @(CHA-RL1k3)@ @[Testable]@ If the attachment is unsuccessful (i.e. @channelattach()@ throws an error), the attach error will be thrown as the result of the room @attach()@ operation.
 ** @(CHA-RL1f)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL1g)@ This specification point has been removed. It was valid up until the single-channel migration.
 *** @(CHA-RL1g1)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -168,7 +168,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL3n1)@ @[Testable]@ If the channel state is @FAILED@, the client shall immediately breaks from the loop.
 *** @(CHA-RL3n2)@ @[Testable]@ The client shall initiate and await a @channel.detach()@ operation. If this operation succeeds, the client shall exit the loop.
 *** @(CHA-RL3n3)@ @[Testable]@ If the @channel.detach()@ operation fails, the client shall wait a short time (250ms) and restart the loop from @CHA-RL3n1@.
-** @(CHA-RL3i)@ @[Testable]@ Upon operation completion, the room status shall be transitioned to @RELEASED@.
+** @(CHA-RL3o)@ @[Testable]@ Upon operation completion, the room status shall be transitioned to @RELEASED@.
 ** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
 ** @(CHA-RL3l)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL3d)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -225,14 +225,14 @@ As well as user-initiated operations, the room must monitor its underlying resou
 * @(CHA-RL11)@ The room must monitor the underlying realtime channel state, and update the room status accordingly.
 ** @(CHA-RL11a)@ @[Testable]@ The room will subscribe to channel state changes on the underlying realtime channel.
 ** @(CHA-RL11b)@ @[Testable]@ If a room lifecycle operation is in progress and a channel state change is received, the operation is no-op.
-** @(CHA-RL11b)@ @[Testable]@ If a room lifecycle operation is not in progress and a channel state change is received, the operation is no-op, the room status is set according to the underlying channel state, along with any associated error.
+** @(CHA-RL11c)@ @[Testable]@ If a room lifecycle operation is not in progress and a channel state change is received, the operation is no-op, the room status is set according to the underlying channel state, along with any associated error.
 * @(CHA-RL12)@ The room must monitor the underlying realtime channel state and emit notifications of discontinuity.
 ** @(CHA-RL12a)@ @[Testable]@ The room will subscribe to channel state changes on the underlying realtime channel, specifically @UPDATE@ and @ATTACHED@.
 ** @(CHA-RL12b)@ @[Testable]@ If a channel state change is received, and the @resume@ flag is @false@, and the @isFirstAttach@ property is @false@ and the @isPostExplicitDetach@ flag is @false@, then a discontinuity event will be emitted, using an @ErrorInfo@ with the @RoomDiscontinuity@ code from the "error codes":#error-codes and the error from the @ChannelStateChange@ as the cause.
-* @(CHA-RL13)@ The room must allow users to subscribe to discontinuity events.
-** @(CHA-RL13a)@ @[Testable]@ The room must allow users to supply a listener that shall receive events when a room discontinuity is detected.
-** @(CHA-RL13b)@ @[Testable]@ Users must be able to unsubscribe a previously added listener, after which point events shall no longer be received.
-** @(CHA-RL13b)@ @[Testable]@ Attempting to unsubscribe a previously removed listener shall result in a no-op.
+* @(CHA-RL15)@ The room must allow users to subscribe to discontinuity events.
+** @(CHA-RL15a)@ @[Testable]@ The room must allow users to supply a listener that shall receive events when a room discontinuity is detected.
+** @(CHA-RL15b)@ @[Testable]@ Users must be able to unsubscribe a previously added listener, after which point events shall no longer be received.
+** @(CHA-RL15c)@ @[Testable]@ Attempting to unsubscribe a previously removed listener shall result in a no-op.
 
 h2(#room-configuration). Room Configuration
 
