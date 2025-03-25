@@ -3,7 +3,7 @@
 # Script to detect duplicate spec IDs in the client library spec
 # This tends to happen when concurrent spec PRs are merged
 
-SPEC_FILES = ["features", "chat-features"]
+SPEC_FILES = ["features", "chat-features", "objects-features"]
 
 has_errors = false
 
