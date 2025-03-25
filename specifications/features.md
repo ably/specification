@@ -1748,7 +1748,7 @@ Presence ops.
 #### ProtocolMessage
 
 - `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol. A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages.
-- `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`
+- `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`, `ACTIVATE`
 - `(TR3)` `ProtocolMessage` `Flag` enum has the following values, where a flag with value `n` is defined to be set if the bitwise AND of the `flags` field with `2ⁿ` is nonzero
   - `(TR3a)` 0: `HAS_PRESENCE`
   - `(TR3b)` 1: `HAS_BACKLOG`
@@ -2662,6 +2662,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       MESSAGE // TR2
       SYNC // TR2
       AUTH // TR2
+      ACTIVATE // TR2
 
     class AuthDetails: // AD*
       accessToken: String // AD2, RTC8a

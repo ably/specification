@@ -115,6 +115,10 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 - AUTH (17) := Sent by the client with a new token to reauthenticate the connection, with the connection either being closed due to incompatible token details being provided, or a `CONNECTED` message being sent back to the client confirming the authentication succeeded. The server can request that the client authenticates by sending an `AUTH` protocol message to the client, and the client must respond with a new token in an `AUTH` protocol message.
 
+<!-- -->
+
+- ACTIVATE (18) := Reserved for a deprecated use.
+
 ## Protocol Message fields
 
 ProtocolMessages are populated with one or more of the following fields.
