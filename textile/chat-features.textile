@@ -426,6 +426,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
 ** @(CHA-T10a)@ @[Testable]@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving heartbeats). The value shall be set to 2000ms.
 *** @(CHA-T10a1)@ @[Testable]@ If a @typing.start@ event is not received within this period, the client shall assume that the user has stopped typing. For example, if the client has not received a @typing.start@ event within 12000ms of the last heartbeat (10s heartbeat interval plus 2s grace period), the client shall assume that the user has stopped typing.
+* @(CHA-T3)@ This specification point has been removed. It was replaced by @CHA-T10@.
 * @(CHA-T4)@ Users may indicate that they have started typing using the @keystroke@ method.
 ** @(CHA-T4d)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer not set on successful publish @CHA-T4a4@):
