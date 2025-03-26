@@ -451,7 +451,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to the user.
 ** @(CHA-T13a)@ @[Testable]@ If the typing event is malformed (unknown fields should be ignored), then it shall not be emitted to the subscriber.
 ** @(CHA-T13b)@ @[Testable]@ When a typing event is received from the realtime client;
-*** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the chat client shall add the typer to the typing set and a emit the updated set to any subscribers. It shall also begin a timeout that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ grade period.
+*** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the chat client shall add the typer to the typing set and a emit the updated set to any subscribers. It shall also begin a timeout that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
 *** @(CHA-T13b2)@ @[Testable]@ Each additional typing heartbeat from the same client shall reset the @(CHA-T13b1)@ timeout.
 *** @(CHA-T13b3)@ @[Testable]@ If the @(CHA-T13b1)@ timeout expires, the client shall remove the clientId from the typing set and emit typing stop event for the given client with an updated set.
 *** @(CHA-T13b4)@ @[Testable]@ If the event represents a client that has stopped typing, then the chat client shall remove the clientId from the typing set and emit the updated set to any subscribers. It shall also cancel the @(CHA-T13b1)@ timeout for the typing client.
