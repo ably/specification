@@ -137,6 +137,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 *** @(CHA-RL1h4)@ This specification point has been removed. It was valid up until the single-channel migration.
 *** @(CHA-RL1h5)@ This specification point has been removed. It was valid up until the single-channel migration.
 *** @(CHA-RL1h6)@ This specification point has been removed. It was valid up until the single-channel migration.
+** @(CHA-RL1i)@ This specification point has been removed. It was superseded by CHA-RC1f.
 *** @(CHA-RL1i1)@ This specification point has been removed. It was made redundant by the introduction of @CHA-RC1@.
 * @(CHA-RL2)@ A room must be explicitly detached via the @DETACH@ operation.
 ** @(CHA-RL2i)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
