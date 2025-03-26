@@ -265,9 +265,10 @@ Each chat room can be configured individually, allowing options to be passed as 
 ** @(CHA-RC2d)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RC2e)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RC2f)@ This specification point has been removed. It was valid up until the single-channel migration.
-* @(CHA-RC3)@ Multiple features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
+* @(CHA-RC3)@ Multiple chat features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
 ** @(CHA-RC3a)@ @[Testable]@ When retrieving a channel via @channels.get()@, features must merge together their respective options/modes and pass the merged result to the call to @channels.get()@.
 ** @(CHA-RC3b)@ Note: SDKs shall not rely on updating the value progressively via feature spec item @RTS3c@ - as this has been soft-deprecated and may be removed in the future.
+** @(CHA-RC3c)@ @[Testable]@ Unless explicitly stated otherwise, the channel used shall be @<roomId>::$chat@. So if your roomId is @foo@, the channel will be @foo::$chat@.
 * @(CHA-RC4)@ Users may provide room options to the @rooms.get()@ call to control the behaviour of the room.
 ** @(CHA-RC4a)@ @[Testable]@ Where room options have not been provided, the client shall provide defaults.
 ** @(CHA-RC4b)@ @[Testable]@ Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
@@ -280,7 +281,7 @@ Messages are the quintessential component of a chat room - the purpose of chat i
 Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.
 @Messages@ shall be exposed to consumers via the @messages@ property of a @Room@.
 
-* @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat@. For example, if your room id is @my-room@ then the messages channel will be @my-room::$chat@.
+* @(CHA-M1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 <div class=deprecated>
 ** @(CHA-M2a)@ @[Testable]@ @(deprecated)@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
@@ -361,7 +362,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 
 @Reactions@ shall be exposed to consumers via the @reactions@ property of a @Room@.
 
-* @(CHA-ER1)@ Reactions for a Room are sent on the realtime channel @<roomId>::$chat@. For example, if your room id is @my-room@ then the reactions channel will be @my-room::$chat@.
+* @(CHA-ER1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ This specification point was removed. It was valid until the single-channel migration.
@@ -381,7 +382,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 
 @Presence@ shall be exposed to consumers via the @presence@ property of a @Room@.
 
-* @(CHA-PR1)@ Presence for a Room is exposed on a realtime channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat@.
+* @(CHA-PR1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-PR2)@ The presence payload for Chat is opinionated, so that we may add or change fields later without needing to consider how customers are using presence.
 ** @(CHA-PR2a)@ @[Testable]@ The presence data format is a JSON object as described below. Customers may specify content of an arbitrary type to be placed in the @userCustomData@ field.
 
@@ -450,9 +451,9 @@ This system uses ephemeral non-persisted heartbeat messages. They do not appear 
 
 For the purpose of this section, an @ephemeral message@ is understood to mean a regular message where @message.extras.ephemeral@ is set to @true@, i.e "typing-message-format":#realtime-typing-message.
 
-* @(CHA-T1)@ This specification point has been removed. It was superseded by @CHA-T8@.
+* @(CHA-T1)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
-* @(CHA-T8)@ Typing Indicators for a Room are exposed on the main room channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the channel will be @my-room::$chat@.
+* @(CHA-T8)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
 * @(CHA-T9)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.get()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
 * @(CHA-T15)@ @[Testable]@ Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
@@ -506,7 +507,7 @@ the overhead of having everyone in presence.
 
 @Occupancy@ shall be exposed to consumers via the @occupancy@ property of a @Room@.
 
-* @(CHA-O1)@ Occupancy for a room is exposed on a realtime channel in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the presence channel will be @my-room::$chat@.
+* @(CHA-O1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O2)@ The occupancy event format is shown "here":#chat-structs-occupancy-event
 * @(CHA-O3)@ @[Testable]@ Users can request an instantaneous occupancy check via the REST API. The request is detailed "here":#rest-occupancy-request, with the response format being a simple "occupancy event":#chat-structs-occupancy-event
 * @(CHA-O4)@ Users can subscribe to in-band, realtime occupancy updates.
