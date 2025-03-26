@@ -241,7 +241,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC1)@ Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
 ** @(CHA-RC1a)@ This specification point has been removed. It was superseded by CHA-RC1f.
 ** @(CHA-RC1f)@ @[Testable]@ Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
-*** @(CHA-RC1f1)@ @[Testable]@ If the room id exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with code @40000@ is thrown.
+*** @(CHA-RC1f1)@ @[Testable]@ If the room id exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with the @BadRequest@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400 shall be thrown.
 *** @(CHA-RC1f2)@ @[Testable]@ If the room id exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
 *** @(CHA-RC1f3)@ @[Testable]@ If no @CHA-RC1g@ release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
 *** @(CHA-RC1f4)@ @[Testable]@ If a @CHA-RC1g@ release operation is in progress, the entry shall be added to the room map, but the new room instance must not be created until the release operation has resolved. The future shall then subsequently resolve with the new room value.
