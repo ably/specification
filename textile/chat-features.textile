@@ -438,7 +438,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR9b)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
 ** @(CHA-PR9c)@ The option @receivePresenceEvents@ controls whether or not the client should receive presence events.
 *** @(CHA-PR9c1)@ @[Testable]@ This option defaults to @true@.
-*** @(CHA-PR9c2)@ @[Testable]@ When set to @false@, when getting the channel from the realtime client, the @PRESENCE_SUBSCRIBE@ channel mode shall be omitted.
+*** @(CHA-PR9c2)@ @[Testable]@ When set to @false@: when getting the channel from the realtime client, if no modes have been explicitly set yet, then the modes shall be initialised to @['PUBLISH', 'SUBSCRIBE', 'PRESENCE']@ (thus omitting @PRESENCE_SUBSCRIBE@).
 
 h2(#typing). Typing Indicators
 
