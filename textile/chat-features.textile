@@ -108,7 +108,7 @@ Rooms are considered the atomic unit of chat underpinned by a realtime channel.
 
 There are three room lifecycle operations: @ATTACH@, @DETACH@, @RELEASE@.
 
-Discontinuities in Realtime connections happen - whereby continuity of message delivery is disrupted. Therefore each feature may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves.
+Discontinuities in Realtime connections can happen - whereby continuity of message delivery is disrupted. Therefore each feature may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves.
 
 h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 
