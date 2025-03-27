@@ -148,7 +148,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL2j)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status.
 ** @(CHA-RL2k)@ @[Testable]@ Following the @CHA-RL2j@ transition, the client shall initiate and await the detachment of the realtime channel.
 *** @(CHA-RL2k1)@ @[Testable]@ If the detachment is successful, the room status shall be transitioned to @DETACHED@, and the @isPostExplicitDetach@ flag set to @true@.
-*** @(CHA-RL2k2)@ @[Testable]@ If the detachment is unsuccessful (i.e. @channel.detach()@ throws an error), the detach error is the @ErrorInfo@ from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the attach error.
+*** @(CHA-RL2k2)@ @[Testable]@ If the detachment is unsuccessful (i.e. @channel.detach()@ throws an error), the detach error is the @ErrorInfo@ from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the detach error.
 *** @(CHA-RL2k3)@ @[Testable]@ If the detachment is unsuccessful (i.e. @channel.detach()@ throws an error), the detach error will be thrown as the result of the room @detach()@ operation.
 ** @(CHA-RL2e)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL2f)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -165,10 +165,11 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3c)@ This specification point has been removed.
 ** @(CHA-RL3i)@ This specification point has been removed.
 ** @(CHA-RL3m)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status.
-** @(CHA-RL3n)@ @[Testable]@ After @CHA-RL3m@, the room enters a detach loop.
+** @(CHA-RL3n)@ After @CHA-RL3m@, the room enters a detach loop.
 *** @(CHA-RL3n1)@ @[Testable]@ If the channel state is @FAILED@, the client shall immediately breaks from the loop.
 *** @(CHA-RL3n2)@ @[Testable]@ The client shall initiate and await a @channel.detach()@ operation. If this operation succeeds, the client shall exit the loop.
-*** @(CHA-RL3n3)@ @[Testable]@ If the @channel.detach()@ operation fails, the client shall wait a short time (250ms) and restart the loop from @CHA-RL3n1@.
+*** @(CHA-RL3n3)@ @[Testable]@ If the @channel.detach()@ operation fails, and the realtime channel state is @FAILED@ (checked after the failure), the loop shall terminate.
+*** @(CHA-RL3n4)@ @[Testable]@ If the @channel.detach()@ operation fails otherwise, the client shall wait a short time (250ms) and restart the loop from @CHA-RL3n1@.
 ** @(CHA-RL3o)@ @[Testable]@ Upon operation completion, the room status shall be transitioned to @RELEASED@.
 ** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
 ** @(CHA-RL3l)@ This specification point has been removed. It was valid up until the single-channel migration.
