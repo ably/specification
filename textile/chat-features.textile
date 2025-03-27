@@ -438,7 +438,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T4c)@ If typing is already in progress (i.e. a heartbeat timer set according to @CHA-T4a4@ exists and has not expired):
 *** @(CHA-T4c1)@ @[Testable]@ The client must not send a @typing.started@ event.
 * @(CHA-T5)@ Users may explicitly indicate that they have stopped typing using @stop@ method.
-** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T10@ heartbeat timer exists and has not expired), this operation is a no-op.
+** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T10@ heartbeat timer does not exist or is expired), this operation is a no-op.
 ** @(CHA-T5b)@ This specification point has been removed.
 ** @(CHA-T5c)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-heartbeat.
@@ -450,7 +450,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T6c1)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c2)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 * @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to the user.
-** @(CHA-T13a)@ @[Testable]@ If the typing event is malformed (unknown fields should be ignored), then it shall not be emitted to the subscriber.
+** @(CHA-T13a)@ @[Testable]@ If the typing event received from the server is malformed, i.e does not conform to the expected "payload":#realtime-typing-events (unknown fields should be ignored), then it shall not be handled and emitted to the subscriber.
 ** @(CHA-T13b)@ @[Testable]@ When a typing event is received from the realtime client:
 *** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the chat client shall add the typer to the typing set and a emit the updated set to any subscribers. It shall also begin a timeout that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
 *** @(CHA-T13b2)@ @[Testable]@ Each additional typing heartbeat from the same client shall reset the @(CHA-T13b1)@ timeout.
