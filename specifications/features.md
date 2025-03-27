@@ -1805,8 +1805,8 @@ Presence ops.
   - `(OST2b)` `siteTimeserials` `Dict<String, String>` - a map of [serials](#OM2h) keyed by [siteCode](#OM2i), representing the last operations applied to this object
   - `(OST2c)` `tombstone` boolean - true if the object has been tombstoned
   - `(OST2d)` `createOp` `ObjectOperation` object - the operation that created the object
-  - `(OST2e)` `map` `Map` object - the data that represents the state of the object if it is a `Map` object type
-  - `(OST2f)` `counter` `Counter` object - the data that represents the state of the object if it is a `Counter` object type
+  - `(OST2e)` `map` `Map` object - the data that represents the result of applying all object operations to a `Map` object excluding the initial value from the `createOp` if it is a `Map` object type
+  - `(OST2f)` `counter` `Counter` object - the data that represents the result of applying all object operations to a `Counter` object excluding the initial value from the `createOp` if it is a `Counter` object type
 - `(OST3)` The size of the `ObjectState` is calculated as follows:
   - `(OST3a)` The size is the sum of the sizes of the `map`, `counter`, and `createOp` properties
   - `(OST3b)` The size of the `map` property is calculated per [MAP4](#MAP4)
