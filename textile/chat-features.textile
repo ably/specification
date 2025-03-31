@@ -416,22 +416,23 @@ This system uses ephemeral non-persisted heartbeat messages. They do not appear 
 
 @Typing Indicators@ shall be exposed to consumers via the @typing@ property of a @Room@.
 
-For the purpose of this section, an @ephemeral message@ is understood to mean a regular message where @message.extras.ephemeral@ is set to @true@.
+For the purpose of this section, an @ephemeral message@ is understood to mean a regular message where @message.extras.ephemeral@ is set to @true@, i.e "typing-message-format":#realtime-typing-message.
 
 * @(CHA-T1)@ This specification point has been removed. It was superseded by @CHA-T8@.
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
 * @(CHA-T8)@ Typing Indicators for a Room are exposed on the main room channel, in the format @<roomId>::$chat@. For example, if your room id is @my-room@ then the channel will be @my-room::$chat@.
-* @(CHA-T9)@ @[Testable]@ Users may retrieve a list of the currently typing client IDs.
+* @(CHA-T9)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.get()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
+* @(CHA-T15)@ @[Testable]@ Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
-** @(CHA-T10a)@ @[Testable]@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving heartbeats). The value shall be set to 2000ms.
-*** @(CHA-T10a1)@ @[Testable]@ If a @typing.start@ event is not received within this period, the client shall assume that the user has stopped typing. For example, if the client has not received a @typing.start@ event within 12000ms of the last heartbeat (10s heartbeat interval plus 2s grace period), the client shall assume that the user has stopped typing.
+** @(CHA-T10a)@ @[Testable]@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving events). The value shall be set to 2000ms.
+*** @(CHA-T10a1)@ @[Testable]@ If a @typing.start@ event is not received within this period, the client shall assume that the user has stopped typing. For example, if the client has not received a @typing.start@ event within 12000ms of the last heartbeat (10s heartbeat interval plus 2s grace period), the client shall assume that the user has stopped typing and emit a @typing.stopped@ event for that user to all registered listeners @(CHA-T15)@.
 * @(CHA-T3)@ This specification point has been removed. It was replaced by @CHA-T10@.
 * @(CHA-T4)@ Users may indicate that they have started typing using the @keystroke@ method.
 ** @(CHA-T4d)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
-** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer not set on successful publish @CHA-T4a4@):
+** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer has not been set by the successful publish @CHA-T4a4@ of a @typing.started@ event):
 *** @(CHA-T4a1)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
 *** @(CHA-T4a2)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
-*** @(CHA-T4a3)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.started@, the format of which is detailed "here":#realtime-typing-heartbeat.
+*** @(CHA-T4a3)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the @name@ field set to @typing.started@, the format of which is detailed "here":#realtime-typing-message.
 *** @(CHA-T4a4)@ @[Testable]@ Upon successful publish, a heartbeat timer shall be set according to the @CHA-T10@ timeout interval.
 ** @(CHA-T4b)@ This specification point has been removed. It was superseded by @CHA-T4c@.
 ** @(CHA-T4c)@ If typing is already in progress (i.e. a heartbeat timer set according to @CHA-T4a4@ exists and has not expired):
@@ -440,7 +441,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T10@ heartbeat timer does not exist or is expired), this operation is a no-op.
 ** @(CHA-T5b)@ This specification point has been removed.
 ** @(CHA-T5c)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
-** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-heartbeat.
+** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-message.
 ** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T10@ timer shall be unset.
 * @(CHA-T6)@ Users may subscribe to typing events - updates to a set of clientIDs that are typing. This operation, like all subscription operations, has no side-effects in relation to room lifecycle.
 ** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing event V2":#chat-structs-typing-event-V2 in a chat room.
@@ -448,14 +449,14 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T6c)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c1)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c2)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
-* @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to the user.
-** @(CHA-T13a)@ @[Testable]@ If the typing event received from the server is malformed, i.e does not conform to the expected "payload":#realtime-typing-events (unknown fields should be ignored), then it shall not be handled and emitted to the subscriber.
-** @(CHA-T13b)@ @[Testable]@ When a typing event is received from the realtime client:
-*** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the chat client shall add the typer to the typing set and a emit the updated set to any subscribers. It shall also begin a timeout that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
-*** @(CHA-T13b2)@ @[Testable]@ Each additional typing heartbeat from the same client shall reset the @(CHA-T13b1)@ timeout.
-*** @(CHA-T13b3)@ @[Testable]@ If the @(CHA-T13b1)@ timeout expires, the client shall remove the clientId from the typing set and emit a synthetic typing stop event for the given client.
-*** @(CHA-T13b4)@ @[Testable]@ If the event represents a client that has stopped typing, then the chat client shall remove the clientId from the typing set and emit the updated set to any subscribers. It shall also cancel the @(CHA-T13b1)@ timeout for the typing client.
-*** @(CHA-T13b5)@ @[Testable]@ If the event represents that a client has stopped typing, but the clientId for that client is not present in the typing set, then the event is ignored.
+* @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to all registered listeners @(CHA-T15)@.
+** @(CHA-T13a)@ @[Testable]@ If the typing event received from the server is malformed, i.e does not conform to the expected "payload":#realtime-typing-message (unknown fields should be ignored), then it shall not be handled and emitted to the subscriber.
+** @(CHA-T13b)@ @[Testable]@ When a typing event is received on the realtime client:
+*** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the Chat client shall add the typers clientId (@msg.clientId@) to the typing set and a emit the updated set, via a new "typing event":#chat-structs-typing-event-V2 , to any subscribers. It shall also begin a timeout that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
+*** @(CHA-T13b2)@ @[Testable]@ Each additional @typing.started@ event from the same client shall reset the @(CHA-T13b1)@ timeout for that client.
+*** @(CHA-T13b3)@ @[Testable]@ If the @(CHA-T13b1)@ timeout expires, the client shall remove the clientId from the typing set and emit a typing stop event for the given client to all registered listeners (@(CHA-T15)@).
+*** @(CHA-T13b4)@ @[Testable]@ If the event represents a client that has stopped typing, the Chat client shall remove the clientId from the typing set and emit the updated set to any registered listeners (@(CHA-T15)@). It shall also cancel the @(CHA-T13b1)@ timeout for that typer.
+*** @(CHA-T13b5)@ @[Testable]@ If the event represents a client that has stopped typing, but the clientId for that client is not present in the typing set, then no event shall be emitted to any registered listeners (@(CHA-T15)@).
 * @(CHA-T14)@ @[Testable]@ Multiple asynchronous calls to keystroke/stop typing must eventually converge to a consistent state.
 ** @(CHA-TM14a)@ When a call to @keystroke@ or @stop@ is made, it should attempt to acquire a mutex lock.
 ** @(CHA-TM14b)@ Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
@@ -796,15 +797,13 @@ h3(#realtime-room-reactions). Ephemeral Room Reactions
   }
 </pre>
 
-h3(#realtime-typing-events). Typing Events
+h3(#realtime-typing-message). Typing Message
 
 <pre>
   {
-    "name": "typing.started" | "typing.stopped"
-    "encoding": "json"
-    "clientId": "who-is-typing",
-    "timestamp": "1726232498871", // Only on incoming messages
-    "extras": { "ephemeral": true}
+    "name": "typing.started" // Required, must be either "typing.started" or "typing.stopped"
+    "clientId": "who-is-typing", // Required, cannot be empty string or null
+    "extras": { "ephemeral": true } // Required, must be set to true
   }
 </pre>
 
@@ -973,7 +972,7 @@ h3(#chat-structs-typing-event-V2). Typing Event V2
         "type": "typing.started",
         "clientId": "clientId-2",
     },
-    "currentlyTyping": ["clientId-1", "clientID-2"],
+    "currentlyTyping": ["clientId-1", "clientId-2"],
   }
 </pre>
 
