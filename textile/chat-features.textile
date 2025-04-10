@@ -512,17 +512,18 @@ the overhead of having everyone in presence.
 * @(CHA-O1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O2)@ The occupancy event format is shown "here":#chat-structs-occupancy-event
 * @(CHA-O3)@ @[Testable]@ Users can request an instantaneous occupancy check via the REST API. The request is detailed "here":#rest-occupancy-request, with the response format being a simple "occupancy event":#chat-structs-occupancy-event
-* @(CHA-O4)@ Users can subscribe to in-band, realtime occupancy updates.
+* @(CHA-O4)@ Users can subscribe to realtime occupancy updates.
+** @(CHA-04e)@ @[Testable]@ If occupancy events have been disabled per @CHA-O6@, then the client shall throw an error with code @40000@.
 ** @(CHA-O4a)@ @[Testable]@ Users may register a listener that receives occupancy events in realtime.
 ** @(CHA-O4b)@ @[Testable]@ A subscription to occupancy events may be removed, after which it shall receive no further events.
 ** @(CHA-O4c)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event":#chat-structs-occupancy-event format and broadcast it to subscribers.
 ** @(CHA-O4d)@ @[Testable]@ If an invalid occupancy event is received on the channel, it shall be dropped.
 to typing subscribers.
 * @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
-* @(CHA-O6)@ Enabling inband occupancy causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
-** @(CHA-O6a)@ @[Testable]@ If the @occupancy.enableInboundOccupancy@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
-** @(CHA-O6b)@ @[Testable]@ If the @occupancy.enableInboundOccupancy@ is set to @false@, then the client shall not set the @options.params.occupancy@ channel parameter.
-** @(CHA-O6c)@ @[Testable]@ The default value of @occupancy.enableInboundOccupancy@ is @false@.
+* @(CHA-O6)@ Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
+** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableOccupancyEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
+** @(CHA-O6b)@ @[Testable]@ If @occupancy.enableOccupancyEvents@ is set to @false@, then the client shall not set the @options.params.occupancy@ channel parameter.
+** @(CHA-O6c)@ @[Testable]@ The default value of @occupancy.enableOccupancyEvents@ is @false@.
 
 h2(#rest-api). Chat HTTP REST API
 
