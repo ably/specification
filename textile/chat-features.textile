@@ -225,12 +225,12 @@ As well as user-initiated operations, the room must monitor its underlying resou
 *** @(CHA-RL4b9)@ This specification point has been removed. It was valid up until the single-channel migration.
 *** @(CHA-RL4b10)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-RL11)@ The room must monitor the underlying realtime channel state, and update the room status accordingly.
-** @(CHA-RL11a)@ @[Testable]@ The room will subscribe to channel state changes on the underlying realtime channel.
-** @(CHA-RL11b)@ @[Testable]@ If a room lifecycle operation is in progress and a channel state change is received, the operation is no-op.
-** @(CHA-RL11c)@ @[Testable]@ If a room lifecycle operation is not in progress and a channel state change is received, the operation is no-op, the room status is set according to the underlying channel state, along with any associated error.
+** @(CHA-RL11a)@ @[Testable]@ The room will subscribe to non-@UPDATE@ channel state events on the underlying realtime channel.
+** @(CHA-RL11b)@ @[Testable]@ If a room lifecycle operation is in progress and such a channel state event is received, the operation is no-op.
+** @(CHA-RL11c)@ @[Testable]@ If a room lifecycle operation is not in progress and such a channel state event is received, then the room status is set according to the underlying channel state, along with any associated error.
 * @(CHA-RL12)@ The room must monitor the underlying realtime channel state and emit notifications of discontinuity.
-** @(CHA-RL12a)@ @[Testable]@ The room will subscribe to channel state changes on the underlying realtime channel, specifically @UPDATE@ and @ATTACHED@.
-** @(CHA-RL12b)@ @[Testable]@ If a channel state change is received, and the @resumed@ flag is @false@, and the @hasAttachedOnce@ property is @true@ and the @isExplicitlyDetached@ flag is @false@, then a discontinuity event will be emitted, using an @ErrorInfo@ with the @RoomDiscontinuity@ code from the "error codes":#error-codes and the error from the @ChannelStateChange@ as the cause.
+** @(CHA-RL12a)@ @[Testable]@ The room will subscribe to @UPDATE@ and @ATTACHED@ state events on the underlying realtime channel.
+** @(CHA-RL12b)@ @[Testable]@ If such a channel event is received, and the @resumed@ flag is @false@, and the @hasAttachedOnce@ property is @true@ and the @isExplicitlyDetached@ flag is @false@, then a discontinuity event will be emitted, using an @ErrorInfo@ with the @RoomDiscontinuity@ code from the "error codes":#error-codes and the error from the @ChannelStateChange@ as the cause.
 * @(CHA-RL15)@ The room must allow users to subscribe to discontinuity events.
 ** @(CHA-RL15a)@ @[Testable]@ The room must allow users to supply a listener that shall receive events when a room discontinuity is detected.
 ** @(CHA-RL15b)@ @[Testable]@ Users must be able to unsubscribe a previously added listener, after which point events shall no longer be received.
