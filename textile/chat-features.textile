@@ -440,7 +440,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
 ** @(CHA-PR9a)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
 ** @(CHA-PR9b)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
-** @(CHA-PR9c)@ The option @enablePresenceEvents@ controls whether or not the client should receive presence events from the server.
+** @(CHA-PR9c)@ The option @enableEvents@ controls whether or not the client should receive presence events from the server.
 *** @(CHA-PR9c1)@ @[Testable]@ This option defaults to @true@.
 *** @(CHA-PR9c2)@ @[Testable]@ When set to @false@: when getting the channel from the realtime client, then the modes shall be initialised to @['PUBLISH', 'SUBSCRIBE', 'PRESENCE']@ (thus omitting @PRESENCE_SUBSCRIBE@).
 
@@ -522,9 +522,9 @@ the overhead of having everyone in presence.
 to typing subscribers.
 * @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O6)@ Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
-** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableOccupancyEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
-** @(CHA-O6b)@ @[Testable]@ If @occupancy.enableOccupancyEvents@ is set to @false@, then the client shall not set the @options.params.occupancy@ channel parameter.
-** @(CHA-O6c)@ @[Testable]@ The default value of @occupancy.enableOccupancyEvents@ is @false@.
+** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
+** @(CHA-O6b)@ @[Testable]@ If @occupancy.enableEvents@ is set to @false@, then the client shall not set the @options.params.occupancy@ channel parameter.
+** @(CHA-O6c)@ @[Testable]@ The default value of @occupancy.enableEvents@ is @false@.
 
 h2(#rest-api). Chat HTTP REST API
 
