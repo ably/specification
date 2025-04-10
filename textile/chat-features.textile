@@ -440,7 +440,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
 ** @(CHA-PR9a)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
 ** @(CHA-PR9b)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
-** @(CHA-PR9c)@ The option @enableEvents@ controls whether or not the client should receive presence events from the server.
+** @(CHA-PR9c)@ The option @presence.enableEvents@ controls whether or not the client should receive presence events from the server.
 *** @(CHA-PR9c1)@ @[Testable]@ This option defaults to @true@.
 *** @(CHA-PR9c2)@ @[Testable]@ When set to @false@: when getting the channel from the realtime client, then the modes shall be initialised to @['PUBLISH', 'SUBSCRIBE', 'PRESENCE']@ (thus omitting @PRESENCE_SUBSCRIBE@).
 
