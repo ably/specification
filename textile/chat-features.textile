@@ -432,6 +432,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR6e)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 ** @(CHA-PR6f)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 * @(CHA-PR7)@ Users may subscribe to presence events.
+** @(CHA-PR7d)@ @[Testable] If presence events have been disabled per @CHA-PR9c@, then the client shall throw an error with code @40000@.
 ** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event in a room.
 ** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
 ** @(CHA-PR7c)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
@@ -439,7 +440,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
 ** @(CHA-PR9a)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
 ** @(CHA-PR9b)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
-** @(CHA-PR9c)@ The option @receivePresenceEvents@ controls whether or not the client should receive presence events.
+** @(CHA-PR9c)@ The option @enablePresenceEvents@ controls whether or not the client should receive presence events from the server.
 *** @(CHA-PR9c1)@ @[Testable]@ This option defaults to @true@.
 *** @(CHA-PR9c2)@ @[Testable]@ When set to @false@: when getting the channel from the realtime client, then the modes shall be initialised to @['PUBLISH', 'SUBSCRIBE', 'PRESENCE']@ (thus omitting @PRESENCE_SUBSCRIBE@).
 
