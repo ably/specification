@@ -130,6 +130,10 @@ Each Protocol Message has an `action` that indicates the nature of the message.
   The channelSerial serves two purposes, it provides a way for the client library to resume a `OBJECT_SYNC` should the transport be disconnected, and it also provides a means for the client library to know when the sync is complete. A channelSerial that is being synced will contain an ID followed by a cursor after a colon such as "cf30e75054887:map:3DYRjGoon2rfGav1VdWVruZ3pX6TQSt8UYYsmo6CqfY@1742208124981", however the final page of `OBJECT_SYNC` messages will have a serial with an empty cursor such as "cf30e75054887:". The channelSerial ID is guaranteed to not include a colon, but the cursor might. Therefore, if the client library needs to extract the ID and cursor value, it must split the channelSerial at the first colon.\
   A client can explicitly request a OBJECT_SYNC with an optional channelSerial; if no channelSerial is provided the server will send a complete snapshot of all objects on the channel; if a channelSerial is provided, the server will resume the `OBJECT_SYNC` operation.
 
+<!-- -->
+
+- ANNOTATION (21) := The \`annotations\` field of the Protocol Message has a payload of one or more `Annotation` messages, all associated with a single channel. They may be sent in either direction. The channel associated with these annotations is indicated in the channel field.`<br>`{=html}`<br>`{=html}
+
 ## Protocol Message fields
 
 ProtocolMessages are populated with one or more of the following fields.
@@ -170,10 +174,6 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
-- i64 `connectionSerial` := Contains a serial number for a message on the current connection, in `MESSAGE` and `PRESENCE` protocol messages sent from the service to the client. The `connectionSerial` is a zero-based, serially increasing number which, in combination with the `connectionId`, uniquely identifies an attempted delivery of a Protocol Message to the client. The client uses the connection serial to track the receipt of messages, and may specify the `connectionSerial` when performing connection state recovery.
-
-<!-- -->
-
 - Error `error` := Contains error information. See `Error` type description for details of the contained information. The error field is populated in an `ERROR` message and may also be populated to provide supplementary information (eg for non-fatal errors) in various other message types (`CONNECTED`, `ATTACHED`, `DETACHED`, `ACK`, `NACK`).
 
 <!-- -->
@@ -186,11 +186,15 @@ ProtocolMessages are populated with one or more of the following fields.
 
 <!-- -->
 
-- list`<Message>`{=html} `messages` := A ProtocolMessage with a `MESSAGE` action contains one or more messages belonging to a channel. The messages field of the ProtocolMessage contains a collection of messages.
+- list`<Message>`{=html} `messages` := A ProtocolMessage with a `MESSAGE` action contains one or more messages belonging to a channel in this field.
 
 <!-- -->
 
-- list`<Presence>`{=html} `presence` := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel. The presence field of the ProtocolMessage contains a collection of presence messages.
+- list`<Presence>`{=html} `presence` := A ProtocolMessage with a `PRESENCE` action contains one or more presence updates belonging to a channel in this field.
+
+<!-- -->
+
+- list`<Annotation>`{=html} `annotations` := A ProtocolMessage with a `ANNOTATION` action contains one or more annotations belonging to a channel in this field.
 
 <!-- -->
 
