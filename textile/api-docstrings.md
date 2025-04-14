@@ -621,7 +621,7 @@ Enumerates the possible types of `Message` there can be.
 | MESSAGE_CREATE | TM5 | A normal message that has been published by a user. |
 | MESSAGE_UPDATE | TM5 | An update that modifies a previously-published message (referenced by `serial`). |
 | MESSAGE_DELETE | TM5 | A deletion of a previously-published message (referenced by `serial`). |
-| META_OCCUPANCY | TM5 | Channel metadata containing information on what the current occupancy of the channel is. |
+| META | TM5 | A meta-message (a message originating from ably rather than being explicitly published on a channel), containing information such as inband channel occupancy events that has been requested by channel param. |
 | MESSAGE_SUMMARY | TM5 | A message containing the latest rolled-up summary of annotations that have been made to this message. |
 
 ## class RestAnnotations
