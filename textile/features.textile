@@ -378,6 +378,7 @@ h3(#rest-channel). RestChannel
 * @(RSL7)@ @RestChannel#setOptions@ takes a @ChannelOptions@ object and sets or updates the stored channel options, then indicates success
 * @(RSL8)@ @RestChannel#status@ function: makes a http get request to @<restHost>/channels/<channelId>@ where @<restHost>@ represents the current rest host as described by "@RSC11@":#RSC11
 ** @(RSL8a)@ Returns a @ChannelDetails@ object
+* @(RSL10)@ @RestChannel#annotations@ attribute contains the @RestAnnotations@ object for this channel
 
 h3(#plugins). Plugins
 * @(PC1)@ Specific client library features that are not commonly used may be supplied as independent libraries, as plugins, in order to avoid excessively bloating the client library. Although such plugins are packaged as independent libraries, they are still considered logically to be part of the client library code and, as such, may be tightly coupled with the client library implementation. The client library can be assumed to be aware of the plugin specific type and capabilities, and such plugins may by design be coupled to a specific version of the client library.
@@ -424,6 +425,28 @@ h3(#rest-encryption). Encryption
 * @(RSE2)@ @Crypto::generateRandomKey@ function
 ** @(RSE2a)@ Takes an optional @keyLength@ parameter, which is the length in bits of the key to be generated. If unspecified, this is equal to the default @keyLength@ of the default algorithm: for @AES@, 256 bits.
 ** @(RSE2b)@ Returns (or calls back with, if the language cryptographic randomness primitives are blocking or async) the key as a binary (e.g. a byte array, depending on the language)
+
+h3(#rest-annotations). RestAnnotations
+
+* @(RSAN1)@ @RestAnnotations#publish@ function:
+** @(RSAN1a)@ Takes a first argument of a @Message@ identifier in the form of the string of the @serial@ of the message to be annotated, and a second argument representing the annotation to be published.
+*** @(RSAN1a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
+*** @(RSAN1a2)@ The form of the second argument may accept any language-idiomatic representation (e.g. plain objects in untyped languages), but must allow the user to supply at least the @type@, @clientId@, @name@, @count@, @data@, and @extras@ fields
+*** @(RSAN1a3)@ The SDK must validate that the user supplied a @TAN5b@ @type@. (All other fields are optional)
+*** @(RSAN1a4)@ The SDK may validate that the total size of the annotation or (if publishing an array) annotations, calculated identially to message size per "TO3l8":#TO3l8, exceeds the @maxMessageSize@, then the client library should reject the publish and indicate an error with code 40009
+** @(RSAN1c)@ The SDK must POST a request body consisting of an array with one element, which is the annotation to be published
+*** @(RSAN1c1)@ The @Annotation.action@ must be set to @ANNOTATION_CREATE@
+*** @(RSAN1c2)@ The @Annotation.messageSerial@ must be set to the identifier specified in the first argument to @publish()@
+*** @(RSAN1c3)@ If the user has supplied an @Annotation.data@, that must be encoded (and the @encoding@ set) just as it would be for a @Message@, per @RSL4@
+*** @(RSAN1c4)@ If @idempotentRestPublishing@ (see "TO3n":#TO3n) is enabled and the annotation has an empty @id@ attribute, the SDK should generate a string by base64-encoding a sequence of at least 9 bytes obtained from a source of randomness, append @:0@, and set it as the @Annotation.id@
+*** @(RSAN1c5)@ The body must be encoded to the appropriate format per @RSC8@
+*** @(RSAN1c6)@ The body must be sent as a POST request to the endpoint @/channels/{channelName}/messages/{messageSerial}/annotations@, where @messageSerial@ is the identifier specified in the first argument to @publish()@
+* @(RSAN2)@ @RestAnnotations#delete@ function:
+** @(RSAN2a)@ Must be identical to @RSAN1@ @publish()@ except that the @Annotation.action@ is set to @ANNOTATION_DELETE@, not @ANNOTATION_CREATE@
+* @(RSAN3)@ @RestAnnotations#get@ function:
+** @(RSAN3a)@ Accepts a message identifier (similar to @RSAN1a@, must at least accept a @messageSerial@ string, should also accept a @Message@ object containing a @serial@) and optional @Dict<string, stringifiable>@ params
+** @(RSAN3b)@ Sends a GET request to the endpoint @/channels/{channelName}/messages/{messageSerial}/annotations@, where @messageSerial@ is the identifier specified in the first argument, and any @params@ are sent in the querystring
+** @(RSAN3c)@ Returns a @PaginatedResult<Annotation>@ page containing the first page of decoded @Annotation@ objects in the @PaginatedResult#items@ attribute
 
 h3(#rest-compatibility). Forwards compatibility
 * @(RSF1)@ The library must apply the "robustness principle":https://en.wikipedia.org/wiki/Robustness_principle in its processing of requests and responses with the Ably system. In particular, deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
@@ -515,7 +538,7 @@ h3(#realtime-connection). Connection
 * @(RTN6)@ A @Connection@ is successful and considered @CONNECTED@ once the "websocket":https://ably.com/topic/websockets connection is open and the initial @CONNECTED@ @ProtocolMessage@ has been received
 * @(RTN21)@ If the @CONNECTED@ @ProtocolMessage@ contains a @connectionDetails@ property, the attributes within @ConnectionDetails@ will be used as the defaults for this client library, overriding any configured options at the time the @CONNECTED@ @ProtocolMessage@ is received
 * @(RTN7)@ @ACK@ and @NACK@:
-** @(RTN7a)@ All @PRESENCE@, @MESSAGE@ and @OBJECT@ @ProtocolMessages@ sent to Ably expect either an @ACK@ or @NACK@ from Ably to confirm successful receipt and acceptance or failure respectively. For clarity, it is unnecessary to fail the publish operation of a message using a timer. Instead the client library can rely on: the realtime system will send an @ACK@ or @NACK@ when connected; the client library will fail all awaiting messages once @SUSPENDED@ (see "RTN7e":#RTN7e); upon reconnecting, the client will resend all message awaiting a response, and the realtime system in turn will respond with an @ACK@ or @NACK@ (see "RTN19a":#RTN19a)
+** @(RTN7a)@ All @PRESENCE@, @MESSAGE@, @ANNOTATION@, and @OBJECT@ @ProtocolMessages@ sent to Ably expect either an @ACK@ or @NACK@ from Ably to confirm successful receipt and acceptance or failure respectively. For clarity, it is unnecessary to fail the publish operation of a message using a timer. Instead the client library can rely on: the realtime system will send an @ACK@ or @NACK@ when connected; the client library will fail all awaiting messages once @SUSPENDED@ (see "RTN7e":#RTN7e); upon reconnecting, the client will resend all message awaiting a response, and the realtime system in turn will respond with an @ACK@ or @NACK@ (see "RTN19a":#RTN19a)
 ** @(RTN7b)@ Every @ProtocolMessage@ that expects an @ACK@ or @NACK@ sent must contain a unique serially incrementing @msgSerial@ integer value starting at zero. The @msgSerial@ along with the @count@ for incoming @ACK@ and @NACK@ @ProtocolMessages@ indicates which messages succeeded or failed to be delivered
 ** @(RTN7c)@ This clause has been replaced by "@RTN7e@":#RTN7e (it contained a mistake). It was valid up to and including specification version @TBD@.
 ** @(RTN7e)@ If a connection enters the @SUSPENDED@, @CLOSED@ or @FAILED@ state, and an @ACK@ or @NACK@ has not yet been received for a message submitted to the connection via "@RTL6c1@":#RTL6c1 or "@RTL6c2@":#RTL6c2, the client should consider the delivery of those messages as failed, meaning their callback (or language equivalent) should be called with an error representing the reason for the state change, and they should be removed from any @RTN19a@ retry queue. (Note that @PRESENCE@ messages which, per "@RTP16b@":#RTP16b, have not yet been submitted to the connection are handled by "@RTL11@":#RTL11.)
@@ -760,7 +783,7 @@ h3(#realtime-channel). RealtimeChannel
 * @(RTL12)@ An attached channel may receive an additional @ATTACHED@ @ProtocolMessage@ from Ably at any point. (This is typically triggered following a transport being resumed to indicate a partial loss of message continuity on that channel, in which case the @ProtocolMessage@ will have a @resumed@ flag set to false). If and only if the @resumed@ flag is false, this should result in the channel emitting an @UPDATE@ event with a @ChannelStateChange@ object. The @ChannelStateChange@ object should have both @previous@ and @current@ attributes set to @attached@, the @reason@ attribute set to to the @error@ member of the @ATTACHED@ @ProtocolMessage@ (if any), and the @resumed@ attribute set per the @RESUMED@ bitflag of the @ATTACHED@ @ProtocolMessage@. (Note that @UPDATE@ should be the only event emitted: in particular, the library must not emit an @ATTACHED@ event if the channel was already attached, see @RTL2g@).
 * @(RTL15)@ @RealtimeChannel#properties@ attribute is a @ChannelProperties@ object representing properties of the channel state. @properties@ is a publicly accessible member of the channel, but it is an experimental and unstable API. It has the following attributes:
 ** @(RTL15a)@ @attachSerial@ is unset when the channel is instantiated, and is updated with the @channelSerial@ from each @ATTACHED@ @ProtocolMessage@ received from Ably with a matching @channel@ attribute. The @attachSerial@ value is used for @untilAttach@ queries, see "RTL10b":#RTL10b
-** @(RTL15b)@ @channelSerial@ is updated whenever a @ProtocolMessage@ with either @MESSAGE@, @PRESENCE@, @OBJECT@, or @ATTACHED@ actions is received on a channel, and is set to the @TR4c@ @channelSerial@ of that @ProtocolMessage@, if and only if that field (@ProtocolMessage.channelSerial@) is populated.
+** @(RTL15b)@ @channelSerial@ is updated whenever a @ProtocolMessage@ with either @MESSAGE@, @PRESENCE@, @ANNOTATION@, @OBJECT@, or @ATTACHED@ actions is received on a channel, and is set to the @TR4c@ @channelSerial@ of that @ProtocolMessage@, if and only if that field (@ProtocolMessage.channelSerial@) is populated.
 *** @(RTL15b1)@ If the channel enters the @DETACHED@, @SUSPENDED@, or @FAILED@ state, it must clear its @channelSerial@.
 * @(RTL13)@ If the channel receives a server initiated @DETACHED@ message when it is in the @ATTACHING@, @ATTACHED@ or @SUSPENDED@ state (i.e. the client has not explicitly requested a detach putting the channel into the @DETACHING@ state), then the following applies:
 ** @(RTL13a)@ If the channel is in the @ATTACHED@ or @SUSPENDED@ states, an attempt to reattach the channel should be made immediately by sending a new @ATTACH@ message and the channel should transition to the @ATTACHING@ state with the error emitted in the @ChannelStateChange@ event.
@@ -789,6 +812,7 @@ h3(#realtime-channel). RealtimeChannel
 * @(RTL25)@ @RealtimeChannel#whenState@ function:
 ** @(RTL25a)@ If the channel is already in the given state, calls the listener with a `null` argument.
 ** @(RTL25b)@ Else, calls @#once@ with the given state and listener.
+* @(RTL26)@ @RealtimeChannel#annotations@ attribute contains the @RealtimeAnnotations@ object for this channel
 
 h3(#realtime-presence). RealtimePresence
 
@@ -909,6 +933,27 @@ then the @enter@ request results in an error immediately.
 h3(#objects). Objects
 
 Reserved for @Objects@ feature specification. Reserved spec points: @OBJ@, @LM@, @LC@
+
+h3(#realtime-annotations). RealtimeAnnotations
+
+* @(RTAN1)@ @RealtimeAnnotations#publish@ function:
+** @(RTAN1a)@ Must accept the same arguments and performs the same validation, field setting, and data encoding as in @RSAN1@
+** @(RTAN1b)@ Has the same connection and channel state conditions as message publishing, see @RTL6c@
+** @(RTAN1c)@ Must put the annotation to be published into an array in the @annotations@ field of a @ProtocolMessage@ whose @action@ field is set to @ANNOTATION@, and @channel@ field is set to the channel name, and send it to the connection
+** @(RTAN1d)@ Must indicate success or failure of the publish (once @ACKed@ or @NACKed@) in the same way as @RealtimeChannel#publish@
+* @(RTAN2)@ @RealtimeAnnotations#delete@ function:
+** @(RTAN2a)@ Must be identical to @RTAN1@ @publish()@ except that the @Annotation.action@ is set to @ANNOTATION_DELETE@, not @ANNOTATION_CREATE@
+* @(RTAN3)@ @RealtimeAnnotations#get@ function:
+** @(RTAN3a)@ Is identical to @RestAnnotations#get@
+* @(RTAN4)@ @RealtimeAnnotations#subscribe@ function:
+** @(RTAN4a)@ Should support the same set of type signatures as @RealtimeChannel#subscribe@ (@RTL7@), except that the @name@ event-name argument is here called @type@
+** @(RTAN4b)@ When the library receives a @ProtocolMessage@ with an action of @ANNOTATION@, every member of the @annotations@ array (decoded into a @Annotation@ objects) should be delivered to registered listeners
+** @(RTAN4c)@ Analagously to @name@-filtering with @RealtimeChannel#subscribe@, if the user subscribes with a @type@ (or array of @type@s) the SDK must deliver only annotations whose @type@ field exactly equals the requested @type@
+** @(RTAN4d)@ Has the same connection and channel state preconditions and return value as @RealtimeChannel#subscribe@, including implicitly attaching unless the user requests otherwise per @RTL7g@/@RTL7h@
+** @(RTAN4e)@ Has one additional channel state condition: once the channel is in the @attached@ state, the @RTL4m@ channel modes are checked for the presence of the @ANNOTATION_SUBSCRIBE@ mode. (Note: the thing being checked is the mode set actually granted, according to the server, not the set of modes requested by the user per @TB2d@). If this mode is missing, the library should log a warning indicating that the user has tried to add an annotation listener without having requested the @ANNOTATION_SUBSCRIBE@ channel mode in ChannelOptions, which will not work
+*** @(RTAN4e1)@ This check does not apply if @attachOnSubscribe@ has been set to @false@ and the channel is not attached
+* @(RTAN5)@ @RealtimeAnnotations#unsubscribe@ function:
+** @(RTAN5a)@ Should support the same set of type signatures as @RealtimeChannel#unsubscribe@ (@RTL7@), except that the @name@ event-name argument is here called @type@
 
 h3(#eventemitter). EventEmitter mixin / interface
 
@@ -1400,6 +1445,8 @@ h4. Message
 *** @(TM2n1)@ @clientId@ string
 *** @(TM2n2)@ @description@ string
 *** @(TM2n3)@ @metadata@ object - used to contain any arbitrary key value pairs of type string.
+** @(TM2q)@ @summary@ @Dict<string, JsonObject>@ - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing @summary@ field on the wire indicates an empty summary, equivalent to an object with no keys.
+*** @(TM2q1)@ A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
 * @(TM6)@ The size of the @Message@ for "TO3l8":#TO3l8 is calculated as follows:
@@ -1409,6 +1456,23 @@ h4. Message
 ** @(TM6f)@ The size of a @string@ @data@ property is its length
 ** @(TM6d)@ The size of the @extras@ property is the string length of its JSON representation
 ** @(TM6e)@ The size of a @null@ or omitted property is zero
+* @(TM7)@ The SDK may expose a series of constructors (or types that can be used for type assertions where that is language-idiomatic) that take a deserialized @JsonObject@, one of the aggregated summaries for a particular annotation type (that is, a value from the @TM2q@ @summary@ @Dict@), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
+** @(TM7a)@ The SDK must not try to do this conversion automatically (either by parsing the annotation type or dynamically detecting the structure). This is so that, when the server adds new annotation types that the SDK does not yet know about, when we later add support for those new types to the SDK, that does not result in a a breaking API change for the SDK.
+** @(TM7b)@ If the SDK chooses to do this, it should support at least the following set of constructors (or other language-idiomatic mechanism that achieves a similar result):
+*** @(TM7b1)@ @SummaryDistinctV1(JsonObject) -> Dict<string, SummaryClientIdList>@
+*** @(TM7b2)@ @SummaryUniqueV1(JsonObject) -> Dict<string, SummaryClientIdList>@
+*** @(TM7b3)@ @SummaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts>@
+*** @(TM7b4)@ @SummaryFlagV1(JsonObject) -> SummaryClientIdList@
+*** @(TM7b5)@ @SummaryTotalV1(JsonObject) -> SummaryTotal@
+** @(TM7c)@ Where:
+*** @(TM7c1)@ @SummaryClientIdList@ is an object containing:
+**** @(TM7c1a)@ @total@ integer
+**** @(TM7c1b)@ @clientIds@ array of strings
+*** @(TM7d1)@ @SummaryClientIdCounts@ is an object containing:
+**** @(TM7d1a)@ @total@ integer
+**** @(TM7d1b)@ @clientIds@ @Dict<string, integer>@
+*** @(TM7e1)@ @SummaryTotal@ is an object containing:
+**** @(TM7e1a)@ @total@ integer
 
 h4. DeltaExtras
 
@@ -1563,10 +1627,30 @@ h4. ObjectData
 ** @(OD3d)@ The size of a @boolean@ @value@ property is 1
 ** @(OD3e)@ The size of a @null@ or omitted property is zero
 
+h4. Annotation
+
+* @(TAN1)@ An @Annotation@ represents an individual annotation event sent or received from the server
+* @(TAN2)@ The attributes of an @Annotation@ (with optionality indicated for Annotations received from the server) are:
+** @(TAN2a)@ @id@ string
+** @(TAN2b)@ @action@ enum, with the following values in order from zero: @ANNOTATION_CREATE@, @ANNOTATION_DELETE@
+*** @(TAN2b1)@ As with @Message@ and @PresenceMessage@, in the wire protocol the action is numeric, and on decoding the library should expose it to the user in whatever enum form is idiomatic in the language and adheres to library conventions. (For example, in javascript, 'annotation.create' and 'annotation.delete' strings)
+** @(TAN2c)@ @clientId@ string
+** @(TAN2d)@ @name@ string (optional)
+** @(TAN2e)@ @count@ integer (optional)
+** @(TAN2f)@ @data@ string, binary, or JSON-encodable object or array (optional)
+*** @(TAN2f1)@ encoded and decoded per @RSL4@
+** @(TAN2g)@ @encoding@ string (optional)
+** @(TAN2h)@ @timestamp@ number: Timestamp of when the annotation was received by the server, as milliseconds since the Unix epoch
+** @(TAN2i)@ @serial@ string: The unique serial number for this annotation, assigned by the server
+** @(TAN2j)@ @messageSerial@ string: The @serial@ of the message that is being annotated
+** @(TAN2k)@ @type@ string: a string indicating the type of the annotation, handled opaquely by the SDK
+** @(TAN2l)@ @extras@ object (optional): A JSON-encodable object for arbitrary metadata
+* @(TAN3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Annotation@-like object (or array of such objects), and optionally a @channelOptions@, and return an @Annotation@ (or array of @Annotations@) that's decoded and decrypted analagously to @TM3@ and @TP4@
+
 h4. ProtocolMessage
 
 * @(TR1)@ A @ProtocolMessage@ represents the type used to send and receive messages over the Realtime protocol.  A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages.
-* @(TR2)@ @ProtocolMessage@ @Action@ enum has the following values in order from zero: @HEARTBEAT@, @ACK@, @NACK@, @CONNECT@, @CONNECTED@, @DISCONNECT@, @DISCONNECTED@, @CLOSE@, @CLOSED@, @ERROR@, @ATTACH@, @ATTACHED@, @DETACH@, @DETACHED@, @PRESENCE@, @MESSAGE@, @SYNC@, @AUTH@, @ACTIVATE@, @OBJECT@, @OBJECT_SYNC@
+* @(TR2)@ @ProtocolMessage@ @Action@ enum has the following values in order from zero: @HEARTBEAT@, @ACK@, @NACK@, @CONNECT@, @CONNECTED@, @DISCONNECT@, @DISCONNECTED@, @CLOSE@, @CLOSED@, @ERROR@, @ATTACH@, @ATTACHED@, @DETACH@, @DETACHED@, @PRESENCE@, @MESSAGE@, @SYNC@, @AUTH@, @ACTIVATE@, @OBJECT@, @OBJECT_SYNC@, @ANNOTATION@
 * @(TR3)@ @ProtocolMessage@ @Flag@ enum has the following values, where a flag with value @n@ is defined to be set if the bitwise AND of the @flags@ field with @2ⁿ@ is nonzero
 ** @(TR3a)@ 0: @HAS_PRESENCE@
 ** @(TR3b)@ 1: @HAS_BACKLOG@
@@ -1579,6 +1663,10 @@ h4. ProtocolMessage
 ** @(TR3s)@ 18: @SUBSCRIBE@ Synonymous with @MESSAGE_SUBSCRIBE@. Retained for backward compatibility.
 ** @(TR3u)@ 18: @MESSAGE_SUBSCRIBE@ Synonymous with @SUBSCRIBE@. This variant should be preferred.
 ** @(TR3t)@ 19: @PRESENCE_SUBSCRIBE@
+** @(TR3v)@ 20: (reserved)
+** @(TR3w)@ 21: @ANNOTATION_PUBLISH@
+** @(TR3x)@ 22: @ANNOTATION_SUBSCRIBE@
+** @(TR3ν)@ 23: (reserved)
 ** @(TR3y)@ 24: @OBJECT_SUBSCRIBE@
 ** @(TR3z)@ 25: @OBJECT_PUBLISH@
 * @(TR4)@ The attributes available in a @ProtocolMessage@ are:
@@ -1732,8 +1820,8 @@ h4. ConnectionDetails
 h4. ChannelProperties
 * @(CP1)@ properties of a channel and its state
 * @(CP2)@ The attributes of @ChannelProperties@ consist of:
-** @(CP2a)@ @attachSerial@ string? - contains the last @channelSerial@ received in an @ATTACHED@ @ProtocolMessage@ for the channel, see "RTL15a":#RTL15a
-** @(CP2b)@ @channelSerial@ string? - contains the last @channelSerial@ received in any @MESSAGE@, @PRESENCE@, @OBJECT@, or @ATTACHED@ @ProtocolMessage@ on the channel, see "RTL15b":#RTL15b
+** @(CP2a)@ @attachSerial@ string - contains the @channelSerial@ that the current attachment started at, set per "RTL15a":#RTL15a
+** @(CP2b)@ @channelSerial@ string - contains the last @channelSerial@ received on the channel, set per "RTL15b":#RTL15b
 
 h4. ChannelDetails
 
@@ -2381,6 +2469,27 @@ class RealtimePresence: // RTP*
   updateClient(clientId: String, Data?, extras?: JsonObject) => io // RTP15
   leaveClient(clientId: String, Data?, extras?: JsonObject) => io // RTP15
 
+class RestAnnotations: // RSAN*
+  publish(messageSerial: String | Message, annotation: Partial<Annotation>) => io // RSAN1
+  delete(messageSerial: String | Message, annotation: Partial<Annotation>) => io // RSAN2
+  get(
+    messageSerial: String | Message,
+    params?: Dict<String, Stringifiable>
+  ) => io PaginatedResult<Annotation> // RSAN3
+
+class RealtimeAnnotations: // RTAN*
+  publish(messageSerial: String | Message, annotation: Annotation) => io // RTAN1
+  delete(messageSerial: String | Message, annotation: Annotation) => io // RTAN2
+  get(
+    messageSerial: String | Message,
+    params?: Dict<String, Stringifiable>
+  ) => io PaginatedResult<Annotation> // RTAN3
+  subscribe((Annotation) ->) => io ChannelStateChange? // RTAN4
+  subscribe(String | [String], (Annotation) ->) => io ChannelStateChange? // RTAN4
+  unsubscribe() // RTAN5
+  unsubscribe((Annotation) ->) // RTAN5
+  unsubscribe(String, (Annotation) ->) // RTAN5
+
 enum PresenceAction: // TP2
   ABSENT // TP2
   PRESENT // TP2
@@ -2406,6 +2515,10 @@ enum ObjectOperationAction: // OOP2, internal
 enum MapSemantics: // MAP2, internal
   LWW // MAP2
 
+enum AnnotationAction: // TAN2b
+  ANNOTATION_CREATE
+  ANNOTATION_DELETE
+
 class ConnectionDetails: // CD*, internal
   clientId: String? // RSA12a, CD2a
   connectionKey: String // RTN15e, CD2b
@@ -2421,6 +2534,11 @@ class Message: // TM*
   constructor(name: String?, data: Data?, clientId: String?) // TM4
   +fromEncoded(JsonObject, ChannelOptions?) -> Message // TM3
   +fromEncodedArray(JsonArray, ChannelOptions?) -> [Message] // TM3
+  +summaryDistinctV1(JsonObject) -> Dict<string, SummaryClientIdList>// TM7b1
+  +summaryUniqueV1(JsonObject) -> Dict<string, SummaryClientIdList> // TM7b2
+  +summaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts> // TM7b3
+  +summaryFlagV1(JsonObject) -> SummaryClientIdList // TM7b4
+  +summaryTotalV1(JsonObject) -> SummaryTotal // TM7b5
   clientId: String? // TM2b
   connectionId: String? // TM2c
   connectionKey: String? // TM2h
@@ -2437,6 +2555,7 @@ class Message: // TM*
   refType: string? // TM2m
   operation: Object? // TM2n
   createdAt: Time? // TM2o
+  summary: Dict<string, JsonObject>? // TM2q
 
 class PresenceMessage // TP*
   +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
@@ -2504,6 +2623,22 @@ class ObjectData // OD*, internal
   objectId: String? // OD2a
   encoding: String? // OD2b
   value: (String | Number | Boolean | Binary)? // OD2c
+
+class Annotation // TAN*
+  +fromEncoded(JsonObject, ChannelOptions?) -> Annotation // TAN3
+  +fromEncodedArray(JsonArray, ChannelOptions?) -> [Annotation] // TAN3
+  id: String // TAN2a
+  action: AnnotationAction // TAN2b
+  clientId: String? // TAN2c
+  name: String? // TAN2d
+  count: Int? // TAN2e
+  data: Data? // TAN2f
+  encoding: String? // TAN2g
+  timestamp: Time // TAN2h
+  serial: String // TAN2i
+  messageSerial: String // TAN2j
+  type: String // TAN2k
+  extras: JsonObject? // TAN2l
 
 class ProtocolMessage: // internal
   action: ProtocolMessageAction // TR2, TR4a
@@ -2767,6 +2902,17 @@ class TokenRevocationFailureResult:
 
 class WrapperSDKProxyOptions:
   agents: [String: String?]? // WPO2a
+
+class SummaryClientIdList:
+  total: number // TM7c1a
+  clientIds: [string] // TM7c1b
+
+class SummaryClientIdCounts:
+  total: number // TM7d1a
+  clientIds: Dict<string, number> // TM7d1b
+
+class SummaryTotal:
+  total: number // TM7e1a
 </pre>
 
 h2(#old-specs). Old specs
