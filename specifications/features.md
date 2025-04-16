@@ -1034,7 +1034,7 @@ No-op
 <!-- When CLOSED -->
 <td>
 
-[RTN11a](#RTN11a</td>)
+[RTN11a](#RTN11a), [RTN11d](#RTN11d</td>)
 
 <!-- When FAILED -->
 <td>
