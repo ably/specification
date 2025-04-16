@@ -981,7 +981,7 @@ Reserved for `Objects` feature specification. Reserved spec points: `OBJ`, `LM`,
 
 ### Forwards compatibility {#realtime-compatibility}
 
-- `(RTF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+- `(RTF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values, which must be ignored (in the case of unrecognised attributes) or handled in some sensible, language-idiomatic way (for unknown enum members)
 
 ### Wrapper SDK proxy client {#wrapper-sdk-proxy}
 
