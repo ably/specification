@@ -971,7 +971,7 @@ h3(#backoff-jitter). Incremental backoff and jitter
 ** @(RTB1b)@ The jitter coefficient is a random number between 0.8 and 1. The randomness of this number doesn't need to be cryptographically secure but should be approximately uniformly distributed.
 
 h3(#realtime-compatibility). Forwards compatibility
-* @(RTF1)@ The library must apply the "robustness principle":https://en.wikipedia.org/wiki/Robustness_principle in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+* @(RTF1)@ The library must apply the "robustness principle":https://en.wikipedia.org/wiki/Robustness_principle in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values, which must be ignored (in the case of unrecognised attributes) or handled in some sensible, language-idiomatic way (for unknown enum members)
 
 h3(#wrapper-sdk-proxy). Wrapper SDK proxy client
 
