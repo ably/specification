@@ -962,15 +962,15 @@ h3(#connection-states-operations). @Connection.state@ effects on realtime operat
   <!-- When CONNECTED -->
   <td>No-op</td>
   <!-- When DISCONNECTED -->
-  <td>"RTN11c":#RTN11c</td>
+  <td>"RTN11a":#RTN11a, "RTN11c":#RTN11c</td>
   <!-- When SUSPENDED -->
-  <td>"RTN11c":#RTN11c</td>
+  <td>"RTN11a":#RTN11a, "RTN11c":#RTN11c</td>
   <!-- When CLOSING -->
-  <td>"RTN11b":#RTN11b</td>
+  <td>"RTN11a":#RTN11a, "RTN11b":#RTN11b</td>
   <!-- When CLOSED -->
   <td>"RTN11a":#RTN11a</td>
   <!-- When FAILED -->
-  <td>"RTN11d":#RTN11d</td>
+  <td>"RTN11a":#RTN11a, "RTN11d":#RTN11d</td>
 
 </tr>
 
