@@ -968,7 +968,7 @@ h3(#connection-states-operations). @Connection.state@ effects on realtime operat
   <!-- When CLOSING -->
   <td>"RTN11a":#RTN11a, "RTN11b":#RTN11b</td>
   <!-- When CLOSED -->
-  <td>"RTN11a":#RTN11a</td>
+  <td>"RTN11a":#RTN11a, "RTN11d":#RTN11d</td>
   <!-- When FAILED -->
   <td>"RTN11a":#RTN11a, "RTN11d":#RTN11d</td>
 
