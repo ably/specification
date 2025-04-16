@@ -1019,17 +1019,17 @@ No-op
 <!-- When DISCONNECTED -->
 <td>
 
-[RTN11c](#RTN11c</td>)
+[RTN11a](#RTN11a), [RTN11c](#RTN11c</td>)
 
 <!-- When SUSPENDED -->
 <td>
 
-[RTN11c](#RTN11c</td>)
+[RTN11a](#RTN11a), [RTN11c](#RTN11c</td>)
 
 <!-- When CLOSING -->
 <td>
 
-[RTN11b](#RTN11b</td>)
+[RTN11a](#RTN11a), [RTN11b](#RTN11b</td>)
 
 <!-- When CLOSED -->
 <td>
@@ -1039,7 +1039,7 @@ No-op
 <!-- When FAILED -->
 <td>
 
-[RTN11d](#RTN11d</td>)
+[RTN11a](#RTN11a), [RTN11d](#RTN11d</td>)
 
 </tr>
 <tr>
