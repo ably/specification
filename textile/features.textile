@@ -76,11 +76,11 @@ h2(#endpoint-configuration). Client library endpoint configuration
 ** @(REC1b)@ If the @endpoint@ option is specified then:
 *** @(REC1b1)@ If any one of the deprecated options @environment@, @restHost@, @realtimeHost@ or @fallbackHostsUseDefault@ are also specified then the options as a set are invalid.
 *** @(REC1b2)@ If the @endpoint@ option is a domain name, determined by it containing at least one period (@.@) then the @primary domain@ is the value of the @endpoint@ option.
-*** @(REC1b3)@ Otherwise, if the @endpoint@ option is a non-production routing policy name, determined by it having the form @nonprod:[name]@, then the @primary domain@ is @[name].realtime.ably-nonprod.net@.
-*** @(REC1b4)@ Otherwise, the @endpoint@ option is a production routing policy name of the form @[name]@, and the @primary domain@ is @[name].realtime.ably.net@.
-** @(REC1c)@ If the deprecated @environment@ option is specified then it defines a production routing policy name @[name]@:
+*** @(REC1b3)@ Otherwise, if the @endpoint@ option is a non-production routing policy name, determined by it having the form @nonprod:[id]@, then the @primary domain@ is @[id].realtime.ably-nonprod.net@.
+*** @(REC1b4)@ Otherwise, the @endpoint@ option is a production routing policy name of the form @[id]@, and the @primary domain@ is @[id].realtime.ably.net@.
+** @(REC1c)@ If the deprecated @environment@ option is specified then it defines a production routing policy name @[id]@:
 *** @(REC1c1)@ If any one of the deprecated options @restHost@, @realtimeHost@ are also specified then the options as a set are invalid.
-*** @(REC1c2)@ Otherwise, the primary domain is @[name].realtime.ably.net@.
+*** @(REC1c2)@ Otherwise, the primary domain is @[id].realtime.ably.net@.
 ** @(REC1d)@ If either the @restHost@ or @realtimeHost@ option is specified then:
 *** @(REC1d1)@ If the @restHost@ option is specified the @primary domain@ is the value of the @restHost@ option.
 *** @(REC1d2)@ Otherwise, if the @realtimeHost@ option is specified the @primary domain@ is the value of the @realtimeHost@ option.
@@ -93,9 +93,9 @@ h2(#endpoint-configuration). Client library endpoint configuration
 ** @(REC2c)@ Otherwise, the set of @fallback domains@ is defined implicitly by the options used to define the @primary domain@ as specified in @(REC1)@:
 *** @(REC2c1)@ If the @primary domain@ is determined to be the default via @(REC1a)@ then the set of @fallback domains@ is the default @main.a.fallback.ably-realtime.com@, @main.b.fallback.ably-realtime.com@, @main.c.fallback.ably-realtime.com@, @main.d.fallback.ably-realtime.com@, and @main.e.fallback.ably-realtime.com@.
 *** @(REC2c2)@ Otherwise, if the @primary domain@ is determined to be an explicit domain name via @(REC1b2)@ then the set of @fallback domains@ is empty.
-*** @(REC2c3)@ Otherwise, if the @primary domain@ is determined by a non-production routing policy name via @(REC1b3)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime-nonprod.com@, @[name].b.fallback.ably-realtime-nonprod.com@, @[name].c.fallback.ably-realtime-nonprod.com@, @[name].d.fallback.ably-realtime-nonprod.com@, @[name].e.fallback.ably-realtime-nonprod.com@.
-*** @(REC2c4)@ Otherwise, if the @primary domain@ is determined by a production routing policy name via @(REC1b4)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime.com@, @[name].b.fallback.ably-realtime.com@, @[name].c.fallback.ably-realtime.com@, @[name].d.fallback.ably-realtime.com@, @[name].e.fallback.ably-realtime.com@.
-*** @(REC2c5)@ Otherwise, if the @primary domain@ is determined by a routing policy name via @(REC1c2)@ then the set of @fallback domains@ is @[name].a.fallback.ably-realtime.com@, @[name].b.fallback.ably-realtime.com@, @[name].c.fallback.ably-realtime.com@, @[name].d.fallback.ably-realtime.com@, @[name].e.fallback.ably-realtime.com@.
+*** @(REC2c3)@ Otherwise, if the @primary domain@ is determined by a non-production routing policy name via @(REC1b3)@ then the set of @fallback domains@ is @[id].a.fallback.ably-realtime-nonprod.com@, @[id].b.fallback.ably-realtime-nonprod.com@, @[id].c.fallback.ably-realtime-nonprod.com@, @[id].d.fallback.ably-realtime-nonprod.com@, @[id].e.fallback.ably-realtime-nonprod.com@.
+*** @(REC2c4)@ Otherwise, if the @primary domain@ is determined by a production routing policy name via @(REC1b4)@ then the set of @fallback domains@ is @[id].a.fallback.ably-realtime.com@, @[id].b.fallback.ably-realtime.com@, @[id].c.fallback.ably-realtime.com@, @[id].d.fallback.ably-realtime.com@, @[id].e.fallback.ably-realtime.com@.
+*** @(REC2c5)@ Otherwise, if the @primary domain@ is determined by a routing policy name via @(REC1c2)@ then the set of @fallback domains@ is @[id].a.fallback.ably-realtime.com@, @[id].b.fallback.ably-realtime.com@, @[id].c.fallback.ably-realtime.com@, @[id].d.fallback.ably-realtime.com@, @[id].e.fallback.ably-realtime.com@.
 *** @(REC2c6)@ Otherwise, if the @primary domain@ is determined by the deprecated @restHost@ or @realtimeHost@ option via @(REC1d)@ then the set of fallback domains is empty.
 
 * @(REC3)@ Client options determine a @connectivity check URL@.
