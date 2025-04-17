@@ -902,6 +902,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP15e)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in or enters the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
   - `(RTP15f)` If the client is identified and has a valid `clientId`, and the `clientId` argument does not match the client's `clientId`, then it should indicate an error. The connection and channel remain available for further operations
 
+### Objects
+
+Reserved for `Objects` feature specification. Reserved spec points: `OBJ`, `LM`, `LC`
+
 ### EventEmitter mixin / interface {#eventemitter}
 
 - `(RTE1)` `EventEmitter` is a generic interface for event registration and delivery used in a number of the types in the Realtime client library. For example, the `Connection` object emits events for connection state using the `EventEmitter` pattern
