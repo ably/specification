@@ -1560,8 +1560,8 @@ h4. ProtocolMessage
 ** @(TR3s)@ 18: @SUBSCRIBE@ Synonymous with @MESSAGE_SUBSCRIBE@. Retained for backward compatibility.
 ** @(TR3u)@ 18: @MESSAGE_SUBSCRIBE@ Synonymous with @SUBSCRIBE@. This variant should be preferred.
 ** @(TR3t)@ 19: @PRESENCE_SUBSCRIBE@
-** @(TR3v)@ 24: @OBJECT_SUBSCRIBE@
-** @(TR3w)@ 25: @OBJECT_PUBLISH@
+** @(TR3y)@ 24: @OBJECT_SUBSCRIBE@
+** @(TR3z)@ 25: @OBJECT_PUBLISH@
 * @(TR4)@ The attributes available in a @ProtocolMessage@ are:
 ** @(TR4a)@ @action@ enum
 ** @(TR4n)@ @id@ string, which will generally be of the form @connectionId:msgSerial@
