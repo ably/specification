@@ -76,8 +76,8 @@ h2(#endpoint-configuration). Client library endpoint configuration
 ** @(REC1b)@ If the @endpoint@ option is specified then:
 *** @(REC1b1)@ If any one of the deprecated options @environment@, @restHost@, @realtimeHost@ or @fallbackHostsUseDefault@ are also specified then the options as a set are invalid.
 *** @(REC1b2)@ If the @endpoint@ option is a domain name, determined by it containing at least one period (@.@) then the @primary domain@ is the value of the @endpoint@ option.
-*** @(REC1b3)@ Otherwise, if the @endpoint@ option is a non-production routing policy name of the form @nonprod:[name]@ then the @primary domain@ is @[name].realtime.ably-nonprod.net@.
-*** @(REC1b4)@ Otherwise, if the @endpoint@ option is a production routing policy name of the form @[name]@ then the @primary domain@ is @[name].realtime.ably.net@.
+*** @(REC1b3)@ Otherwise, if the @endpoint@ option is a non-production routing policy name, determined by it having the form @nonprod:[name]@, then the @primary domain@ is @[name].realtime.ably-nonprod.net@.
+*** @(REC1b4)@ Otherwise, the @endpoint@ option is a production routing policy name of the form @[name]@, and the @primary domain@ is @[name].realtime.ably.net@.
 ** @(REC1c)@ If the deprecated @environment@ option is specified then it defines a production routing policy name @[name]@:
 *** @(REC1c1)@ If any one of the deprecated options @restHost@, @realtimeHost@ are also specified then the options as a set are invalid.
 *** @(REC1c2)@ Otherwise, the primary domain is @[name].realtime.ably.net@.
