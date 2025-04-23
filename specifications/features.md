@@ -2058,8 +2058,8 @@ Presence ops.
 
 - `(CP1)` properties of a channel and its state
 - `(CP2)` The attributes of `ChannelProperties` consist of:
-  - `(CP2a)` `attachSerial` string - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMessage` for the channel, see [RTL15a](#RTL15a)
-  - `(CP2b)` `channelSerial` string - contains the last `channelSerial` received in any `MESSAGE`, `PRESENCE`, `OBJECT`, or `ATTACHED` `ProtocolMessage` on the channel, see [RTL15b](#RTL15b)
+  - `(CP2a)` `attachSerial` string? - contains the last `channelSerial` received in an `ATTACHED` `ProtocolMessage` for the channel, see [RTL15a](#RTL15a)
+  - `(CP2b)` `channelSerial` string? - contains the last `channelSerial` received in any `MESSAGE`, `PRESENCE`, `OBJECT`, or `ATTACHED` `ProtocolMessage` on the channel, see [RTL15b](#RTL15b)
 
 #### ChannelDetails
 
@@ -2594,8 +2594,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       name: string // MFI2d
 
     class ChannelProperties: // CP*
-      attachSerial: String // CP2a
-      channelSerial: String // CP2b
+      attachSerial: String? // CP2a
+      channelSerial: String? // CP2b
 
     // Only on platforms that support receiving push notifications:
     class PushChannel: // RSH7
