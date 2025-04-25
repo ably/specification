@@ -831,7 +831,7 @@ h3(#realtime-presence). RealtimePresence
 ** @(RTP5b)@ If a channel enters the @ATTACHED@ state then all queued presence messages will be sent immediately. A presence @SYNC@ may be initiated per "@RTP1@":#RTP1
 * @(RTP16)@ Connection state conditions:
 ** @(RTP16a)@ If the channel is @ATTACHED@ then the presence messages are handled per @RTL6c2@. (That is: they should be sent to the connection, to be published immediately if the connection is @CONNECTED@, else if the connection state and @queueMessages@ option allows they may be placed in a connection-wide queue to be published once the connection becomes @CONNECTED@, else rejected)
-** @(RTP16b)@ If the channel is @ATTACHING@ or @INITIALIZED@, then if @ClientOptions.queueMessages@ is @true@, the presence messages should be queued at a channel level, to be handled per @RTP16a@ once the channel becomes @ATTACHED@, or failed if the channel state becomes @SUSPENDED@, @FAILED@, or @DETACHED@ first
+** @(RTP16b)@ If the channel is @ATTACHING@ or @INITIALIZED@, then if @ClientOptions.queueMessages@ is @true@, the presence messages should be queued at a channel level, to be handled per @RTP16a@ once the channel becomes @ATTACHED@, or failed per "@RTL11@":#RTL11
 ** @(RTP16c)@ In any other case the operation should result in an error
 * @(RTP6)@ @RealtimePresence#subscribe@ function:
 ** @(RTP6a)@ Subscribe with a single listener argument subscribes a listener to all presence messages
