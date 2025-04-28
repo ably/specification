@@ -369,7 +369,7 @@ Describes the properties of the channel state.
 
 | Method / Property | Parameter | Returns | Spec | Description |
 |---|---|---|---|---|
-| attachSerial: String ||| CP2a | Starts unset when a channel is instantiated, then updated with the `channelSerial` from each [`ATTACHED`]{@link ChannelState#ATTACHED} event that matches the channel. Used as the value for [`untilAttach`]{@link RealtimeChannel#history}. |
+| attachSerial: String? ||| CP2a | Starts unset when a channel is instantiated, then updated with the `channelSerial` from each [`ATTACHED`]{@link ChannelState#ATTACHED} event that matches the channel. Used as the value for [`untilAttach`]{@link RealtimeChannel#history}. |
 
 ## class PushChannel
 
