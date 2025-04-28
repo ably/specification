@@ -439,12 +439,12 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T4c)@ If typing is already in progress (i.e. a heartbeat timer set according to @CHA-T4a4@ exists and has not expired):
 *** @(CHA-T4c1)@ @[Testable]@ The client must not send a @typing.started@ event, instead it shall return a successful no-op to the caller.
 * @(CHA-T5)@ Users may explicitly indicate that they have stopped typing using @stop@ method.
-** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T10@ heartbeat timer does not exist or is expired), this operation is a no-op.
+** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T4a4@ heartbeat timer does not exist or is expired), this operation is a no-op.
 ** @(CHA-T5b)@ This specification point has been removed.
 ** @(CHA-T5c)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-message. The client must wait for the publish to succeed or fail before returning the result to the caller.
 ** @(CHA-T5d1)@ @[Testable]@ The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
-** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T10@ timer shall be unset.
+** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T4a4@ timer shall be unset.
 * @(CHA-T6)@ Users may subscribe to typing events - updates to a set of clientIDs that are typing. This operation, like all subscription operations, has no side-effects in relation to room lifecycle.
 ** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing event V2":#chat-structs-typing-event-V2 in a chat room.
 ** @(CHA-T6b)@ @[Testable]@ A subscription to typing may be removed, after which it shall receive no further events.
