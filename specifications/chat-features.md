@@ -105,7 +105,7 @@ The status of any given Chat Room is determined by the state of the underlying r
 
 ### Room Lifecycle {#rooms-lifecycle}
 
-Rooms are considered the atomic unit of chat underpinned by a realtime channel.
+Rooms are considered the atomic units of chat, and each is underpinned by a dedicated realtime channel.
 
 There are three room lifecycle operations: `ATTACH`, `DETACH`, `RELEASE`.
 
