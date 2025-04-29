@@ -108,7 +108,7 @@ Rooms are considered the atomic units of chat, and each is underpinned by a dedi
 
 There are three room lifecycle operations: @ATTACH@, @DETACH@, @RELEASE@.
 
-Discontinuities in Realtime connections can happen - whereby continuity of message delivery is disrupted. Therefore each feature may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves.
+Discontinuities in Realtime connections can happen - whereby continuity of message delivery is disrupted. Therefore, a room and its associated features may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves.
 
 h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 
@@ -117,10 +117,10 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 * @(CHA-RL1)@ A room must be explicitly attached via the @ATTACH@ operation.
 ** @(CHA-RL1a)@ @[Testable]@ If the room is already in the @ATTACHED@ status, then this operation is no-op.
 ** @(CHA-RL1j)@ This specification point has been removed.
-** @(CHA-RL1b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleasing@ error code from the "chat-specific error codes":#error-codes.
+** @(CHA-RL1b)@ This specification point has been removed, it was valid up until the single-channel migration.
 ** @(CHA-RL1c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
-** @(CHA-RL1e)@ @[Testable]@ Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the @ATTACHING@ status.
+** @(CHA-RL1e)@ @[Testable]@ Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the @ATTACHING@ status before attempting to attach to the realtime channel.
 ** @(CHA-RL1k)@ @[Testable]@ Following the @CHA-RL1e@ transition, the client shall initiate and await the attachment of the realtime channel.
 *** @(CHA-RL1k1)@ @[Testable]@ If the attachment is successful, the room status shall be transitioned to @ATTACHED@, the @isExplicitlyDetached@ flag shall be set to @false@ and the @hasAttachedOnce@ flags set to @true@.
 *** @(CHA-RL1k2)@ @[Testable]@ If the attachment is unsuccessful (i.e. @channel.attach()@ throws an error), the attach error is the @ErrorInfo@ from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the attach error.
@@ -142,10 +142,10 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 * @(CHA-RL2)@ A room must be explicitly detached via the @DETACH@ operation.
 ** @(CHA-RL2i)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 ** @(CHA-RL2a)@ @[Testable]@ If the room status is already @DETACHED@, then this operation is a no-op.
-** @(CHA-RL2b)@ @[Testable]@ If the room is in the @RELEASING@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleasing@ error code from the "chat-specific error codes":#error-codes.
+** @(CHA-RL2b)@ @[Testable]@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL2c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL2d)@ @[Testable]@ If the room is in the @FAILED@ status, the operation shall be rejected with an @ErrorInfo@ with @RoomInFailedState@ error code from the "chat-specific error codes":#error-codes.
-** @(CHA-RL2j)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status.
+** @(CHA-RL2j)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status before attempting to detach from the realtime channel.
 ** @(CHA-RL2k)@ @[Testable]@ Following the @CHA-RL2j@ transition, the client shall initiate and await the detachment of the realtime channel.
 *** @(CHA-RL2k1)@ @[Testable]@ If the detachment is successful, the room status shall be transitioned to @DETACHED@, and the @isExplicitlyDetached@ flag set to @true@.
 *** @(CHA-RL2k2)@ @[Testable]@ If the detachment is unsuccessful (i.e. @channel.detach()@ throws an error), the detach error is the @ErrorInfo@ from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the detach error.
@@ -164,7 +164,7 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3j)@ @[Testable]@ If the room is in the @INITIALIZED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
 ** @(CHA-RL3c)@ This specification point has been removed.
 ** @(CHA-RL3i)@ This specification point has been removed.
-** @(CHA-RL3m)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status.
+** @(CHA-RL3m)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status before attempting to detach and then release the realtime channel.
 ** @(CHA-RL3n)@ After @CHA-RL3m@, the room enters a detach loop.
 *** @(CHA-RL3n1)@ @[Testable]@ If the channel state is @FAILED@, the client shall immediately breaks from the loop.
 *** @(CHA-RL3n2)@ @[Testable]@ The client shall initiate and await a @channel.detach()@ operation. If this operation succeeds, the client shall exit the loop.
