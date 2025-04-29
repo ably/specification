@@ -164,14 +164,14 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL3j)@ @[Testable]@ If the room is in the @INITIALIZED@ status, then the room is immediately transitioned to @RELEASED@ and the operation succeeds.
 ** @(CHA-RL3c)@ This specification point has been removed.
 ** @(CHA-RL3i)@ This specification point has been removed.
-** @(CHA-RL3m)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status before attempting to detach and then release the realtime channel.
+** @(CHA-RL3m)@ @[Testable]@ When the release operation commences, the room will transition into the @RELEASING@ status.
 ** @(CHA-RL3n)@ After @CHA-RL3m@, the room enters a detach loop.
 *** @(CHA-RL3n1)@ @[Testable]@ If the channel state is @FAILED@, the client shall immediately breaks from the loop.
 *** @(CHA-RL3n2)@ @[Testable]@ The client shall initiate and await a @channel.detach()@ operation. If this operation succeeds, the client shall exit the loop.
 *** @(CHA-RL3n3)@ @[Testable]@ If the @channel.detach()@ operation fails, and the realtime channel state is @FAILED@ (checked after the failure), the loop shall terminate.
 *** @(CHA-RL3n4)@ @[Testable]@ If the @channel.detach()@ operation fails otherwise, the client shall wait a short time (250ms) and restart the loop from @CHA-RL3n1@.
 ** @(CHA-RL3o)@ @[Testable]@ Upon operation completion, the room status shall be transitioned to @RELEASED@.
-** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channels are released from the core SDK prevent leakage.
+** @(CHA-RL3h)@ @[Testable]@ Upon operation completion, the underlying Realtime Channel shall be released from the core SDK to prevent leakage.
 ** @(CHA-RL3l)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL3d)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RL3e)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -180,8 +180,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 * @(CHA-RL7)@ Room lifecycle operations are atomic and exclusive operations: one operation must complete (whether that's failure or success) before the next one may begin.
 ** @(CHA-RL7a)@ @[Testable]@ Room lifecycle operations have a precedence. If multiple operations are scheduled to run, they run in the following order:
 *** @(CHA-RL7a1)@ This specification point has been removed. It was valid up until the single-channel migration.
-*** @(CHA-RL7a2)@ The @RELEASE@ operation.
-*** @(CHA-RL7a3)@ The @ATTACH@ and @DETACH@ operations have equal precedence.
+*** @(CHA-RL7a2)@ 1. The @RELEASE@ operation - Highest priority.
+*** @(CHA-RL7a3)@ 2. The @ATTACH@ and @DETACH@ operations have equal precedence.
 * @(CHA-RL9)@ Many operations in the Chat SDK will still attempt to proceed if the room is in an @ATTACHING@ status. However, their ability to proceed will depend on the subsequent status that the room takes. This specification point is defined here to avoid unnecessary repetition. It is primarily testable via the points that refer to it.
 ** @(CHA-RL9a)@ @[Testable]@ When the room status is @ATTACHING@ at the point of operation commencement, the caller will subscribe a one-time listener to the room status.
 ** @(CHA-RL9b)@ @[Testable]@ If the next room status received by the caller is @ATTACHED@, the operation shall proceed as normal.
@@ -260,7 +260,8 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1g3)@ @[Testable]@ If the room does not exist in the room map, and a release operation is already in progress, then the associated future will be returned.
 *** @(CHA-RC1g4)@ @[Testable]@ If a release operation is already in progress, any pending @CHA-RC1f@ future shall be rejected / throw an error. The error must use the @RoomReleasedBeforeOperationCompleted@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400. The room shall be removed from the room map and the operation must return the future associated with the previous operation.
 *** @(CHA-RC1g5)@ @[Testable]@ The room is removed from the room map and a @CHA-RL3@ release operation is initiated for the room object. A future is returned which resolves when the release operation completes.
-* @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain features. When requesting a room, options as to which features should be enabled, and the configuration they should take, must be provided (@RoomOptions@).
+* @(CHA-RC5)@ @[Testable]@ All chat feature properties (e.g. @room.messages@) are enabled by default. The specific behaviour of each feature is controlled by its respective room options @CHA-RC2@.
+* @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain functionality. When requesting a room, options as to what functionality should be enabled/disabled, can be provided (@RoomOptions@).
 ** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
 ** @(CHA-RC2c)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RC2b)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -274,7 +275,6 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC4)@ Users may provide room options to the @rooms.get()@ call to control the behaviour of the room.
 ** @(CHA-RC4a)@ @[Testable]@ Where room options have not been provided, the client shall provide defaults.
 ** @(CHA-RC4b)@ @[Testable]@ Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
-* @(CHA-RC5)@ @[Testable]@ All chat feature properties (e.g. @room.messages@) are enabled by default. The specific behaviour of each feature is controlled by its respective room options.
 
 h2(#messages). Messages
 
