@@ -657,8 +657,10 @@ h3(#realtime-channel). RealtimeChannel
 * @(RTL3)@ Connection state change side effects:
 ** @(RTL3e)@ If the connection state enters the @DISCONNECTED@ state, it will have no effect on the channel states.
 ** @(RTL3a)@ If the connection state enters the @FAILED@ state, then an @ATTACHING@ or @ATTACHED@ channel state will transition to @FAILED@ and set the @RealtimeChannel#errorReason@
+** @(RTL3g)@ If the connection state enters the @FAILED@ state, then any channels in the @DETACHING@ state should transition to @FAILED@ and set their @errorReason@ to that of the connection.
 ** @(RTL3b)@ If the connection state enters the @CLOSED@ state, then an @ATTACHING@ or @ATTACHED@ channel state will transition to @DETACHED@
 ** @(RTL3c)@ If the connection state enters the @SUSPENDED@ state, then an @ATTACHING@ or @ATTACHED@ channel state will transition to @SUSPENDED@
+** @(RTL3h)@ If the connection enters the @CLOSED@ or @SUSPENDED@ state, then any channels in the @DETACHING@ state should transition to @DETACHED@.
 ** @(RTL3d)@ If the connection state enters the @CONNECTED@ state, any channels in the @ATTACHING@, @ATTACHED@, or @SUSPENDED@ states should be transitioned to @ATTACHING@ (other than ones already in that state), and initiate an @RTL4c@ attach sequence. (If the attach operation times out and the channel was previously @SUSPENDED@, it should return to the @SUSPENDED@ state, see "RTL4f":#RTL4f). The connection should also process any messages that had been queued per @RTL6c2@ (it should do this immediately, without waiting for the attach operations to finish).
 ** @(RTL3f)@ If the connection enters the @CONNECTED@ state then any channels in the @DETACHING@ state should initiate an "@RTL5d@":#RTL5d detach sequence.
 * @(RTL11)@ If a channel enters the @DETACHED@, @SUSPENDED@ or @FAILED@ state, then all presence actions that are still queued for send on that channel per "RTP16b":#RTP16b should be deleted from the queue, and any callback passed to the corresponding presence method invocation should be called with an @ErrorInfo@ indicating the failure
@@ -684,17 +686,18 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL4l)@ If the user has specified a @modes@ array in the @ChannelOptions@ ("@TB2d@":#TB2d), it must be encoded as a bitfield per "@TR3@":#TR3 and set as the @flags@ field of the @ATTACH@ @ProtocolMessage@. (For the avoidance of doubt, when multiple different spec items require flags to be set in the @ATTACH@, the final @flags@ field should be the bitwise OR of them all)
 ** @(RTL4m)@ On receipt of an @ATTACHED@, the client library should decode the @flags@ into an array of @ChannelMode@ s (that is, the same format as @ChannelOptions.modes@) and expose it as a read-only @modes@ field of the @RealtimeChannel@ (or a @getModes()@ method where that is more idiomatic). This should only contain @ChannelMode@ s: it should not contain flags which are not modes (see "@TB2d@":#TB2d)
 * @(RTL5)@ @RealtimeChannel#detach@ function:
-** @(RTL5a)@ If the channel state is @INITIALIZED@ or @DETACHED@ nothing is done
+** @(RTL5a)@ If the channel state is @INITIALIZED@ or @DETACHED@ nothing is done, and the optional callback should be called with no argument
 ** @(RTL5i)@ If the channel is in a pending state @DETACHING@ or @ATTACHING@, do the detach operation after the completion of the pending request
-** @(RTL5b)@ If the channel state is @FAILED@, the @detach@ request results in an error
-** @(RTL5j)@ If the channel state is @SUSPENDED@, the @detach@ request transitions the channel immediately to the @DETACHED@ state
-** @(RTL5g)@ If the connection state is @CLOSING@ or @FAILED@, the @detach@ request results in an error
+** @(RTL5b)@ If the channel state is @FAILED@, the @detach@ request results in an error (that is, depending on what is idiomatic for the language it should either throw an error or call its optional callback with an error)
+** @(RTL5j)@ If the channel state is @SUSPENDED@, the @detach@ request transitions the channel immediately to the @DETACHED@ state, and calls the optional callback with no argument
+** @(RTL5g)@ If the connection state is @CLOSING@ or @FAILED@, the @detach@ request results in an error (that is, depending on what is idiomatic for the language it should either throw an error or call its optional callback with an error)
 ** @(RTL5h)@ If the connection state is @CONNECTING@ or @DISCONNECTED@, do the detach operation once the connection state is @CONNECTED@
 ** @(RTL5d)@ Otherwise (i.e. the channel state is @ATTACHED@ and the connection — given this channel state, "@RTL3@":#RTL3, and the above connection state conditions — is thus @CONNECTED@) a @DETACH@ ProtocolMessage is sent to the server, the state transitions to @DETACHING@ and the channel becomes @DETACHED@ when the confirmation @DETACHED@ ProtocolMessage is received
 ** @(RTL5f)@ This clause has been replaced by "@RTL5l@":#RTL5l. It was valid up to and including specification version @TBD@.
-** @(RTL5l)@ Once a @DETACH@ @ProtocolMessage@ is sent, if a @DETACHED@ @ProtocolMessage@ is not received within "@realtimeRequestTimeout@":#TO3l11, the detach request should be treated as though it has failed and the channel will transition back to @ATTACHED@
+** @(RTL5l)@ Once a @DETACH@ @ProtocolMessage@ is sent, if a @DETACHED@ @ProtocolMessage@ is not received within "@realtimeRequestTimeout@":#TO3l11, the detach request should be treated as though it has failed, and the channel will transition back to @ATTACHED@ and call its optional callback with an error
 ** @(RTL5k)@ If the channel receives an @ATTACHED@ message while in the @DETACHING@ or @DETACHED@ state, it should send a new @DETACH@ message and remain in (or transition to) the @DETACHING@ state
-** @(RTL5e)@ If the language permits, a callback can be provided that is called when the channel is detached successfully or the detach fails and the @ErrorInfo@ error is passed as an argument to the callback
+** @(RTL5e)@ This clause has been replaced by "@RTL5m@":#RTL5m. It was valid up to and including specification version @TBD@.
+** @(RTL5m)@ A callback (or other language-idiomatic equivalent) can be provided that is called by either "@RTL5a@":#RTL5a, "@RTL5b@":#RTL5b, "@RTL5j@":#RTL5j, "@RTL5g@":#RTL5g or "@RTL5l@":#RTL5l, or when, after the channel transitions to @DETACHING@ in "@RTL5d@":#RTL5d and the request does not subsequently time out in "@RTL5l@":#RTL5l, the channel next moves to one of the @DETACHED@ or @FAILED@ states. In the case of @DETACHED@ the callback is called with no argument. In the case of @FAILED@ it is called with an @ErrorInfo@ corresponding to the @ChannelStateChange.reason@ of the state change to indicate that the detach has failed.
 * @(RTL6)@ @RealtimeChannel#publish@ function:
 ** @(RTL6a)@ Messages are encoded in the same way as the @RestChannel#publish@ method, and "RSL1g":#RSL1g (size limit) applies similarly
 *** @(RTL6a1)@ "RSL1k":#RSL1k (@idempotentRestPublishing@ option), "RSL1j1":#RSL1j1 (idempotent publishing test), and "RSL1l":#RSL1l (@publish(Message, params)@ form) do not apply to realtime publishes
@@ -778,7 +781,7 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL22b)@ The method must allow for matching only messages which do not have @extras.ref@.
 ** @(RTL22c)@ The listener must only execute if all provided criteria are met.
 ** @(RTL22d)@ The method should use the @MessageFilter@ object if possible and idiomatic for the language.
-* @(RTL24)@ @RealtimeChannel#errorReason@ attribute is an optional @ErrorInfo@ object which is set by the library when an error occurs on the channel, as described by "RTN11d":#RTN11d, "RTL3a":#RTL3a, "RTL4g":#RTL4g, "RTL14":#RTL14.
+* @(RTL24)@ @RealtimeChannel#errorReason@ attribute is an optional @ErrorInfo@ object which is set by the library when an error occurs on the channel, as described by "RTN11d":#RTN11d, "RTL3a":#RTL3a, "RTL3g":#RTL3g, "RTL4g":#RTL4g, "RTL14":#RTL14.
 * @(RTL25)@ @RealtimeChannel#whenState@ function:
 ** @(RTL25a)@ If the channel is already in the given state, calls the listener with a `null` argument.
 ** @(RTL25b)@ Else, calls @#once@ with the given state and listener.
