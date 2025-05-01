@@ -460,10 +460,10 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T13b4)@ @[Testable]@ If the event represents a client that has stopped typing, the Chat client shall remove the @clientId@ from the typing set and emit a typing stopped event to any registered listeners (@CHA-T15@). It shall also cancel the @(CHA-T13b1)@ timer for the given typing client.
 *** @(CHA-T13b5)@ @[Testable]@ If the event represents a client that has stopped typing, but the @clientId@ for that client is not present in the typing set, then no stop typing event shall be emitted to any registered listeners (@CHA-T15@).
 * @(CHA-T14)@ @[Testable]@ Multiple asynchronous calls to keystroke/stop typing must eventually converge to a consistent state.
-** @(CHA-TM14a)@ @[Testable]@ When a call to @keystroke@ or @stop@ is made, it should attempt to acquire a mutex lock.
-** @(CHA-TM14b)@ @[Testable]@ Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
-*** @(CHA-TM14b1)@ @[Testable]@ During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
-*** @(CHA-TM14b2)@ @[Testable]@ If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
+** @(CHA-T14a)@ @[Testable]@ When a call to @keystroke@ or @stop@ is made, it should attempt to acquire a mutex lock.
+** @(CHA-T14b)@ @[Testable]@ Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
+*** @(CHA-T14b1)@ @[Testable]@ During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
+*** @(CHA-T14b2)@ @[Testable]@ If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
 
 h2(#occupancy). Occupancy
 
