@@ -464,6 +464,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T14b)@ @[Testable]@ Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
 *** @(CHA-T14b1)@ @[Testable]@ During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
 *** @(CHA-T14b2)@ @[Testable]@ If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
+* @(CHA-T7)@ This specification point has been removed, it was valid up until the single-channel migration.
 
 h2(#occupancy). Occupancy
 
