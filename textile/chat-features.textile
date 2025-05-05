@@ -255,12 +255,10 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 * @(CHA-M1)@ Chat messages for a Room are sent on a corresponding realtime channel @<roomId>::$chat::$chatMessages@. For example, if your room id is @my-room@ then the messages channel will be @my-room::$chat::$chatMessages@.
 * @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
-<div class=deprecated>
-** @(CHA-M2a)@ @[Testable]@ @(deprecated)@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
-** @(CHA-M2b)@ @[Testable]@ @(deprecated)@ A @Message@ is considered after another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes second.
-** @(CHA-M2c)@ @[Testable]@ @(deprecated)@ A @Message@ is considered to be equal to another @Message@ if they have the same timeserial.
-</div>
-** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
+** @(CHA-M2a)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M2e@.
+** @(CHA-M2b)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M2f@.
+** @(CHA-M2c)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M2g@.
+** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse @serial@ strings.
 ** @(CHA-M2e)@ @[Testable]@ In global ordering, a @Message@ is considered to occur before another @Message@ if the @serial@ of the first @Message@ is before the latter when lexicographically sorted.
 ** @(CHA-M2f)@ @[Testable]@ In global ordering, a @Message@ is considered after another @Message@ if the @serial@ of the first @Message@ is after the latter when lexicographically sorted.
 ** @(CHA-M2g)@ @[Testable]@ Two @Messages@ are considered to be the same if they have the same @serial@, that is to say, both @Serial@ strings are identical.
@@ -295,11 +293,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
-
-<div class=deprecated>
-** @(CHA-M4c)@ @[Testable]@ @(deprecated)@ When a realtime message with @name@ set to @message.created@  is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
-</div>
-
+** @(CHA-M4c)@ @[Testable]@ This specification point has been removed. It was superseded by @CHA-M4l@.
 ** @(CHA-M4l)@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M4m)@ @[Testable]@ The @action@ field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
@@ -528,7 +522,7 @@ h4(#rest-sending-messages-request-v1). Corresponding Realtime Event V1 @(depreca
 h4(#rest-sending-messages-request-v2). Request V2
 
 Below is the full REST payload format for the V2 endpoint. The @metadata@ and @headers@ keys are optional.
-
+Note that @metadata@ is of type map<string, any> or jsonObject.
 <pre>
   POST /chat/v2/rooms/<roomId>/messages
   {
@@ -590,7 +584,7 @@ h3(#rest-updating-messages). Updating Messages
 h4(#rest-updating-messages-request). Request
 
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
-
+Note that outer @metadata@ is of type map<string, string>.
 <pre>
   PUT /chat/v2/rooms/<roomId>/messages/<serial>
   {
@@ -620,8 +614,8 @@ The response body is as follows.
 
 <pre>
   {
-    "version": "01726585978590-001@abcdefghij:001",
-    "timestamp": 1726585978590
+    "version": "01729085978590-001@abcdefghij:001",
+    "timestamp": 1729085978590
   }
 </pre>
 
@@ -640,14 +634,14 @@ h4(#rest-updating-messages-request). Corresponding Realtime Event
       }
     },
     "createdAt": 1726232498871,
-    "timestamp": 1726585978590,
+    "timestamp": 1729085978590,
     "extras": {
       "headers": {
         "baz": "qux"
       }
     }
-    "serial": "01726232498871-001@abcdefghij:001",
-    "version": "01726585978590-001@abcdefghij:001"
+    "serial": "01726585978590-001@abcdefghij:001",
+    "version": "01729085978590-001@abcdefghij:001"
     "action": "message.update"
     "operation": {
       "clientId": "who-performed-the-action",
@@ -664,7 +658,7 @@ h3(#rest-deleting-messages). Deleting Messages
 h4(#rest-deleting-messages-request). Request
 
 Below is the full REST payload format for the endpoint.
-
+Note that @metadata@ is of type map<string, string>.
 <pre>
   POST /chat/v2/rooms/<roomId>/messages/<serial>/delete
   {
@@ -702,16 +696,15 @@ h4(#rest-deleting-messages-request). Corresponding Realtime Event
         }
       }
     },
-    "timestamp": "1726232498871",
     "extras": {
       "headers": {
         "baz": "qux"
       },
     }
+    "createdAt": 1726232498871,
     "serial": "01726585978590-001@abcdefghij:001",
-    "action": "message.deleted"
-    "timestamp": 1826232498871
-    "createdAt": 1726585978590,
+    "action": "message.deleted",
+    "timestamp": 1826232498871,
     "version": "01826232498871-001@abcdefghij:001",
     "operation": {
       "clientId": "who-performed-the-action",
@@ -859,9 +852,7 @@ h4(#chat-structs-message-v2). Messages V2
         "clientId": "who-performed-the-action",
         "description": "why-the-action-was-performed"
         "metadata": {
-          "foo": {
-            "bar": 1
-          }
+          "foo": "bar"
         },
     }
   }
