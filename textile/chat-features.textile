@@ -482,7 +482,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T5d1)@ @[Testable]@ The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
 ** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T4a4@ timer shall be unset.
 * @(CHA-T6)@ Users may subscribe to typing events - updates to a set of clientIDs that are typing. This operation, like all subscription operations, has no side-effects in relation to room lifecycle.
-** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing event V2":#chat-structs-typing-event-V2 in a chat room.
+** @(CHA-T6a)@ @[Testable]@ Users may provide a listener to subscribe to "typing events":#chat-structs-typing-event-V3 in a chat room.
 ** @(CHA-T6b)@ @[Testable]@ A subscription to typing may be removed, after which it shall receive no further events.
 ** @(CHA-T6c)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c1)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
@@ -491,7 +491,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to all registered listeners @(CHA-T15)@.
 ** @(CHA-T13a)@ @[Testable]@ Typing events received from the server must have a valid @clientId@ and must not be malformed, i.e they must conform to the expected "payload":#realtime-typing-message (unknown fields should be ignored). Invalid events shall not be handled or emitted to any registered listeners (@CHA-T15@).
 ** @(CHA-T13b)@ @[Testable]@ When a typing event is received on the realtime client:
-*** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the Chat client shall add the typers @clientId@ to the typing set and a emit the updated set, via a new "typing event":#chat-structs-typing-event-V2 , to any listeners. It shall also begin a timer with a timeout period that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
+*** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the Chat client shall add the typers @clientId@ to the typing set and a emit the updated set, via a new "typing event":#chat-structs-typing-event-V3, to any listeners. It shall also begin a timer with a timeout period that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
 *** @(CHA-T13b2)@ @[Testable]@ Each additional @typing.started@ event from the same client shall reset the @(CHA-T13b1)@ timer for that client.
 *** @(CHA-T13b3)@ @[Testable]@ If the @(CHA-T13b1)@ timer expires, the client shall remove the @clientId@ from the typing set and emit a typing stopped event for the given client to all registered listeners (@CHA-T15@).
 *** @(CHA-T13b4)@ @[Testable]@ If the event represents a client that has stopped typing, the Chat client shall remove the @clientId@ from the typing set and emit a typing stopped event to any registered listeners (@CHA-T15@). It shall also cancel the @(CHA-T13b1)@ timer for the given typing client.
@@ -943,10 +943,23 @@ h3(#chat-structs-typing-event). Typing Event @(deprecated)@
   }
 </pre>
 
-h3(#chat-structs-typing-event-V2). Typing Event V2
+h3(#chat-structs-typing-event-V2). Typing Event V2 @(deprecated)@
 
 <pre>
   {
+    "change": {
+        "type": "typing.started",
+        "clientId": "clientId-2",
+    },
+    "currentlyTyping": ["clientId-1", "clientId-2"],
+  }
+</pre>
+
+h3(#chat-structs-typing-event-V3). Typing Event V3
+
+<pre>
+  {
+    "type": "typing.set.changed",
     "change": {
         "type": "typing.started",
         "clientId": "clientId-2",
