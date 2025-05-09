@@ -366,24 +366,24 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 h2(#messageReactions). Message Reactions
 
-Users can add reactions to messages, such as thumbs-up or heart emojis. Summaries (counts per reaction, and who reacted) of the message reactions are stored with the message and are visible to all users in the room. Message reactions are powered by Pub/Sub message annotations.
+Users can add reactions to messages, such as thumbs-up or heart emojis. Summaries (counts per reaction name, and who reacted) of the message reactions are stored with the message and are visible to all users in the room. Message reactions are powered by Pub/Sub message annotations.
 
 @MessagesReactions@ object is the entry point for interacting with Message Reactions. It shall be exposed to consumers via a @reactions@ property insde the @Messages@ obejct. From the @Room@ level: @room.messages.reactions@.
 
 * @(CHA-MR1)@ Message reactions are powered by Pub/Sub message annotations. The annotation type used is of the format @reaction:<aggregation>@.
 
 * @(CHA-MR2)@ There are three types of message reactions, each corresponding to a different annotation aggregation type.
-  ** @(CHA-MR2a)@ @[Testable]@ Reactions of type @Unique@ use the annotation type @reaction:unique.v1@. In this type, each client can add a specific reaction emoji only once.
-  ** @(CHA-MR2b)@ @[Testable]@ Reactions of type @Distinct@ use the annotation type @reaction:distinct.v1@. Each client can add multiple different reactions, but each emoji only once.
-  ** @(CHA-MR2c)@ @[Testable]@ Reactions of type @Multiple@ use the annotation type @reaction:multiple.v1@. In this type, each client can add any reaction multiple times including duplicates.
+  ** @(CHA-MR2a)@ @[Testable]@ Reactions of type @Unique@ use the annotation type @reaction:unique.v1@. In this type, each client can add only one reaction (by @name@). Reacting again changes the reaction to the new one (similar to WhatsApp or iMessage).
+  ** @(CHA-MR2b)@ @[Testable]@ Reactions of type @Distinct@ use the annotation type @reaction:distinct.v1@. Each client can add multiple reaction with different names, but each unique @name@ only once (similar to Slack).
+  ** @(CHA-MR2c)@ @[Testable]@ Reactions of type @Multiple@ use the annotation type @reaction:multiple.v1@. In this type, each client can add any reaction @name@ multiple times including duplicates. Reactions can include a @count@ field indicating how many times the reaction should be counted towards the total (similar to claps on Medium).
 
-* @(CHA-MR3)@ @[Testable]@ The @reactions@ property of the @Message@ object is an object or map that contains summaries for all message reaction types, keyed by reaction type and not annotation type (eg. "distinct" and not "reaction:distinct.v1").
+* @(CHA-MR3)@ @[Testable]@ The @reactions@ property of the @Message@ object is an object or map that contains summaries for all message reaction types. For convenience when using this in the public API, these are keyed by reaction type and not annotation type (eg. "distinct" and not "reaction:distinct.v1").
 ** @(CHA-MR3a)@ @[Testable]@ The values for each reaction type summary are the same as defined in PubSub for the respective annotation aggregation types.
   ** @(CHA-MR3b)@ @[Testable]@ For @Unique@ reaction types, the summary is at @Message.reactions.unique@ and is of type @Dict<string, SummaryClientIdList>@ (see @TM7b2@).
   ** @(CHA-MR3b3)@ @[Testable]@ For @Distinct@ reaction types, the summary is at @Message.reactions.distinct@ and is of type @Dict<string, SummaryClientIdList>@ (see @TM7b1@).
   ** @(CHA-MR3b2)@ @[Testable]@ For @Multiple@ reaction types, the summary is at @Message.reactions.multiple@ and is of type @Dict<string, SummaryClientIdCounts>@ (see @TM7b3@).
 
-* @(CHA-MR4)@ @[Testable]@ Sending a reaction is done via the @add@ method of the @MessagesReactions@ object (@room.messages.reactions.add@). The method accepts a message (or message serial), and an object where the @reaction@ (ie. emoji string), @type@ (optional) and @count@ (optional, only valid for type @multiple@) are specified.
+* @(CHA-MR4)@ @[Testable]@ Sending a reaction is done via the @add@ method of the @MessagesReactions@ object (@room.messages.reactions.add@). The method accepts a message (or message serial), and a @params@ object where the @name@ (ie. emoji string), @type@ (optional) and @count@ (optional, only valid for type @multiple@) are specified.
 ** @(CHA-MR4a)@ @[Testable]@ If @type@ is not specified, the default type for the room used.
 
 * @(CHA-MR5)@ @[Testable]@ Users may configure a default message reactions type for a room. This configuration is provided at the @RoomOptions.messages.defaultMessageReactionType@ property, or idiomatic equivalent. The default value is @distinct@.
@@ -407,7 +407,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
   ** @(CHA-MR9c)@ @[Testable]@ The event must include a @reaction@ object containing:
     *** @(CHA-MR9c1)@ @[Testable]@ A @messageSerial@ identifying which message the reaction belongs to.
     *** @(CHA-MR9c2)@ @[Testable]@ A @type@ field indicating the reaction type (unique, distinct, or multiple).
-    *** @(CHA-MR9c3)@ @[Testable]@ A @reaction@ field containing the reaction string (typically an emoji).
+    *** @(CHA-MR9c3)@ @[Testable]@ A @name@ field containing the name of the reaction (e.g. emoji string).
     *** @(CHA-MR9c4)@ @[Testable]@ An optional @count@ field for reactions of type Multiple.
     *** @(CHA-MR9c5)@ @[Testable]@ A @clientId@ identifying the user who added or removed the reaction.
   ** @(CHA-MR9d)@ Raw message reactions should not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
@@ -820,7 +820,7 @@ Below is the full REST payload format for the V3 endpoint. The @count@ field is 
   POST /chat/v3/rooms/<roomId>/messages/<serial>/reactions
   {
     "type": "reaction:multiple.v1",
-    "reaction": "🔥",
+    "name": "🔥",
     "count": 5
   }
 </pre>
@@ -859,10 +859,10 @@ h3(#rest-deleting-message-reactions). Deleting message reactions
 
 h4(#rest-deleting-messages-reactions-request-v3). Request V3
 
-Below is the full REST payload format for the V3 endpoint. The @reaction@ param is ignored for reactions of type @reaction:unique.v1@ but it is required for all other reaction types.
+Below is the full REST payload format for the V3 endpoint. The @name@ param is ignored for reactions of type @reaction:unique.v1@ but it is required for all other reaction types.
 
 <pre>
-  DELETE /chat/v3/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&reaction=<reaction>
+  DELETE /chat/v3/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
 </pre>
 
 h4(#rest-sending-messages-response-v3). Response V3
