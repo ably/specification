@@ -246,8 +246,8 @@ Each chat room can be configured individually, allowing options to be passed as 
 - `(CHA-RC1)` Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
   - `(CHA-RC1a)` This specification point has been removed. It was superseded by CHA-RC1f.
   - `(CHA-RC1f)` `[Testable]` Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
-    - `(CHA-RC1f1)` `[Testable]` If the room id exists in the room map, but the room has been requested with different options, then an `ErrorInfo` with the `BadRequest` error code from the [chat-specific error codes](#error-codes) and a `statusCode` of 400 shall be thrown.
-    - `(CHA-RC1f2)` `[Testable]` If the room id exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
+    - `(CHA-RC1f1)` `[Testable]` If the room name exists in the room map, but the room has been requested with different options, then an `ErrorInfo` with the `BadRequest` error code from the [chat-specific error codes](#error-codes) and a `statusCode` of 400 shall be thrown.
+    - `(CHA-RC1f2)` `[Testable]` If the room name exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
     - `(CHA-RC1f3)` `[Testable]` If no `CHA-RC1g` release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
     - `(CHA-RC1f4)` `[Testable]` If a `CHA-RC1g` release operation is in progress, the entry shall be added to the room map, but the new room instance must not be created until the release operation has resolved. The future shall then subsequently resolve with the new room value.
     - `(CHA-RC1f5)` In relation to `CHA-RC1f4`, we recommend storing a future in the room map.
@@ -274,7 +274,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 - `(CHA-RC3)` Multiple chat features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
   - `(CHA-RC3a)` `[Testable]` When retrieving a channel via `channels.get()`, features must merge together their respective options/modes and pass the merged result to the call to `channels.get()`.
   - `(CHA-RC3b)` Note: SDKs shall not rely on updating the value progressively via feature spec item `RTS3c` - as this has been soft-deprecated and may be removed in the future.
-  - `(CHA-RC3c)` `[Testable]` Unless explicitly stated otherwise, the channel used shall be `<roomId>::$chat`. So if your roomId is `foo`, the channel will be `foo::$chat`.
+  - `(CHA-RC3c)` `[Testable]` Unless explicitly stated otherwise, the channel used shall be `<roomName>::$chat`. So if your room name is `foo`, the channel will be `foo::$chat`.
 - `(CHA-RC4)` Users may provide room options to the `rooms.get()` call to control the behaviour of the room.
   - `(CHA-RC4a)` `[Testable]` Where room options have not been provided, the client shall provide defaults.
   - `(CHA-RC4b)` `[Testable]` Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
@@ -644,7 +644,7 @@ the overhead of having everyone in presence.
 
 Below is the full REST payload format for the V3 endpoint. The `metadata` and `headers` keys are optional.
 
-      POST /chat/v3/rooms/<roomId>/messages
+      POST /chat/v3/rooms/<roomName>/messages
       {
         "text": "the message text",
         "metadata": {
@@ -703,7 +703,7 @@ The response body is as follows.
 
 Below is the full REST payload format for the endpoint. The `description`, `headers` and both `metadata` keys are optional.
 
-      PUT /chat/v3/rooms/<roomId>/messages/<serial>
+      PUT /chat/v3/rooms/<roomName>/messages/<serial>
       {
         "message": {
           "text": "the new message text",
@@ -774,7 +774,7 @@ The response body is as follows.
 
 Below is the full REST payload format for the endpoint.
 
-      POST /chat/v3/rooms/<roomId>/messages/<serial>/delete
+      POST /chat/v3/rooms/<roomName>/messages/<serial>/delete
       {
         "description": "why-the-action-was-performed"
         "metadata": {
@@ -833,7 +833,7 @@ The response body is as follows.
 
 #### Request V3 {#rest-fetching-messages-request}
 
-      GET /chat/v3/rooms/<roomId>/messages
+      GET /chat/v3/rooms/<roomName>/messages
 
 The method accepts query parameters identical to the standard Ably REST API.
 
@@ -951,7 +951,7 @@ This section describes the message formats for chat events that occur over a Rea
 
 #### Request {#rest-occupancy-request}
 
-      GET /chat/v3/rooms/<roomId>/occupancy
+      GET /chat/v3/rooms/<roomName>/occupancy
 
 #### Response {#rest-occupancy-response}
 
@@ -988,7 +988,6 @@ The RoomOptions struct describes configuration options for a Chat room. It is an
 
       {
         "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
-        "roomId": "my-room",
         "clientId": "who-sent-the-message",
         "text": "my-message",
         "createdAt": DateTime(),
@@ -1008,7 +1007,6 @@ The RoomOptions struct describes configuration options for a Chat room. It is an
 
       {
         "serial": "01726585978590-001@abcdefghij:001",
-        "roomId": "my-room",
         "clientId": "who-sent-the-message",
         "text": "my-message",
         "createdAt": DateTime(),
@@ -1151,7 +1149,6 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
 
       {
         "type": ":heart:",
-        "roomId": "my-room",
         "clientId": "who-sent-the-message",
         "createdAt": DateTime(),
         "metadata": {
@@ -1170,7 +1167,6 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
         "type": RoomReactionEventType.Reaction,
         "reaction": {
           "type": ":heart:",
-          "roomId": "my-room",
           "clientId": "who-sent-the-message",
           "createdAt": DateTime(),
           "metadata": {
