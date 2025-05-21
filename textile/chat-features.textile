@@ -63,7 +63,7 @@ The connection status of the Chat client closely reflects the status of the unde
 ** @(CHA-CS4c)@ @[Testable]@ Connection status update events must contain the connection error (if any) that pertains to the newly entered connection status.
 ** @(CHA-CS4d)@ @[Testable]@ Clients must be able to register a listener for connection status events and receive such events.
 ** @(CHA-CS4e)@ @[Testable]@ Clients must be able to unregister a listener for connection status events and from that point onwards, cease to receive such events on that listener.
-** @(CHA-CS4f)@ @[Testable]@ Clients must be able to unregister all listeners for connections status events, after which point, all currently registered listeners will cease to receive such events.
+** @(CHA-CS4f)@ This specification point has been removed. It was valid until the V1 API Review.
 * @(CHA-CS5)@ The chat client must monitor the underlying realtime connection for connection status changes.
 ** @(CHA-CS5a)@ The chat client must suppress transient disconnection events. It is not uncommon for Ably servers to perform connection shedding to balance load, or due to retiring. Clients should not need to concern themselves with transient events.
 *** @(CHA-CS5a1)@ @[Testable]@ If the realtime connection status transitions from @CONNECTED@ to @DISCONNECTED@, the chat client connection status must not change. A 5 second transient disconnect timer shall be started.
@@ -100,7 +100,8 @@ The status of any given Chat Room is determined by the state of the underlying r
 ** @(CHA-RS4d)@ @[Testable]@ Room status update events must contain an error, where that error pertains to the current status.
 ** @(CHA-RS4e)@ @[Testable]@ Clients must be able to register a listener for room status updates and receive such events.
 ** @(CHA-RS4f)@ @[Testable]@ Clients must be able to unregister a listener for room status updates and from that point onwards, cease to receive such events on that listener only.
-** @(CHA-RS4g)@ @[Testable]@ Clients must be able to unregister all listeners for room status updates and from that point onwards, cease to receive such events on all listeners.
+** @(CHA-RS4g)@ This specification point has been removed. It was valid until the V1 API Review.
+* @(CHA-RS5)@ @[Testable]@ The initial status and error of the connection must be whatever status the realtime client returns whilst the connection status object is constructed.
 
 h3(#rooms-lifecycle). Room Lifecycle
 
