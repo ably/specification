@@ -610,7 +610,7 @@ the overhead of having everyone in presence.
 
 - `(CHA-O1)` This specification point has been removed. It was valid up until the single-channel migration.
 - `(CHA-O2)` The occupancy event format is shown [here](#chat-structs-occupancy-event)
-- `(CHA-O3)` `[Testable]` Users can request an instantaneous occupancy check via the REST API. The request is detailed [here](#rest-occupancy-request), with the response format being a simple [occupancy event](#chat-structs-occupancy-event)
+- `(CHA-O3)` `[Testable]` Users can request an instantaneous occupancy check via the REST API. The request is detailed [here](#rest-occupancy-request), with the response format being a simple [occupancy data struct](#chat-structs-occupancy-data)
 - `(CHA-O4)` Users can subscribe to realtime occupancy updates.
   - `(CHA-O4e)` `[Testable]` If occupancy events have been disabled per `CHA-O6`, then the client shall throw an error with code `40000`.
   - `(CHA-O4a)` `[Testable]` Users may register a listener that receives occupancy events in realtime.
@@ -665,27 +665,30 @@ The response body is as follows.
 #### Corresponding Realtime Event V3 {#rest-sending-messages-realtime-v3}
 
       {
-        "name": "chat.message"
-        "encoding": "json"
-        "data": {
-          "text": "the message text",
-          "metadata": {
-            "foo": {
-              "bar": 1
+        "type": "message.created"
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
             }
-          }
-        },
-        "timestamp": 1726232498871,
-        "createdAt": 1726232498871,
-        "extras": {
-          "headers": {
-            "baz": "qux"
           },
-        },
-        "serial": "01726585978590-001@abcdefghij:001",
-        "action": "message.create",
-        "version": "01726585978590-001@abcdefghij:001",
-        "operation": {}
+          "timestamp": 1726232498871,
+          "createdAt": 1726232498871,
+          "extras": {
+            "headers": {
+              "baz": "qux"
+            },
+          },
+          "serial": "01726585978590-001@abcdefghij:001",
+          "action": "message.create",
+          "version": "01726585978590-001@abcdefghij:001",
+          "operation": {}
+        }
       }
 
 ### Updating Messages {#rest-updating-messages}
@@ -727,31 +730,34 @@ The response body is as follows.
 #### Corresponding Realtime Event {#rest-updating-messages-request}
 
       {
-        "name": "chat.message"
-        "encoding": "json"
-        "data": {
-          "text": "the new message text",
-          "metadata": {
-            "foo": {
-              "bar": 1
+        "type": "message.updated"
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the new message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
+            }
+          },
+          "createdAt": 1726232498871,
+          "timestamp": 1726585978590,
+          "extras": {
+            "headers": {
+              "baz": "qux"
             }
           }
-        },
-        "createdAt": 1726232498871,
-        "timestamp": 1726585978590,
-        "extras": {
-          "headers": {
-            "baz": "qux"
-          }
-        }
-        "serial": "01726232498871-001@abcdefghij:001",
-        "version": "01726585978590-001@abcdefghij:001"
-        "action": "message.update"
-        "operation": {
-          "clientId": "who-performed-the-action",
-          "description": "why-the-action-was-performed"
-          "metadata": {
-            "foo": "bar"
+          "serial": "01726232498871-001@abcdefghij:001",
+          "version": "01726585978590-001@abcdefghij:001"
+          "action": "message.update"
+          "operation": {
+            "clientId": "who-performed-the-action",
+            "description": "why-the-action-was-performed"
+            "metadata": {
+              "foo": "bar"
+            }
           }
         }
       }
@@ -784,33 +790,36 @@ The response body is as follows.
 #### Corresponding Realtime Event {#rest-deleting-messages-request}
 
       {
-        "name": "chat.message"
-        "encoding": "json"
-        "data": {
-          "text": "the original message text",
-          "metadata": {
-            "foo": {
-              "bar": 1
+        "type": "message.deleted",
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the original message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
             }
+          },
+          "timestamp": "1726232498871",
+          "extras": {
+            "headers": {
+              "baz": "qux"
+            },
           }
-        },
-        "timestamp": "1726232498871",
-        "extras": {
-          "headers": {
-            "baz": "qux"
-          },
-        }
-        "serial": "01726585978590-001@abcdefghij:001",
-        "action": "message.deleted"
-        "timestamp": 1826232498871
-        "createdAt": 1726585978590,
-        "version": "01826232498871-001@abcdefghij:001",
-        "operation": {
-          "clientId": "who-performed-the-action",
-          "description": "why-the-action-was-performed"
-          "metadata": {
-            "foo": "bar"
-          },
+          "serial": "01726585978590-001@abcdefghij:001",
+          "action": "message.deleted"
+          "timestamp": 1826232498871
+          "createdAt": 1726585978590,
+          "version": "01826232498871-001@abcdefghij:001",
+          "operation": {
+            "clientId": "who-performed-the-action",
+            "description": "why-the-action-was-performed"
+            "metadata": {
+              "foo": "bar"
+            },
+          }
         }
       }
 
@@ -949,18 +958,22 @@ in whichever format is most idiomatic to the platform.
 
 ### RoomOptions {#chat-structs-room-options}
 
-The RoomOptions struct describes configuration options for a Chat room. A property being set to a non-null value means that the feature is enabled. Some features have specific configuration.
+The RoomOptions struct describes configuration options for a Chat room. It is an optional argument when getting the room, with defaults provided. Below describes the structure, along with the default values.
 
       {
         "presence": {
-          "enter": boolean,
-          "subscribe": boolean,
+          "enableEvents": true
         },
         "typing": {
-          "timeoutMs": number
+          "heartbeatThrottleMs": 10000
         },
-        "reactions": {}, // No properties, but must be non-null to enable feature.
-        "occupancy": {}
+        "occupancy": {
+          "enableEvents": false
+        },
+        "messages": {
+          "rawMessageReactions": false,
+          "defaultMessageReactionType": MessageReactionType.Distinct
+        }
       }
 
 ### Messages {#chat-structs-message}
@@ -1145,11 +1158,30 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
         }
       }
 
+### Ephemeral Room Reaction Event {#chat-structs-ephemeral-reactions}
+
+      {
+        "type": RoomReactionEventType.Reaction,
+        "reaction": {
+          "type": ":heart:",
+          "roomId": "my-room",
+          "clientId": "who-sent-the-message",
+          "createdAt": DateTime(),
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          },
+          "headers": {
+            "baz": "qux"
+          }
+        }
+      }
+
 ### Presence Member {#chat-structs-presence-member}
 
       {
         "clientId": "who-sent-the-message",
-        "action": "enter",
         "updatedAt": DateTime(),
         "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
         "extras": {
@@ -1162,16 +1194,19 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
 ### Presence Event {#chat-structs-presence-event}
 
       {
-        "clientId": "who-is-in-presence",
-        "action": "enter",
-        "timestamp": DateTime(),
-        "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+        "type": PresenceEventType,
+        "member": {
+          "clientId": "who-is-in-presence",
+          "timestamp": DateTime(),
+          "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+        }
       }
 
 ### Typing Event `(deprecated)` {#chat-structs-typing-event}
 
       {
-        "currentlyTyping": ["clientId-1", "clientID-2"],
+        "type": "typing.started",
+        "currentlyTyping": ["clientId-1", "clientID-2"]
       }
 
 ### Typing Event V2 `(deprecated)` {#chat-structs-typing-event-V2}
@@ -1187,9 +1222,9 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
 ### Typing Event V3 {#chat-structs-typing-event-V3}
 
       {
-        "type": "typing.set.changed",
+        "type": TypingSetEventType.SetChanged
         "change": {
-            "type": "typing.started",
+            "type": TypingEventType,
             "clientId": "clientId-2",
         },
         "currentlyTyping": ["clientId-1", "clientId-2"],
@@ -1198,8 +1233,18 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
 ### Occupancy Event {#chat-structs-occupancy-event}
 
       {
+        "type": OccupancyEventType.Updated,
+        "occupancy": {
+          "connections": 5,
+          "presenceMembers" 2
+        }
+      }
+
+### Occupancy Data {#chat-structs-occupancy-data}
+
+      {
         "connections": 5,
-        "presenceMembers" 2,
+        "presenceMembers" 2
       }
 
 ## Chat-specific Error Codes {#error-codes}
