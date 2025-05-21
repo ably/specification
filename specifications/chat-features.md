@@ -624,6 +624,10 @@ the overhead of having everyone in presence.
   - `(CHA-O6a)` `[Testable]` If `occupancy.enableEvents` is set to `true`, then the client shall set the `options.params.occupancy` channel parameter to `"metrics"` on the underlying realtime channel per `CHA-RC3`.
   - `(CHA-O6b)` `[Testable]` If `occupancy.enableEvents` is set to `false`, then the client shall not set the `options.params.occupancy` channel parameter.
   - `(CHA-O6c)` `[Testable]` The default value of `occupancy.enableEvents` is `false`.
+- `(CHA-O7)` Users can access the latest occupancy received in realtime, via the `occupancy.current()` method.
+  - `(CHA-O7a)` `[Testable]` The `current` method should return the latest occupancy numbers received over the realtime connection in a `[meta]occupancy` event.
+  - `(CHA-O7b)` `[Testable]` If no realtime events have been received yet, `current()` returns undefined/null.
+  - `(CHA-O7c)` `[Testable]` If occupancy events are not enabled via `RoomOptions.occupancy.enableEvents`, `current()` throws an error with code 40000.
 
 ## Chat HTTP REST API {#rest-api}
 
