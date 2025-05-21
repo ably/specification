@@ -16,10 +16,17 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 The over-the-wire protocol for Chat, as well as implementation details, may be found on the chat protocol page.
 
-## Chat Specification Version {#overview}
+## Chat Specification Version {#version}
 
 - `(CHA-V1)` **Specification Version**: This document defines the Ably chat library features specification ('features spec').
-  - `(CHA-V1a)` The current version of the Chat library feature specification is version `0.1.0`.
+  - `(CHA-V1a)` The current version of the Chat library feature specification is version `0.7.0`.
+
+## Major Revision History
+
+This specification has undergone the following major revisions, stemming from a review process. A major revision is understood to mean a significant public API change that affects a wide-range of functionality or implementation in the library. Specification points that were removed due to a major review/revision are marked as such.
+
+- Single Channel Migration: CHADR-097, March 2025
+- V1 API Review: CHADR-101, May 2025
 
 ## General Principles {#general}
 
