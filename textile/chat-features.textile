@@ -44,7 +44,7 @@ A Room is the atomic unit of Chat. All chat operations are performed in the cont
 
 h3(#connection-status). Connection Status
 
-The connection status of the Chat client closely reflects the status of the underlying Realtime client, but with one major difference. When a disconnect takes place, we assume that it is transient for a certain amount of time, before eventually emitting an event. This prevents customers being unnecessarily sent connection status updates if the connection recovers quickly (e.g. when going through a tunnel).
+The connection status of the Chat client closely reflects the status of the underlying Realtime client.
 
 * @(CHA-CS1)@ Every chat client has a @status@, which describes the current status of the connection.
 ** @(CHA-CS1a)@ The @INITIALIZED@ status is a default status when the realtime client is first initialized. This value may be seen if the realtime client doesn't have autoconnect turned on.
@@ -65,12 +65,13 @@ The connection status of the Chat client closely reflects the status of the unde
 ** @(CHA-CS4e)@ @[Testable]@ Clients must be able to unregister a listener for connection status events and from that point onwards, cease to receive such events on that listener.
 ** @(CHA-CS4f)@ This specification point has been removed. It was valid until the V1 API Review.
 * @(CHA-CS5)@ The chat client must monitor the underlying realtime connection for connection status changes.
-** @(CHA-CS5a)@ The chat client must suppress transient disconnection events. It is not uncommon for Ably servers to perform connection shedding to balance load, or due to retiring. Clients should not need to concern themselves with transient events.
-*** @(CHA-CS5a1)@ @[Testable]@ If the realtime connection status transitions from @CONNECTED@ to @DISCONNECTED@, the chat client connection status must not change. A 5 second transient disconnect timer shall be started.
-*** @(CHA-CS5a2)@ @[Testable]@ If a transient disconnect timer is active and the realtime connection status changes to @DISCONNECTED@ or @CONNECTING@, the library must not emit a status change.
-*** @(CHA-CS5a3)@ @[Testable]@ If a transient disconnect timer is active and the realtime connections status changes to @CONNECTED@, @SUSPENDED@ or @FAILED@, the library shall cancel the transient disconnect timer. The superseding status change shall be emitted.
-*** @(CHA-CS5a4)@ @[Testable]@ If a transient disconnect timer expires, the library shall emit a connection status change event. This event must contain the current status of timer expiry, along with the @original@ error that initiated the transient disconnect timer.
-** @(CHA-CS5b)@ @[Testable]@ Not withstanding @CHA-CS5a@. If a connection state event is observed from the underlying realtime library, the client must emit a status change event. The current status of that event shall reflect the status change in the underlying realtime library, along with the accompanying error.
+** @(CHA-CS5a)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a1)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a2)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a3)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a4)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-CS5b)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-CS5c)@ @[Testable]@ If a connection state event is observed from the underlying realtime library, the client must emit a status change event. The current status of that event shall reflect the status change in the underlying realtime library, along with the accompanying error.
 
 h3(#rooms-status). Room Statuses
 
