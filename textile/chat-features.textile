@@ -425,6 +425,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ This specification point was removed. It was valid until the single-channel migration.
+** @(CHA-ER3f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-ER3d)@ @[Testable]@ Reactions are sent on the channel using an @ephemeral@ message in "this format":#realtime-room-reactions.
 ** @(CHA-ER3b)@ This clause has been deleted.
 ** @(CHA-ER3c)@ This clause has been deleted.
@@ -513,14 +514,16 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T1)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
 * @(CHA-T8)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
-* @(CHA-T9)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.get()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
+* @(CHA-T9)@ This specification point has been removed. It was valid until the V1 API Review.
+* @(CHA-T16)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.current()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
 * @(CHA-T15)@ @[Testable]@ Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
 ** @(CHA-T10a)@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving events). The default value shall be set to 2000ms.
 *** @(CHA-T10a1)@ This grace period is used to determine how long to wait (since the last recorded received typing event), beyond the heartbeat interval, before removing a client from the typing set. This is used to prevent flickering when a user is typing and stops typing for a short period of time. See @CHA-T13b1@ for a detailed description of how this is used.
 * @(CHA-T3)@ This specification point has been removed. It was replaced by @CHA-T10@.
 * @(CHA-T4)@ Users may indicate that they have started typing using the @keystroke@ method.
-** @(CHA-T4d)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-T4d)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-T4e)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer has not been set by the successful publish @CHA-T4a4@ of a @typing.started@ event):
 *** @(CHA-T4a1)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
 *** @(CHA-T4a2)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
@@ -533,7 +536,8 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T5)@ Users may explicitly indicate that they have stopped typing using @stop@ method.
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T4a4@ heartbeat timer does not exist or is expired), this operation is a no-op.
 ** @(CHA-T5b)@ This specification point has been removed.
-** @(CHA-T5c)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-T5c)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-T5f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-message. The client must wait for the publish to succeed or fail before returning the result to the caller.
 ** @(CHA-T5d1)@ @[Testable]@ The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
 ** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T4a4@ timer shall be unset.
