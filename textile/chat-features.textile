@@ -329,12 +329,11 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M11)@ A @Message@ must have a method @with@ to apply changes from events (@MessageEvent@ and @MessageReactionSummaryEvent@) to produce updated message instances.
   ** @(CHA-M11a)@ @[Testable]@ When the method receives a @MessageEvent@ of type @created@, it must throw an @ErrorInfo@ with code @40000@ and status code @400@.
   ** @(CHA-M11b)@ @[Testable]@ For @MessageEvent@ the method must verify that the @message.serial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
-  ** @(CHA-M11c)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event's @message.version@ is less than or equal to the current message's @version@, the original message must be returned unchanged.
-  ** @(CHA-M11d)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event's @message.version@ is greater than the current message's @version@, the method must return a new message based on the event and deep-copying the reactions from the original message.
+  ** @(CHA-M11c)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is older or the same (see CHA-M10), the original message must be returned unchanged.
+  ** @(CHA-M11d)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is newer (see CHA-M10), the method must return a new message based on the event and deep-copying the reactions from the original message.
   ** @(CHA-M11e)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must verify that the @summary.messageSerial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
   ** @(CHA-M11f)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must return a new @Message@ instance (deep copy) with the updated reactions, preserving all other properties of the original message.
   ** @(CHA-M11g)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must deep-copy the reactions from the event before applying them to the returned message instance.
-  ** @(CHA-M11h)@ @[Testable]@ The method must not alter the original message instance.
 
 <div class=deprecated>
 ** @(CHA-M4c)@ @[Testable]@ @(deprecated)@ When a realtime message with @name@ set to @message.created@  is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
@@ -368,14 +367,14 @@ h2(#messageReactions). Message Reactions
 
 Users can add reactions to messages, such as thumbs-up or heart emojis. Summaries (counts per reaction name, and who reacted) of the message reactions are stored with the message and are visible to all users in the room. Message reactions are powered by Pub/Sub message annotations.
 
-@MessagesReactions@ object is the entry point for interacting with Message Reactions. It shall be exposed to consumers via a @reactions@ property insde the @Messages@ obejct. From the @Room@ level: @room.messages.reactions@.
+@MessagesReactions@ object is the entry point for interacting with Message Reactions. It shall be exposed to consumers via a @reactions@ property inside the @Messages@ obejct. From the @Room@ level: @room.messages.reactions@.
 
 * @(CHA-MR1)@ Message reactions are powered by Pub/Sub message annotations. The annotation type used is of the format @reaction:<aggregation>@.
 
 * @(CHA-MR2)@ There are three types of message reactions, each corresponding to a different annotation aggregation type.
-  ** @(CHA-MR2a)@ @[Testable]@ Reactions of type @Unique@ use the annotation type @reaction:unique.v1@. In this type, each client can add only one reaction (by @name@). Reacting again changes the reaction to the new one (similar to WhatsApp or iMessage).
-  ** @(CHA-MR2b)@ @[Testable]@ Reactions of type @Distinct@ use the annotation type @reaction:distinct.v1@. Each client can add multiple reaction with different names, but each unique @name@ only once (similar to Slack).
-  ** @(CHA-MR2c)@ @[Testable]@ Reactions of type @Multiple@ use the annotation type @reaction:multiple.v1@. In this type, each client can add any reaction @name@ multiple times including duplicates. Reactions can include a @count@ field indicating how many times the reaction should be counted towards the total (similar to claps on Medium).
+  ** @(CHA-MR2a)@ Reactions of type @Unique@ use the annotation type @reaction:unique.v1@. In this type, each client can add only one reaction (by @name@). Reacting again changes the reaction to the new one (similar to WhatsApp or iMessage).
+  ** @(CHA-MR2b)@ Reactions of type @Distinct@ use the annotation type @reaction:distinct.v1@. Each client can add multiple reaction with different names, but each unique @name@ only once (similar to Slack).
+  ** @(CHA-MR2c)@ Reactions of type @Multiple@ use the annotation type @reaction:multiple.v1@. In this type, each client can add any reaction @name@ multiple times including duplicates. Reactions can include a @count@ field indicating how many times the reaction should be counted towards the total (similar to claps on Medium).
 
 * @(CHA-MR3)@ @[Testable]@ The @reactions@ property of the @Message@ object is an object or map that contains summaries for all message reaction types. For convenience when using this in the public API, these are keyed by reaction type and not annotation type (eg. "distinct" and not "reaction:distinct.v1").
 ** @(CHA-MR3a)@ @[Testable]@ The values for each reaction type summary are the same as defined in PubSub for the respective annotation aggregation types.
@@ -383,39 +382,26 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
   ** @(CHA-MR3b3)@ @[Testable]@ For @Distinct@ reaction types, the summary is at @Message.reactions.distinct@ and is of type @Dict<string, SummaryClientIdList>@ (see @TM7b1@).
   ** @(CHA-MR3b2)@ @[Testable]@ For @Multiple@ reaction types, the summary is at @Message.reactions.multiple@ and is of type @Dict<string, SummaryClientIdCounts>@ (see @TM7b3@).
 
-* @(CHA-MR4)@ @[Testable]@ Sending a reaction is done via the @add@ method of the @MessagesReactions@ object (@room.messages.reactions.add@). The method accepts a message (or message serial), and a @params@ object where the @name@ (ie. emoji string), @type@ (optional) and @count@ (optional, only valid for type @multiple@) are specified.
-** @(CHA-MR4a)@ @[Testable]@ If @type@ is not specified, the default type for the room used.
+* @(CHA-MR4)@ @[Testable]@ Users should be able to send a reaction via the `add` method of the `MessagesReactions` object (@room.messages.reactions.add@).
+** @(CHA-MR4a)@ @[Testable]@ The `add` method accepts a message (or message serial) as the first parameter to identify which message to react to.
+** @(CHA-MR4b)@ @[Testable]@ The `add` method accepts a `params` object as the second parameter with the following properties:
+*** @(CHA-MR4b1)@ @[Testable]@ A `name` property (required) specifying the reaction identifier (e.g., emoji string).
+*** @(CHA-MR4b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
+*** @(CHA-MR4b3)@ @[Testable]@ A `count` property (optional) specifying the reaction count. This is only valid for reactions of type `multiple`. Defaults to 1 and must be a positive integer.
 
 * @(CHA-MR5)@ @[Testable]@ Users may configure a default message reactions type for a room. This configuration is provided at the @RoomOptions.messages.defaultMessageReactionType@ property, or idiomatic equivalent. The default value is @distinct@.
 
-* @(CHA-MR6)@ @[Testable]@ Subscribing to message reactions is done via the @subscribe@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribe@). The method accepts a callback (or similar idomatic construct) that receives message reactions summary events of type @MessageReactionSummaryEvent@.
+* @(CHA-MR6)@ @[Testable]@ Users must be able to subscribe to message reaction summaries via the @subscribe@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribe@). The method accepts a callback (or similar idiomatic construct) that receives message reactions summary events of type @MessageReactionSummaryEvent@.
 
-* @(CHA-MR7)@ The @MessageReactionSummaryEvent@ interface provides information about reaction summaries for messages.
-  ** @(CHA-MR7a)@ @[Testable]@ The event must include a @type@ field set to indicate it's a reaction summary event.
-  ** @(CHA-MR7b)@ @[Testable]@ The event must include a @summary@ object containing:
-    *** @(CHA-MR7b1)@ @[Testable]@ The @messageSerial@ identifying which message the reactions belong to.
-    *** @(CHA-MR7b2)@ @[Testable]@ A @unique@ field containing reaction summaries for unique-type reactions.
-    *** @(CHA-MR7b3)@ @[Testable]@ A @distinct@ field containing reaction summaries for distinct-type reactions.
-    *** @(CHA-MR7b4)@ @[Testable]@ A @multiple@ field containing reaction summaries for multiple-type reactions.
+* @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). This method accepts a callback (or similar idiomatic construct) that receives individual annotations of type @MessageReactionRawEvent@.
+  ** @(CHA-MR7a)@ @[Testable]@ The attempt to subscribe to raw message reactions must fail with an error if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
 
-* @(CHA-MR8)@ @[Testable]@ Subscribing to raw message reactions (as individual annotations) is done via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). The method accepts a callback (or similar idomatic construct) that receives individual annotations of type @MessageReactionRawEvent@.
-* @(CHA-MR8a)@ @[Testable]@ Subscribing to raw message reactions throws an error if the room is not configured to support raw message reactions by setting room option @RoomOptions.messages.rawMessageReactions@ to @true@ (defaults to @false@).
+* @(CHA-MR8)@ Raw message reactions should not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
 
-* @(CHA-MR9)@ The @MessageReactionRawEvent@ interface provides information about individual message reaction events.
-  ** @(CHA-MR9a)@ @[Testable]@ The event must include a @type@ field indicating whether a reaction was added or removed.
-  ** @(CHA-MR9b)@ @[Testable]@ The event must include a @timestamp@ field containing the date/time when the event occurred.
-  ** @(CHA-MR9c)@ @[Testable]@ The event must include a @reaction@ object containing:
-    *** @(CHA-MR9c1)@ @[Testable]@ A @messageSerial@ identifying which message the reaction belongs to.
-    *** @(CHA-MR9c2)@ @[Testable]@ A @type@ field indicating the reaction type (unique, distinct, or multiple).
-    *** @(CHA-MR9c3)@ @[Testable]@ A @name@ field containing the name of the reaction (e.g. emoji string).
-    *** @(CHA-MR9c4)@ @[Testable]@ An optional @count@ field for reactions of type Multiple.
-    *** @(CHA-MR9c5)@ @[Testable]@ A @clientId@ identifying the user who added or removed the reaction.
-  ** @(CHA-MR9d)@ Raw message reactions should not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
+* @(CHA-MR9)@ @[Testable]@ The room option @RoomOptions.messages.rawMessageReactions@ controls whether raw message reactions are enabled or not. The default value is @false@. 
+  ** @(CHA-MR9a)@ @[Testable]@ If the room option is set to @true@, the SDK will add the @ANNOTATION_SUBSCRIBE@ channel mode to the realtime channel used for the room.
 
-* @(CHA-MR10)@ @[Testable]@ The room option @RoomOptions.messages.rawMessageReactions@ controls whether raw message reactions are enabled or not. The default value is @false@. 
-  ** @(CHA-MR10a)@ @[Testable]@ If the room option is set to @true@, the SDK will add the @ANNOTATION_SUBSCRIBE@ channel mode to the realtime channel used for the room.
-
-* @(CHA-MR11)@ @[Testable]@ The SDK always adds the @ANNOTATION_PUBLISH@ channel mode to the realtime channel used for the room.
+* @(CHA-MR10)@ @[Testable]@ The client must always add the @ANNOTATION_PUBLISH@ channel mode to the realtime channel used for the room.
 
 h2(#reactions). Ephemeral Room Reactions
 
@@ -1046,6 +1032,17 @@ When keeping a @Message@ updated, use the @Message.with(event)@ method to apply 
 
 h3(#chat-structs-message-reactions-summary-event). Message reactions reaction summary
 
+The @MessageReactionSummaryEvent@ interface provides information about reaction summaries for messages.
+
+* The event must include a @type@ field set to indicate it's a reaction summary event.
+* The event must include a @summary@ object containing:
+  ** The @messageSerial@ identifying which message the reactions belong to.
+  ** A @unique@ field containing reaction summaries for unique-type reactions.
+  ** A @distinct@ field containing reaction summaries for distinct-type reactions.
+  ** A @multiple@ field containing reaction summaries for multiple-type reactions.
+
+Example:
+
 <pre>
   {
     type: "reaction.summary",
@@ -1097,6 +1094,16 @@ h3(#chat-structs-message-reactions-summary-event). Message reactions reaction su
 
 
 h3(#chat-structs-message-reactions-raw-event). Message reactions raw reaction event
+
+The @MessageReactionRawEvent@ interface provides information about individual message reaction events.
+* The event must include a @type@ field indicating whether a reaction was added or removed.
+* The event must include a @timestamp@ field containing the date/time when the event occurred.
+* The event must include a @reaction@ object containing:
+  ** A @messageSerial@ identifying which message the reaction belongs to.
+  ** A @type@ field indicating the reaction type (unique, distinct, or multiple).
+  ** A @name@ field containing the name of the reaction (e.g. emoji string).
+  ** An optional @count@ field for reactions of type Multiple.
+  ** A @clientId@ identifying the user who added or removed the reaction.
 
 <pre>
   {
