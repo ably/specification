@@ -425,16 +425,16 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 <!-- -->
 
-- `(CHA-MR6)` `[Testable]` Users must be able to subscribe to message reaction summaries via the `subscribe` method of the `MessagesReactions` object (`room.messages.reactions.subscribe`). The method accepts a callback (or similar idiomatic construct) that receives message reactions summary events of type `MessageReactionSummaryEvent`.
+- `(CHA-MR6)` `[Testable]` Users must be able to subscribe to message reaction summaries via the `subscribe` method of the `MessagesReactions` object (`room.messages.reactions.subscribe`). The events emitted will be of type `MessageReactionSummaryEvent`.
 
 <!-- -->
 
-- `(CHA-MR7)` `[Testable]` Users must be able to subscribe to raw message reactions (as individual annotations) via the `subscribeRaw` method of the `MessagesReactions` object (`room.messages.reactions.subscribeRaw`). This method accepts a callback (or similar idiomatic construct) that receives individual annotations of type `MessageReactionRawEvent`.\
-  `(CHA-MR7a)` `[Testable]` The attempt to subscribe to raw message reactions must fail with an error if the room is not configured to support raw message reactions (when room option `RoomOptions.messages.rawMessageReactions` is not set to `true`; it defaults to `false`).
+- `(CHA-MR7)` `[Testable]` Users must be able to subscribe to raw message reactions (as individual annotations) via the `subscribeRaw` method of the `MessagesReactions` object (`room.messages.reactions.subscribeRaw`). The events emitted are of type `MessageReactionRawEvent`.\
+  `(CHA-MR7a)` `[Testable]` The attempt to subscribe to raw message reactions must throw an `ErrorInfo` with code `40000` and status code `400` if the room is not configured to support raw message reactions (when room option `RoomOptions.messages.rawMessageReactions` is not set to `true`; it defaults to `false`).
 
 <!-- -->
 
-- `(CHA-MR8)` Raw message reactions should not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
+- `(CHA-MR8)` Raw message reactions must not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
 
 <!-- -->
 
