@@ -391,12 +391,12 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR5)@ @[Testable]@ Users may configure a default message reactions type for a room. This configuration is provided at the @RoomOptions.messages.defaultMessageReactionType@ property, or idiomatic equivalent. The default value is @distinct@.
 
-* @(CHA-MR6)@ @[Testable]@ Users must be able to subscribe to message reaction summaries via the @subscribe@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribe@). The method accepts a callback (or similar idiomatic construct) that receives message reactions summary events of type @MessageReactionSummaryEvent@.
+* @(CHA-MR6)@ @[Testable]@ Users must be able to subscribe to message reaction summaries via the @subscribe@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribe@). The events emitted will be of type @MessageReactionSummaryEvent@.
 
-* @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). This method accepts a callback (or similar idiomatic construct) that receives individual annotations of type @MessageReactionRawEvent@.
-  ** @(CHA-MR7a)@ @[Testable]@ The attempt to subscribe to raw message reactions must fail with an error if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
+* @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). The events emitted are of type @MessageReactionRawEvent@.
+  ** @(CHA-MR7a)@ @[Testable]@ The attempt to subscribe to raw message reactions must throw an @ErrorInfo@ with code @40000@ and status code @400@ if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
 
-* @(CHA-MR8)@ Raw message reactions should not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
+* @(CHA-MR8)@ Raw message reactions must not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
 
 * @(CHA-MR9)@ @[Testable]@ The room option @RoomOptions.messages.rawMessageReactions@ controls whether raw message reactions are enabled or not. The default value is @false@. 
   ** @(CHA-MR9a)@ @[Testable]@ If the room option is set to @true@, the SDK will add the @ANNOTATION_SUBSCRIBE@ channel mode to the realtime channel used for the room.
