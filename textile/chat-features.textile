@@ -328,10 +328,14 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M8b)@ @[Testable]@ When a message is updated successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
 ** @(CHA-M8c)@ @[Testable]@ An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
 ** @(CHA-M8d)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @update@ call.
+** @(CHA-M8e)@ @[Testable]@ A client must be able to update a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an object/other parameters to update and an (optional) operation information.
+*** @(CHA-M8e1) The exact idiom for the method signature is left to the best practice for the language.
 * @(CHA-M9)@ A client must be able to delete a message in a room.
 ** @(CHA-M9a)@ @[Testable]@ A client may delete a message via the Chat REST API by calling the @delete@ method.
 ** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
 ** @(CHA-M9c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
+** @(CHA-M9d)@ @[Testable]@ A client must be able to delete a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an (optional) operation information.
+*** @(CHA-M9d1) The exact idiom for the method signature is left to the best practice for the language.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
@@ -498,8 +502,8 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR6f)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 * @(CHA-PR7)@ Users may subscribe to presence events.
 ** @(CHA-PR7d)@ @[Testable]@ If presence events have been disabled per @CHA-PR9c@, then the client shall throw an error with code @40000@.
-** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event in a room.
-** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
+** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event-v2 in a room.
+** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event-v2, to subscribe to just those events in a room.
 ** @(CHA-PR7c)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
 * @(CHA-PR8)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
@@ -584,9 +588,9 @@ the overhead of having everyone in presence.
 ** @(CHA-O4e)@ @[Testable]@ If occupancy events have been disabled per @CHA-O6@, then the client shall throw an error with code @40000@.
 ** @(CHA-O4a)@ @[Testable]@ Users may register a listener that receives occupancy events in realtime.
 ** @(CHA-O4b)@ @[Testable]@ A subscription to occupancy events may be removed, after which it shall receive no further events.
-** @(CHA-O4c)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event":#chat-structs-occupancy-event format and broadcast it to subscribers.
+** @(CHA-O4c)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-O4e)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event V2":#chat-structs-occupancy-event-v2 format, with type @OccupancyEventType.Updated@, and broadcast it to subscribers.
 ** @(CHA-O4d)@ @[Testable]@ If an invalid occupancy event is received on the channel, it shall be dropped.
-to typing subscribers.
 * @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O6)@ Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
 ** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
@@ -706,7 +710,10 @@ The response body is as follows.
 <pre>
   {
     "version": "01726585978590-001@abcdefghij:001",
-    "timestamp": 1726585978590
+    "timestamp": 1726585978590,
+    "message": {
+      // A full message object
+    }
   }
 </pre>
 
@@ -772,7 +779,10 @@ The response body is as follows.
 <pre>
   {
     "version": "01826232498871-001@abcdefghij:001",
-    "timestamp": 1826232498871
+    "timestamp": 1826232498871,
+    "message": {
+      // A full message object
+    }
   }
 </pre>
 
@@ -1216,12 +1226,23 @@ h3(#chat-structs-presence-member). Presence Member
   }
 </pre>
 
-h3(#chat-structs-presence-event). Presence Event
+h3(#chat-structs-presence-event). Presence Event (deprecated)
+
+<pre>
+  {
+      "clientId": "who-is-in-presence",
+      "action": "enter",
+      "timestamp": DateTime(),
+      "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+  }
+</pre>
+
+h3(#chat-structs-presence-event-v2). Presence Event V2
 
 <pre>
   {
     "type": PresenceEventType,
-    "member": {
+    "member": { // PresenceMember
       "clientId": "who-is-in-presence",
       "timestamp": DateTime(),
       "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
@@ -1233,7 +1254,6 @@ h3(#chat-structs-typing-event). Typing Event @(deprecated)@
 
 <pre>
   {
-    "type": "typing.started",
     "currentlyTyping": ["clientId-1", "clientID-2"]
   }
 </pre>
@@ -1263,12 +1283,21 @@ h3(#chat-structs-typing-event-V3). Typing Event V3
   }
 </pre>
 
-h3(#chat-structs-occupancy-event). Occupancy Event
+h3(#chat-structs-occupancy-event). Occupancy Event (Deprecated)
+
+<pre>
+  {
+    "connections": 5,
+    "presenceMembers" 2
+  }
+</pre>
+
+h3(#chat-structs-occupancy-event-v2). Occupancy Event V2
 
 <pre>
   {
     "type": OccupancyEventType.Updated,
-    "occupancy": {
+    "occupancy": { // Of type OccupancyData 
       "connections": 5,
       "presenceMembers" 2
     }
