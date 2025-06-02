@@ -412,12 +412,20 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 <!-- -->
 
-- `(CHA-MR4)` `[Testable]` Users should be able to send a reaction via the \`add\` method of the \`MessagesReactions\` object (`room.messages.reactions.add`).
-  - `(CHA-MR4a)` `[Testable]` The \`add\` method accepts a message (or message serial) as the first parameter to identify which message to react to.
-  - `(CHA-MR4b)` `[Testable]` The \`add\` method accepts a \`params\` object as the second parameter with the following properties:
+- `(CHA-MR4)` `[Testable]` Users should be able to send a reaction to a message via the \`send\` method of the \`MessagesReactions\` object (`room.messages.reactions.send`).
+  - `(CHA-MR4a)` `[Testable]` The \`send\` method accepts a message (or message serial) as the first parameter to identify which message to react to.
+  - `(CHA-MR4b)` `[Testable]` The \`send\` method accepts a \`params\` object as the second parameter with the following properties:
     - `(CHA-MR4b1)` `[Testable]` A \`name\` property (required) specifying the reaction identifier (e.g., emoji string).
     - `(CHA-MR4b2)` `[Testable]` A \`type\` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
     - `(CHA-MR4b3)` `[Testable]` A \`count\` property (optional) specifying the reaction count. This is only valid for reactions of type \`multiple\`. Defaults to 1 and must be a positive integer.
+
+<!-- -->
+
+- `(CHA-MR11)` `[Testable]` Users should be able to delete a reaction from a message via the \`delete\` method of the \`MessagesReactions\` object (`room.messages.reactions.delete`).
+  - `(CHA-MR11a)` `[Testable]` The \`delete\` method accepts a message (or message serial) as the first parameter to identify which message to delete the reaction from.
+  - `(CHA-MR11b)` `[Testable]` The \`delete\` method accepts a \`params\` object as the second parameter with the following properties:
+    - `(CHA-MR11b1)` `[Testable]` A \`name\` property specifying the reaction identifier (e.g., emoji string). It is required for all reaction types except for `Unique`.
+    - `(CHA-MR11b2)` `[Testable]` A \`type\` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
 
 <!-- -->
 
