@@ -330,12 +330,14 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M8d)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @update@ call.
 ** @(CHA-M8e)@ @[Testable]@ A client must be able to update a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an object/other parameters to update and an (optional) operation information.
 *** @(CHA-M8e1) The exact idiom for the method signature is left to the best practice for the language.
+** @(CHA-M8f)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 * @(CHA-M9)@ A client must be able to delete a message in a room.
 ** @(CHA-M9a)@ @[Testable]@ A client may delete a message via the Chat REST API by calling the @delete@ method.
 ** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
 ** @(CHA-M9c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
 ** @(CHA-M9d)@ @[Testable]@ A client must be able to delete a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an (optional) operation information.
 *** @(CHA-M9d1) The exact idiom for the method signature is left to the best practice for the language.
+** @(CHA-M9e)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
@@ -398,6 +400,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR4)@ @[Testable]@ Users should be able to send a reaction to a message via the `send` method of the `MessagesReactions` object (@room.messages.reactions.send@).
 ** @(CHA-MR4a)@ @[Testable]@ The `send` method accepts a message (or message serial) as the first parameter to identify which message to react to.
+*** @(CHA-MR4a1)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 ** @(CHA-MR4b)@ @[Testable]@ The `send` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR4b1)@ @[Testable]@ A `name` property (required) specifying the reaction identifier (e.g., emoji string).
 *** @(CHA-MR4b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
@@ -405,6 +408,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR11)@ @[Testable]@ Users should be able to delete a reaction from a message via the `delete` method of the `MessagesReactions` object (@room.messages.reactions.delete@).
 ** @(CHA-MR11a)@ @[Testable]@ The `delete` method accepts a message (or message serial) as the first parameter to identify which message to delete the reaction from.
+*** @(CHA-MR4a1)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 ** @(CHA-MR11b)@ @[Testable]@ The `delete` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR11b1)@ @[Testable]@ A `name` property specifying the reaction identifier (e.g., emoji string). It is required for all reaction types except for @Unique@.
 *** @(CHA-MR11b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
