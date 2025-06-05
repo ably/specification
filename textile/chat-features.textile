@@ -15,10 +15,18 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 The over-the-wire protocol for Chat, as well as implementation details, may be found on the chat protocol page.
 
-h2(#overview). Chat Specification Version
+h2(#version). Chat Specification Version
 
 * @(CHA-V1)@ **Specification Version**: This document defines the Ably chat library features specification ('features spec').
-** @(CHA-V1a)@ The current version of the Chat library feature specification is version @0.1.0@.
+** @(CHA-V1a)@ The current version of the Chat library feature specification is version @0.7.0@.
+
+h2(#major-revision-history). Major Revision History
+
+This specification has undergone the following major revisions, stemming from a review process. A major revision is understood to mean a significant public API change that affects a wide-range of functionality or implementation in the library. Specification points that were removed due to a major review/revision are marked as such.
+
+* Single Channel Migration: CHADR-097, March 2025
+* V1 API Review: CHADR-101, May 2025
+
 
 h2(#general). General Principles
 
@@ -44,7 +52,7 @@ A Room is the atomic unit of Chat. All chat operations are performed in the cont
 
 h3(#connection-status). Connection Status
 
-The connection status of the Chat client closely reflects the status of the underlying Realtime client, but with one major difference. When a disconnect takes place, we assume that it is transient for a certain amount of time, before eventually emitting an event. This prevents customers being unnecessarily sent connection status updates if the connection recovers quickly (e.g. when going through a tunnel).
+The connection status of the Chat client closely reflects the status of the underlying Realtime client.
 
 * @(CHA-CS1)@ Every chat client has a @status@, which describes the current status of the connection.
 ** @(CHA-CS1a)@ The @INITIALIZED@ status is a default status when the realtime client is first initialized. This value may be seen if the realtime client doesn't have autoconnect turned on.
@@ -63,14 +71,15 @@ The connection status of the Chat client closely reflects the status of the unde
 ** @(CHA-CS4c)@ @[Testable]@ Connection status update events must contain the connection error (if any) that pertains to the newly entered connection status.
 ** @(CHA-CS4d)@ @[Testable]@ Clients must be able to register a listener for connection status events and receive such events.
 ** @(CHA-CS4e)@ @[Testable]@ Clients must be able to unregister a listener for connection status events and from that point onwards, cease to receive such events on that listener.
-** @(CHA-CS4f)@ @[Testable]@ Clients must be able to unregister all listeners for connections status events, after which point, all currently registered listeners will cease to receive such events.
+** @(CHA-CS4f)@ This specification point has been removed. It was valid until the V1 API Review.
 * @(CHA-CS5)@ The chat client must monitor the underlying realtime connection for connection status changes.
-** @(CHA-CS5a)@ The chat client must suppress transient disconnection events. It is not uncommon for Ably servers to perform connection shedding to balance load, or due to retiring. Clients should not need to concern themselves with transient events.
-*** @(CHA-CS5a1)@ @[Testable]@ If the realtime connection status transitions from @CONNECTED@ to @DISCONNECTED@, the chat client connection status must not change. A 5 second transient disconnect timer shall be started.
-*** @(CHA-CS5a2)@ @[Testable]@ If a transient disconnect timer is active and the realtime connection status changes to @DISCONNECTED@ or @CONNECTING@, the library must not emit a status change.
-*** @(CHA-CS5a3)@ @[Testable]@ If a transient disconnect timer is active and the realtime connections status changes to @CONNECTED@, @SUSPENDED@ or @FAILED@, the library shall cancel the transient disconnect timer. The superseding status change shall be emitted.
-*** @(CHA-CS5a4)@ @[Testable]@ If a transient disconnect timer expires, the library shall emit a connection status change event. This event must contain the current status of timer expiry, along with the @original@ error that initiated the transient disconnect timer.
-** @(CHA-CS5b)@ @[Testable]@ Not withstanding @CHA-CS5a@. If a connection state event is observed from the underlying realtime library, the client must emit a status change event. The current status of that event shall reflect the status change in the underlying realtime library, along with the accompanying error.
+** @(CHA-CS5a)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a1)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a2)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a3)@ This specification point has been removed. It was valid until the V1 API Review.
+*** @(CHA-CS5a4)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-CS5b)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-CS5c)@ @[Testable]@ If a connection state event is observed from the underlying realtime library, the client must emit a status change event. The current status of that event shall reflect the status change in the underlying realtime library, along with the accompanying error.
 
 h3(#rooms-status). Room Statuses
 
@@ -100,7 +109,8 @@ The status of any given Chat Room is determined by the state of the underlying r
 ** @(CHA-RS4d)@ @[Testable]@ Room status update events must contain an error, where that error pertains to the current status.
 ** @(CHA-RS4e)@ @[Testable]@ Clients must be able to register a listener for room status updates and receive such events.
 ** @(CHA-RS4f)@ @[Testable]@ Clients must be able to unregister a listener for room status updates and from that point onwards, cease to receive such events on that listener only.
-** @(CHA-RS4g)@ @[Testable]@ Clients must be able to unregister all listeners for room status updates and from that point onwards, cease to receive such events on all listeners.
+** @(CHA-RS4g)@ This specification point has been removed. It was valid until the V1 API Review.
+* @(CHA-RS5)@ @[Testable]@ The initial status and error of the connection must be whatever status the realtime client returns whilst the connection status object is constructed.
 
 h3(#rooms-lifecycle). Room Lifecycle
 
@@ -243,8 +253,8 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC1)@ Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
 ** @(CHA-RC1a)@ This specification point has been removed. It was superseded by CHA-RC1f.
 ** @(CHA-RC1f)@ @[Testable]@ Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
-*** @(CHA-RC1f1)@ @[Testable]@ If the room id exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with the @BadRequest@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400 shall be thrown.
-*** @(CHA-RC1f2)@ @[Testable]@ If the room id exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
+*** @(CHA-RC1f1)@ @[Testable]@ If the room name exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with the @BadRequest@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400 shall be thrown.
+*** @(CHA-RC1f2)@ @[Testable]@ If the room name exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
 *** @(CHA-RC1f3)@ @[Testable]@ If no @CHA-RC1g@ release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
 *** @(CHA-RC1f4)@ @[Testable]@ If a @CHA-RC1g@ release operation is in progress, the entry shall be added to the room map, but the new room instance must not be created until the release operation has resolved. The future shall then subsequently resolve with the new room value.
 *** @(CHA-RC1f5)@ In relation to @CHA-RC1f4@, we recommend storing a future in the room map.
@@ -271,7 +281,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC3)@ Multiple chat features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
 ** @(CHA-RC3a)@ @[Testable]@ When retrieving a channel via @channels.get()@, features must merge together their respective options/modes and pass the merged result to the call to @channels.get()@.
 ** @(CHA-RC3b)@ Note: SDKs shall not rely on updating the value progressively via feature spec item @RTS3c@ - as this has been soft-deprecated and may be removed in the future.
-** @(CHA-RC3c)@ @[Testable]@ Unless explicitly stated otherwise, the channel used shall be @<roomId>::$chat@. So if your roomId is @foo@, the channel will be @foo::$chat@.
+** @(CHA-RC3c)@ @[Testable]@ Unless explicitly stated otherwise, the channel used shall be @<roomName>::$chat@. So if your room name is @foo@, the channel will be @foo::$chat@.
 * @(CHA-RC4)@ Users may provide room options to the @rooms.get()@ call to control the behaviour of the room.
 ** @(CHA-RC4a)@ @[Testable]@ Where room options have not been provided, the client shall provide defaults.
 ** @(CHA-RC4b)@ @[Testable]@ Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
@@ -318,10 +328,16 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M8b)@ @[Testable]@ When a message is updated successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
 ** @(CHA-M8c)@ @[Testable]@ An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
 ** @(CHA-M8d)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @update@ call.
+** @(CHA-M8e)@ @[Testable]@ A client must be able to update a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an object/other parameters to update and an (optional) operation information.
+*** @(CHA-M8e1) The exact idiom for the method signature is left to the best practice for the language.
+** @(CHA-M8f)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 * @(CHA-M9)@ A client must be able to delete a message in a room.
 ** @(CHA-M9a)@ @[Testable]@ A client may delete a message via the Chat REST API by calling the @delete@ method.
 ** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
 ** @(CHA-M9c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
+** @(CHA-M9d)@ @[Testable]@ A client must be able to delete a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an (optional) operation information.
+*** @(CHA-M9d1) The exact idiom for the method signature is left to the best practice for the language.
+** @(CHA-M9e)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
@@ -384,6 +400,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR4)@ @[Testable]@ Users should be able to send a reaction to a message via the `send` method of the `MessagesReactions` object (@room.messages.reactions.send@).
 ** @(CHA-MR4a)@ @[Testable]@ The `send` method accepts a message (or message serial) as the first parameter to identify which message to react to.
+*** @(CHA-MR4a1)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 ** @(CHA-MR4b)@ @[Testable]@ The `send` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR4b1)@ @[Testable]@ A `name` property (required) specifying the reaction identifier (e.g., emoji string).
 *** @(CHA-MR4b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
@@ -391,6 +408,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR11)@ @[Testable]@ Users should be able to delete a reaction from a message via the `delete` method of the `MessagesReactions` object (@room.messages.reactions.delete@).
 ** @(CHA-MR11a)@ @[Testable]@ The `delete` method accepts a message (or message serial) as the first parameter to identify which message to delete the reaction from.
+*** @(CHA-MR11a1)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 ** @(CHA-MR11b)@ @[Testable]@ The `delete` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR11b1)@ @[Testable]@ A `name` property specifying the reaction identifier (e.g., emoji string). It is required for all reaction types except for @Unique@.
 *** @(CHA-MR11b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
@@ -423,6 +441,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ This specification point was removed. It was valid until the single-channel migration.
+** @(CHA-ER3f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-ER3d)@ @[Testable]@ Reactions are sent on the channel using an @ephemeral@ message in "this format":#realtime-room-reactions.
 ** @(CHA-ER3b)@ This clause has been deleted.
 ** @(CHA-ER3c)@ This clause has been deleted.
@@ -487,8 +506,8 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR6f)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 * @(CHA-PR7)@ Users may subscribe to presence events.
 ** @(CHA-PR7d)@ @[Testable]@ If presence events have been disabled per @CHA-PR9c@, then the client shall throw an error with code @40000@.
-** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event in a room.
-** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event, to subscribe to just those events in a room.
+** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event-v2 in a room.
+** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event-v2, to subscribe to just those events in a room.
 ** @(CHA-PR7c)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
 * @(CHA-PR8)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
@@ -511,14 +530,16 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T1)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
 * @(CHA-T8)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
-* @(CHA-T9)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.get()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
+* @(CHA-T9)@ This specification point has been removed. It was valid until the V1 API Review.
+* @(CHA-T16)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.current()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
 * @(CHA-T15)@ @[Testable]@ Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
 ** @(CHA-T10a)@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving events). The default value shall be set to 2000ms.
 *** @(CHA-T10a1)@ This grace period is used to determine how long to wait (since the last recorded received typing event), beyond the heartbeat interval, before removing a client from the typing set. This is used to prevent flickering when a user is typing and stops typing for a short period of time. See @CHA-T13b1@ for a detailed description of how this is used.
 * @(CHA-T3)@ This specification point has been removed. It was replaced by @CHA-T10@.
 * @(CHA-T4)@ Users may indicate that they have started typing using the @keystroke@ method.
-** @(CHA-T4d)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-T4d)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-T4e)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer has not been set by the successful publish @CHA-T4a4@ of a @typing.started@ event):
 *** @(CHA-T4a1)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
 *** @(CHA-T4a2)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
@@ -531,7 +552,8 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T5)@ Users may explicitly indicate that they have stopped typing using @stop@ method.
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T4a4@ heartbeat timer does not exist or is expired), this operation is a no-op.
 ** @(CHA-T5b)@ This specification point has been removed.
-** @(CHA-T5c)@ @[Testable]@ If the channel state is not @ATTACHED@ or @ATTACHING@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-T5c)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-T5f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
 ** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-message. The client must wait for the publish to succeed or fail before returning the result to the caller.
 ** @(CHA-T5d1)@ @[Testable]@ The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
 ** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T4a4@ timer shall be unset.
@@ -565,19 +587,23 @@ the overhead of having everyone in presence.
 
 * @(CHA-O1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O2)@ The occupancy event format is shown "here":#chat-structs-occupancy-event
-* @(CHA-O3)@ @[Testable]@ Users can request an instantaneous occupancy check via the REST API. The request is detailed "here":#rest-occupancy-request, with the response format being a simple "occupancy event":#chat-structs-occupancy-event
+* @(CHA-O3)@ @[Testable]@ Users can request an instantaneous occupancy check via the REST API. The request is detailed "here":#rest-occupancy-request, with the response format being a simple "occupancy data struct":#chat-structs-occupancy-data
 * @(CHA-O4)@ Users can subscribe to realtime occupancy updates.
 ** @(CHA-O4e)@ @[Testable]@ If occupancy events have been disabled per @CHA-O6@, then the client shall throw an error with code @40000@.
 ** @(CHA-O4a)@ @[Testable]@ Users may register a listener that receives occupancy events in realtime.
 ** @(CHA-O4b)@ @[Testable]@ A subscription to occupancy events may be removed, after which it shall receive no further events.
-** @(CHA-O4c)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event":#chat-structs-occupancy-event format and broadcast it to subscribers.
+** @(CHA-O4c)@ This specification point has been removed. It was valid until the V1 API Review.
+** @(CHA-O4f)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event V2":#chat-structs-occupancy-event-v2 format, with type @OccupancyEventType.Updated@, and broadcast it to subscribers.
 ** @(CHA-O4d)@ @[Testable]@ If an invalid occupancy event is received on the channel, it shall be dropped.
-to typing subscribers.
 * @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O6)@ Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
 ** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
 ** @(CHA-O6b)@ @[Testable]@ If @occupancy.enableEvents@ is set to @false@, then the client shall not set the @options.params.occupancy@ channel parameter.
 ** @(CHA-O6c)@ @[Testable]@ The default value of @occupancy.enableEvents@ is @false@.
+* @(CHA-O7)@ Users can access the latest occupancy received in realtime, via the @occupancy.current()@ method.
+** @(CHA-O7a)@ @[Testable]@ The @current@ method should return the latest occupancy numbers received over the realtime connection in a @[meta]occupancy@ event.
+** @(CHA-O7b)@ @[Testable]@ If no realtime events have been received yet, @current()@ returns undefined/null.
+** @(CHA-O7c)@ @[Testable]@ If occupancy events are not enabled via @RoomOptions.occupancy.enableEvents@, @current()@ throws an error with code 40000.
 
 h2(#rest-api). Chat HTTP REST API
 
@@ -594,7 +620,7 @@ h4(#rest-sending-messages-request-v3). Request V3
 Below is the full REST payload format for the V3 endpoint. The @metadata@ and @headers@ keys are optional.
 
 <pre>
-  POST /chat/v3/rooms/<roomId>/messages
+  POST /chat/v3/rooms/<roomName>/messages
   {
     "text": "the message text",
     "metadata": {
@@ -625,27 +651,30 @@ h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3
 
 <pre>
   {
-    "name": "chat.message"
-    "encoding": "json"
-    "data": {
-      "text": "the message text",
-      "metadata": {
-        "foo": {
-          "bar": 1
+    "type": "message.created"
+    "message": {
+      "name": "chat.message"
+      "encoding": "json"
+      "data": {
+        "text": "the message text",
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
         }
-      }
-    },
-    "timestamp": 1726232498871,
-    "createdAt": 1726232498871,
-    "extras": {
-      "headers": {
-        "baz": "qux"
       },
-    },
-    "serial": "01726585978590-001@abcdefghij:001",
-    "action": "message.create",
-    "version": "01726585978590-001@abcdefghij:001",
-    "operation": {}
+      "timestamp": 1726232498871,
+      "createdAt": 1726232498871,
+      "extras": {
+        "headers": {
+          "baz": "qux"
+        },
+      },
+      "serial": "01726585978590-001@abcdefghij:001",
+      "action": "message.create",
+      "version": "01726585978590-001@abcdefghij:001",
+      "operation": {}
+    }
   }
 </pre>
 
@@ -656,7 +685,7 @@ h4(#rest-updating-messages-request). Request
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
 
 <pre>
-  PUT /chat/v3/rooms/<roomId>/messages/<serial>
+  PUT /chat/v3/rooms/<roomName>/messages/<serial>
   {
     "message": {
       "text": "the new message text",
@@ -685,7 +714,10 @@ The response body is as follows.
 <pre>
   {
     "version": "01726585978590-001@abcdefghij:001",
-    "timestamp": 1726585978590
+    "timestamp": 1726585978590,
+    "message": {
+      // A full message object
+    }
   }
 </pre>
 
@@ -693,31 +725,34 @@ h4(#rest-updating-messages-request). Corresponding Realtime Event
 
 <pre>
   {
-    "name": "chat.message"
-    "encoding": "json"
-    "data": {
-      "text": "the new message text",
-      "metadata": {
-        "foo": {
-          "bar": 1
+    "type": "message.updated"
+    "message": {
+      "name": "chat.message"
+      "encoding": "json"
+      "data": {
+        "text": "the new message text",
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        }
+      },
+      "createdAt": 1726232498871,
+      "timestamp": 1726585978590,
+      "extras": {
+        "headers": {
+          "baz": "qux"
         }
       }
-    },
-    "createdAt": 1726232498871,
-    "timestamp": 1726585978590,
-    "extras": {
-      "headers": {
-        "baz": "qux"
-      }
-    }
-    "serial": "01726232498871-001@abcdefghij:001",
-    "version": "01726585978590-001@abcdefghij:001"
-    "action": "message.update"
-    "operation": {
-      "clientId": "who-performed-the-action",
-      "description": "why-the-action-was-performed"
-      "metadata": {
-        "foo": "bar"
+      "serial": "01726232498871-001@abcdefghij:001",
+      "version": "01726585978590-001@abcdefghij:001"
+      "action": "message.update"
+      "operation": {
+        "clientId": "who-performed-the-action",
+        "description": "why-the-action-was-performed"
+        "metadata": {
+          "foo": "bar"
+        }
       }
     }
   }
@@ -730,7 +765,7 @@ h4(#rest-deleting-messages-request). Request
 Below is the full REST payload format for the endpoint.
 
 <pre>
-  POST /chat/v3/rooms/<roomId>/messages/<serial>/delete
+  POST /chat/v3/rooms/<roomName>/messages/<serial>/delete
   {
     "description": "why-the-action-was-performed"
     "metadata": {
@@ -748,7 +783,10 @@ The response body is as follows.
 <pre>
   {
     "version": "01826232498871-001@abcdefghij:001",
-    "timestamp": 1826232498871
+    "timestamp": 1826232498871,
+    "message": {
+      // A full message object
+    }
   }
 </pre>
 
@@ -756,33 +794,36 @@ h4(#rest-deleting-messages-request). Corresponding Realtime Event
 
 <pre>
   {
-    "name": "chat.message"
-    "encoding": "json"
-    "data": {
-      "text": "the original message text",
-      "metadata": {
-        "foo": {
-          "bar": 1
+    "type": "message.deleted",
+    "message": {
+      "name": "chat.message"
+      "encoding": "json"
+      "data": {
+        "text": "the original message text",
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
         }
+      },
+      "timestamp": "1726232498871",
+      "extras": {
+        "headers": {
+          "baz": "qux"
+        },
       }
-    },
-    "timestamp": "1726232498871",
-    "extras": {
-      "headers": {
-        "baz": "qux"
-      },
-    }
-    "serial": "01726585978590-001@abcdefghij:001",
-    "action": "message.deleted"
-    "timestamp": 1826232498871
-    "createdAt": 1726585978590,
-    "version": "01826232498871-001@abcdefghij:001",
-    "operation": {
-      "clientId": "who-performed-the-action",
-      "description": "why-the-action-was-performed"
-      "metadata": {
-        "foo": "bar"
-      },
+      "serial": "01726585978590-001@abcdefghij:001",
+      "action": "message.deleted"
+      "timestamp": 1826232498871
+      "createdAt": 1726585978590,
+      "version": "01826232498871-001@abcdefghij:001",
+      "operation": {
+        "clientId": "who-performed-the-action",
+        "description": "why-the-action-was-performed"
+        "metadata": {
+          "foo": "bar"
+        },
+      }
     }
   }
 </pre>
@@ -792,7 +833,7 @@ h3(#rest-fetching-messages). Fetching Message History
 h4(#rest-fetching-messages-request). Request V3
 
 <pre>
-  GET /chat/v3/rooms/<roomId>/messages
+  GET /chat/v3/rooms/<roomName>/messages
 </pre>
 
 The method accepts query parameters identical to the standard Ably REST API.
@@ -930,7 +971,7 @@ h3(#rest-occupancy). Occupancy
 h4(#rest-occupancy-request). Request
 
 <pre>
-  GET /chat/v3/rooms/<roomId>/occupancy
+  GET /chat/v3/rooms/<roomName>/occupancy
 </pre>
 
 h4(#rest-occupancy-response). Response
@@ -945,19 +986,23 @@ in whichever format is most idiomatic to the platform.
 
 h3(#chat-structs-room-options). RoomOptions
 
-The RoomOptions struct describes configuration options for a Chat room. A property being set to a non-null value means that the feature is enabled. Some features have specific configuration.
+The RoomOptions struct describes configuration options for a Chat room. It is an optional argument when getting the room, with defaults provided. Below describes the structure, along with the default values.
 
 <pre>
   {
     "presence": {
-      "enter": boolean,
-      "subscribe": boolean,
+      "enableEvents": true
     },
     "typing": {
-      "timeoutMs": number
+      "heartbeatThrottleMs": 10000
     },
-    "reactions": {}, // No properties, but must be non-null to enable feature.
-    "occupancy": {}
+    "occupancy": {
+      "enableEvents": false
+    },
+    "messages": {
+      "rawMessageReactions": false,
+      "defaultMessageReactionType": MessageReactionType.Distinct
+    }
   }
 </pre>
 
@@ -967,7 +1012,6 @@ h4(#chat-structs-message-v1). Messages V1 @(deprecated)@
 <pre>
   {
     "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
-    "roomId": "my-room",
     "clientId": "who-sent-the-message",
     "text": "my-message",
     "createdAt": DateTime(),
@@ -989,7 +1033,6 @@ h4(#chat-structs-message-v2). Messages V2
 <pre>
   {
     "serial": "01726585978590-001@abcdefghij:001",
-    "roomId": "my-room",
     "clientId": "who-sent-the-message",
     "text": "my-message",
     "createdAt": DateTime(),
@@ -1138,7 +1181,6 @@ h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reactions
 <pre>
   {
     "type": ":heart:",
-    "roomId": "my-room",
     "clientId": "who-sent-the-message",
     "createdAt": DateTime(),
     "metadata": {
@@ -1152,12 +1194,32 @@ h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reactions
   }
 </pre>
 
+h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reaction Event
+
+<pre>
+  {
+    "type": RoomReactionEventType.Reaction,
+    "reaction": {
+      "type": ":heart:",
+      "clientId": "who-sent-the-message",
+      "createdAt": DateTime(),
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      },
+      "headers": {
+        "baz": "qux"
+      }
+    }
+  }
+</pre>
+
 h3(#chat-structs-presence-member). Presence Member
 
 <pre>
   {
     "clientId": "who-sent-the-message",
-    "action": "enter",
     "updatedAt": DateTime(),
     "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
     "extras": {
@@ -1168,14 +1230,27 @@ h3(#chat-structs-presence-member). Presence Member
   }
 </pre>
 
-h3(#chat-structs-presence-event). Presence Event
+h3(#chat-structs-presence-event). Presence Event (deprecated)
 
 <pre>
   {
-    "clientId": "who-is-in-presence",
-    "action": "enter",
-    "timestamp": DateTime(),
-    "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+      "clientId": "who-is-in-presence",
+      "action": "enter",
+      "timestamp": DateTime(),
+      "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+  }
+</pre>
+
+h3(#chat-structs-presence-event-v2). Presence Event V2
+
+<pre>
+  {
+    "type": PresenceEventType,
+    "member": { // PresenceMember
+      "clientId": "who-is-in-presence",
+      "timestamp": DateTime(),
+      "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+    }
   }
 </pre>
 
@@ -1183,7 +1258,7 @@ h3(#chat-structs-typing-event). Typing Event @(deprecated)@
 
 <pre>
   {
-    "currentlyTyping": ["clientId-1", "clientID-2"],
+    "currentlyTyping": ["clientId-1", "clientID-2"]
   }
 </pre>
 
@@ -1203,21 +1278,42 @@ h3(#chat-structs-typing-event-V3). Typing Event V3
 
 <pre>
   {
-    "type": "typing.set.changed",
+    "type": TypingSetEventType.SetChanged
     "change": {
-        "type": "typing.started",
+        "type": TypingEventType,
         "clientId": "clientId-2",
     },
     "currentlyTyping": ["clientId-1", "clientId-2"],
   }
 </pre>
 
-h3(#chat-structs-occupancy-event). Occupancy Event
+h3(#chat-structs-occupancy-event). Occupancy Event (Deprecated)
 
 <pre>
   {
     "connections": 5,
-    "presenceMembers" 2,
+    "presenceMembers" 2
+  }
+</pre>
+
+h3(#chat-structs-occupancy-event-v2). Occupancy Event V2
+
+<pre>
+  {
+    "type": OccupancyEventType.Updated,
+    "occupancy": { // Of type OccupancyData 
+      "connections": 5,
+      "presenceMembers" 2
+    }
+  }
+</pre>
+
+h3(#chat-structs-occupancy-data). Occupancy Data
+
+<pre>
+  {
+    "connections": 5,
+    "presenceMembers" 2
   }
 </pre>
 
