@@ -1518,7 +1518,7 @@ h4. Map
 * @(MAP2)@ @Map@ @Semantics@ enum has the following values in order from zero: @LWW@
 * @(MAP3)@ The attributes available in a @Map@ are:
 ** @(MAP3a)@ @semantics@ @Semantics@ enum - the conflict-resolution semantics used by the map object
-** @(MAP3b)@ @map@ @Dict<String, MapEntry>@ - the map entries, indexed by key
+** @(MAP3b)@ @entries@ @Dict<String, MapEntry>@ - the map entries, indexed by key
 * @(MAP4)@ The size of the @Map@ is calculated as follows:
 ** @(MAP4a)@ The size is the sum of the sizes of all map entries in @map@ property
 *** @(MAP4a1)@ Includes the size of the @String@ key for the map entry
@@ -2487,7 +2487,7 @@ class CounterOp // COP*, internal
 
 class Map // MAP*, internal
   semantics: MapSemantics // MAP3a
-  map: Dict<String, MapEntry>? // MAP3b
+  entries: Dict<String, MapEntry>? // MAP3b
 
 class Counter // CNT*, internal
   count: Number? // CNT2a
