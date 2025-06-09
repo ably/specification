@@ -703,7 +703,7 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL5k)@ If the channel receives an @ATTACHED@ message while in the @DETACHING@ or @DETACHED@ state, it should send a new @DETACH@ message and remain in (or transition to) the @DETACHING@ state
 ** @(RTL5e)@ If the language permits, a callback can be provided that is called when the channel is detached successfully or the detach fails and the @ErrorInfo@ error is passed as an argument to the callback
 * @(RTL6)@ @RealtimeChannel#publish@ function:
-** @(RTL6a)@ Messages are encoded in the same way as the @RestChannel#publish@ method, and "RSL1g":#RSL1g (size limit) applies similarly
+** @(RTL6a)@ Messages are encoded in the same way as the @RestChannel#publish@ method, and "RSL1i":#RSL1i (size limit) applies similarly
 *** @(RTL6a1)@ "RSL1k":#RSL1k (@idempotentRestPublishing@ option), "RSL1j1":#RSL1j1 (idempotent publishing test), and "RSL1l":#RSL1l (@publish(Message, params)@ form) do not apply to realtime publishes
 ** @(RTL6b)@ An optional callback can be provided to the @#publish@ method that is called when the message is successfully delivered or upon failure with the appropriate @ErrorInfo@ error. A test should exist to publish lots of messages on a few connections to ensure all message success callbacks are called for all messages published
 ** @(RTL6i)@ Expects either a @Message@ object, an array of @Message@ objects, or a @name@ string and @data@ payload:
