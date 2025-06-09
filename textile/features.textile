@@ -1406,6 +1406,7 @@ h4. Message
 ** @(TM6a)@ The size is the sum of the sizes of the @name@, @data@, @clientId@, and @extras@ properties
 ** @(TM6b)@ The size of an @Object@ or @Array@ @data@ property is its string length after being JSON-stringified
 ** @(TM6c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+** @(TM6f)@ The size of a @string@ @data@ property is its length
 ** @(TM6d)@ The size of the @extras@ property is the string length of its JSON representation
 ** @(TM6e)@ The size of a @null@ or omitted property is zero
 
@@ -1451,6 +1452,7 @@ h4. ObjectMessage
 ** @(OM3b)@ The size of the @operation@ property is calculated per "OOP4":#OOP4
 ** @(OM3c)@ The size of the @object@ property is calculated per "OST3":#OST3
 ** @(OM3d)@ The size of the @extras@ property is the string length of its JSON representation
+** @(OM3f)@ The size of the @clientId@ property is its string length
 ** @(OM3e)@ The size of a @null@ or omitted property is zero
 
 h4. ObjectOperation
@@ -1501,6 +1503,7 @@ h4. MapOp
 * @(MOP3)@ The size of the @MapOp@ is calculated as follows:
 ** @(MOP3a)@ The size is the sum of the sizes of the @key@ and @data@ properties
 ** @(MOP3b)@ The size of the @data@ property is calculated per "OD3":#OD3
+** @(MOP3d)@ The size of the @key@ property is its string length
 ** @(MOP3c)@ The size of a @null@ or omitted property is zero
 
 h4. CounterOp
@@ -1521,7 +1524,7 @@ h4. Map
 ** @(MAP3b)@ @entries@ @Dict<String, MapEntry>@ - the map entries, indexed by key
 * @(MAP4)@ The size of the @Map@ is calculated as follows:
 ** @(MAP4a)@ The size is the sum of the sizes of all map entries in @map@ property
-*** @(MAP4a1)@ Includes the size of the @String@ key for the map entry
+*** @(MAP4a1)@ Includes the size of the @String@ key for the map entry, calculated as its length
 *** @(MAP4a2)@ Includes the size of the @MapEntry@ object for the map entry, calculated per "ME3":#ME3
 ** @(MAP4b)@ The size of a @null@ or omitted property is zero
 
