@@ -1554,14 +1554,18 @@ h4. ObjectData
 * @(OD1)@ An @ObjectData@ represents a value in an object on a channel
 * @(OD2)@ The attributes available in an @ObjectData@ are:
 ** @(OD2a)@ @objectId@ string - a reference to another object
-** @(OD2b)@ @encoding@ string - the encoding the client library should use to interpret the @value@
-** @(OD2c)@ @value@ string, number, boolean or binary - a concrete value of the object
+** @(OD2b)@ @encoding@ string - can be set by the client to indicate that value in @string@ or @bytes@ field have an encoding
+** @(OD2c)@ @boolean@ boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
+** @(OD2d)@ @bytes@ binary - a primitive binary leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
+** @(OD2e)@ @number@ number - a primitive number leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
+** @(OD2f)@ @string@ string - a primitive string leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
 * @(OD3)@ The size of the @ObjectData@ is calculated as follows:
-** @(OD3a)@ It is equal to the size of the @value@ property
-** @(OD3b)@ The size of a @binary@ @value@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
-** @(OD3c)@ The size of a @number@ @value@ property is 8
-** @(OD3d)@ The size of a @boolean@ @value@ property is 1
-** @(OD3e)@ The size of a @null@ or omitted property is zero
+** @(OD3a)@ The size is the sum of the sizes of the @boolean@, @bytes@, @number@, and @string@ properties
+** @(OD3b)@ If set, the size of a @boolean@ property is 1
+** @(OD3c)@ If set, the size of a @bytes@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+** @(OD3d)@ If set, the size of a @number@ property is 8
+** @(OD3e)@ If set, the size of a @string@ property is its length
+** @(OD3f)@ The size of a @null@ or omitted property is zero
 
 h4. ProtocolMessage
 
@@ -2503,7 +2507,10 @@ class MapEntry // ME*, internal
 class ObjectData // OD*, internal
   objectId: String? // OD2a
   encoding: String? // OD2b
-  value: (String | Number | Boolean | Binary)? // OD2c
+  boolean: Boolean? // OD2c
+  bytes: Binary? // OD2d
+  number: Number? // OD2e
+  string: String? // OD2f
 
 class ProtocolMessage: // internal
   action: ProtocolMessageAction // TR2, TR4a
