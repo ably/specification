@@ -621,8 +621,105 @@ Enumerates the possible types of `Message` there can be.
 | MESSAGE_CREATE | TM5 | A normal message that has been published by a user. |
 | MESSAGE_UPDATE | TM5 | An update that modifies a previously-published message (referenced by `serial`). |
 | MESSAGE_DELETE | TM5 | A deletion of a previously-published message (referenced by `serial`). |
-| META_OCCUPANCY | TM5 | Channel metadata containing information on what the current occupancy of the channel is. |
+| META | TM5 | A meta-message (a message originating from ably rather than being explicitly published on a channel), containing information such as inband channel occupancy events that has been requested by channel param. |
 | MESSAGE_SUMMARY | TM5 | A message containing the latest rolled-up summary of annotations that have been made to this message. |
+
+## class RestAnnotations
+
+
+Functionality for annotating messages with small pieces of data, such as emoji reactions, that the server will roll up into the message as a summary.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| publish(message: Message, annotation: OutboundAnnotation) => io ||| RSAN1 | Publish a new annotation for a message. |
+|| `message` || RSAN1a1 | The message to annotate. |
+|| `annotation` || RSAN1a2 | The annotation to publish. (Must include at least the `type`. Assumed to be an annotation.create if no action is specified) |
+| publish(messageSerial: string, annotation: OutboundAnnotation) => io ||| RSAN1 | Publish a new annotation for a message (alternative form where you only have the serial of the message, not a complete Message object) |
+|| `messageSerial` || RSAN1a | The serial field of the message to annotate. |
+|| `annotation` || RSAN1a2 | The annotation to publish. (Must include at least the `type`. Assumed to be an annotation.create if no action is specified) |
+| delete(message: Message, annotation: OutboundAnnotation) => io ||| RSAN2 | Delete an annotation for a message. |
+|| `message` || RSAN2a | The message to remove the annotation from. |
+|| `annotation` || RSAN2a | The annotation to delete. (Must include at least the `type`.) |
+| delete(messageSerial: string, annotation: OutboundAnnotation) => io ||| RSAN2 | Delete an annotation for a message (alternative form where you only have the serial of the message, not a complete Message object) |
+|| `messageSerial` || RSAN2a | The serial field of the message to remove the annotation from. |
+|| `annotation` || RSAN2a | The annotation to delete. (Must include at least the `type`.) |
+| get(message: Message, params?: `Dict<string, stringifiable>`) => io `PaginatedResult<Annotation>` ||| RSAN3 | Get all annotations for a given message (as a paginated result) |
+|| `message` || RSAN3a | The message to get annotations for. |
+|| `params` || RSAN3a | Restrictions on which annotations to get (in particular a limit) |
+||| `PaginatedResult<Annotation>` || A paginated result containing annotations. |
+| get(messageSerial: string, params?: `Dict<string, stringifiable>`) => io `PaginatedResult<Annotation>` ||| RSAN3 | Get all annotations for a given message (as a paginated result) (alternative form where you only have the serial of the message, not a complete Message object) |
+|| `messageSerial` || RSAN3a | The `serial` of the message to get annotations for. |
+|| `params` || RSAN3a | Restrictions on which annotations to get (in particular a limit) |
+||| `PaginatedResult<Annotation>` || A paginated result containing annotations. |
+
+## class RealtimeAnnotations
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| publish(message: Message, annotation: OutboundAnnotation) => io ||| RTAN1 | Publish a new annotation for a message. |
+|| `message` || RTAN1a | The message to annotate. |
+|| `annotation` || RTAN1a | The annotation to publish. (Must include at least the `type`. Assumed to be an annotation.create if no action is specified) |
+| publish(messageSerial: string, annotation: OutboundAnnotation) => io ||| RTAN1 | Publish a new annotation for a message (alternative form where you only have the serial of the message, not a complete Message object) |
+|| `messageSerial` || RTAN1a | The serial field of the message to annotate. |
+|| `annotation` || RTAN1a | The annotation to publish. (Must include at least the `type`. Assumed to be an annotation.create if no action is specified) |
+| delete(message: Message, annotation: OutboundAnnotation) => io ||| RTAN2 | Delete an annotation for a message. |
+|| `message` || RTAN2a | The message to remove the annotation from. |
+|| `annotation` || RTAN2a | The annotation to delete. (Must include at least the `type`.) |
+| delete(messageSerial: string, annotation: OutboundAnnotation) => io ||| RTAN2 | Delete an annotation for a message (alternative form where you only have the serial of the message, not a complete Message object) |
+|| `messageSerial` || RTAN2a | The serial field of the message to remove the annotation from. |
+|| `annotation` || RTAN2a | The annotation to delete. (Must include at least the `type`.) |
+| get(message: Message, params?: `Dict<string, stringifiable>`) => io `PaginatedResult<Annotation>` ||| RTAN3 | Get all annotations for a given message (as a paginated result) |
+|| `message` || RTAN3a | The message to get annotations for. |
+|| `params` || RTAN3a | Restrictions on which annotations to get (such as a `limit` on the size of the result page) |
+||| `PaginatedResult<Annotation>` || A paginated result containing annotations. |
+| get(messageSerial: string, params?: `Dict<string, stringifiable>`) => io `PaginatedResult<Annotation>` ||| RTAN3 | Get all annotations for a given message (as a paginated result) (alternative form where you only have the serial of the message, not a complete Message object) |
+|| `messageSerial` || RTAN3a | The `serial` of the message to get annotations for. |
+|| `params` || RTAN3a | Restrictions on which annotations to get (in particular a limit) |
+||| `PaginatedResult<Annotation>` || A paginated result containing annotations. |
+| subscribe((Annotation) ->)) => io ||| RTAN4 | Registers a listener that is called each time an Annotation is received on the channel. Note that if you want to receive individual realtime annotations (instead of just the rolled-up summaries), you will need to request the ANNOTATION_SUBSCRIBE ChannelMode in ChannelOptions, since they are not delivered by default. In general, most clients will not bother with subscribing to individual annotations, and will instead just look at the summary updates. |
+|| `listener` || RTAN4a | An event listener function. |
+| subscribe(String \| [String], listener?: (Annotation) ->)) => io ||| RTAN4 | Registers a listener that is called each time an Annotation matching a given type is received on the channel. Note that if you want to receive individual realtime annotations (instead of just the rolled-up summaries), you will need to request the annotation_subscribe ChannelMode in ChannelOptions, since they are not delivered by default. In general, most clients will not bother with subscribing to individual annotations, and will instead just look at the summary updates. |
+|| `type` || RTAN4b | A specific type string or an array of them to register the listener for. |
+|| `listener` || RTAN4a | An event listener function. |
+| unsubscribe() ||| RTAN5 | Deregisters all listeners currently receiving Annotation for the channel. |
+| unsubscribe(listener: (Annotation) ->)) ||| RTAN5 | Deregisters a specific listener that is registered to receive Annotation on the channel. |
+|| `listener` || RTAN5a | An event listener function. |
+| unsubscribe(String \| [String]) ||| RTAN5 | Deregisters any listener that is registered to receive Annotation on the channel for a specific type. |
+|| `type` || RTAN5a | A specific annotation type (or array of types) to deregister the listeners for. |
+| unsubscribe(String \| [String], listener: (Annotation) ->)) ||| RTAN5 | Deregisters a specific listener that is registered to receive Annotation on the channel for a given type. |
+|| `type` || RTAN5a | A specific annotation type (or array of types) to deregister the listener for. |
+|| `listener` || RTAN5a | An event listener function. |
+
+## Class Annotation
+
+| Property | Type | Spec | Description |
+|---|---|---|---|
+| id | string | TAN2a | An ID assigned (by the publisher or Ably) to this annotation, which is used as the idempotency key. |
+| action | AnnotationAction | TAN2b | The action, whether this is an annotation being added or removed, one of the AnnotationAction enum values. |
+| clientId | string? | TAN2c | The client ID of the publisher of this annotation (if any). |
+| name | string? | TAN2d | The name of this annotation. This is the field that most annotation aggregations will operate on. For example, using "distinct.v1" aggregation (specified in the type), the message summary will show a list of clients who have published an annotation with each distinct annotation.name. |
+| count | number? | TAN2e | An optional count, only relevant to certain aggregation methods, see aggregation methods documentation for more info. |
+| data | any? | TAN2f | An arbitrary publisher-provided payload, if provided. Not aggregated. |
+| encoding | string? | TAN2g | The encoding of the payload; typically empty as the data is decoded client-side back into the original data type. |
+| timestamp | number | TAN2h | Timestamp of when the annotation was received by Ably, as milliseconds since the Unix epoch. |
+| serial | string | TAN2i | This annotation's unique serial (lexicographically totally ordered). |
+| messageSerial | string | TAN2j | The serial of the message (of type `MESSAGE_CREATE`) that this annotation is annotating. |
+| type | string | TAN2k | The type of annotation it is, typically some identifier together with an aggregation method; for example: "emoji:distinct.v1". Handled opaquely by the SDK and validated serverside. |
+| extras | any? | TAN2l | A JSON object for metadata and/or ancillary payloads. |
+
+## Class OutboundAnnotation
+
+An `Annotation` with all fields optional except the `type`.
+
+## enum AnnotationAction
+
+Enumerates the possible values of the `action` field of an `Annotation`
+
+| Enum | Spec | Description |
+|---|---|---|
+| ANNOTATION_CREATE | TAN2b | A created annotation |
+| ANNOTATION_DELETE | TAN2b | A deleted annotation |
+
 
 ## class ConnectionDetails
 
@@ -660,6 +757,21 @@ Contains an individual message that is sent to, or received from, Ably.
 || `JsonArray` ||| An array of `Message`-like deserialized objects. |
 || `ChannelOptions` ||| A [`ChannelOptions`]{@link ChannelOptions} object. If you have an encrypted channel, use this to allow the library to decrypt the data. |
 ||| [`Message`] || An array of [`Message`]{@link Message} objects. |
+| +SummaryDistinctV1(JsonObject) -> `Dict<string, SummaryClientIdList>` ||| TM7b1 | A static factory method that takes the value of one of the keys in the `Message.summary` object for the `distinct.v1` annotation type, and outputs a strongly-typed summary entry. |
+|| rawSummaryEntry: JsonObject ||| The value of one of the keys of the @Message.summary@. |
+||| summaryEntry: `Dict<string, SummaryClientIdList>` || Map of annotation name to aggregated annotations |
+| +SummaryUniqueV1(JsonObject) -> `Dict<string, SummaryClientIdList>` ||| TM7b2 | A static factory method that takes the value of one of the keys in the `Message.summary` object for the `unique.v1` annotation type, and outputs a strongly-typed summary entry. |
+|| rawSummaryEntry: JsonObject ||| The value of one of the keys of the @Message.summary@. |
+||| summaryEntry: `Dict<string, SummaryClientIdList>` || Map of annotation name to aggregated annotations |
+| +SummaryMultipleV1(JsonObject) -> `Dict<string, SummaryClientIdCounts>` ||| TM7b3 | A static factory method that takes the value of one of the keys in the `Message.summary` object for the `multiple.v1` annotation type, and outputs a strongly-typed summary entry. |
+|| rawSummaryEntry: JsonObject ||| The value of one of the keys of the @Message.summary@. |
+||| summaryEntry: `Dict<string, SummaryClientIdCounts>` || Map of annotation name to aggregated annotations |
+| +SummaryFlagV1(JsonObject) -> `SummaryClientIdList` ||| TM7b4 | A static factory method that takes the value of one of the keys in the `Message.summary` object for the `flag.v1` annotation type, and outputs a strongly-typed summary entry. |
+|| rawSummaryEntry: JsonObject ||| The value of one of the keys of the @Message.summary@. |
+||| summaryEntry: `SummaryClientIdList` || Aggregated annotations |
+| +SummaryTotalV1(JsonObject) -> `SummaryTotal` ||| TM7b5 | A static factory method that takes the value of one of the keys in the `Message.summary` object for the `total.v1` annotation type, and outputs a strongly-typed summary entry. |
+|| rawSummaryEntry: JsonObject ||| The value of one of the keys of the @Message.summary@. |
+||| summaryEntry: `SummaryTotal` || Aggregated total summary |
 | clientId: String? ||| RSL1g1, TM2b | The client ID of the publisher of this message. |
 | connectionId: String? ||| TM2c | The connection ID of the publisher of this message. |
 | data: Data? ||| TM2d | The message payload, if provided. |
@@ -676,6 +788,34 @@ Contains an individual message that is sent to, or received from, Ably.
 | createdAt: Time? ||| TM2o | The timestamp of the very first version of a given message (will differ from `timestamp` only if the message has been updated or deleted). |
 | operation: Operation? ||| TM2n | In the case of an updated or deleted message, this will contain metadata about the update or delete operation. |
 | connectionKey: String? ||| TM2h | Allows a REST client to publish a message on behalf of a Realtime client. If you set this to the [private connection key]{@link Connection.key} of a Realtime connection when publishing a message using a [`RestClient`]{@link RestClient}, the message will be published on behalf of that Realtime client. This property is only populated by a client performing a publish, and will never be populated on an inbound message. |
+| summary: `Dict<string, JsonObject>`? ||| TM2q | A summary of all the annotations that have been made to the message, whose keys are the `type` fields from any annotations that it includes. For summary types the SDK knows about, static factory methods on `Message` exist to parse the values into strongly-typed objects. |
+
+## Class SummaryClientIdList
+
+The summary entry for aggregated annotations that use the flag.v1 aggregation method; also the per-name value for some other aggregation methods.
+
+| Property | Type | Description |
+|---|---|---|
+| total | number | The total number of clients who have published an annotation with this name (or type, depending on context). |
+| clientIds | string[] | A list of the clientIds of all clients who have published an annotation with this name (or type, depending on context). |
+
+## Class SummaryClientIdCounts
+
+The per-name value for the multiple.v1 aggregation method.
+
+| Property | Type | Description |
+|---|---|---|
+| total | number | The sum of the counts from all clients who have published an annotation with this name |
+| clientIds | { [key: string]: number } | A list of the clientIds of all clients who have published an annotation with this name, and the count each of them have contributed. |
+
+
+## Class SummaryTotal
+
+The summary for the total.v1 aggregation method.
+
+| Property | Type | Description |
+|---|---|---|
+| total | number | The number of clients who have published an annotation of this type |
 
 ## class Operation
 
