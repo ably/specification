@@ -1454,6 +1454,8 @@ h4. Message
 ** @(TM6b)@ The size of an @Object@ or @Array@ @data@ property is its string length after being JSON-stringified
 ** @(TM6c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
 ** @(TM6f)@ The size of a @string@ @data@ property is its length
+** @(TM6g)@ The size of a @string@ @name@ property is its length
+** @(TM6h)@ The size of a @string@ @clientId@ property is its length
 ** @(TM6d)@ The size of the @extras@ property is the string length of its JSON representation
 ** @(TM6e)@ The size of a @null@ or omitted property is zero
 * @(TM7)@ The SDK may expose a series of functions (static factory methods on a Message or otherwise, wherever is language idiomatic; for some languages this might just be types that can be used for type assertions, etc), that take a deserialized @JsonObject@, one of the aggregated summaries for a particular annotation type (that is, a value from the @TM2q@ @summary@ @Dict@), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
@@ -1496,7 +1498,11 @@ h4. PresenceMessage
 ** @(TP3g)@ @timestamp@ time in milliseconds since epoch. If a presence message received from Ably does not contain a @timestamp@, it should be set to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TP3h)@ @memberKey@ string function that combines the @connectionId@ and @clientId@ ensuring multiple connected clients with the same clientId are uniquely identifiable
 * @(TP4)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @PresenceMessage@-like object (or array of such objects), and optionally a @channelOptions@, and return a @PresenceMessage@ (or array of such @PresenceMessages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves. This behaviour is the same as in @(TM3)@.
-* @(TP5)@ The size of the @PresenceMessage@ for "TO3l8":#TO3l8 is calculated in the same way as for @Message@; see "TM6":#TM6
+* @(TP5)@ The size of the @PresenceMessage@ for "TO3l8":#TO3l8 is calculated as follows:
+** @(TP5a)@ The size is the sum of the sizes of the @data@ and @clientId@ properties
+** @(TP5b)@ The size of a @data@ property is as per "TM6b":#TM6b, "TM6c":#TM6c and "TM6f":#TM6f
+** @(TP5e)@ The size of a @string@ @clientId@ property is its length
+** @(TP5f)@ The size of a @null@ or omitted property is zero
 
 h4. ObjectMessage
 
@@ -1650,6 +1656,13 @@ h4. Annotation
 ** @(TAN2k)@ @type@ string: a string indicating the type of the annotation, handled opaquely by the SDK
 ** @(TAN2l)@ @extras@ object (optional): A JSON-encodable object for arbitrary metadata
 * @(TAN3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Annotation@-like object (or array of such objects), and optionally a @channelOptions@, and return an @Annotation@ (or array of @Annotations@) that's decoded and decrypted analagously to @TM3@ and @TP4@
+* @(TAN4)@ The size of the @Annotation@ for "TO3l8":#TO3l8 is calculated as follows:
+** @(TAN4a)@ The size is the sum of the sizes of the @name@, @data@, @clientId@, and @extras@ properties
+** @(TAN4b)@ The size of a @data@ property is as per "TM6b":#TM6b, "TM6c":#TM6c and "TM6f":#TM6f
+** @(TAN4e)@ The size of a @string@ @name@ property is its length
+** @(TAN4f)@ The size of a @string@ @clientId@ property is its length
+** @(TAN4g)@ The size of the @extras@ property is the string length of its JSON representation
+** @(TAN4h)@ The size of a @null@ or omitted property is zero
 
 h4. ProtocolMessage
 
