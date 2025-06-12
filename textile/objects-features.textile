@@ -1,0 +1,145 @@
+---
+title: Objects Features
+section: client-lib-development-guide
+index: 65
+jump_to:
+  Help with:
+    - Objects Features Overview#overview
+---
+
+h2(#overview). Overview
+
+This document outlines the feature specification for the Objects feature of the Realtime system. It is currently under development and stored separately from the main specification to simplify the initial implementation of the feature in other SDKs. Once completed, it will be moved to the main "features":../features spec.
+
+Objects feature enables clients to store shared data as "objects" on a channel. When an object is updated, changes are automatically propagated to all subscribed clients in realtime, ensuring each client always sees the latest state.
+
+h3(#realtime-objects). RealtimeObjects
+
+* @(RTO1)@ @Objects#getRoot@ function:
+** @(RTO1a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+** @(RTO1b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should indicate an error with code 90001
+** @(RTO1c)@ Waits for the objects sync sequence to complete and for "RTO5c":#RTO5c to finish
+** @(RTO1d)@ Returns the object with id @root@ from the internal @ObjectsPool@ as a @LiveMap@
+* @(RTO2)@ Various object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
+** @(RTO2a)@ If the channel is in the @ATTACHED@ state, the presence of the required channel mode is checked against the set of channel modes granted by the server per "RTL4m":../features#RTL4m :
+*** @(RTO2a1)@ If the channel mode is in the set, the operation is allowed
+*** @(RTO2a2)@ If the channel mode is missing, unless otherwise specified by the operation, the library should indicate an error with code 40024 stating that the operation cannot be performed without the required channel mode
+** @(RTO2b)@ Otherwise, a best-effort attempt is made, and the channel mode is checked against the set of channel modes requested by the user per "TB2d":../features#TB2d :
+*** @(RTO2b1)@ If the channel mode is in the set, the operation is allowed
+*** @(RTO2b2)@ If the channel mode is missing, unless otherwise specified by the operation, the library should indicate an error with code 40024 stating that the operation cannot be performed without the required channel mode
+* @(RTO3)@ An internal @ObjectsPool@ should be used to maintain the list of objects present on a channel
+** @(RTO3a)@ @ObjectsPool@ is a @Dict<String, LiveObject>@ - a map of @LiveObject@s keyed by "@objectId@":../features#OST2a string
+** @(RTO3b)@ It must always contain a @LiveMap@ object with id @root@
+* @(RTO4)@ When a channel @ATTACHED@ @ProtocolMessage@ is received, the @ProtocolMessage@ may contain a @HAS_OBJECTS@ bit flag indicating that it will perform an objects sync, see "TR3":../features#TR3 . Note that this does not imply that objects are definitely present on the channel, only that there may be; the @OBJECT_SYNC@ message may be empty
+** @(RTO4a)@ If the @HAS_OBJECTS@ flag is 1, the server will shortly perform an @OBJECT_SYNC@ sequence as described in "RTO5":#RTO5
+** @(RTO4b)@ If the @HAS_OBJECTS@ flag is 0 or there is no @flags@ field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
+*** @(RTO4b1)@ All objects except the one with id @root@ must be removed from the internal @ObjectsPool@
+*** @(RTO4b2)@ The data for the @LiveMap@ with id @root@ must be cleared by setting it to a zero-value per "RTLM4":#RTLM4
+*** @(RTO4b3)@ The @SyncObjectsPool@ must be cleared
+*** @(RTO4b4)@ Perform the actions for objects sync completion as described in "RTO5c":#RTO5c
+* @(RTO5)@ The realtime system reserves the right to initiate an objects sync of the objects on a channel at any point once a channel is attached. A server initiated objects sync provides Ably with a means to send a complete list of objects present on the channel at any point
+** @(RTO5a)@ When an @OBJECT_SYNC@ @ProtocolMessage@ is received with a @channel@ attribute matching the channel name, the client library must parse the @channelSerial@ attribute:
+*** @(RTO5a1)@ The @channelSerial@ is used as the sync cursor and is a two-part identifier: @<sequence id>:<cursor value>@
+*** @(RTO5a2)@ If a new sequence id is sent from Ably, the client library must treat it as the start of a new objects sync sequence, and any previous in-flight sync must be discarded:
+**** @(RTO5a2a)@ The current @SyncObjectsPool@ list must be cleared
+*** @(RTO5a3)@ If the sequence id matches the previously received sequence id, the client library should continue the sync process
+*** @(RTO5a4)@ The objects sync sequence for that sequence identifier is considered complete once the cursor is empty; that is when the @channelSerial@ looks like @<sequence id>:@
+*** @(RTO5a5)@ An @OBJECT_SYNC@ may also be sent with no @channelSerial@ attribute. In this case, the sync data is entirely contained within the @ProtocolMessage@
+** @(RTO5b)@ During the sync sequence, the @ObjectMessage.object@ values from incoming @OBJECT_SYNC@ @ProtocolMessage@s must be temporarily stored in the internal @SyncObjectsPool@ list
+** @(RTO5c)@ When the objects sync has completed, the client library must perform the following actions in order:
+*** @(RTO5c1)@ For each @ObjectState@ member in the @SyncObjectsPool@ list:
+**** @(RTO5c1a)@ If an object with @ObjectState.objectId@ exists in the internal @ObjectsPool@:
+***** @(RTO5c1a1)@ Override the internal data for the object as per "RTLC6":#RTLC6, "RTLM6":#RTLM6
+**** @(RTO5c1b)@ If an object with @ObjectState.objectId@ does not exist in the internal @ObjectsPool@:
+***** @(RTO5c1b1)@ Create a new @LiveObject@ using the data from @ObjectState@ and add it to the internal @ObjectsPool@:
+****** @(RTO5c1b1a)@ If @ObjectState.counter@ is present, create a zero-value @LiveCounter@ (per "RTLC4":#RTLC4), set its private @objectId@ equal to @ObjectState.objectId@ and override its internal data using the current @ObjectState@ per "RTLC6":#RTLC6
+****** @(RTO5c1b1b)@ If @ObjectState.map@ is present, create a zero-value @LiveMap@ (per "RTLM4":#RTLM4), set its private @objectId@ equal to @ObjectState.objectId@, set its private @semantics@ equal to @ObjectState.map.semantics@ and override its internal data using the current @ObjectState@ per "RTLM6":#RTLM6
+****** @(RTO5c1b1c)@ Otherwise, log a warning that an unsupported object state message has been received, and discard the current @ObjectState@ without taking any action
+*** @(RTO5c2)@ Remove any objects from the internal @ObjectsPool@ for which @objectId@s were not received during the sync sequence
+**** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
+*** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
+*** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
+* @(RTO6)@ When needed, a zero-value object can be created if it does not exist in the internal @ObjectsPool@ for an @objectId@, in the following way:
+** @(RTO6a)@ If an object with @objectId@ exists in @ObjectsPool@, do not create a new object
+** @(RTO6b)@ The expected type of the object can be inferred from the provided @objectId@:
+*** @(RTO6b1)@ Split the @objectId@ (formatted as @type:hash&#64;timestamp@) on the separator @:@ and parse the first part as the type string
+*** @(RTO6b2)@ If the parsed type is @map@, create a zero-value @LiveMap@ per "RTLM4":#RTLM4 in the @ObjectsPool@
+*** @(RTO6b3)@ If the parsed type is @counter@, create a zero-value @LiveCounter@ per "RTLC4":#RTLC4 in the @ObjectsPool@
+
+h3(#livecounter). LiveCounter
+
+* @(RTLC1)@ The @LiveCounter@ extends @LiveObject@
+* @(RTLC2)@ Represents the counter object type for Object IDs of type @counter@
+* @(RTLC3)@ Holds a 64-bit floating-point number as a private @data@
+* @(RTLC4)@ The zero-value @LiveCounter@ is a @LiveCounter@ with @data@ set to 0
+* @(RTLC5)@ @LiveCounter#value@ function:
+** @(RTLC5a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLC5b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should indicate an error with code 90001
+** @(RTLC5c)@ Returns the current @data@ value
+* @(RTLC6)@ @LiveCounter@'s internal @data@ can be overridden with the provided @ObjectState@ in the following way:
+** @(RTLC6a)@ Replace the private @siteTimeserials@ of the @LiveCounter@ with the value from @ObjectState.siteTimeserials@
+** @(RTLC6b)@ Set the private flag @createOperationIsMerged@ to @false@
+** @(RTLC6c)@ Set @data@ to the value of @ObjectState.counter.count@, or to 0 if it does not exist
+** @(RTLC6d)@ If @ObjectState.createOp@ is present:
+*** @(RTLC6d1)@ Add @ObjectState.createOp.counter.count@ to @data@, if it exists
+*** @(RTLC6d2)@ Set the private flag @createOperationIsMerged@ to @true@
+
+h3(#livemap). LiveMap
+
+* @(RTLM1)@ The @LiveMap@ extends @LiveObject@
+* @(RTLM2)@ Represents the map object type for Object IDs of type @map@
+* @(RTLM3)@ Holds a @Dict<String, ObjectsMapEntry>@ as a private @data@ map
+* @(RTLM4)@ The zero-value @LiveMap@ is a @LiveMap@ with @data@ set to an empty map
+* @(RTLM5)@ @LiveMap#get@ function:
+** @(RTLM5a)@ Accepts a key of type String
+** @(RTLM5b)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLM5c)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should indicate an error with code 90001
+** @(RTLM5d)@ Returns the value from the current @data@ at the specified key, as follows:
+*** @(RTLM5d1)@ If no @ObjectsMapEntry@ exists at the key, return undefined/null
+*** @(RTLM5d2)@ If an @ObjectsMapEntry@ exists at the key:
+**** @(RTLM5d2a)@ If @ObjectsMapEntry.tombstone@ is @true@, return undefined/null
+**** @(RTLM5d2b)@ If @ObjectsMapEntry.data.boolean@ exists, return it
+**** @(RTLM5d2c)@ If @ObjectsMapEntry.data.bytes@ exists, return it
+**** @(RTLM5d2d)@ If @ObjectsMapEntry.data.number@ exists, return it
+**** @(RTLM5d2e)@ If @ObjectsMapEntry.data.string@ exists, return it
+**** @(RTLM5d2f)@ If @ObjectsMapEntry.data.objectId@ exists, get the object stored at that @objectId@ from the internal @ObjectsPool@:
+***** @(RTLM5d2f1)@ If an object with id @objectId@ does not exist, return undefined/null
+***** @(RTLM5d2f2)@ If an object with id @objectId@ exists, return it
+**** @(RTLM5d2g)@ Otherwise, return undefined/null
+* @(RTLM6)@ @LiveMap@ internal @data@ can be overridden with the provided @ObjectState@ in the following way:
+** @(RTLM6a)@ Replace the private @siteTimeserials@ of the @LiveMap@ with the value from @ObjectState.siteTimeserials@
+** @(RTLM6b)@ Set the private flag @createOperationIsMerged@ to @false@
+** @(RTLM6c)@ Set @data@ to @ObjectState.map.entries@, or to an empty map if it does not exist
+** @(RTLM6d)@ If @ObjectState.createOp@ is present:
+*** @(RTLM6d1)@ For each key–@ObjectsMapEntry@ pair in @ObjectState.createOp.map.entries@:
+**** @(RTLM6d1a)@ If @ObjectsMapEntry.tombstone@ is @false@, apply the @MAP_SET@ operation to the specified key using @ObjectsMapEntry.timeserial@ and @ObjectsMapEntry.data@ per "RTLM7":#RTLM7
+**** @(RTLM6d1b)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the specified key using @ObjectsMapEntry.timeserial@ per "RTLM8":#RTLM8
+*** @(RTLM6d2)@ Set the private flag @createOperationIsMerged@ to @true@
+* @(RTLM7)@ @MAP_SET@ operation for a key can be applied to a @LiveMap@ in the following way:
+** @(RTLM7a)@ If an entry exists in the private @data@ for the specified key:
+*** @(RTLM7a1)@ If the operation cannot be applied as per "RTLM9":#RTLM9, discard the operation without taking any action
+*** @(RTLM7a2)@ Otherwise, apply the operation:
+**** @(RTLM7a2a)@ Set @ObjectsMapEntry.data@ to the @ObjectData@ from the operation
+**** @(RTLM7a2b)@ Set @ObjectsMapEntry.timeserial@ to the operation's serial
+**** @(RTLM7a2c)@ Set @ObjectsMapEntry.tombstone@ to @false@
+** @(RTLM7b)@ If an entry does not exist in the private @data@ for the specified key:
+*** @(RTLM7b1)@ Create a new entry in @data@ for the specified key with the provided @ObjectData@ and the operation's serial
+*** @(RTLM7b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @false@
+** @(RTLM7c)@ If the operation has a non-empty @ObjectData.objectId@ attribute:
+*** @(RTLM7c1)@ Create a zero-value @LiveObject@ in the internal @ObjectsPool@ per "RTO6":#RTO6
+* @(RTLM8)@ @MAP_REMOVE@ operation for a key can be applied to a @LiveMap@ in the following way:
+** @(RTLM8a)@ If an entry exists in the private @data@ for the specified key:
+*** @(RTLM8a1)@ If the operation cannot be applied as per "RTLM9":#RTLM9, discard the operation without taking any action
+*** @(RTLM8a2)@ Otherwise, apply the operation:
+**** @(RTLM8a2a)@ Set @ObjectsMapEntry.data@ to undefined/null
+**** @(RTLM8a2b)@ Set @ObjectsMapEntry.timeserial@ to the operation's serial
+**** @(RTLM8a2c)@ Set @ObjectsMapEntry.tombstone@ to @true@
+** @(RTLM8b)@ If an entry does not exist in the private @data@ for the specified key:
+*** @(RTLM8b1)@ Create a new entry in @data@ for the specified key, with @ObjectsMapEntry.data@ set to undefined/null and the operation's serial
+*** @(RTLM8b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @true@
+* @(RTLM9)@ Whether a map operation can be applied to a map entry is determined as follows:
+** @(RTLM9a)@ For a @LiveMap@ using @LWW@ (Last-Write-Wins) CRDT semantics, the operation must only be applied if its serial is strictly greater ("after") than the entry's serial when compared lexicographically
+** @(RTLM9b)@ If both the entry serial and the operation serial are null or empty strings, they are treated as the "earliest possible" serials and considered "equal", so the operation must not be applied
+** @(RTLM9c)@ If only the entry serial exists, the missing operation serial is considered lower than the existing entry serial, so the operation must not be applied
+** @(RTLM9d)@ If only the operation serial exists, it is considered greater than the missing entry serial, so the operation can be applied
+** @(RTLM9e)@ If both serials exist, compare them lexicographically and allow operation to be applied only if the operation's serial is greater than the entry's serial
