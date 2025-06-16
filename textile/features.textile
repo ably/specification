@@ -1453,11 +1453,11 @@ h4. Message
 ** @(TM6a)@ The size is the sum of the sizes of the @name@, @data@, @clientId@, and @extras@ properties
 ** @(TM6b)@ The size of an @Object@ or @Array@ @data@ property is its string length after being JSON-stringified
 ** @(TM6c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use).
-** @(TM6f)@ The size of a @string@ @data@ property is its UTF-8 encoded length in bytes (because of Non-ASCII characters)
-** @(TM6g)@ The size of a @string@ @name@ property is its length
-** @(TM6h)@ The size of a @string@ @clientId@ property is its length
-** @(TM6d)@ The size of the @extras@ property is the string length of its JSON representation
-** @(TM6e)@ The size of a @null@ or omitted property is zero
+** @(TM6f)@ The size of a @string@ @data@ property is its UTF-8 encoded length in bytes (because of Non-ASCII characters, i.e. 你 is 3 bytes, 😊 is 4 bytes).
+** @(TM6g)@ The size of a @string@ @name@ property is its UTF-8 encoded length in bytes.
+** @(TM6h)@ The size of a @string@ @clientId@ property is its UTF-8 encoded length in bytes.
+** @(TM6d)@ The size of the @extras@ property is the UTF-8 encoded length of its JSON string representation.
+** @(TM6e)@ The size of a @null@, omitted or missing property is zero
 * @(TM7)@ The SDK may expose a series of functions (static factory methods on a Message or otherwise, wherever is language idiomatic; for some languages this might just be types that can be used for type assertions, etc), that take a deserialized @JsonObject@, one of the aggregated summaries for a particular annotation type (that is, a value from the @TM2q@ @summary@ @Dict@), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
 ** @(TM7a)@ The SDK must not try to do this conversion automatically (either by parsing the annotation type or dynamically detecting the structure). This is so that, when the server adds new annotation types that the SDK does not yet know about, when we later add support for those new types to the SDK, that does not result in a a breaking API change for the SDK.
 ** @(TM7b)@ If the SDK chooses to do this, it should support at least the following set of constructors (or other language-idiomatic mechanism that achieves a similar result):
@@ -1630,7 +1630,7 @@ h4. ObjectData
 ** @(OD3b)@ If set, the size of a @boolean@ property is 1
 ** @(OD3c)@ If set, the size of a @bytes@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
 ** @(OD3d)@ If set, the size of a @number@ property is 8
-** @(OD3e)@ If set, the size of a @string@ property is its UTF-8 encoded length in bytes (because of Non-ASCII characters)
+** @(OD3e)@ If set, the size of a @string@ property is its UTF-8 encoded length in bytes (because of Non-ASCII characters, i.e. 你 is 3 bytes, 😊 is 4 bytes)
 ** @(OD3f)@ The size of a @null@ or omitted property is zero
 
 h4. Annotation
