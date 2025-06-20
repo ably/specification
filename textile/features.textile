@@ -1522,23 +1522,23 @@ h4. ObjectMessage
 h4. ObjectOperation
 
 * @(OOP1)@ An @ObjectOperation@ describes an operation to be applied to an object on a channel
-* @(OOP2)@ @ObjectOperation@ @Action@ enum has the following values in order from zero: @MAP_CREATE@, @MAP_SET@, @MAP_REMOVE@, @COUNTER_CREATE@, @COUNTER_INC@, @OBJECT_DELETE@
+* @(OOP2)@ @ObjectOperationAction@ enum has the following values in order from zero: @MAP_CREATE@, @MAP_SET@, @MAP_REMOVE@, @COUNTER_CREATE@, @COUNTER_INC@, @OBJECT_DELETE@
 * @(OOP3)@ The attributes available in an @ObjectOperation@ are:
-** @(OOP3a)@ @action@ enum - defines the operation to be applied to the object
+** @(OOP3a)@ @action@ @ObjectOperationAction@ enum - defines the operation to be applied to the object
 ** @(OOP3b)@ @objectId@ string - the object ID of the object on a channel to which the operation should be applied
-** @(OOP3c)@ @mapOp@ @MapOp@ object - the payload for the operation if it is an operation on a @Map@ object type
-** @(OOP3d)@ @counterOp@ @CounterOp@ object - the payload for the operation if it is an operation on a @Counter@ object type
-** @(OOP3e)@ @map@ @Map@ object - the payload for the operation if the operation is @MAP_CREATE@. Defines the initial value for the @Map@ object
-** @(OOP3f)@ @counter@ @Counter@ object - the payload for the operation if the operation is @COUNTER_CREATE@. Defines the initial value for the @Counter@ object
+** @(OOP3c)@ @mapOp@ @ObjectsMapOp@ object - the payload for the operation if it is an operation on an @ObjectsMap@ object type
+** @(OOP3d)@ @counterOp@ @ObjectsCounterOp@ object - the payload for the operation if it is an operation on an @ObjectsCounter@ object type
+** @(OOP3e)@ @map@ @ObjectsMap@ object - the payload for the operation if the operation is @MAP_CREATE@. Defines the initial value for the @ObjectsMap@ object
+** @(OOP3f)@ @counter@ @ObjectsCounter@ object - the payload for the operation if the operation is @COUNTER_CREATE@. Defines the initial value for the @ObjectsCounter@ object
 ** @(OOP3g)@ @nonce@ string - the nonce, must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server
 ** @(OOP3h)@ @initialValue@ binary - the initial value bytes for the object
 ** @(OOP3i)@ @initialValueEncoding@ string - defines how the @initialValue@ should be interpreted. Should be @msgpack@ or @json@
 * @(OOP4)@ The size of the @ObjectOperation@ is calculated as follows:
 ** @(OOP4a)@ The size is the sum of the sizes of the @mapOp@, @counterOp@, @map@, and @counter@ properties
-** @(OOP4b)@ The size of the @mapOp@ property is calculated per "MOP3":#MOP3
-** @(OOP4c)@ The size of the @counterOp@ property is calculated per "COP3":#COP3
-** @(OOP4d)@ The size of the @map@ property is calculated per "MAP4":#MAP4
-** @(OOP4e)@ The size of the @counter@ property is calculated per "CNT3":#CNT3
+** @(OOP4b)@ The size of the @mapOp@ property is calculated per "OMO3":#OMO3
+** @(OOP4c)@ The size of the @counterOp@ property is calculated per "OCO3":#OCO3
+** @(OOP4d)@ The size of the @map@ property is calculated per "OMP4":#OMP4
+** @(OOP4e)@ The size of the @counter@ property is calculated per "OCN3":#OCN3
 ** @(OOP4f)@ The size of a @null@ or omitted property is zero
 
 h4. ObjectState
@@ -1549,69 +1549,69 @@ h4. ObjectState
 ** @(OST2b)@ @siteTimeserials@ @Dict<String, String>@ - a map of "serials":#OM2h keyed by "siteCode":#OM2i, representing the last operations applied to this object
 ** @(OST2c)@ @tombstone@ boolean - true if the object has been tombstoned
 ** @(OST2d)@ @createOp@ @ObjectOperation@ object - the operation that created the object
-** @(OST2e)@ @map@ @Map@ object - the data that represents the result of applying all object operations to a @Map@ object excluding the initial value from the @createOp@ if it is a @Map@ object type
-** @(OST2f)@ @counter@ @Counter@ object - the data that represents the result of applying all object operations to a @Counter@ object excluding the initial value from the @createOp@ if it is a @Counter@ object type
+** @(OST2e)@ @map@ @ObjectsMap@ object - the data that represents the result of applying all object operations to an @ObjectsMap@ object excluding the initial value from the @createOp@ if it is an @ObjectsMap@ object type
+** @(OST2f)@ @counter@ @ObjectsCounter@ object - the data that represents the result of applying all object operations to an @ObjectsCounter@ object excluding the initial value from the @createOp@ if it is an @ObjectsCounter@ object type
 * @(OST3)@ The size of the @ObjectState@ is calculated as follows:
 ** @(OST3a)@ The size is the sum of the sizes of the @map@, @counter@, and @createOp@ properties
-** @(OST3b)@ The size of the @map@ property is calculated per "MAP4":#MAP4
-** @(OST3c)@ The size of the @counter@ property is calculated per "CNT3":#CNT3
+** @(OST3b)@ The size of the @map@ property is calculated per "OMP4":#OMP4
+** @(OST3c)@ The size of the @counter@ property is calculated per "OCN3":#OCN3
 ** @(OST3d)@ The size of the @createOp@ property is calculated per "OOP4":#OOP4
 ** @(OST3e)@ The size of a @null@ or omitted property is zero
 
-h4. MapOp
+h4. ObjectsMapOp
 
-* @(MOP1)@ A @MapOp@ describes an operation to be applied to a @Map@ object
-* @(MOP2)@ The attributes available in a @MapOp@ are:
-** @(MOP2a)@ @key@ string - the key of the map entry to which the operation should be applied
-** @(MOP2b)@ @data@ @ObjectData@ object - the data that the map entry should contain if the operation is a @MAP_SET@ operation
-* @(MOP3)@ The size of the @MapOp@ is calculated as follows:
-** @(MOP3a)@ The size is the sum of the sizes of the @key@ and @data@ properties
-** @(MOP3b)@ The size of the @data@ property is calculated per "OD3":#OD3
-** @(MOP3d)@ The size of the @key@ property is its string length
-** @(MOP3c)@ The size of a @null@ or omitted property is zero
+* @(OMO1)@ An @ObjectsMapOp@ describes an operation to be applied to an @ObjectsMap@ object
+* @(OMO2)@ The attributes available in an @ObjectsMapOp@ are:
+** @(OMO2a)@ @key@ string - the key of the map entry to which the operation should be applied
+** @(OMO2b)@ @data@ @ObjectData@ object - the data that the map entry should contain if the operation is a @MAP_SET@ operation
+* @(OMO3)@ The size of the @ObjectsMapOp@ is calculated as follows:
+** @(OMO3a)@ The size is the sum of the sizes of the @key@ and @data@ properties
+** @(OMO3b)@ The size of the @data@ property is calculated per "OD3":#OD3
+** @(OMO3d)@ The size of the @key@ property is its string length
+** @(OMO3c)@ The size of a @null@ or omitted property is zero
 
-h4. CounterOp
+h4. ObjectsCounterOp
 
-* @(COP1)@ A @CounterOp@ describes an operation to be applied to a @Counter@ object
-* @(COP2)@ The attributes available in a @CounterOp@ are:
-** @(COP2a)@ @amount@ number - the data value that should be added to the counter
-* @(COP3)@ The size of the @CounterOp@ is calculated as follows:
-** @(COP3a)@ The size is 8 if @amount@ is a number
-** @(COP3b)@ The size is 0 if @amount@ is a @null@ or omitted
+* @(OCO1)@ An @ObjectsCounterOp@ describes an operation to be applied to an @ObjectsCounter@ object
+* @(OCO2)@ The attributes available in an @ObjectsCounterOp@ are:
+** @(OCO2a)@ @amount@ number - the data value that should be added to the counter
+* @(OCO3)@ The size of the @ObjectsCounterOp@ is calculated as follows:
+** @(OCO3a)@ The size is 8 if @amount@ is a number
+** @(OCO3b)@ The size is 0 if @amount@ is a @null@ or omitted
 
-h4. Map
+h4. ObjectsMap
 
-* @(MAP1)@ A @Map@ object represents a map of key-value pairs
-* @(MAP2)@ @Map@ @Semantics@ enum has the following values in order from zero: @LWW@
-* @(MAP3)@ The attributes available in a @Map@ are:
-** @(MAP3a)@ @semantics@ @Semantics@ enum - the conflict-resolution semantics used by the map object
-** @(MAP3b)@ @entries@ @Dict<String, MapEntry>@ - the map entries, indexed by key
-* @(MAP4)@ The size of the @Map@ is calculated as follows:
-** @(MAP4a)@ The size is the sum of the sizes of all map entries in @map@ property
-*** @(MAP4a1)@ Includes the size of the @String@ key for the map entry, calculated as its length
-*** @(MAP4a2)@ Includes the size of the @MapEntry@ object for the map entry, calculated per "ME3":#ME3
-** @(MAP4b)@ The size of a @null@ or omitted property is zero
+* @(OMP1)@ An @ObjectsMap@ object represents a map of key-value pairs
+* @(OMP2)@ @ObjectsMapSemantics@ enum has the following values in order from zero: @LWW@
+* @(OMP3)@ The attributes available in an @ObjectsMap@ are:
+** @(OMP3a)@ @semantics@ @ObjectsMapSemantics@ enum - the conflict-resolution semantics used by the map object
+** @(OMP3b)@ @entries@ @Dict<String, ObjectsMapEntry>@ - the map entries, indexed by key
+* @(OMP4)@ The size of the @ObjectsMap@ is calculated as follows:
+** @(OMP4a)@ The size is the sum of the sizes of all map entries in @map@ property
+*** @(OMP4a1)@ Includes the size of the @String@ key for the map entry, calculated as its length
+*** @(OMP4a2)@ Includes the size of the @ObjectsMapEntry@ object for the map entry, calculated per "OME3":#OME3
+** @(OMP4b)@ The size of a @null@ or omitted property is zero
 
-h4. Counter
+h4. ObjectsCounter
 
-* @(CNT1)@ A @Counter@ object represents an incrementable and decrementable value
-* @(CNT2)@ The attributes available in a @Counter@ are:
-** @(CNT2a)@ @count@ number - the value of the counter
-* @(CNT3)@ The size of the @Counter@ is calculated as follows:
-** @(CNT3a)@ The size is 8 if @count@ is a number
-** @(CNT3b)@ The size is 0 if @count@ is a @null@ or omitted
+* @(OCN1)@ An @ObjectsCounter@ object represents an incrementable and decrementable value
+* @(OCN2)@ The attributes available in an @ObjectsCounter@ are:
+** @(OCN2a)@ @count@ number - the value of the counter
+* @(OCN3)@ The size of the @ObjectsCounter@ is calculated as follows:
+** @(OCN3a)@ The size is 8 if @count@ is a number
+** @(OCN3b)@ The size is 0 if @count@ is a @null@ or omitted
 
-h4. MapEntry
+h4. ObjectsMapEntry
 
-* @(ME1)@ A @MapEntry@ represents the value at a given key in a @Map@ object
-* @(ME2)@ The attributes available in a @MapEntry@ are:
-** @(ME2a)@ @tombstone@ boolean - indicates whether the map entry has been removed
-** @(ME2b)@ @timeserial@ string - the @serial@#OM2h value of the last operation that was applied to the map entry
-** @(ME2c)@ @data@ @ObjectData@ object - the data that represents the value of the map entry.
-* @(ME3)@ The size of the @MapEntry@ is calculated as follows:
-** @(ME3a)@ It is equal to the size of the @data@ property
-** @(ME3b)@ The size of the @data@ property is calculated per "OD3":#OD3
-** @(ME3c)@ The size of a @null@ or omitted property is zero
+* @(OME1)@ An @ObjectsMapEntry@ represents the value at a given key in an @ObjectsMap@ object
+* @(OME2)@ The attributes available in an @ObjectsMapEntry@ are:
+** @(OME2a)@ @tombstone@ boolean - indicates whether the map entry has been removed
+** @(OME2b)@ @timeserial@ string - the @serial@#OM2h value of the last operation that was applied to the map entry
+** @(OME2c)@ @data@ @ObjectData@ object - the data that represents the value of the map entry.
+* @(OME3)@ The size of the @ObjectsMapEntry@ is calculated as follows:
+** @(OME3a)@ It is equal to the size of the @data@ property
+** @(OME3b)@ The size of the @data@ property is calculated per "OD3":#OD3
+** @(OME3c)@ The size of a @null@ or omitted property is zero
 
 h4. ObjectData
 
@@ -2516,8 +2516,8 @@ enum ObjectOperationAction: // OOP2, internal
   COUNTER_INC // OOP2
   OBJECT_DELETE // OOP2
 
-enum MapSemantics: // MAP2, internal
-  LWW // MAP2
+enum ObjectsMapSemantics: // OMP2, internal
+  LWW // OMP2
 
 enum AnnotationAction: // TAN2b
   ANNOTATION_CREATE
@@ -2588,10 +2588,10 @@ class ObjectMessage // OM*, internal
 class ObjectOperation // OOP*, internal
   action: ObjectOperationAction // OOP3a
   objectId: String // OOP3b
-  mapOp: MapOp? // OOP3c
-  counterOp: CounterOp? // OOP3d
-  map: Map? // OOP3e
-  counter: Counter? // OOP3f
+  mapOp: ObjectsMapOp? // OOP3c
+  counterOp: ObjectsCounterOp? // OOP3d
+  map: ObjectsMap? // OOP3e
+  counter: ObjectsCounter? // OOP3f
   nonce: String? // OOP3g
   initialValue: Binary? // OOP3h
   initialValueEncoding: String? // OOP3i
@@ -2601,27 +2601,27 @@ class ObjectState // OST*, internal
   siteTimeserials: Dict<String, String> // OST2b
   tombstone: Boolean // OST2c
   createOp: ObjectOperation? // OST2d
-  map: Map? // OST2e
-  counter: Counter? // OST2f
+  map: ObjectsMap? // OST2e
+  counter: ObjectsCounter? // OST2f
 
-class MapOp // MOP*, internal
-  key: String // MOP2a
-  data: ObjectData? // MOP2b
+class ObjectsMapOp // OMO*, internal
+  key: String // OMO2a
+  data: ObjectData? // OMO2b
 
-class CounterOp // COP*, internal
-  amount: Number // COP2a
+class ObjectsCounterOp // OCO*, internal
+  amount: Number // OCO2a
 
-class Map // MAP*, internal
-  semantics: MapSemantics // MAP3a
-  entries: Dict<String, MapEntry>? // MAP3b
+class ObjectsMap // OMP*, internal
+  semantics: ObjectsMapSemantics // OMP3a
+  entries: Dict<String, ObjectsMapEntry>? // OMP3b
 
-class Counter // CNT*, internal
-  count: Number? // CNT2a
+class ObjectsCounter // OCN*, internal
+  count: Number? // OCN2a
 
-class MapEntry // ME*, internal
-  tombstone: Boolean? // ME2a
-  timeserial: String? // ME2b
-  data: ObjectData // ME2c
+class ObjectsMapEntry // OME*, internal
+  tombstone: Boolean? // OME2a
+  timeserial: String? // OME2b
+  data: ObjectData // OME2c
 
 class ObjectData // OD*, internal
   objectId: String? // OD2a
