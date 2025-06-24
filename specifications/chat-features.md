@@ -942,13 +942,39 @@ A message summary event is also broadcast to the channel after adding or removin
 
 This section describes the message formats for chat events that occur over a Realtime connection.
 
-### Ephemeral Room Reactions {#realtime-room-reactions}
+### Ephemeral Room Reactions (Deprecated) {#realtime-room-reactions-deprecated}
+
+This was valid until the Chat v1 API review.
 
       {
         "name": "roomReaction"
         "encoding": "json"
         "data": {
           "type": ":heart:",
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          }
+        },
+        "timestamp": "1726232498871", // Only on incoming messages
+        "extras": {
+          "headers": {
+            "baz": "qux"
+          },
+          "ephemeral": true, // This is set by the Chat SDK
+        }
+      }
+
+### Ephemeral Room Reactions {#realtime-room-reactions}
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+      {
+        "name": "roomReaction"
+        "encoding": "json"
+        "data": {
+          "name": ":heart:",
           "metadata": {
             "foo": {
               "bar": 1
@@ -1170,7 +1196,9 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
 
 `reaction.count` is optional and only set for `reaction:multiple.v1`.
 
-### Ephemeral Room Reactions {#chat-structs-ephemeral-reactions}
+### Ephemeral Room Reactions (Deprecated) {#chat-structs-ephemeral-reactions-old}
+
+This was valid until the Chat v1 API review.
 
       {
         "type": ":heart:",
@@ -1186,12 +1214,53 @@ Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `re
         }
       }
 
-### Ephemeral Room Reaction Event {#chat-structs-ephemeral-reactions}
+### Ephemeral Room Reaction Event (Deprecated) {#chat-structs-ephemeral-reactions-old}
+
+This was valid until the Chat v1 API review.
 
       {
         "type": RoomReactionEventType.Reaction,
         "reaction": {
           "type": ":heart:",
+          "clientId": "who-sent-the-message",
+          "createdAt": DateTime(),
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          },
+          "headers": {
+            "baz": "qux"
+          }
+        }
+      }
+
+### Ephemeral Room Reactions {#chat-structs-ephemeral-reactions}
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+      {
+        "name": ":heart:",
+        "clientId": "who-sent-the-message",
+        "createdAt": DateTime(),
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+      }
+
+### Ephemeral Room Reaction Event {#chat-structs-ephemeral-reactions}
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+      {
+        "type": RoomReactionEventType.Reaction,
+        "reaction": {
+          "name": ":heart:",
           "clientId": "who-sent-the-message",
           "createdAt": DateTime(),
           "metadata": {
