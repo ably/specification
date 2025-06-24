@@ -932,7 +932,9 @@ h2(#realtime-api). Chat Realtime API
 
 This section describes the message formats for chat events that occur over a Realtime connection.
 
-h3(#realtime-room-reactions). Ephemeral Room Reactions
+h3(#realtime-room-reactions-deprecated). Ephemeral Room Reactions (Deprecated)
+
+This was valid until the Chat v1 API review.
 
 <pre>
   {
@@ -940,6 +942,32 @@ h3(#realtime-room-reactions). Ephemeral Room Reactions
     "encoding": "json"
     "data": {
       "type": ":heart:",
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      }
+    },
+    "timestamp": "1726232498871", // Only on incoming messages
+    "extras": {
+      "headers": {
+        "baz": "qux"
+      },
+      "ephemeral": true, // This is set by the Chat SDK
+    }
+  }
+</pre>
+
+h3(#realtime-room-reactions). Ephemeral Room Reactions
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+<pre>
+  {
+    "name": "roomReaction"
+    "encoding": "json"
+    "data": {
+      "name": ":heart:",
       "metadata": {
         "foo": {
           "bar": 1
@@ -1176,7 +1204,9 @@ Event @reaction.type@ can be @reaction:unique.v1@, @reaction:distinct.v1@ or @re
 
 
 
-h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reactions
+h3(#chat-structs-ephemeral-reactions-old). Ephemeral Room Reactions (Deprecated)
+
+This was valid until the Chat v1 API review.
 
 <pre>
   {
@@ -1194,13 +1224,58 @@ h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reactions
   }
 </pre>
 
-h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reaction Event
+h3(#chat-structs-ephemeral-reactions-old). Ephemeral Room Reaction Event (Deprecated)
+
+This was valid until the Chat v1 API review.
 
 <pre>
   {
     "type": RoomReactionEventType.Reaction,
     "reaction": {
       "type": ":heart:",
+      "clientId": "who-sent-the-message",
+      "createdAt": DateTime(),
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      },
+      "headers": {
+        "baz": "qux"
+      }
+    }
+  }
+</pre>
+
+h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reactions
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+<pre>
+  {
+    "name": ":heart:",
+    "clientId": "who-sent-the-message",
+    "createdAt": DateTime(),
+    "metadata": {
+      "foo": {
+        "bar": 1
+      }
+    },
+    "headers": {
+      "baz": "qux"
+    }
+  }
+</pre>
+
+h3(#chat-structs-ephemeral-reactions). Ephemeral Room Reaction Event
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+<pre>
+  {
+    "type": RoomReactionEventType.Reaction,
+    "reaction": {
+      "name": ":heart:",
       "clientId": "who-sent-the-message",
       "createdAt": DateTime(),
       "metadata": {
