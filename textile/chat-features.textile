@@ -279,9 +279,12 @@ Each chat room can be configured individually, allowing options to be passed as 
 ** @(CHA-RC2e)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RC2f)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-RC3)@ Multiple chat features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
-** @(CHA-RC3a)@ @[Testable]@ When retrieving a channel via @channels.get()@, features must merge together their respective options/modes and pass the merged result to the call to @channels.get()@.
-** @(CHA-RC3b)@ Note: SDKs shall not rely on updating the value progressively via feature spec item @RTS3c@ - as this has been soft-deprecated and may be removed in the future.
+** @(CHA-RC3a)@ This specification point has been replaced by @CHA-RC3d@.
+** @(CHA-RC3b)@ This specification point has been replaced by @CHA-RC3d@.
 ** @(CHA-RC3c)@ @[Testable]@ Unless explicitly stated otherwise, the channel used shall be @<roomName>::$chat@. So if your room name is @foo@, the channel will be @foo::$chat@.
+** @(CHA-RC3d)@ @[Testable]@ When retrieving the @CHA-RC3c@ channel via @channels.get()@, the channel modes in the @ChannelOptions@ should be set as follows. Set @ChannelOptions.modes@ to an initial value of @['PUBLISH', 'SUBSCRIBE', 'PRESENCE', 'ANNOTATION_PUBLISH']@. Then follow these steps:
+**** @(CHA-RC3d1)@ @[Testable]@ If the @presence.enableEvents@ room option (@CHA-PR9c@) is @true@, then add @PRESENCE_SUBSCRIBE@ to @ChannelOptions.modes@.
+**** @(CHA-RC3d2)@ @[Testable]@ If the @messages.rawMessageReactions@ room option (@CHA-MR9@) is @true@, then add @ANNOTATION_SUBSCRIBE@ to @ChannelOptions.modes@.
 * @(CHA-RC4)@ Users may provide room options to the @rooms.get()@ call to control the behaviour of the room.
 ** @(CHA-RC4a)@ @[Testable]@ Where room options have not been provided, the client shall provide defaults.
 ** @(CHA-RC4b)@ @[Testable]@ Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
@@ -422,10 +425,10 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR8)@ Raw message reactions must not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
 
-* @(CHA-MR9)@ @[Testable]@ The room option @RoomOptions.messages.rawMessageReactions@ controls whether raw message reactions are enabled or not. The default value is @false@. 
-  ** @(CHA-MR9a)@ @[Testable]@ If the room option is set to @true@, the SDK will add the @ANNOTATION_SUBSCRIBE@ channel mode to the realtime channel used for the room.
+* @(CHA-MR9)@ @[Testable]@ The room option @RoomOptions.messages.rawMessageReactions@ controls whether raw message reactions are enabled or not. @CHA-RC3d2@ describes how to implement this. The default value is @false@.
+  ** @(CHA-MR9a)@ This specification point has been replaced by @CHA-RC3d2@.
 
-* @(CHA-MR10)@ @[Testable]@ The client must always add the @ANNOTATION_PUBLISH@ channel mode to the realtime channel used for the room.
+* @(CHA-MR10)@ This specification point has been replaced by @CHA-RC3d@.
 
 h2(#reactions). Ephemeral Room Reactions
 
@@ -513,9 +516,9 @@ Presence allows chat room users to indicate to others that they're online, as we
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
 ** @(CHA-PR9a)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
 ** @(CHA-PR9b)@ This specification point has been removed. It was valid up until the single-channel migration and was replaced by @CHA-PR9c@.
-** @(CHA-PR9c)@ The option @presence.enableEvents@ controls whether or not the client should receive presence events from the server.
+** @(CHA-PR9c)@ The option @presence.enableEvents@ controls whether or not the client should receive presence events from the server. @CHA-RC3d1@ describes how to implement this.
 *** @(CHA-PR9c1)@ @[Testable]@ This option defaults to @true@.
-*** @(CHA-PR9c2)@ @[Testable]@ When set to @false@: when getting the channel from the realtime client, then the modes shall be initialised to @['PUBLISH', 'SUBSCRIBE', 'PRESENCE']@ (thus omitting @PRESENCE_SUBSCRIBE@).
+*** @(CHA-PR9c2)@ This specification point has been replaced by @CHA-RC3d1@.
 
 h2(#typing). Typing Indicators
 
