@@ -367,11 +367,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
   `(CHA-M11f)` `[Testable]` For `MessageReactionSummaryEvent`, the method must return a new `Message` instance (deep copy) with the updated reactions, preserving all other properties of the original message.\
   `(CHA-M11g)` `[Testable]` For `MessageReactionSummaryEvent`, the method must deep-copy the reactions from the event before applying them to the returned message instance.
 
-<div class=deprecated>
-
-`(CHA-M4c)` `[Testable]` `(deprecated)` When a realtime message with `name` set to `message.created` is received, it is translated into a message event, which contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message). This event is then broadcast to all subscribers.
-
-</div>
+`(CHA-M4c)` This specification point has been removed. It was valid up until the v1 API review.
 
 `(CHA-M4l)` When a realtime message with the `name` field set to `chat.message` is received, it shall be translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message-v2). This event shall then broadcast to all subscribers.
 
