@@ -200,6 +200,7 @@ h3(#restclient). RestClient
 ** @(RSC22a)@ This clause has been replaced by "@RSC22c@":#RSC22c. It was valid up to and including specification @2.1@.
 ** @(RSC22c)@ Takes a @BatchPublishSpec@ or an array of @BatchPublishSpec@s and sends then in a POST request to @/messages@.
 ** @(RSC22b)@ Returns an array of @BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>@s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single @BatchPublishSpec@ and return a single @BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>@. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+** @(RSC22d)@ If @idempotentRestPublishing@ (see "TO3n":#TO3n) is enabled, then "@RSL1k1@":#RSL1k1 should be applied (to each @BatchPublishSpec@ separately).
 ** @(RSC23)@ This clause has been replaced by "@RSC24@":#RSC24. It was valid up to and including specification @2.1@.
 ** @(RSC24)@ @RestClient#batchPresence@ function takes an array of channel name strings and sends them as a comma separated string in the @channels@ query parameter in a GET request to @/presence@, returning a @BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>@ object.
 * @(RSC26)@ @RestClient#createWrapperSDKProxy@:
