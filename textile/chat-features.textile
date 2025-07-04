@@ -344,20 +344,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
-
-* @(CHA-M11)@ A @Message@ must have a method @with@ to apply changes from events (@MessageEvent@ and @MessageReactionSummaryEvent@) to produce updated message instances.
-  ** @(CHA-M11a)@ @[Testable]@ When the method receives a @MessageEvent@ of type @created@, it must throw an @ErrorInfo@ with code @40000@ and status code @400@.
-  ** @(CHA-M11b)@ @[Testable]@ For @MessageEvent@ the method must verify that the @message.serial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
-  ** @(CHA-M11c)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is older or the same (see CHA-M10), the original message must be returned unchanged.
-  ** @(CHA-M11d)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is newer (see CHA-M10), the method must return a new message based on the event and deep-copying the reactions from the original message.
-  ** @(CHA-M11e)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must verify that the @summary.messageSerial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
-  ** @(CHA-M11f)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must return a new @Message@ instance (deep copy) with the updated reactions, preserving all other properties of the original message.
-  ** @(CHA-M11g)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must deep-copy the reactions from the event before applying them to the returned message instance.
-
-<div class=deprecated>
-** @(CHA-M4c)@ @[Testable]@ @(deprecated)@ When a realtime message with @name@ set to @message.created@  is received, it is translated into a message event, which contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message. This event is then broadcast to all subscribers.
-</div>
-
+** @(CHA-M4c)@ This specification point has been removed. It was valid up until the v1 API review.
 ** @(CHA-M4l)@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M4m)@ @[Testable]@ The @action@ field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
@@ -365,7 +352,21 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m2)@ @[Testable]@ If @action@ is set to @MESSAGE_UPDATE@, then an event with @type@ set to @message.updated@ shall be emitted.
 *** @(CHA-M4m3)@ @[Testable]@ If @action@ is set to @MESSAGE_DELETE@, then an event with @type@ set to @message.deleted@ shall be emitted.
 *** @(CHA-M4m4)@ @[Testable]@ If a realtime message with an unknown @action@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
-** @(CHA-M5k)@ @[Testable]@ Incoming realtime events that are malformed (unknown field should be ignored) shall not be emitted to subscribers.
+*** @(CHA-M4m5)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @text@ property must be set to an empty string.
+*** @(CHA-M4m6)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @metadata@ property must be set to an empty object.
+*** @(CHA-M4m7)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @headers@ property must be set to an empty object.
+** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed (unknown fields should be ignored) shall not be emitted to subscribers.
+*** @(CHA-M4k1)@ @[Testable]@ If the message does not contain a @data@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k2)@ @[Testable]@ If the message does not contain a @clientId@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k3)@ @[Testable]@ If the message does not contain an @extras@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k4)@ @[Testable]@ If the message action is not @MessageDelete@ and the message @data@ field does not contain a @text@ property or the @text@ property is undefined, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k5)@ @[Testable]@ If the message action is not @MessageDelete@ and the message @extras@ field does not contain a @headers@ property, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k6)@ @[Testable]@ If the message action is not @MessageDelete@ and the message @data@ field does not contain a @metadata@ property, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k7)@ @[Testable]@ If the message does not contain a @serial@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k8)@ @[Testable]@ If the message does not contain a @version@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k9)@ @[Testable]@ If the message does not contain a @createdAt@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k10)@ @[Testable]@ If the message does not contain a @timestamp@ field, an @ErrorInfo@ with code @50000@ must be thrown.
+*** @(CHA-M4k11)@ @[Testable]@ If the message contains an @action@ field with a value that is not one of the supported @ChatMessageAction@ values (@MessageCreate@, @MessageUpdate@, @MessageDelete@), an @ErrorInfo@ with code @50000@ must be thrown.
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
 ** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
 ** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
@@ -381,6 +382,14 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through. Each message must be represented by the standard @Message@ object.
 * @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 * @(CHA-M7)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-M11)@ A @Message@ must have a method @with@ to apply changes from events (@MessageEvent@ and @MessageReactionSummaryEvent@) to produce updated message instances.
+  ** @(CHA-M11a)@ @[Testable]@ When the method receives a @MessageEvent@ of type @created@, it must throw an @ErrorInfo@ with code @40000@ and status code @400@.
+  ** @(CHA-M11b)@ @[Testable]@ For @MessageEvent@ the method must verify that the @message.serial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
+  ** @(CHA-M11c)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is older or the same (see CHA-M10), the original message must be returned unchanged.
+  ** @(CHA-M11d)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is newer (see CHA-M10), the method must return a new message based on the event and deep-copying the reactions from the original message.
+  ** @(CHA-M11e)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must verify that the @summary.messageSerial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
+  ** @(CHA-M11f)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must return a new @Message@ instance (deep copy) with the updated reactions, preserving all other properties of the original message.
+  ** @(CHA-M11g)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must deep-copy the reactions from the event before applying them to the returned message instance.
 
 h2(#messageReactions). Message Reactions
 
