@@ -416,17 +416,17 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 <!-- -->
 
 - `(CHA-MR2)` There are three types of message reactions, each corresponding to a different annotation aggregation type.\
-  `(CHA-MR2a)` Reactions of type `Unique` use the annotation type `reaction:unique.v1`. In this type, each client can add only one reaction (by `name`). Reacting again changes the reaction to the new one (similar to WhatsApp or iMessage).\
-  `(CHA-MR2b)` Reactions of type `Distinct` use the annotation type `reaction:distinct.v1`. Each client can add multiple reaction with different names, but each unique `name` only once (similar to Slack).\
-  `(CHA-MR2c)` Reactions of type `Multiple` use the annotation type `reaction:multiple.v1`. In this type, each client can add any reaction `name` multiple times including duplicates. Reactions can include a `count` field indicating how many times the reaction should be counted towards the total (similar to claps on Medium).
+  `(CHA-MR2a)` Reactions of type `unique` use the annotation type `reaction:unique.v1`. In this type, each client can add only one reaction (by `name`). Reacting again changes the reaction to the new one (similar to WhatsApp or iMessage).\
+  `(CHA-MR2b)` Reactions of type `distinct` use the annotation type `reaction:distinct.v1`. Each client can add multiple reaction with different names, but each unique `name` only once (similar to Slack).\
+  `(CHA-MR2c)` Reactions of type `multiple` use the annotation type `reaction:multiple.v1`. In this type, each client can add any reaction `name` multiple times including duplicates. Reactions can include a `count` field indicating how many times the reaction should be counted towards the total (similar to claps on Medium).
 
 <!-- -->
 
 - `(CHA-MR3)` `[Testable]` The `reactions` property of the `Message` object is an object or map that contains summaries for all message reaction types. For convenience when using this in the public API, these are keyed by reaction type and not annotation type (eg. "distinct" and not "reaction:distinct.v1").
   - `(CHA-MR3a)` `[Testable]` The values for each reaction type summary are the same as defined in PubSub for the respective annotation aggregation types.\
-    `(CHA-MR3b)` `[Testable]` For `Unique` reaction types, the summary is at `Message.reactions.unique` and is of type `Dict<string, SummaryClientIdList>` (see `TM7b2`).\
-    `(CHA-MR3b3)` `[Testable]` For `Distinct` reaction types, the summary is at `Message.reactions.distinct` and is of type `Dict<string, SummaryClientIdList>` (see `TM7b1`).\
-    `(CHA-MR3b2)` `[Testable]` For `Multiple` reaction types, the summary is at `Message.reactions.multiple` and is of type `Dict<string, SummaryClientIdCounts>` (see `TM7b3`).
+    `(CHA-MR3b)` `[Testable]` For `unique` reaction types, the summary is at `Message.reactions.unique` and is of type `Dict<string, SummaryClientIdList>` (see `TM7b2`).\
+    `(CHA-MR3b3)` `[Testable]` For `distinct` reaction types, the summary is at `Message.reactions.distinct` and is of type `Dict<string, SummaryClientIdList>` (see `TM7b1`).\
+    `(CHA-MR3b2)` `[Testable]` For `multiple` reaction types, the summary is at `Message.reactions.multiple` and is of type `Dict<string, SummaryClientIdCounts>` (see `TM7b3`).
 
 <!-- -->
 
@@ -873,11 +873,11 @@ An array of V2 [`Message` structs](#chat-structs-message-v2)
 
 #### Request V3 {#rest-sending-messages-reactions-request-v3}
 
-Below is the full REST payload format for the V3 endpoint. The `count` field is optional and it is only accepted for reactions of type `reaction:multiple.v1`.
+Below is the full REST payload format for the V3 endpoint. The `count` field is optional, defaults to 1, and it is only accepted for reactions of type `multiple`.
 
       POST /chat/v3/rooms/<roomId>/messages/<serial>/reactions
       {
-        "type": "reaction:multiple.v1",
+        "type": "multiple",
         "name": "🔥",
         "count": 5
       }
@@ -902,7 +902,7 @@ Note this is an Annotation not a Message. ChannelMessage action is 21. The annot
         "messageSerial" : "01746631762878-000@cbfVqJopQBorrt95348450:000",
         "name" : "🔥",
         "serial" : "01746631786947-000@cbfVqJopQBorrt95348450:000",
-        "type" : "reaction:multiple.v1",
+        "type" : "multiple",
         "count": 5
       }
 
@@ -912,8 +912,9 @@ A message summary event is also broadcast to the channel after adding or removin
 
 #### Request V3 {#rest-deleting-messages-reactions-request-v3}
 
-Below is the full REST payload format for the V3 endpoint. The `name` param is ignored for reactions of type `reaction:unique.v1` but it is required for all other reaction types.
+Below is the full REST payload format for the V3 endpoint. The `name` param is ignored for reactions of type `unique` but it is required for all other reaction types.
 
+     
       DELETE /chat/v3/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
 
 #### Response V3 {#rest-sending-messages-response-v3}
@@ -936,7 +937,7 @@ Note this is an Annotation not a Message. ChannelMessage action is 21. The annot
         "messageSerial" : "01746631762878-000@cbfVqJopQBorrt95348450:000",
         "name" : "❤️",
         "serial" : "01746632464399-000@cbfVqJopQBorrt95348450:000",
-        "type" : "reaction:distinct.v1"
+        "type" : "distinct"
       }
 
 A message summary event is also broadcast to the channel after adding or removing one or more annotations.
@@ -1176,7 +1177,7 @@ The `MessageReactionRawEvent` interface provides information about individual me
   A `messageSerial` identifying which message the reaction belongs to.\
   A `type` field indicating the reaction type (unique, distinct, or multiple).\
   A `name` field containing the name of the reaction (e.g. emoji string).\
-  An optional `count` field for reactions of type Multiple.\
+  An optional `count` field for reactions of type `multiple`.\
   A `clientId` identifying the user who added or removed the reaction.
 
 <!-- -->
@@ -1186,8 +1187,8 @@ The `MessageReactionRawEvent` interface provides information about individual me
         timestamp: DateTime(),
         reaction: {
           messageSerial: "01726585978590-001@abcdefghij:001",
-          type: "reaction:multiple.v1",
-          reaction: ":like:",
+          type: "multiple",
+          name: ":like:",
           count: 3,
           clientId: "user1",
         };
@@ -1195,9 +1196,9 @@ The `MessageReactionRawEvent` interface provides information about individual me
 
 Event `type` can be `reaction.update` or `reaction.delete`.
 
-Event `reaction.type` can be `reaction:unique.v1`, `reaction:distinct.v1` or `reaction:multiple.v1`.
+Event `reaction.type` can be `unique`, `distinct` or `multiple`.
 
-`reaction.count` is optional and only set for `reaction:multiple.v1`.
+`reaction.count` is optional and only set for `multiple`.
 
 ### Ephemeral Room Reactions (Deprecated) {#chat-structs-ephemeral-reactions-old}
 
