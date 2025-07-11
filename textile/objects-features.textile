@@ -15,7 +15,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 h3(#realtime-objects). RealtimeObjects
 
-* @(RTO1)@ @Objects#getRoot@ function:
+* @(RTO1)@ @RealtimeObjects#getRoot@ function:
 ** @(RTO1a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
 ** @(RTO1b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTO1c)@ Waits for the objects sync sequence to complete and for "RTO5c":#RTO5c to finish
@@ -254,3 +254,29 @@ h3(#livemap). LiveMap
 *** @(RTLM17a1)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@
 *** @(RTLM17a2)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@
 ** @(RTLM17b)@ Set the private flag @createOperationIsMerged@ to @true@
+
+h2(#idl). Interface Definition
+
+Describes types for RealtimeObjects.
+Types and their properties/methods are public and exposed to users by default. An @internal@ label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
+
+<pre>
+class RealtimeObjects: // RTO*
+  getRoot() => io LiveMap // RTO1
+
+class LiveObject: // RTLO*
+  objectId: String // RTLO3a, internal
+  siteTimeserials: Dict<String, String> // RTLO3b, internal
+  createOperationIsMerged: Boolean // RTLO3c, internal
+  canApplyOperation(ObjectMessage) -> Boolean // RTLO4a, internal
+
+class LiveCounter extends LiveObject: // RTLC*, RTLC1
+  value() -> Number // RTLC5
+
+class LiveMap extends LiveObject: // RTLM*, RTLM1
+  get(key: String) -> Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap // RTLM5
+  size() -> Number // RTLM10
+  entries() -> [String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap][] // RTLM11
+  keys() -> String[] // RTLM12
+  values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)[] // RTLM13
+</pre>
