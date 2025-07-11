@@ -355,18 +355,11 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m5)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @text@ property must be set to an empty string.
 *** @(CHA-M4m6)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @metadata@ property must be set to an empty object.
 *** @(CHA-M4m7)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @headers@ property must be set to an empty object.
-** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed (unknown fields should be ignored) shall not be emitted to subscribers.
-*** @(CHA-M4k1)@ @[Testable]@ If the message does not contain a @data@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k2)@ @[Testable]@ If the message does not contain a @clientId@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k3)@ @[Testable]@ If the message does not contain an @extras@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k4)@ @[Testable]@ If the message action is not @MessageDelete@ and the message @data@ field does not contain a @text@ property or the @text@ property is undefined, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k5)@ @[Testable]@ If the message action is not @MessageDelete@ and the message @extras@ field does not contain a @headers@ property, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k6)@ @[Testable]@ If the message action is not @MessageDelete@ and the message @data@ field does not contain a @metadata@ property, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k7)@ @[Testable]@ If the message does not contain a @serial@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k8)@ @[Testable]@ If the message does not contain a @version@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k9)@ @[Testable]@ If the message does not contain a @createdAt@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k10)@ @[Testable]@ If the message does not contain a @timestamp@ field, an @ErrorInfo@ with code @50000@ must be thrown.
-*** @(CHA-M4k11)@ @[Testable]@ If the message contains an @action@ field with a value that is not one of the supported @ChatMessageAction@ values (@MessageCreate@, @MessageUpdate@, @MessageDelete@), an @ErrorInfo@ with code @50000@ must be thrown.
+** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
+*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version) shall be empty strings.
+*** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
+*** @(CHA-M4k3)@ @[Testable]@ The default action shall be @MessageCreate@.
+*** @(CHA-M4k4)@ @[Testable]@ Timestamps must have the current time.
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
 ** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
 ** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
@@ -428,9 +421,15 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 * @(CHA-MR5)@ @[Testable]@ Users may configure a default message reactions type for a room. This configuration is provided at the @RoomOptions.messages.defaultMessageReactionType@ property, or idiomatic equivalent. The default value is @distinct@.
 
 * @(CHA-MR6)@ @[Testable]@ Users must be able to subscribe to message reaction summaries via the @subscribe@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribe@). The events emitted will be of type @MessageReactionSummaryEvent@.
+  ** @(CHA-MR6a)@ @[Testable]@ Invalid reaction summary events received over realtime must still produce an event, but with fields filled in with default values.
+    *** @(CHA-MR6a1)@ @[Testable]@ The summary shall be assumed to be an empty object if unspecified.
 
 * @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). The events emitted are of type @MessageReactionRawEvent@.
   ** @(CHA-MR7a)@ @[Testable]@ The attempt to subscribe to raw message reactions must throw an @ErrorInfo@ with code @40000@ and status code @400@ if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
+  ** @(CHA-MR7b)@ @[Testable]@ Invalid reaction events received over realtime must still produce an event, but with fields filled in with default values.
+    *** @(CHA-MR7b1)@ @[Testable]@ The default event type shall be @MessageReactionEventType.Create@.
+    *** @(CHA-MR7b2)@ @[Testable]@ The default reaction type shall be @MessageReactionType.Distinct@.
+    *** @(CHA-MR7b3)@ @[Testable]@ String fields (e.g. name, clientId, serial) must take a default value of empty string.
 
 * @(CHA-MR8)@ Raw message reactions must not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
 
@@ -461,7 +460,12 @@ All ephemeral room reactions are handled over the Realtime connection.
 ** @(CHA-ER4a)@ @[Testable]@ A user may provide a listener to subscribe to reaction events. This operation must have no side-effects in relation to room or underlying status. When a "realtime message":#realtime-room-reactions with name @roomReaction@ is received, this message is converted into a "reaction object":#chat-structs-ephemeral-reactions and emitted to subscribers.
 ** @(CHA-ER4b)@ @[Testable]@ A user may unsubscribe a registered listener. This operation must have no side-effects in relation to room or underlying status. Once unsubscribed, subsequent reaction events must not be emitted to this listener.
 ** @(CHA-ER4c)@ @[Testable]@ Realtime events with an unknown @name@ shall be silently discarded.
-** @(CHA-ER4d)@ @[Testable]@ Realtime events that are malformed (unknown fields should be ignored) shall not be emitted to listeners.
+** @(CHA-ER4d)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
+** @(CHA-ER4e)@ @[Testable]@ Realtime events that are malformed, or incomplete, must trigger an event, but fields shall be populated with default values.
+*** @(CHA-ER4e1)@ @[Testable]@ If the @name@ field within the realtime message @data@ is omitted, it shall be replaced with an empty string. NOTE: this is NOT the same as the @name@ field on the message itself.
+*** @(CHA-ER4e2)@ @[Testable]@ The metadata and headers fields shall be replaced with empty objects. 
+*** @(CHA-ER4e3)@ @[Testable]@ The clientId field shall be an empty string.
+*** @(CHA-ER4e4)@ @[Testable]@ Timestamp fields shall be the current timestamp.
 * @(CHA-ER5)@ This specification point has been removed. It was valid up until the single-channel migration.
 
 h2(#presence). Online Status (Presence)
@@ -599,7 +603,8 @@ the overhead of having everyone in presence.
 ** @(CHA-O4b)@ @[Testable]@ A subscription to occupancy events may be removed, after which it shall receive no further events.
 ** @(CHA-O4c)@ This specification point has been removed. It was valid until the V1 API Review.
 ** @(CHA-O4f)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event V2":#chat-structs-occupancy-event-v2 format, with type @OccupancyEventType.Updated@, and broadcast it to subscribers.
-** @(CHA-O4d)@ @[Testable]@ If an invalid occupancy event is received on the channel, it shall be dropped.
+** @(CHA-O4d)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
+** @(CHA-O4g)@ @[Testable]@ If an invalid occupancy event is received from the channel, or is incomplete, then an event must be omitted but the values shall be 0.
 * @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O6)@ Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
 ** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
