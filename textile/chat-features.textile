@@ -351,14 +351,12 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m1)@ @[Testable]@ If @action@ is set to @MESSAGE_CREATE@, then an event with @type@ set to @message.created@ shall be emitted.
 *** @(CHA-M4m2)@ @[Testable]@ If @action@ is set to @MESSAGE_UPDATE@, then an event with @type@ set to @message.updated@ shall be emitted.
 *** @(CHA-M4m3)@ @[Testable]@ If @action@ is set to @MESSAGE_DELETE@, then an event with @type@ set to @message.deleted@ shall be emitted.
-*** @(CHA-M4m4)@ @[Testable]@ If a realtime message with an unknown @action@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
-*** @(CHA-M4m5)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @text@ property must be set to an empty string.
-*** @(CHA-M4m6)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @metadata@ property must be set to an empty object.
-*** @(CHA-M4m7)@ @[Testable]@ When parsing an incoming message with action @MessageDelete@, then the messages @headers@ property must be set to an empty object.
+*** @(CHA-M4m4)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
+*** @(CHA-M4m5)@ The default value is specified in @CHA-M4k@.
 ** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
 *** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version) shall be empty strings.
 *** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
-*** @(CHA-M4k3)@ @[Testable]@ The default action shall be @MessageCreate@.
+*** @(CHA-M4k3)@ @[Testable]@ The default action shall be @message.created@.
 *** @(CHA-M4k4)@ @[Testable]@ Timestamps must have the current time.
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
 ** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
