@@ -354,7 +354,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m4)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
 *** @(CHA-M4m5)@ The default value is specified in @CHA-M4k@.
 ** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
-*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version) shall be empty strings.
+*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version, clientId) shall be empty strings.
 *** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
 *** @(CHA-M4k3)@ @[Testable]@ The default action shall be @message.created@.
 *** @(CHA-M4k4)@ @[Testable]@ Timestamps must have the current time.
