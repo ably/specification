@@ -352,7 +352,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m2)@ @[Testable]@ If @action@ is set to @MESSAGE_UPDATE@, then an event with @type@ set to @message.updated@ shall be emitted.
 *** @(CHA-M4m3)@ @[Testable]@ If @action@ is set to @MESSAGE_DELETE@, then an event with @type@ set to @message.deleted@ shall be emitted.
 *** @(CHA-M4m4)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
-*** @(CHA-M4m5)@ The default value is specified in @CHA-M4k@.
+*** @(CHA-M4m5)@ If an event is to be ignored (i.e. because the @action@ is unknown), the library must log the fact at @INFO@ level.
 ** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
 *** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version, clientId) shall be empty strings.
 *** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
@@ -423,6 +423,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
     *** @(CHA-MR6a1)@ @[Testable]@ The summary shall be assumed to be an empty object if unspecified.
     *** @(CHA-MR6a2)@ @[Testable]@ If the reaction type (e.g. unique, distinct) is unknown - then it shall be ignored.
     *** @(CHA-MR6a3)@ @[Testable]@ If data for a known reaction type (e.g. unique, distinct, multiple) is missing - then it shall be set to an empty object.
+    *** @(CHA-MR6a4)@ If an event is to be ignored, the library must log the fact at @INFO@ level.
 
 * @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). The events emitted are of type @MessageReactionRawEvent@.
   ** @(CHA-MR7a)@ @[Testable]@ The attempt to subscribe to raw message reactions must throw an @ErrorInfo@ with code @40000@ and status code @400@ if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
@@ -430,6 +431,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
     *** @(CHA-MR7b1)@ @[Testable]@ If the reaction type (e.g. unique, distinct) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).
     *** @(CHA-MR7b2)@ @[Testable]@ If the reaction action type (e.g. add, remove) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).
     *** @(CHA-MR7b3)@ @[Testable]@ String fields (e.g. name, clientId, serial) must take a default value of empty string.
+    *** @(CHA-MR7b4)@ If an event is to be ignored, the library must log the fact at @INFO@ level.
 
 * @(CHA-MR8)@ Raw message reactions must not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
 
