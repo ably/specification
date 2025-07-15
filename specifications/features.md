@@ -1783,8 +1783,6 @@ Presence ops.
   - `(TM2p)` `version` string - an opaque string that uniquely identifies the message, and is different for different versions. (May not be populated).
   - `(TM2k)` `serial` string - an opaque string that uniquely identifies the message. If a message received from Ably (whether over realtime or REST, eg history) with an `action` of `MESSAGE_CREATE` does not contain a `serial` but does contain a `version`, the SDK must set it equal to the `TM2p` `version`. (May not be populated).
   - `(TM2o)` `createdAt` time in milliseconds since epoch. If a message received from Ably (whether over realtime or REST, eg history) with an `action` of `MESSAGE_CREATE` does not contain a `createdAt`, the SDK must set it equal to the `TM2f` `timestamp`.
-  - `(TM2l)` `refSerial` string - an opaque string that uniquely identifies some referenced message.
-  - `(TM2m)` `refType` string - an opaque string that identifies the type of this reference.
   - `(TM2n)` `operation` - object that may contain the following \`optional\` attributes;
     - `(TM2n1)` `clientId` string
     - `(TM2n2)` `description` string
@@ -2915,8 +2913,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
       action: MessageAction // TM2j
       serial: string? // TM2k
       version: string? // TM2p
-      refSerial: string? // TM2l
-      refType: string? // TM2m
       operation: Object? // TM2n
       createdAt: Time? // TM2o
       summary: Dict<string, JsonObject>? // TM2q
