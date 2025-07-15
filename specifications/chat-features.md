@@ -445,7 +445,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
   `(CHA-MR6a)` `[Testable]` Invalid reaction summary events received over realtime must still produce an event, but with fields filled in with default values.\
   \* `(CHA-MR6a1)` `[Testable]` The summary shall be assumed to be an empty object if unspecified.\
   \* `(CHA-MR6a2)` `[Testable]` If the reaction type (e.g. unique, distinct) is unknown - then it shall be ignored.\
-  \* `(CHA-MR6a2)` `[Testable]` If the reaction type (e.g. unique, distinct) is missing - then it shall be set to an empty object.
+  \* `(CHA-MR6a3)` `[Testable]` If the reaction type (e.g. unique, distinct) is missing - then it shall be set to an empty object.
 
 <!-- -->
 
