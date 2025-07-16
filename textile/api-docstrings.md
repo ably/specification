@@ -783,8 +783,6 @@ Contains an individual message that is sent to, or received from, Ably.
 | timestamp: Time ||| TM2f | Timestamp of when the message was received by Ably, as milliseconds since the Unix epoch. (This is the timestamp of the current version of the message) |
 | serial: String? ||| TM2k | This message's unique serial (an identifier that — unlike the id — will remain the same in all future updates of this message, and can be used to update or delete that message). Lexicographically-comparable with other serials and with the `version` field. |
 | version: String? ||| TM2p | The version of the message, lexicographically-comparable with other versions (that share the same serial) Will differ from the serial only if the message has been updated or deleted. |
-| refSerial: String? ||| TM2l | If this message references another, the serial of that referenced message. |
-| refType: String? ||| TM2m | If this message references another, the type of reference that is. |
 | createdAt: Time? ||| TM2o | The timestamp of the very first version of a given message (will differ from `timestamp` only if the message has been updated or deleted). |
 | operation: Operation? ||| TM2n | In the case of an updated or deleted message, this will contain metadata about the update or delete operation. |
 | connectionKey: String? ||| TM2h | Allows a REST client to publish a message on behalf of a Realtime client. If you set this to the [private connection key]{@link Connection.key} of a Realtime connection when publishing a message using a [`RestClient`]{@link RestClient}, the message will be published on behalf of that Realtime client. This property is only populated by a client performing a publish, and will never be populated on an inbound message. |
