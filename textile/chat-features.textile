@@ -481,7 +481,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR2a)@ @[Testable]@ This specification point has been removed. It was valid up until the adoption of CHADR-107.
 ** @(CHA-PR2b)@ This specification point has been removed. It was valid up until the adoption of CHADR-107.
 * @(CHA-PR3)@ Users may enter presence. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
-** @(CHA-PR3a)@ @[Testable]@ Users may choose to enter presence, optionally providing custom data to enter with. The overall presence data must retain the format specified in @CHA-PR2@.
+** @(CHA-PR3a)@ @[Testable]@ Users may choose to enter presence, optionally providing custom data to enter with.
 ** @(CHA-PR3b)@ This clause has been replaced by @CHA-PR3c - CHA-PR3g@.
 ** @(CHA-PR3c)@ This specification point has been removed.
 *** @(CHA-PR3c1) This specification point has been removed.
@@ -492,7 +492,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR3f)@ This specification point has been removed. It was superseded by @CHA-PR3h@.
 ** @(CHA-PR3g)@ This specification point has been removed. It was superseded by @CHA-PR3h@.
 * @(CHA-PR10)@ Users may update their presence data. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
-** @(CHA-PR10a)@ @[Testable]@ Users may choose to update their presence data, optionally providing custom data to update with. The overall presence data must retain the format specified in @CHA-PR2@.
+** @(CHA-PR10a)@ @[Testable]@ Users may choose to update their presence data, optionally providing custom data to update with.
 ** @(CHA-PR10b)@ This clause has been replaced by @CHA-PR10c - CHA-PR10g@.
 ** @(CHA-PR10c)@ This specification point has been removed.
 *** @(CHA-PR10c1)@ This specification point has been removed.
@@ -503,7 +503,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR10f)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 ** @(CHA-PR10g)@ This specification point has been removed. It was superseded by @CHA-PR10h@.
 * @(CHA-PR4)@ Users may leave presence.
-** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set. The user may optionally provide custom data to leave with. The overall presence data must retain the format specified in @CHA-PR2@.
+** @(CHA-PR4a)@ @[Testable]@ Users may choose to leave presence, which results in them being removed from the Realtime presence set. The user may optionally provide custom data to leave with.
 * @(CHA-PR5)@ @[Testable]@ It must be possible to query if a given clientId is in the presence set.
 * @(CHA-PR6)@ @[Testable]@ It must be possible to retrieve all the "@Members":#chat-structs-presence-member of the presence set. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
 ** @(CHA-PR6a)@ This clause has been replaced by @CHA-PR6b - CHA-PR6f@.
@@ -1335,8 +1335,11 @@ h3(#chat-structs-presence-event-v2). Presence Event V2
     "type": PresenceEventType,
     "member": { // PresenceMember
       "clientId": "who-is-in-presence",
-      "timestamp": DateTime(),
-      "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+      "updatedAt": DateTime(),
+      "data": { … },
+      "extras": {},
+      "connectionId": "foo",
+      "encoding": "json"
     }
   }
 </pre>
