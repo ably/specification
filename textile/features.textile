@@ -1690,7 +1690,7 @@ h4. ProtocolMessage
 ** @(TR4g)@ @count@ integer
 ** @(TR4h)@ @error@ @ErrorInfo@ object
 ** @(TR4i)@ @flags@ integer. Contains one or more of the bit flags specified in @TR3@
-** @(TR4j)@ @msgSerial@ long
+** @(TR4j)@ @msgSerial@ long. Should be reset to @0@ every clean connection attempt (not a resume attempt). Including reconnect after @SUSPENDED@
 ** @(TR4k)@ @messages@ Array of @Message@ objects
 ** @(TR4l)@ @presence@ Array of @PresenceMessage@ objects
 ** @(TR4m)@ @timestamp@ time in milliseconds since epoch
