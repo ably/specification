@@ -44,6 +44,13 @@ h2(#initialization). Initialization
 ** @(CHA-IN1c)@ SDK authors must ensure that they have registered the agents used by @CHA-IN1b@ in the common repository, per "@RSC7d5@":../features#RSC7d5.
 ** @(CHA-IN1d)@ @[Testable]@ The chat client must use the wrapper SDK proxy client created in @CHA-IN1a@ as the realtime client on which it performs all subsequent actions (for example, fetching channels or calling @#request@).
 
+h2(#client). Chat Client
+
+** @(CHA-CL1)@ @[Testable]@ The @ChatClient@ provides a @dispose@ method to clean up all resources and prepare the client for garbage collection.
+*** @(CHA-CL1a)@ @[Testable]@ When @dispose@ is called on a @ChatClient@, it must first dispose of all rooms. This will release all rooms currently in use.
+*** @(CHA-CL1b)@ @[Testable]@ After disposing of rooms, the @ChatClient@ must dispose of the connection instance.
+*** @(CHA-CL1c)@ This operation is naturally asynchronous, however many languages use synchronous destructor sequences. Therefore each language should implement whatever is most idiomatic, and the exact implementation details are left up to each individual SDK.
+
 h2(#rooms). Rooms
 
 h3(#rooms-general). General Information
@@ -253,6 +260,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC1)@ Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
 ** @(CHA-RC1a)@ This specification point has been removed. It was superseded by CHA-RC1f.
 ** @(CHA-RC1f)@ @[Testable]@ Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
+*** @(CHA-RC1f7)@ @[Testable]@ If the @Rooms@ instance has been disposed (following a call to @dispose@), attempting to get a room must throw an error with code @40000@.
 *** @(CHA-RC1f1)@ @[Testable]@ If the room name exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with the @BadRequest@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400 shall be thrown.
 *** @(CHA-RC1f2)@ @[Testable]@ If the room name exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
 *** @(CHA-RC1f3)@ @[Testable]@ If no @CHA-RC1g@ release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
@@ -270,6 +278,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1g3)@ @[Testable]@ If the room does not exist in the room map, and a release operation is already in progress, then the associated future will be returned.
 *** @(CHA-RC1g4)@ @[Testable]@ If a release operation is already in progress, any pending @CHA-RC1f@ future shall be rejected / throw an error. The error must use the @RoomReleasedBeforeOperationCompleted@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400. The room shall be removed from the room map and the operation must return the future associated with the previous operation.
 *** @(CHA-RC1g5)@ @[Testable]@ The room is removed from the room map and a @CHA-RL3@ release operation is initiated for the room object. A future is returned which resolves when the release operation completes.
+*** @(CHA-RC1g6)@ @[Testable]@ Once the @CHA-RL3@ release operation completes, each individual feature must be cleaned up for garbage collection via its individual @dispose@ method.
 * @(CHA-RC5)@ @[Testable]@ All chat feature properties (e.g. @room.messages@) are enabled by default. The specific behaviour of each feature is controlled by its respective room options @CHA-RC2@.
 * @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain functionality. When requesting a room, options as to what functionality should be enabled/disabled, can be provided (@RoomOptions@).
 ** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
@@ -288,6 +297,16 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC4)@ Users may provide room options to the @rooms.get()@ call to control the behaviour of the room.
 ** @(CHA-RC4a)@ @[Testable]@ Where room options have not been provided, the client shall provide defaults.
 ** @(CHA-RC4b)@ @[Testable]@ Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
+
+h2(#roos-disposal). Rooms Disposal
+
+Rooms in the Chat SDK are a complex type that register many different listeners and consume many different events. Therefore, there must be methods available to clean up any listeners to allow for garbage collection.
+
+** @(CHA-RD1)@ @[Testable]@ The @Rooms@ map / manager must offer an internal @dispose@ method that must prepare the rooms manager for garbage collection and release all managed rooms.
+*** @(CHA-RD1a)@ @[Testable]@ When @dispose@ is called, it must mark the instance as disposed to prevent future room operations.
+*** @(CHA-RD1b)@ @[Testable]@ If no rooms exist when @dispose@ is called, the method must complete successfully without error.
+*** @(CHA-RD1c)@ @[Testable]@ If rooms exist in the map, the @dispose@ method must release all rooms currently in the rooms map concurrently.
+*** @(CHA-RD1d)@ @[Testable]@ The @dispose@ method must wait for all room release operations to complete before resolving.
 
 h2(#messages). Messages
 
@@ -381,6 +400,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
   ** @(CHA-M11e)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must verify that the @summary.messageSerial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
   ** @(CHA-M11f)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must return a new @Message@ instance (deep copy) with the updated reactions, preserving all other properties of the original message.
   ** @(CHA-M11g)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must deep-copy the reactions from the event before applying them to the returned message instance.
+* @(CHA-M12)@ @[Testable]@ The @Messages@ instance must provide an internal @dispose@ method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 h2(#messageReactions). Message Reactions
 
@@ -440,6 +460,8 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR10)@ This specification point has been replaced by @CHA-RC3d@.
 
+* @(CHA-MR12)@ @[Testable]@ The @MessageReactions@ instance must provide an internal @dispose@ method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+
 h2(#reactions). Ephemeral Room Reactions
 
 Ephemeral room reactions are one-time events that are sent to the room, such as thumbs-up or heart emojis. They are supposed to capture the current emotions in the room (e.g. everyone spamming the :tada: emoji when a team scores the winning goal).
@@ -469,6 +491,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 *** @(CHA-ER4e3)@ @[Testable]@ The clientId field shall be an empty string.
 *** @(CHA-ER4e4)@ @[Testable]@ Timestamp fields shall be the current timestamp.
 * @(CHA-ER5)@ This specification point has been removed. It was valid up until the single-channel migration.
+* @(CHA-ER6)@ @[Testable]@ The @RoomReactions@ instance must provide an internal @dispose@ method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 h2(#presence). Online Status (Presence)
 
@@ -527,6 +550,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR9c)@ The option @presence.enableEvents@ controls whether or not the client should receive presence events from the server. @CHA-RC3d1@ describes how to implement this.
 *** @(CHA-PR9c1)@ @[Testable]@ This option defaults to @true@.
 *** @(CHA-PR9c2)@ This specification point has been replaced by @CHA-RC3d1@.
+* @(CHA-PR11)@ @[Testable]@ The @Presence@ instance must provide an internal @dispose@ method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 h2(#typing). Typing Indicators
 
@@ -588,6 +612,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T14b)@ @[Testable]@ Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
 *** @(CHA-T14b1)@ @[Testable]@ During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
 *** @(CHA-T14b2)@ @[Testable]@ If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
+* @(CHA-T17)@ @[Testable]@ The @Messages@ instance must provide an internal @dispose@ method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel. Any timeouts or timers associated with typing heartbeats must also be cancelled.
 
 h2(#occupancy). Occupancy
 
@@ -616,6 +641,7 @@ the overhead of having everyone in presence.
 ** @(CHA-O7a)@ @[Testable]@ The @current@ method should return the latest occupancy numbers received over the realtime connection in a @[meta]occupancy@ event.
 ** @(CHA-O7b)@ @[Testable]@ If no realtime events have been received yet, @current()@ returns undefined/null.
 ** @(CHA-O7c)@ @[Testable]@ If occupancy events are not enabled via @RoomOptions.occupancy.enableEvents@, @current()@ throws an error with code 40000.
+* @(CHA-O8)@ @[Testable]@ The @Occupancy@ instance must provide an internal @dispose@ method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 h2(#rest-api). Chat HTTP REST API
 
