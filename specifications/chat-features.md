@@ -302,11 +302,11 @@ Each chat room can be configured individually, allowing options to be passed as 
 
 Rooms in the Chat SDK are a complex type that register many different listeners and consume many different events. Therefore, there must be methods available to clean up any listeners to allow for garbage collection.
 
-- `(CHA-RD1)` `[Testable]` The `Rooms` map / manager must offer an internal `dispose` method that must prepare the rooms manager for garbage collection and release all managed rooms.
-  - `(CHA-RD1a)` `[Testable]` When `dispose` is called, it must mark the instance as disposed to prevent future room operations.
+- `(CHA-RD1)` `[Testable]` The `Rooms` map / manager must offer an internal API for disposal, that must prepare the rooms manager for garbage collection and release all managed rooms.
+  - `(CHA-RD1a)` `[Testable]` When disposal is called, it must mark the instance as disposed to prevent future room operations.
   - `(CHA-RD1b)` `[Testable]` If no rooms exist when `dispose` is called, the method must complete successfully without error.
-  - `(CHA-RD1c)` `[Testable]` If rooms exist in the map, the `dispose` method must release all rooms currently in the rooms map concurrently.
-  - `(CHA-RD1d)` `[Testable]` The `dispose` method must wait for all room release operations to complete before resolving.
+  - `(CHA-RD1c)` `[Testable]` If rooms exist in the map, the procedure must release all rooms currently in the rooms map concurrently.
+  - `(CHA-RD1d)` `[Testable]` The procedure must wait for all room release operations to complete before resolving.
 
 ## Messages
 
@@ -411,7 +411,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
   `(CHA-M11e)` `[Testable]` For `MessageReactionSummaryEvent`, the method must verify that the `summary.messageSerial` in the event matches the message's own serial. If they don't match, an error with code `40000` and status code `400` must be thrown.\
   `(CHA-M11f)` `[Testable]` For `MessageReactionSummaryEvent`, the method must return a new `Message` instance (deep copy) with the updated reactions, preserving all other properties of the original message.\
   `(CHA-M11g)` `[Testable]` For `MessageReactionSummaryEvent`, the method must deep-copy the reactions from the event before applying them to the returned message instance.
-- `(CHA-M12)` `[Testable]` The `Messages` instance must provide an internal `dispose` method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+- `(CHA-M12)` `[Testable]` The `Messages` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 ## Message Reactions {#messageReactions}
 
@@ -493,7 +493,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 <!-- -->
 
-- `(CHA-MR12)` `[Testable]` The `MessageReactions` instance must provide an internal `dispose` method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+- `(CHA-MR12)` `[Testable]` The `MessageReactions` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 ## Ephemeral Room Reactions {#reactions}
 
@@ -524,7 +524,7 @@ All ephemeral room reactions are handled over the Realtime connection.
     - `(CHA-ER4e3)` `[Testable]` The clientId field shall be an empty string.
     - `(CHA-ER4e4)` `[Testable]` Timestamp fields shall be the current timestamp.
 - `(CHA-ER5)` This specification point has been removed. It was valid up until the single-channel migration.
-- `(CHA-ER6)` `[Testable]` The `RoomReactions` instance must provide an internal `dispose` method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+- `(CHA-ER6)` `[Testable]` The `RoomReactions` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 ## Online Status (Presence) {#presence}
 
@@ -583,7 +583,7 @@ Presence allows chat room users to indicate to others that they're online, as we
   - `(CHA-PR9c)` The option `presence.enableEvents` controls whether or not the client should receive presence events from the server. `CHA-RC3d1` describes how to implement this.
     - `(CHA-PR9c1)` `[Testable]` This option defaults to `true`.
     - `(CHA-PR9c2)` This specification point has been replaced by `CHA-RC3d1`.
-- `(CHA-PR11)` `[Testable]` The `Presence` instance must provide an internal `dispose` method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+- `(CHA-PR11)` `[Testable]` The `Presence` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 ## Typing Indicators {#typing}
 
@@ -645,7 +645,7 @@ For the purpose of this section, an `ephemeral message` is understood to mean a 
   - `(CHA-T14b)` `[Testable]` Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
     - `(CHA-T14b1)` `[Testable]` During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
     - `(CHA-T14b2)` `[Testable]` If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
-- `(CHA-T17)` `[Testable]` The `Messages` instance must provide an internal `dispose` method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel. Any timeouts or timers associated with typing heartbeats must also be cancelled.
+- `(CHA-T17)` `[Testable]` The `Messages` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel. Any timeouts or timers associated with typing heartbeats must also be cancelled.
 
 ## Occupancy
 
@@ -674,7 +674,7 @@ the overhead of having everyone in presence.
   - `(CHA-O7a)` `[Testable]` The `current` method should return the latest occupancy numbers received over the realtime connection in a `[meta]occupancy` event.
   - `(CHA-O7b)` `[Testable]` If no realtime events have been received yet, `current()` returns undefined/null.
   - `(CHA-O7c)` `[Testable]` If occupancy events are not enabled via `RoomOptions.occupancy.enableEvents`, `current()` throws an error with code 40000.
-- `(CHA-O8)` `[Testable]` The `Occupancy` instance must provide an internal `dispose` method, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+- `(CHA-O8)` `[Testable]` The `Occupancy` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 ## Chat HTTP REST API {#rest-api}
 
