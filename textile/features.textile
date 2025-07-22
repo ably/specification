@@ -1523,6 +1523,8 @@ h4. ObjectMessage
 ** @(OM3d)@ The size of the @extras@ property is the string length of its JSON representation
 ** @(OM3f)@ The size of the @clientId@ property is its string length
 ** @(OM3e)@ The size of a @null@ or omitted property is zero
+* @(OM4)@ For @ObjectMessage@ encoding see @ObjectData@ "OD4":#OD4 and @ObjectOperation@ "OOP5":#OOP5 encoding
+* @(OM5)@ For @ObjectMessage@ decoding see @ObjectData@ "OD5":#OD5 decoding
 
 h4. ObjectOperation
 
@@ -1535,9 +1537,9 @@ h4. ObjectOperation
 ** @(OOP3d)@ @counterOp@ @ObjectsCounterOp@ object - the payload for the operation if it is an operation on an @ObjectsCounter@ object type
 ** @(OOP3e)@ @map@ @ObjectsMap@ object - the payload for the operation if the operation is @MAP_CREATE@. Defines the initial value for the @ObjectsMap@ object
 ** @(OOP3f)@ @counter@ @ObjectsCounter@ object - the payload for the operation if the operation is @COUNTER_CREATE@. Defines the initial value for the @ObjectsCounter@ object
-** @(OOP3g)@ @nonce@ string - the nonce, must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server
-** @(OOP3h)@ @initialValue@ binary - the initial value bytes for the object
-** @(OOP3i)@ @initialValueEncoding@ string - defines how the @initialValue@ should be interpreted. Should be @msgpack@ or @json@
+** @(OOP3g)@ @nonce@ string - the nonce. Must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server. Should not be accessed by the client library if received from the server
+** @(OOP3h)@ @initialValue@ binary - the initial value bytes for the object. Must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server. Should not be accessed by the client library if received from the server
+** @(OOP3i)@ @initialValueEncoding@ string - defines how the @initialValue@ should be interpreted by the server. Must be @msgpack@ or @json@. Must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server. Should not be accessed by the client library if received from the server
 * @(OOP4)@ The size of the @ObjectOperation@ is calculated as follows:
 ** @(OOP4a)@ The size is the sum of the sizes of the @mapOp@, @counterOp@, @map@, and @counter@ properties
 ** @(OOP4b)@ The size of the @mapOp@ property is calculated per "OMO3":#OMO3
@@ -1545,6 +1547,13 @@ h4. ObjectOperation
 ** @(OOP4d)@ The size of the @map@ property is calculated per "OMP4":#OMP4
 ** @(OOP4e)@ The size of the @counter@ property is calculated per "OCN3":#OCN3
 ** @(OOP4f)@ The size of a @null@ or omitted property is zero
+* @(OOP5)@ @ObjectOperation@ encoding:
+** @(OOP5a)@ When the MessagePack protocol is used:
+*** @(OOP5a1)@ A binary @ObjectOperation.initialValue@ is encoded as a MessagePack binary type
+*** @(OOP5a2)@ Set @ObjectOperation.initialValueEncoding@ to @msgpack@
+** @(OOP5b)@ When the JSON protocol is used:
+*** @(OOP5b1)@ A binary @ObjectOperation.initialValue@ is Base64-encoded and represented as a JSON string
+*** @(OOP5b2)@ Set @ObjectOperation.initialValueEncoding@ to @json@
 
 h4. ObjectState
 
@@ -1623,11 +1632,11 @@ h4. ObjectData
 * @(OD1)@ An @ObjectData@ represents a value in an object on a channel
 * @(OD2)@ The attributes available in an @ObjectData@ are:
 ** @(OD2a)@ @objectId@ string - a reference to another object
-** @(OD2b)@ @encoding@ string - can be set by the client to indicate that value in @string@ or @bytes@ field have an encoding
-** @(OD2c)@ @boolean@ boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
-** @(OD2d)@ @bytes@ binary - a primitive binary leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
-** @(OD2e)@ @number@ number - a primitive number leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
-** @(OD2f)@ @string@ string - a primitive string leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - can be set at a time
+** @(OD2b)@ @encoding@ string - may be set by the client library to indicate that value in @string@ field have an encoding
+** @(OD2c)@ @boolean@ boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - must be set at a time
+** @(OD2d)@ @bytes@ binary | string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - must be set at a time
+** @(OD2e)@ @number@ number - a primitive number leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - must be set at a time
+** @(OD2f)@ @string@ string - a primitive string leaf value in the object graph. Only one of the value fields - @boolean@, @bytes@, @number@ or @string@ - must be set at a time
 * @(OD3)@ The size of the @ObjectData@ is calculated as follows:
 ** @(OD3a)@ The size is the sum of the sizes of the @boolean@, @bytes@, @number@, and @string@ properties
 ** @(OD3b)@ If set, the size of a @boolean@ property is 1
@@ -1635,6 +1644,29 @@ h4. ObjectData
 ** @(OD3d)@ If set, the size of a @number@ property is 8
 ** @(OD3e)@ If set, the size of a @string@ property is its length
 ** @(OD3f)@ The size of a @null@ or omitted property is zero
+* @(OD4)@ @ObjectData@ encoding:
+** @(OD4a)@ Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
+** @(OD4b)@ @ObjectData.encoding@ must be left unset unless specified otherwise by the payload encoding procedure in "OD4c":#OD4c and "OD4d":#OD4d
+** @(OD4c)@ When the MessagePack protocol is used:
+*** @(OD4c1)@ A boolean payload is encoded as a MessagePack boolean type, and the result is set on the @ObjectData.boolean@ attribute
+*** @(OD4c2)@ A binary payload is encoded as a MessagePack binary type, and the result is set on the @ObjectData.bytes@ attribute
+*** @(OD4c3)@ A number payload is encoded as a MessagePack float64 type, and the result is set on the @ObjectData.number@ attribute
+*** @(OD4c4)@ A string payload is encoded as a MessagePack string type, and the result is set on the @ObjectData.string@ attribute
+*** @(OD4c5)@ A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, encoded as a MessagePack string type, and the result is set on the @ObjectData.string@ attribute. The @ObjectData.encoding@ attribute is then set to "json"
+** @(OD4d)@ When the JSON protocol is used:
+*** @(OD4d1)@ A boolean payload is represented as a JSON boolean and set on the @ObjectData.boolean@ attribute
+*** @(OD4d2)@ A binary payload is Base64-encoded and represented as a JSON string; the result is set on the @ObjectData.bytes@ attribute
+*** @(OD4d3)@ A number payload is represented as a JSON number and set on the @ObjectData.number@ attribute
+*** @(OD4d4)@ A string payload is represented as a JSON string and set on the @ObjectData.string@ attribute
+*** @(OD4d5)@ A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, represented as a JSON string and the result is set on the @ObjectData.string@ attribute. The @ObjectData.encoding@ attribute is then set to "json"
+* @(OD5)@ @ObjectData@ decoding:
+** @(OD5a)@ When the MessagePack protocol is used:
+*** @(OD5a1)@ The payloads in @ObjectData.boolean@, @ObjectData.bytes@, @ObjectData.number@, and @ObjectData.string@ are decoded as their corresponding MessagePack types
+*** @(OD5a2)@ If @ObjectData.encoding@ is set to "json", the @ObjectData.string@ content is decoded by parsing the string as JSON
+** @(OD5b)@ When the JSON protocol is used:
+*** @(OD5b1)@ The payloads in @ObjectData.boolean@, @ObjectData.number@, and @ObjectData.string@ are decoded as their corresponding JSON types
+*** @(OD5b2)@ The @ObjectData.bytes@ payload is Base64-decoded into a binary value
+*** @(OD5b3)@ If @ObjectData.encoding@ is set to "json", the @ObjectData.string@ content is decoded by parsing the string as JSON
 
 h4. Annotation
 
@@ -2631,7 +2663,7 @@ class ObjectData // OD*, internal
   objectId: String? // OD2a
   encoding: String? // OD2b
   boolean: Boolean? // OD2c
-  bytes: Binary? // OD2d
+  bytes: Binary? | String? // OD2d
   number: Number? // OD2e
   string: String? // OD2f
 
