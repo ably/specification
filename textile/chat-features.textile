@@ -631,7 +631,7 @@ the overhead of having everyone in presence.
 ** @(CHA-O4c)@ This specification point has been removed. It was valid until the V1 API Review.
 ** @(CHA-O4f)@ @[Testable]@ When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into "occupancy event V2":#chat-structs-occupancy-event-v2 format, with type @OccupancyEventType.Updated@, and broadcast it to subscribers.
 ** @(CHA-O4d)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
-** @(CHA-O4g)@ @[Testable]@ If an invalid occupancy event is received from the channel, or is incomplete, then an event must be omitted but the values shall be 0.
+** @(CHA-O4g)@ @[Testable]@ If an invalid occupancy event is received from the channel, or is incomplete, then an event must be emitted but the values shall be 0.
 * @(CHA-O5)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-O6)@ Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
 ** @(CHA-O6a)@ @[Testable]@ If @occupancy.enableEvents@ is set to @true@, then the client shall set the @options.params.occupancy@ channel parameter to @"metrics"@ on the underlying realtime channel per @CHA-RC3@.
