@@ -52,7 +52,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO11f11)@ Set @ObjectMessage.operation.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
 *** @(RTO11f12)@ Set @ObjectMessage.operation.initialValue@ to the JSON string created in "RTO11f5":#RTO11f5
 *** @(RTO11f13)@ Merge values from the partial @ObjectOperation@ created in "RTO11f4":#RTO11f4 into @ObjectMessage.operation@
-** @(RTO11g)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using "@RealtimeObjects.publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+** @(RTO11g)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
 *** @(RTO11g1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
 ** @(RTO11h)@ Returns a @LiveMap@ instance:
 *** @(RTO11h1)@ While waiting for the publish operation to complete in "RTO11g1":#RTO11g1, the client library may have already received the echoed @ObjectMessage@ operation, as it could arrive before the @ACK@ for the publish operation. Depending on the threading and/or asynchronous model of the client library, this could mean that the @ObjectMessage@ for the @MAP_CREATE@ operation has already been processed, and the new @LiveMap@ instance already exists in the internal @ObjectsPool@. As such, the following checks are performed to determine whether the instance already exists
@@ -82,7 +82,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO12f9)@ Set @ObjectMessage.operation.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
 *** @(RTO12f10)@ Set @ObjectMessage.operation.initialValue@ to the JSON string created in "RTO12f3":#RTO12f3
 *** @(RTO12f11)@ Merge values from the partial @ObjectOperation@ created in "RTO12f2":#RTO12f2 into @ObjectMessage.operation@
-** @(RTO12g)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using "@RealtimeObjects.publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+** @(RTO12g)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
 *** @(RTO12g1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
 ** @(RTO12h)@ Returns a @LiveCounter@ instance:
 *** @(RTO12h1)@ While waiting for the publish operation to complete in "RTO12g1":#RTO12g1, the client library may have already received the echoed @ObjectMessage@ operation, as it could arrive before the @ACK@ for the publish operation. Depending on the threading and/or asynchronous model of the client library, this could mean that the @ObjectMessage@ for the @COUNTER_CREATE@ operation has already been processed, and the new @LiveCounter@ instance already exists in the internal @ObjectsPool@. As such, the following checks are performed to determine whether the instance already exists
@@ -185,7 +185,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO14b1)@ Generate a SHA-256 digest from a UTF-8 encoded string in the format @[initialValue]:[nonce]@
 *** @(RTO14b2)@ Base64URL-encode the generated digest. This must follow the URL-safe Base64 encoding as described in "RFC 4648 s.5":https://datatracker.ietf.org/doc/html/rfc4648#section-5, not standard Base64 encoding
 ** @(RTO14c)@ Return an Object ID in the format @[type]:[hash]&#64;[timestamp]@, where @timestamp@ is represented as milliseconds since the epoch
-* @(RTO15)@ Internal @RealtimeObjects.publish@ function:
+* @(RTO15)@ Internal @RealtimeObjects#publish@ function:
 ** @(RTO15a)@ Expects the following arguments:
 *** @(RTO15a1)@ @ObjectMessage[]@ - an array of @ObjectMessage@ to be published on a channel
 ** @(RTO15b)@ Must adhere to the same connection and channel state conditions as message publishing, see "RTL6c":../features#RTL6c
@@ -276,8 +276,23 @@ h3(#livecounter). LiveCounter
 ** @(RTLC5a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
 ** @(RTLC5b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTLC5c)@ Returns the current @data@ value
-* @(RTLC12)@ TODO: @LiveCounter#increment@ function:
-* @(RTLC13)@ TODO: @LiveCounter#decrement@ function:
+* @(RTLC12)@ @LiveCounter#increment@ function:
+** @(RTLC12a)@ Expects the following arguments:
+*** @(RTLC12a1)@ @amount@ @Number@ - the amount by which to increment the counter value
+** @(RTLC12b)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLC12c)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTLC12d)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
+** @(RTLC12e)@ Creates an @ObjectMessage@ for a @COUNTER_INC@ action in the following way:
+*** @(RTLC12e1)@ If @amount@ is null, not of type @Number@, not a finite number, or omitted, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that @amount@ must be a valid number
+*** @(RTLC12e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.COUNTER_INC@
+*** @(RTLC12e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveCounter@
+*** @(RTLC12e4)@ Set @ObjectMessage.operation.counterOp.amount@ to the provided @amount@ value
+** @(RTLC12f)@ Publishes the @ObjectMessage@ from "RTLC12e":#RTLC12e using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+* @(RTLC13)@ @LiveCounter#decrement@ function:
+** @(RTLC13a)@ Expects the following arguments:
+*** @(RTLC13a1)@ @amount@ @Number@ - the amount by which to decrement the counter value
+** @(RTLC13b)@ This is an alias for calling "@LiveCounter#increment@":#RTLC12 with a negative @amount@ and must be implemented with the same behavior
+** @(RTLC13c)@ If the client library chooses to delegate to @LiveCounter#increment@ with a negated @amount@, then in languages where negating a non-number may result in implicit type coercion, the @amount@ argument must first be validated as described in "RTLC12e1":#RTLC12e1 before proceeding
 * @(RTLC6)@ @LiveCounter@'s internal @data@ can be replaced with the provided @ObjectState@ in the following way:
 ** @(RTLC6a)@ Replace the private @siteTimeserials@ of the @LiveCounter@ with the value from @ObjectState.siteTimeserials@
 ** @(RTLC6e)@ If @LiveCounter.isTombstone@ is @true@, finish processing the @ObjectState@
@@ -371,8 +386,38 @@ h3(#livemap). LiveMap
 * @(RTLM13)@ @LiveMap#values@:
 ** @(RTLM13a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to @Map.values()@ for the native @Map@ class
 ** @(RTLM13b)@ The implementation is identical to @LiveMap#entries@, except that it returns only the values from the internal @data@ map
-* @(RTLM20)@ TODO: @LiveMap#set@ function:
-* @(RTLM21)@ TODO: @LiveMap#remove@ function:
+* @(RTLM20)@ @LiveMap#set@ function:
+** @(RTLM20a)@ Expects the following arguments:
+*** @(RTLM20a1)@ @key@ @String@ - the key to set the value for
+*** @(RTLM20a2)@ @value@ @Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap@ - the value to assign to the key
+** @(RTLM20b)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLM20c)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTLM20d)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
+** @(RTLM20e)@ Creates an @ObjectMessage@ for a @MAP_SET@ action in the following way:
+*** @(RTLM20e1)@ Validates the provided @key@ and @value@ in a similar way as described in "RTO11f2":#RTO11f2 and "RTO11f3":#RTO11f3
+*** @(RTLM20e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_SET@
+*** @(RTLM20e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
+*** @(RTLM20e4)@ Set @ObjectMessage.operation.mapOp.key@ to the provided @key@ value
+*** @(RTLM20e5)@ Set @ObjectMessage.operation.mapOp.data@ depending on the type of the provided @value@:
+**** @(RTLM20e5a)@ If the @value@ is of type @LiveCounter@ or @LiveMap@, set @ObjectMessage.operation.mapOp.data.objectId@ to the @objectId@ of that object
+**** @(RTLM20e5b)@ If the @value@ is of type @JsonArray@ or @JsonObject@, set @ObjectMessage.operation.mapOp.data.json@ to that value
+**** @(RTLM20e5c)@ If the @value@ is of type @String@, set @ObjectMessage.operation.mapOp.data.string@ to that value
+**** @(RTLM20e5d)@ If the @value@ is of type @Number@, set @ObjectMessage.operation.mapOp.data.number@ to that value
+**** @(RTLM20e5e)@ If the @value@ is of type @Boolean@, set @ObjectMessage.operation.mapOp.data.boolean@ to that value
+**** @(RTLM20e5f)@ If the @value@ is of type @Binary@, set @ObjectMessage.operation.mapOp.data.bytes@ to that value
+** @(RTLM20f)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+* @(RTLM21)@ @LiveMap#remove@ function:
+** @(RTLM21a)@ Expects the following arguments:
+*** @(RTLM21a1)@ @key@ @String@ - the key to remove the value for
+** @(RTLM21b)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLM21c)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTLM21d)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
+** @(RTLM21e)@ Creates an @ObjectMessage@ for a @MAP_REMOVE@ action in the following way:
+*** @(RTLM21e1)@ Validates the provided @key@ in a similar way as described in "RTO11f2":#RTO11f2
+*** @(RTLM21e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_REMOVE@
+*** @(RTLM21e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
+*** @(RTLM21e4)@ Set @ObjectMessage.operation.mapOp.key@ to the provided @key@ value
+** @(RTLM21f)@ Publishes the @ObjectMessage@ from "RTLM21e":#RTLM21e using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
 * @(RTLM14)@ An @ObjectsMapEntry@ in the internal @data@ map can be checked for being tombstoned using the convenience method:
 ** @(RTLM14a)@ The method returns true if @ObjectsMapEntry.tombstone@ is true
 ** @(RTLM14c)@ The method returns true if @ObjectsMapEntry.data.objectId@ exists, there is an object in the local @ObjectsPool@ with that id, and that @LiveObject.isTombstone@ property is @true@
@@ -507,8 +552,8 @@ interface LiveObjectUpdate: // RTLO4b4
 
 class LiveCounter extends LiveObject: // RTLC*, RTLC1
   value() -> Number // RTLC5
-  increment(Number) => io // RTLC12
-  decrement(Number) => io // RTLC13
+  increment(Number amount) => io // RTLC12
+  decrement(Number amount) => io // RTLC13
 
 interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a
   update: { amount: Number } // RTLC11b, RTLC11b1
@@ -519,8 +564,8 @@ class LiveMap extends LiveObject: // RTLM*, RTLM1
   entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
   keys() -> String[] // RTLM12
   values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13
-  set(String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) => io // RTLM20
-  remove(String) => io // RTLM21
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTLM20
+  remove(String key) => io // RTLM21
 
 interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a
   update: Dict<String, 'updated' | 'removed'> // RTLM18b
