@@ -804,10 +804,16 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL18a)@ Log error with code 40018
 ** @(RTL18b)@ Discard the message
 ** @(RTL18c)@ Send an @ATTACH@ @ProtocolMessage@ with the @channelSerial@ set to the previous message to the message for which "vcdiff" decoding failed to the server, transitioning the channel state to @ATTACHING@, and waiting for a confirmation @ATTACHED@, as per @RTL4c@ and @RTL4f@. @ChannelStateChange.reason@ should be set to @ErrorInfo@ object with with code 40018.
-* @(RTL19)@ The data payload of the last message on each channel must be stored at all times since it will be needed to decode any subsequent message that has a "vcdiff" encoding step. The stored value is the "base payload" of the most recent message; this is the @data@ member of the message, in string or binary form, once all application-level encoding steps have been applied. The base payload is derived initially by processing a non-delta message; the processing and bookkeeping rules are as follows:
-** @(RTL19a)@ When processing any message (whether a delta or a full message), if the message @encoding@ string ends in @base64@, the message @data@ should be base64-decoded (and the @encoding@ string modified accordingly per "RSL6":#RSL6).
-** @(RTL19b)@ In the case of a non-delta message, the resulting @data@ value is stored as the base payload.
-** @(RTL19c)@ In the case of a delta message with a @vcdiff@ @encoding@ step, the @vcdiff@ decoder must be used to decode the base payload of the of delta message, applying that delta to the stored base payload. The direct result of that vcdiff delta application, before performing any further decoding steps, is stored as the updated base payload.
+* @(RTL19)@ The _base payload_ of the last message received on each channel must be stored at all times since it will be needed to decode any subsequent message that has a "vcdiff" encoding step. The base payload is a string or binary value derived from the @data@ property of the message as received in the @ProtocolMessage@ (that is, before performing any further decoding). The rules for deriving the base payload from this @data@ are as follows:
+** @(RTL19d)@ For a non-delta message (that is, one without a @vcdiff@ step in its @encoding@):
+*** @(RTL19d1)@ If the message's final @encoding@ step is @base64@, then the base payload is the result of Base64-decoding the message's @data@.
+*** @(RTL19d2)@ Else, the base payload is the message's @data@.
+** @(RTL19e)@ For a delta message (that is, one with a @vcdiff@ step in its @encoding@):
+*** @(RTL19e1)@ If the message's final @encoding@ step is @base64@, then the base payload is the result of Base64-decoding the message's @data@ to obtain a delta, and then using the @vcdiff@ decoder to apply this delta to the stored base payload.
+*** @(RTL19e2)@ Else, the message's @data@ is a delta, and the base payload is the result of using the @vcdiff@ decoder to apply this delta to the stored base payload.
+** @(RTL19a)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
+** @(RTL19b)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
+** @(RTL19c)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
 * @(RTL20)@ The @id@ of the last received message on each channel must be stored along with the base payload. When processing a delta message (i.e. one whose @encoding@ contains @vcdiff@ step) the stored last message @id@ must be compared against the delta reference @id@, indicated in the @Message.extras.delta.from@ field of the delta message. If the delta reference @id@ of the received delta message does not equal the stored @id@ corresponding to the base payload, the message decoding must fail. The recovery procedure from "RTL18":#RTL18 must be executed.
 * @(RTL21)@ The messages in the @messages@ array of a @ProtocolMessage@ should each be decoded in ascending order of their index in the array.
 * @(RTL22)@ Methods must be provided for attaching and removing a listener which only executes when the message matches a set of criteria.
