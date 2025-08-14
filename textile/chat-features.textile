@@ -378,7 +378,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m4)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
 *** @(CHA-M4m5)@ If an event is to be ignored (i.e. because the @action@ is unknown), the library must log the fact at @INFO@ level.
 ** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
-*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version, clientId) shall be empty strings.
+*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, clientId) shall be empty strings. The @version@ field specification has been superseded by @CHA-M4k5@.
 *** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
 *** @(CHA-M4k3)@ This specification point has been removed.
 *** @(CHA-M4k4)@ This specification point has been removed.
@@ -1119,7 +1119,7 @@ h4(#chat-structs-message-v1). Messages V1 @(deprecated)@
 
 @(deprecated)@ Determining the global order of messages may be achieved by comparing the timeserials. See @CHA-M2@ for more information.
 
-h4(#chat-structs-message-v2). Messages V2
+h4(#chat-structs-message-v2). Messages V2 @(deprecated)@
 
 <pre>
   {
@@ -1155,17 +1155,53 @@ h4(#chat-structs-message-v2). Messages V2
   }
 </pre>
 
+h4(#chat-structs-message-v4). Messages V4
+
+<pre>
+  {
+    "serial": "01726585978590-001@abcdefghij:001",
+    "clientId": "who-sent-the-message",
+    "text": "my-message",
+    "timestamp": DateTime(),
+    "metadata": {
+      "foo": {
+        "bar": 1
+      }
+    },
+    "headers": {
+      "baz": "qux"
+    }
+    "action": "message.created",
+    "version": {
+      "serial": "01726585978590-001@abcdefghij:001",
+      "timestamp": DateTime(),
+      "clientId": "who-performed-the-action",
+      "description": "why-the-action-was-performed",
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      }
+    },
+    "reactions": {
+      "unique": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userThree"]}},
+      "distinct": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userOne"]}},
+      "multiple": {"like": {"total": 5, "clientIds": {"userOne": 3, "userTwo": 2}}, "love": {"total": 10, "clientIds": {"userOne": 10}}},
+    }
+  }
+</pre>
+
 There are getters provided in the @Message@ object to provide easy access to updated/deleted information:
 * @isUpdated@ returns @true@ if the message is updated
 * @isDeleted@ returns @true@ if the message is deleted
-* @updatedBy@ returns the clientId from @operation.clientId@ if the message is updated, @undefined@ otherwise
-* @deletedBy@ returns the clientId from @operation.clientId@ if the message is deleted, @undefined@ otherwise
-* @updatedAt@ returns the @timestamp@ from the operation if the message is updated, @undefined@ otherwise
-* @deletedAt@ returns the @timestamp@ from the operation if the message is deleted, @undefined@ otherwise
+* @updatedBy@ returns the clientId from @version.clientId@ if the message is updated, @undefined@ otherwise
+* @deletedBy@ returns the clientId from @version.clientId@ if the message is deleted, @undefined@ otherwise
+* @updatedAt@ returns the @timestamp@ from the version if the message is updated, @undefined@ otherwise
+* @deletedAt@ returns the @timestamp@ from the version if the message is deleted, @undefined@ otherwise
 
 Determining the global order of messages may be achieved by lexicographically comparing the serials. See @CHA-M2@ for more information.
 
-Determining the global order of message versions may be achieved by lexicographically comparing the @version@. See @CHA-M10@ for more information.
+Determining the global order of message versions may be achieved by lexicographically comparing the @version.serial@. See @CHA-M10@ for more information.
 
 When keeping a @Message@ updated, use the @Message.with(event)@ method to apply events to ensure correctness. The @with@ method returnes message instances with the event applied to them. If the event is not applicable due to being for an older version of the message, the method will return the message unchanged. If the event is applicable, a new instance will be returned with the event applied. @Message.with()@ correctly handles message reactions. See @CHA-M11@ for more information.
 
