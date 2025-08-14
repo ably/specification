@@ -660,12 +660,12 @@ h3(#rest-general). General
 
 h3(#rest-sending-messages). Sending Messages
 
-h4(#rest-sending-messages-request-v3). Request V3
+h4(#rest-sending-messages-request-v4). Request V4
 
-Below is the full REST payload format for the V3 endpoint. The @metadata@ and @headers@ keys are optional.
+Below is the full REST payload format for the V4 endpoint. The @metadata@ and @headers@ keys are optional.
 
 <pre>
-  POST /chat/v3/rooms/<roomName>/messages
+  POST /chat/v4/rooms/<roomName>/messages
   {
     "text": "the message text",
     "metadata": {
@@ -679,7 +679,7 @@ Below is the full REST payload format for the V3 endpoint. The @metadata@ and @h
   }
 </pre>
 
-h4(#rest-sending-messages-response-v3). Response V3
+h4(#rest-sending-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 A successful request shall result in status code @201 Created@.
 
@@ -689,6 +689,19 @@ The response body is as follows.
   {
     "serial": "01726585978590-001@abcdefghij:001",
     "createdAt": 1726232498871
+  }
+</pre>
+
+h4(#rest-sending-messages-response-v4). Response V4
+
+A successful request shall result in status code @201 Created@.
+
+The response body is as follows.
+
+<pre>
+  {
+    "serial": "01726585978590-001@abcdefghij:001",
+    "timestamp": 1726232498871
   }
 </pre>
 
@@ -730,7 +743,7 @@ h4(#rest-updating-messages-request). Request
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
 
 <pre>
-  PUT /chat/v3/rooms/<roomName>/messages/<serial>
+  PUT /chat/v4/rooms/<roomName>/messages/<serial>
   {
     "message": {
       "text": "the new message text",
@@ -750,7 +763,7 @@ Below is the full REST payload format for the endpoint. The @description@, @head
   }
 </pre>
 
-h4(#rest-updating-messages-request). Response
+h4(#rest-updating-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 A successful request shall result in status code @200 Ok@.
 
@@ -763,6 +776,18 @@ The response body is as follows.
     "message": {
       // A full message object
     }
+  }
+</pre>
+
+h4(#rest-updating-messages-response-v4). Response V4
+
+A successful request shall result in status code @200 Ok@.
+
+The response body is as follows.
+
+<pre>
+  {
+      // A full message object
   }
 </pre>
 
@@ -810,7 +835,7 @@ h4(#rest-deleting-messages-request). Request
 Below is the full REST payload format for the endpoint.
 
 <pre>
-  POST /chat/v3/rooms/<roomName>/messages/<serial>/delete
+  POST /chat/v4/rooms/<roomName>/messages/<serial>/delete
   {
     "description": "why-the-action-was-performed"
     "metadata": {
@@ -819,7 +844,7 @@ Below is the full REST payload format for the endpoint.
   }
 </pre>
 
-h4(#rest-deleting-messages-request). Response
+h4(#rest-deleting-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 A successful request shall result in status code @200 Ok@.
 
@@ -832,6 +857,18 @@ The response body is as follows.
     "message": {
       // A full message object
     }
+  }
+</pre>
+
+h4(#rest-deleting-messages-response-v4). Response V4
+
+A successful request shall result in status code @200 Ok@.
+
+The response body is as follows.
+
+<pre>
+  {
+    // A full message object
   }
 </pre>
 
@@ -890,24 +927,28 @@ h3(#rest-fetching-messages-history). Fetching Message History
 h4(#rest-fetching-messages-request). Request V3
 
 <pre>
-  GET /chat/v3/rooms/<roomName>/messages
+  GET /chat/v4/rooms/<roomName>/messages
 </pre>
 
 The method accepts query parameters identical to the standard Ably REST API.
 
-h4(#rest-fetching-messages-response). Response V3
+h4(#rest-fetching-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 An array of V2 "@Message@ structs":#chat-structs-message-v2
+
+h4(#rest-fetching-messages-response-v4). Response V4
+
+An array of V4 "@Message@ structs":#chat-structs-message-v4
 
 
 h3(#rest-sending-message-reactions). Sending message reactions
 
-h4(#rest-sending-messages-reactions-request-v3). Request V3
+h4(#rest-sending-messages-reactions-request-v4). Request V3
 
 Below is the full REST payload format for the V3 endpoint. The @count@ field is optional, defaults to 1, and it is only accepted for reactions of type @multiple@.
 
 <pre>
-  POST /chat/v3/rooms/<roomId>/messages/<serial>/reactions
+  POST /chat/v4/rooms/<roomId>/messages/<serial>/reactions
   {
     "type": "multiple",
     "name": "🔥",
@@ -947,12 +988,12 @@ A message summary event is also broadcast to the channel after adding or removin
 
 h3(#rest-deleting-message-reactions). Deleting message reactions
 
-h4(#rest-deleting-messages-reactions-request-v3). Request V3
+h4(#rest-deleting-messages-reactions-request-v4). Request V3
 
 Below is the full REST payload format for the V3 endpoint. The @name@ param is ignored for reactions of type @unique@ but it is required for all other reaction types.
 
 <pre> 
-  DELETE /chat/v3/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
+  DELETE /chat/v4/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
 </pre>
 
 h4(#rest-sending-messages-response-v3). Response V3
@@ -1056,7 +1097,7 @@ h3(#rest-occupancy). Occupancy
 h4(#rest-occupancy-request). Request
 
 <pre>
-  GET /chat/v3/rooms/<roomName>/occupancy
+  GET /chat/v4/rooms/<roomName>/occupancy
 </pre>
 
 h4(#rest-occupancy-response). Response
