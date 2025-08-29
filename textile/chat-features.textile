@@ -866,6 +866,18 @@ h4(#rest-deleting-messages-request). Corresponding Realtime Event
   }
 </pre>
 
+h3(#rest-fetching-single-message). Fetching a Single Message
+
+h4(#rest-fetching-single-message-request). Request V3
+
+<pre>
+  GET /chat/v3/rooms/<roomName>/messages/<serial>
+</pre>
+
+h4(#rest-fetching-single-message-response). Response V3
+
+A single V3 "@Message@ struct":#chat-structs-message-v2 or status 404 if not found.
+
 h3(#rest-fetching-messages). Fetching Message History
 
 h4(#rest-fetching-messages-request). Request V3
