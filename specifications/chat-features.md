@@ -881,6 +881,16 @@ The response body is as follows.
         }
       }
 
+### Fetching a Single Message {#rest-fetching-single-message}
+
+#### Request V3 {#rest-fetching-single-message-request}
+
+      GET /chat/v3/rooms/<roomName>/messages/<serial>
+
+#### Response V3 {#rest-fetching-single-message-response}
+
+A single V3 [`Message` struct](#chat-structs-message-v2) or status 404 if not found.
+
 ### Fetching Message History {#rest-fetching-messages}
 
 #### Request V3 {#rest-fetching-messages-request}
