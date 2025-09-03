@@ -44,7 +44,7 @@ h3(#realtime-objects). RealtimeObjects
 ****** @(RTO11f4c1f)@ If the value is of type @Binary@, set @ObjectsMapEntry.data.bytes@ to that value
 ***** @(RTO11f4c2)@ Add a new entry to @ObjectOperation.map.entries@ with the current key and the created @ObjectsMapEntry@ as the value
 *** @(RTO11f5)@ Create an initial value JSON string as described in "RTO13":#RTO13, passing in the partial @ObjectOperation@ from "RTO11f4":#RTO11f4
-*** @(RTO11f6)@ Create a unique nonce as a random string
+*** @(RTO11f6)@ Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
 *** @(RTO11f7)@ Get the current server time as described in "RTO16":#RTO16
 *** @(RTO11f8)@ Create an @objectId@ for the new @LiveMap@ object as described in "RTO14":#RTO14, passing in @map@ string as the @type@, the initial value JSON string from "RTO11f5":#RTO11f5, the nonce from "RTO11f6":#RTO11f6, and the server time from "RTO11f7":#RTO11f7
 *** @(RTO11f9)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_CREATE@
@@ -74,7 +74,7 @@ h3(#realtime-objects). RealtimeObjects
 **** @(RTO12f2a)@ Set @ObjectOperation.counter.count@ to 0 if @count@ is omitted
 **** @(RTO12f2b)@ Otherwise, set @ObjectOperation.counter.count@ to the provided @count@ value
 *** @(RTO12f3)@ Create an initial value JSON string as described in "RTO13":#RTO13, passing in the partial @ObjectOperation@ from "RTO12f2":#RTO12f2
-*** @(RTO12f4)@ Create a unique nonce as a random string
+*** @(RTO12f4)@ Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
 *** @(RTO12f5)@ Get the current server time as described in "RTO16":#RTO16
 *** @(RTO12f6)@ Create an @objectId@ for the new @LiveCounter@ object as described in "RTO14":#RTO14, passing in @counter@ string as the @type@, the initial value JSON string from "RTO12f3":#RTO12f3, the nonce from "RTO12f4":#RTO12f4, and the server time from "RTO12f5":#RTO12f5
 *** @(RTO12f7)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.COUNTER_CREATE@
