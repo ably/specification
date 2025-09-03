@@ -1515,7 +1515,7 @@ h4. ObjectMessage
 ** @(OM2f)@ @operation@ @ObjectOperation@ object. Mutually exclusive with the @object@ field. This field is only set on object messages if the @action@ field of the @ProtocolMessage@ encapsulating it is @OBJECT@
 ** @(OM2g)@ @object@ @ObjectState@ object. Mutually exclusive with the @operation@ field. This field is only set on object messages if the @action@ field of the @ProtocolMessage@ encapsulating it is @OBJECT_SYNC@
 ** @(OM2h)@ @serial@ string - an opaque string that uniquely identifies this object message
-** @(OM2j)@ @serialTimestamp@ number - a timestamp from the @serial@ field
+** @(OM2j)@ @serialTimestamp@ Time - a timestamp from the @serial@ field
 ** @(OM2i)@ @siteCode@ string - an opaque string used as a key to update the map of @serial@ values on an object
 * @(OM3)@ The size of the @ObjectMessage@ for "TO3l8":#TO3l8 is calculated as follows:
 ** @(OM3a)@ The size is the sum of the sizes of the @clientId@, @operation@, @object@, and @extras@ properties
@@ -1622,7 +1622,7 @@ h4. ObjectsMapEntry
 * @(OME2)@ The attributes available in an @ObjectsMapEntry@ are:
 ** @(OME2a)@ @tombstone@ boolean - indicates whether the map entry has been removed
 ** @(OME2b)@ @timeserial@ string - the @serial@#OM2h value of the last operation that was applied to the map entry
-** @(OME2d)@ @serialTimestamp@ number - a timestamp from the @timeserial@ field. It is only present if @tombstone@ is @true@
+** @(OME2d)@ @serialTimestamp@ Time - a timestamp from the @timeserial@ field. It is only present if @tombstone@ is @true@
 ** @(OME2c)@ @data@ @ObjectData@ object - the data that represents the value of the map entry.
 * @(OME3)@ The size of the @ObjectsMapEntry@ is calculated as follows:
 ** @(OME3a)@ It is equal to the size of the @data@ property
@@ -2622,7 +2622,7 @@ class ObjectMessage // OM*, internal
   operation: ObjectOperation? // OM2f
   object: ObjectState? // OM2g
   serial: String // OM2h
-  serialTimestamp: Number // OM2j
+  serialTimestamp: Time? // OM2j
   siteCode: String // OM2i
 
 class ObjectOperation // OOP*, internal
@@ -2661,7 +2661,7 @@ class ObjectsCounter // OCN*, internal
 class ObjectsMapEntry // OME*, internal
   tombstone: Boolean? // OME2a
   timeserial: String? // OME2b
-  serialTimestamp: Number? // OME2d
+  serialTimestamp: Time? // OME2d
   data: ObjectData? // OME2c
 
 class ObjectData // OD*, internal

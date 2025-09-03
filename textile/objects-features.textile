@@ -113,7 +113,7 @@ h3(#liveobject). LiveObject
 *** @(RTLO3c1)@ Set to @false@ when the @LiveObject@ is initialized
 ** @(RTLO3d)@ protected @isTombstone@ boolean - a flag indicating whether this object has been tombstoned, i.e. marked for deletion from the objects pool
 *** @(RTLO3d1)@ Set to @false@ when the @LiveObject@ is initialized
-** @(RTLO3e)@ protected @tombstonedAt@ number - a timestamp indicating when this object was tombstoned
+** @(RTLO3e)@ protected @tombstonedAt@ (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and is non-null if and only if @isTombstone@ is @true@
 *** @(RTLO3e1)@ Set to undefined/null when the @LiveObject@ is initialized
 * @(RTLO4)@ @LiveObject@ methods:
 ** @(RTLO4b)@ public @subscribe@ - subscribes a user to data updates on this @LiveObject@ instance
@@ -148,7 +148,7 @@ h3(#liveobject). LiveObject
 *** @(RTLO4a4)@ Get the @siteSerial@ value stored for this @LiveObject@ in the @siteTimeserials@ map using the key @ObjectMessage.siteCode@
 *** @(RTLO4a5)@ If the @siteSerial@ for this @LiveObject@ is null or an empty string, return true
 *** @(RTLO4a6)@ If the @siteSerial@ for this @LiveObject@ is not an empty string, return true if @ObjectMessage.serial@ is greater than @siteSerial@ when compared lexicographically
-** @(RTLO4e)@ protected @tombstone@ - a convenience method used to tombstone this @LiveObject@. The realtime system reserves the right to tombstone an object (i.e. mark it for deletion from the objects pool) by publishing an @OBJECT_DELETE@ operation at any time if the object is orphaned (not a descendant of the root object) or remains uninitialized (no @CREATE@ operation has been received) for an extended period. This method describes the steps the client library must take when it needs to tombstone an object. Eventually, tombstoned objects will be garbage collected following the procedure described in "RTO10":#RTO10
+** @(RTLO4e)@ protected @tombstone@ - a convenience method used to tombstone this @LiveObject@. The realtime system reserves the right to tombstone an object (i.e. mark it for deletion from the objects pool) by publishing an @OBJECT_DELETE@ operation at any time if the object is orphaned (not a descendant of the root object) or remains uninitialized (no @*_CREATE@ operation has been received) for an extended period. Only the realtime system may publish an @OBJECT_DELETE@ operation; clients must never send it. This method describes the steps the client library must take when it needs to tombstone an object locally. Eventually, tombstoned objects will be garbage collected following the procedure described in "RTO10":#RTO10
 *** @(RTLO4e1)@ Expects the following arguments:
 **** @(RTLO4e1a)@ @ObjectMessage@
 *** @(RTLO4e2)@ Set @LiveObject.isTombstone@ to @true@
@@ -187,19 +187,19 @@ h3(#livecounter). LiveCounter
 ** @(RTLC6d)@ If @ObjectState.createOp@ is present, merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectState.createOp@ instance
 *** @(RTLC6d1)@ This clause has been replaced by "RTLC10a":#RTLC10a
 *** @(RTLC6d2)@ This clause has been replaced by "RTLC10b":#RTLC10b
-* @(RTLC7)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveCounter@ in the following way:
+* @(RTLC7)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveCounter@ by performing the following actions in order:
 ** @(RTLC7a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveCounter@. This @ObjectMessage@ represents the operation to be applied to this @LiveCounter@
-** @(RTLC7b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any action
+** @(RTLC7b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action
 ** @(RTLC7c)@ Set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
-** @(RTLC7e)@ If @LiveCounter.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any action. No data update event is emitted
+** @(RTLC7e)@ If @LiveCounter.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any further action. No data update event is emitted
 ** @(RTLC7d)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 *** @(RTLC7d1)@ If @ObjectMessage.operation.action@ is set to @COUNTER_CREATE@, apply the operation as described in "RTLC8":#RTLC8, passing in @ObjectMessage.operation@
 **** @(RTLC7d1a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
 *** @(RTLC7d2)@ If @ObjectMessage.operation.action@ is set to @COUNTER_INC@, apply the operation as described in "RTLC9":#RTLC9, passing in @ObjectMessage.operation.counterOp@
 **** @(RTLC7d2a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
 *** @(RTLC7d4)@ If @ObjectMessage.operation.action@ is set to @OBJECT_DELETE@, apply the operation as described in "RTLO5":#RTLO5, passing in @ObjectMessage@
-**** @(RTLC7d4a)@ Emit the @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to the negative @data@ value this @LiveCounter@ had before applying the @OBJECT_DELETE@ operation
-*** @(RTLC7d3)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action. No data update event is emitted
+**** @(RTLC7d4a)@ Emit a @LiveCounterUpdate@ object after applying the @OBJECT_DELETE@ operation, with @LiveCounterUpdate.update.amount@ set to the negated value that this @LiveCounter@ held before the operation was applied
+*** @(RTLC7d3)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any further action. No data update event is emitted
 * @(RTLC8)@ A @COUNTER_CREATE@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC8a)@ Expects the following arguments:
 *** @(RTLC8a1)@ @ObjectOperation@
@@ -226,7 +226,7 @@ h3(#livemap). LiveMap
 * @(RTLM2)@ Represents the map object type for Object IDs of type @map@
 * @(RTLM3)@ Holds a @Dict<String, ObjectsMapEntry>@ as a private @data@ map
 ** @(RTLM3a)@ @ObjectsMapEntry@ entries in a @LiveMap@ have the following attributes in addition to those defined in "OME2":../features#OME2:
-*** @(RTLM3a1)@ @tombstonedAt@ number - a timestamp indicating when this map entry was tombstoned
+*** @(RTLM3a1)@ @tombstonedAt@ (optional) Time - a timestamp indicating when this map entry was tombstoned. This property is nullable, and is non-null if and only if the corresponding @ObjectsMapEntry.tombstone@ is @true@
 * @(RTLM4)@ The zero-value @LiveMap@ is a @LiveMap@ with @data@ set to an empty map
 * @(RTLM18)@ Data updates for a @LiveMap@ are emitted using the @LiveMapUpdate@ object:
 ** @(RTLM18a)@ @LiveMapUpdate@ extends @LiveObjectUpdate@
@@ -290,11 +290,11 @@ h3(#livemap). LiveMap
 **** @(RTLM6d1a)@ This clause has been replaced by "RTLM17a1":#RTLM17a1
 **** @(RTLM6d1b)@ This clause has been replaced by "RTLM17a2":#RTLM17a2
 *** @(RTLM6d2)@ This clause has been replaced by "RTLM17b":#RTLM17b
-* @(RTLM15)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveMap@ in the following way:
+* @(RTLM15)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveMap@ by performing the following actions in order:
 ** @(RTLM15a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveMap@. This @ObjectMessage@ represents the operation to be applied to this @LiveMap@
-** @(RTLM15b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any action
+** @(RTLM15b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action
 ** @(RTLM15c)@ Set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
-** @(RTLM15e)@ If @LiveMap.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any action. No data update event is emitted
+** @(RTLM15e)@ If @LiveMap.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any further action. No data update event is emitted
 ** @(RTLM15d)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 *** @(RTLM15d1)@ If @ObjectMessage.operation.action@ is set to @MAP_CREATE@, apply the operation as described in "RTLM16":#RTLM16, passing in @ObjectMessage.operation@
 **** @(RTLM15d1a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
@@ -304,7 +304,7 @@ h3(#livemap). LiveMap
 **** @(RTLM15d3a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
 *** @(RTLM15d5)@ If @ObjectMessage.operation.action@ is set to @OBJECT_DELETE@, apply the operation as described in "RTLO5":#RTLO5, passing in @ObjectMessage@
 **** @(RTLM15d5a)@ Emit a @LiveMapUpdate@ object with @LiveMapUpdate.update@ consisting of entries for the keys that were removed as a result of applying the @OBJECT_DELETE@ operation, each set to @removed@
-*** @(RTLM15d4)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action. No data update event is emitted
+*** @(RTLM15d4)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any further action. No data update event is emitted
 * @(RTLM16)@ A @MAP_CREATE@ operation can be applied to a @LiveMap@ in the following way:
 ** @(RTLM16a)@ Expects the following argument:
 *** @(RTLM16a1)@ @ObjectOperation@
@@ -336,7 +336,7 @@ h3(#livemap). LiveMap
 ** @(RTLM8c)@ Expects the following arguments:
 *** @(RTLM8c1)@ @ObjectsMapOp@
 *** @(RTLM8c2)@ @serial@ string - operation's serial value
-*** @(RTLM8c3)@ @serialTimestamp@ string - operation's serial timestamp value
+*** @(RTLM8c3)@ @serialTimestamp@ Time - operation's serial timestamp value
 ** @(RTLM8d)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
 ** @(RTLM8a)@ If an @ObjectsMapEntry@ exists in the private @data@ for the specified key:
 *** @(RTLM8a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action. Return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
@@ -384,7 +384,7 @@ class LiveObject: // RTLO*
   siteTimeserials: Dict<String, String> // RTLO3b, internal
   createOperationIsMerged: Boolean // RTLO3c, internal
   isTombstone: Boolean // RTLO3d, internal
-  tombstonedAt: Number // RTLO3e, internal
+  tombstonedAt: Time? // RTLO3e, internal
   canApplyOperation(ObjectMessage) -> Boolean // RTLO4a, internal
   tombstone(ObjectMessage) // RTLO4e, internal
   subscribe((LiveObjectUpdate) ->) -> LiveObjectSubscription // RTLO4b
