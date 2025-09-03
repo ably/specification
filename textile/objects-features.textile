@@ -136,8 +136,8 @@ h3(#livecounter). LiveCounter
 * @(RTLC8)@ A @COUNTER_CREATE@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC8a)@ Expects the following arguments:
 *** @(RTLC8a1)@ @ObjectOperation@
-** @(RTLC8b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @COUNTER_CREATE@ operation has already been applied to this @LiveCounter@, and discard the operation without taking any action
-** @(RTLC8c)@ Merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectOperation@ instance
+** @(RTLC8b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @COUNTER_CREATE@ operation has already been applied to this @LiveCounter@, and discard the operation without taking any further action
+** @(RTLC8c)@ Otherwise merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectOperation@ instance
 * @(RTLC9)@ A @COUNTER_INC@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC9a)@ Expects the following arguments:
 *** @(RTLC9a1)@ @ObjectsCounterOp@
@@ -212,9 +212,9 @@ h3(#livemap). LiveMap
 * @(RTLM16)@ A @MAP_CREATE@ operation can be applied to a @LiveMap@ in the following way:
 ** @(RTLM16a)@ Expects the following argument:
 *** @(RTLM16a1)@ @ObjectOperation@
-** @(RTLM16b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @MAP_CREATE@ operation has already been applied to this @LiveMap@, and discard the operation without taking any action
-** @(RTLM16c)@ If the private @semantics@ field does not match @ObjectOperation.map.semantics@, log a warning that the operation cannot be applied due to mismatched semantics, and discard the operation without taking any action
-** @(RTLM16d)@ Merge the initial value into the @LiveMap@ as described in "RTLM17":#RTLM17, passing in the @ObjectOperation@ instance
+** @(RTLM16b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @MAP_CREATE@ operation has already been applied to this @LiveMap@, and discard the operation without taking any further action
+** @(RTLM16c)@ If the private @semantics@ field does not match @ObjectOperation.map.semantics@, log a warning that the operation cannot be applied due to mismatched semantics, and discard the operation without taking any further action
+** @(RTLM16d)@ Otherwise merge the initial value into the @LiveMap@ as described in "RTLM17":#RTLM17, passing in the @ObjectOperation@ instance
 * @(RTLM7)@ A @MAP_SET@ operation for a key can be applied to a @LiveMap@ in the following way:
 ** @(RTLM7d)@ Expects the following arguments:
 *** @(RTLM7d1)@ @ObjectsMapOp@
