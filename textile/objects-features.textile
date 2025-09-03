@@ -92,9 +92,9 @@ h3(#realtime-objects). RealtimeObjects
 * @(RTO10)@ The client library must have a process in place to regularly check for objects and map entries that have been tombstoned for a period of time, and release their resources so they can be garbage collected. Tombstoned objects and map entries are retained in memory for a sufficient grace period (at least >2 minutes) to ensure that no late-arriving operation is mistakenly applied to an object or map entry the client has already "forgotten" about.
 ** @(RTO10a)@ The check should occur at regular intervals, for example, every 5 minutes
 ** @(RTO10b)@ The grace period for releasing resources for tombstoned objects and map entries is determined as follows:
-*** @(RTO10b1)@ It is equal to "@ConnectionDetails.gcGracePeriod@":../features#CD2i received in the @CONNECTED@ @ProtocolMessage@
-*** @(RTO10b2)@ The grace period value is updated to match the new @ConnectionDetails.gcGracePeriod@ value whenever a new @CONNECTED@ @ProtocolMessage@ is received per "RTN24":../features#RTN24
-*** @(RTO10b3)@ A default value of 86,400,000 milliseconds (24 hours) is used if @ConnectionDetails.gcGracePeriod@ is not provided
+*** @(RTO10b1)@ It is equal to "@ConnectionDetails.objectsGCGracePeriod@":../features#CD2i received in the @CONNECTED@ @ProtocolMessage@
+*** @(RTO10b2)@ The grace period value is updated to match the new @ConnectionDetails.objectsGCGracePeriod@ value whenever a new @CONNECTED@ @ProtocolMessage@ is received per "RTN24":../features#RTN24
+*** @(RTO10b3)@ A default value of 86,400,000 milliseconds (24 hours) is used if @ConnectionDetails.objectsGCGracePeriod@ is not provided
 ** @(RTO10c)@ On each check interval:
 *** @(RTO10c1)@ For each @LiveObject@ in the @ObjectsPool@:
 **** @(RTO10c1a)@ Check if the @LiveObject@ needs to release any resources, see "RTLM19":#RTLM19
