@@ -274,8 +274,8 @@ Types and their properties/methods are public and exposed to users by default. A
       value() -> Number // RTLC5
 
     class LiveMap extends LiveObject: // RTLM*, RTLM1
-      get(key: String) -> Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap // RTLM5
+      get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5
       size() -> Number // RTLM10
-      entries() -> [String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap][] // RTLM11
+      entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
       keys() -> String[] // RTLM12
-      values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)[] // RTLM13
+      values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13
