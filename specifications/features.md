@@ -2977,7 +2977,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class ObjectsMapEntry // OME*, internal
       tombstone: Boolean? // OME2a
       timeserial: String? // OME2b
-      data: ObjectData // OME2c
+      data: ObjectData? // OME2c
 
     class ObjectData // OD*, internal
       objectId: String? // OD2a
