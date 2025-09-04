@@ -113,7 +113,7 @@ h3(#liveobject). LiveObject
 *** @(RTLO3c1)@ Set to @false@ when the @LiveObject@ is initialized
 ** @(RTLO3d)@ protected @isTombstone@ boolean - a flag indicating whether this object has been tombstoned, i.e. marked for deletion from the objects pool
 *** @(RTLO3d1)@ Set to @false@ when the @LiveObject@ is initialized
-** @(RTLO3e)@ protected @tombstonedAt@ (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and is non-null if and only if @isTombstone@ is @true@
+** @(RTLO3e)@ protected @tombstonedAt@ (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if @isTombstone@ is @true@
 *** @(RTLO3e1)@ Set to undefined/null when the @LiveObject@ is initialized
 * @(RTLO4)@ @LiveObject@ methods:
 ** @(RTLO4b)@ public @subscribe@ - subscribes a user to data updates on this @LiveObject@ instance
@@ -226,7 +226,7 @@ h3(#livemap). LiveMap
 * @(RTLM2)@ Represents the map object type for Object IDs of type @map@
 * @(RTLM3)@ Holds a @Dict<String, ObjectsMapEntry>@ as a private @data@ map
 ** @(RTLM3a)@ @ObjectsMapEntry@ entries in a @LiveMap@ have the following attributes in addition to those defined in "OME2":../features#OME2:
-*** @(RTLM3a1)@ @tombstonedAt@ (optional) Time - a timestamp indicating when this map entry was tombstoned. This property is nullable, and is non-null if and only if the corresponding @ObjectsMapEntry.tombstone@ is @true@
+*** @(RTLM3a1)@ @tombstonedAt@ (optional) Time - a timestamp indicating when this map entry was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if the corresponding @ObjectsMapEntry.tombstone@ is @true@
 * @(RTLM4)@ The zero-value @LiveMap@ is a @LiveMap@ with @data@ set to an empty map
 * @(RTLM18)@ Data updates for a @LiveMap@ are emitted using the @LiveMapUpdate@ object:
 ** @(RTLM18a)@ @LiveMapUpdate@ extends @LiveObjectUpdate@
