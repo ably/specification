@@ -2625,7 +2625,7 @@ class ObjectsCounter // OCN*, internal
 class ObjectsMapEntry // OME*, internal
   tombstone: Boolean? // OME2a
   timeserial: String? // OME2b
-  data: ObjectData // OME2c
+  data: ObjectData? // OME2c
 
 class ObjectData // OD*, internal
   objectId: String? // OD2a
