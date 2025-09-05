@@ -117,30 +117,36 @@ h3(#livemap). LiveMap
 ** @(RTLM6c)@ Set @data@ to @ObjectState.map.entries@, or to an empty map if it does not exist
 ** @(RTLM6d)@ If @ObjectState.createOp@ is present:
 *** @(RTLM6d1)@ For each key–@ObjectsMapEntry@ pair in @ObjectState.createOp.map.entries@:
-**** @(RTLM6d1a)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the specified key using @ObjectsMapEntry.timeserial@ and @ObjectsMapEntry.data@ per "RTLM7":#RTLM7
-**** @(RTLM6d1b)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the specified key using @ObjectsMapEntry.timeserial@ per "RTLM8":#RTLM8
+**** @(RTLM6d1a)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@
+**** @(RTLM6d1b)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@
 *** @(RTLM6d2)@ Set the private flag @createOperationIsMerged@ to @true@
 * @(RTLM7)@ @MAP_SET@ operation for a key can be applied to a @LiveMap@ in the following way:
+** @(RTLM7d)@ Expects the following arguments:
+*** @(RTLM7d1)@ @ObjectsMapOp@
+*** @(RTLM7d2)@ @serial@ string - operation's serial value
 ** @(RTLM7a)@ If an @ObjectsMapEntry@ exists in the private @data@ for the specified key:
 *** @(RTLM7a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action
 *** @(RTLM7a2)@ Otherwise, apply the operation to the existing entry:
 **** @(RTLM7a2a)@ Set @ObjectsMapEntry.data@ to the @ObjectData@ from the operation
-**** @(RTLM7a2b)@ Set @ObjectsMapEntry.timeserial@ to the operation's serial
+**** @(RTLM7a2b)@ Set @ObjectsMapEntry.timeserial@ to the provided @serial@
 **** @(RTLM7a2c)@ Set @ObjectsMapEntry.tombstone@ to @false@
 ** @(RTLM7b)@ If an entry does not exist in the private @data@ for the specified key:
-*** @(RTLM7b1)@ Create a new entry in @data@ for the specified key with the provided @ObjectData@ and the operation's serial
+*** @(RTLM7b1)@ Create a new @ObjectsMapEntry@ in @data@ for the specified key, with @ObjectsMapEntry.data@ set to the provided @ObjectData@ and @ObjectsMapEntry.timeserial@ set to @serial@
 *** @(RTLM7b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @false@
 ** @(RTLM7c)@ If the operation has a non-empty @ObjectData.objectId@ attribute:
 *** @(RTLM7c1)@ Create a zero-value @LiveObject@ for this @ObjectData.objectId@ in the internal @ObjectsPool@ per "RTO6":#RTO6
 * @(RTLM8)@ @MAP_REMOVE@ operation for a key can be applied to a @LiveMap@ in the following way:
+** @(RTLM8c)@ Expects the following arguments:
+*** @(RTLM8c1)@ @ObjectsMapOp@
+*** @(RTLM8c2)@ @serial@ string - operation's serial value
 ** @(RTLM8a)@ If an @ObjectsMapEntry@ exists in the private @data@ for the specified key:
 *** @(RTLM8a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action
 *** @(RTLM8a2)@ Otherwise, apply the operation to the existing entry:
 **** @(RTLM8a2a)@ Set @ObjectsMapEntry.data@ to undefined/null
-**** @(RTLM8a2b)@ Set @ObjectsMapEntry.timeserial@ to the operation's serial
+**** @(RTLM8a2b)@ Set @ObjectsMapEntry.timeserial@ to the provided @serial@
 **** @(RTLM8a2c)@ Set @ObjectsMapEntry.tombstone@ to @true@
 ** @(RTLM8b)@ If an entry does not exist in the private @data@ for the specified key:
-*** @(RTLM8b1)@ Create a new entry in @data@ for the specified key, with @ObjectsMapEntry.data@ set to undefined/null and the operation's serial
+*** @(RTLM8b1)@ Create a new @ObjectsMapEntry@ in @data@ for the specified key, with @ObjectsMapEntry.data@ set to undefined/null and @ObjectsMapEntry.timeserial@ set to the provided @serial@
 *** @(RTLM8b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @true@
 * @(RTLM9)@ Whether a map operation can be applied to a map entry is determined as follows:
 ** @(RTLM9a)@ For a @LiveMap@ with @semantics@ set to @ObjectsMapSemantics.LWW@ (Last-Write-Wins CRDT semantics), the operation must only be applied if its serial is strictly greater ("after") than the entry's serial when compared lexicographically
