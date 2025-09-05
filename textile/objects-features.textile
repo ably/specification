@@ -20,7 +20,7 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO1b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTO1c)@ Waits for the objects sync sequence to complete and for "RTO5c":#RTO5c to finish
 ** @(RTO1d)@ Returns the object with id @root@ from the internal @ObjectsPool@ as a @LiveMap@
-* @(RTO2)@ Various object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
+* @(RTO2)@ Certain object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
 ** @(RTO2a)@ If the channel is in the @ATTACHED@ state, the presence of the required channel mode is checked against the set of channel modes granted by the server per "RTL4m":../features#RTL4m :
 *** @(RTO2a1)@ If the channel mode is in the set, the operation is allowed
 *** @(RTO2a2)@ If the channel mode is missing, unless otherwise specified by the operation, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40024, indicating that the operation cannot be performed without the required channel mode
@@ -61,7 +61,7 @@ h3(#realtime-objects). RealtimeObjects
 **** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
 *** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
 *** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
-* @(RTO6)@ When needed, a zero-value object can be created if it does not exist in the internal @ObjectsPool@ for an @objectId@, in the following way:
+* @(RTO6)@ Certain object operations may require creating a zero-value object if one does not already exist in the internal @ObjectsPool@ for the given @objectId@. This can be done as follows:
 ** @(RTO6a)@ If an object with @objectId@ exists in @ObjectsPool@, do not create a new object
 ** @(RTO6b)@ The expected type of the object can be inferred from the provided @objectId@:
 *** @(RTO6b1)@ Split the @objectId@ (formatted as @type:hash&#64;timestamp@) on the separator @:@ and parse the first part as the type string
