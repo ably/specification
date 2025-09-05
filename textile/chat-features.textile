@@ -382,19 +382,18 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
 ** @(CHA-M5c)@ @[Testable]@ If a channel leaves the @ATTACHED@ state and then re-enters @ATTACHED@ with @resumed=false@, then it must be assumed that messages have been missed. The @subscription point@ of any subscribers must be reset to the @attachSerial@.
 ** @(CHA-M5d)@ @[Testable]@ If a channel @UPDATE@ event is received and @resumed=false@, then it must be assumed that messages have been missed. The @subscription point@ of any subscribers must be reset to the @attachSerial@.
-** @(CHA-M5e)@ Each subscription shall expose a method or callback that allows for messages to be queried. These messages are queried via the "REST API"#rest-fetching-messages.
+** @(CHA-M5e)@ Each subscription shall expose a method or callback that allows for messages to be queried. These messages are queried via the "REST API"#rest-fetching-messages-history.
 ** @(CHA-M5f)@ @[Testable]@ This method must accept any of the standard history query options, except for @orderBy@, which must always be @newestFirst@.
 ** @(CHA-M5g)@ @[Testable]@ The subscribers @subscription point@ must be additionally specified (internally, by us) in the @fromSerial@ query parameter.
 ** @(CHA-M5h)@ @[Testable]@ The method must return a standard @PaginatedResult@ , which can be further inspected to paginate across results.
 ** @(CHA-M5i)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 ** @(CHA-M5j)@ This specification point has been removed.
-* @(CHA-M6)@ Messages should be queryable from a paginated REST API.
-* @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API"#rest-fetching-messages and return a @PaginatedResult@ containing messages, which can then be paginated through. Each message must be represented by the standard @Message@ object.
+* @(CHA-M6)@ Messages (history) must be queryable from a paginated REST API.
+* @(CHA-M6a)@ @[Testable]@ A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API history endpoint"#rest-fetching-messages-history and return a @PaginatedResult@ containing messages, which can then be paginated through. Each message must be represented by the standard @Message@ object.
 * @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
-* @(CHA-M13)@ A single message should be queryable from the REST API.
-** @(CHA-M13a)@ @[Testable]@ A method must be exposed that accepts a message serial and returns a single @Message@ object. It shall call the "REST API"#rest-fetching-single-message and return the message if found.
-** @(CHA-M13b)@ @[Testable]@ If the REST API returns a 404 error, then the method must return @null@ or the language's idiomatic equivalent for "not found".
-** @(CHA-M13c)@ @[Testable]@ If the REST API returns any other error, then the method must throw its @ErrorInfo@ representation.
+* @(CHA-M13)@ A single message must be retrievable from the REST API.
+** @(CHA-M13a)@ @[Testable]@ A method must be exposed that accepts a message serial and returns a single @Message@ object. It shall call the "REST API single message endpoint"#rest-fetching-single-message and return the message if found.
+** @(CHA-M13b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 * @(CHA-M7)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-M11)@ A @Message@ must have a method @with@ to apply changes from events (@MessageEvent@ and @MessageReactionSummaryEvent@) to produce updated message instances.
   ** @(CHA-M11a)@ @[Testable]@ When the method receives a @MessageEvent@ of type @created@, it must throw an @ErrorInfo@ with code @40000@ and status code @400@.
@@ -882,7 +881,7 @@ h4(#rest-fetching-single-message-response). Response V3
 
 A single V3 "@Message@ struct":#chat-structs-message-v2 or status 404 if not found.
 
-h3(#rest-fetching-messages). Fetching Message History
+h3(#rest-fetching-messages-history). Fetching Message History
 
 h4(#rest-fetching-messages-request). Request V3
 
