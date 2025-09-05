@@ -39,6 +39,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO4b3)@ The @SyncObjectsPool@ must be cleared
 *** @(RTO4b4)@ Perform the actions for objects sync completion as described in "RTO5c":#RTO5c
 * @(RTO5)@ The realtime system reserves the right to initiate an objects sync of the objects on a channel at any point once a channel is attached. A server initiated objects sync provides Ably with a means to send a complete list of objects present on the channel at any point
+** @(RTO5d)@ If an @OBJECT_SYNC@ @ProtocolMessage@ is received and "@ObjectMessage.object@":../features#TR4r is null or omitted, the client library should skip processing that @ProtocolMessage@
 ** @(RTO5a)@ When an @OBJECT_SYNC@ @ProtocolMessage@ is received with a @channel@ attribute matching the channel name, the client library must parse the @channelSerial@ attribute:
 *** @(RTO5a1)@ The @channelSerial@ is used as the sync cursor and is a two-part identifier: @<sequence id>:<cursor value>@
 *** @(RTO5a2)@ If a new sequence id is sent from Ably, the client library must treat it as the start of a new objects sync sequence, and any previous in-flight sync must be discarded:
@@ -46,7 +47,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5a3)@ If the sequence id matches the previously received sequence id, the client library should continue the sync process
 *** @(RTO5a4)@ The objects sync sequence for that sequence identifier is considered complete once the cursor is empty; that is when the @channelSerial@ looks like @<sequence id>:@
 *** @(RTO5a5)@ An @OBJECT_SYNC@ may also be sent with no @channelSerial@ attribute. In this case, the sync data is entirely contained within the @ProtocolMessage@
-** @(RTO5b)@ During the sync sequence, the @ObjectMessage.object@ values from incoming @OBJECT_SYNC@ @ProtocolMessage@s must be temporarily stored in the internal @SyncObjectsPool@ list
+** @(RTO5b)@ During the sync sequence, the "@ObjectMessage.object@":../features#TR4r values from incoming @OBJECT_SYNC@ @ProtocolMessage@s must be temporarily stored in the internal @SyncObjectsPool@ list
 ** @(RTO5c)@ When the objects sync has completed, the client library must perform the following actions in order:
 *** @(RTO5c1)@ For each @ObjectState@ in the @SyncObjectsPool@ list:
 **** @(RTO5c1a)@ If an object with @ObjectState.objectId@ exists in the internal @ObjectsPool@:
