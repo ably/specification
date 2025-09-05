@@ -128,10 +128,10 @@ h3(#livemap). LiveMap
 *** @(RTLM11d2)@ The return type is idiomatic for the platform's analogous Map/Dictionary interface operation. For example, in JavaScript, it returns a map iterator object like the one returned by @Map.entries()@ method for the native @Map@ class
 * @(RTLM12)@ @LiveMap#keys@:
 ** @(RTLM12a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to @Map.keys()@ for the native @Map@ class
-** @(RTLM12b)@ Identical to @LiveMap#entries@, except that it returns only the keys from the internal @data@ map
+** @(RTLM12b)@ The implementation is identical to @LiveMap#entries@, except that it returns only the keys from the internal @data@ map
 * @(RTLM13)@ @LiveMap#values@:
 ** @(RTLM13a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to @Map.values()@ for the native @Map@ class
-** @(RTLM13b)@ Identical to @LiveMap#entries@, except that it returns only the values from the internal @data@ map
+** @(RTLM13b)@ The implementation is identical to @LiveMap#entries@, except that it returns only the values from the internal @data@ map
 * @(RTLM14)@ An @ObjectsMapEntry@ in the internal @data@ map can be checked for being tombstoned using the convenience method:
 ** @(RTLM14a)@ The method returns true if @ObjectsMapEntry.tombstone@ is true
 ** @(RTLM14b)@ Otherwise, it returns false
