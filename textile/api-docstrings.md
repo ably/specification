@@ -780,13 +780,11 @@ Contains an individual message that is sent to, or received from, Ably.
 | id: String ||| TM2a | A Unique ID assigned by Ably to this message. |
 | name: String? ||| TM2g | The event name. |
 | action: MessageAction ||| TM2j | Which one of the [`MessageAction`]{@link MessageAction} types this message represents. |
-| timestamp: Time ||| TM2f | Timestamp of when the message was received by Ably, as milliseconds since the Unix epoch. (This is the timestamp of the current version of the message) |
+| timestamp: Time ||| TM2f | Timestamp of when the message was first received by Ably, as milliseconds since the Unix epoch. |
 | serial: String? ||| TM2k | This message's unique serial (an identifier that — unlike the id — will remain the same in all future updates of this message, and can be used to update or delete that message). Lexicographically-comparable with other serials and with the `version` field. |
-| version: String? ||| TM2p | The version of the message, lexicographically-comparable with other versions (that share the same serial) Will differ from the serial only if the message has been updated or deleted. |
-| createdAt: Time? ||| TM2o | The timestamp of the very first version of a given message (will differ from `timestamp` only if the message has been updated or deleted). |
-| operation: Operation? ||| TM2n | In the case of an updated or deleted message, this will contain metadata about the update or delete operation. |
 | connectionKey: String? ||| TM2h | Allows a REST client to publish a message on behalf of a Realtime client. If you set this to the [private connection key]{@link Connection.key} of a Realtime connection when publishing a message using a [`RestClient`]{@link RestClient}, the message will be published on behalf of that Realtime client. This property is only populated by a client performing a publish, and will never be populated on an inbound message. |
-| summary: `Dict<string, JsonObject>`? ||| TM2q | A summary of all the annotations that have been made to the message, whose keys are the `type` fields from any annotations that it includes. For summary types the SDK knows about, static factory methods on `Message` exist to parse the values into strongly-typed objects. |
+| version: MessageVersion ||| TM2s | An object containing information about the latest version of a message. |
+| annotations: MessageAnnotations ||| TM2u | An object containing annotations that have been made to the message. |
 
 ## Class SummaryClientIdList
 
@@ -815,15 +813,25 @@ The summary for the total.v1 aggregation method.
 |---|---|---|
 | total | number | The number of clients who have published an annotation of this type |
 
-## class Operation
+## class MessageVersion
 
-In the case of an updated or deleted message, this will contain metadata about the update or delete operation.
+Contains information about the version of a message.
 
 | Method / Property | Parameter | Returns | Spec | Description |
 |---|---|---|---|---|
-| clientId: String? ||| TM2n1 | ClientId of the user who triggered the update or delete. |
-| description: String? ||| TM2n2 | Reason for the update or delete provided by of the user who triggered it. |
-| metadata: Dict<string, string>? ||| TM2n3 | Arbitrary metadata contributed by the user who triggered the update or delete. |
+| serial: String ||| TM2s1 | An opaque string that identifies the specific version of the message. |
+| timestamp: Time ||| TM2s2 | Time in milliseconds since epoch when this version was created. |
+| clientId: String? ||| TM2s3 | The client ID of the user who created this version. |
+| description: String? ||| TM2s4 | A description provided by the user who created this version. |
+| metadata: Dict<String, String>? ||| TM2s5 | Arbitrary metadata contributed by the user who created this version. |
+
+## class MessageAnnotations
+
+Contains annotations that have been made to a message.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| summary: Dict<String, JsonObject>? ||| TM8a | An object whose keys are annotation types, and the values are aggregated summaries for that annotation type. |
 
 ## class PresenceMessage
 

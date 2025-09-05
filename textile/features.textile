@@ -1443,15 +1443,23 @@ h4. Message
 ** @(TM2i)@ @extras@ JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The @extras@ field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is @push@, via the @extras.push@ member; 1.2 adds the @delta@ extension whose keys and values are described by the attributes of the type @DeltaExtras@, and the @headers@ extension, which contains arbitrary @string->string@ key-value pairs, settable at publish time, and @ref@ whose keys and values are described by the attributes of the type @ReferenceExtras@. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the @extras@ field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
 ** @(TM2f)@ @timestamp@ time in milliseconds since epoch. If a message received from Ably over a realtime transport does not contain a @timestamp@, the SDK must set it to the @timestamp@ of the encapsulating @ProtocolMessage@
 ** @(TM2j)@ @action@ enum
-** @(TM2p)@ @version@ string - an opaque string that uniquely identifies the message, and is different for different versions. (May not be populated).
-** @(TM2k)@ @serial@ string - an opaque string that uniquely identifies the message. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @serial@ but does contain a @version@, the SDK must set it equal to the @TM2p@ @version@. (May not be populated).
-** @(TM2o)@ @createdAt@ time in milliseconds since epoch. If a message received from Ably (whether over realtime or REST, eg history) with an @action@ of @MESSAGE_CREATE@ does not contain a @createdAt@, the SDK must set it equal to the @TM2f@ @timestamp@.
-** @(TM2n)@ @operation@ - object that may contain the following `optional` attributes;
-*** @(TM2n1)@ @clientId@ string
-*** @(TM2n2)@ @description@ string
-*** @(TM2n3)@ @metadata@ object - used to contain any arbitrary key value pairs of type string.
-** @(TM2q)@ @summary@ @Dict<string, JsonObject>@ - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing @summary@ field on the wire indicates an empty summary, equivalent to an object with no keys.
-*** @(TM2q1)@ A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
+** @(TM2p)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by @TM2s@
+** @(TM2k)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by @TM2r@.
+** @(TM2o)@ This clause has been deleted. It was valid up to and including specification version 3.1 and its purpose moved to @TM2f@.
+** @(TM2n)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been melded into @TM2s@.
+*** @(TM2n1)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been moved to @TM2s3@.
+*** @(TM2n2)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been moved to @TM2s4@.
+*** @(TM2n3)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been moved to @TM2s5@.
+** @(TM2q)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by @TM2u@.
+*** @(TM2q1)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by @TM2u@.
+** @(TM2r)@ @serial@ string - an opaque string that uniquely identifies the message.
+** @(TM2s)@ @version@ - an object containing information about the latest version of a message. If a message received from Ably (whether over realtime or REST) does not contain a @version@ object the SDK must initialize a @version@ object and set a subset of fields as specified below.
+*** @(TM2s1)@ @serial@ - an opaque string that identifies the specific version of the message. If the @version.serial@ is not received over the wire, it must be set to the @TM2r@ @serial@, if it is set. Otherwise, it must be set to an empty string.
+*** @(TM2s2)@ @timestamp@ - time in milliseconds since epoch. If the @version.timestamp@ is not received over the wire, it must be set to the @TM2f@ @timestamp@, if it is set.
+*** @(TM2s3)@ @clientId@ - string
+*** @(TM2s4)@ @description@ - string
+*** @(TM2s5)@ @metadata@ - Dict<String, string> - used to contain any arbitrary key value pairs of type string.
+** @(TM2u)@ @annotations@ - an object of type @MessageAnnotations@. If not set on the wire, the SDK must set it to an empty @MessageAnnotations@ object.
 * @(TM4)@ @Message@ has constructors @constructor(name: String?, data: Data?)@ and @constructor(name: String?, data: Data?, clientId: String?)@.
 * @(TM3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Message@-like object (or array of such objects), and optionally a @channelOptions@, and return a @Message@ (or array of such @Messages@) that's decoded and decrypted as specified in @RSL6@, using the cipher in the @channelOptions@ if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the @encoding@ property per @RSL6b@. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the @encoding@ string themselves.
 * @(TM6)@ The size of the @Message@ for "TO3l8":#TO3l8 is calculated as follows:
@@ -1478,6 +1486,9 @@ h4. Message
 **** @(TM7d1b)@ @clientIds@ @Dict<string, integer>@
 *** @(TM7e1)@ @SummaryTotal@ is an object containing:
 **** @(TM7e1a)@ @total@ integer
+* @(TM8)@ The attributes available in a @MessageAnnotations@ object are:
+** @(TM8a)@ @summary@ @Dict<string, JsonObject>@ - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing @summary@ field on the wire indicates an empty summary, equivalent to an object with no keys.
+*** @(TM8a1)@ A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
 
 h4. DeltaExtras
 
@@ -2594,11 +2605,9 @@ class Message: // TM*
   name: String? // TM2g
   timestamp: Time // TM2f
   action: MessageAction // TM2j
-  serial: string? // TM2k
-  version: string? // TM2p
-  operation: Object? // TM2n
-  createdAt: Time? // TM2o
-  summary: Dict<string, JsonObject>? // TM2q
+  serial: string? // TM2r
+  version: MessageVersion // TM2s
+  annotations: MessageAnnotations // TM2u
 
 class PresenceMessage // TP*
   +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
@@ -2962,6 +2971,16 @@ class SummaryClientIdCounts:
 
 class SummaryTotal:
   total: number // TM7e1a
+
+class MessageAnnotations:
+  summary: Dict<string, JsonObject>? // TM8a
+
+class MessageVersion:
+  serial: string // TM2s1
+  timestamp: number // TM2s2
+  clientId: string? // TM2s3
+  description: string? // TM2s4
+  metadata: Dict<string, string>? //TM2s5
 </pre>
 
 h2(#old-specs). Old specs
