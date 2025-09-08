@@ -112,6 +112,29 @@ h3(#livemap). LiveMap
 ***** @(RTLM5d2f1)@ If an object with id @objectId@ does not exist, return undefined/null
 ***** @(RTLM5d2f2)@ If an object with id @objectId@ exists, return it
 **** @(RTLM5d2g)@ Otherwise, return undefined/null
+* @(RTLM10)@ @LiveMap#size@:
+** @(RTLM10a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a property similar to @Map.size@ for the native @Map@ class
+** @(RTLM10b)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLM10c)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTLM10d)@ Returns the number of non-tombstoned entries (per "RTLM14":#RTLM14) in the internal @data@ map
+* @(RTLM11)@ @LiveMap#entries@:
+** @(RTLM11a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to @Map.entries()@ for the native @Map@ class
+** @(RTLM11b)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+** @(RTLM11c)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTLM11d)@ Returns key-value pairs from the internal @data@ map:
+*** @(RTLM11d1)@ Pairs with tombstoned entries (per "RTLM14":#RTLM14) are not returned
+*** @(RTLM11d3)@ @ObjectsMapEntry@ values are mapped to user-facing values following the same procedure as in "RTLM5d2":#RTLM5d2
+**** @(RTLM11d3a)@ Note that if "RTLM5d2":#RTLM5d2 results in an @ObjectsMapEntry@ being mapped to an undefined/null value, the corresponding key-value pair is still returned by this @LiveMap#entries@ call
+*** @(RTLM11d2)@ The return type is idiomatic for the platform's analogous Map/Dictionary interface operation. For example, in JavaScript, it returns a map iterator object like the one returned by @Map.entries()@ method for the native @Map@ class
+* @(RTLM12)@ @LiveMap#keys@:
+** @(RTLM12a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to @Map.keys()@ for the native @Map@ class
+** @(RTLM12b)@ The implementation is identical to @LiveMap#entries@, except that it returns only the keys from the internal @data@ map
+* @(RTLM13)@ @LiveMap#values@:
+** @(RTLM13a)@ A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to @Map.values()@ for the native @Map@ class
+** @(RTLM13b)@ The implementation is identical to @LiveMap#entries@, except that it returns only the values from the internal @data@ map
+* @(RTLM14)@ An @ObjectsMapEntry@ in the internal @data@ map can be checked for being tombstoned using the convenience method:
+** @(RTLM14a)@ The method returns true if @ObjectsMapEntry.tombstone@ is true
+** @(RTLM14b)@ Otherwise, it returns false
 * @(RTLM6)@ @LiveMap@ internal @data@ can be replaced with the provided @ObjectState@ in the following way:
 ** @(RTLM6a)@ Replace the private @siteTimeserials@ of the @LiveMap@ with the value from @ObjectState.siteTimeserials@
 ** @(RTLM6b)@ Set the private flag @createOperationIsMerged@ to @false@
