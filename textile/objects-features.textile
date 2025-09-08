@@ -58,7 +58,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO11h1)@ While waiting for the publish operation to complete in "RTO11g1":#RTO11g1, the client library may have already received the echoed @ObjectMessage@ operation, as it could arrive before the @ACK@ for the publish operation. Depending on the threading and/or asynchronous model of the client library, this could mean that the @ObjectMessage@ for the @MAP_CREATE@ operation has already been processed, and the new @LiveMap@ instance already exists in the internal @ObjectsPool@. As such, the following checks are performed to determine whether the instance already exists
 *** @(RTO11h2)@ If an object with the @ObjectMessage.operation.objectId@ exists in the internal @ObjectsPool@, return it
 *** @(RTO11h3)@ Otherwise, if the object does not exist in the internal @ObjectsPool@:
-**** @(RTO11h3a)@ Create a zero-value @LiveMap@ (per "RTLM4":#RTLM4), set its @objectId@ to @ObjectMessage.operation.objectId@, set its @semantics@ to @ObjectMessage.operation.map.semantics@, and merge the initial value as described in "RTLM17":#RTLM17, passing in @ObjectMessage.operation@
+**** @(RTO11h3a)@ Create a new @LiveMap@ (per "RTLM4":#RTLM4) by passing in @ObjectMessage.operation.objectId@ as @objectId@, @ObjectMessage.operation.map.semantics@ as @semantics@, and then merge the initial value as described in "RTLM17":#RTLM17, passing in @ObjectMessage.operation@
 **** @(RTO11h3b)@ Add the created @LiveMap@ instance to the internal @ObjectsPool@
 **** @(RTO11h3c)@ Return the created @LiveMap@ instance
 * @(RTO12)@ @RealtimeObjects#createCounter@ function:
@@ -88,7 +88,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO12h1)@ While waiting for the publish operation to complete in "RTO12g1":#RTO12g1, the client library may have already received the echoed @ObjectMessage@ operation, as it could arrive before the @ACK@ for the publish operation. Depending on the threading and/or asynchronous model of the client library, this could mean that the @ObjectMessage@ for the @COUNTER_CREATE@ operation has already been processed, and the new @LiveCounter@ instance already exists in the internal @ObjectsPool@. As such, the following checks are performed to determine whether the instance already exists
 *** @(RTO12h2)@ If an object with the @ObjectMessage.operation.objectId@ exists in the internal @ObjectsPool@, return it
 *** @(RTO12h3)@ Otherwise, if the object does not exist in the internal @ObjectsPool@:
-**** @(RTO12h3a)@ Create a zero-value @LiveCounter@ (per "RTLC4":#RTLC4), set its @objectId@ to @ObjectMessage.operation.objectId@, and merge the initial value as described in "RTLC10":#RTLC10, passing in @ObjectMessage.operation@
+**** @(RTO12h3a)@ Create a new @LiveCounter@ (per "RTLC4":#RTLC4) by passing in @ObjectMessage.operation.objectId@ as @objectId@, and then merge the initial value as described in "RTLC10":#RTLC10, passing in @ObjectMessage.operation@
 **** @(RTO12h3b)@ Add the created @LiveCounter@ instance to the internal @ObjectsPool@
 **** @(RTO12h3c)@ Return the created @LiveCounter@ instance
 * @(RTO2)@ Certain object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
@@ -106,7 +106,7 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO4a)@ If the @HAS_OBJECTS@ flag is 1, the server will shortly perform an @OBJECT_SYNC@ sequence as described in "RTO5":#RTO5
 ** @(RTO4b)@ If the @HAS_OBJECTS@ flag is 0 or there is no @flags@ field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
 *** @(RTO4b1)@ All objects except the one with id @root@ must be removed from the internal @ObjectsPool@
-*** @(RTO4b2)@ The data for the @LiveMap@ with id @root@ must be cleared by setting it to a zero-value per "RTLM4":#RTLM4. Note that the client SDK must not create a new @LiveMap@ instance with id @root@; it must only clear the internal data of the existing @LiveMap@ with id @root@
+*** @(RTO4b2)@ The data for the @LiveMap@ with id @root@ must be cleared by setting it to an empty map per "RTLM4c":#RTLM4c. Note that the client SDK must not create a new @LiveMap@ instance with id @root@; it must only clear the internal data of the existing @LiveMap@ with id @root@
 **** @(RTO4b2a)@ Emit a @LiveMapUpdate@ object for the @LiveMap@ with ID @root@, with @LiveMapUpdate.update@ consisting of entries for the keys that were removed, each set to @removed@
 *** @(RTO4b3)@ The @SyncObjectsPool@ list must be cleared
 *** @(RTO4b5)@ The @BufferedObjectOperations@ list must be cleared
@@ -129,8 +129,8 @@ h3(#realtime-objects). RealtimeObjects
 ***** @(RTO5c1a2)@ Store the @LiveObjectUpdate@ object returned by the operation, along with a reference to the updated object
 **** @(RTO5c1b)@ If an object with @ObjectState.objectId@ does not exist in the internal @ObjectsPool@:
 ***** @(RTO5c1b1)@ Create a new @LiveObject@ using the data from @ObjectState@ and add it to the internal @ObjectsPool@:
-****** @(RTO5c1b1a)@ If @ObjectState.counter@ is present, create a zero-value @LiveCounter@ (per "RTLC4":#RTLC4), set its private @objectId@ equal to @ObjectState.objectId@ and replace its internal data using the current @ObjectState@ per "RTLC6":#RTLC6
-****** @(RTO5c1b1b)@ If @ObjectState.map@ is present, create a zero-value @LiveMap@ (per "RTLM4":#RTLM4), set its private @objectId@ equal to @ObjectState.objectId@, set its private @semantics@ equal to @ObjectState.map.semantics@ and replace its internal data using the current @ObjectState@ per "RTLM6":#RTLM6
+****** @(RTO5c1b1a)@ If @ObjectState.counter@ is present, create a new @LiveCounter@ (per "RTLC4":#RTLC4) by passing in @ObjectState.objectId@ as @objectId@, and then replace its internal data using the current @ObjectState@ per "RTLC6":#RTLC6
+****** @(RTO5c1b1b)@ If @ObjectState.map@ is present, create a new @LiveMap@ (per "RTLM4":#RTLM4) by passing in @ObjectState.objectId@ as @objectId@, @ObjectState.map.semantics@ as @semantics@, and then replace its internal data using the current @ObjectState@ per "RTLM6":#RTLM6
 ****** @(RTO5c1b1c)@ Otherwise, log a warning that an unsupported object state message has been received, and discard the current @ObjectState@ without taking any action
 *** @(RTO5c2)@ Remove any objects from the internal @ObjectsPool@ for which @objectId@s were not received during the sync sequence
 **** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
@@ -139,12 +139,12 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
 *** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
 *** @(RTO5c5)@ The @BufferedObjectOperations@ list must be cleared
-* @(RTO6)@ Certain object operations may require creating a zero-value object if one does not already exist in the internal @ObjectsPool@ for the given @objectId@. This can be done as follows:
+* @(RTO6)@ Certain object operations may require creating a new object if one does not already exist in the internal @ObjectsPool@ for the given @objectId@. This can be done as follows:
 ** @(RTO6a)@ If an object with @objectId@ exists in @ObjectsPool@, do not create a new object
 ** @(RTO6b)@ The expected type of the object can be inferred from the provided @objectId@:
 *** @(RTO6b1)@ Split the @objectId@ (formatted as @[type]:[hash]&#64;[timestamp]@, see "RTO14c":#RTO14c) on the separator @:@ and parse the first part as the type string
-*** @(RTO6b2)@ If the parsed type is @map@, create a zero-value @LiveMap@ per "RTLM4":#RTLM4 in the @ObjectsPool@
-*** @(RTO6b3)@ If the parsed type is @counter@, create a zero-value @LiveCounter@ per "RTLC4":#RTLC4 in the @ObjectsPool@
+*** @(RTO6b2)@ If the parsed type is @map@, create a new @LiveMap@ per "RTLM4":#RTLM4 by passing in the @objectId@, and add it to the @ObjectsPool@
+*** @(RTO6b3)@ If the parsed type is @counter@, create a new @LiveCounter@ per "RTLC4":#RTLC4 by passing in the @objectId@, and add it to the @ObjectsPool@
 * @(RTO7)@ The client library may receive @OBJECT@ @ProtocolMessages@ in realtime over the channel concurrently with @OBJECT_SYNC@ @ProtocolMessages@ during the object sync sequence ("RTO5":#RTO5). Some of the incoming @OBJECT@ messages may have already been applied to the objects described in the sync sequence, while others may not. Therefore, the client must buffer @OBJECT@ messages during the sync sequence so that it can determine which of them should be applied to the objects once the sync is complete. See "RTO8":#RTO8
 ** @(RTO7a)@ An internal @BufferedObjectOperations@ should be used to store the buffered @ObjectMessages@, as described in "RTO8a":#RTO8a. @BufferedObjectOperations@ is an array of @ObjectMessage@ instances
 *** @(RTO7a1)@ This array is empty upon @RealtimeObjects@ initialization
@@ -156,7 +156,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO9a1)@ If @ObjectMessage.operation@ is null or omitted, log a warning indicating that an unsupported object operation message has been received, and discard the current @ObjectMessage@ without taking any action
 *** @(RTO9a2)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 **** @(RTO9a2a)@ If @ObjectMessage.operation.action@ is one of the following: @MAP_CREATE@, @MAP_SET@, @MAP_REMOVE@, @COUNTER_CREATE@, @COUNTER_INC@, or @OBJECT_DELETE@, then:
-***** @(RTO9a2a1)@ If it does not already exist, create a zero-value @LiveObject@ in the internal @ObjectsPool@ per "RTO6":#RTO6 using the @objectId@ from @ObjectMessage.operation.objectId@
+***** @(RTO9a2a1)@ If it does not already exist, create a new @LiveObject@ in the internal @ObjectsPool@ per "RTO6":#RTO6 using the @objectId@ from @ObjectMessage.operation.objectId@
 ***** @(RTO9a2a2)@ Get the @LiveObject@ instance from the internal @ObjectsPool@ using the @objectId@ from @ObjectMessage.operation.objectId@
 ***** @(RTO9a2a3)@ Apply the @ObjectMessage.operation@ to the @LiveObject@; see "RTLC7":#RTLC7, "RTLM15":#RTLM15
 **** @(RTO9a2b)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action
@@ -256,7 +256,7 @@ h3(#liveobject). LiveObject
 **** @(RTLO4e3a)@ Set it equal to @ObjectMessage.serialTimestamp@ if it exists
 **** @(RTLO4e3b)@ Otherwise, set it to the current time using the local clock
 ***** @(RTLO4e3b1)@ Log a debug or trace message indicating that @serialTimestamp@ was not found in the message and the local clock is being used instead for the tombstone timestamp
-*** @(RTLO4e4)@ Set the data for the @LiveObject@ to a zero-value, as described in "RTLC4":#RTLC4 or "RTLM4":#RTLM4 depending on the object type
+*** @(RTLO4e4)@ Clear the internal data of the @LiveObject@ as described in "RTLC4b":#RTLC4b or "RTLM4c":#RTLM4c, depending on the object type
 * @(RTLO5)@ An @OBJECT_DELETE@ operation can be applied to a @LiveObject@ in the following way:
 ** @(RTLO5a)@ Expects the following arguments:
 *** @(RTLO5a1)@ @ObjectMessage@
@@ -267,7 +267,9 @@ h3(#livecounter). LiveCounter
 * @(RTLC1)@ The @LiveCounter@ extends @LiveObject@
 * @(RTLC2)@ Represents the counter object type for Object IDs of type @counter@
 * @(RTLC3)@ Holds a 64-bit floating-point number as a private @data@
-* @(RTLC4)@ The zero-value @LiveCounter@ is a @LiveCounter@ with @data@ set to 0
+* @(RTLC4)@ A new @LiveCounter@ can be created with the following values:
+** @(RTLC4a)@ @objectId@ is passed into the constructor and set upon creation
+** @(RTLC4b)@ @data@ is set to 0
 * @(RTLC11)@ Data updates for a @LiveCounter@ are emitted using the @LiveCounterUpdate@ object:
 ** @(RTLC11a)@ @LiveCounterUpdate@ extends @LiveObjectUpdate@
 ** @(RTLC11b)@ @LiveCounterUpdate.update@ has the following properties:
@@ -344,7 +346,10 @@ h3(#livemap). LiveMap
 * @(RTLM3)@ Holds a @Dict<String, ObjectsMapEntry>@ as a private @data@ map
 ** @(RTLM3a)@ @ObjectsMapEntry@ entries in a @LiveMap@ have the following attributes in addition to those defined in "OME2":../features#OME2:
 *** @(RTLM3a1)@ @tombstonedAt@ (optional) Time - a timestamp indicating when this map entry was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if the corresponding @ObjectsMapEntry.tombstone@ is @true@
-* @(RTLM4)@ The zero-value @LiveMap@ is a @LiveMap@ with @data@ set to an empty map
+* @(RTLM4)@ A new @LiveMap@ can be created with the following values:
+** @(RTLM4a)@ @objectId@ is passed into the constructor and set upon creation
+** @(RTLM4b)@ @semantics@ may be passed into the constructor and set upon creation; if not provided, it defaults to "@ObjectsMapSemantics.LWW@":../features#OMP2
+** @(RTLM4c)@ @data@ is set to an empty map
 * @(RTLM18)@ Data updates for a @LiveMap@ are emitted using the @LiveMapUpdate@ object:
 ** @(RTLM18a)@ @LiveMapUpdate@ extends @LiveObjectUpdate@
 ** @(RTLM18b)@ @LiveMapUpdate.update@ is of type @Dict<String, 'updated' | 'removed'>@ - a map of @LiveMap@ keys that were either updated or removed, with the corresponding value indicating the type of change for each key
@@ -479,7 +484,7 @@ h3(#livemap). LiveMap
 *** @(RTLM7b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @false@
 *** @(RTLM7b3)@ Set @ObjectsMapEntry.tombstonedAt@ for the new entry to undefined/null
 ** @(RTLM7c)@ If the operation has a non-empty @ObjectData.objectId@ attribute:
-*** @(RTLM7c1)@ Create a zero-value @LiveObject@ for this @ObjectData.objectId@ in the internal @ObjectsPool@ per "RTO6":#RTO6
+*** @(RTLM7c1)@ Create a new @LiveObject@ for this @ObjectData.objectId@ in the internal @ObjectsPool@ per "RTO6":#RTO6
 ** @(RTLM7f)@ Return a @LiveMapUpdate@ object with a @LiveMapUpdate.update@ map containing the key used in this operation set to @updated@
 * @(RTLM8)@ A @MAP_REMOVE@ operation for a key can be applied to a @LiveMap@ in the following way:
 ** @(RTLM8c)@ Expects the following arguments:
