@@ -1852,6 +1852,7 @@ Presence ops.
   - `(OM2f)` `operation` `ObjectOperation` object. Mutually exclusive with the `object` field. This field is only set on object messages if the `action` field of the `ProtocolMessage` encapsulating it is `OBJECT`
   - `(OM2g)` `object` `ObjectState` object. Mutually exclusive with the `operation` field. This field is only set on object messages if the `action` field of the `ProtocolMessage` encapsulating it is `OBJECT_SYNC`
   - `(OM2h)` `serial` string - an opaque string that uniquely identifies this object message
+  - `(OM2j)` `serialTimestamp` Time - a timestamp from the `serial` field
   - `(OM2i)` `siteCode` string - an opaque string used as a key to update the map of `serial` values on an object
 - `(OM3)` The size of the `ObjectMessage` for [TO3l8](#TO3l8) is calculated as follows:
   - `(OM3a)` The size is the sum of the sizes of the `clientId`, `operation`, `object`, and `extras` properties
@@ -1958,6 +1959,7 @@ Presence ops.
 - `(OME2)` The attributes available in an `ObjectsMapEntry` are:
   - `(OME2a)` `tombstone` boolean - indicates whether the map entry has been removed
   - `(OME2b)` `timeserial` string - the `serial`#OM2h value of the last operation that was applied to the map entry
+  - `(OME2d)` `serialTimestamp` Time - a timestamp from the `timeserial` field. It is only present if `tombstone` is `true`
   - `(OME2c)` `data` `ObjectData` object - the data that represents the value of the map entry.
 - `(OME3)` The size of the `ObjectsMapEntry` is calculated as follows:
   - `(OME3a)` It is equal to the size of the `data` property
@@ -2195,9 +2197,8 @@ Presence ops.
   - `(CD2f)` `connectionStateTtl` is the duration that Ably will persist the connection state when a Realtime client is abruptly disconnected
   - `(CD2g)` `serverId` string is a unique identifier for the front-end server that the client has connected to. This server ID is only used for the purposes of debugging
   - `(CD2h)` `maxIdleInterval` is the maximum length of time in milliseconds that the server will allow no activity to occur in the server-\>client direction. After such a period of inactivity, the server will send a `HEARTBEAT` or transport-level ping to the client. If the value is 0, the server will allow arbitrarily-long levels of inactivity.
-
-#### ChannelProperties
-
+  - `(CD2i)` `objectsGCGracePeriod` integer - the length of time, in milliseconds, that the client library must wait before releasing resources for tombstoned objects and map entries (see [RTO10](../objects-features#RTO10))\
+    h4. ChannelProperties
 - `(CP1)` properties of a channel and its state
 - `(CP2)` The attributes of `ChannelProperties` consist of:
   - `(CP2a)` `attachSerial` string - contains the `channelSerial` that the current attachment started at, set per [RTL15a](#RTL15a)
@@ -2922,6 +2923,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       maxMessageSize: Int // CD2c
       serverId: String // CD2g
       maxIdleInterval: Duration // CD2h
+      objectsGCGracePeriod: Int // CD2i
 
     class Message: // TM*
       constructor(name: String?, data: Data?) // TM4
@@ -2971,6 +2973,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       operation: ObjectOperation? // OM2f
       object: ObjectState? // OM2g
       serial: String // OM2h
+      serialTimestamp: Time? // OM2j
       siteCode: String // OM2i
 
     class ObjectOperation // OOP*, internal
@@ -3009,6 +3012,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class ObjectsMapEntry // OME*, internal
       tombstone: Boolean? // OME2a
       timeserial: String? // OME2b
+      serialTimestamp: Time? // OME2d
       data: ObjectData? // OME2c
 
     class ObjectData // OD*, internal
