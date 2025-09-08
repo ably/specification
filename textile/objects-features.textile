@@ -36,6 +36,7 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO4b)@ If the @HAS_OBJECTS@ flag is 0 or there is no @flags@ field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
 *** @(RTO4b1)@ All objects except the one with id @root@ must be removed from the internal @ObjectsPool@
 *** @(RTO4b2)@ The data for the @LiveMap@ with id @root@ must be cleared by setting it to a zero-value per "RTLM4":#RTLM4. Note that the client SDK must not create a new @LiveMap@ instance with id @root@; it must only clear the internal data of the existing @LiveMap@ with id @root@
+**** @(RTO4b2a)@ Emit a @LiveMapUpdate@ object for the @LiveMap@ with ID @root@, with @LiveMapUpdate.update@ consisting of entries for the keys that were removed, each set to @removed@
 *** @(RTO4b3)@ The @SyncObjectsPool@ list must be cleared
 *** @(RTO4b5)@ The @BufferedObjectOperations@ list must be cleared
 *** @(RTO4b4)@ Perform the actions for objects sync completion as described in "RTO5c":#RTO5c
@@ -54,6 +55,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5c1)@ For each @ObjectState@ in the @SyncObjectsPool@ list:
 **** @(RTO5c1a)@ If an object with @ObjectState.objectId@ exists in the internal @ObjectsPool@:
 ***** @(RTO5c1a1)@ Replace the internal data for the object as described in "RTLC6":#RTLC6 or "RTLM6":#RTLM6 depending on the object type, passing in current @ObjectState@
+***** @(RTO5c1a2)@ Store the @LiveObjectUpdate@ object returned by the operation, along with a reference to the updated object
 **** @(RTO5c1b)@ If an object with @ObjectState.objectId@ does not exist in the internal @ObjectsPool@:
 ***** @(RTO5c1b1)@ Create a new @LiveObject@ using the data from @ObjectState@ and add it to the internal @ObjectsPool@:
 ****** @(RTO5c1b1a)@ If @ObjectState.counter@ is present, create a zero-value @LiveCounter@ (per "RTLC4":#RTLC4), set its private @objectId@ equal to @ObjectState.objectId@ and replace its internal data using the current @ObjectState@ per "RTLC6":#RTLC6
@@ -61,6 +63,7 @@ h3(#realtime-objects). RealtimeObjects
 ****** @(RTO5c1b1c)@ Otherwise, log a warning that an unsupported object state message has been received, and discard the current @ObjectState@ without taking any action
 *** @(RTO5c2)@ Remove any objects from the internal @ObjectsPool@ for which @objectId@s were not received during the sync sequence
 **** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
+*** @(RTO5c7)@ For each previously existing object that was updated as a result of "RTO5c1a":#RTO5c1a, emit the corresponding stored @LiveObjectUpdate@ object from "RTO5c1a2":#RTO5c1a2
 *** @(RTO5c6)@ @ObjectMessages@ stored in the @BufferedObjectOperations@ list are applied as described in "RTO9":#RTO9
 *** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
 *** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
@@ -99,6 +102,30 @@ h3(#liveobject). LiveObject
 ** @(RTLO3c)@ protected @createOperationIsMerged@ boolean - a flag indicating whether the corresponding @MAP_CREATE@ or @COUNTER_CREATE@ operation has been applied to this @LiveObject@ instance
 *** @(RTLO3c1)@ Set to @false@ when the @LiveObject@ is initialized
 * @(RTLO4)@ @LiveObject@ methods:
+** @(RTLO4b)@ public @subscribe@ - subscribes a user to data updates on this @LiveObject@ instance
+*** @(RTLO4b1)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+*** @(RTLO4b2)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+*** @(RTLO4b3)@ A user may provide a listener to subscribe to data updates on this @LiveObject@ instance
+*** @(RTLO4b4)@ An update to @LiveObject@ data is communicated by internally emitting a @LiveObjectUpdate@ object for this @LiveObject@, or in any other platform-appropriate manner:
+**** @(RTLO4b4a)@ @LiveObjectUpdate.update@ contains the specific information about what was changed on the object. The exact type depends on the object type
+**** @(RTLO4b4b)@ The @LiveObjectUpdate.noop@ internal property can be used to indicate that the update was a no-op
+**** @(RTLO4b4c)@ When a @LiveObjectUpdate@ is emitted:
+***** @(RTLO4b4c1)@ If @LiveObjectUpdate@ is indicated to be a no-op, do nothing
+***** @(RTLO4b4c2)@ Otherwise, the registered listener is called with the @LiveObjectUpdate@ object
+*** @(RTLO4b5)@ The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
+**** @(RTLO4b5a)@ The subscription object includes an @unsubscribe@ function
+**** @(RTLO4b5b)@ Calling @unsubscribe@ deregisters the listener previously registered by the user via the corresponding @subscribe@ call
+*** @(RTLO4b6)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
+** @(RTLO4c)@ public @unsubscribe@ - unsubscribes a previously registered listener
+*** @(RTLO4c1)@ This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
+*** @(RTLO4c2)@ A user may provide a listener they wish to deregister from receiving data updates for this @LiveObject@
+*** @(RTLO4c3)@ Once deregistered, subsequent data updates for this @LiveObject@ must not result in the listener being called
+*** @(RTLO4c4)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
+** @(RTLO4d)@ public @unsubscribeAll@ - unsubscribes all previously registered listeners
+*** @(RTLO4d1)@ This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
+*** @(RTLO4d2)@ Deregisters all current data update listeners from receiving any further events for this @LiveObject@
+*** @(RTLO4d3)@ Once deregistered, subsequent data updates for this @LiveObject@ must not result in any of the previously registered listeners being called
+*** @(RTLO4d4)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
 ** @(RTLO4a)@ protected @canApplyOperation@ - a convenience method used to determine whether the @ObjectMessage.operation@ should be applied to this object based on a serial value:
 *** @(RTLO4a1)@ Expects the following arguments:
 **** @(RTLO4a1a)@ @ObjectMessage@
@@ -114,6 +141,10 @@ h3(#livecounter). LiveCounter
 * @(RTLC2)@ Represents the counter object type for Object IDs of type @counter@
 * @(RTLC3)@ Holds a 64-bit floating-point number as a private @data@
 * @(RTLC4)@ The zero-value @LiveCounter@ is a @LiveCounter@ with @data@ set to 0
+* @(RTLC11)@ Data updates for a @LiveCounter@ are emitted using the @LiveCounterUpdate@ object:
+** @(RTLC11a)@ @LiveCounterUpdate@ extends @LiveObjectUpdate@
+** @(RTLC11b)@ @LiveCounterUpdate.update@ has the following properties:
+*** @(RTLC11b1)@ @amount@ number - the value by which the counter was incremented or decremented
 * @(RTLC5)@ @LiveCounter#value@ function:
 ** @(RTLC5a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
 ** @(RTLC5b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
@@ -131,20 +162,29 @@ h3(#livecounter). LiveCounter
 ** @(RTLC7c)@ Set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
 ** @(RTLC7d)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 *** @(RTLC7d1)@ If @ObjectMessage.operation.action@ is set to @COUNTER_CREATE@, apply the operation as described in "RTLC8":#RTLC8, passing in @ObjectMessage.operation@
+**** @(RTLC7d1a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
 *** @(RTLC7d2)@ If @ObjectMessage.operation.action@ is set to @COUNTER_INC@, apply the operation as described in "RTLC9":#RTLC9, passing in @ObjectMessage.operation.counterOp@
-*** @(RTLC7d3)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action
+**** @(RTLC7d2a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
+*** @(RTLC7d3)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action. No data update event is emitted
 * @(RTLC8)@ A @COUNTER_CREATE@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC8a)@ Expects the following arguments:
 *** @(RTLC8a1)@ @ObjectOperation@
-** @(RTLC8b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @COUNTER_CREATE@ operation has already been applied to this @LiveCounter@, and discard the operation without taking any further action
+** @(RTLC8d)@ The return type is a @LiveCounterUpdate@ object, which indicates the data update for this @LiveCounter@
+** @(RTLC8b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @COUNTER_CREATE@ operation has already been applied to this @LiveCounter@. Discard the operation without taking any further action, and return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@, indicating that no update was made to the object
 ** @(RTLC8c)@ Otherwise merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectOperation@ instance
+** @(RTLC8e)@ Return the @LiveCounterUpdate@ object returned by "RTLC10":#RTLC10
 * @(RTLC9)@ A @COUNTER_INC@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC9a)@ Expects the following arguments:
 *** @(RTLC9a1)@ @ObjectsCounterOp@
+** @(RTLC9c)@ The return type is a @LiveCounterUpdate@ object, which indicates the data update for this @LiveCounter@
 ** @(RTLC9b)@ Add @ObjectsCounterOp.amount@ to @data@, if it exists
+** @(RTLC9d)@ If @ObjectsCounterOp.amount@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @ObjectsCounterOp.amount@
+** @(RTLC9e)@ If @ObjectsCounterOp.amount@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
 * @(RTLC10)@ The initial value from @ObjectOperation.counter@ can be merged into this @LiveCounter@ in the following way:
 ** @(RTLC10a)@ Add @ObjectOperation.counter.count@ to @data@, if it exists
 ** @(RTLC10b)@ Set the private flag @createOperationIsMerged@ to @true@
+** @(RTLC10c)@ If @ObjectOperation.counter.count@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @ObjectOperation.counter.count@
+** @(RTLC10d)@ If @ObjectOperation.counter.count@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
 
 h3(#livemap). LiveMap
 
@@ -152,6 +192,9 @@ h3(#livemap). LiveMap
 * @(RTLM2)@ Represents the map object type for Object IDs of type @map@
 * @(RTLM3)@ Holds a @Dict<String, ObjectsMapEntry>@ as a private @data@ map
 * @(RTLM4)@ The zero-value @LiveMap@ is a @LiveMap@ with @data@ set to an empty map
+* @(RTLM18)@ Data updates for a @LiveMap@ are emitted using the @LiveMapUpdate@ object:
+** @(RTLM18a)@ @LiveMapUpdate@ extends @LiveObjectUpdate@
+** @(RTLM18b)@ @LiveMapUpdate.update@ is of type @Dict<String, 'updated' | 'removed'>@ - a map of @LiveMap@ keys that were either updated or removed, with the corresponding value indicating the type of change for each key
 * @(RTLM5)@ @LiveMap#get@ function:
 ** @(RTLM5a)@ Accepts a key of type String
 ** @(RTLM5b)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
@@ -206,21 +249,27 @@ h3(#livemap). LiveMap
 ** @(RTLM15c)@ Set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
 ** @(RTLM15d)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 *** @(RTLM15d1)@ If @ObjectMessage.operation.action@ is set to @MAP_CREATE@, apply the operation as described in "RTLM16":#RTLM16, passing in @ObjectMessage.operation@
+**** @(RTLM15d1a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
 *** @(RTLM15d2)@ If @ObjectMessage.operation.action@ is set to @MAP_SET@, apply the operation as described in "RTLM7":#RTLM7, passing in @ObjectMessage.operation.mapOp@ and @ObjectMessage.serial@
+**** @(RTLM15d2a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
 *** @(RTLM15d3)@ If @ObjectMessage.operation.action@ is set to @MAP_REMOVE@, apply the operation as described in "RTLM8":#RTLM8, passing in @ObjectMessage.operation.mapOp@ and @ObjectMessage.serial@
-*** @(RTLM15d4)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action
+**** @(RTLM15d3a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
+*** @(RTLM15d4)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action. No data update event is emitted
 * @(RTLM16)@ A @MAP_CREATE@ operation can be applied to a @LiveMap@ in the following way:
 ** @(RTLM16a)@ Expects the following argument:
 *** @(RTLM16a1)@ @ObjectOperation@
-** @(RTLM16b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @MAP_CREATE@ operation has already been applied to this @LiveMap@, and discard the operation without taking any further action
-** @(RTLM16c)@ If the private @semantics@ field does not match @ObjectOperation.map.semantics@, log a warning that the operation cannot be applied due to mismatched semantics, and discard the operation without taking any further action
+** @(RTLM16e)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
+** @(RTLM16b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @MAP_CREATE@ operation has already been applied to this @LiveMap@. Discard the operation without taking any further action, and return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
+** @(RTLM16c)@ If the private @semantics@ field does not match @ObjectOperation.map.semantics@, log a warning that the operation cannot be applied due to mismatched semantics. Discard the operation without taking any further action, and return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
 ** @(RTLM16d)@ Otherwise merge the initial value into the @LiveMap@ as described in "RTLM17":#RTLM17, passing in the @ObjectOperation@ instance
+** @(RTLM16f)@ Return the @LiveMapUpdate@ object returned by "RTLM17":#RTLM17
 * @(RTLM7)@ A @MAP_SET@ operation for a key can be applied to a @LiveMap@ in the following way:
 ** @(RTLM7d)@ Expects the following arguments:
 *** @(RTLM7d1)@ @ObjectsMapOp@
 *** @(RTLM7d2)@ @serial@ string - operation's serial value
+** @(RTLM7e)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
 ** @(RTLM7a)@ If an @ObjectsMapEntry@ exists in the private @data@ for the specified key:
-*** @(RTLM7a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action
+*** @(RTLM7a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action. Return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
 *** @(RTLM7a2)@ Otherwise, apply the operation to the existing entry:
 **** @(RTLM7a2a)@ Set @ObjectsMapEntry.data@ to the @ObjectData@ from the operation
 **** @(RTLM7a2b)@ Set @ObjectsMapEntry.timeserial@ to the provided @serial@
@@ -230,12 +279,14 @@ h3(#livemap). LiveMap
 *** @(RTLM7b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @false@
 ** @(RTLM7c)@ If the operation has a non-empty @ObjectData.objectId@ attribute:
 *** @(RTLM7c1)@ Create a zero-value @LiveObject@ for this @ObjectData.objectId@ in the internal @ObjectsPool@ per "RTO6":#RTO6
-* @(RTLM8)@ @MAP_REMOVE@ operation for a key can be applied to a @LiveMap@ in the following way:
+** @(RTLM7f)@ Return a @LiveMapUpdate@ object with a @LiveMapUpdate.update@ map containing the key used in this operation set to @updated@
+* @(RTLM8)@ A @MAP_REMOVE@ operation for a key can be applied to a @LiveMap@ in the following way:
 ** @(RTLM8c)@ Expects the following arguments:
 *** @(RTLM8c1)@ @ObjectsMapOp@
 *** @(RTLM8c2)@ @serial@ string - operation's serial value
+** @(RTLM8d)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
 ** @(RTLM8a)@ If an @ObjectsMapEntry@ exists in the private @data@ for the specified key:
-*** @(RTLM8a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action
+*** @(RTLM8a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action. Return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
 *** @(RTLM8a2)@ Otherwise, apply the operation to the existing entry:
 **** @(RTLM8a2a)@ Set @ObjectsMapEntry.data@ to undefined/null
 **** @(RTLM8a2b)@ Set @ObjectsMapEntry.timeserial@ to the provided @serial@
@@ -243,6 +294,7 @@ h3(#livemap). LiveMap
 ** @(RTLM8b)@ If an entry does not exist in the private @data@ for the specified key:
 *** @(RTLM8b1)@ Create a new @ObjectsMapEntry@ in @data@ for the specified key, with @ObjectsMapEntry.data@ set to undefined/null and @ObjectsMapEntry.timeserial@ set to the provided @serial@
 *** @(RTLM8b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @true@
+** @(RTLM8e)@ Return a @LiveMapUpdate@ object with a @LiveMapUpdate.update@ map containing the key used in this operation set to @removed@
 * @(RTLM9)@ Whether a map operation can be applied to a map entry is determined as follows:
 ** @(RTLM9a)@ For a @LiveMap@ with @semantics@ set to @ObjectsMapSemantics.LWW@ (Last-Write-Wins CRDT semantics), the operation must only be applied if its serial is strictly greater ("after") than the entry's serial when compared lexicographically
 ** @(RTLM9b)@ If both the entry serial and the operation serial are null or empty strings, they are treated as the "earliest possible" serials and considered "equal", so the operation must not be applied
@@ -250,10 +302,11 @@ h3(#livemap). LiveMap
 ** @(RTLM9d)@ If only the operation serial exists and is not an empty string, it is considered greater than the missing entry serial, so the operation can be applied
 ** @(RTLM9e)@ If both serials exist and are not empty strings, compare them lexicographically and allow operation to be applied only if the operation's serial is greater than the entry's serial
 * @(RTLM17)@ The initial value from @ObjectOperation.map@ can be merged into this @LiveMap@ in the following way:
-** @(RTLM17a)@ For each key–@ObjectsMapEntry@ pair in @ObjectOperation.map.entries@:
-*** @(RTLM17a1)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@
-*** @(RTLM17a2)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@
+** @(RTLM17a)@ For each key-@ObjectsMapEntry@ pair in @ObjectOperation.map.entries@:
+*** @(RTLM17a1)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@. Store the returned @LiveMapUpdate@ object for use in "RTLM17c":#RTLM17c
+*** @(RTLM17a2)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@. Store the returned @LiveMapUpdate@ object for use in "RTLM17c":#RTLM17c
 ** @(RTLM17b)@ Set the private flag @createOperationIsMerged@ to @true@
+** @(RTLM17c)@ Return a single @LiveMapUpdate@ object, where @LiveMapUpdate.update@ is a merged map containing all key-value pairs from the @LiveMapUpdate.update@ maps of the stored @LiveMapUpdate@ objects. Skip any stored @LiveMapUpdate@ objects marked as no-op
 
 h2(#idl). Interface Definition
 
@@ -269,9 +322,22 @@ class LiveObject: // RTLO*
   siteTimeserials: Dict<String, String> // RTLO3b, internal
   createOperationIsMerged: Boolean // RTLO3c, internal
   canApplyOperation(ObjectMessage) -> Boolean // RTLO4a, internal
+  subscribe((LiveObjectUpdate) ->) -> LiveObjectSubscription // RTLO4b
+  unsubscribe((LiveObjectUpdate) ->) // RTLO4c
+  unsubscribeAll() // RTLO4d
+
+interface LiveObjectSubscription: // RTLO4b5
+  unsubscribe() // RTLO4b5a
+
+interface LiveObjectUpdate: // RTLO4b4
+  update: Object // RTLO4b4a
+  noop: Boolean // RTLO4b4b, internal
 
 class LiveCounter extends LiveObject: // RTLC*, RTLC1
   value() -> Number // RTLC5
+
+interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a
+  update: { amount: Number } // RTLC11b, RTLC11b1
 
 class LiveMap extends LiveObject: // RTLM*, RTLM1
   get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5
@@ -279,4 +345,7 @@ class LiveMap extends LiveObject: // RTLM*, RTLM1
   entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
   keys() -> String[] // RTLM12
   values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13
+
+interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a
+  update: Dict<String, 'updated' | 'removed'> // RTLM18b
 </pre>
