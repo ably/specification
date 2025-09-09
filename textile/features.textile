@@ -1454,7 +1454,7 @@ h4. Message
 *** @(TM2q1)@ This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by @TM2u@.
 ** @(TM2r)@ @serial@ string - an opaque string that uniquely identifies the message.
 ** @(TM2s)@ @version@ - an object containing information about the latest version of a message. If a message received from Ably (whether over realtime or REST) does not contain a @version@ object the SDK must initialize a @version@ object and set a subset of fields as specified below.
-*** @(TM2s1)@ @serial@ - an opaque string that identifies the specific version of the message. If the @version.serial@ is not received over the wire, it must be set to the @TM2r@ @serial@, if it is set. Otherwise, it must be set to an empty string.
+*** @(TM2s1)@ @serial@ - an opaque string that identifies the specific version of the message. If the @version.serial@ is not received over the wire, it must be set to the @TM2r@ @serial@, if it is set.
 *** @(TM2s2)@ @timestamp@ - time in milliseconds since epoch. If the @version.timestamp@ is not received over the wire, it must be set to the @TM2f@ @timestamp@, if it is set.
 *** @(TM2s3)@ @clientId@ - string
 *** @(TM2s4)@ @description@ - string
@@ -2976,8 +2976,8 @@ class MessageAnnotations:
   summary: Dict<string, JsonObject>? // TM8a
 
 class MessageVersion:
-  serial: string // TM2s1
-  timestamp: number // TM2s2
+  serial: string? // TM2s1
+  timestamp: number? // TM2s2
   clientId: string? // TM2s3
   description: string? // TM2s4
   metadata: Dict<string, string>? //TM2s5

@@ -819,8 +819,8 @@ Contains information about the version of a message.
 
 | Method / Property | Parameter | Returns | Spec | Description |
 |---|---|---|---|---|
-| serial: String ||| TM2s1 | An opaque string that identifies the specific version of the message. |
-| timestamp: Time ||| TM2s2 | Time in milliseconds since epoch when this version was created. |
+| serial: String? ||| TM2s1 | An opaque string that identifies the specific version of the message. |
+| timestamp: Time? ||| TM2s2 | Time in milliseconds since epoch when this version was created. |
 | clientId: String? ||| TM2s3 | The client ID of the user who created this version. |
 | description: String? ||| TM2s4 | A description provided by the user who created this version. |
 | metadata: Dict<String, String>? ||| TM2s5 | Arbitrary metadata contributed by the user who created this version. |
