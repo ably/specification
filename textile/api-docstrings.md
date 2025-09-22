@@ -804,7 +804,7 @@ The per-name value for the multiple.v1 aggregation method.
 |---|---|---|
 | total | number | The sum of the counts from all clients who have published an annotation with this name. |
 | clientIds | { [key: string]: number } | A list of the clientIds of all clients who have published an annotation with this name, and the count each of them have contributed. |
-| totalUnidentified | number | The sum of the counts from annotations of unidentified clients. |
+| totalUnidentified | number | The sum of the counts provided towards the total by unidentified clients. |
 | clipped | boolean | Indicates whether the clientIds map has been clipped. Note that `total` and `totalClients` always represent the values of the unclipped summary. |
 | totalClientIds | number | The number of distinct clients who have published an annotation with this name. |
 
