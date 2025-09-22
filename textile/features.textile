@@ -1481,9 +1481,13 @@ h4. Message
 *** @(TM7c1)@ @SummaryClientIdList@ is an object containing:
 **** @(TM7c1a)@ @total@ integer
 **** @(TM7c1b)@ @clientIds@ array of strings
+**** @(TM7c1c)@ @clipped@ boolean (must be forced to false if not set over the wire)
 *** @(TM7d1)@ @SummaryClientIdCounts@ is an object containing:
 **** @(TM7d1a)@ @total@ integer
 **** @(TM7d1b)@ @clientIds@ @Dict<string, integer>@
+**** @(TM7d1c)@ @clipped@ boolean (must be forced to false if not set over the wire)
+**** @(TM7d1d)@ @totalUnidentified@ integer
+**** @(TM7d1e)@ @totalClientIds@ integer
 *** @(TM7e1)@ @SummaryTotal@ is an object containing:
 **** @(TM7e1a)@ @total@ integer
 * @(TM8)@ The attributes available in a @MessageAnnotations@ object are:
