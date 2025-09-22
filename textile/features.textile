@@ -1472,24 +1472,24 @@ h4. Message
 * @(TM7)@ The SDK may expose a series of functions (static factory methods on a Message or otherwise, wherever is language idiomatic; for some languages this might just be types that can be used for type assertions, etc), that take a deserialized @JsonObject@, one of the aggregated summaries for a particular annotation type (that is, a value from the @TM2q@ @summary@ @Dict@), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
 ** @(TM7a)@ The SDK must not try to do this conversion automatically (either by parsing the annotation type or dynamically detecting the structure). This is so that, when the server adds new annotation types that the SDK does not yet know about, when we later add support for those new types to the SDK, that does not result in a a breaking API change for the SDK.
 ** @(TM7b)@ If the SDK chooses to do this, it should support at least the following set of constructors (or other language-idiomatic mechanism that achieves a similar result):
-*** @(TM7b1)@ @SummaryDistinctV1(JsonObject) -> Dict<string, SummaryClientIdList>@
-*** @(TM7b2)@ @SummaryUniqueV1(JsonObject) -> Dict<string, SummaryClientIdList>@
-*** @(TM7b3)@ @SummaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts>@
+*** @(TM7b1)@ @SummaryDistinctV1(JsonObject) -> Dict<string, SummaryClientIdList>@ - string key is the name of annotation
+*** @(TM7b2)@ @SummaryUniqueV1(JsonObject) -> Dict<string, SummaryClientIdList>@ - string key is the name of annotation
+*** @(TM7b3)@ @SummaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts>@ - string key is the name of annotation
 *** @(TM7b4)@ @SummaryFlagV1(JsonObject) -> SummaryClientIdList@
 *** @(TM7b5)@ @SummaryTotalV1(JsonObject) -> SummaryTotal@
 ** @(TM7c)@ Where:
 *** @(TM7c1)@ @SummaryClientIdList@ is an object containing:
-**** @(TM7c1a)@ @total@ integer
-**** @(TM7c1b)@ @clientIds@ array of strings
-**** @(TM7c1c)@ @clipped@ boolean (must be forced to false if not set over the wire)
+**** @(TM7c1a)@ @total@ integer. Total number of clients who have published an annotation with this name.
+**** @(TM7c1b)@ @clientIds@ array of strings. A list of the clientIds of all clients who have published an annotation with this name.
+**** @(TM7c1c)@ @clipped@ boolean. If this field is not set over the wire, it should be set to false.
 *** @(TM7d1)@ @SummaryClientIdCounts@ is an object containing:
-**** @(TM7d1a)@ @total@ integer
-**** @(TM7d1b)@ @clientIds@ @Dict<string, integer>@
-**** @(TM7d1c)@ @clipped@ boolean (must be forced to false if not set over the wire)
-**** @(TM7d1d)@ @totalUnidentified@ integer
-**** @(TM7d1e)@ @totalClientIds@ integer
+**** @(TM7d1a)@ @total@ integer. The sum of the counts from all clients who have published an annotation with this name.
+**** @(TM7d1b)@ @clientIds@ @Dict<string, integer>@. A map of the clientIds of all clients who have published an annotation with this name, and the count each of them have contributed.
+**** @(TM7d1c)@ @clipped@ boolean. If this field is not set over the wire, it should be set to false.
+**** @(TM7d1d)@ @totalUnidentified@ integer. The sum of the counts from annotations of unidentified clients.
+**** @(TM7d1e)@ @totalClientIds@ integer. The number of distinct identified clients who have published an annotation with this name.
 *** @(TM7e1)@ @SummaryTotal@ is an object containing:
-**** @(TM7e1a)@ @total@ integer
+**** @(TM7e1a)@ @total@ integer. The total number of annotations of this type.
 * @(TM8)@ The attributes available in a @MessageAnnotations@ object are:
 ** @(TM8a)@ @summary@ @Dict<string, JsonObject>@ - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing @summary@ field on the wire indicates an empty summary, equivalent to an object with no keys. The SDK must initialize this object if not present.
 *** @(TM8a1)@ A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
