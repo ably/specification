@@ -794,6 +794,7 @@ The summary entry for aggregated annotations that use the flag.v1 aggregation me
 |---|---|---|
 | total | number | The total number of clients who have published an annotation with this name (or type, depending on context). |
 | clientIds | string[] | A list of the clientIds of all clients who have published an annotation with this name (or type, depending on context). |
+| clipped | boolean | Indicates whether the clientIds map has been clipped. Note that `total` always represents the value of the unclipped summary. |
 
 ## Class SummaryClientIdCounts
 
@@ -801,8 +802,11 @@ The per-name value for the multiple.v1 aggregation method.
 
 | Property | Type | Description |
 |---|---|---|
-| total | number | The sum of the counts from all clients who have published an annotation with this name |
+| total | number | The sum of the counts from all clients who have published an annotation with this name. |
 | clientIds | { [key: string]: number } | A list of the clientIds of all clients who have published an annotation with this name, and the count each of them have contributed. |
+| totalUnidentified | number | The sum of the counts provided towards the total by unidentified clients. |
+| clipped | boolean | Indicates whether the clientIds map has been clipped. Note that `total` and `totalClients` always represent the values of the unclipped summary. |
+| totalClientIds | number | The number of distinct clients who have published an annotation with this name. |
 
 
 ## Class SummaryTotal
