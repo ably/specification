@@ -141,6 +141,7 @@ Passes additional client-specific properties to the REST [`constructor()`]{@link
 | plugins: `Dict<PluginType, Plugin>` ||| TO3o | A map between a [`PluginType`]{@link PluginType} and a `Plugin` object. |
 | idempotentRestPublishing: bool default true ||| RSL1k1, RTL6a1, TO3n | When `true`, enables idempotent publishing by assigning a unique message ID client-side, allowing the Ably servers to discard automatic publish retries following a failure such as a network fault. The default is `true`. |
 | agents: [String: String?]? ||| RSC7d6 - interface only offered by some libraries | A set of additional entries for the Ably agent header. Each entry can be a key string or set of key-value pairs. |
+| connectivityCheckUrl: String default "https://internet-up.ably-realtime.com/is-the-internet-up.txt" ||| REC3 | The URL of an endpoint that the SDK can use to determine whether or not the Internet connection is working. It is only necessary to specify a non-default value if the default endpoint is not expected to be reachable in a particular network setting. |
 
 ## class AuthOptions
 

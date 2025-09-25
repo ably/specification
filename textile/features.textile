@@ -2289,6 +2289,7 @@ class ClientOptions: // TO*
   plugins: Dict<PluginType, Plugin> // TO3o
   idempotentRestPublishing: bool default true // RSL1k1, RTL6a1, TO3n
   agents: [String: String?]? // RSC7d6 - interface only offered by some libraries
+  connectivityCheckUrl: String default "https://internet-up.ably-realtime.com/is-the-internet-up.txt" // REC3
 
 class AuthOptions: // AO*
   authCallback: ((TokenParams) -> io (String | TokenDetails | TokenRequest | JsonObject))? // RSA4a, RSA4, TO3j5, AO2b
