@@ -375,8 +375,11 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
 *** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version, clientId) shall be empty strings.
 *** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
-*** @(CHA-M4k3)@ @[Testable]@ The @timestamp@ field shall have the current time.
-*** @(CHA-M4k4)@ @[Testable]@ The @createdAt@ field shall be 0 (the unix epoch).
+*** @(CHA-M4k3)@ This specification point has been removed.
+*** @(CHA-M4k4)@ This specification point has been removed.
+*** @(CHA-M4k5)@ @[Testable]@ The @message.timestamp@ field shall be 0 (the unix epoch).
+*** @(CHA-M4k6)@ @[Testable]@ The @message.version.serial@ field shall match @message.serial@.
+*** @(CHA-M4k7)@ @[Testable]@ The @message.version.timestamp@ field shall match @message.timestamp@.
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
 ** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
 ** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
