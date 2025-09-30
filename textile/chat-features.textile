@@ -44,6 +44,7 @@ h2(#initialization). Initialization
 *** @(CHA-IN1b1)@ @[Testable]@ When SDKs utilise themselves as a wrapper (e.g. JS in the context of React), both agents must be specified. For example, @{ "agents": { "chat-js": "1.0.1", "chat-react": "1.0.1" } }@.
 ** @(CHA-IN1c)@ SDK authors must ensure that they have registered the agents used by @CHA-IN1b@ in the common repository, per "@RSC7d5@":../features#RSC7d5.
 ** @(CHA-IN1d)@ @[Testable]@ The chat client must use the wrapper SDK proxy client created in @CHA-IN1a@ as the realtime client on which it performs all subsequent actions (for example, fetching channels or calling @#request@).
+** @(CHA-IN1e)@ @[Testable]@ Where @WrapperSDKProxyOptions@ does not exist, these agents must be injected into the Realtime client's agents properties, as well as channel params on @channels.get@ calls.
 
 h2(#client). Chat Client
 
