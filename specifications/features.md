@@ -2800,6 +2800,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       cipher: (CipherParams | CipherParamOptions)? // RSL5a, TB2b
       params?: Dict<String, String> // TB2c
       modes?: [ChannelMode] // TB2d
+      attachOnSubscribe: Bool default true // TB4
 
     class DeriveOptions: // DO*
       filter: String // DO2a (The filter string is a valid JMESPath String Expression)
