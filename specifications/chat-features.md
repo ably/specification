@@ -691,6 +691,8 @@ the overhead of having everyone in presence.
 - `(CHA-RST1)` REST API requests shall be made via the `request()` method on the underling Ably SDK.
 - `(CHA-RST2)` REST API requests shall use the API Protocol Version of the underlying core SDK.
 - `(CHA-RST3)` `[Testable]` REST API requests must be supported using `JSON` and `msgpack` as a `Content-Type` (`useBinaryProtocol` on the underlying Ably SDK)
+- `(CHA-RST4)` `[Testable]` Where a URL path contains a `roomName` variable, that value shall be URL-encoded.
+- `(CHA-RST5)` `[Testable]` Where a URL path contains a `timeserial` variable, that value shall be URL-encoded.
 
 ### Sending Messages {#rest-sending-messages}
 
