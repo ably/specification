@@ -658,9 +658,9 @@ h3(#rest-general). General
 * @(CHA-RST1)@ REST API requests shall be made via the @request()@ method on the underling Ably SDK.
 * @(CHA-RST2)@ REST API requests shall use the API Protocol Version of the underlying core SDK.
 * @(CHA-RST3)@ @[Testable]@ REST API requests must be supported using @JSON@ and @msgpack@ as a @Content-Type@ (@useBinaryProtocol@ on the underlying Ably SDK)
-* @(CHA-RST6)@ This specification requires that certain URL path segments be percent-encoded. When this is the case, this encoding procedure must produce a string that conforms to the @segment@ production as defined in "RFC 3986 Section 3.3":https://datatracker.ietf.org/doc/html/rfc3986#section-3.3. (Note that this differs from the @path@ production in that it requires that @/@ be percent-encoded.)
-* @(CHA-RST4)@ @[Testable]@ Where a URL path contains a @roomName@ variable, that value shall be percent-encoded per @CHA-RST6@.
-* @(CHA-RST5)@ @[Testable]@ Where a URL path contains a @timeserial@ variable, that value shall be percent-encoded per @CHA-RST6@.
+* @(CHA-RST6)@ @[Testable]@ All URL path variables (that is, the path components given in angle brackets, e.g. @<roomName>@) must be percent-encoded to produce a string that conforms to the @segment@ production as defined in "RFC 3986 Section 3.3":https://datatracker.ietf.org/doc/html/rfc3986#section-3.3. (Note that this differs from the @path@ production in that it requires that @/@ be percent-encoded.).
+* @(CHA-RST4)@ @[Testable]@ This specification point has been replaced by @CHA-RST6@.
+* @(CHA-RST5)@ @[Testable]@ This specification point has been replaced by @CHA-RST6@.
 
 h3(#rest-sending-messages). Sending Messages
 
