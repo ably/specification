@@ -656,8 +656,9 @@ h3(#rest-general). General
 * @(CHA-RST1)@ REST API requests shall be made via the @request()@ method on the underling Ably SDK.
 * @(CHA-RST2)@ REST API requests shall use the API Protocol Version of the underlying core SDK.
 * @(CHA-RST3)@ @[Testable]@ REST API requests must be supported using @JSON@ and @msgpack@ as a @Content-Type@ (@useBinaryProtocol@ on the underlying Ably SDK)
-* @(CHA-RST4)@ @[Testable]@ Where a URL path contains a @roomName@ variable, that value shall be URL-encoded.
-* @(CHA-RST5)@ @[Testable]@ Where a URL path contains a @timeserial@ variable, that value shall be URL-encoded.
+* @(CHA-RST6)@ @[Testable]@ All URL path variables (that is, the path segments given in angle brackets, e.g. @<roomName>@) must be percent-encoded as follows: the path variable must first be encoded to UTF-8 octets, and then each octet that does not satisfy the @pchar@ rule in section 3.3 of "RFC 3986":https://datatracker.ietf.org/doc/html/rfc3986 must be percent-encoded using the mechanism described in section 2.1 of the same RFC. Implementations are free to percent-encode any other octets that do not satisfy the @unreserved@ rule in section 2.3 of the same RFC; this allows implementations to use standard library URI-encoding functions that percent-encode a wider set of characters than those listed in @pchar@, for example JavaScript's @encodeURIComponent@ function. (Be careful when selecting a standard library function for URI-encoding to ensure that it does indeed produce output suitable for use in a URI path segment; for example, JavaScript's @encodeURI@ does not percent-encode the @/@ character, rendering it unsuitable.)
+* @(CHA-RST4)@ @[Testable]@ This specification point has been replaced by @CHA-RST6@.
+* @(CHA-RST5)@ @[Testable]@ This specification point has been replaced by @CHA-RST6@.
 
 h3(#rest-sending-messages). Sending Messages
 
