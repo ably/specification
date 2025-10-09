@@ -343,6 +343,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M3)@ A client must be able to send a message to a room.
 ** @(CHA-M3f)@ @[Testable]@ A client may send a message via the Chat REST API.
 ** @(CHA-M3a)@ @[Testable]@ When a message is sent successfully via the Chat REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message in response, as if it were received via Realtime event.
+*** @(CHA-M3a1)@ @[Testable]@ The message shall be populated directly from the data returned in the server response.
 ** @(CHA-M3b)@ @[Testable]@ A message may be sent via the Chat REST API without @metadata@ or @headers@. When these are not specified by the user, they must be omitted from the REST payload.
 ** @(CHA-M3c)@ This clause has been deleted.
 ** @(CHA-M3d)@ This clause has been deleted.
