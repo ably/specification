@@ -361,7 +361,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
   - `(CHA-M3e)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `send` call.
 - `(CHA-M8)` A client must be able to update a message in a room.
   - `(CHA-M8a)` `[Testable]` A client may update a message via the Chat REST API by calling the `update` method.
-  - `(CHA-M8b)` `[Testable]` When a message is updated successfully via the REST API, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response, as if it were received via Realtime event.
+  - `(CHA-M8b)` `[Testable]` When a message is updated successfully via the REST API, the caller shall receive a struct representing the [Messagev4](#chat-structs-message-v4) in response, as if it were received via Realtime event.
     - `(CHA-M8b1)` `[Testable]` The message shall be populated directly from the data returned in the server response.
   - `(CHA-M8c)` `[Testable]` An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
   - `(CHA-M8d)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation must be thrown as the result of the `update` call.
@@ -370,7 +370,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
       ** `(CHA-M8f)@ `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code 40000 must be thrown.
 - `(CHA-M9)` A client must be able to delete a message in a room.
   - `(CHA-M9a)` `[Testable]` A client may delete a message via the Chat REST API by calling the `delete` method.
-  - `(CHA-M9b)` `[Testable]` When a message is deleted successfully via the REST API, the caller shall receive a struct representing the [`Message`](#chat-structs-message-v2) in response, as if it were received via Realtime event.
+  - `(CHA-M9b)` `[Testable]` When a message is deleted successfully via the REST API, the caller shall receive a struct representing the [Messagev4](#chat-structs-message-v4) in response, as if it were received via Realtime event.
     - `(CHA-M9b1)` `[Testable]` The message shall be populated directly from the data returned in the server response.
   - `(CHA-M9c)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation must be thrown as the result of the `delete` call.
   - `(CHA-M9d)` `[Testable]` A client must be able to delete a message without requiring the full `Message` type. At minimum, it must be able to provide a `serial` string and an (optional) operation information.
@@ -380,7 +380,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
   - `(CHA-M4a)` `[Testable]` A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
   - `(CHA-M4b)` `[Testable]` A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
   - `(CHA-M4c)` This specification point has been removed. It was valid up until the v1 API review.
-  - `(CHA-M4l)` When a realtime message with the `name` field set to `chat.message` is received, it shall be translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [`Message Struct`](#chat-structs-message-v2). This event shall then broadcast to all subscribers.
+  - `(CHA-M4l)` When a realtime message with the `name` field set to `chat.message` is received, it shall be translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [Messagev4](#chat-structs-message-v4). This event shall then broadcast to all subscribers.
   - `(CHA-M4d)` `[Testable]` If a realtime message with an unknown `name` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
   - `(CHA-M4m)` `[Testable]` The `action` field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
     - `(CHA-M4m1)` `[Testable]` If `action` is set to `MESSAGE_CREATE`, then an event with `type` set to `message.created` shall be emitted.
@@ -699,11 +699,11 @@ the overhead of having everyone in presence.
 
 ### Sending Messages {#rest-sending-messages}
 
-#### Request V3 {#rest-sending-messages-request-v3}
+#### Request V4 {#rest-sending-messages-request-v4}
 
-Below is the full REST payload format for the V3 endpoint. The `metadata` and `headers` keys are optional.
+Below is the full REST payload format for the V4 endpoint. The `metadata` and `headers` keys are optional.
 
-      POST /chat/v3/rooms/<roomName>/messages
+      POST /chat/v4/rooms/<roomName>/messages
       {
         "text": "the message text",
         "metadata": {
@@ -716,7 +716,7 @@ Below is the full REST payload format for the V3 endpoint. The `metadata` and `h
         }
       }
 
-#### Response V3 {#rest-sending-messages-response-v3}
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-sending-messages-response-v3}
 
 A successful request shall result in status code `201 Created`.
 
@@ -727,7 +727,17 @@ The response body is as follows.
         "createdAt": 1726232498871
       }
 
-#### Corresponding Realtime Event V3 {#rest-sending-messages-realtime-v3}
+#### Response V4 {#rest-sending-messages-response-v4}
+
+A successful request shall result in status code `201 Created`.
+
+The response body is as follows.
+
+      {
+        // A full message object
+      }
+
+#### Corresponding Realtime Event V3 (Deprecated as of endpoint v4) {#rest-sending-messages-realtime-v3}
 
       {
         "type": "message.created"
@@ -756,13 +766,42 @@ The response body is as follows.
         }
       }
 
+#### Corresponding Realtime Event V4 {#rest-sending-messages-realtime-v4}
+
+      {
+        "type": "message.created"
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
+            }
+          },
+          "timestamp": 1726232498871,
+          "extras": {
+            "headers": {
+              "baz": "qux"
+            },
+          },
+          "serial": "01726585978590-001@abcdefghij:001",
+          "action": "message.create",
+          "version": { 
+            serial: "01726585978590-001@abcdefghij:001",
+            timestamp: 1726232498871,
+        }
+      }
+
 ### Updating Messages {#rest-updating-messages}
 
 #### Request {#rest-updating-messages-request}
 
 Below is the full REST payload format for the endpoint. The `description`, `headers` and both `metadata` keys are optional.
 
-      PUT /chat/v3/rooms/<roomName>/messages/<serial>
+      PUT /chat/v4/rooms/<roomName>/messages/<serial>
       {
         "message": {
           "text": "the new message text",
@@ -781,7 +820,7 @@ Below is the full REST payload format for the endpoint. The `description`, `head
         }
       }
 
-#### Response {#rest-updating-messages-request}
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-updating-messages-response-v3}
 
 A successful request shall result in status code `200 Ok`.
 
@@ -793,6 +832,16 @@ The response body is as follows.
         "message": {
           // A full message object
         }
+      }
+
+#### Response V4 {#rest-updating-messages-response-v4}
+
+A successful request shall result in status code `200 Ok`.
+
+The response body is as follows.
+
+      {
+          // A full message object
       }
 
 #### Corresponding Realtime Event {#rest-updating-messages-request}
@@ -836,7 +885,7 @@ The response body is as follows.
 
 Below is the full REST payload format for the endpoint.
 
-      POST /chat/v3/rooms/<roomName>/messages/<serial>/delete
+      POST /chat/v4/rooms/<roomName>/messages/<serial>/delete
       {
         "description": "why-the-action-was-performed"
         "metadata": {
@@ -844,7 +893,7 @@ Below is the full REST payload format for the endpoint.
         }
       }
 
-#### Response {#rest-deleting-messages-request}
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-deleting-messages-response-v3}
 
 A successful request shall result in status code `200 Ok`.
 
@@ -858,78 +907,105 @@ The response body is as follows.
         }
       }
 
-#### Corresponding Realtime Event {#rest-deleting-messages-request}
+#### Response V4 {#rest-deleting-messages-response-v4}
+
+A successful request shall result in status code `200 Ok`.
+
+The response body is as follows.
 
       {
-        "type": "message.deleted",
-        "message": {
-          "name": "chat.message"
-          "encoding": "json"
-          "data": {
-            "text": "the original message text",
-            "metadata": {
-              "foo": {
-                "bar": 1
-              }
+        // A full message object
+      }
+
+#### Corresponding Realtime Event {#rest-deleting-messages-request}
+
+    {
+      "type": "message.deleted",
+      "message": {
+        "name": "chat.message",
+        "encoding": "json",
+        "data": {
+          "text": "the original message text",
+          "metadata": {
+            "foo": {
+              "bar": 1
             }
-          },
-          "timestamp": "1726232498871",
-          "extras": {
-            "headers": {
-              "baz": "qux"
-            },
           }
-          "serial": "01726585978590-001@abcdefghij:001",
-          "action": "message.deleted"
-          "timestamp": 1826232498871
-          "createdAt": 1726585978590,
-          "version": "01826232498871-001@abcdefghij:001",
-          "operation": {
-            "clientId": "who-performed-the-action",
-            "description": "why-the-action-was-performed"
-            "metadata": {
-              "foo": "bar"
-            },
+        },
+        "timestamp": "1726232498871",
+        "extras": {
+          "headers": {
+            "baz": "qux"
+          }
+        },
+        "serial": "01726585978590-001@abcdefghij:001",
+        "action": "message.deleted",
+        "version": {
+          "serial": "01826232498871-001@abcdefghij:001",
+          "timestamp": 1826232498871,
+          "clientId": "who-performed-the-action",
+          "description": "why-the-action-was-performed",
+          "metadata": {
+            "foo": "bar"
           }
         }
       }
+    }
 
 ### Fetching a Single Message {#rest-fetching-single-message}
 
-#### Request V3 {#rest-fetching-single-message-request}
+#### Request V3 `(deprecated as of endpoint v4)` {#rest-fetching-single-message-request}
 
       GET /chat/v3/rooms/<roomName>/messages/<serial>
 
-#### Response V3 {#rest-fetching-single-message-response}
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-fetching-single-message-response}
 
 A single V3 [`Message` struct](#chat-structs-message-v2) or status 404 if not found.
 
+#### Request V4 {#rest-fetching-single-message-request}
+
+      GET /chat/v4/rooms/<roomName>/messages/<serial>
+
+#### Response V4 {#rest-fetching-single-message-response}
+
+A single V4 [`Message` struct](#chat-structs-message-v4) or status 404 if not found.
+
 ### Fetching Message History {#rest-fetching-messages-history}
 
-#### Request V3 {#rest-fetching-messages-request}
+#### Request V3 `(deprecated as of endpoint v4)` {#rest-fetching-messages-request}
 
-      GET /chat/v3/rooms/<roomName>/messages
+      GET /chat/v4/rooms/<roomName>/messages
 
 The method accepts query parameters identical to the standard Ably REST API.
 
-#### Response V3 {#rest-fetching-messages-response}
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-fetching-messages-response-v3}
 
 An array of V2 [`Message` structs](#chat-structs-message-v2)
 
+#### Request V4 {#rest-fetching-messages-request}
+
+      GET /chat/v4/rooms/<roomName>/messages
+
+The method accepts query parameters identical to the standard Ably REST API.
+
+#### Response V4 {#rest-fetching-messages-response-v4}
+
+An array of V4 [`Message` structs](#chat-structs-message-v4)
+
 ### Sending message reactions {#rest-sending-message-reactions}
 
-#### Request V3 {#rest-sending-messages-reactions-request-v3}
+#### Request V4 {#rest-sending-messages-reactions-request-v4}
 
-Below is the full REST payload format for the V3 endpoint. The `count` field is optional, defaults to 1, and it is only accepted for reactions of type `multiple`.
+Below is the full REST payload format for the V4 endpoint. The `count` field is optional, defaults to 1, and it is only accepted for reactions of type `multiple`.
 
-      POST /chat/v3/rooms/<roomId>/messages/<serial>/reactions
+      POST /chat/v4/rooms/<roomId>/messages/<serial>/reactions
       {
         "type": "multiple",
         "name": "🔥",
         "count": 5
       }
 
-#### Response V3 {#rest-sending-messages-response-v3}
+#### Response V4 {#rest-sending-messages-response-v4}
 
 A successful request shall result in status code `201 Created`.
 
@@ -939,7 +1015,7 @@ The response body is as follows showing the serial of the new annotation.
         "serial": "01746631786947-000@cbfVqJopQBorrt95348450",
       }
 
-#### Corresponding Realtime Event V3 {#rest-sending-messages-realtime-v3}
+#### Corresponding Realtime Event V4 {#rest-sending-messages-realtime-v4}
 
 Note this is an Annotation not a Message. ChannelMessage action is 21. The annotations are under the `annotations` key.
 
@@ -957,14 +1033,14 @@ A message summary event is also broadcast to the channel after adding or removin
 
 ### Deleting message reactions {#rest-deleting-message-reactions}
 
-#### Request V3 {#rest-deleting-messages-reactions-request-v3}
+#### Request V4 {#rest-deleting-messages-reactions-request-v4}
 
-Below is the full REST payload format for the V3 endpoint. The `name` param is ignored for reactions of type `unique` but it is required for all other reaction types.
+Below is the full REST payload format for the V4 endpoint. The `name` param is ignored for reactions of type `unique` but it is required for all other reaction types.
 
      
-      DELETE /chat/v3/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
+      DELETE /chat/v4/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
 
-#### Response V3 {#rest-sending-messages-response-v3}
+#### Response V4 {#rest-sending-messages-response-v4}
 
 A successful request shall result in status code `200 OK`.
 
@@ -974,7 +1050,7 @@ The response body is as follows showing the serial of the new annotation (annota
         "serial": "01746632464399-000@cbfVqJopQBorrt95348450",
       }
 
-#### Corresponding Realtime Event V3 {#rest-sending-messages-realtime-v3}
+#### Corresponding Realtime Event V4 {#rest-sending-messages-realtime-v4}
 
 Note this is an Annotation not a Message. ChannelMessage action is 21. The annotations are under the `annotations` key.
 
@@ -1053,7 +1129,7 @@ As part of the Chat v1 API review, the "type" field was renamed to "name".
 
 #### Request {#rest-occupancy-request}
 
-      GET /chat/v3/rooms/<roomName>/occupancy
+      GET /chat/v4/rooms/<roomName>/occupancy
 
 #### Response {#rest-occupancy-response}
 
