@@ -343,6 +343,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M3)@ A client must be able to send a message to a room.
 ** @(CHA-M3f)@ @[Testable]@ A client may send a message via the Chat REST API.
 ** @(CHA-M3a)@ @[Testable]@ When a message is sent successfully via the Chat REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message in response, as if it were received via Realtime event.
+*** @(CHA-M3a1)@ @[Testable]@ The message shall be populated directly from the data returned in the server response.
 ** @(CHA-M3b)@ @[Testable]@ A message may be sent via the Chat REST API without @metadata@ or @headers@. When these are not specified by the user, they must be omitted from the REST payload.
 ** @(CHA-M3c)@ This clause has been deleted.
 ** @(CHA-M3d)@ This clause has been deleted.
@@ -350,6 +351,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M8)@ A client must be able to update a message in a room.
 ** @(CHA-M8a)@ @[Testable]@ A client may update a message via the Chat REST API by calling the @update@ method.
 ** @(CHA-M8b)@ @[Testable]@ When a message is updated successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
+*** @(CHA-M8b1)@ @[Testable]@ The message shall be populated directly from the data returned in the server response.
 ** @(CHA-M8c)@ @[Testable]@ An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
 ** @(CHA-M8d)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @update@ call.
 ** @(CHA-M8e)@ @[Testable]@ A client must be able to update a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an object/other parameters to update and an (optional) operation information.
@@ -358,6 +360,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M9)@ A client must be able to delete a message in a room.
 ** @(CHA-M9a)@ @[Testable]@ A client may delete a message via the Chat REST API by calling the @delete@ method.
 ** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
+*** @(CHA-M9b1)@ @[Testable]@ The message shall be populated directly from the data returned in the server response.
 ** @(CHA-M9c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
 ** @(CHA-M9d)@ @[Testable]@ A client must be able to delete a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an (optional) operation information.
 *** @(CHA-M9d1) The exact idiom for the method signature is left to the best practice for the language.
