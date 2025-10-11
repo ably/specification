@@ -1279,8 +1279,8 @@ Example:
 
       {
         type: "reaction.summary",
-        summary: {
-          messageSerial: "01726585978590-001@abcdefghij:001",
+        messageSerial: "01726585978590-001@abcdefghij:001",
+        reactions: {
           "unique": {
             "like": {
               "total": 2,
