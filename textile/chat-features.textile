@@ -319,11 +319,6 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 
 * @(CHA-M1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-M2)@ A @Message@ corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
-<div class=deprecated>
-** @(CHA-M2a)@ @[Testable]@ @(deprecated)@ A @Message@ is considered before another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes first.
-** @(CHA-M2b)@ @[Testable]@ @(deprecated)@ A @Message@ is considered after another @Message@ in the global order if the @timeserial@ of the corresponding realtime channel message comes second.
-** @(CHA-M2c)@ @[Testable]@ @(deprecated)@ A @Message@ is considered to be equal to another @Message@ if they have the same timeserial.
-</div>
 ** @(CHA-M2d)@ @[Testable]@ A @Message@ contains a unique, immutable @serial@, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
 ** @(CHA-M2e)@ @[Testable]@ In global ordering, a @Message@ is considered to occur before another @Message@ if the @serial@ of the first @Message@ is before the latter when lexicographically sorted.
 ** @(CHA-M2f)@ @[Testable]@ In global ordering, a @Message@ is considered after another @Message@ if the @serial@ of the first @Message@ is after the latter when lexicographically sorted.
