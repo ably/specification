@@ -552,7 +552,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 * @(CHA-PR7)@ Users may subscribe to presence events.
 ** @(CHA-PR7d)@ @[Testable]@ If presence events have been disabled per @CHA-PR9c@, then the client shall throw an error with code @40000@.
 ** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event-v2 in a room.
-** @(CHA-PR7b)@ @[Testable]@ Users may provide a listener and a list of selected "presence events":#chat-structs-presence-event-v2, to subscribe to just those events in a room.
+** @(CHA-PR7b)@ @[Testable]@ This specification point has been removed.
 ** @(CHA-PR7c)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
 * @(CHA-PR8)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-PR9)@ Users may configure their presence options via the @RoomOptions@ provided at room configuration time.
