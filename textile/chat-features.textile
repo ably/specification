@@ -350,7 +350,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M3e)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation shall be thrown as the result of the @send@ call.
 * @(CHA-M8)@ A client must be able to update a message in a room.
 ** @(CHA-M8a)@ @[Testable]@ A client may update a message via the Chat REST API by calling the @update@ method.
-** @(CHA-M8b)@ @[Testable]@ When a message is updated successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
+** @(CHA-M8b)@ @[Testable]@ When a message is updated successfully via the REST API, the caller shall receive a struct representing the "Messagev4":#chat-structs-message-v4 in response, as if it were received via Realtime event.
 *** @(CHA-M8b1)@ @[Testable]@ The message shall be populated directly from the data returned in the server response.
 ** @(CHA-M8c)@ @[Testable]@ An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
 ** @(CHA-M8d)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @update@ call.
@@ -359,7 +359,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M8f)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
 * @(CHA-M9)@ A client must be able to delete a message in a room.
 ** @(CHA-M9a)@ @[Testable]@ A client may delete a message via the Chat REST API by calling the @delete@ method.
-** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "@Message@":#chat-structs-message-v2 in response, as if it were received via Realtime event.
+** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "Messagev4":#chat-structs-message-v4 in response, as if it were received via Realtime event.
 *** @(CHA-M9b1)@ @[Testable]@ The message shall be populated directly from the data returned in the server response.
 ** @(CHA-M9c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
 ** @(CHA-M9d)@ @[Testable]@ A client must be able to delete a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an (optional) operation information.
@@ -369,7 +369,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4c)@ This specification point has been removed. It was valid up until the v1 API review.
-** @(CHA-M4l)@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "@Message Struct@":#chat-structs-message-v2. This event shall then broadcast to all subscribers.
+** @(CHA-M4l)@ When a realtime message with the @name@ field set to @chat.message@ is received, it shall be translated into a message event based on its @action@. This message event contains a @type@ field with the event type as well as a @message@ field containing the "Messagev4":#chat-structs-message-v4. This event shall then broadcast to all subscribers.
 ** @(CHA-M4d)@ @[Testable]@ If a realtime message with an unknown @name@ is received, the SDK shall silently discard the message, though it may log at @DEBUG@ or @TRACE@ level.
 ** @(CHA-M4m)@ @[Testable]@ The @action@ field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
 *** @(CHA-M4m1)@ @[Testable]@ If @action@ is set to @MESSAGE_CREATE@, then an event with @type@ set to @message.created@ shall be emitted.
@@ -378,7 +378,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 *** @(CHA-M4m4)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
 *** @(CHA-M4m5)@ If an event is to be ignored (i.e. because the @action@ is unknown), the library must log the fact at @INFO@ level.
 ** @(CHA-M4k)@ @[Testable]@ Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
-*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, version, clientId) shall be empty strings.
+*** @(CHA-M4k1)@ @[Testable]@ Text fields (e.g. serial, string, clientId) shall be empty strings. The @version@ field specification has been superseded by @CHA-M4k5@.
 *** @(CHA-M4k2)@ @[Testable]@ Object fields (e.g. headers, metadata) shall be empty maps/objects.
 *** @(CHA-M4k3)@ This specification point has been removed.
 *** @(CHA-M4k4)@ This specification point has been removed.
@@ -666,12 +666,12 @@ h3(#rest-general). General
 
 h3(#rest-sending-messages). Sending Messages
 
-h4(#rest-sending-messages-request-v3). Request V3
+h4(#rest-sending-messages-request-v4). Request V4
 
-Below is the full REST payload format for the V3 endpoint. The @metadata@ and @headers@ keys are optional.
+Below is the full REST payload format for the V4 endpoint. The @metadata@ and @headers@ keys are optional.
 
 <pre>
-  POST /chat/v3/rooms/<roomName>/messages
+  POST /chat/v4/rooms/<roomName>/messages
   {
     "text": "the message text",
     "metadata": {
@@ -685,7 +685,7 @@ Below is the full REST payload format for the V3 endpoint. The @metadata@ and @h
   }
 </pre>
 
-h4(#rest-sending-messages-response-v3). Response V3
+h4(#rest-sending-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 A successful request shall result in status code @201 Created@.
 
@@ -698,7 +698,19 @@ The response body is as follows.
   }
 </pre>
 
-h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3
+h4(#rest-sending-messages-response-v4). Response V4
+
+A successful request shall result in status code @201 Created@.
+
+The response body is as follows.
+
+<pre>
+  {
+    // A full message object
+  }
+</pre>
+
+h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3 (Deprecated as of endpoint v4)
 
 <pre>
   {
@@ -729,6 +741,37 @@ h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3
   }
 </pre>
 
+h4(#rest-sending-messages-realtime-v4). Corresponding Realtime Event V4
+
+<pre>
+  {
+    "type": "message.created"
+    "message": {
+      "name": "chat.message"
+      "encoding": "json"
+      "data": {
+        "text": "the message text",
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        }
+      },
+      "timestamp": 1726232498871,
+      "extras": {
+        "headers": {
+          "baz": "qux"
+        },
+      },
+      "serial": "01726585978590-001@abcdefghij:001",
+      "action": "message.create",
+      "version": { 
+        serial: "01726585978590-001@abcdefghij:001",
+        timestamp: 1726232498871,
+    }
+  }
+</pre>
+
 h3(#rest-updating-messages). Updating Messages
 
 h4(#rest-updating-messages-request). Request
@@ -736,7 +779,7 @@ h4(#rest-updating-messages-request). Request
 Below is the full REST payload format for the endpoint. The @description@, @headers@ and both @metadata@ keys are optional.
 
 <pre>
-  PUT /chat/v3/rooms/<roomName>/messages/<serial>
+  PUT /chat/v4/rooms/<roomName>/messages/<serial>
   {
     "message": {
       "text": "the new message text",
@@ -756,7 +799,7 @@ Below is the full REST payload format for the endpoint. The @description@, @head
   }
 </pre>
 
-h4(#rest-updating-messages-request). Response
+h4(#rest-updating-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 A successful request shall result in status code @200 Ok@.
 
@@ -769,6 +812,18 @@ The response body is as follows.
     "message": {
       // A full message object
     }
+  }
+</pre>
+
+h4(#rest-updating-messages-response-v4). Response V4
+
+A successful request shall result in status code @200 Ok@.
+
+The response body is as follows.
+
+<pre>
+  {
+      // A full message object
   }
 </pre>
 
@@ -816,7 +871,7 @@ h4(#rest-deleting-messages-request). Request
 Below is the full REST payload format for the endpoint.
 
 <pre>
-  POST /chat/v3/rooms/<roomName>/messages/<serial>/delete
+  POST /chat/v4/rooms/<roomName>/messages/<serial>/delete
   {
     "description": "why-the-action-was-performed"
     "metadata": {
@@ -825,7 +880,7 @@ Below is the full REST payload format for the endpoint.
   }
 </pre>
 
-h4(#rest-deleting-messages-request). Response
+h4(#rest-deleting-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 A successful request shall result in status code @200 Ok@.
 
@@ -841,79 +896,110 @@ The response body is as follows.
   }
 </pre>
 
-h4(#rest-deleting-messages-request). Corresponding Realtime Event
+h4(#rest-deleting-messages-response-v4). Response V4
+
+A successful request shall result in status code @200 Ok@.
+
+The response body is as follows.
 
 <pre>
   {
-    "type": "message.deleted",
-    "message": {
-      "name": "chat.message"
-      "encoding": "json"
-      "data": {
-        "text": "the original message text",
-        "metadata": {
-          "foo": {
-            "bar": 1
-          }
+    // A full message object
+  }
+</pre>
+
+h4(#rest-deleting-messages-request). Corresponding Realtime Event
+
+<pre>
+{
+  "type": "message.deleted",
+  "message": {
+    "name": "chat.message",
+    "encoding": "json",
+    "data": {
+      "text": "the original message text",
+      "metadata": {
+        "foo": {
+          "bar": 1
         }
-      },
-      "timestamp": "1726232498871",
-      "extras": {
-        "headers": {
-          "baz": "qux"
-        },
       }
-      "serial": "01726585978590-001@abcdefghij:001",
-      "action": "message.deleted"
-      "timestamp": 1826232498871
-      "createdAt": 1726585978590,
-      "version": "01826232498871-001@abcdefghij:001",
-      "operation": {
-        "clientId": "who-performed-the-action",
-        "description": "why-the-action-was-performed"
-        "metadata": {
-          "foo": "bar"
-        },
+    },
+    "timestamp": "1726232498871",
+    "extras": {
+      "headers": {
+        "baz": "qux"
+      }
+    },
+    "serial": "01726585978590-001@abcdefghij:001",
+    "action": "message.deleted",
+    "version": {
+      "serial": "01826232498871-001@abcdefghij:001",
+      "timestamp": 1826232498871,
+      "clientId": "who-performed-the-action",
+      "description": "why-the-action-was-performed",
+      "metadata": {
+        "foo": "bar"
       }
     }
   }
+}
 </pre>
 
 h3(#rest-fetching-single-message). Fetching a Single Message
 
-h4(#rest-fetching-single-message-request). Request V3
+h4(#rest-fetching-single-message-request). Request V3 @(deprecated as of endpoint v4)@
 
 <pre>
   GET /chat/v3/rooms/<roomName>/messages/<serial>
 </pre>
 
-h4(#rest-fetching-single-message-response). Response V3
+h4(#rest-fetching-single-message-response). Response V3 @(deprecated as of endpoint v4)@
 
 A single V3 "@Message@ struct":#chat-structs-message-v2 or status 404 if not found.
 
-h3(#rest-fetching-messages-history). Fetching Message History
-
-h4(#rest-fetching-messages-request). Request V3
+h4(#rest-fetching-single-message-request). Request V4
 
 <pre>
-  GET /chat/v3/rooms/<roomName>/messages
+  GET /chat/v4/rooms/<roomName>/messages/<serial>
+</pre>
+
+h4(#rest-fetching-single-message-response). Response V4
+
+A single V4 "@Message@ struct":#chat-structs-message-v4 or status 404 if not found.
+
+h3(#rest-fetching-messages-history). Fetching Message History
+
+h4(#rest-fetching-messages-request). Request V3 @(deprecated as of endpoint v4)@
+
+<pre>
+  GET /chat/v4/rooms/<roomName>/messages
 </pre>
 
 The method accepts query parameters identical to the standard Ably REST API.
 
-h4(#rest-fetching-messages-response). Response V3
+h4(#rest-fetching-messages-response-v3). Response V3 @(deprecated as of endpoint v4)@
 
 An array of V2 "@Message@ structs":#chat-structs-message-v2
 
+h4(#rest-fetching-messages-request). Request V4
+<pre>
+  GET /chat/v4/rooms/<roomName>/messages
+</pre>
+
+The method accepts query parameters identical to the standard Ably REST API.
+
+h4(#rest-fetching-messages-response-v4). Response V4
+
+An array of V4 "@Message@ structs":#chat-structs-message-v4
 
 h3(#rest-sending-message-reactions). Sending message reactions
 
-h4(#rest-sending-messages-reactions-request-v3). Request V3
+h4(#rest-sending-messages-reactions-request-v4). Request V4
 
-Below is the full REST payload format for the V3 endpoint. The @count@ field is optional, defaults to 1, and it is only accepted for reactions of type @multiple@.
+Below is the full REST payload format for the V4 endpoint. The @count@ field is optional, defaults to 1, and it is only accepted for reactions of type @multiple@.
 
 <pre>
-  POST /chat/v3/rooms/<roomId>/messages/<serial>/reactions
+  POST /chat/v4/rooms/<roomId>/messages/<serial>/reactions
   {
     "type": "multiple",
     "name": "🔥",
@@ -921,7 +1007,7 @@ Below is the full REST payload format for the V3 endpoint. The @count@ field is 
   }
 </pre>
 
-h4(#rest-sending-messages-response-v3). Response V3
+h4(#rest-sending-messages-response-v4). Response V4
 
 A successful request shall result in status code @201 Created@.
 
@@ -933,7 +1019,7 @@ The response body is as follows showing the serial of the new annotation.
   }
 </pre>
 
-h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3
+h4(#rest-sending-messages-realtime-v4). Corresponding Realtime Event V4
 
 Note this is an Annotation not a Message. ChannelMessage action is 21. The annotations are under the @annotations@ key.
 
@@ -953,15 +1039,15 @@ A message summary event is also broadcast to the channel after adding or removin
 
 h3(#rest-deleting-message-reactions). Deleting message reactions
 
-h4(#rest-deleting-messages-reactions-request-v3). Request V3
+h4(#rest-deleting-messages-reactions-request-v4). Request V4
 
-Below is the full REST payload format for the V3 endpoint. The @name@ param is ignored for reactions of type @unique@ but it is required for all other reaction types.
+Below is the full REST payload format for the V4 endpoint. The @name@ param is ignored for reactions of type @unique@ but it is required for all other reaction types.
 
 <pre> 
-  DELETE /chat/v3/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
+  DELETE /chat/v4/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
 </pre>
 
-h4(#rest-sending-messages-response-v3). Response V3
+h4(#rest-sending-messages-response-v4). Response V4
 
 A successful request shall result in status code @200 OK@.
 
@@ -973,7 +1059,7 @@ The response body is as follows showing the serial of the new annotation (annota
   }
 </pre>
 
-h4(#rest-sending-messages-realtime-v3). Corresponding Realtime Event V3
+h4(#rest-sending-messages-realtime-v4). Corresponding Realtime Event V4
 
 Note this is an Annotation not a Message. ChannelMessage action is 21. The annotations are under the @annotations@ key.
 
@@ -1062,7 +1148,7 @@ h3(#rest-occupancy). Occupancy
 h4(#rest-occupancy-request). Request
 
 <pre>
-  GET /chat/v3/rooms/<roomName>/occupancy
+  GET /chat/v4/rooms/<roomName>/occupancy
 </pre>
 
 h4(#rest-occupancy-response). Response
@@ -1119,7 +1205,7 @@ h4(#chat-structs-message-v1). Messages V1 @(deprecated)@
 
 @(deprecated)@ Determining the global order of messages may be achieved by comparing the timeserials. See @CHA-M2@ for more information.
 
-h4(#chat-structs-message-v2). Messages V2
+h4(#chat-structs-message-v2). Messages V2 @(deprecated)@
 
 <pre>
   {
@@ -1155,17 +1241,53 @@ h4(#chat-structs-message-v2). Messages V2
   }
 </pre>
 
+h4(#chat-structs-message-v4). Messages V4
+
+<pre>
+  {
+    "serial": "01726585978590-001@abcdefghij:001",
+    "clientId": "who-sent-the-message",
+    "text": "my-message",
+    "timestamp": DateTime(),
+    "metadata": {
+      "foo": {
+        "bar": 1
+      }
+    },
+    "headers": {
+      "baz": "qux"
+    }
+    "action": "message.created",
+    "version": {
+      "serial": "01726585978590-001@abcdefghij:001",
+      "timestamp": DateTime(),
+      "clientId": "who-performed-the-action",
+      "description": "why-the-action-was-performed",
+      "metadata": {
+        "foo": {
+          "bar": 1
+        }
+      }
+    },
+    "reactions": {
+      "unique": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userThree"]}},
+      "distinct": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userOne"]}},
+      "multiple": {"like": {"total": 5, "clientIds": {"userOne": 3, "userTwo": 2}}, "love": {"total": 10, "clientIds": {"userOne": 10}}},
+    }
+  }
+</pre>
+
 There are getters provided in the @Message@ object to provide easy access to updated/deleted information:
 * @isUpdated@ returns @true@ if the message is updated
 * @isDeleted@ returns @true@ if the message is deleted
-* @updatedBy@ returns the clientId from @operation.clientId@ if the message is updated, @undefined@ otherwise
-* @deletedBy@ returns the clientId from @operation.clientId@ if the message is deleted, @undefined@ otherwise
-* @updatedAt@ returns the @timestamp@ from the operation if the message is updated, @undefined@ otherwise
-* @deletedAt@ returns the @timestamp@ from the operation if the message is deleted, @undefined@ otherwise
+* @updatedBy@ returns the clientId from @version.clientId@ if the message is updated, @undefined@ otherwise
+* @deletedBy@ returns the clientId from @version.clientId@ if the message is deleted, @undefined@ otherwise
+* @updatedAt@ returns the @timestamp@ from the version if the message is updated, @undefined@ otherwise
+* @deletedAt@ returns the @timestamp@ from the version if the message is deleted, @undefined@ otherwise
 
 Determining the global order of messages may be achieved by lexicographically comparing the serials. See @CHA-M2@ for more information.
 
-Determining the global order of message versions may be achieved by lexicographically comparing the @version@. See @CHA-M10@ for more information.
+Determining the global order of message versions may be achieved by lexicographically comparing the @version.serial@. See @CHA-M10@ for more information.
 
 When keeping a @Message@ updated, use the @Message.with(event)@ method to apply events to ensure correctness. The @with@ method returnes message instances with the event applied to them. If the event is not applicable due to being for an older version of the message, the method will return the message unchanged. If the event is applicable, a new instance will be returned with the event applied. @Message.with()@ correctly handles message reactions. See @CHA-M11@ for more information.
 
