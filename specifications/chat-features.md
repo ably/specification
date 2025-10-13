@@ -317,28 +317,12 @@ Messages are the quintessential component of a chat room - the purpose of chat i
 Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.\
 `Messages` shall be exposed to consumers via the `messages` property of a `Room`.
 
-\* `(CHA-M1)` This specification point has been removed. It was valid up until the single-channel migration.
-
-\* `(CHA-M2)` A `Message` corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a `ProtocolMessage`).
-
-<div class=deprecated>
-
-`(CHA-M2a)` `[Testable]` `(deprecated)` A `Message` is considered before another `Message` in the global order if the `timeserial` of the corresponding realtime channel message comes first.
-
-`(CHA-M2b)` `[Testable]` `(deprecated)` A `Message` is considered after another `Message` in the global order if the `timeserial` of the corresponding realtime channel message comes second.
-
-`(CHA-M2c)` `[Testable]` `(deprecated)` A `Message` is considered to be equal to another `Message` if they have the same timeserial.
-
-</div>
-
-`(CHA-M2d)` `[Testable]` A `Message` contains a unique, immutable `serial`, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
-
-`(CHA-M2e)` `[Testable]` In global ordering, a `Message` is considered to occur before another `Message` if the `serial` of the first `Message` is before the latter when lexicographically sorted.
-
-`(CHA-M2f)` `[Testable]` In global ordering, a `Message` is considered after another `Message` if the `serial` of the first `Message` is after the latter when lexicographically sorted.
-
-`(CHA-M2g)` `[Testable]` Two `Messages` are considered to be the same if they have the same `serial`, that is to say, both `Serial` strings are identical.
-
+- `(CHA-M1)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-M2)` A `Message` corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a `ProtocolMessage`).
+  - `(CHA-M2d)` `[Testable]` A `Message` contains a unique, immutable `serial`, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
+  - `(CHA-M2e)` `[Testable]` In global ordering, a `Message` is considered to occur before another `Message` if the `serial` of the first `Message` is before the latter when lexicographically sorted.
+  - `(CHA-M2f)` `[Testable]` In global ordering, a `Message` is considered after another `Message` if the `serial` of the first `Message` is after the latter when lexicographically sorted.
+  - `(CHA-M2g)` `[Testable]` Two `Messages` are considered to be the same if they have the same `serial`, that is to say, both `Serial` strings are identical.
 - `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` must generate a new `Message` instance with the same `serial` and an updated `version`.
   - `(CHA-M10a)` `[Testable]` The `version` of a `Message` is a lexicographically sortable, unique identifier for each version of the `Message`.
   - `(CHA-M10b)` This clause has been deleted.
