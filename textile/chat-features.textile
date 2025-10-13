@@ -324,14 +324,14 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M2f)@ @[Testable]@ In global ordering, a @Message@ is considered after another @Message@ if the @serial@ of the first @Message@ is after the latter when lexicographically sorted.
 ** @(CHA-M2g)@ @[Testable]@ Two @Messages@ are considered to be the same if they have the same @serial@, that is to say, both @Serial@ strings are identical.
 * @(CHA-M10)@ A @Message@ can be modified by applying a new @action@ to it, such as an update or delete. Applying an @action@ must generate a new @Message@ instance with the same @serial@ and an updated @version@.
-** @(CHA-M10a)@ @[Testable]@ The @version@ of a @Message@ is a lexicographically sortable, unique identifier for each version of the @Message@.
+** @(CHA-M10a)@ @[Testable]@ The @version@ of a @Message@ is a lexicographically sortable via it's @serial@ field, unique identifier for each version of the @Message@.
 ** @(CHA-M10b)@ This clause has been deleted.
 ** @(CHA-M10c)@ This clause has been deleted.
 ** @(CHA-M10d)@ This clause has been deleted.
-** @(CHA-M10e)@ @[Testable]@ To sort @Message@ @versions@ of the same @Message@ (instances with the same @serial@) in global order, sort @Message@ instances lexicographically by their @version@ property.
-*** @(CHA-M10e1)@ @[Testable]@ Two @Message@ instances of the same @serial@ are considered the same version if they have the same @version@ property.
-*** @(CHA-M10e2)@ @[Testable]@ Among @Message@ instances of the same @serial@, the one with a lexicographically higher @version@ is newer.
-*** @(CHA-M10e3)@ @[Testable]@ Among @Message@ instances of the same @serial@, the one with a lexicographically lower @version@ is older.
+** @(CHA-M10e)@ @[Testable]@ To sort @Message@ @versions@ of the same @Message@ (instances with the same @serial@) in global order, sort @Message@ instances lexicographically by their @version.serial@ property.
+*** @(CHA-M10e1)@ @[Testable]@ Two @Message@ instances of the same @serial@ are considered the same version if they have the same @version.serial@ property.
+*** @(CHA-M10e2)@ @[Testable]@ Among @Message@ instances of the same @serial@, the one with a lexicographically higher @version.serial@ is newer.
+*** @(CHA-M10e3)@ @[Testable]@ Among @Message@ instances of the same @serial@, the one with a lexicographically lower @version.serial@ is older.
 ** @(CHA-M10f)@ This specification point has been removed.
 ** @(CHA-M10g)@ This specification point has been removed.
 ** @(CHA-M10h)@ This specification point has been removed.
