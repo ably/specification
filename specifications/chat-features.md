@@ -469,6 +469,16 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 <!-- -->
 
+- `(CHA-MR13)` `[Testable]` Users should be able to fetch the message reaction summary for a given client ID via the `clientReactions` method of the `MessageReactions` object.
+  - `(CHA-MR13a)` This method accepts the following arguments:
+    - `(CHA-MR13a1)` `messageSerial`, string: the `serial` of the message for which reactions should be fetched
+    - `(CHA-MR13a2)` `clientId`, optional string: the `clientId` whose reactions should be fetched (absent means the current client, to be determined implicitly from the authenticated user)
+  - `(CHA-MR13b)` `[Testable]` Calls the [REST API fetch reactions summary endpoint](#rest-fetching-reactions-summary) and returns the summary.
+    - `(CHA-MR13b1)` `[Testable]` If the user does not pass the `clientId` argument, then the REST API call must not include the `forClientId` parameter.
+  - `(CHA-MR13c)` `[Testable]` If the REST API returns an error, then the method must throw its `ErrorInfo` representation.
+
+<!-- -->
+
 - `(CHA-MR5)` `[Testable]` Users may configure a default message reactions type for a room. This configuration is provided at the `RoomOptions.messages.defaultMessageReactionType` property, or idiomatic equivalent. The default value is `distinct`.
 
 <!-- -->
@@ -1072,6 +1082,20 @@ Note this is an Annotation not a Message. ChannelMessage action is 21. The annot
       }
 
 A message summary event is also broadcast to the channel after adding or removing one or more annotations.
+
+### Fetching Summary of Reactions for a Message {#rest-fetching-reactions-summary}
+
+#### Request V4 {#rest-fetching-reactions-summary-request}
+
+      GET /chat/v4/rooms/<roomName>/messages/<serial>/client-reactions
+
+Accepts the following query parameters:
+
+- `forClientId` (optional): The client ID for which the message summary should be fetched. Defaults to the client ID of the authenticated user.
+
+#### Response V4 {#rest-fetching-reactions-summary-response}
+
+A single V4 [`Message.reactions` struct](#chat-structs-message-v4) or status 404 if not found.
 
 ## Chat Realtime API {#realtime-api}
 
