@@ -381,6 +381,38 @@ h3(#rest-channel). RestChannel
 * @(RSL8)@ @RestChannel#status@ function: makes a http get request to @<restHost>/channels/<channelId>@ where @<restHost>@ represents the current rest host as described by "@RSC11@":#RSC11
 ** @(RSL8a)@ Returns a @ChannelDetails@ object
 * @(RSL10)@ @RestChannel#annotations@ attribute contains the @RestAnnotations@ object for this channel
+* @(RSL11)@ @RestChannel#getMessage@ function:
+** @(RSL11a)@ Takes a first argument of a @serial@ string of the message to be retrieved.
+*** @(RSL11a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
+** @(RSL11b)@ The SDK must send a GET request to the endpoint @/channels/{channelName}/messages/{serial}@
+** @(RSL11c)@ Returns the decoded @Message@ object for the specified message serial
+* @(RSL12)@ @RestChannel#updateMessage@ function:
+** @(RSL12a)@ Takes a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
+** @(RSL12b)@ The SDK must send a PATCH to @/channels/{channelName}/messages/{serial}@, with any @params@ sent in the querystring. The request body consists of an object with the following fields:
+*** @(RSL12b1)@ @serial@ - the serial identifier of the message being updated
+*** @(RSL12b2)@ @operation@ - the @MessageOperation@ object if provided
+*** @(RSL12b3)@ @name@ - the message name from the @Message@ object if provided
+*** @(RSL12b4)@ @data@ - the message data from the @Message@ object if provided, encoded per @RSL4@
+*** @(RSL12b5)@ @encoding@ - the encoding field set according to @RSL4@ if @data@ was encoded
+*** @(RSL12b6)@ @extras@ - the extras field from the @Message@ object if provided
+** @(RSL12c)@ The body must be encoded to the appropriate format per @RSC8@
+** @(RSL12d)@ Returns the updated @Message@ object, which the server will have responded with
+* @(RSL13)@ @RestChannel#deleteMessage@ function:
+** @(RSL13a)@ Takes a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
+** @(RSL13b)@ The SDK must send a POST to @/channels/{channelName}/messages/{serial}/delete@, with any @params@ sent in the querystring. The request body consists of an object with the following fields:
+*** @(RSL13b1)@ @serial@ - the serial identifier of the message being deleted
+*** @(RSL13b2)@ @operation@ - the @MessageOperation@ object if provided
+*** @(RSL13b3)@ @name@ - the message name from the @Message@ object if provided
+*** @(RSL13b4)@ @data@ - the message data from the @Message@ object if provided, encoded per @RSL4@
+*** @(RSL13b5)@ @encoding@ - the encoding field set according to @RSL4@ if @data@ was encoded
+*** @(RSL13b6)@ @extras@ - the extras field from the @Message@ object if provided
+** @(RSL13c)@ The body must be encoded to the appropriate format per @RSC8@
+** @(RSL13d)@ Returns the updated (well, 'deleted') @Message@ object, which the server will have responded with
+* @(RSL14)@ @RestChannel#getMessageVersions@ function:
+** @(RSL14a)@ Takes a first argument a @serial@ string of the message whose versions are to be retrieved, and an optional second argument of @Dict<string, stringifiable>@ params
+*** @(RSL14a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
+** @(RSL14b)@ The SDK must send a GET request to the endpoint @/channels/{channelName}/messages/{serial}/versions@
+** @(RSL14c)@ Returns a @PaginatedResult<Message>@
 
 h3(#plugins). Plugins
 * @(PC1)@ Specific client library features that are not commonly used may be supplied as independent libraries, as plugins, in order to avoid excessively bloating the client library. Although such plugins are packaged as independent libraries, they are still considered logically to be part of the client library code and, as such, may be tightly coupled with the client library implementation. The client library can be assumed to be aware of the plugin specific type and capabilities, and such plugins may by design be coupled to a specific version of the client library.
@@ -820,6 +852,10 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL25a)@ If the channel is already in the given state, calls the listener with a `null` argument.
 ** @(RTL25b)@ Else, calls @#once@ with the given state and listener.
 * @(RTL26)@ @RealtimeChannel#annotations@ attribute contains the @RealtimeAnnotations@ object for this channel
+* @(RTL28)@ @RealtimeChannel#getMessage@ function: same as @RestChannel#getMessage@
+* @(RTL29)@ @RealtimeChannel#updateMessage@ function: same as @RestChannel#updateMessage@
+* @(RTL30)@ @RealtimeChannel#deleteMessage@ function: same as @RestChannel#deleteMessage@
+* @(RTL31)@ @RealtimeChannel#getMessageVersions@ function: same as @RestChannel#getMessageVersions@
 
 h3(#realtime-presence). RealtimePresence
 
@@ -2450,6 +2486,11 @@ class ChannelOptions: // TB*
   params?: Dict<String, String> // TB2c
   modes?: [ChannelMode] // TB2d
   attachOnSubscribe: Bool default true // TB4
+
+class MessageOperation: // MOP*
+  clientId?: String // MOP2a
+  description?: String // MOP2b
+  metadata?: Dict<String, String> // MOP2c
 
 class DeriveOptions: // DO*
   filter: String // DO2a (The filter string is a valid JMESPath String Expression)
