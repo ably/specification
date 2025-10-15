@@ -449,7 +449,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 <!-- -->
 
 - `(CHA-MR4)` `[Testable]` Users should be able to send a reaction to a message via the \`send\` method of the \`MessagesReactions\` object (`room.messages.reactions.send`).
-  - `(CHA-MR4a)` `[Testable]` The \`send\` method accepts a message (or message serial) as the first parameter to identify which message to react to.
+  - `(CHA-MR4a)` `[Testable]` The \`send\` method accepts a message serial as the first parameter to identify which message to react to.
     - `(CHA-MR4a1)` This specification point has been removed. It was valid up until the pre-v1 error code review.
     - `(CHA-MR4a2)` `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code 40003 must be thrown.
   - `(CHA-MR4b)` `[Testable]` The \`send\` method accepts a \`params\` object as the second parameter with the following properties:
@@ -460,7 +460,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 <!-- -->
 
 - `(CHA-MR11)` `[Testable]` Users should be able to delete a reaction from a message via the \`delete\` method of the \`MessagesReactions\` object (`room.messages.reactions.delete`).
-  - `(CHA-MR11a)` `[Testable]` The \`delete\` method accepts a message (or message serial) as the first parameter to identify which message to delete the reaction from.
+  - `(CHA-MR11a)` `[Testable]` The \`delete\` method accepts a message serial as the first parameter to identify which message to delete the reaction from.
     - `(CHA-MR11a1)` This specification point has been removed. It was valid up until the pre-v1 error code review.
     - `(CHA-MR11a2)` `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code 40003 must be thrown.
   - `(CHA-MR11b)` `[Testable]` The \`delete\` method accepts a \`params\` object as the second parameter with the following properties:
