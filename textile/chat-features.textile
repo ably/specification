@@ -26,6 +26,7 @@ This specification has undergone the following major revisions, stemming from a 
 
 * Single Channel Migration: CHADR-097, March 2025
 * V1 API Review: CHADR-101, May 2025
+* Pre-V1 Error Code Review: CHA-1207, October 2025
 
 
 h2(#general). General Principles
@@ -137,7 +138,8 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL1a)@ @[Testable]@ If the room is already in the @ATTACHED@ status, then this operation is no-op.
 ** @(CHA-RL1j)@ This specification point has been removed.
 ** @(CHA-RL1b)@ This specification point has been removed, it was valid up until the single-channel migration.
-** @(CHA-RL1c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
+** @(CHA-RL1c)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-RL1l)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL1d)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 ** @(CHA-RL1e)@ @[Testable]@ Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the @ATTACHING@ status before attempting to attach to the realtime channel.
 ** @(CHA-RL1k)@ @[Testable]@ Following the @CHA-RL1e@ transition, the client shall initiate and await the attachment of the realtime channel.
@@ -162,8 +164,10 @@ h4(#rooms-lifecycle-operations). Room Lifecycle Operations
 ** @(CHA-RL2i)@ @[Testable]@ If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to @CHA-RL7@.
 ** @(CHA-RL2a)@ @[Testable]@ If the room status is already @DETACHED@, then this operation is a no-op.
 ** @(CHA-RL2b)@ @[Testable]@ This specification point has been removed. It was valid up until the single-channel migration.
-** @(CHA-RL2c)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomIsReleased@ error code from the "chat-specific error codes":#error-codes.
-** @(CHA-RL2d)@ @[Testable]@ If the room is in the @FAILED@ status, the operation shall be rejected with an @ErrorInfo@ with @RoomInFailedState@ error code from the "chat-specific error codes":#error-codes.
+** @(CHA-RL2c)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-RL2l)@ @[Testable]@ If the room is in the @RELEASED@ status, the operation shall be rejected with an @ErrorInfo@ with the @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes.
+** @(CHA-RL2d)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-RL2m)@ @[Testable]@ If the room is in the @FAILED@ status, the operation shall be rejected with an @ErrorInfo@ with @RoomInInvalidState@ error code from the "chat-specific error codes":#error-codes.
 ** @(CHA-RL2j)@ @[Testable]@ Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the @DETACHING@ status before attempting to detach from the realtime channel.
 ** @(CHA-RL2k)@ @[Testable]@ Following the @CHA-RL2j@ transition, the client shall initiate and await the detachment of the realtime channel.
 *** @(CHA-RL2k1)@ @[Testable]@ If the detachment is successful, the room status shall be transitioned to @DETACHED@, and the @isExplicitlyDetached@ flag set to @true@.
@@ -262,7 +266,8 @@ Each chat room can be configured individually, allowing options to be passed as 
 * @(CHA-RC1)@ Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
 ** @(CHA-RC1a)@ This specification point has been removed. It was superseded by CHA-RC1f.
 ** @(CHA-RC1f)@ @[Testable]@ Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
-*** @(CHA-RC1f7)@ @[Testable]@ If the @Rooms@ instance has been disposed (following a call to @dispose@), attempting to get a room must throw an error with code @40000@.
+*** @(CHA-RC1f7)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+*** @(CHA-RC1f8)@ @[Testable]@ If the @Rooms@ instance has been disposed (following a call to @dispose@), attempting to get a room must throw an error with code @40014@.
 *** @(CHA-RC1f1)@ @[Testable]@ If the room name exists in the room map, but the room has been requested with different options, then an @ErrorInfo@ with the @BadRequest@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400 shall be thrown.
 *** @(CHA-RC1f2)@ @[Testable]@ If the room name exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
 *** @(CHA-RC1f3)@ @[Testable]@ If no @CHA-RC1g@ release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
@@ -275,7 +280,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1d1)@ This specification point has been removed.
 ** @(CHA-RC1e)@ This specification point has been removed.
 ** @(CHA-RC1g)@ A room may be @released@, which causes it to be disposed of and eligible for garbage collection.
-*** @(CHA-RC1g1)@ The release operation returns a future that shall resolve when the operation completes. 
+*** @(CHA-RC1g1)@ The release operation returns a future that shall resolve when the operation completes.
 *** @(CHA-RC1g2)@ @[Testable]@ If the room does not exist in the room map, and no release operation is in progress, this operation is no-op.
 *** @(CHA-RC1g3)@ @[Testable]@ If the room does not exist in the room map, and a release operation is already in progress, then the associated future will be returned.
 *** @(CHA-RC1g4)@ @[Testable]@ If a release operation is already in progress, any pending @CHA-RC1f@ future shall be rejected / throw an error. The error must use the @RoomReleasedBeforeOperationCompleted@ error code from the "chat-specific error codes":#error-codes and a @statusCode@ of 400. The room shall be removed from the room map and the operation must return the future associated with the previous operation.
@@ -283,7 +288,7 @@ Each chat room can be configured individually, allowing options to be passed as 
 *** @(CHA-RC1g6)@ @[Testable]@ Once the @CHA-RL3@ release operation completes, each individual feature must be cleaned up for garbage collection via its individual @dispose@ method.
 * @(CHA-RC5)@ @[Testable]@ All chat feature properties (e.g. @room.messages@) are enabled by default. The specific behaviour of each feature is controlled by its respective room options @CHA-RC2@.
 * @(CHA-RC2)@ Chat rooms are configurable, so as to enable or disable certain functionality. When requesting a room, options as to what functionality should be enabled/disabled, can be provided (@RoomOptions@).
-** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40001@ must be thrown.
+** @(CHA-RC2a)@ @[Testable]@ If a room is requested with invalid configuration, for example: a negative typing timeout, an @ErrorInfo@ with code @40003@ must be thrown.
 ** @(CHA-RC2c)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RC2b)@ This specification point has been removed. It was valid up until the single-channel migration.
 ** @(CHA-RC2d)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -351,7 +356,8 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M8d)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @update@ call.
 ** @(CHA-M8e)@ @[Testable]@ A client must be able to update a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an object/other parameters to update and an (optional) operation information.
 *** @(CHA-M8e1) The exact idiom for the method signature is left to the best practice for the language.
-** @(CHA-M8f)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
+** @(CHA-M8f)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-M8g)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40003 must be thrown.
 * @(CHA-M9)@ A client must be able to delete a message in a room.
 ** @(CHA-M9a)@ @[Testable]@ A client may delete a message via the Chat REST API by calling the @delete@ method.
 ** @(CHA-M9b)@ @[Testable]@ When a message is deleted successfully via the REST API, the caller shall receive a struct representing the "Messagev4":#chat-structs-message-v4 in response, as if it were received via Realtime event.
@@ -359,7 +365,8 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M9c)@ @[Testable]@ If an error is returned from the REST API, its @ErrorInfo@ representation must be thrown as the result of the @delete@ call.
 ** @(CHA-M9d)@ @[Testable]@ A client must be able to delete a message without requiring the full @Message@ type. At minimum, it must be able to provide a @serial@ string and an (optional) operation information.
 *** @(CHA-M9d1) The exact idiom for the method signature is left to the best practice for the language.
-** @(CHA-M9e)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
+** @(CHA-M9e)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-M9f)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40003 must be thrown.
 * @(CHA-M4)@ Messages can be received via a subscription in realtime.
 ** @(CHA-M4a)@ @[Testable]@ A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
 ** @(CHA-M4b)@ @[Testable]@ A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
@@ -399,11 +406,14 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M13b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 * @(CHA-M7)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-M11)@ A @Message@ must have a method @with@ to apply changes from events (@MessageEvent@ and @MessageReactionSummaryEvent@) to produce updated message instances.
-  ** @(CHA-M11a)@ @[Testable]@ When the method receives a @MessageEvent@ of type @created@, it must throw an @ErrorInfo@ with code @40000@ and status code @400@.
-  ** @(CHA-M11b)@ @[Testable]@ For @MessageEvent@ the method must verify that the @message.serial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
+  ** @(CHA-M11a)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+  ** @(CHA-M11h)@ @[Testable]@ When the method receives a @MessageEvent@ of type @created@, it must throw an @ErrorInfo@ with code @40003@ and status code @400@.
+  ** @(CHA-M11b)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+  ** @(CHA-M11i)@ @[Testable]@ For @MessageEvent@ the method must verify that the @message.serial@ in the event matches the message's own serial. If they don't match, an error with code @40003@ and status code @400@ must be thrown.
   ** @(CHA-M11c)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is older or the same (see CHA-M10), the original message must be returned unchanged.
   ** @(CHA-M11d)@ @[Testable]@ For @MessageEvent@ of type @update@ and @delete@, if the event message is newer (see CHA-M10), the method must return a new message based on the event and deep-copying the reactions from the original message.
-  ** @(CHA-M11e)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must verify that the @messageSerial@ in the event matches the message's own serial. If they don't match, an error with code @40000@ and status code @400@ must be thrown.
+  ** @(CHA-M11e)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+  ** @(CHA-M11j)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must verify that the @messageSerial@ in the event matches the message's own serial. If they don't match, an error with code @40003@ and status code @400@ must be thrown.
   ** @(CHA-M11f)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must return a new @Message@ instance (deep copy) with the updated reactions, preserving all other properties of the original message.
   ** @(CHA-M11g)@ @[Testable]@ For @MessageReactionSummaryEvent@, the method must deep-copy the reactions from the event before applying them to the returned message instance.
 * @(CHA-M12)@ @[Testable]@ The @Messages@ instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
@@ -429,7 +439,8 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR4)@ @[Testable]@ Users should be able to send a reaction to a message via the `send` method of the `MessagesReactions` object (@room.messages.reactions.send@).
 ** @(CHA-MR4a)@ @[Testable]@ The `send` method accepts a message (or message serial) as the first parameter to identify which message to react to.
-*** @(CHA-MR4a1)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
+*** @(CHA-MR4a1)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+*** @(CHA-MR4a2)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40003 must be thrown.
 ** @(CHA-MR4b)@ @[Testable]@ The `send` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR4b1)@ @[Testable]@ A `name` property (required) specifying the reaction identifier (e.g., emoji string).
 *** @(CHA-MR4b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
@@ -437,7 +448,8 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 
 * @(CHA-MR11)@ @[Testable]@ Users should be able to delete a reaction from a message via the `delete` method of the `MessagesReactions` object (@room.messages.reactions.delete@).
 ** @(CHA-MR11a)@ @[Testable]@ The `delete` method accepts a message (or message serial) as the first parameter to identify which message to delete the reaction from.
-*** @(CHA-MR11a1)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40000 must be thrown.
+*** @(CHA-MR11a1)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+*** @(CHA-MR11a2)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code 40003 must be thrown.
 ** @(CHA-MR11b)@ @[Testable]@ The `delete` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR11b1)@ @[Testable]@ A `name` property specifying the reaction identifier (e.g., emoji string). It is required for all reaction types except for @Unique@.
 *** @(CHA-MR11b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
@@ -452,7 +464,8 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
     *** @(CHA-MR6a4)@ If an event is to be ignored, the library must log the fact at @INFO@ level.
 
 * @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). The events emitted are of type @MessageReactionRawEvent@.
-  ** @(CHA-MR7a)@ @[Testable]@ The attempt to subscribe to raw message reactions must throw an @ErrorInfo@ with code @40000@ and status code @400@ if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
+  ** @(CHA-MR7a)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+  ** @(CHA-MR7c)@ @[Testable]@ The attempt to subscribe to raw message reactions must throw an @ErrorInfo@ using the @FeatureNotEnabledInRoom@ error code from the "chat-specific error codes":#error-codes with a status code of @400@ if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
   ** @(CHA-MR7b)@ @[Testable]@ Invalid reaction events received over realtime must still produce an event, but with fields filled in with default values.
     *** @(CHA-MR7b1)@ @[Testable]@ If the reaction type (e.g. unique, distinct) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).
     *** @(CHA-MR7b2)@ @[Testable]@ If the reaction action type (e.g. add, remove) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).
@@ -482,7 +495,8 @@ All ephemeral room reactions are handled over the Realtime connection.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ This specification point was removed. It was valid until the single-channel migration.
-** @(CHA-ER3f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-ER3f)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-ER3g)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @80003@.
 ** @(CHA-ER3d)@ @[Testable]@ Reactions are sent on the channel using an @ephemeral@ message in "this format":#realtime-room-reactions.
 ** @(CHA-ER3b)@ This clause has been deleted.
 ** @(CHA-ER3c)@ This clause has been deleted.
@@ -493,7 +507,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 ** @(CHA-ER4d)@ @[Testable]@ This specification point has been removed. It was valid until the introduction of CHADR-108.
 ** @(CHA-ER4e)@ @[Testable]@ Realtime events that are malformed, or incomplete, must trigger an event, but fields shall be populated with default values.
 *** @(CHA-ER4e1)@ @[Testable]@ If the @name@ field within the realtime message @data@ is omitted, it shall be replaced with an empty string. NOTE: this is NOT the same as the @name@ field on the message itself.
-*** @(CHA-ER4e2)@ @[Testable]@ The metadata and headers fields shall be replaced with empty objects. 
+*** @(CHA-ER4e2)@ @[Testable]@ The metadata and headers fields shall be replaced with empty objects.
 *** @(CHA-ER4e3)@ @[Testable]@ The clientId field shall be an empty string.
 *** @(CHA-ER4e4)@ @[Testable]@ Timestamp fields shall be the current timestamp.
 * @(CHA-ER5)@ This specification point has been removed. It was valid up until the single-channel migration.
@@ -545,7 +559,8 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR6e)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 ** @(CHA-PR6f)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 * @(CHA-PR7)@ Users may subscribe to presence events.
-** @(CHA-PR7d)@ @[Testable]@ If presence events have been disabled per @CHA-PR9c@, then the client shall throw an error with code @40000@.
+** @(CHA-PR7d)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-PR7e)@ @[Testable]@ If presence events have been disabled per @CHA-PR9c@, then the client shall throw an @ErrorInfo@ using the @FeatureNotEnabledInRoom@ error code from the "chat-specific error codes":#error-codes with a status code of @400@.
 ** @(CHA-PR7a)@ @[Testable]@ Users may provide a listener to subscribe to all "presence events":#chat-structs-presence-event-v2 in a room.
 ** @(CHA-PR7b)@ @[Testable]@ This specification point has been removed.
 ** @(CHA-PR7c)@ @[Testable]@ A subscription to presence may be removed, after which it shall receive no further events.
@@ -580,7 +595,8 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T3)@ This specification point has been removed. It was replaced by @CHA-T10@.
 * @(CHA-T4)@ Users may indicate that they have started typing using the @keystroke@ method.
 ** @(CHA-T4d)@ This specification point has been removed. It was valid until the V1 API Review.
-** @(CHA-T4e)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-T4e)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-T4f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @80003@.
 ** @(CHA-T4a)@ If typing is not already in progress (i.e. a heartbeat timer has not been set by the successful publish @CHA-T4a4@ of a @typing.started@ event):
 *** @(CHA-T4a1)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
 *** @(CHA-T4a2)@ This specification point has been removed. It was replaced by @CHA-T4a3+@.
@@ -594,7 +610,8 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T5a)@ @[Testable]@ If typing is not in progress (i.e. a @CHA-T4a4@ heartbeat timer does not exist or is expired), this operation is a no-op.
 ** @(CHA-T5b)@ This specification point has been removed.
 ** @(CHA-T5c)@ This specification point has been removed. It was valid until the V1 API Review.
-** @(CHA-T5f)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @40000@.
+** @(CHA-T5f)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-T5g)@ @[Testable]@ If the connection state is not @CONNECTED@, the operation shall throw an @ErrorInfo@ with code @80003@.
 ** @(CHA-T5d)@ @[Testable]@ The client shall publish an ephemeral message to the channel with the name field set to @typing.stopped@, the format of which is detailed "here":#realtime-typing-message. The client must wait for the publish to succeed or fail before returning the result to the caller.
 ** @(CHA-T5d1)@ @[Testable]@ The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
 ** @(CHA-T5e)@ @[Testable]@ On successfully publishing the message in @(CHA-T5d)@, the @CHA-T4a4@ timer shall be unset.
@@ -631,7 +648,8 @@ the overhead of having everyone in presence.
 * @(CHA-O2)@ The occupancy event format is shown "here":#chat-structs-occupancy-event
 * @(CHA-O3)@ @[Testable]@ Users can request an instantaneous occupancy check via the REST API. The request is detailed "here":#rest-occupancy-request, with the response format being a simple "occupancy data struct":#chat-structs-occupancy-data
 * @(CHA-O4)@ Users can subscribe to realtime occupancy updates.
-** @(CHA-O4e)@ @[Testable]@ If occupancy events have been disabled per @CHA-O6@, then the client shall throw an error with code @40000@.
+** @(CHA-O4e)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-O4h)@ @[Testable]@ If occupancy events have been disabled per @CHA-O6@, then the client shall throw an @ErrorInfo@ using the @FeatureNotEnabledInRoom@ error code from the "chat-specific error codes":#error-codes with a status code of @400@.
 ** @(CHA-O4a)@ @[Testable]@ Users may register a listener that receives occupancy events in realtime.
 ** @(CHA-O4b)@ @[Testable]@ A subscription to occupancy events may be removed, after which it shall receive no further events.
 ** @(CHA-O4c)@ This specification point has been removed. It was valid until the V1 API Review.
@@ -646,7 +664,8 @@ the overhead of having everyone in presence.
 * @(CHA-O7)@ Users can access the latest occupancy received in realtime, via the @occupancy.current()@ method.
 ** @(CHA-O7a)@ @[Testable]@ The @current@ method should return the latest occupancy numbers received over the realtime connection in a @[meta]occupancy@ event.
 ** @(CHA-O7b)@ @[Testable]@ If no realtime events have been received yet, @current()@ returns undefined/null.
-** @(CHA-O7c)@ @[Testable]@ If occupancy events are not enabled via @RoomOptions.occupancy.enableEvents@, @current()@ throws an error with code 40000.
+** @(CHA-O7c)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+** @(CHA-O7d)@ @[Testable]@ If occupancy events are not enabled via @RoomOptions.occupancy.enableEvents@, @current()@ throws an @ErrorInfo@ using the @FeatureNotEnabledInRoom@ error code from the "chat-specific error codes":#error-codes with a status code of @400@.
 * @(CHA-O8)@ @[Testable]@ The @Occupancy@ instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
 
 h2(#rest-api). Chat HTTP REST API
@@ -761,7 +780,7 @@ h4(#rest-sending-messages-realtime-v4). Corresponding Realtime Event V4
       },
       "serial": "01726585978590-001@abcdefghij:001",
       "action": "message.create",
-      "version": { 
+      "version": {
         serial: "01726585978590-001@abcdefghij:001",
         timestamp: 1726232498871,
     }
@@ -1039,7 +1058,7 @@ h4(#rest-deleting-messages-reactions-request-v4). Request V4
 
 Below is the full REST payload format for the V4 endpoint. The @name@ param is ignored for reactions of type @unique@ but it is required for all other reaction types.
 
-<pre> 
+<pre>
   DELETE /chat/v4/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
 </pre>
 
@@ -1552,7 +1571,7 @@ h3(#chat-structs-occupancy-event-v2). Occupancy Event V2
 <pre>
   {
     "type": OccupancyEventType.Updated,
-    "occupancy": { // Of type OccupancyData 
+    "occupancy": { // Of type OccupancyData
       "connections": 5,
       "presenceMembers" 2
     }
@@ -1572,48 +1591,90 @@ h2(#error-codes). Chat-specific Error Codes
 
 This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used. For example @400xx@ for client errors or @500xx@ for server errors.
 
-For non-chat-specific codes, the status code for the error should align with the error code. For example, error code @40000@ should hav status code @400@.
+For non-chat-specific codes, the status code for the error should align with the error code. For example, error code @40000@ should have status code @400@.
 
 <pre>
 
-  // The request was invalid.
-  BadRequest = 40000,
+    // The request was invalid.
+    // To be accompanied by status code 400.
+    BadRequest = 40000,
 
-  // The message was rejected before publishing by a rule on the chat room.
-  // To be accompanied by status code 422
-  MessageRejectedByBeforePublishRule = 42211
+    // Invalid argument provided.
+    // To be accompanied by status code 400.
+    InvalidArgument = 40003,
 
-  // The message was rejected before publishing by a moderation rule on the chat room.
-  // To be accompanied by status code 422
-  MessageRejectedByModeration = 42213
+    // Invalid client ID.
+    // To be accompanied by status code 400.
+    InvalidClientId = 40012,
 
-  // The room has experienced a discontinuity.
-  // To be accompanied with status code 500.
-  RoomDiscontinuity = 102100
+    // Resource has been disposed.
+    // To be accompanied by status code 400.
+    ResourceDisposed = 40014,
 
-  // Unable to perform operation;
+    // The message was rejected before publishing by a rule on the chat room.
+    // To be accompanied by status code 422.
+    MessageRejectedByBeforePublishRule = 42211,
 
-  // Cannot perform operation because the room is in a failed state.
-  // To be accompanied with status code 400.
-  RoomInFailedState = 102101
+    // The message was rejected before publishing by a moderation rule on the chat room.
+    // To be accompanied by status code 422.
+    MessageRejectedByModeration = 42213,
 
-  // Cannot perform operation because the room is in a releasing state.
-  // To be accompanied with status code 400.
-  RoomIsReleasing = 102102
+    // The client is not connected to Ably.
+    // To be accompanied by status code 400.
+    Disconnected = 80003,
 
-  // Cannot perform operation because the room is in a released state.
-  // To be accompanied with status code 400.
-  RoomIsReleased = 102103
+    // Could not re-enter presence automatically after a room re-attach occurred.
+    // To be accompanied by status code 400.
+    PresenceAutoReentryFailed = 91004,
 
-  // Cannot perform operation because the previous operation failed.
-  // To be accompanied with status code 500.
-  PreviousOperationFailed = 102104
+    // The room has experienced a discontinuity.
+    // To be accompanied by status code 500.
+    RoomDiscontinuity = 102100,
 
-  // An unknown error has happened in the room lifecycle.
-  // To be accompanied with status code 500.
-  RoomLifecycleError = 102105
+    // Cannot perform operation because the room is in an invalid state.
+    // To be accompanied by status code 400.
+    RoomInInvalidState = 102112,
 
-  // Room was released before the operation could complete.
-  // To be accompanied with status code 400.
-  RoomReleasedBeforeOperationCompleted = 102106
+    // Room was released before the operation could complete.
+    // To be accompanied by status code 400.
+    RoomReleasedBeforeOperationCompleted = 102106,
+
+    // A room already exists with different options.
+    // To be accompanied by status code 400.
+    RoomExistsWithDifferentOptions = 102107,
+
+    // Feature is not enabled in room options.
+    // To be accompanied by status code 400.
+    FeatureNotEnabledInRoom = 102108,
+
+    // Listener has not been subscribed yet (used in messages historyBeforeSubscribe).
+    // To be accompanied by status code 400.
+    ListenerNotSubscribed = 102109,
+
+    // Channel serial is not defined when expected.
+    // To be accompanied by status code 500.
+    ChannelSerialNotDefined = 102110,
+
+    // Channel options cannot be modified after the channel has been requested.
+    // To be accompanied by status code 400.
+    ChannelOptionsCannotBeModified = 102111,
+
+    // Failed to enforce sequential execution of the operation.
+    // To be accompanied by status code 500.
+    OperationSerializationFailed = 102113,
+
+    // 102200 - 102300 are reserved for React errors
+
+    // React hook must be used within the appropriate provider.
+    // To be accompanied by status code 400.
+    ReactHookMustBeUsedWithinProvider = 102200,
+
+    // React component has been unmounted.
+    // To be accompanied by status code 400.
+    ReactComponentUnmounted = 102201,
+
+    // Failed to fetch presence data after maximum retries.
+    // To be accompanied by status code 500.
+    PresenceFetchFailed = 102202,
+
 </pre>
