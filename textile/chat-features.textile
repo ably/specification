@@ -39,6 +39,8 @@ h2(#general). General Principles
 * @(CHA-GP5)@ When raising an @ErrorInfo@, avoid relying on the generic @40000@ and @50000@ codes.
 ** @(CHA-GP5a)@ Prefer codes already defined in @ably-common@, for example - use @40003@ for an invalid argument passed to a function.
 ** @(CHA-GP5b)@ If the error is chat-specific, define a new code in the @102000 - 103000@ range reserved for chat.
+* @(CHA-GP6)@ Error messages must follow the standard format @unable to <op>; <reason>@.
+** @(CHA-GP6a)@ Error messages must be written assuming that the audience is the customer developer, not an Ably engineer.
 
 h2(#initialization). Initialization
 
