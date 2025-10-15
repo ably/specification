@@ -36,6 +36,9 @@ h2(#general). General Principles
 ** @(CHA-GP2a)@ @[Testable]@ Whenever the Chat SDK fetches a realtime channel, it must do so with the @attachOnSubscribe@ channel option set to @false@.
 * @(CHA-GP3)@ Wherever possible, Chat features should be exposed in the public API as properties of their parent. For example, @messages@ would be considered a property of a @room@ object. This allows for greater composability and extensibility in the future.
 * @(CHA-GP4)@ Avoid overloading methods and optional parameters. Prefer object-type parameters wherever practical and idiomatic.
+* @(CHA-GP5)@ When raising an @ErrorInfo@, avoid relying on the generic @40000@ and @50000@ codes.
+** @(CHA-GP5a)@ Prefer codes already defined in @ably-common@, for example - use @40003@ for an invalid argument passed to a function.
+** @(CHA-GP5b)@ If the error is chat-specific, define a new code in the @102000 - 103000@ range reserved for chat.
 
 h2(#initialization). Initialization
 
@@ -1589,7 +1592,7 @@ h3(#chat-structs-occupancy-data). Occupancy Data
 
 h2(#error-codes). Chat-specific Error Codes
 
-This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used. For example @400xx@ for client errors or @500xx@ for server errors.
+This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used according to the guidelines of @CHA-GP5@. For example @400xx@ for client errors or @500xx@ for server errors.
 
 For non-chat-specific codes, the status code for the error should align with the error code. For example, error code @40000@ should have status code @400@.
 
