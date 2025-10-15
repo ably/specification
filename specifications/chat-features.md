@@ -1519,12 +1519,9 @@ As part of the Chat v1 API review, the "type" field was renamed to "name".
         "presenceMembers" 2
       }
 
-## Chat-specific Error Codes {#error-codes}
+## Commmon Error Codes used by Chat {#common-error-codes}
 
-This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used according to the guidelines of `CHA-GP5`. For example `400xx` for client errors or `500xx` for server errors.
-
-For non-chat-specific codes, the status code for the error should align with the error code. For example, error code `40000` should have status code `400`.
-
+This section contains error codes that are common across Ably, but the Chat SDK makes use of.
 
         // The request was invalid.
         // To be accompanied by status code 400.
@@ -1557,6 +1554,15 @@ For non-chat-specific codes, the status code for the error should align with the
         // Could not re-enter presence automatically after a room re-attach occurred.
         // To be accompanied by status code 400.
         PresenceAutoReentryFailed = 91004,
+
+## Chat-specific Error Codes {#error-codes}
+
+This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used according to the guidelines of `CHA-GP5`. For example `400xx` for client errors or `500xx` for server errors.
+
+For non-chat-specific codes, the status code for the error should align with the error code. For example, error code `40000` should have status code `400`.
+
+The chat reserved error code range is `102000 - 102999`.
+
 
         // The room has experienced a discontinuity.
         // To be accompanied by status code 500.
