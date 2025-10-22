@@ -14,12 +14,10 @@ This document outlines the feature specification for the Ably Chat product.
 
 The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may", and "optional" (whether lowercased or uppercased) in this document are to be interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
 
-The over-the-wire protocol for Chat, as well as implementation details, may be found on the chat protocol page.
-
 ## Chat Specification Version {#version}
 
 - `(CHA-V1)` **Specification Version**: This document defines the Ably chat library features specification ('features spec').
-  - `(CHA-V1a)` The current version of the Chat library feature specification is version `0.7.0`.
+  - `(CHA-V1a)` The current version of the Chat library feature specification is version `1.0.0`.
 
 ## Major Revision History
 
@@ -28,6 +26,7 @@ This specification has undergone the following major revisions, stemming from a 
 - Single Channel Migration: CHADR-097, March 2025
 - V1 API Review: CHADR-101, May 2025
 - Pre-V1 Error Code Review: CHA-1207, October 2025
+- V1 released (no changes), October 2025
 
 ## General Principles {#general}
 
