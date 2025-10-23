@@ -456,6 +456,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 *** @(CHA-MR11a2)@ @[Testable]@ If the @serial@ passed to this method is invalid: @undefined, null, empty string@, an error with code @InvalidArgument@ must be thrown.
 ** @(CHA-MR11b)@ @[Testable]@ The `delete` method accepts a `params` object as the second parameter with the following properties:
 *** @(CHA-MR11b1)@ @[Testable]@ A `name` property specifying the reaction identifier (e.g., emoji string). It is required for all reaction types except for @Unique@.
+*** @(CHA-MR11b1a)@ @[Testable]@ If the reaction type is not @Unique@ and the @name@ param is not provided, an error with code @InvalidArgument@ must be thrown.
 *** @(CHA-MR11b2)@ @[Testable]@ A `type` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
 
 * @(CHA-MR13)@ @[Testable]@ Users should be able to fetch the message reaction summary for a given client ID via the @clientReactions@ method of the @MessageReactions@ object.
