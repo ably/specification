@@ -75,6 +75,8 @@ The connection status of the Chat client closely reflects the status of the unde
 ** @(CHA-CS1d)@ The @DISCONNECTED@ status is used when the client is not currently connected to Ably servers. This state may be temporary as the underlying Realtime SDK seeks to reconnect.
 ** @(CHA-CS1e)@ The @SUSPENDED@ status is used when the client is in an extended state of disconnection, but will attempt to reconnect.
 ** @(CHA-CS1f)@ The @FAILED@ status is used when the client is disconnected from the Ably servers due to some non-retriable failure such as authentication failure. It will not attempt to reconnect.
+** @(CHA-CS1g)@ The @CLOSING@ status is used when a user has called @close@ on the underlying Realtime client and it is attempting to close the connection with Ably. The library will not attempt to reconnect.
+** @(CHA-CS1h)@ The @CLOSED@ status is used when the @close@ call on the underlying Realtime client has succeeded, either via mutual agreement with the server or forced after a time out. The library will not attempt to reconnect.
 * @(CHA-CS2)@ The connection must expose its current status.
 ** @(CHA-CS2a)@ @[Testable]@ The chat client must expose its current connection status, a single value from the list in @CHA-CS1@.
 ** @(CHA-CS2b)@ @[Testable]@ The chat client must expose the latest error, if any, associated with its current status.
