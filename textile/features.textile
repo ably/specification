@@ -1374,7 +1374,8 @@ h3(#activation-state-machine). Activation State Machine
 *** @(RSH3g1)@ On event @CalledDeactivate@:
 **** @(RSH3g1a)@ Transitions to @WaitingForDeregistration@.
 *** @(RSH3g2)@ On event @Deregistered@:
-**** @(RSH3g2a)@ Clears all local @DeviceDetails@.
+**** @(RSH3g2d)@ Generates a new pair of device @id@ and @deviceSecret@ as described in "RSH3a2b":#RSH3a2b. Clears all other local @DeviceDetails@.
+**** @(RSH3g2a)@ This clause has been replaced by "@RSH3g2d@":#RSH3g2d. It was valid up to and including specification version @3.0@.
 **** @(RSH3g2b)@ Makes @Push#deactivate@ return or call its callback with no error.
 **** @(RSH3g2c)@ Transitions to @NotActivated@.
 *** @(RSH3g3)@ On event @DeregistrationFailed@:
