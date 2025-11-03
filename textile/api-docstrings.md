@@ -287,6 +287,22 @@ Enables messages to be published and historic messages to be retrieved for a cha
 || `data` ||| The payload of the message. |
 | setOptions(options: ChannelOptions) => io ||| RSL7 | Sets the [`ChannelOptions`]{@link ChannelOptions} for the channel. |
 || `options` ||| A [`ChannelOptions`]{@link ChannelOptions} object. |
+| getMessage(serialOrMsg: String \| Message) => io Message ||| RSL11 | Retrieves the latest version of a specific message by its serial identifier or by providing a [`Message`]{@link Message} object containing the serial (which will not be mutated). |
+|| `serialOrMsg` ||| Either the serial identifier string of the message to retrieve, or a [`Message`]{@link Message} object containing a populated `serial` field. |
+||| `Message` || A [`Message`]{@link Message}, the latest version of the message |
+| updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io Message ||| RSL12 | Publishes an update to existing message with patch semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the fields to update. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the update operation. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+||| `Message` || A [`Message`]{@link Message} object containing the updated message. |
+| deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io ||| RSL13 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses patch semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the delete operation. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+| getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RSL14 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
+|| `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+||| `PaginatedResult<Message>` || A [`PaginatedResult`]{@link PaginatedResult} object containing an array of [`Message`]{@link Message} objects representing all versions of the message. |
 | push: PushChannel ||| RSH4 | A [`PushChannel`]{@link PushChannel} object. |
 
 ## class RealtimeChannel
@@ -352,6 +368,22 @@ Enables messages to be published and subscribed to. Also enables historic messag
 || `(Message)` ||| An event listener function. |
 | setOptions(options: ChannelOptions) => io ||| RTL16 | Sets the [`ChannelOptions`]{@link ChannelOptions} for the channel. An optional callback may be provided to notify of the success or failure of the operation. |
 || `options` ||| A [`ChannelOptions`]{@link ChannelOptions} object. |
+| getMessage(serialOrMsg: String \| Message) => io Message ||| RTL28 | Retrieves the latest version of a specific message by its serial identifier or by providing a [`Message`]{@link Message} object containing the serial. |
+|| `serialOrMsg` ||| Either the serial identifier string of the message to retrieve, or a [`Message`]{@link Message} object containing a populated `serial` field. |
+||| `Message` || A [`Message`]{@link Message}, the latest version of the message |
+| updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io Message ||| RTL29 | Updates an existing message with patch semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the fields to update. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the update operation. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+||| `Message` || A [`Message`]{@link Message} object containing the updated message. |
+| deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io ||| RTL30 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses patch semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the delete operation. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+| getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RTL31 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
+|| `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+||| `PaginatedResult<Message>` || A [`PaginatedResult`]{@link PaginatedResult} object containing an array of [`Message`]{@link Message} objects representing all versions of the message. |
 
 ## class MessageFilterObject
 
@@ -364,6 +396,16 @@ Contains properties to filter messages with when calling [`subscribe()`]{@link R
 | refType: string ||| RTL22a | Filters messages by a specific `extras.ref.type` value. |
 | name: string ||| RTL22a | Filters messages by a specific message `name`. |
 | clientId: string ||| RTL22a | Filters messages by a specific message `clientId`. |
+
+## class MessageOperation
+
+Contains metadata about a message update or delete operation.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| clientId?: String ||| MOP2a | Optional identifier of the client performing the operation. |
+| description?: String ||| MOP2b | Optional human-readable description of the operation. |
+| metadata?: `Dict<String, String>` ||| MOP2c | Optional dictionary of key-value pairs containing additional metadata about the operation. |
 
 ## class ChannelProperties
 
