@@ -396,7 +396,7 @@ h3(#rest-channel). RestChannel
 *** @(RSL12b5)@ @encoding@ - the encoding field set according to @RSL4@ if @data@ was encoded
 *** @(RSL12b6)@ @extras@ - the extras field from the @Message@ object if provided
 ** @(RSL12c)@ The body must be encoded to the appropriate format per @RSC8@
-** @(RSL12d)@ Returns the updated @Message@ object, which the server will have responded with
+** @(RSL12d)@ The function signals success or failure according to the http response per our normal REST standards. It does not return a value on success
 * @(RSL13)@ @RestChannel#deleteMessage@ function:
 ** @(RSL13a)@ Takes a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
 ** @(RSL13b)@ The SDK must send a POST to @/channels/{channelName}/messages/{serial}/delete@, with any @params@ sent in the querystring. The request body consists of an object with the following fields:
@@ -407,7 +407,7 @@ h3(#rest-channel). RestChannel
 *** @(RSL13b5)@ @encoding@ - the encoding field set according to @RSL4@ if @data@ was encoded
 *** @(RSL13b6)@ @extras@ - the extras field from the @Message@ object if provided
 ** @(RSL13c)@ The body must be encoded to the appropriate format per @RSC8@
-** @(RSL13d)@ Returns the updated (well, 'deleted') @Message@ object, which the server will have responded with
+** @(RSL13d)@ The function signals success or failure according to the http response per our normal REST standards. It does not return a value on success
 * @(RSL14)@ @RestChannel#getMessageVersions@ function:
 ** @(RSL14a)@ Takes a first argument a @serial@ string of the message whose versions are to be retrieved, and an optional second argument of @Dict<string, stringifiable>@ params
 *** @(RSL14a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
