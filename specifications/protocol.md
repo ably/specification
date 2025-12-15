@@ -41,7 +41,7 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 <!-- -->
 
-- ACK (1) := An acknowledgement message, sent from the service to a client, to confirm receipt of one or more messages published by the client. Further details of the acknowledgement protocol is given below.
+- ACK (1) := An acknowledgement message, sent from the service to a client, to confirm receipt of one or more messages published by the client. The `ACK` message contains a `res` field with an array of `PublishResult` objects, one per acknowledged `ProtocolMessage`, each containing the `serials` of the messages that were published. Further details of the acknowledgement protocol is given below.
 
 <!-- -->
 
@@ -201,6 +201,10 @@ ProtocolMessages are populated with one or more of the following fields.
 - i64 `timestamp` := An optional timestamp, applied by the service in messages sent to the client, to indicate the system time at which the message was sent. Note that this differs from the timestamp field of a `Message` or `PresenceMessage` which is an indication of the timestamp of receipt of that message by the system.`<br>`{=html}`<br>`{=html}\
   Currently there are no requirements for the client library to process or populate the timestamp.
 
+<!-- -->
+
+- list`<PublishResult>`{=html} `res` := Present in `ACK` Protocol Messages. Contains one `PublishResult` per acknowledged `ProtocolMessage` in order. Each `PublishResult` contains a `serials` array with the message serials corresponding 1:1 to the messages that were published. A serial may be null if the message was discarded due to a configured conflation rule.
+
 ## Other message object {#other-message-structs}
 
 The protocol relies on a number of structs embedded in Protocol Messages.
@@ -298,6 +302,26 @@ The members are as follows.
 
 - string connectionId := optional public connection ID of the message publisher. The field is expected to be empty in messages sent from a client to the service.
 
+<!-- -->
+
+- i32 action := The message action, indicating the type of message operation. The following values are defined: `MESSAGE_CREATE` (0) for new messages, `MESSAGE_UPDATE` (1) for updates to existing messages, `MESSAGE_DELETE` (2) for message deletions, `META` (3) for metadata messages, `MESSAGE_SUMMARY` (4) for summary messages, and `MESSAGE_APPEND` (5) for appending data to existing messages. When publishing an update, delete, or append, the `serial` field must be populated to identify the target message.
+
+<!-- -->
+
+- string serial := An opaque string that uniquely identifies the message. Used when updating, deleting, or appending to an existing message.
+
+<!-- -->
+
+- object version := Contains information about the latest version of a message, including version serial, timestamp, and optional operation metadata (clientId, description, metadata) for update/delete/append operations.
+
+### PublishResult
+
+Contains the result of a publish operation, returned in `ACK` Protocol Messages.
+
+The members are as follows.
+
+- list`<string>`{=html} `serials` := An array of message serials corresponding 1:1 to the messages that were published in the acknowledged `ProtocolMessage`. A serial may be null if the message was discarded due to a configured conflation rule.
+
 ### Presence Message
 
 This is an individual channel presence update, as defined in the Thrift `TPresence` struct.
@@ -325,7 +349,7 @@ The members are as follows.
 
 ## Message acknowledgement protocol {#message-acknowledgement}
 
-The Ably client API allows a caller to provide a success callback when publishing messages, or presence updates, to the Ably service. The callback is called, either with success or a failure code, once the Ably service has indicated whether or not it has processed the message successfully. The callback is not simply an indication that the message sent without error; it is confirmation that the service has processed the message sufficiently that its onward delivery to relevant attached clients is now guaranteed.
+The Ably client API allows a caller to await the result of publishing messages, or presence updates, to the Ably service. The result indicates success (with a `PublishResult` containing the serials of published messages) or failure (with an error code), once the Ably service has indicated whether or not it has processed the message successfully. A successful result is not simply an indication that the message sent without error; it is confirmation that the service has processed the message sufficiently that its onward delivery to relevant attached clients is now guaranteed.
 
 In the Comet transport, success or failure is indicated on a per-call basis with an `ACK` or `NACK` Message body in the HTTP response to the `send` API call.
 
@@ -339,7 +363,9 @@ An `ACK` message contains a `msgSerial` and `count` value. Receipt of this messa
 
 have been processed successfully.
 
-Similarly, a `NACK` message contains a `msgSerial` and `count` value and usually also an `error` value. Receipt of this message signifies that the messages whose serial numbers are:
+The `ACK` message also contains a `res` field, which is an array of `PublishResult` objects corresponding 1:1 to the acknowledged `ProtocolMessages` in `msgSerial` order. Each `PublishResult` contains a `serials` array with the message serials for each `Message` in the corresponding `ProtocolMessage`. This allows the client library to return a `PublishResult` from publish operations, providing callers with the serials of their published messages. A serial in the array may be null if the message was discarded due to a configured conflation rule.
+
+A `NACK` message contains a `msgSerial` and `count` value and usually also an `error` value. Receipt of this message signifies that the messages whose serial numbers are:
 
 ``` {lang="json"}
 { msgSerial ... msgSerial + count - 1 }
