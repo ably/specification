@@ -276,28 +276,38 @@ Enables messages to be published and historic messages to be retrieved for a cha
 ||| `PaginatedResult<Message>` || A [`PaginatedResult`]{@link PaginatedResult} object containing an array of [`Message`]{@link Message} objects. |
 | status() => ChannelDetails ||| RSL8 | Retrieves a [`ChannelDetails`]{@link ChannelDetails} object for the channel, which includes status and occupancy metrics. |
 ||| `ChannelDetails` || A [`ChannelDetails`]{@link ChannelDetails} object. |
-| publish(Message, params?: `Dict<String, Stringifiable>`) => io ||| RSL1 | Publishes a message to the channel. A callback may optionally be passed in to this call to be notified of success or failure of the operation. |
+| publish(Message, params?: `Dict<String, Stringifiable>`) => io PublishResult ||| RSL1 | Publishes a message to the channel. |
 || `Message` ||| A [`Message`]{@link Message} object. |
 || `params` ||| Optional parameters, such as [`quickAck`](https://faqs.ably.com/why-are-some-rest-publishes-on-a-channel-slow-and-then-typically-faster-on-subsequent-publishes) sent as part of the query string. |
-| publish([Message], params?: `Dict<String, Stringifiable>` ||| RSL1 | Publishes an array of messages to the channel. A callback may optionally be passed in to this call to be notified of success or failure of the operation. |
+||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serials of the published messages. |
+| publish([Message], params?: `Dict<String, Stringifiable>`) => io PublishResult ||| RSL1 | Publishes an array of messages to the channel. |
 || [`Message`] ||| An array of [`Message`]{@link Message} objects. |
 || `params` ||| Optional parameters, such as [`quickAck`](https://faqs.ably.com/why-are-some-rest-publishes-on-a-channel-slow-and-then-typically-faster-on-subsequent-publishes) sent as part of the query string. |
-| publish(name: String?, data: Data?) => io ||| RSL1 | Publishes a single message to the channel with the given event name and payload. A callback may optionally be passed in to this call to be notified of success or failure of the operation. |
+||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serials of the published messages. |
+| publish(name: String?, data: Data?) => io PublishResult ||| RSL1 | Publishes a single message to the channel with the given event name and payload. |
 || `name` ||| The name of the message. |
 || `data` ||| The payload of the message. |
+||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serial of the published message. |
 | setOptions(options: ChannelOptions) => io ||| RSL7 | Sets the [`ChannelOptions`]{@link ChannelOptions} for the channel. |
 || `options` ||| A [`ChannelOptions`]{@link ChannelOptions} object. |
 | getMessage(serialOrMsg: String \| Message) => io Message ||| RSL11 | Retrieves the latest version of a specific message by its serial identifier or by providing a [`Message`]{@link Message} object containing the serial (which will not be mutated). |
 || `serialOrMsg` ||| Either the serial identifier string of the message to retrieve, or a [`Message`]{@link Message} object containing a populated `serial` field. |
 ||| `Message` || A [`Message`]{@link Message}, the latest version of the message |
-| updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io ||| RSL12 | Publishes an update to existing message with patch semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
+| updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL12 | Publishes an update to existing message with shallow mixin semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the fields to update. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the update operation. |
 || `params` ||| Optional parameters sent as part of the query string. |
-| deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io ||| RSL13 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses patch semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
+| deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL13 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses shallow mixin semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the delete operation. |
 || `params` ||| Optional parameters sent as part of the query string. |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
+| appendMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL15 | Appends data to an existing message. The supplied `data` field is appended to the previous message's data, while all other fields (`name`, `extras`) replace the previous values if provided. |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the data to append. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the append operation. |
+|| `params` ||| Optional parameters sent as part of the query string. |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RSL14 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
 || `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
 || `params` ||| Optional parameters sent as part of the query string. |
@@ -331,13 +341,16 @@ Enables messages to be published and subscribed to. Also enables historic messag
 || `limit` || RTL10a | An upper limit on the number of messages returned. The default is 100, and the maximum is 1000. |
 || `untilAttach` || RTL10b | When `true`, ensures message history is up until the point of the channel being attached. See [continuous history](https://ably.com/docs/realtime/history#continuous-history) for more info. Requires the `direction` to be `backwards`. If the channel is not attached, or if `direction` is set to `forwards`, this option results in an error. |
 ||| `PaginatedResult<Message>` || A [`PaginatedResult`]{@link PaginatedResult} object containing an array of [`Message`]{@link Message} objects. |
-| publish(Message) => io ||| RTL6i | Publish a message to the channel. A callback may optionally be passed in to this call to be notified of success or failure of the operation. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
+| publish(Message) => io PublishResult ||| RTL6i | Publish a message to the channel. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
 || `Message` ||| A [`Message`]{@link Message} object. |
-| publish([Message]) => io ||| RTL6i | Publishes an array of messages to the channel. A callback may optionally be passed in to this call to be notified of success or failure of the operation. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
+||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serial of the published message. |
+| publish([Message]) => io PublishResult ||| RTL6i | Publishes an array of messages to the channel. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
 || [`Message`] ||| An array of [`Message`]{@link Message} objects. |
-| publish(name: String?, data: Data?) => io ||| RTL6i | Publishes a single message to the channel with the given event name and payload. A callback may optionally be passed in to this call to be notified of success or failure of the operation. When publish is called with this client library, it won't attempt to implicitly attach to the channel, so long as [transient publishing](https://ably.com/docs/realtime/channels#transient-publish) is available in the library. Otherwise, the client will implicitly attach. |
+||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serials of the published messages. |
+| publish(name: String?, data: Data?) => io PublishResult ||| RTL6i | Publishes a single message to the channel with the given event name and payload. When publish is called with this client library, it won't attempt to implicitly attach to the channel, so long as [transient publishing](https://ably.com/docs/realtime/channels#transient-publish) is available in the library. Otherwise, the client will implicitly attach. |
 || `name` ||| The event name. |
 || `data` ||| The message payload. |
+||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serial of the published message. |
 | subscribe((Message) ->) => io ||| RTL7a | Registers a listener for messages on this channel. The caller supplies a listener function, which is called each time one or more messages arrives on the channel. A callback may optionally be passed in to this call to be notified of success or failure of the channel [`attach()`]{@link RealtimeChannel#attach} operation. It will not be called if the [`attachOnSubscribe`]{@link ChannelOptions#attachOnSubscribe} channel option is set to `false`. |
 || `(Message)` ||| An event listener function. |
 | subscribe(String, (Message) ->) => io ||| RTL7b | Registers a listener for messages with a given event name on this channel. The caller supplies a listener function, which is called each time one or more matching messages arrives on the channel. A callback may optionally be passed in to this call to be notified of success or failure of the channel [`attach()`]{@link RealtimeChannel#attach} operation. It will not be called if the [`attachOnSubscribe`]{@link ChannelOptions#attachOnSubscribe} channel option is set to `false`. |
@@ -370,14 +383,21 @@ Enables messages to be published and subscribed to. Also enables historic messag
 | getMessage(serialOrMsg: String \| Message) => io Message ||| RTL28 | Retrieves the latest version of a specific message by its serial identifier or by providing a [`Message`]{@link Message} object containing the serial. |
 || `serialOrMsg` ||| Either the serial identifier string of the message to retrieve, or a [`Message`]{@link Message} object containing a populated `serial` field. |
 ||| `Message` || A [`Message`]{@link Message}, the latest version of the message |
-| updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io ||| RTL29 | Updates an existing message with patch semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
+| updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL29 | Updates an existing message with shallow mixin semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the fields to update. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the update operation. |
-|| `params` ||| Optional parameters sent as part of the query string. |
-| deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io ||| RTL30 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses patch semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
+|| `params` ||| Optional parameters (ignored for realtime). |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
+| deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL30 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses shallow mixin semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the delete operation. |
-|| `params` ||| Optional parameters sent as part of the query string. |
+|| `params` ||| Optional parameters (ignored for realtime). |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
+| appendMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL32 | Appends data to an existing message. The supplied `data` field is appended to the previous message's data, while all other fields (`name`, `extras`) replace the previous values if provided. |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the data to append. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the append operation. |
+|| `params` ||| Optional parameters (ignored for realtime). |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RTL31 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
 || `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
 || `params` ||| Optional parameters sent as part of the query string. |
@@ -404,6 +424,22 @@ Contains metadata about a message update or delete operation.
 | clientId?: String ||| MOP2a | Optional identifier of the client performing the operation. |
 | description?: String ||| MOP2b | Optional human-readable description of the operation. |
 | metadata?: `Dict<String, String>` ||| MOP2c | Optional dictionary of key-value pairs containing additional metadata about the operation. |
+
+## class PublishResult
+
+Contains the result of a publish operation.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| serials: [String?] ||| PBR2a | An array of message serials corresponding 1:1 to the messages that were published. A serial may be null if the message was discarded due to a configured conflation rule. |
+
+## class UpdateDeleteResult
+
+Contains the result of an update or delete message operation.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| versionSerial: String? ||| UDR2a | The serial of the version of the updated or deleted message. Will be null if the message was superseded by a subsequent update before it could be published. |
 
 ## class ChannelProperties
 

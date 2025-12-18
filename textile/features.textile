@@ -330,6 +330,8 @@ h3(#rest-channel). RestChannel
 ** @(RSL1b)@ When @name@ and @data@ (or a @Message@) is provided, a single message is published to Ably
 ** @(RSL1c)@ When an array of @Message@ objects is provided, a single request is made to Ably
 ** @(RSL1d)@ Indicates an error if the message was not successfully published to Ably
+** @(RSL1n)@ On success, returns a @PublishResult@ object containing the serials of the published messages. The API response body will contain a superset of the fields of a @PublishResult@.
+*** @(RSL1n1)@ In SDKs for which adding a response value would be a breaking API change and where such changes are idiomatically rare may implement any appropriate alternative that would allow a user who wishes to get a serials array on publish to do so.
 ** @(RSL1e)@ Allows @name@ and/or @data@ to be @null@.  If any of the values are @null@, that property is not sent to Ably, e.g. a payload with a @null@ value for @data@ would be sent as @{"name":"click"}@
 ** @(RSL1m)@ The @Message.clientId@ must be left alone (that is, it will be there if it was set in the @Message@ object passed to @publish()@, else left unset). The client library must not try and set it from the client-library-wide @clientId@; that is achieved by @RSA7e@ for basic auth or implicit in the credentials for token auth. The following tests can be used to check for correct clientId handling:
 *** @(RSL1m1)@ Publishing a @Message@ with no clientId when the clientId is set to some value in the client options should result in a message received with the @clientId@ property set to that value
@@ -386,33 +388,21 @@ h3(#rest-channel). RestChannel
 *** @(RSL11a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
 ** @(RSL11b)@ The SDK must send a GET request to the endpoint @/channels/{channelName}/messages/{serial}@
 ** @(RSL11c)@ Returns the decoded @Message@ object for the specified message serial
-* @(RSL12)@ @RestChannel#updateMessage@ function:
-** @(RSL12a)@ Takes a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
-** @(RSL12b)@ The SDK must send a PATCH to @/channels/{channelName}/messages/{serial}@, with any @params@ sent in the querystring. The request body consists of an object with the following fields:
-*** @(RSL12b1)@ @serial@ - the serial identifier of the message being updated
-*** @(RSL12b2)@ @operation@ - the @MessageOperation@ object if provided
-*** @(RSL12b3)@ @name@ - the message name from the @Message@ object if provided
-*** @(RSL12b4)@ @data@ - the message data from the @Message@ object if provided, encoded per @RSL4@
-*** @(RSL12b5)@ @encoding@ - the encoding field set according to @RSL4@ if @data@ was encoded
-*** @(RSL12b6)@ @extras@ - the extras field from the @Message@ object if provided
-** @(RSL12c)@ The body must be encoded to the appropriate format per @RSC8@
-** @(RSL12d)@ The function signals success or failure according to the http response per our normal REST standards. It does not return a value on success
-* @(RSL13)@ @RestChannel#deleteMessage@ function:
-** @(RSL13a)@ Takes a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
-** @(RSL13b)@ The SDK must send a POST to @/channels/{channelName}/messages/{serial}/delete@, with any @params@ sent in the querystring. The request body consists of an object with the following fields:
-*** @(RSL13b1)@ @serial@ - the serial identifier of the message being deleted
-*** @(RSL13b2)@ @operation@ - the @MessageOperation@ object if provided
-*** @(RSL13b3)@ @name@ - the message name from the @Message@ object if provided
-*** @(RSL13b4)@ @data@ - the message data from the @Message@ object if provided, encoded per @RSL4@
-*** @(RSL13b5)@ @encoding@ - the encoding field set according to @RSL4@ if @data@ was encoded
-*** @(RSL13b6)@ @extras@ - the extras field from the @Message@ object if provided
-** @(RSL13c)@ The body must be encoded to the appropriate format per @RSC8@
-** @(RSL13d)@ The function signals success or failure according to the http response per our normal REST standards. It does not return a value on success
+* @(RSL12)@ This clause has been replaced by "@RSL15@":#RSL15. It was valid up to and including specification version 5.0.0.
+* @(RSL13)@ This clause has been replaced by "@RSL15@":#RSL15. It was valid up to and including specification version 5.0.0.
 * @(RSL14)@ @RestChannel#getMessageVersions@ function:
 ** @(RSL14a)@ Takes a first argument a @serial@ string of the message whose versions are to be retrieved, and an optional second argument of @Dict<string, stringifiable>@ params
 *** @(RSL14a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
 ** @(RSL14b)@ The SDK must send a GET request to the endpoint @/channels/{channelName}/messages/{serial}/versions@
 ** @(RSL14c)@ Returns a @PaginatedResult<Message>@
+* @(RSL15)@ @RestChannel#updateMessage@, @RestChannel#deleteMessage@, and @RestChannel#appendMessage@ functions:
+** @(RSL15a)@ Take a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
+** @(RSL15b)@ The SDK must send a PATCH to @/channels/{channelName}/messages/{serial}@, with any @params@ sent in the querystring. The request body is a @Message@ object (encoded per "RSL4":#RSL4) with whatever fields were in the user-supplied @Message@, in addition to:
+*** @(RSL15b1)@ @action@ - set to @MESSAGE_UPDATE@ for @updateMessage()@, @MESSAGE_DELETE@ for @deleteMessage()@, and @MESSAGE_APPEND@ for @appendMessage()@.
+*** @(RSL15b7)@ @version@ - set to the @MessageOperation@ object if provided.
+** @(RSL15c)@ The SDK must not mutate the user-supplied @Message@ object.
+** @(RSL15d)@ The request body must be encoded to the appropriate format per @RSC8@.
+** @(RSL15e)@ On success, returns an @UpdateDeleteResult@ object. The API response body will contain a superset of the fields of a @UpdateDeleteResult@. Indicates an error if the operation was not successful.
 
 h3(#plugins). Plugins
 * @(PC1)@ Specific client library features that are not commonly used may be supplied as independent libraries, as plugins, in order to avoid excessively bloating the client library. Although such plugins are packaged as independent libraries, they are still considered logically to be part of the client library code and, as such, may be tightly coupled with the client library implementation. The client library can be assumed to be aware of the plugin specific type and capabilities, and such plugins may by design be coupled to a specific version of the client library.
@@ -764,6 +754,8 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL6a)@ Messages are encoded in the same way as the @RestChannel#publish@ method, and "RSL1i":#RSL1i (size limit) applies similarly
 *** @(RTL6a1)@ "RSL1k":#RSL1k (@idempotentRestPublishing@ option), "RSL1j1":#RSL1j1 (idempotent publishing test), and "RSL1l":#RSL1l (@publish(Message, params)@ form) do not apply to realtime publishes
 ** @(RTL6b)@ An optional callback can be provided to the @#publish@ method that is called when the message is successfully delivered or upon failure with the appropriate @ErrorInfo@ error. A test should exist to publish lots of messages on a few connections to ensure all message success callbacks are called for all messages published
+** @(RTL6j)@ On success, returns a @PublishResult@ object containing the serials of the published messages. The serials are obtained from the @ACK@ @ProtocolMessage@ response (see "TR4s":#TR4s).
+*** @(RTL6j1)@ In SDKs for which adding a response value would be a breaking API change and where such changes are idiomatically rare may implement any appropriate alternative that would allow a user who wishes to get a serials array on publish to do so.
 ** @(RTL6i)@ Expects either a @Message@ object, an array of @Message@ objects, or a @name@ string and @data@ payload:
 *** @(RTL6i1)@ When @name@ and @data@ (or a @Message@) is provided, a single @ProtocolMessage@ containing one @Message@ is published to Ably
 *** @(RTL6i2)@ When an array of @Message@ objects is provided, a single @ProtocolMessage@ is used to publish all @Message@ objects in the array.
@@ -852,9 +844,16 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL25b)@ Else, calls @#once@ with the given state and listener.
 * @(RTL26)@ @RealtimeChannel#annotations@ attribute contains the @RealtimeAnnotations@ object for this channel
 * @(RTL28)@ @RealtimeChannel#getMessage@ function: same as @RestChannel#getMessage@
-* @(RTL29)@ @RealtimeChannel#updateMessage@ function: same as @RestChannel#updateMessage@
-* @(RTL30)@ @RealtimeChannel#deleteMessage@ function: same as @RestChannel#deleteMessage@
+* @(RTL29)@ This clause has been replaced by "@RTL32@":#RTL32. It was valid up to and including specification version 5.0.0.
+* @(RTL30)@ This clause has been replaced by "@RTL32@":#RTL32. It was valid up to and including specification version 5.0.0.
 * @(RTL31)@ @RealtimeChannel#getMessageVersions@ function: same as @RestChannel#getMessageVersions@
+* @(RTL32)@ @RealtimeChannel#updateMessage@, @RealtimeChannel#deleteMessage@, and @RealtimeChannel#appendMessage@ functions:
+** @(RTL32a)@ Take a first argument of a @Message@ object (which must contain a populated @serial@ field), and an optional second argument of a @MessageOperation@ object
+** @(RTL32b)@ The SDK must send a @MESSAGE@ @ProtocolMessage@ to Ably, containing a single @Message@ populated with whatever fields were in the user-supplied @Message@, in addition to:
+*** @(RTL32b1)@ @action@ - set to @MESSAGE_UPDATE@ for @updateMessage()@, @MESSAGE_DELETE@ for @deleteMessage()@, and @MESSAGE_APPEND@ for @appendMessage()@
+*** @(RTL32b2)@ @version@ - set to the @MessageOperation@ object if provided.
+** @(RTL32c)@ The SDK must not mutate the user-supplied @Message@ object.
+** @(RTL32d)@ On success, returns an @UpdateDeleteResult@ object containing the version serial of the published update, obtained from the first element of the @serials@ array of the "TR4s":#TR4s @res@ field of the @ACK@. Indicates an error if the operation was not successful.
 
 h3(#realtime-presence). RealtimePresence
 
@@ -1466,7 +1465,7 @@ h3(#types). Data types
 
 h4. Message
 * @(TM1)@ A @Message@ represents an individual message to be sent or received via the Ably Realtime service.
-* @(TM5)@ @Message@ @Action@ enum has the following values in order from zero: @MESSAGE_CREATE@, @MESSAGE_UPDATE@, @MESSAGE_DELETE@, @META@, @MESSAGE_SUMMARY@
+* @(TM5)@ @Message@ @Action@ enum has the following values in order from zero: @MESSAGE_CREATE@, @MESSAGE_UPDATE@, @MESSAGE_DELETE@, @META@, @MESSAGE_SUMMARY@, @MESSAGE_APPEND@
 * @(TM2)@ The attributes available in a @Message@ are:
 ** @(TM2a)@ @id@ string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an @id@, it should be set to @protocolMsgId:index@, where @protocolMsgId@ is the id of the @ProtocolMessage@ encapsulating it, and @index@ is the index of the message inside the @messages@ array of the @ProtocolMessage@
 ** @(TM2b)@ @clientId@ string
@@ -1780,6 +1779,7 @@ h4. ProtocolMessage
 ** @(TR4m)@ @timestamp@ time in milliseconds since epoch
 ** @(TR4q)@ @params@ @Dict<String, String>@ key-value pairs
 ** @(TR4r)@ @state@ Array of @ObjectMessage@ objects
+** @(TR4s)@ @res@ Array of @PublishResult@ objects - present in @ACK@ @ProtocolMessages@, contains one @PublishResult@ per acknowledged @ProtocolMessage@ in order, each containing the @serials@ of the messages that were published
 
 h4. PaginatedResult
 
@@ -1971,6 +1971,7 @@ h4. BatchPublishSuccessResult
 * @(BPR2)@ The attributes of @BatchPublishSuccessResult@ consist of:
 ** @(BPR2a)@ @channel@ string - the name of the channel
 ** @(BPR2b)@ @messageId@ string - a string containing the @messageId@ prefix for the published message(s)
+** @(BPR2c)@ @serials@ array of @String?@ - an array of message serials corresponding 1:1 to the messages that were published. A serial may be null if the message was discarded due to a configured conflation rule.
 
 h4. BatchPublishFailureResult
 
@@ -1992,6 +1993,18 @@ h4. BatchPresenceFailureResult
 * @(BGF2)@ The attributes of @BatchPresenceFailureResult@ consist of:
 ** @(BGF2a)@ @channel@ string - the name of the channel
 ** @(BGF2b)@ @error@ @ErrorInfo@ - @ErrorInfo@ indicating the reason the presence request failed for the given channel
+
+h4. PublishResult
+
+* @(PBR1)@ Contains the result of a publish operation
+* @(PBR2)@ The attributes of @PublishResult@ consist of:
+** @(PBR2a)@ @serials@ array of @String?@ - an array of message serials corresponding 1:1 to the messages that were published. A serial may be null if the message was discarded due to a configured conflation rule.
+
+h4. UpdateDeleteResult
+
+* @(UDR1)@ Contains the result of an update or delete message operation
+* @(UDR2)@ The attributes of @UpdateDeleteResult@ consist of:
+** @(UDR2a)@ @versionSerial@ @String?@ - the new version serial string of the updated or deleted message. Will be null if the message was superseded by a subsequent update before it could be published.
 
 h4. TokenRevocationTargetSpecifier
 
@@ -2388,11 +2401,16 @@ class RestChannel: // RSL*
     limit: int api-default 100 // RSL2b3
   ) => io PaginatedResult<Message> // RSL2
   status() => ChannelDetails // RSL8
-  publish(Message, params?: Dict<String, Stringifiable>) => io // RSL1
-  publish([Message], params?: Dict<String, Stringifiable>) => io // RSL1
-  publish(name: String?, data: Data?) => io // RSL1
+  publish(Message, params?: Dict<String, Stringifiable>) => io PublishResult // RSL1
+  publish([Message], params?: Dict<String, Stringifiable>) => io PublishResult // RSL1
+  publish(name: String?, data: Data?) => io PublishResult // RSL1
   setOptions(options: ChannelOptions) => io // RSL7 - note asynchronous return value for
     // compatibility with RealtimeChannel#setOptions; not required for REST-only libraries
+  getMessage(serial: String) => io Message // RSL11
+  updateMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL12
+  deleteMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL13
+  getMessageVersions(serial: String, params?: Dict<String, Stringifiable>) => io PaginatedResult<Message> // RSL14
+  appendMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL15
 
   // Only on platforms that support receiving push notifications:
   push: PushChannel // RSH7
@@ -2419,9 +2437,9 @@ class RealtimeChannel: // RTL*
     limit: int api-default 100, // RTL10a
     untilAttach: Bool default false // RTL10b
   ) => io PaginatedResult<Message> // RTL10
-  publish(Message) => io // RTL6, RTL6i
-  publish([Message]) => io // RTL6, RTL6i
-  publish(name: String?, data: Data?) => io // RTL6, RTL6i
+  publish(Message) => io PublishResult // RTL6, RTL6i
+  publish([Message]) => io PublishResult // RTL6, RTL6i
+  publish(name: String?, data: Data?) => io PublishResult // RTL6, RTL6i
   subscribe((Message) ->) => io ChannelStateChange? // RTL7, RTL7a
   subscribe(String, (Message) ->) => io ChannelStateChange? // RTL7, RTL7b
   subscribe(MessageFilter, (Message) ->) io ChannelStateChange? // RTL22
@@ -2430,6 +2448,11 @@ class RealtimeChannel: // RTL*
   unsubscribe(String, (Message) ->) // RTL8, RTL8b
   unsubscribe(MessageFilter, (Message) ->) // RTL22
   setOptions(options: ChannelOptions) => io // RTL16
+  getMessage(serial: String) => io Message // RTL28
+  updateMessage(Message, operation?: MessageOperation) => io UpdateDeleteResult // RTL29
+  deleteMessage(Message, operation?: MessageOperation) => io UpdateDeleteResult // RTL30
+  getMessageVersions(serial: String, params?: Dict<String, Stringifiable>) => io PaginatedResult<Message> // RTL31
+  appendMessage(Message, operation?: MessageOperation) => io UpdateDeleteResult // RTL32
 
 class MessageFilter: // MFI*
   isRef: bool // MFI2a
@@ -2604,6 +2627,7 @@ enum MessageAction: // TM5
   MESSAGE_DELETE // TM5
   META // TM5
   MESSAGE_SUMMARY // TM5
+  MESSAGE_APPEND // TM5
 
 enum ObjectOperationAction: // OOP2, internal
   MAP_CREATE // OOP2
@@ -2760,6 +2784,7 @@ class ProtocolMessage: // internal
   timestamp: Time? // TR4m
   params: Dict<String, String>? // TR4q, RTL4k
   state: [ObjectMessage]? // TR4r
+  res: [PublishResult]? // TR4s
 
 enum ProtocolMessageAction: // internal
   HEARTBEAT // TR2
@@ -2978,6 +3003,7 @@ class BatchPublishSpec:
 class BatchPublishSuccessResult:
   channel: string // BPR2a
   messageId: string // BPR2b
+  serials: [String?] // BPR2c
 
 class BatchPublishFailureResult:
   channel: string // BPF2a
@@ -2990,6 +3016,12 @@ class BatchPresenceSuccessResult:
 class BatchPresenceFailureResult
   channel: string // BGF2a
   error: ErrorInfo // BGF2b
+
+class PublishResult:
+  serials: [String?] // PBR2a
+
+class UpdateDeleteResult:
+  versionSerial: String? // UDR2a
 
 class TokenRevocationTargetSpecifier:
   type: string // TRT2a
