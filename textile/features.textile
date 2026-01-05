@@ -152,24 +152,24 @@ h3(#restclient). RestClient
 * @(RSC9)@ Uses @Auth@ to establish what authentication scheme to use, how to authenticate, and automatic issuing of tokens when necessary
 * @(RSC10)@ If a REST request responds with a token error (401 HTTP status code and an Ably error value @40140 <= code < 40150@), then the Auth class is responsible for reissuing a token and the request should be reattempted, see "RSA4a":#RSA4a and "RSA4b":#RSA4b
 * @(RSC25)@ Requests are sent to the @primary domain@ as determined by "@REC1@":#REC1". New HTTP requests (except where @RSC15f@ applies and a cached fallback host is in effect) are first attempted against the @primary domain@.
-* @(RSC11)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
-** @(RSC11a)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
-** @(RSC11b)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
-* @(RSC12)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
+* @(RSC11)@ This clause has been replaced by "@RSC25@":#RSC25 as of specification version 4.0.0.
+** @(RSC11a)@ This clause has been replaced by "@RSC25@":#RSC25 as of specification version 4.0.0.
+** @(RSC11b)@ This clause has been replaced by "@RSC25@":#RSC25 as of specification version 4.0.0.
+* @(RSC12)@ This clause has been replaced by "@RSC25@":#RSC25 as of specification version 4.0.0.
 * @(RSC13)@ The client library must use the connection and request timeouts specified in the @ClientOptions@, falling back to the defaults described in @ClientOptions@ below
 * @(RSC15)@ Host Fallback
 ** @(RSC15m)@ The fallback behavior described by this section, "RSC15":#RSC15, only applies when the set of @fallback domains@, as determined by "@REC2@":#REC2 is not empty. When the set of @fallback domains@ is empty, failing HTTP requests that would have "qualified for a retry against a fallback host (see RSC15d)":#RSC15d will instead result in an error immediately.
 ** @(RSC15n)@ When the use of fallbacks applies, the set of @fallback domains@ is determined by "@REC2@":#REC2.
-** @(RSC15b)@ This clause has been replaced by "@RSC15j@":#RSC15j. It was valid up to and including specification version @TBD@.
-** @(RSC15e)@ This clause has been replaced by "@RSC25@":#RSC25. It was valid up to and including specification version @TBD@.
+** @(RSC15b)@ This clause has been replaced by "@RSC15j@":#RSC15j as of specification version 4.0.0.
+** @(RSC15e)@ This clause has been replaced by "@RSC25@":#RSC25 as of specification version 4.0.0.
 ** @(RSC15a)@ In the case of an error necessitating use of an alternative host (see "RSC15d":#RSC15d), try @fallback domains@ in random order, continuing to try further domains if "qualifying errors":#RSC15d occur, failing when all have been tried or the configured @httpMaxRetryCount@ has been reached (see "TO3l@":#TO3l5). This ensures that a client library is able to work around routing or other problems for the user's closest datacenter. For example, if a @POST@ request to @main.realtime.ably.net@ fails because the default endpoint is unreachable or unserviceable, then the @POST@ request should be retried again against the fallback hosts in attempt to find an alternate healthy datacenter to service the request
-** @(RSC15g)@ This clause has been replaced by "@RSC15n@":#RSC15n. It was valid up to and including specification version @TBD@.
-*** @(RSC15g1)@ This clause has been replaced by "@RSC15n@":#RSC15n. It was valid up to and including specification version @TBD@.
-*** @(RSC15g2)@ This clause has been replaced by "@RSC15n@":#RSC15n. It was valid up to and including specification version @TBD@.
-*** @(RSC15g3)@ This clause has been replaced by "@RSC15n@":#RSC15n. It was valid up to and including specification version @TBD@.
-*** @(RSC15g4)@ This clause has been replaced by "@RSC15n@":#RSC15n. It was valid up to and including specification version @TBD@.
-** @(RSC15h)@ This clause has been replaced by "@REC2@":#REC2. It was valid up to and including specification version @TBD@.
-** @(RSC15i)@ This clause has been replaced by "@REC2@":#REC2. It was valid up to and including specification version @TBD@.
+** @(RSC15g)@ This clause has been replaced by "@RSC15n@":#RSC15n as of specification version 4.0.0.
+*** @(RSC15g1)@ This clause has been replaced by "@RSC15n@":#RSC15n as of specification version 4.0.0.
+*** @(RSC15g2)@ This clause has been replaced by "@RSC15n@":#RSC15n as of specification version 4.0.0.
+*** @(RSC15g3)@ This clause has been replaced by "@RSC15n@":#RSC15n as of specification version 4.0.0.
+*** @(RSC15g4)@ This clause has been replaced by "@RSC15n@":#RSC15n as of specification version 4.0.0.
+** @(RSC15h)@ This clause has been replaced by "@REC2@":#REC2 as of specification version 4.0.0.
+** @(RSC15i)@ This clause has been replaced by "@REC2@":#REC2 as of specification version 4.0.0.
 ** @(RSC15j)@ Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to @main.realtime.ably.net@ fails and will be retried to @c.ably-realtime.com@, the Host header must be set to @c.ably-realtime.com@ in the retried request
 ** @(RSC15d)@ This clause has been replaced by "@RSC15l@":#RSC15l.
 ** @(RSC15l)@ Errors that necessitate use of an alternative host include any of the following conditions. (Resending requests that have failed for other failure conditions will not fix the problem and will simply increase the load on other datacenters unnecessarily).
@@ -388,8 +388,8 @@ h3(#rest-channel). RestChannel
 *** @(RSL11a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
 ** @(RSL11b)@ The SDK must send a GET request to the endpoint @/channels/{channelName}/messages/{serial}@
 ** @(RSL11c)@ Returns the decoded @Message@ object for the specified message serial
-* @(RSL12)@ This clause has been replaced by "@RSL15@":#RSL15. It was valid up to and including specification version 5.0.0.
-* @(RSL13)@ This clause has been replaced by "@RSL15@":#RSL15. It was valid up to and including specification version 5.0.0.
+* @(RSL12)@ This clause has been replaced by "@RSL15@":#RSL15 as of specification version 5.0.0.
+* @(RSL13)@ This clause has been replaced by "@RSL15@":#RSL15 as of specification version 5.0.0.
 * @(RSL14)@ @RestChannel#getMessageVersions@ function:
 ** @(RSL14a)@ Takes a first argument a @serial@ string of the message whose versions are to be retrieved, and an optional second argument of @Dict<string, stringifiable>@ params
 *** @(RSL14a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
@@ -493,8 +493,8 @@ h3(#realtimeclient). RealtimeClient
 ** @(RTC1a)@ @echoMessages@ boolean is true by default. If false, it prevents messages originating from this connection being echoed back on the same connection; see "RTN2b":#RTN2b.
 ** @(RTC1b)@ @autoConnect@ boolean is true by default. If true, as soon as the client library is instantiated, it will connect to Ably. If false, the client library will wait for an explicit @Connection#connect@ to be called before connecting
 ** @(RTC1c)@ @recover@ string, when set, will attempt to recover the connection state of a previous connection
-** @(RTC1d)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
-** @(RTC1e)@ This clause has been deleted. It was valid up to and including specification version @TBD@.
+** @(RTC1d)@ This clause has been deleted as of specification version 4.0.0.
+** @(RTC1e)@ This clause has been deleted as of specification version 4.0.0.
 ** @(RTC1f)@ @transportParams@ map or equivalent, additional parameters to be sent in the querystring when initiating a realtime connection. Keys are @Strings@, values are @Stringifiable@ (a value that can be coerced to a string in order to be sent as a querystring parameter. Supported values should be at least strings, numbers, and booleans, with booleans stringified as @true@ and @false@. If this is unidiomatic to the language, the implementer may consider this as equivalent to @String@).
 *** @(RTC1f1)@ If a key in @transportParams@ is one the library sends by default (for example, @v@ or @heartbeats@), the value in @transportParams@ takes precedence.
 * @(RTC2)@ @RealtimeClient#connection@ attribute provides access to the underlying @Connection@ object
@@ -567,7 +567,7 @@ h3(#realtime-connection). Connection
 * @(RTN7)@ @ACK@ and @NACK@:
 ** @(RTN7a)@ All @PRESENCE@, @MESSAGE@, @ANNOTATION@, and @OBJECT@ @ProtocolMessages@ sent to Ably expect either an @ACK@ or @NACK@ from Ably to confirm successful receipt and acceptance or failure respectively. For clarity, it is unnecessary to fail the publish operation of a message using a timer. Instead the client library can rely on: the realtime system will send an @ACK@ or @NACK@ when connected; the client library will fail all awaiting messages once @SUSPENDED@ (see "RTN7e":#RTN7e); upon reconnecting, the client will resend all message awaiting a response, and the realtime system in turn will respond with an @ACK@ or @NACK@ (see "RTN19a":#RTN19a)
 ** @(RTN7b)@ Every @ProtocolMessage@ that expects an @ACK@ or @NACK@ sent must contain a unique serially incrementing @msgSerial@ integer value starting at zero. The @msgSerial@ along with the @count@ for incoming @ACK@ and @NACK@ @ProtocolMessages@ indicates which messages succeeded or failed to be delivered
-** @(RTN7c)@ This clause has been replaced by "@RTN7e@":#RTN7e (it contained a mistake). It was valid up to and including specification version @TBD@.
+** @(RTN7c)@ This clause has been replaced by "@RTN7e@":#RTN7e (it contained a mistake) as of specification version 4.0.0.
 ** @(RTN7e)@ If a connection enters the @SUSPENDED@, @CLOSED@ or @FAILED@ state, and an @ACK@ or @NACK@ has not yet been received for a message submitted to the connection via "@RTL6c1@":#RTL6c1 or "@RTL6c2@":#RTL6c2, the client should consider the delivery of those messages as failed, meaning their callback (or language equivalent) should be called with an error representing the reason for the state change, and they should be removed from any @RTN19a@ retry queue. (Note that @PRESENCE@ messages which, per "@RTP16b@":#RTP16b, have not yet been submitted to the connection are handled by "@RTL11@":#RTL11.)
 ** @(RTN7d)@ If the @queueMessages@ client option (@TO3g@) has been set to @false@, then when a connection enters the @DISCONNECTED@ state, any messages which have not yet been @ACK@d should be considered to have failed, with the same effect as in @RTN7e@
 * @(RTN22)@ Ably can request that a connected client re-authenticates by sending the client an @AUTH@ @ProtocolMessage@. The client must then immediately start a new authentication process as described in "RTC8":#RTC8
@@ -582,7 +582,7 @@ h3(#realtime-connection). Connection
 ** @(RTN9c)@ Is @Null@ when the SDK is in the @CLOSED@, @CLOSING@, @FAILED@, or @SUSPENDED@ states
 * @(RTN10)@ This clause has been deleted. It was valid up to and including specification version @1.2@.
 * @(RTN11)@ @Connection#connect@ function:
-** @(RTN11a)@ This clause has been replaced by @"RTN11e"@:#RTN11e and @"RTN11f@":#RTN11f. It was valid up to and including specification version @TBD@.
+** @(RTN11a)@ This clause has been replaced by @"RTN11e"@:#RTN11e and @"RTN11f@":#RTN11f as of specification version 4.0.0.
 ** @(RTN11e)@ No-op if @CONNECTING@ or @CONNECTED@.
 ** @(RTN11f)@ Otherwise, connects to the Ably service. Subsequent spec points describe state-dependent additional behaviours that should occur before this connection attempt.
 ** @(RTN11b)@ If the state is @CLOSING@, the client should make a new connection with a new transport instance and remove all references to the old one. In particular, it should make sure that, when the @CLOSED@ @ProtocolMessage@ arrives for the old connection, it doesn't affect the new one. Additionally, the client should ensure that all channels first transition to @DETACHED@, following "@RTL3b@":#RTL3b, and then reinitialize channels per "@RTN11d@":#RTN11d.
@@ -615,7 +615,7 @@ h3(#realtime-connection). Connection
 **** @(RTN15h2i)@ The library MAY briefly transition through the @DISCONNECTED@ state on its way from the @CONNECTED@ to @CONNECTING@. (There is no need for an SDK need to implement this behaviour if it is not already present).
 *** @(RTN15h3)@ If the @DISCONNECTED@ message contains an error other than a token error, the library must initiate an immediate reconnect attempt, by transitioning into the @CONNECTING@ state and initiating an @RTN15b@ resume attempt.
 ** @(RTN15j)@ If an @ERROR@ @ProtocolMessage@ with an empty @channel@ attribute is received, this indicates a fatal error in the connection. The server will close the transport immediately after. The client should transition to the @FAILED@ state triggering all attached channels to transition to the @FAILED@ state as well. Additionally the @Connection#errorReason@ should be set with the error received from Ably
-** @(RTN15i)@ This clause has been replaced by "@RTN15j@":#RTN15j. It was valid up to and including specification version @TBD@.
+** @(RTN15i)@ This clause has been replaced by "@RTN15j@":#RTN15j as of specification version 4.0.0.
 ** @(RTN15a)@ If a transport is disconnected unexpectedly (without having received a @DISCONNECTED@ or @ERROR@ protocol message), it should respond as if it had received a non-token @DISCONNECTED@ (following @RTN15h3@).
 ** @(RTN15g)@ Connection state is only maintained server-side for a brief period, given by the @connectionStateTtl@ in the @connectionDetails@, see "CD2f":#CD2f. If a client has been disconnected for longer than the @connectionStateTtl@, it should not attempt to resume. Instead, it should clear the local connection state, and any connection attempts should be made as for a fresh connection
 *** @(RTN15g1)@ This check should be made before each connection attempt. It is generally not sufficient to merely clear the connection state when moving to @SUSPENDED@ state (though that may be done too), since the device may have been sleeping / suspended, in which case it may have been many hours since it was last actually connected, even though, having been in the @CONNECTED@ state when it was put to sleep, it has only moved out of that state very recently (after waking up and noticing it's no longer connected)
@@ -659,14 +659,14 @@ h3(#realtime-connection). Connection
 * @(RTN17)@ Domain selection and fallback behaiviour
 ** @(RTN17g)@ The fallback behavior described by this section, "RTN17":#RTN17, only applies when the set of @fallback domains@, as determined by "@REC2@":#REC2 is not empty. When the set of @fallback domains@ is empty, failing HTTP requests that would have "qualified for a retry against a fallback host (see RSC15d)":#RSC15d will instead result in an error immediately.
 ** @(RTN17h)@ When the use of fallbacks applies, the set of @fallback domains@ is determined by "@REC2@":#REC2.
-** @(RTN17b)@ This clause has been replaced by "@RSC17h@":#RSC17h. It was valid up to and including specification version @TBD@.
-*** @(RTN17b1)@ This clause has been replaced by "@RSC17h@":#RSC17h. It was valid up to and including specification version @TBD@.
-*** @(RTN17b2)@ This clause has been replaced by "@RSC17h@":#RSC17h. It was valid up to and including specification version @TBD@.
-*** @(RTN17b3)@ This clause has been replaced by "@RSC17h@":#RSC17h. It was valid up to and including specification version @TBD@.
+** @(RTN17b)@ This clause has been replaced by "@RSC17h@":#RSC17h as of specification version 4.0.0.
+*** @(RTN17b1)@ This clause has been replaced by "@RSC17h@":#RSC17h as of specification version 4.0.0.
+*** @(RTN17b2)@ This clause has been replaced by "@RSC17h@":#RSC17h as of specification version 4.0.0.
+*** @(RTN17b3)@ This clause has been replaced by "@RSC17h@":#RSC17h as of specification version 4.0.0.
 ** @(RTN17i)@ By default, every connection attempt is first attempted to the @primary domain@ as specified in "@REC1@"#REC1. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed. (That is, @RSC15f@ does not apply)
-** @(RTN17a)@ This clause has been replaced by "@RSC17i@":#RSC17i. It was valid up to and including specification version @TBD@.
+** @(RTN17a)@ This clause has been replaced by "@RSC17i@":#RSC17i as of specification version 4.0.0.
 ** @(RTN17j)@ In the case of an error necessitating use of an alternative host (see "RTN17f":#RTN17f), the @Connection@ manager should first check if an internet connection is available by issuing a @GET@ request to the @connectivityCheckUrl@ as determined via "@REC3@"#REC3. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against @fallback domains@ in random order to find an alternative healthy datacenter.
-** @(RTN17c)@ This clause has been replaced by "@RSC17j@":#RSC17j. It was valid up to and including specification version @TBD@.
+** @(RTN17c)@ This clause has been replaced by "@RSC17j@":#RSC17j as of specification version 4.0.0.
 ** @(RTN17d)@ This clause has been replaced by "@RTN17f@":#RTN17f.
 ** @(RTN17f)@ Errors that necessitate use of an alternative host include any of the failure conditions specified in "@RSC15l@":#RSC15l, and additionally also:
 *** @(RTN17f1)@ a @DISCONNECTED@ response with an @error.statusCode@ in the range @500 <= code <= 504@
@@ -839,8 +839,8 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL25b)@ Else, calls @#once@ with the given state and listener.
 * @(RTL26)@ @RealtimeChannel#annotations@ attribute contains the @RealtimeAnnotations@ object for this channel
 * @(RTL28)@ @RealtimeChannel#getMessage@ function: same as @RestChannel#getMessage@
-* @(RTL29)@ This clause has been replaced by "@RTL32@":#RTL32. It was valid up to and including specification version 5.0.0.
-* @(RTL30)@ This clause has been replaced by "@RTL32@":#RTL32. It was valid up to and including specification version 5.0.0.
+* @(RTL29)@ This clause has been replaced by "@RTL32@":#RTL32 as of specification version 5.0.0.
+* @(RTL30)@ This clause has been replaced by "@RTL32@":#RTL32 as of specification version 5.0.0.
 * @(RTL31)@ @RealtimeChannel#getMessageVersions@ function: same as @RestChannel#getMessageVersions@
 * @(RTL32)@ @RealtimeChannel#updateMessage@, @RealtimeChannel#deleteMessage@, and @RealtimeChannel#appendMessage@ functions:
 ** @(RTL32a)@ Take a first argument of a @Message@ object (which must contain a populated @serial@ field), an optional second argument of a @MessageOperation@ object, and an optional third argument of @Dict<string, stringifiable>@ publish params
@@ -896,7 +896,7 @@ h3(#realtime-presence). RealtimePresence
 * @(RTP4)@ Ensure a test exists that enters 250 members using @RealtimePresence#enterClient@ on a single connection, and checks for @PRESENT@ events to be emitted on another connection for each member, and once sync is complete, all 250 members should be present in a @RealtimePresence#get@ request
 * @(RTP5)@ RealtimeChannel state change side effects:
 ** @(RTP5a)@ If the channel enters the @DETACHED@ or @FAILED@ state then all queued presence messages will fail immediately, and the @PresenceMap@ and "internal PresenceMap (see RTP17)":#RTP17 is cleared. The latter ensures members are not automatically re-entered if the @RealtimeChannel@ later becomes attached. Since channels in the @DETACHED@ and @FAILED@ states will not receive any presence updates from Ably, presence events (specifically @LEAVE@) should not be emitted when the @PresenceMap@ is cleared as each presence member's state is unknown
-*** @(RTP5a1)@ This clause has been replaced by "@RTL15b1@":#RTL15b1 (no change in content, just moved to the correct section of spec). It was valid up to and including specification version @TBD@.
+*** @(RTP5a1)@ This clause has been replaced by "@RTL15b1@":#RTL15b1 (no change in content, just moved to the correct section of spec) as of specification version 4.0.0.
 ** @(RTP5f)@ If the channel enters the @SUSPENDED@ state then all queued presence messages will fail immediately, and the @PresenceMap@ is maintained. This ensures that if the channel later becomes @ATTACHED@, it will only emit presence events for the changes in the @PresenceMap@ that have occurred whilst the client was disconnected. A test should exist for a channel that is in the @SUSPENDED@ state containing presence members to transition to the @ATTACHED@ state, and following the @SYNC@ process after attaching, any members present before and after the sync should not emit presence events, all other changes should be reflected in the @PresenceMap@ and should emit presence events on the channel
 ** @(RTP5b)@ If a channel enters the @ATTACHED@ state then all queued presence messages will be sent immediately. A presence @SYNC@ may be initiated per "@RTP1@":#RTP1
 * @(RTP16)@ Connection state conditions:
