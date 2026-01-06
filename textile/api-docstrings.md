@@ -700,6 +700,7 @@ Enumerates the possible types of `Message` there can be.
 | MESSAGE_DELETE | TM5 | A deletion of a previously-published message (referenced by `serial`). |
 | META | TM5 | A meta-message (a message originating from ably rather than being explicitly published on a channel), containing information such as inband channel occupancy events that has been requested by channel param. |
 | MESSAGE_SUMMARY | TM5 | A message containing the latest rolled-up summary of annotations that have been made to this message. |
+| MESSAGE_APPEND | TM5 | Message action for an appended message. The `serial` field identifies the message to which data is being appended. The `data` field is appended to the previous message's data, while all other fields replace the previous values. |
 
 ## class RestAnnotations
 
