@@ -296,17 +296,17 @@ Enables messages to be published and historic messages to be retrieved for a cha
 | updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL12 | Publishes an update to existing message with shallow mixin semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the fields to update. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the update operation. |
-|| `params` ||| Optional parameters sent as part of the query string. |
+|| `params` ||| Optional parameters sent as part of the query string. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL13 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses shallow mixin semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the delete operation. |
-|| `params` ||| Optional parameters sent as part of the query string. |
+|| `params` ||| Optional parameters sent as part of the query string. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | appendMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL15 | Appends data to an existing message. The supplied `data` field is appended to the previous message's data, while all other fields (`name`, `extras`) replace the previous values if provided. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the data to append. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the append operation. |
-|| `params` ||| Optional parameters sent as part of the query string. |
+|| `params` ||| Optional parameters sent as part of the query string. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RSL14 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
 || `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
@@ -341,11 +341,13 @@ Enables messages to be published and subscribed to. Also enables historic messag
 || `limit` || RTL10a | An upper limit on the number of messages returned. The default is 100, and the maximum is 1000. |
 || `untilAttach` || RTL10b | When `true`, ensures message history is up until the point of the channel being attached. See [continuous history](https://ably.com/docs/realtime/history#continuous-history) for more info. Requires the `direction` to be `backwards`. If the channel is not attached, or if `direction` is set to `forwards`, this option results in an error. |
 ||| `PaginatedResult<Message>` || A [`PaginatedResult`]{@link PaginatedResult} object containing an array of [`Message`]{@link Message} objects. |
-| publish(Message) => io PublishResult ||| RTL6i | Publish a message to the channel. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
+| publish(Message, params?: `Dict<String, Stringifiable>`) => io PublishResult ||| RTL6i | Publish a message to the channel. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
 || `Message` ||| A [`Message`]{@link Message} object. |
+|| `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serial of the published message. |
-| publish([Message]) => io PublishResult ||| RTL6i | Publishes an array of messages to the channel. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
+| publish([Message], params?: `Dict<String, Stringifiable>`) => io PublishResult ||| RTL6i | Publishes an array of messages to the channel. When publish is called with this client library, it won't attempt to implicitly attach to the channel. |
 || [`Message`] ||| An array of [`Message`]{@link Message} objects. |
+|| `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `PublishResult` || A [`PublishResult`]{@link PublishResult} object containing the serials of the published messages. |
 | publish(name: String?, data: Data?) => io PublishResult ||| RTL6i | Publishes a single message to the channel with the given event name and payload. When publish is called with this client library, it won't attempt to implicitly attach to the channel, so long as [transient publishing](https://ably.com/docs/realtime/channels#transient-publish) is available in the library. Otherwise, the client will implicitly attach. |
 || `name` ||| The event name. |
@@ -386,17 +388,17 @@ Enables messages to be published and subscribed to. Also enables historic messag
 | updateMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL29 | Updates an existing message with shallow mixin semantics. Non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged. Note that this publishes an update, it does not mutate the original message if passed in. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the fields to update. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the update operation. |
-|| `params` ||| Optional parameters (ignored for realtime). |
+|| `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | deleteMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL30 | Marks a message as deleted by publishing an update with an action of `MESSAGE_DELETE`. This does not remove the message from the server, and the full message history remains accessible. Uses shallow mixin semantics: non-null `name`, `data`, and `extras` fields in the provided message will replace the corresponding fields in the existing message, while null fields will be left unchanged (meaning that if you for example want the `MESSAGE_DELETE` to have an empty data, you should explicitly set the `data` to an empty object). |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the delete operation. |
-|| `params` ||| Optional parameters (ignored for realtime). |
+|| `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | appendMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL32 | Appends data to an existing message. The supplied `data` field is appended to the previous message's data, while all other fields (`name`, `extras`) replace the previous values if provided. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the data to append. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the append operation. |
-|| `params` ||| Optional parameters (ignored for realtime). |
+|| `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RTL31 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
 || `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
