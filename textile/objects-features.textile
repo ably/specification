@@ -121,7 +121,13 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5a3)@ If the sequence id matches the previously received sequence id, the client library should continue the sync process
 *** @(RTO5a4)@ The objects sync sequence for that sequence identifier is considered complete once the cursor is empty; that is when the @channelSerial@ looks like @<sequence id>:@
 *** @(RTO5a5)@ An @OBJECT_SYNC@ may also be sent with no @channelSerial@ attribute. In this case, the sync data is entirely contained within the @ProtocolMessage@
-** @(RTO5b)@ During the sync sequence, the "@ObjectMessage.object@":../features#TR4r values from incoming @OBJECT_SYNC@ @ProtocolMessages@ must be temporarily stored in the internal @SyncObjectsPool@ list
+** @(RTO5b)@ During the sync sequence, the "@ObjectMessage.object@":../features#TR4r values from incoming @OBJECT_SYNC@ @ProtocolMessages@ must be temporarily stored in the internal @SyncObjectsPool@ list. The behavior differs based on the protocol version in use:
+*** @(RTO5b1)@ For protocol versions prior to 6, the server sends a complete @ObjectState@ for each object in a single @OBJECT_SYNC@ @ProtocolMessage@. Each @ObjectState@ received is stored directly in the @SyncObjectsPool@
+*** @(RTO5b2)@ From protocol version 6 onwards, partial object sync is enabled. The server may split a large object across multiple @OBJECT_SYNC@ @ProtocolMessages@, each containing a partial @ObjectState@ for the same object. Multiple @OBJECT_SYNC@ messages may be delivered with the exact same @channelSerial@ when they contain partial data for the same object. The client determines that sync messages relate to the same object by matching the @ObjectState.objectId@. When receiving partial @ObjectState@ messages for the same @objectId@:
+**** @(RTO5b2a)@ If an @ObjectState@ with the given @objectId@ does not yet exist in the @SyncObjectsPool@, store the received @ObjectState@
+**** @(RTO5b2b)@ If an @ObjectState@ with the given @objectId@ already exists in the @SyncObjectsPool@, merge the entries from the received @ObjectState@ into the existing one:
+***** @(RTO5b2b1)@ For a map object, merge @ObjectState.map.entries@ from the received @ObjectState@ into the existing @ObjectState.map.entries@. Other fields on the @ObjectState@ envelope (such as @siteTimeserials@) and the map envelope (such as @semantics@) will be identical across all partial messages for the same object; the client may apply these from any message relating to that object
+***** @(RTO5b2b2)@ Counter objects have a bounded size and will never be split across multiple sync messages
 ** @(RTO5c)@ When the objects sync has completed, the client library must perform the following actions in order:
 *** @(RTO5c1)@ For each @ObjectState@ in the @SyncObjectsPool@ list:
 **** @(RTO5c1a)@ If an object with @ObjectState.objectId@ exists in the internal @ObjectsPool@:
