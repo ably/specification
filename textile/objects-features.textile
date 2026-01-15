@@ -18,7 +18,7 @@ h3(#realtime-objects). RealtimeObjects
 * @(RTO1)@ @RealtimeObjects#getRoot@ function:
 ** @(RTO1a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
 ** @(RTO1b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
-** @(RTO1c)@ Waits for the objects sync sequence to complete and for "RTO5c":#RTO5c to finish
+** @(RTO1c)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, waits for the sync state to transition to @SYNCED@
 ** @(RTO1d)@ Returns the object with id @root@ from the internal @ObjectsPool@ as a @LiveMap@
 * @(RTO11)@ @RealtimeObjects#createMap@ function:
 ** @(RTO11a)@ Expects the following arguments:
@@ -103,6 +103,7 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO3b)@ It must always contain a @LiveMap@ object with id @root@
 *** @(RTO3b1)@ Upon initialization of the @ObjectsPool@, create a new @LiveMap@ (per "RTLM4":#RTLM4) with @objectId@ set to @root@ and add it to the @ObjectsPool@
 * @(RTO4)@ When a channel @ATTACHED@ @ProtocolMessage@ is received, the @ProtocolMessage@ may contain a @HAS_OBJECTS@ bit flag indicating that it will perform an objects sync, see "TR3":../features#TR3 . Note that this does not imply that objects are definitely present on the channel, only that there may be; the @OBJECT_SYNC@ message may be empty
+** @(RTO4c)@ Upon receipt of an @ATTACHED@ @ProtocolMessage@, the "RTO17":#RTO17 sync state must transition to @SYNCING@ if not already @SYNCING@. This must occur before performing any "RTO4b":#RTO4b actions.
 ** @(RTO4a)@ If the @HAS_OBJECTS@ flag is 1, the server will shortly perform an @OBJECT_SYNC@ sequence as described in "RTO5":#RTO5
 ** @(RTO4b)@ If the @HAS_OBJECTS@ flag is 0 or there is no @flags@ field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
 *** @(RTO4b1)@ All objects except the one with id @root@ must be removed from the internal @ObjectsPool@
@@ -113,6 +114,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO4b4)@ Perform the actions for objects sync completion as described in "RTO5c":#RTO5c
 * @(RTO5)@ The realtime system reserves the right to initiate an objects sync of the objects on a channel at any point once a channel is attached. A server initiated objects sync provides Ably with a means to send a complete list of objects present on the channel at any point
 ** @(RTO5d)@ If an @OBJECT_SYNC@ @ProtocolMessage@ is received and "@ObjectMessage.object@":../features#TR4r is null or omitted, the client library should skip processing that @ProtocolMessage@
+** @(RTO5e)@ When an @OBJECT_SYNC@ @ProtocolMessage@ is received with a @channel@ attribute matching the channel name, the "RTO17":#RTO17 sync state must transition to @SYNCING@ if not already @SYNCING@. This must occur before performing any "RTO5c":#RTO5c sync completion actions.
 ** @(RTO5a)@ When an @OBJECT_SYNC@ @ProtocolMessage@ is received with a @channel@ attribute matching the channel name, the client library must parse the @channelSerial@ attribute:
 *** @(RTO5a1)@ The @channelSerial@ is used as the sync cursor and is a two-part identifier: @<sequence id>:<cursor value>@
 *** @(RTO5a2)@ If a new sequence id is sent from Ably, the client library must treat it as the start of a new objects sync sequence, and any previous in-flight sync must be discarded:
@@ -139,6 +141,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
 *** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
 *** @(RTO5c5)@ The @BufferedObjectOperations@ list must be cleared
+*** @(RTO5c8)@ The "RTO17":#RTO17 sync state must transition to @SYNCED@
 * @(RTO6)@ Certain object operations may require creating a zero-value object if one does not already exist in the internal @ObjectsPool@ for the given @objectId@. This can be done as follows:
 ** @(RTO6a)@ If an object with @objectId@ exists in @ObjectsPool@, do not create a new object
 ** @(RTO6b)@ The expected type of the object can be inferred from the provided @objectId@:
@@ -149,7 +152,7 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO7a)@ An internal @BufferedObjectOperations@ should be used to store the buffered @ObjectMessages@, as described in "RTO8a":#RTO8a. @BufferedObjectOperations@ is an array of @ObjectMessage@ instances
 *** @(RTO7a1)@ This array is empty upon @RealtimeObjects@ initialization
 * @(RTO8)@ When the library receives a @ProtocolMessage@ with an action of @OBJECT@, each member of the @ProtocolMessage.state@ array (decoded into @ObjectMessage@ objects) is passed to the @RealtimeObjects@ instance per "RTL1":../features#RTL1. Each @ObjectMessage@ from @OBJECT@ @ProtocolMessage@ (also referred to as an @OBJECT@ message) describes an operation to be applied to an object on a channel and must be handled as follows:
-** @(RTO8a)@ If an object sync sequence is currently in progress, add the @ObjectMessages@ to the internal @BufferedObjectOperations@ array
+** @(RTO8a)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, add the @ObjectMessages@ to the internal @BufferedObjectOperations@ array
 ** @(RTO8b)@ Otherwise, apply the @ObjectMessages@ as described in "RTO9":#RTO9
 * @(RTO9)@ @OBJECT@ messages can be applied to @RealtimeObjects@ in the following way:
 ** @(RTO9a)@ For each @ObjectMessage@ in the provided list:
@@ -199,6 +202,26 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO15g)@ Must indicate success or failure of the publish (once @ACKed@ or @NACKed@) in the same way as @RealtimeChannel#publish@
 * @(RTO16)@ Server time can be retrieved using "@RestClient#time@":../features#RSC16
 ** @(RTO16a)@ The server time offset can be persisted by the client library and used to calculate the server time without making a request, in a similar way to how it is described in "RSA10k":../features#RSA10k. The persisted offset from either operation can be used interchangeably
+* @(RTO17)@ The @RealtimeObjects@ instance must maintain an internal sync state to track the status of synchronising the local objects data with the Ably service.
+** @(RTO17a)@ The sync state has type @ObjectsSyncState@, which is an enum with the following cases (note that their descriptions are purely informative; the rules for state transitions are described elsewhere in this specification):
+*** @(RTO17a1)@ @INITIALIZED@ - the initial state when @RealtimeObjects@ is created
+*** @(RTO17a2)@ @SYNCING@ - in this state, the local copy of objects on the channel is currently being synchronised with the Ably service
+*** @(RTO17a3)@ @SYNCED@ - in this state, the local copy of objects on the channel has been synchronised with the Ably service
+** @(RTO17b)@ When the sync state transitions, an event with the @ObjectsEvent@ value matching the new state must be emitted to any listeners registered via @RealtimeObjects#on@ ("RTO18":#RTO18).
+* @(RTO18)@ @RealtimeObjects#on@ function - registers a listener for sync state events
+** @(RTO18a)@ Expects the following arguments:
+*** @(RTO18a1)@ @event@ - the event name to listen for, of type @ObjectsEvent@ (see "RTO18b":#RTO18b)
+*** @(RTO18a2)@ @callback@ - the event listener function to be called when the event is emitted
+** @(RTO18b)@ @ObjectsEvent@ is an enum with the following cases:
+*** @(RTO18b1)@ @SYNCING@: Indicates that the "RTO17":#RTO17 sync state has transitioned to @SYNCING@
+*** @(RTO18b2)@ @SYNCED@: Indicates that the "RTO17":#RTO17 sync state has transitioned to @SYNCED@
+** @(RTO18c)@ Registers the provided listener for the specified event
+** @(RTO18d)@ If @on@ is called more than once with the same listener and event, the listener is added multiple times to the listener registry. As such, if the same listener is registered twice and an event is emitted once, the listener will be invoked twice
+** @(RTO18e)@ When an event is emitted, all registered listeners for that event must be called with no arguments
+** @(RTO18f)@ The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
+*** @(RTO18f1)@ The subscription object includes an @off@ function
+*** @(RTO18f2)@ Calling @off@ deregisters the listener previously registered by the user via the corresponding @on@ call
+* @(RTO19)@ @RealtimeObjects#off@ function - deregisters an event listener previously registered via @RealtimeObjects#on@ ("RTO18":#RTO18)
 
 h3(#liveobject). LiveObject
 
@@ -235,11 +258,6 @@ h3(#liveobject). LiveObject
 *** @(RTLO4c2)@ A user may provide a listener they wish to deregister from receiving data updates for this @LiveObject@
 *** @(RTLO4c3)@ Once deregistered, subsequent data updates for this @LiveObject@ must not result in the listener being called
 *** @(RTLO4c4)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
-** @(RTLO4d)@ public @unsubscribeAll@ - unsubscribes all previously registered listeners
-*** @(RTLO4d1)@ This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
-*** @(RTLO4d2)@ Deregisters all current data update listeners from receiving any further events for this @LiveObject@
-*** @(RTLO4d3)@ Once deregistered, subsequent data updates for this @LiveObject@ must not result in any of the previously registered listeners being called
-*** @(RTLO4d4)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
 ** @(RTLO4a)@ protected @canApplyOperation@ - a convenience method used to determine whether the @ObjectMessage.operation@ should be applied to this object based on a serial value
 *** @(RTLO4a1)@ Expects the following arguments:
 **** @(RTLO4a1a)@ @ObjectMessage@
@@ -529,7 +547,21 @@ class RealtimeObjects: // RTO*
   getRoot() => io LiveMap // RTO1
   createMap(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap> entries?) => io LiveMap // RTO11
   createCounter(Number count?) => io LiveCounter // RTO12
+  on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18
+  off(() ->) // RTO19
   publish(ObjectMessage[]) => io // RTO15, internal
+
+enum ObjectsSyncState: // RTO17a
+  INITIALIZED // RTO17a1
+  SYNCING // RTO17a2
+  SYNCED // RTO17a3
+
+enum ObjectsEvent: // RTO18b
+  SYNCING // RTO18b1
+  SYNCED // RTO18b2
+
+interface StatusSubscription: // RTO18f
+  off() // RTO18f1
 
 class LiveObject: // RTLO*
   objectId: String // RTLO3a, internal
@@ -541,7 +573,6 @@ class LiveObject: // RTLO*
   tombstone(ObjectMessage) // RTLO4e, internal
   subscribe((LiveObjectUpdate) ->) -> LiveObjectSubscription // RTLO4b
   unsubscribe((LiveObjectUpdate) ->) // RTLO4c
-  unsubscribeAll() // RTLO4d
 
 interface LiveObjectSubscription: // RTLO4b5
   unsubscribe() // RTLO4b5a
