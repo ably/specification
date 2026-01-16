@@ -104,6 +104,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO3b1)@ Upon initialization of the @ObjectsPool@, create a new @LiveMap@ (per "RTLM4":#RTLM4) with @objectId@ set to @root@ and add it to the @ObjectsPool@
 * @(RTO4)@ When a channel @ATTACHED@ @ProtocolMessage@ is received, the @ProtocolMessage@ may contain a @HAS_OBJECTS@ bit flag indicating that it will perform an objects sync, see "TR3":../features#TR3 . Note that this does not imply that objects are definitely present on the channel, only that there may be; the @OBJECT_SYNC@ message may be empty
 ** @(RTO4c)@ Upon receipt of an @ATTACHED@ @ProtocolMessage@, the "RTO17":#RTO17 sync state must transition to @SYNCING@ if not already @SYNCING@. This must occur before performing any "RTO4b":#RTO4b actions.
+** @(RTO4d)@ The @bufferedObjectOperations@ list must be cleared without applying any buffered operations
 ** @(RTO4a)@ If the @HAS_OBJECTS@ flag is 1, the server will shortly perform an @OBJECT_SYNC@ sequence as described in "RTO5":#RTO5
 ** @(RTO4b)@ If the @HAS_OBJECTS@ flag is 0 or there is no @flags@ field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
 *** @(RTO4b1)@ All objects except the one with id @root@ must be removed from the internal @ObjectsPool@
@@ -119,7 +120,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5a1)@ The @channelSerial@ is used as the sync cursor and is a two-part identifier: @<sequence id>:<cursor value>@
 *** @(RTO5a2)@ If a new sequence id is sent from Ably, the client library must treat it as the start of a new objects sync sequence, and any previous in-flight sync must be discarded:
 **** @(RTO5a2a)@ The @SyncObjectsPool@ list must be cleared
-**** @(RTO5a2b)@ The @bufferedObjectOperations@ list must be cleared
+**** @(RTO5a2b)@ This clause has been replaced by "RTO4d":#RTO4d
 *** @(RTO5a3)@ If the sequence id matches the previously received sequence id, the client library should continue the sync process
 *** @(RTO5a4)@ The objects sync sequence for that sequence identifier is considered complete once the cursor is empty; that is when the @channelSerial@ looks like @<sequence id>:@
 *** @(RTO5a5)@ An @OBJECT_SYNC@ may also be sent with no @channelSerial@ attribute. In this case, the sync data is entirely contained within the @ProtocolMessage@
