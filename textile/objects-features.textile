@@ -322,6 +322,7 @@ h3(#livecounter). LiveCounter
 ** @(RTLC6d)@ If @ObjectState.createOp@ is present, merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectState.createOp@ instance
 *** @(RTLC6d1)@ This clause has been replaced by "RTLC10a":#RTLC10a
 *** @(RTLC6d2)@ This clause has been replaced by "RTLC10b":#RTLC10b
+** @(RTLC6g)@ Return a @LiveCounterUpdate@ object that reflects the change in value caused by applying "RTLC6":#RTLC6. Construct the update using the procedure defined in "RTLC14":#RTLC14, passing in the @previous@ @data@ value that the @LiveCounter@ had before applying "RTLC6":#RTLC6, and the @new@ @data@ value that the @LiveCounter@ has after applying "RTLC6d":#RTLC6d
 * @(RTLC7)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveCounter@ by performing the following actions in order:
 ** @(RTLC7a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveCounter@. This @ObjectMessage@ represents the operation to be applied to this @LiveCounter@
 ** @(RTLC7b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action
@@ -354,6 +355,12 @@ h3(#livecounter). LiveCounter
 ** @(RTLC10b)@ Set the private flag @createOperationIsMerged@ to @true@
 ** @(RTLC10c)@ If @ObjectOperation.counter.count@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @ObjectOperation.counter.count@
 ** @(RTLC10d)@ If @ObjectOperation.counter.count@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
+* @(RTLC14)@ A @LiveCounterUpdate@ for the difference between two @LiveCounter@ @data@ values (referred to as "previous" and "new" values) can be created using the convenience method:
+** @(RTLC14a)@ Expects the following arguments:
+*** @(RTLC14a1)@ @previous@ number
+*** @(RTLC14a2)@ @new@ number
+** @(RTLC14b)@ The return type is a @LiveCounterUpdate@ object, which indicates the data update for this @LiveCounter@
+** @(RTLC14c)@ Return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ equal to the difference between the @new@ and @previous@ values
 
 h3(#livemap). LiveMap
 
@@ -457,6 +464,7 @@ h3(#livemap). LiveMap
 **** @(RTLM6d1a)@ This clause has been replaced by "RTLM17a1":#RTLM17a1
 **** @(RTLM6d1b)@ This clause has been replaced by "RTLM17a2":#RTLM17a2
 *** @(RTLM6d2)@ This clause has been replaced by "RTLM17b":#RTLM17b
+** @(RTLM6g)@ Return a @LiveMapUpdate@ object that reflects the change in value caused by applying "RTLM6":#RTLM6. Construct the update using the procedure defined in "RTLM22":#RTLM22, passing in the @previous@ @data@ value that the @LiveMap@ had before applying "RTLM6":#RTLM6, and the @new@ @data@ value that the @LiveMap@ has after applying "RTLM6d":#RTLM6d
 * @(RTLM15)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveMap@ by performing the following actions in order:
 ** @(RTLM15a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveMap@. This @ObjectMessage@ represents the operation to be applied to this @LiveMap@
 ** @(RTLM15b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action
@@ -536,6 +544,12 @@ h3(#livemap). LiveMap
 * @(RTLM19)@ The @LiveMap@ can be checked to determine whether it should release resources for its tombstoned @ObjectsMapEntry@ entries as follows:
 ** @(RTLM19a)@ For each @ObjectsMapEntry@ in the internal @data@:
 *** @(RTLM19a1)@ If @ObjectsMapEntry.tombstone@ is @true@, and the difference between the current time and @ObjectsMapEntry.tombstonedAt@ is greater than or equal to the "grace period":#RTO10b, remove the entry from the internal @data@ map and release resources for the corresponding @ObjectsMapEntry@ entity to allow it to be garbage collected
+* @(RTLM22)@ A @LiveMapUpdate@ for the difference between two @LiveMap@ @data@ values (referred to as "previous" and "new" values) can be created using the convenience method:
+** @(RTLM22a)@ Expects the following arguments:
+*** @(RTLM22a1)@ @previous@ @Dict<String, ObjectsMapEntry>@
+*** @(RTLM22a2)@ @new@ @Dict<String, ObjectsMapEntry>@
+** @(RTLM22b)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
+** @(RTLM22c)@ TODO
 
 h2(#idl). Interface Definition
 
