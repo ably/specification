@@ -396,6 +396,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M5)@ For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow @(subscription point)@ at which the subscription was made, NOT the channel attachment point.
 ** @(CHA-M5a)@ @[Testable]@ If a subscription is added when the underlying realtime channel is @ATTACHED@, then the @subscription point@ is the current @channelSerial@ of the realtime channel.
 ** @(CHA-M5b)@ @[Testable]@ If a subscription is added when the underlying realtime channel is in any other state, then its @subscription point@ becomes the @attachSerial@ at the the point of channel attachment.
+*** @(CHA-M5b1)@ @[Testable]@ If the channel fails to attach then an error should be thrown with an error code 102112 (room in invalid state).
 ** @(CHA-M5c)@ @[Testable]@ If a channel leaves the @ATTACHED@ state and then re-enters @ATTACHED@ with @resumed=false@, then it must be assumed that messages have been missed. The @subscription point@ of any subscribers must be reset to the @attachSerial@.
 ** @(CHA-M5d)@ @[Testable]@ If a channel @UPDATE@ event is received and @resumed=false@, then it must be assumed that messages have been missed. The @subscription point@ of any subscribers must be reset to the @attachSerial@.
 ** @(CHA-M5e)@ Each subscription shall expose a method or callback that allows for messages to be queried. These messages are queried via the "REST API"#rest-fetching-messages-history.
@@ -409,6 +410,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 * @(CHA-M6b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 * @(CHA-M13)@ A single message must be retrievable from the REST API.
 ** @(CHA-M13a)@ @[Testable]@ A method must be exposed that accepts a message serial and returns a single @Message@ object. It shall call the "REST API single message endpoint"#rest-fetching-single-message and return the message if found.
+*** @(CHA-M13a1)@ @[Testable]@ If not found an error should be thrown with an error code 40400 and status code 404.
 ** @(CHA-M13b)@ @[Testable]@ If the REST API returns an error, then the method must throw its @ErrorInfo@ representation.
 * @(CHA-M7)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-M11)@ A @Message@ must have a method @with@ to apply changes from events (@MessageEvent@ and @MessageReactionSummaryEvent@) to produce updated message instances.
