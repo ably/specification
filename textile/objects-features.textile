@@ -102,6 +102,13 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO3a)@ @ObjectsPool@ is a @Dict<String, LiveObject>@ - a map of @LiveObject@s keyed by "@objectId@":../features#OST2a string
 ** @(RTO3b)@ It must always contain a @LiveMap@ object with id @root@
 *** @(RTO3b1)@ Upon initialization of the @ObjectsPool@, create a new @LiveMap@ (per "RTLM4":#RTLM4) with @objectId@ set to @root@ and add it to the @ObjectsPool@
+** @(RTO3c)@ An internal @appliedOnAckSerials@ set should be used to maintain a sliding window of serials for operations that have been applied on ACK but for which the echo has not yet been received
+*** @(RTO3c1)@ @appliedOnAckSerials@ is a @Set<String>@ - a set of "@serial@":../features#OM2h strings
+*** @(RTO3c2)@ It is empty upon @RealtimeObjects@ initialization
+** @(RTO3d)@ The @RealtimeObjects@ instance must store the @siteCode@ of the site that the connection is connected to
+*** @(RTO3d1)@ The @siteCode@ is obtained from the @ConnectionDetails@ received in a @CONNECTED@ @ProtocolMessage@, per "RTN24":../features#RTN24
+*** @(RTO3d2)@ The @siteCode@ value is updated whenever a new @CONNECTED@ @ProtocolMessage@ is received
+*** @(RTO3d3)@ The @siteCode@ is used when applying operations on ACK to perform the @siteTimeserials@ check as described in "RTO20a":#RTO20a
 * @(RTO4)@ When a channel @ATTACHED@ @ProtocolMessage@ is received, the @ProtocolMessage@ may contain a @HAS_OBJECTS@ bit flag indicating that it will perform an objects sync, see "TR3":../features#TR3 . Note that this does not imply that objects are definitely present on the channel, only that there may be; the @OBJECT_SYNC@ message may be empty
 ** @(RTO4c)@ Upon receipt of an @ATTACHED@ @ProtocolMessage@, the "RTO17":#RTO17 sync state must transition to @SYNCING@ if not already @SYNCING@. This must occur before performing any "RTO4b":#RTO4b actions.
 ** @(RTO4a)@ If the @HAS_OBJECTS@ flag is 1, the server will shortly perform an @OBJECT_SYNC@ sequence as described in "RTO5":#RTO5
@@ -111,6 +118,8 @@ h3(#realtime-objects). RealtimeObjects
 **** @(RTO4b2a)@ Emit a @LiveMapUpdate@ object for the @LiveMap@ with ID @root@, with @LiveMapUpdate.update@ consisting of entries for the keys that were removed, each set to @removed@
 *** @(RTO4b3)@ The @SyncObjectsPool@ list must be cleared
 *** @(RTO4b5)@ The @BufferedObjectOperations@ list must be cleared
+*** @(RTO4b6)@ The @appliedOnAckSerials@ set must be cleared
+*** @(RTO4b7)@ The @BufferedAcks@ list must be cleared (see "RTO21":#RTO21)
 *** @(RTO4b4)@ Perform the actions for objects sync completion as described in "RTO5c":#RTO5c
 * @(RTO5)@ The realtime system reserves the right to initiate an objects sync of the objects on a channel at any point once a channel is attached. A server initiated objects sync provides Ably with a means to send a complete list of objects present on the channel at any point
 ** @(RTO5d)@ If an @OBJECT_SYNC@ @ProtocolMessage@ is received and "@ObjectMessage.object@":../features#TR4r is null or omitted, the client library should skip processing that @ProtocolMessage@
@@ -120,6 +129,8 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5a2)@ If a new sequence id is sent from Ably, the client library must treat it as the start of a new objects sync sequence, and any previous in-flight sync must be discarded:
 **** @(RTO5a2a)@ The @SyncObjectsPool@ list must be cleared
 **** @(RTO5a2b)@ The @BufferedObjectOperations@ list must be cleared
+**** @(RTO5a2c)@ The @appliedOnAckSerials@ set must be cleared
+**** @(RTO5a2d)@ The @BufferedAcks@ list must be cleared (see "RTO21":#RTO21)
 *** @(RTO5a3)@ If the sequence id matches the previously received sequence id, the client library should continue the sync process
 *** @(RTO5a4)@ The objects sync sequence for that sequence identifier is considered complete once the cursor is empty; that is when the @channelSerial@ looks like @<sequence id>:@
 *** @(RTO5a5)@ An @OBJECT_SYNC@ may also be sent with no @channelSerial@ attribute. In this case, the sync data is entirely contained within the @ProtocolMessage@
@@ -138,9 +149,11 @@ h3(#realtime-objects). RealtimeObjects
 **** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
 *** @(RTO5c7)@ For each previously existing object that was updated as a result of "RTO5c1a":#RTO5c1a, emit the corresponding stored @LiveObjectUpdate@ object from "RTO5c1a2":#RTO5c1a2
 *** @(RTO5c6)@ @ObjectMessages@ stored in the @BufferedObjectOperations@ list are applied as described in "RTO9":#RTO9
+*** @(RTO5c9)@ Apply buffered ACKs stored in the @BufferedAcks@ list as described in "RTO21c":#RTO21c
 *** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
 *** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
 *** @(RTO5c5)@ The @BufferedObjectOperations@ list must be cleared
+*** @(RTO5c10)@ The @BufferedAcks@ list must be cleared
 *** @(RTO5c8)@ The "RTO17":#RTO17 sync state must transition to @SYNCED@
 * @(RTO6)@ Certain object operations may require creating a zero-value object if one does not already exist in the internal @ObjectsPool@ for the given @objectId@. This can be done as follows:
 ** @(RTO6a)@ If an object with @objectId@ exists in @ObjectsPool@, do not create a new object
@@ -157,6 +170,9 @@ h3(#realtime-objects). RealtimeObjects
 * @(RTO9)@ @OBJECT@ messages can be applied to @RealtimeObjects@ in the following way:
 ** @(RTO9a)@ For each @ObjectMessage@ in the provided list:
 *** @(RTO9a1)@ If @ObjectMessage.operation@ is null or omitted, log a warning indicating that an unsupported object operation message has been received, and discard the current @ObjectMessage@ without taking any action
+*** @(RTO9a0)@ If the @appliedOnAckSerials@ set contains @ObjectMessage.serial@, this operation has already been applied on ACK:
+**** @(RTO9a0a)@ Remove @ObjectMessage.serial@ from the @appliedOnAckSerials@ set
+**** @(RTO9a0b)@ Do not proceed with applying this operation. This handles the case where the operation has already been applied on ACK
 *** @(RTO9a2)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 **** @(RTO9a2a)@ If @ObjectMessage.operation.action@ is one of the following: @MAP_CREATE@, @MAP_SET@, @MAP_REMOVE@, @COUNTER_CREATE@, @COUNTER_INC@, or @OBJECT_DELETE@, then:
 ***** @(RTO9a2a1)@ If it does not already exist, create a zero-value @LiveObject@ in the internal @ObjectsPool@ per "RTO6":#RTO6 using the @objectId@ from @ObjectMessage.operation.objectId@
@@ -222,6 +238,34 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO18f1)@ The subscription object includes an @off@ function
 *** @(RTO18f2)@ Calling @off@ deregisters the listener previously registered by the user via the corresponding @on@ call
 * @(RTO19)@ @RealtimeObjects#off@ function - deregisters an event listener previously registered via @RealtimeObjects#on@ ("RTO18":#RTO18)
+* @(RTO20)@ Applying operations on ACK - when the client library receives an @ACK@ @ProtocolMessage@ for an operation that it published, it should apply that operation to the local objects immediately, before receiving the echo of that operation over the Realtime connection. This ensures that when the promise returned by an operation method (such as @LiveMap#set@) resolves, the operation has already been applied to the local objects
+** @(RTO20a)@ When an @ACK@ @ProtocolMessage@ is received for a published @ObjectMessage@:
+*** @(RTO20a1)@ Extract the operation's @serial@ from the @ProtocolMessage.msgSerial@ field (see "RTL17":../features#RTL17)
+*** @(RTO20a2)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, buffer the ACK as described in "RTO21":#RTO21 instead of applying it immediately
+*** @(RTO20a3)@ Perform the standard @siteTimeserials@ check using this @serial@ and the @siteCode@ stored in @RealtimeObjects@ per "RTO3d":#RTO3d:
+**** @(RTO20a3a)@ For each @ObjectMessage@ that was published in the original @OBJECT@ @ProtocolMessage@, get the target @LiveObject@ from the @ObjectsPool@ using @ObjectMessage.operation.objectId@
+**** @(RTO20a3b)@ For each target @LiveObject@, check if the operation can be applied using "@LiveObject.canApplyOperation@":#RTLO4a, passing in a synthetic @ObjectMessage@ with @ObjectMessage.serial@ set to the @serial@ from "RTO20a1":#RTO20a1, and @ObjectMessage.siteCode@ set to the @siteCode@ from "RTO3d":#RTO3d
+**** @(RTO20a3c)@ If the check disallows the application of the operation for any of the target objects, do not proceed with applying any of the operations on ACK. This handles the case where the operation has already been applied due to receiving the echo before the ACK
+*** @(RTO20a4)@ For each @ObjectMessage@ that was published in the original @OBJECT@ @ProtocolMessage@:
+**** @(RTO20a4a)@ Apply the operation to the target @LiveObject@ per "RTO9a2a":#RTO9a2a
+**** @(RTO20a4b)@ Note that the @siteTimeserials@ for the object must not be updated when applying on ACK, as they will be updated when the echo is received
+*** @(RTO20a5)@ Insert the operation's @serial@ into the @appliedOnAckSerials@ set
+*** @(RTO20a6)@ Resolve the promise or callback associated with the publish operation, indicating success to the caller
+* @(RTO21)@ Buffering ACKs during SYNCING state - when the @RealtimeObjects@ sync state is @SYNCING@, ACKs for published operations must be buffered and applied after the sync completes. This is necessary because applying operations on ACK during a sync could result in those operations being applied to stale object state
+** @(RTO21a)@ An internal @BufferedAcks@ list should be used to store ACKs that are received while the sync state is @SYNCING@
+*** @(RTO21a1)@ @BufferedAcks@ is an array of @BufferedAck@ instances
+*** @(RTO21a2)@ Each @BufferedAck@ contains:
+**** @(RTO21a2a)@ @serial@ - the @serial@ value from the ACK @ProtocolMessage@
+**** @(RTO21a2b)@ @objectMessages@ - the array of @ObjectMessage@ instances that were published in the original operation
+*** @(RTO21a3)@ @BufferedAcks@ is empty upon @RealtimeObjects@ initialization
+** @(RTO21b)@ When an ACK is received and the sync state is @SYNCING@ (per "RTO20a2":#RTO20a2):
+*** @(RTO21b1)@ Create a @BufferedAck@ instance with the @serial@ and @objectMessages@ from the ACK
+*** @(RTO21b2)@ Add the @BufferedAck@ to the @BufferedAcks@ list
+*** @(RTO21b3)@ Resolve the promise or callback associated with the publish operation, indicating success to the caller. This resolution must have no impact on the buffering of the ACK; the operation is not applied to local objects until after the sync completes
+** @(RTO21c)@ Applying buffered ACKs - when the sync completes (per "RTO5c9":#RTO5c9), apply all buffered ACKs:
+*** @(RTO21c1)@ For each @BufferedAck@ in the @BufferedAcks@ list:
+**** @(RTO21c1a)@ Apply the ACK as described in "RTO20a":#RTO20a, skipping the check in "RTO20a2":#RTO20a2 (since the sync state is now @SYNCED@)
+**** @(RTO21c1b)@ Skip the promise resolution step in "RTO20a6":#RTO20a6, as the promise was already resolved when the ACK was buffered
 
 h3(#liveobject). LiveObject
 
