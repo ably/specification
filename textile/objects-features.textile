@@ -52,15 +52,17 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO11f11)@ Set @ObjectMessage.operation.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
 *** @(RTO11f12)@ Set @ObjectMessage.operation.initialValue@ to the JSON string created in "RTO11f5":#RTO11f5
 *** @(RTO11f13)@ Merge values from the partial @ObjectOperation@ created in "RTO11f4":#RTO11f4 into @ObjectMessage.operation@
-** @(RTO11g)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
-*** @(RTO11g1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
+** @(RTO11g)@ This clause has been replaced by "RTO11i":#RTO11i
+** @(RTO11i)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+*** @(RTO11i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
 ** @(RTO11h)@ Returns a @LiveMap@ instance:
-*** @(RTO11h1)@ While waiting for the publish operation to complete in "RTO11g1":#RTO11g1, the client library may have already received the echoed @ObjectMessage@ operation, as it could arrive before the @ACK@ for the publish operation. Depending on the threading and/or asynchronous model of the client library, this could mean that the @ObjectMessage@ for the @MAP_CREATE@ operation has already been processed, and the new @LiveMap@ instance already exists in the internal @ObjectsPool@. As such, the following checks are performed to determine whether the instance already exists
+*** @(RTO11h1)@ This clause has been deleted.
 *** @(RTO11h2)@ If an object with the @ObjectMessage.operation.objectId@ exists in the internal @ObjectsPool@, return it
 *** @(RTO11h3)@ Otherwise, if the object does not exist in the internal @ObjectsPool@:
-**** @(RTO11h3a)@ Create a zero-value @LiveMap@ (per "RTLM4":#RTLM4), set its @objectId@ to @ObjectMessage.operation.objectId@, set its @semantics@ to @ObjectMessage.operation.map.semantics@, and merge the initial value as described in "RTLM17":#RTLM17, passing in @ObjectMessage.operation@
-**** @(RTO11h3b)@ Add the created @LiveMap@ instance to the internal @ObjectsPool@
-**** @(RTO11h3c)@ Return the created @LiveMap@ instance
+**** @(RTO11h3a)@ This clause has been deleted.
+**** @(RTO11h3b)@ This clause has been deleted.
+**** @(RTO11h3c)@ This clause has been deleted.
+**** @(RTO11h3d)@ The library should throw an @ErrorInfo@ error with @statusCode@ 500 and @code@ 50000 (Note: this is not expected to happen since the object should have been created as part of applying the @MAP_CREATE@ operation via @publishAndApply@ in "RTO11i":#RTO11i)
 * @(RTO12)@ @RealtimeObjects#createCounter@ function:
 ** @(RTO12a)@ Expects the following arguments:
 *** @(RTO12a1)@ @count@ @Number@ (optional) - the initial count for the new @LiveCounter@ object
@@ -82,15 +84,17 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO12f9)@ Set @ObjectMessage.operation.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
 *** @(RTO12f10)@ Set @ObjectMessage.operation.initialValue@ to the JSON string created in "RTO12f3":#RTO12f3
 *** @(RTO12f11)@ Merge values from the partial @ObjectOperation@ created in "RTO12f2":#RTO12f2 into @ObjectMessage.operation@
-** @(RTO12g)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
-*** @(RTO12g1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
+** @(RTO12g)@ This clause has been replaced by "RTO12i":#RTO12i
+** @(RTO12i)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+*** @(RTO12i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
 ** @(RTO12h)@ Returns a @LiveCounter@ instance:
-*** @(RTO12h1)@ While waiting for the publish operation to complete in "RTO12g1":#RTO12g1, the client library may have already received the echoed @ObjectMessage@ operation, as it could arrive before the @ACK@ for the publish operation. Depending on the threading and/or asynchronous model of the client library, this could mean that the @ObjectMessage@ for the @COUNTER_CREATE@ operation has already been processed, and the new @LiveCounter@ instance already exists in the internal @ObjectsPool@. As such, the following checks are performed to determine whether the instance already exists
+*** @(RTO12h1)@ This clause has been deleted.
 *** @(RTO12h2)@ If an object with the @ObjectMessage.operation.objectId@ exists in the internal @ObjectsPool@, return it
 *** @(RTO12h3)@ Otherwise, if the object does not exist in the internal @ObjectsPool@:
-**** @(RTO12h3a)@ Create a zero-value @LiveCounter@ (per "RTLC4":#RTLC4), set its @objectId@ to @ObjectMessage.operation.objectId@, and merge the initial value as described in "RTLC10":#RTLC10, passing in @ObjectMessage.operation@
-**** @(RTO12h3b)@ Add the created @LiveCounter@ instance to the internal @ObjectsPool@
-**** @(RTO12h3c)@ Return the created @LiveCounter@ instance
+**** @(RTO12h3a)@ This clause has been deleted.
+**** @(RTO12h3b)@ This clause has been deleted.
+**** @(RTO12h3c)@ This clause has been deleted.
+**** @(RTO12h3d)@ The library should throw an @ErrorInfo@ error with @statusCode@ 500 and @code@ 50000 (Note: this is not expected to happen since the object should have been created as part of applying the @COUNTER_CREATE@ operation via @publishAndApply@ in "RTO12i":#RTO12i)
 * @(RTO2)@ Certain object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
 ** @(RTO2a)@ If the channel is in the @ATTACHED@ state, the presence of the required channel mode is checked against the set of channel modes granted by the server per "RTL4m":../features#RTL4m :
 *** @(RTO2a1)@ If the channel mode is in the set, the operation is allowed
@@ -137,10 +141,11 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5c2)@ Remove any objects from the internal @ObjectsPool@ for which @objectId@s were not received during the sync sequence
 **** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
 *** @(RTO5c7)@ For each previously existing object that was updated as a result of "RTO5c1a":#RTO5c1a, emit the corresponding stored @LiveObjectUpdate@ object from "RTO5c1a2":#RTO5c1a2
-*** @(RTO5c6)@ @ObjectMessages@ stored in the @bufferedObjectOperations@ list are applied as described in "RTO9":#RTO9
+*** @(RTO5c6)@ @ObjectMessages@ stored in the @bufferedObjectOperations@ list are applied as described in "RTO9":#RTO9, passing @source@ as @CHANNEL@
 *** @(RTO5c3)@ Clear any stored sync sequence identifiers and cursor values
 *** @(RTO5c4)@ The @SyncObjectsPool@ must be cleared
 *** @(RTO5c5)@ The @bufferedObjectOperations@ list must be cleared
+*** @(RTO5c9)@ The @appliedOnAckSerials@ set ("RTO7b":#RTO7b) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the @appliedOnAckSerials@ no longer accurately describes which operations have been applied to the channel's LiveObjects data
 *** @(RTO5c8)@ The "RTO17":#RTO17 sync state must transition to @SYNCED@
 * @(RTO6)@ Certain object operations may require creating a zero-value object if one does not already exist in the internal @ObjectsPool@ for the given @objectId@. This can be done as follows:
 ** @(RTO6a)@ If an object with @objectId@ exists in @ObjectsPool@, do not create a new object
@@ -151,17 +156,24 @@ h3(#realtime-objects). RealtimeObjects
 * @(RTO7)@ The client library may receive @OBJECT@ @ProtocolMessages@ in realtime over the channel concurrently with @OBJECT_SYNC@ @ProtocolMessages@ during the object sync sequence ("RTO5":#RTO5). Some of the incoming @OBJECT@ messages may have already been applied to the objects described in the sync sequence, while others may not. Therefore, the client must buffer @OBJECT@ messages during the sync sequence so that it can determine which of them should be applied to the objects once the sync is complete. See "RTO8":#RTO8
 ** @(RTO7a)@ The @RealtimeObjects@ instance has an internal attribute @bufferedObjectOperations@, which is an array of @ObjectMessage@ instances. This is used to store the buffered @ObjectMessages@, as described in "RTO8a":#RTO8a.
 *** @(RTO7a1)@ This array is empty upon @RealtimeObjects@ initialization
+** @(RTO7b)@ The @RealtimeObjects@ instance has an internal attribute @appliedOnAckSerials@, which is a set of strings. This is used to store the serial values of operations that have been applied upon receipt of an @ACK@ but for which the echo has not yet been received.
+*** @(RTO7b1)@ This set is empty upon @RealtimeObjects@ initialization
 * @(RTO8)@ When the library receives a @ProtocolMessage@ with an action of @OBJECT@, each member of the @ProtocolMessage.state@ array (decoded into @ObjectMessage@ objects) is passed to the @RealtimeObjects@ instance per "RTL1":../features#RTL1. Each @ObjectMessage@ from @OBJECT@ @ProtocolMessage@ (also referred to as an @OBJECT@ message) describes an operation to be applied to an object on a channel and must be handled as follows:
 ** @(RTO8a)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, add the @ObjectMessages@ to the internal @bufferedObjectOperations@ array
-** @(RTO8b)@ Otherwise, apply the @ObjectMessages@ as described in "RTO9":#RTO9
+** @(RTO8b)@ Otherwise, apply the @ObjectMessages@ as described in "RTO9":#RTO9, passing @source@ as @CHANNEL@
 * @(RTO9)@ @OBJECT@ messages can be applied to @RealtimeObjects@ in the following way:
+** @(RTO9b)@ Expects the following arguments:
+*** @(RTO9b1)@ @ObjectMessage[]@ - the list of @ObjectMessages@ to apply
+*** @(RTO9b2)@ @source@ @ObjectsOperationSource@ - the source of the operation (see "RTO22":#RTO22)
 ** @(RTO9a)@ For each @ObjectMessage@ in the provided list:
 *** @(RTO9a1)@ If @ObjectMessage.operation@ is null or omitted, log a warning indicating that an unsupported object operation message has been received, and discard the current @ObjectMessage@ without taking any action
+*** @(RTO9a3)@ If the @appliedOnAckSerials@ set ("RTO7b":#RTO7b) contains @ObjectMessage.serial@, log a debug or trace message indicating that the operation has already been applied upon receipt of the ACK, remove this value from the set, and discard the current @ObjectMessage@ without taking any further action
 *** @(RTO9a2)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 **** @(RTO9a2a)@ If @ObjectMessage.operation.action@ is one of the following: @MAP_CREATE@, @MAP_SET@, @MAP_REMOVE@, @COUNTER_CREATE@, @COUNTER_INC@, or @OBJECT_DELETE@, then:
 ***** @(RTO9a2a1)@ If it does not already exist, create a zero-value @LiveObject@ in the internal @ObjectsPool@ per "RTO6":#RTO6 using the @objectId@ from @ObjectMessage.operation.objectId@
 ***** @(RTO9a2a2)@ Get the @LiveObject@ instance from the internal @ObjectsPool@ using the @objectId@ from @ObjectMessage.operation.objectId@
-***** @(RTO9a2a3)@ Apply the @ObjectMessage.operation@ to the @LiveObject@; see "RTLC7":#RTLC7, "RTLM15":#RTLM15
+***** @(RTO9a2a3)@ Apply the @ObjectMessage.operation@ to the @LiveObject@; see "RTLC7":#RTLC7, "RTLM15":#RTLM15, passing the @source@ parameter. The operation returns a boolean indicating whether the operation was successfully applied
+***** @(RTO9a2a4)@ If @source@ is @LOCAL@ and "RTO9a2a3":#RTO9a2a3 returned @true@, add @ObjectMessage.serial@ to the internal @appliedOnAckSerials@ set ("RTO7b":#RTO7b)
 **** @(RTO9a2b)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any action
 * @(RTO10)@ The client library must have a process in place to regularly check for objects and map entries that have been tombstoned for a period of time, and release their resources so they can be garbage collected. Tombstoned objects and map entries are retained in memory for a sufficient grace period (at least >2 minutes) to ensure that no late-arriving operation is mistakenly applied to an object or map entry the client has already "forgotten" about.
 ** @(RTO10a)@ The check should occur at regular intervals, for example, every 5 minutes
@@ -200,6 +212,23 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO15e3)@ Set @ProtocolMessage.state@ to the encoded @ObjectMessages@
 ** @(RTO15f)@ Must send the @ProtocolMessage@ to the connection
 ** @(RTO15g)@ Must indicate success or failure of the publish (once @ACKed@ or @NACKed@) in the same way as @RealtimeChannel#publish@
+** @(RTO15h)@ Upon success, must return the @PublishResult@ from the first element of the @ACK@'s @res@ array ("TR4s":../features#TR4s), in the same way as @RealtimeChannel#publish@ ("RTL6j":../features#RTL6j)
+* @(RTO20)@ Internal @RealtimeObjects#publishAndApply@ function:
+** @(RTO20a)@ Expects the following arguments:
+*** @(RTO20a1)@ @ObjectMessage[]@ - an array of @ObjectMessage@ to be published on a channel
+** @(RTO20b)@ Calls @RealtimeObjects#publish@ ("RTO15":#RTO15) with the provided @ObjectMessage[]@ and awaits the @PublishResult@. If @publish@ fails, rethrow the error and do not proceed
+** @(RTO20c)@ If the information needed to apply the operations locally on ACK is not available, this is unexpected incorrect behaviour from the server. Log an error indicating the reason the operations will not be applied locally, and do not proceed with the remaining steps. (The operations have already been published successfully, but cannot be applied locally on ACK; they will instead be applied when the echoed messages are received from the server.) The required information is:
+*** @(RTO20c1)@ A @siteCode@ from "CD2j":../features#CD2j @ConnectionDetails.siteCode@
+*** @(RTO20c2)@ A @PublishResult.serials@ array with the same length as the provided @ObjectMessage[]@ argument
+** @(RTO20d)@ Create a list of synthetic inbound @ObjectMessages@ as follows. For each @ObjectMessage@ in the provided @ObjectMessage[]@ argument, paired with the corresponding serial from @PublishResult.serials@ at the same index:
+*** @(RTO20d1)@ If the serial from the @PublishResult@ is @null@ (indicating that the operation was conflated — not currently an expected behaviour but we wish to handle it gracefully if the server introduces this behaviour in the future), log a debug or trace message indicating that the operation will not be applied locally because it was not assigned a @serial@, and skip this @ObjectMessage@ without adding it to the list
+*** @(RTO20d2)@ Create a synthetic inbound @ObjectMessage@ by copying the outbound @ObjectMessage@ and setting:
+**** @(RTO20d2a)@ @ObjectMessage.serial@ to the serial from the @PublishResult@
+**** @(RTO20d2b)@ @ObjectMessage.siteCode@ to the "CD2j":../features#CD2j @ConnectionDetails.siteCode@
+*** @(RTO20d3)@ Add the synthetic @ObjectMessage@ to the list
+** @(RTO20e)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, wait for the sync state to transition to @SYNCED@
+*** @(RTO20e1)@ If the channel enters the @DETACHED@, @SUSPENDED@, or @FAILED@ state while waiting for the sync state to transition to @SYNCED@, the @publishAndApply@ operation must fail with an @ErrorInfo@ error with @code@ @92008@, a @statusCode@ of @400@, a @message@ stating that the operation could not be applied locally due to the channel entering the respective state whilst waiting for objects sync to complete, and @cause@ set to the @RealtimeChannel.errorReason@ if it is set
+** @(RTO20f)@ Apply the synthetic @ObjectMessages@ as described in "RTO9":#RTO9, passing @source@ as @LOCAL@
 * @(RTO16)@ Server time can be retrieved using "@RestClient#time@":../features#RSC16
 ** @(RTO16a)@ The server time offset can be persisted by the client library and used to calculate the server time without making a request, in a similar way to how it is described in "RSA10k":../features#RSA10k. The persisted offset from either operation can be used interchangeably
 * @(RTO17)@ The @RealtimeObjects@ instance must maintain an internal sync state to track the status of synchronising the local objects data with the Ably service.
@@ -222,6 +251,9 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO18f1)@ The subscription object includes an @off@ function
 *** @(RTO18f2)@ Calling @off@ deregisters the listener previously registered by the user via the corresponding @on@ call
 * @(RTO19)@ @RealtimeObjects#off@ function - deregisters an event listener previously registered via @RealtimeObjects#on@ ("RTO18":#RTO18)
+* @(RTO22)@ @ObjectsOperationSource@ is an internal enum describing the source of an operation being applied:
+** @(RTO22a)@ @LOCAL@ - an operation that originated locally, being applied upon receipt of the @ACK@ from Realtime
+** @(RTO22b)@ @CHANNEL@ - an operation received over a Realtime channel
 
 h3(#liveobject). LiveObject
 
@@ -305,7 +337,8 @@ h3(#livecounter). LiveCounter
 *** @(RTLC12e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.COUNTER_INC@
 *** @(RTLC12e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveCounter@
 *** @(RTLC12e4)@ Set @ObjectMessage.operation.counterOp.amount@ to the provided @amount@ value
-** @(RTLC12f)@ Publishes the @ObjectMessage@ from "RTLC12e":#RTLC12e using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+** @(RTLC12f)@ This clause has been replaced by "RTLC12g":#RTLC12g
+** @(RTLC12g)@ Publishes the @ObjectMessage@ from "RTLC12e":#RTLC12e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLC13)@ @LiveCounter#decrement@ function:
 ** @(RTLC13a)@ Expects the following arguments:
 *** @(RTLC13a1)@ @amount@ @Number@ - the amount by which to decrement the counter value
@@ -325,18 +358,25 @@ h3(#livecounter). LiveCounter
 *** @(RTLC6d2)@ This clause has been replaced by "RTLC10b":#RTLC10b
 ** @(RTLC6h)@ Calculate the diff between @previousData@ from "RTLC6g":#RTLC6g and the current @data@ per "RTLC14":#RTLC14, and return the resulting @LiveCounterUpdate@ object
 * @(RTLC7)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveCounter@ by performing the following actions in order:
-** @(RTLC7a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveCounter@. This @ObjectMessage@ represents the operation to be applied to this @LiveCounter@
-** @(RTLC7b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action
-** @(RTLC7c)@ Set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
-** @(RTLC7e)@ If @LiveCounter.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any further action. No data update event is emitted
+** @(RTLC7f)@ Expects the following arguments:
+*** @(RTLC7f1)@ @ObjectMessage@ - an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveCounter@. This @ObjectMessage@ represents the operation to be applied to this @LiveCounter@
+*** @(RTLC7f2)@ @source@ @ObjectsOperationSource@ - the source of the operation (see "RTO22":#RTO22)
+** @(RTLC7g)@ Returns a boolean indicating whether the operation was successfully applied
+** @(RTLC7a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts the arguments described in "RTLC7f":#RTLC7f
+** @(RTLC7b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action. Return @false@
+** @(RTLC7c)@ If @source@ is @CHANNEL@, set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
+** @(RTLC7e)@ If @LiveCounter.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any further action. No data update event is emitted. Return @false@
 ** @(RTLC7d)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 *** @(RTLC7d1)@ If @ObjectMessage.operation.action@ is set to @COUNTER_CREATE@, apply the operation as described in "RTLC8":#RTLC8, passing in @ObjectMessage.operation@
 **** @(RTLC7d1a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
+**** @(RTLC7d1b)@ Return @true@
 *** @(RTLC7d2)@ If @ObjectMessage.operation.action@ is set to @COUNTER_INC@, apply the operation as described in "RTLC9":#RTLC9, passing in @ObjectMessage.operation.counterOp@
 **** @(RTLC7d2a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
+**** @(RTLC7d2b)@ Return @true@
 *** @(RTLC7d4)@ If @ObjectMessage.operation.action@ is set to @OBJECT_DELETE@, apply the operation as described in "RTLO5":#RTLO5, passing in @ObjectMessage@
 **** @(RTLC7d4a)@ Emit a @LiveCounterUpdate@ object after applying the @OBJECT_DELETE@ operation, with @LiveCounterUpdate.update.amount@ set to the negated value that this @LiveCounter@ held before the operation was applied
-*** @(RTLC7d3)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any further action. No data update event is emitted
+**** @(RTLC7d4b)@ Return @true@
+*** @(RTLC7d3)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any further action. No data update event is emitted. Return @false@
 * @(RTLC8)@ A @COUNTER_CREATE@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC8a)@ Expects the following arguments:
 *** @(RTLC8a1)@ @ObjectOperation@
@@ -430,7 +470,8 @@ h3(#livemap). LiveMap
 **** @(RTLM20e5d)@ If the @value@ is of type @Number@, set @ObjectMessage.operation.mapOp.data.number@ to that value
 **** @(RTLM20e5e)@ If the @value@ is of type @Boolean@, set @ObjectMessage.operation.mapOp.data.boolean@ to that value
 **** @(RTLM20e5f)@ If the @value@ is of type @Binary@, set @ObjectMessage.operation.mapOp.data.bytes@ to that value
-** @(RTLM20f)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+** @(RTLM20f)@ This clause has been replaced by "RTLM20g":#RTLM20g
+** @(RTLM20g)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLM21)@ @LiveMap#remove@ function:
 ** @(RTLM21a)@ Expects the following arguments:
 *** @(RTLM21a1)@ @key@ @String@ - the key to remove the value for
@@ -442,7 +483,8 @@ h3(#livemap). LiveMap
 *** @(RTLM21e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_REMOVE@
 *** @(RTLM21e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
 *** @(RTLM21e4)@ Set @ObjectMessage.operation.mapOp.key@ to the provided @key@ value
-** @(RTLM21f)@ Publishes the @ObjectMessage@ from "RTLM21e":#RTLM21e using "@RealtimeObjects#publish@":#RTO15, passing the @ObjectMessage@ as a single element in the array
+** @(RTLM21f)@ This clause has been replaced by "RTLM21g":#RTLM21g
+** @(RTLM21g)@ Publishes the @ObjectMessage@ from "RTLM21e":#RTLM21e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLM14)@ An @ObjectsMapEntry@ in the internal @data@ map can be checked for being tombstoned using the convenience method:
 ** @(RTLM14a)@ The method returns true if @ObjectsMapEntry.tombstone@ is true
 ** @(RTLM14c)@ The method returns true if @ObjectsMapEntry.data.objectId@ exists, there is an object in the local @ObjectsPool@ with that id, and that @LiveObject.isTombstone@ property is @true@
@@ -467,20 +509,28 @@ h3(#livemap). LiveMap
 *** @(RTLM6d2)@ This clause has been replaced by "RTLM17b":#RTLM17b
 ** @(RTLM6h)@ Calculate the diff between @previousData@ from "RTLM6g":#RTLM6g and the current @data@ per "RTLM22":#RTLM22, and return the resulting @LiveMapUpdate@ object
 * @(RTLM15)@ An @ObjectOperation@ from @ObjectMessage.operation@ can be applied to a @LiveMap@ by performing the following actions in order:
-** @(RTLM15a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveMap@. This @ObjectMessage@ represents the operation to be applied to this @LiveMap@
-** @(RTLM15b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action
-** @(RTLM15c)@ Set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
-** @(RTLM15e)@ If @LiveMap.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any further action. No data update event is emitted
+** @(RTLM15f)@ Expects the following arguments:
+*** @(RTLM15f1)@ @ObjectMessage@ - an @ObjectMessage@ instance with an existing @ObjectMessage.operation@ object, with @ObjectMessage.operation.objectId@ matching the Object ID of this @LiveMap@. This @ObjectMessage@ represents the operation to be applied to this @LiveMap@
+*** @(RTLM15f2)@ @source@ @ObjectsOperationSource@ - the source of the operation (see "RTO22":#RTO22)
+** @(RTLM15g)@ Returns a boolean indicating whether the operation was successfully applied
+** @(RTLM15a)@ A client library may choose to implement this logic as a convenience method named @applyOperation@, which accepts the arguments described in "RTLM15f":#RTLM15f
+** @(RTLM15b)@ If @ObjectMessage.operation@ cannot be applied based on the result of "@LiveObject.canApplyOperation@":#RTLO4a, log a debug or trace message indicating that the operation cannot be applied because its serial value is not newer than the object's, and discard the @ObjectMessage@ without taking any further action. Return @false@
+** @(RTLM15c)@ If @source@ is @CHANNEL@, set the entry in the private @siteTimeserials@ map at the key @ObjectMessage.siteCode@ to equal @ObjectMessage.serial@
+** @(RTLM15e)@ If @LiveMap.isTombstone@ is @true@, the operation cannot be applied to the object. Finish processing the @ObjectMessage@ without taking any further action. No data update event is emitted. Return @false@
 ** @(RTLM15d)@ The @ObjectMessage.operation.action@ field (see "@ObjectOperationAction@":../features#OOP2) determines the type of operation to apply:
 *** @(RTLM15d1)@ If @ObjectMessage.operation.action@ is set to @MAP_CREATE@, apply the operation as described in "RTLM16":#RTLM16, passing in @ObjectMessage.operation@
 **** @(RTLM15d1a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
+**** @(RTLM15d1b)@ Return @true@
 *** @(RTLM15d2)@ If @ObjectMessage.operation.action@ is set to @MAP_SET@, apply the operation as described in "RTLM7":#RTLM7, passing in @ObjectMessage.operation.mapOp@ and @ObjectMessage.serial@
 **** @(RTLM15d2a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
+**** @(RTLM15d2b)@ Return @true@
 *** @(RTLM15d3)@ If @ObjectMessage.operation.action@ is set to @MAP_REMOVE@, apply the operation as described in "RTLM8":#RTLM8, passing in @ObjectMessage.operation.mapOp@, @ObjectMessage.serial@ and @ObjectMessage.serialTimestamp@
 **** @(RTLM15d3a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
+**** @(RTLM15d3b)@ Return @true@
 *** @(RTLM15d5)@ If @ObjectMessage.operation.action@ is set to @OBJECT_DELETE@, apply the operation as described in "RTLO5":#RTLO5, passing in @ObjectMessage@
 **** @(RTLM15d5a)@ Emit a @LiveMapUpdate@ object with @LiveMapUpdate.update@ consisting of entries for the keys that were removed as a result of applying the @OBJECT_DELETE@ operation, each set to @removed@
-*** @(RTLM15d4)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any further action. No data update event is emitted
+**** @(RTLM15d5b)@ Return @true@
+*** @(RTLM15d4)@ Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current @ObjectMessage@ without taking any further action. No data update event is emitted. Return @false@
 * @(RTLM16)@ A @MAP_CREATE@ operation can be applied to a @LiveMap@ in the following way:
 ** @(RTLM16a)@ Expects the following arguments:
 *** @(RTLM16a1)@ @ObjectOperation@
@@ -566,7 +616,8 @@ class RealtimeObjects: // RTO*
   createCounter(Number count?) => io LiveCounter // RTO12
   on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18
   off(() ->) // RTO19
-  publish(ObjectMessage[]) => io // RTO15, internal
+  publish(ObjectMessage[]) => io PublishResult // RTO15, internal
+  publishAndApply(ObjectMessage[]) => io // RTO20, internal
 
 enum ObjectsSyncState: // RTO17a
   INITIALIZED // RTO17a1
@@ -576,6 +627,10 @@ enum ObjectsSyncState: // RTO17a
 enum ObjectsEvent: // RTO18b
   SYNCING // RTO18b1
   SYNCED // RTO18b2
+
+enum ObjectsOperationSource: // RTO22, internal
+  LOCAL // RTO22a
+  CHANNEL // RTO22b
 
 interface StatusSubscription: // RTO18f
   off() // RTO18f1
