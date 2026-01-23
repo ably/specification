@@ -1914,6 +1914,7 @@ h4. ConnectionDetails
 ** @(CD2g)@ @serverId@ string is a unique identifier for the front-end server that the client has connected to. This server ID is only used for the purposes of debugging
 ** @(CD2h)@ @maxIdleInterval@ is the maximum length of time in milliseconds that the server will allow no activity to occur in the server->client direction. After such a period of inactivity, the server will send a @HEARTBEAT@ or transport-level ping to the client. If the value is 0, the server will allow arbitrarily-long levels of inactivity.
 ** @(CD2i)@ @objectsGCGracePeriod@ integer - the length of time, in milliseconds, that the client library must wait before releasing resources for tombstoned objects and map entries (see "RTO10":../objects-features#RTO10)
+** @(CD2j)@ @siteCode@ string - an identifier for the site that the client has connected to
 h4. ChannelProperties
 * @(CP1)@ properties of a channel and its state
 * @(CP2)@ The attributes of @ChannelProperties@ consist of:
@@ -2658,6 +2659,7 @@ class ConnectionDetails: // CD*, internal
   serverId: String // CD2g
   maxIdleInterval: Duration // CD2h
   objectsGCGracePeriod: Int // CD2i
+  siteCode: String // CD2j
 
 class Message: // TM*
   constructor(name: String?, data: Data?) // TM4
