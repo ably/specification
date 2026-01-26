@@ -486,7 +486,7 @@ h3(#livemap). LiveMap
 *** @(RTLM16a1)@ @ObjectOperation@
 ** @(RTLM16e)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
 ** @(RTLM16b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @MAP_CREATE@ operation has already been applied to this @LiveMap@. Discard the operation without taking any further action, and return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
-** @(RTLM16c)@ If the private @semantics@ field does not match @ObjectOperation.map.semantics@, log a warning that the operation cannot be applied due to mismatched semantics. Discard the operation without taking any further action, and return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
+** @(RTLM16c)@ This clause has been deleted.
 ** @(RTLM16d)@ Otherwise merge the initial value into the @LiveMap@ as described in "RTLM17":#RTLM17, passing in the @ObjectOperation@ instance
 ** @(RTLM16f)@ Return the @LiveMapUpdate@ object returned by "RTLM17":#RTLM17
 * @(RTLM7)@ A @MAP_SET@ operation for a key can be applied to a @LiveMap@ in the following way:
