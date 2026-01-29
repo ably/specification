@@ -1,0 +1,3175 @@
+---
+title: Features spec
+section: client-lib-development-guide
+index: 1
+anchor_specs: true
+languages:
+  - none
+jump_to:
+  General:
+    - Test guidelines
+  REST client library:
+    - RestClient
+    - Auth#rest-auth
+    - Channels#rest-channels
+    - RestChannel#rest-channel
+    - Plugins#plugins
+    - RestPresence#rest-presence
+    - Encryption#rest-encryption
+    - Forwards compatibility#rest-compatibility
+  Realtime client library:
+    - RealtimeClient
+    - Connection#realtime-connection
+    - Channels#realtime-channels
+    - RealtimeChannel#realtime-channel
+    - RealtimePresence#realtime-presence
+    - RealtimeObjects#realtime-objects
+    - EventEmitter#eventemitter
+    - Forwards compatibility#realtime-compatibility
+    - State conditions and operations#state-conditions-and-operations
+  Push notifications:
+    - Push notifications#push-notifications
+    - Push channels#push-channels
+    - Activation state machine#activation-state-machine
+  Types:
+    - Data types#types
+    - Options#options
+    - Push notifications#types-push
+    - Client library introspection#introspection
+  Interface Definition:
+    - Complete API IDL#idl
+  Previous version:
+    - Old specs
+---
+
+This document outlines the complete feature set of both the REST and Realtime client libraries. It is expected that every client library developer refers to this document to ensure that their client library provides the same API and features as the existing Ably client libraries. In addition to this, it is essential that there is test coverage over all of the features described below. As an example, see the Ruby library [test specification and coverage](https://github.com/ably/ably-ruby/blob/main/SPEC.md) generated from the test suite.
+
+We recommend you use the [IDL (Interface Definition Language)](#idl) and refer to other existing libraries that adhere to this spec as a reference when reviewing how the API has been implemented.
+
+The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended",  "may", and "optional" (whether lowercased or uppercased) in this document are to be interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119) .
+
+_Please note we maintain a separate Google Sheet that keeps track of which features are implemented and matching test coverage for each client library. If you intend to work on an Ably client library, please [contact us](https://ably.com/contact) for access to this Google Sheet as it is useful as a reference and also needs to be kept up to date_
+
+## Specification and Protocol Versions {#versions}
+
+
+* `(CSV1)` **Specification Version**: This document defines the Ably client library features specification ('features spec').
+  * `(CSV1a)` The specification version is a SemVer value (from specification version `2.0.0` onwards).
+  * `(CSV1b)` This document defines specification version `{{ SPECIFICATION_VERSION }}`.
+* `(CSV2)` **Protocol Version**: This document describes requirements for client libraries that are compatible with Ably endpoints at a specific protocol version (also referred to as the 'wire protocol' version).
+  * `(CSV2a)` The protocol version is an Integer value (from protocol version `2` onwards - it was a Decimal prior to that, for example `1.2`).
+  * `(CSV2b)` This document is compatible with protocol version `{{ PROTOCOL_VERSION }}`.
+  * `(CSV2c)` A client library must identify to Ably the protocol version it uses in all requests and connections, per [`RSC7a`](#RSC7a) and [`RTN2f`](#RTN2f).
+  * `(CSV2d)` It is expected, very likely required, that client libraries which implement most or all of this specification at the version defined in this document ("`CSV1b`":CSV1b) will need to identify with Ably at the protocol version defined in this document ([`CSV2b`](#CSV2b)). There may, from time to time, be edge cases where this is not the case but these must be considered very carefully (for example a client library using an older protocol version until fully implemented).
+  * `(CSV2e)` Client libraries that need to send a Decimal protocol version must send the exact string specified in [`CSV2b`](#CSV2b) (previously `G4`). Therefore, it is recommended that client library implementations treat the version opaquely, as a string, not a float.
+
+## Test guidelines {#test-guidelines}
+
+
+* `(G1)` Every test should be executed using all supported protocols (i.e. JSON and [MessagePack](https://msgpack.org/) if supported).  This includes both sending & receiving data
+* `(G2)` All tests by default are run against a special Ably sandbox environment.  This environment allows apps to be provisioned without any authentication that can then be used for client library testing. Bear in mind that all apps created in the sandbox environment are automatically deleted after 60 minutes and have low limits to prevent abuse. Apps are configured by sending a `POST` request to `https://sandbox.realtime.ably-nonprod.net/apps` with a JSON body that specifies the keys and their associated capabilities, channel namespace rules and any presence fixture data that is required; see [ably-common test-app-setup.json](https://github.com/ably/ably-common/blob/main/test-resources/test-app-setup.json.) Presence fixture data is necessary for the REST library presence tests as there is no way to register presence on a channel in the REST library
+* `(G3)` Testing statistics can be tricky due to timing issues and slow test suites as a result of sending requests to generate statistics.  As such, we provide a special stats endpoint in our sandbox environment that allows stats to be injected into our metrics system so that stats tests can make predictable assertions.  To create stats you must send an authenticated `POST` request to the stats JSON to `https://sandbox.realtime.ably-nonprod.net/stats` with the stats data you wish to create. See the [JavaScript stats fixture](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/rest/stats.test.js#L8-L51) and [setup helper](https://github.com/ably/ably-js/blob/4e65d4e13eb8750a375b9511e4dd059092c0e481/spec/common/modules/testapp_manager.js#L158-L182) as an example
+* `(G4)` This clause has been replaced by [`CSV1`](#CSV1) and [`CSV2`](#CSV2). It was valid up to and including specification version 1.2.
+  * `(G4a)` This clause has been replaced by [`CSV2d`](#CSV2d). It was valid up to and including specification version 1.2.
+
+## Client library endpoint configuration {#endpoint-configuration}
+
+
+* `(REC1)` Various client options collectively determine a `primary domain`.
+  * `(REC1a)` The `primary domain` is `main.realtime.ably.net` unless overridden by specifying an `endpoint` option or any of the deprecated options `environment`, `restHost`, `realtimeHost`.
+  * `(REC1b)` If the `endpoint` option is specified then:
+    * `(REC1b1)` If any one of the deprecated options `environment`, `restHost`, `realtimeHost` or `fallbackHostsUseDefault` are also specified then the options as a set are invalid.
+    * `(REC1b2)` If the `endpoint` option is a hostname, determined by it containing at least one period (`.`), or containing at least one instance of the string `::`, or being equal to the string `localhost`, then the `primary domain` is the value of the `endpoint` option.
+    * `(REC1b3)` Otherwise, if the `endpoint` option specifies a non-production routing policy ID, determined by it having the form `nonprod:[id]`, then the `primary domain` is `[id].realtime.ably-nonprod.net`.
+    * `(REC1b4)` Otherwise, the `endpoint` option is a production routing policy ID of the form `[id]`, and the `primary domain` is `[id].realtime.ably.net`.
+  * `(REC1c)` If the deprecated `environment` option is specified then it defines a production routing policy ID `[id]`:
+    * `(REC1c1)` If any one of the deprecated options `restHost`, `realtimeHost` are also specified then the options as a set are invalid.
+    * `(REC1c2)` Otherwise, the primary domain is `[id].realtime.ably.net`.
+  * `(REC1d)` If either the `restHost` or `realtimeHost` option is specified then:
+    * `(REC1d1)` If the `restHost` option is specified the `primary domain` is the value of the `restHost` option.
+    * `(REC1d2)` Otherwise, if the `realtimeHost` option is specified the `primary domain` is the value of the `realtimeHost` option.
+
+* `(REC2)` Various client options collectively determine a set of `fallback domains`.
+  * `(REC2a)` If the `fallbackHosts` client option is specified then:
+    * `(REC2a1)` If the deprecated `fallbackHostsUseDefault` option is specified then the options as a set are invalid.
+    * `(REC2a2)` Otherwise, the set of `fallback domains` is given by the value of the `fallbackHosts` option.
+  * `(REC2b)` Otherwise, if the deprecated `fallbackHostsUseDefault` option is specified then the set of `fallback domains` is the default set defined in `(REC2c1)`.
+  * `(REC2c)` Otherwise, the set of `fallback domains` is defined implicitly by the options used to define the `primary domain` as specified in `(REC1)`:
+    * `(REC2c1)` If the `primary domain` is determined to be the default via `(REC1a)` then the set of `fallback domains` is the default `main.a.fallback.ably-realtime.com`, `main.b.fallback.ably-realtime.com`, `main.c.fallback.ably-realtime.com`, `main.d.fallback.ably-realtime.com`, and `main.e.fallback.ably-realtime.com`.
+    * `(REC2c2)` Otherwise, if the `primary domain` is determined to be an explicit hostname via `(REC1b2)` then the set of `fallback domains` is empty.
+    * `(REC2c3)` Otherwise, if the `primary domain` is determined by a non-production routing policy ID via `(REC1b3)` then the set of `fallback domains` is `[id].a.fallback.ably-realtime-nonprod.com`, `[id].b.fallback.ably-realtime-nonprod.com`, `[id].c.fallback.ably-realtime-nonprod.com`, `[id].d.fallback.ably-realtime-nonprod.com`, `[id].e.fallback.ably-realtime-nonprod.com`.
+    * `(REC2c4)` Otherwise, if the `primary domain` is determined by a production routing policy ID via `(REC1b4)` then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
+    * `(REC2c5)` Otherwise, if the `primary domain` is determined by a production routing policy ID via `(REC1c2)` then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
+    * `(REC2c6)` Otherwise, if the `primary domain` is determined by the deprecated `restHost` or `realtimeHost` option via `(REC1d)` then the set of fallback domains is empty.
+
+* `(REC3)` Client options determine a `connectivity check URL`.
+  * `(REC3a)` The default values of the `connectivity check URL` is `https://internet-up.ably-realtime.com/is-the-internet-up.txt`.
+  * `(REC3b)` The `connectivity check URL` may be specified explicitly by the `connectivityCheckUrl` option.
+
+## REST client library {#rest}
+
+
+### RestClient {#restclient}
+
+
+* `(RSC1)` The constructor accepts a set of [`ClientOptions`](#options) or, in languages that support overloaded constructors, a string which may be a token string or an API key.
+  * `(RSC1a)` If a single string argument is supplied when constructing the library then the library must determine whether this is a key or a token by checking for the presence of the ':' (colon) delimiter present in an API key. Any other string must be treated as a token string.
+  * `(RSC1b)` If invalid arguments are provided such as no API key, no token and no means to create a token, then this will result in an error with error code 40106 and an informative message.
+  * `(RSC1c)` Tests must exist that in each overloaded library constructor the library correctly determines an API key to be a key, and each type of token string is determined to be a token.
+* `(RSC2)` The logger by default outputs to `STDOUT` (or other logging medium as appropriate to the platform) and the log level is set to warning
+* `(RSC3)` The log level can be changed
+* `(RSC4)` A custom logger can be provided in the constructor
+* `(RSC5)` `RestClient#auth` attribute provides access to the `Auth` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
+* `(RSC6)` `RestClient#stats` function:
+  * `(RSC6a)` Returns a `PaginatedResult` page containing `Stats` objects in the `PaginatedResult#items` attribute returned from the stats request
+  * `(RSC6b)` Supports the following params:
+    * `(RSC6b1)` `start` and `end` are optional timestamp fields represented as milliseconds since epoch, or where suitable to the language, Date or Time objects. `start`, if provided, must be equal to or less than `end` if provided or to the current time otherwise, and is unaffected by the request direction
+    * `(RSC6b2)` `direction` backwards or forwards; if omitted the direction defaults to the REST API default (backwards)
+    * `(RSC6b3)` `limit` supports up to 1,000 items; if omitted the limit defaults to the REST API default (100)
+    * `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
+* `(RSC16)` `RestClient#time` function sends a get request to the `/time` path of the REST endpoint as specified in [`RSC25`](#RSC25) and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
+* `(RSC21)` `RestClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
+* `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint as specified in [`RSC25`](#RSC25).
+  * `(RSC7a)` This clause has been replaced by [`RSC7e`](#RSC7e). It was valid up to and including specification version `2.1`.
+  * `(RSC7e)` The `X-Ably-Version` HTTP header must be included in all REST requests to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2), except in the case where the user directly calls `RestClient#request`, in which case the value to be sent is defined by [`RSC19f1`](#RSC19f1).
+  * `(RSC7b)` (Please note this clause and the associated header have now been superseded by [RCS7d](#RSC7d)) The header `X-Ably-Lib: [lib][.optional variant]?-[version]` should be included in all REST requests to the Ably endpoint where `[lib]` is the name of the library such as `js` for `ably-js`, `[.optional variant]` is an optional library variant, such as `laravel` for the `php` library, which is always delimited with a period such as `php.laravel`, and where `[version]` is the full client library version using [Semver](http://semver.org/) such as `1.0.2`. For example, the 1.0.0 version of the JavaScript library would use the header `X-Ably-Lib: js-1.0.0`.
+    * `(RSC7b1)` When it is not possible to send the `X-Ably-Lib` header, such as for `JSONP` requests, the library version should be sent as a query param such as `lib=js-1.0.0`
+  * `(RSC7c)` If the `addRequestIds` client option is enabled, every REST request to Ably should include in a `request_id` query string parameter a random string obtained by url-safe base64-encoding a sequence of at least 9 bytes obtained from a source of randomness. This request ID must remain the same if a request is retried to a fallback host per `RSC15`. Any log messages associated with the request should include the request ID. If the request fails, the request ID must be included in the `ErrorInfo` returned to the user.
+  * `(RSC7d)` An `Agent` library identifier is used to identify the library type and version, as well as relevant information describing any underlying layers and the client platform.
+    * `(RSC7d1)` The `Agent` library identifier is composed of a series of `key[/value]` entries joined by spaces where `key` is the name of a product and `value` is an optional version of the associated product. This must include at least the `<library name>/<library version>` entry plus, optionally, the `name[/version]` entry for underlying library layer or platform layers. An example would be `ably-flutter/1.2.0 ably-java/1.2.1 android/24`.
+    * `(RSC7d2)` Where possible, the `Agent` library identifier should be included in all HTTP and WebSocket requests to the Ably endpoint via an `Ably-Agent` HTTP header.
+    * `(RSC7d3)` Where the library is unable to specify a header when making a request (such as for `JSONP` requests), the `Agent` library identifier should be sent via an `agent` query param whose value is the URI-encoded `Agent` library identifier.
+    * `(RSC7d4)` Where possible, product versions should be represented as a valid [semantic version](https://semver.org/.) This is best-effort as we recognise that strict SemVer is not always available, or otherwise possible to derive from information available at runtime, especially in the case of products that represent operating system versions.
+    * `(RSC7d5)` Products must be added to the canonical `agents` data file in our common repository. See [Agents in ably-common](https://github.com/ably/ably-common/tree/main/protocol#agents) for more information.
+    * `(RSC7d6)` Libraries may offer a `ClientOptions#agents` property, for use only by other Ably-authored SDKs, on a need-to-have basis.
+      * `(RSC7d6a)` The product/version key-value pairs supplied to that property should be injected into all `Agent` library identifiers emitted by connections made as a result of REST or Realtime instances created using those `ClientOptions`.
+      * `(RSC7d6b)` An API commentary must be provided for this property. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
+    * `(RSC7d7)` To _attribute a given REST request to a given wrapper SDK_ means to, given a `WrapperSDKProxyOptions` object describing the wrapper SDK, inject the product/version key-value pairs contained in these options' `agents` property into the `Agent` library identifier emitted for that REST request. [`WP6`](#WP6) defines the circumstances in which a REST request must be attributed to a wrapper SDK.
+* `(RSC18)` If `ClientOptions#tls` is true, then all communication is over HTTPS. If false, all communication is over HTTP however [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) over HTTP will result in an error as private keys cannot be submitted over an insecure connection. See `Auth` below
+* `(RSC8)` Supports two protocols:
+  * `(RSC8a)` [MessagePack](https://msgpack.org/) binary protocol (this is the default for environments having a suitable level or support for binary data)
+  * `(RSC8b)` JSON text protocol (used when `useBinaryProtocol` option is false)
+  * `(RSC8c)` The library sets the `Accept` and `Content-Type` request headers, to reflect whether the client is configured to use a binary or JSON based protocol, to `application/x-msgpack` or `application/json` respectively.
+  * `(RSC8d)` If a server response indicates a `Content-Type` that does not match the type request by the library (see [RSC8c](#RSC8c)), but is a type that the library supports, then the client should process the response based on the indicated `Content-Type`.
+  * `(RSC8e)` If the library is unable to process the specified content type, then the library processes the response as follows.
+    * `(RSC8e1)` In the case of a response with a `statusCode` >= 400, an error with that `statusCode` must be propagated back to the caller with an error message indicating that the content type is unsupported. In order to help to diagnose the cause of the error, the error message should also include text obtained by truncating the response body to a maximum of 512 bytes followed by base64-encoding.
+    * `(RSC8e2)` In the case of a response with a `statusCode` less than 400, an error must be propagated back to the caller with a `statusCode` of 400, a `code` of `40013` and an error message containing the original `statusCode` with an error message indicating that the content type is unsupported. In order to help to diagnose the cause of the error, the error message should also include text obtained by truncating the response body to a maximum of 512 bytes followed by base64-encoding.
+* `(RSC9)` Uses `Auth` to establish what authentication scheme to use, how to authenticate, and automatic issuing of tokens when necessary
+* `(RSC10)` If a REST request responds with a token error (401 HTTP status code and an Ably error value `40140 <= code < 40150`), then the Auth class is responsible for reissuing a token and the request should be reattempted, see [RSA4a](#RSA4a) and [RSA4b](#RSA4b)
+* `(RSC25)` Requests are sent to the `primary domain` as determined by [`REC1`](#REC1)". New HTTP requests (except where `RSC15f` applies and a cached fallback host is in effect) are first attempted against the `primary domain`.
+* `(RSC11)` This clause has been replaced by [`RSC25`](#RSC25). It was valid up to and including specification version `TBD`.
+  * `(RSC11a)` This clause has been replaced by [`RSC25`](#RSC25). It was valid up to and including specification version `TBD`.
+  * `(RSC11b)` This clause has been replaced by [`RSC25`](#RSC25). It was valid up to and including specification version `TBD`.
+* `(RSC12)` This clause has been replaced by [`RSC25`](#RSC25). It was valid up to and including specification version `TBD`.
+* `(RSC13)` The client library must use the connection and request timeouts specified in the `ClientOptions`, falling back to the defaults described in `ClientOptions` below
+* `(RSC15)` Host Fallback
+  * `(RSC15m)` The fallback behavior described by this section, [RSC15](#RSC15), only applies when the set of `fallback domains`, as determined by [`REC2`](#REC2) is not empty. When the set of `fallback domains` is empty, failing HTTP requests that would have [qualified for a retry against a fallback host (see RSC15d)](#RSC15d) will instead result in an error immediately.
+  * `(RSC15n)` When the use of fallbacks applies, the set of `fallback domains` is determined by [`REC2`](#REC2).
+  * `(RSC15b)` This clause has been replaced by [`RSC15j`](#RSC15j). It was valid up to and including specification version `TBD`.
+  * `(RSC15e)` This clause has been replaced by [`RSC25`](#RSC25). It was valid up to and including specification version `TBD`.
+  * `(RSC15a)` In the case of an error necessitating use of an alternative host (see [RSC15d](#RSC15d)), try `fallback domains` in random order, continuing to try further domains if [qualifying errors](#RSC15d) occur, failing when all have been tried or the configured `httpMaxRetryCount` has been reached (see [TO3l`](#TO3l5)). This ensures that a client library is able to work around routing or other problems for the user's closest datacenter. For example, if a `POST` request to `main.realtime.ably.net` fails because the default endpoint is unreachable or unserviceable, then the `POST@ request should be retried again against the fallback hosts in attempt to find an alternate healthy datacenter to service the request
+  * `(RSC15g)` This clause has been replaced by [`RSC15n`](#RSC15n). It was valid up to and including specification version `TBD`.
+    * `(RSC15g1)` This clause has been replaced by [`RSC15n`](#RSC15n). It was valid up to and including specification version `TBD`.
+    * `(RSC15g2)` This clause has been replaced by [`RSC15n`](#RSC15n). It was valid up to and including specification version `TBD`.
+    * `(RSC15g3)` This clause has been replaced by [`RSC15n`](#RSC15n). It was valid up to and including specification version `TBD`.
+    * `(RSC15g4)` This clause has been replaced by [`RSC15n`](#RSC15n). It was valid up to and including specification version `TBD`.
+  * `(RSC15h)` This clause has been replaced by [`REC2`](#REC2). It was valid up to and including specification version `TBD`.
+  * `(RSC15i)` This clause has been replaced by [`REC2`](#REC2). It was valid up to and including specification version `TBD`.
+  * `(RSC15j)` Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to `main.realtime.ably.net` fails and will be retried to `c.ably-realtime.com`, the Host header must be set to `c.ably-realtime.com` in the retried request
+  * `(RSC15d)` This clause has been replaced by [`RSC15l`](#RSC15l).
+  * `(RSC15l)` Errors that necessitate use of an alternative host include any of the following conditions. (Resending requests that have failed for other failure conditions will not fix the problem and will simply increase the load on other datacenters unnecessarily).
+    * `(RSC15l1)` host unresolvable or unreachable
+    * `(RSC15l2)` request timeout
+    * `(RSC15l3)` a response with an HTTP status code in the range `500 <= code <= 504`
+    * `(RSC15l4)` a response with a `Server: CloudFront` header and an HTTP status code `>= 400`
+  * `(RSC15f)` Once/if a given fallback host succeeds, the client should store that successful fallback host for `ClientOptions.fallbackRetryTimeout`. Future HTTP requests during that period should use that host. If during this period a [qualifying errors](#RSC15d) occurs on that host, or after `fallbackRetryTimeout` has expired, it should be un-stored, and the fallback sequence begun again from scratch, starting with the [`REC1`](#REC1) primary domain or, in the case of an existing fallback realtime connection as per (RTN17e), with the current fallback realtime host.
+* `(RSC17)` When instantiating a `RestClient`, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`
+* `(RSC19)` `RestClient#request` function is provided as a convenience for customers who wish to use REST API functionality that is either not documented or is not included in the API for our client libraries. The REST client library provides a function to issue HTTP requests to the Ably endpoints with all the built in functionality of the library such as authentication, paging, fallback hosts, MsgPack and JSON support etc. The function:
+  * `(RSC19a)` This clause has been replaced by [`RSC19f`](#RSC19f). It was valid up to and including specification version `2.1`.
+  * `(RSC19f)` Method signature is `request(String method, String path, Int version, Dict<String, String> params?, JsonObject | JsonArray body?, Dict<String, String> headers?) -> HttpPaginatedResponse` with arguments: `method` is a valid [HTTP verb](https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html) (must support `"GET"`, `"POST"`, and `"PUT"`, should support `"PATCH"` and `"DELETE", may support others); `path` is the path component of the URL such as `"/channels"`; `params` and `headers` are optional arguments containing key-value pairs of strings (multi-valued headers are not supported) that will respectively result in querystring params and HTTP headers being added to the request (the argument types can be idiomatic for the language such as `Object` in the case of JavaScript); `body` is an optional `JsonObject` or `JsonArray@ like object argument that can be easily serialized to MsgPack or JSON
+    * `(RSC19f1)` The `version` parameter specifies the protocol version that the Ably service should use when interpreting the request. The library must include an `X-Ably-Version` header in the request that it sends, with value given by this argument. (Therefore, `request()` does not use the [`CSV2b`](#CSV2b) version number.)
+  * `(RSC19b)` All requests will unconditionally use the default authentication mechanism configured for the REST client i.e. basic or token authentication (see [Auth](#rest-auth))
+  * `(RSC19c)` The library will configure the `Accept` and `Content-Type` type headers to reflect whether the client is configured to use a binary or JSON based protocol (see [RSC8](#RSC8)). All requests are encoded and decoded into Json or MsgPack as appropriate automatically by the library. Binary `body` payloads are not supported at this time
+  * `(RSC19d)` `request` method returns an `HttpPaginatedResponse` object that inherits from the `PaginatedResult` object to provide details on the response plus paging support where applicable. See [HP1](#HP1) for more details
+  * `(RSC19e)` If the HTTP network request fails for reasons such as a timeout (after the underlying fallback host attempts have failed where applicable, see [RSC15](#RSC15)), then the `request` method should indicate an error in an idiomatic way for the platform
+* `(RSC20)` (deprecated) Unexpected internal library exception handling:
+  * `(RSC20a)` The library must make every attempt to handle unexpected internal exceptions as gracefully as possible. For the avoidance of doubt, unexpected internal exceptions do not include request timeouts, invalid argument values, invalid responses from third parties or exceptions in code run in callbacks registered by applications. However, any unexpected failures or unhandled exceptions in our own code that typically could trigger a crash or raise an exception in our customer's code, is considered an unexpected internal exception
+  * `(RSC20b)` The library may optionally report unexpected internal exceptions to the Ably exception reporting service. Exception reporting, when supported, is enabled by default, but can be disabled using the `logExceptionReportingUrl` `ClientOption` documented in [`TO3m`](#TO3m). When enabled, the client library must:
+    * `(RSC20b1)` At startup log a message with the equivalent of `info` log level with the message "Ably client library exception reporting enabled. Unhandled failures will be automatically submitted to errors.ably.io to help improve our service. To find out more about this feature, see https://help.ably.io/exceptions". The `info` log level is preferred as customers can hide this entry by configuring the client library log level to `warning`, yet will, by default, see this notice when using a client library with exception reporting enabled
+    * `(RSC20b2)` Any unhandled internal exceptions should automatically submit bug reports to the `logExceptionReportingUrl` using the [`Sentry API`](https://docs.sentry.io/clientdev/) either via a raw HTTP request or by using an embedded [Sentry exception reporting client library](https://docs.sentry.io/clients/.) A message at `info` log level should be logged if the request succeeds or fails i.e. a failure to submit an exception should not be logged as a failure / error. Where possible, the exception GUID returned from the Sentry API should be logged so that the specific error can be tracked
+  * `(RSC20c)` Exceptions reported must additionally include the following tags: `ably-lib` with the value defined in [`RSC7b`](#RSC7b), `ably-version` with the value defined in [`RSC7a`](#RSC7a), `appId` if known from either the token or API key currently being used.
+  * `(RSC20d)` All personally identifiable information, as much as is practicable, must be redacted or stripped completely before being submitted to Ably. Our intent is only to capture necessary information to debug issues in our own code
+  * `(RSC20e)` Failures to log exceptions to the `errors.ably.io` endpoint must be handled gracefully. This includes for example DNS failures, TCP/HTTP requests rejected, slow requests and internal failure errors. Additionally, as specified in `RSC20b2`, a failure to log an exception is logged with log level `info` i.e. an exception reporting failure is not consider a client library `error` or `warning`
+  * `(RSC20f)` Any errors emitted by the library as a result of an internal failure must contain a status code `500`, an error code in the range `51000` to `51999` and a suitable error message. The error code must match one of [our common error codes](https://github.com/ably/ably-common/blob/main/protocol/errors.json)
+* `(RSC22)` `RestClient#batchPublish` function:
+  * `(RSC22a)` This clause has been replaced by [`RSC22c`](#RSC22c). It was valid up to and including specification `2.1`.
+  * `(RSC22c)` Takes a `BatchPublishSpec` or an array of `BatchPublishSpec`s and sends then in a POST request to `/messages`.
+  * `(RSC22b)` Returns an array of `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`s. Optionally, in languages where this is idiomatic, an overload may be implemented whereby the method can be called with a single `BatchPublishSpec` and return a single `BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>`. This is not a feature of the REST API, whose response will still be an array, so if implementing this overload, the SDK will have to extract the element from the array.
+  * `(RSC22d)` If `idempotentRestPublishing` (see [TO3n](#TO3n)) is enabled, then [`RSL1k1`](#RSL1k1) should be applied (to each `BatchPublishSpec` separately).
+  * `(RSC23)` This clause has been replaced by [`RSC24`](#RSC24). It was valid up to and including specification `2.1`.
+  * `(RSC24)` `RestClient#batchPresence` function takes an array of channel name strings and sends them as a comma separated string in the `channels` query parameter in a GET request to `/presence`, returning a `BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult>` object.
+* `(RSC26)` `RestClient#createWrapperSDKProxy`:
+  * `(RSC26a)` Returns a wrapper SDK proxy client whose underlying client is this `RestClient`. See [`WP1`](#WP1) for definitions of these terms.
+  * `(RSC26b)` Accepts a single argument, a `WrapperSDKProxyOptions`.
+  * `(RSC26c)` An API commentary must be provided for this method. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
+
+### Auth {#rest-auth}
+
+
+* `(RSA1)` [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) connects over HTTPS by default. Any attempt to use Basic Auth over HTTP without TLS will result in an error
+* `(RSA11)` When using Basic Auth, the API key is Base64 encoded and included in an `Authorization` header, as specified in [RFC7235](https://tools.ietf.org/html/rfc7235.) The API key follows the format `"KEY_NAME:KEY_SECRET"` so when authenticating using [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication), the key name can be used as the username and the key secret as the password
+* `(RSA2)` [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) is the default authentication scheme if an API key exists
+* `(RSA3)` Token Auth:
+  * `(RSA3a)` Can be used over HTTP or HTTPs
+  * `(RSA3b)` For REST requests, the token string is optionally Base64-encoded and used in the `Authorization: Bearer` header
+  * `(RSA3c)` For Realtime [websocket connections](https://ably.com/topic/websockets), the querystring param `accessToken` is appended to the URL endpoint
+  * `(RSA3d)` A test must exist that each type of token string is correctly passed in requests (ie according to `(RSA3b)` and `(RSA3c)`)
+* `(RSA4)` Token Auth is used if `useTokenAuth` is set to true, or if `useTokenAuth` is unspecified and any one of `authUrl`, `authCallback`, `token`, or `TokenDetails` is provided
+  * `(RSA4a)` When a `token` or `tokenDetails` is used to instantiate the library, and no means to renew the token is provided (either an API key, `authCallback` or `authUrl`):
+    * `(RSA4a1)` At instantiation time, a message at `info` log level with error code `40171` should be logged indicating that no means has been provided to renew the supplied token, including an associated url per `TI5`
+    * `(RSA4a2)` if the server responds with a token error (401 HTTP status code and an Ably error value `40140 <= code < 40150`), then the client library should indicate an error with error code `40171`, not retry the request and, in the case of the realtime library, transition the connection to the `FAILED` state
+  * `(RSA4b)` When the client does have a means to renew the token automatically, and the server has responded with a token error (`statusCode` value of 401 and error `code` value in the range `40140 <= code < 40150`) or the client library has optionally detected the current token has expired (see [RSA4b1](#RSA4b1)), then the client should automatically make a single attempt to reissue the token and resend the request using the new token. If the token creation failed or the subsequent request with the new token failed due to a token error, then the request should result in an error (in the case of a realtime library, follow `RSA4c`)
+    * `(RSA4b1)` Client libraries can optionally save a round-trip request to the Ably service for expired tokens by detecting when a token has expired when all of the following applies: the current token is a `TokenDetails` object with an `expires` attribute; the library has previously queried the time from the Ably service and persisted the local clock offset according to [RSA10k](#RSA10k); the `expires` time has passed based on the Ably service time and not the local clock (which is not guaranteed to be accurate)
+  * `(RSA4c)` If an attempt by the realtime client library to authenticate is made using the `authUrl` or `authCallback`, and the request to `authUrl` fails (unless `RSA4d` applies), the callback `authCallback` results in an error (unless [RSA4d](#RSA4d) applies), an attempt to exchange a `TokenRequest` for a `TokenDetails` results in an error (unless [RSA4d](#RSA4d) applies), the provided token is in an invalid format (as defined in [RSA4e](#RSA4e)), or the attempt times out after [`realtimeRequestTimeout`](#TO3l11), then:
+    * `(RSA4c1)`An `ErrorInfo` with `code` `80019`, `statusCode` 401, and `cause` set to the underlying cause should be emitted with the state change if there is one (per `RSA4c2/3`) and set as the connection `errorReason`
+    * `(RSA4c2)`If the connection is `CONNECTING`, then the connection attempt should be treated as unsuccessful, and as such the connection should transition to the `DISCONNECTED` or `SUSPENDED` state as defined in [RTN14](#RTN14) and [RTN15](#RTN15)
+    * `(RSA4c3)`If the connection is `CONNECTED`, then the connection should remain `CONNECTED`
+  * `(RSA4d)` If a request by a realtime client to an `authUrl` results in an HTTP 403 response, or any of an `authUrl` request, an `authCallback`, or a request to Ably to exchange a `TokenRequest` for a `TokenDetails` result in an `ErrorInfo` with `statusCode` 403, as part of an attempt by the realtime client to authenticate, then the client library should transition to the `FAILED` state, with an `ErrorInfo` (with `code` `80019`, `statusCode` 403, and `cause` set to the underlying cause) emitted with the state change and set as the connection `errorReason`
+    * `(RSA4d1)` An "attempt by the realtime client to authenticate" in `RSA4c` and `RSA4d` includes getting a token as part of the connect sequence, an `RTN22` online reauth, and an explicit `authorize()` call, but _not_ an explicit `requestToken` call, which should have no effect on library state
+  * `(RSA4e)` If in the course of a REST request (or explicit call to `requestToken`) an attempt to authenticate using `authUrl` or `authCallback` fails due to a timeout, network error, a token in an invalid format (per [RSA4f](#RSA4f)), or some other auth error condition other than an explicit `ErrorInfo` from Ably, the request should result in an error with `code` 40170, `statusCode` 401, and a suitable error message
+  * `(RSA4f)` The following conditions imply that the token is in an invalid format: the `authUrl` response content type is not one of `text/plain`, `application/json` or `application/jwt`; the object passed by `authCallback` is neither a `String`, `JsonObject`, `TokenRequest` object, nor `TokenDetails` object; the token string or the JSON stringified `JsonObject`, `TokenRequest` or `TokenDetails` is greater than 128KiB.
+  * `(RSA4g)` If multiple `authOptions` are used to initialize the library, the preference ordering among them is identical to `Auth#authorize`, defined in `RSA10e`
+* `(RSA14)` If Token Auth is selected, yet a token is not provided and there is no means to generate a token, then this will result in an error. For example, if only the option `useTokenAuth` is specified, and a `key` is not provided, then the client library is unable to authenticate or issue a token
+* `(RSA15)` If Token Auth is selected and `clientId` has been set in the `ClientOptions` when the library was instantiated:
+  * `(RSA15a)` Any `clientId` provided in `ClientOptions` must match any non wildcard (`'*'`) `clientId` value in `TokenDetails` or `connectionDetails` of the `CONNECTED` `ProtocolMessage`, where applicable
+  * `(RSA15b)` If the clientId from `TokenDetails` or `connectionDetails` contains only a wildcard string '*', then the client is permitted to be either unidentified (i.e. authorised to act on behalf of any clientId) or identified by providing a `clientId` when communicating with Ably
+  * `(RSA15c)` Following an auth request which uses a `TokenDetails` or `TokenRequest` object that contains an incompatible `clientId`, the library should in the case of Realtime transition the connection state to `FAILED`, and in the case of REST result in an appropriate error response
+* `(RSA5)` TTL for new tokens is specified in milliseconds. If the user-provided `tokenParams` does not specify a TTL, the TTL field should be omitted from the `tokenRequest`, and Ably will supply a token with a TTL of 60 minutes. See [TK2a](#TK2a)
+* `(RSA6)` The `capability` for new tokens is JSON stringified. If the user-provided `tokenParams` does not specify capabilities, the `capability` field should be omitted from the `tokenRequest`, and Ably will supply a token with the capabilities of the underlying key. See [TK2b](#TK2b)
+* `(RSA7)` `clientId` and authenticated clients:
+  * `(RSA7d)` If `clientId` is provided in `ClientOptions` and `RSA4` indicates that token auth is to be used, the `clientId` field in the `TokenParams` (`TK2c`) should be set to that `clientId` when requesting a token
+  * `(RSA7e)` If a valid (per `RSA7c`) `clientId` is provided in `ClientOptions`, then:
+    * `(RSA7e1)` For realtime clients, the connect request should include the `clientId` as a querystring parameter, `clientId`
+    * `(RSA7e2)` For REST clients, all requests should include an `X-Ably-ClientId` header with value set to the `clientId`, Base64 encoded
+  * `(RSA7a)` A client is considered to be identified if a `clientId` is implicit in either the connection or the authentication scheme; that is, is present in the current authentication token (with the exception of the wildcard `clientId` `'*'`), is set by a header per `RSA7e2`, or is specified when initiating a realtime connection per `RSA7e1`. The following applies to identified clients:
+    * `(RSA7a1)` All operations (such as message publishing or presence) carried out by an identified client will have an implicit `clientId`. The Ably service automatically updates the `clientId` attribute (when empty) for all `Message` and `PresenceMessage` messages received from that client. Client libraries should therefore not explicitly set the `clientId` field on messages published from an identified client
+    * `(RSA7a4)` When a `clientId` value is provided in both `ClientOptions#clientId` and `ClientOptions#defaultTokenParams`, the `ClientOptions#clientId` takes precedence and is used for all Auth operations
+  * `(RSA12)` `Auth#clientId` attribute is `null` when:
+    * `(RSA12a)` The `clientId` attribute of a `TokenRequest` or `TokenDetails` used for authentication is `null`, or `ConnectionDetails#clientId` is `null` following a connection to Ably. In this case, the `null` value indicates that a `clientId` identity may not be assumed by this client i.e. the client is anonymous for all operations
+    * `(RSA12b)` The client was instantiated without assigning a value for `ClientOptions#clientId` (`null`), and the client has not yet authenticated or connected to Ably. In this case, the `null` value indicates that the client has not yet been able to confirm its identity, and therefore may change and become identified following later authentication or establishment of a connection with Ably
+  * `(RSA7b)` `Auth#clientId` is not `null` when:
+    * `(RSA7b1)` A `clientId` is provided in the `ClientOptions`. `clientId` should be a string
+    * `(RSA7b2)` Token authentication is being used, and the `TokenRequest` or `TokenDetails` object, used for authentication, has a `clientId` value that is not `null`
+    * `(RSA7b3)` Following a realtime connection being established, if the `CONNECTED` `ProtocolMessages` contains a `clientId` that is not `null`. `clientId` is an attribute of `ProtocolMessage#connectionDetails` within a `CONNECTED` `ProtocolMessage`
+    * `(RSA7b4)` When a wildcard string `'*'` is present in the `TokenRequest`, `TokenDetails`, or `ProtocolMessage#connectionDetails` object, then the client does not have an identity but is allowed to assume an identity when performing operations with Ably. As such, `Auth#clientId` should contain the string value `'*'` indicating that the current client is allowed to perform operations on behalf of any `clientId`
+  * `(RSA7c)` A `clientId` provided in the `ClientOptions` when instantiating a `RestClient` must be either `null` or a string, and cannot contain only a wildcard `'*'` string value as that client ID value is reserved
+* `(RSA8)` `Auth#requestToken` function:
+  * `(RSA8e)` Method signature is `requestToken(TokenParams, AuthOptions)`. `TokenParams` and `AuthOptions` are optional. When `TokenParams` or `AuthOptions` are provided, the values of each attribute are not merged with the configured client library defaults, but rather are used instead of the stored values (even when `null`). If the object arguments are omitted, the client library configured defaults are used
+  * `(RSA8a)` Implicitly creates a `TokenRequest` if required, and requests a token from Ably if required. Returns a `TokenDetails` object
+  * `(RSA8b)` Supports all `TokenParams` in the function arguments, which override defaults for `Client` `Auth`
+  * `(RSA8c)` When `authUrl` option is set, it will query the provided URL to obtain a `TokenRequest` or the token itself (either a token string or a `TokenDetails`). The query is performed using the given URL using the HTTP method in `authMethod`, headers (from `authHeaders`) and supplementary params (from `authParams`). The token retrieved is assumed by the library to be a token string if the response has `Content-Type` `"text/plain"` or `"application/jwt"`, or taken to be a `TokenRequest` or `TokenDetails` object if the response has `Content-Type` `"application/json"`. `authMethod` can be either `GET` or `POST`, or if not specified, will default to `GET`. It can be quite difficult to add test coverage for these scenarios - as such, we have developed a simple echo server that can be used in your tests, see the [ably-js authUrl echo tests](https://github.com/ably/ably-js/commit/e77b2c6c197bc71f3d27084fe54524724a00bc92)
+    * `(RSA8c1)` `TokenParams` and any configured `authParams` and `authHeaders` are always sent to the `authUrl` as follows:
+      * `(RSA8c1a)` When the `authMethod` is `GET` or unspecified, the `TokenParams` and `authParams` are merged and appended to the URL as query string params, and the `authHeaders` are sent as HTTP headers
+      * `(RSA8c1b)` When the `authMethod` is `POST`, the `TokenParams` and `authParams` are merged and sent form-encoded in the body of the `POST` request, and the `authHeaders` are sent as HTTP headers
+      * `(RSA8c1c)` If the given `authUrl` includes any querystring params, they should be preserved. In the `GET` case, `authParams`/`tokenParams` should be merged with them. If a name conflict occurs, `authParams`/`tokenParams` should take precedence
+    * `(RSA8c2)` `TokenParams` take precedence over any configured `authParams` when a name conflict occurs
+    * `(RSA8c3)` Specifying `authParams` or `authHeaders` as part of `AuthOptions` replaces any configured `authParams` or `authHeaders` specified in `ClientOptions` respectively. As the provided key/value pairs are not merged with the `ClientOptions` configured key/value pairs, this enables a developer to delete `authParams` or `authHeaders` where necessary by providing an entire new set of key/value pairs
+  * `(RSA8d)` When `authCallback` option is set, it will invoke the callback, passing in the `TokenParams`, and expects either a token string, a `TokenDetails` object or a `TokenRequest` object to be returned, which will in turn be used to request a token from Ably
+  * `(RSA8f)` A test should exist for the following:
+    * `(RSA8f1)` Request a token with a `null` value `clientId`, authenticate a client with the token, publish a message without an explicit `clientId`, and ensure the message published does not have a `clientId`. Check that `Auth#clientId` is `null`
+    * `(RSA8f2)` Request a token with a `null` value `clientId`, authenticate a client with the token, publish a message with an explicit `clientId` value, and ensure that the message is rejected
+    * `(RSA8f3)` Request a token with a wildcard `'*'` value `clientId`, authenticate a client with the token, publish a message without an explicit `clientId`, and ensure the message published does not have a `clientId`. Check that `Auth#clientId` is a string with value `'*'`
+    * `(RSA8f4)` Request a token with a wildcard `'*'` value `clientId`, authenticate a client with the token, publish a message with an explicit `clientId` value, and ensure that the message published has the provided `clientId`
+  * `(RSA8g)` Tests must exist to verify both the `authCallback` and `authURL` mechanisms where the returned token string value is a JWT token string and an Ably token string.
+* `(RSA9)` `Auth#createTokenRequest` function:
+  * `(RSA9h)` Method signature is `createTokenRequest(TokenParams, AuthOptions)`. `TokenParams` and `AuthOptions` are optional.When `TokenParams` or `AuthOptions` are provided, the values of each attribute are not merged with the configured client library defaults, but rather are used instead of the stored values (even when `null`). If the object arguments are omitted, the client library configured defaults are used
+  * `(RSA9a)` Returns a signed `TokenRequest` object that can be used to obtain a token from Ably. This is useful for servers that can create a `TokenRequest` signed with the API key without communicating with Ably directly. The `TokenRequest` can then be passed to a designated client that is then responsible for communicating with Ably and requesting a token for authentication from that `TokenRequest`
+  * `(RSA9c)` Generates a unique 16+ character `nonce` if none is provided; the nonce is used to protect against replay attacks
+  * `(RSA9d)` Generates a `timestamp` from current time if not provided, will retrieve the server time if `queryTime` is true
+  * `(RSA9e)` TTL is optional and specified in milliseconds
+  * `(RSA9f)` Capability JSON text can be provided that specifies the rights of the token in terms of the channel(s) authorized and the permitted operations on each
+  * `(RSA9g)` A valid HMAC is created using the key secret (using the key from the passed-in `AuthOptions` if supplied) to sign the `TokenRequest` so that it can be used by any client to request a token without having or exchanging any secrets
+  * `(RSA9i)` Adheres to all requirements in `RSA8` relating to `TokenParams`
+* `(RSA10)` `Auth#authorize` function:
+  * `(RSA10a)` Instructs the library to create a token immediately and ensures Token Auth is used for all future requests. See [RTC8](#RTC8) for re-authentication behavior when called for a realtime client
+  * `(RSA10j)` Method signature is `authorize(TokenParams, AuthOptions)`. `TokenParams` and `AuthOptions` are optional. When the arguments are present, even if empty, the `TokenParams` and `AuthOptions` supersede any previously client library configured `TokenParams` and `AuthOptions`. For example, if a client is initialized with `TokenParams#ttl` configured with a custom value, and a `TokenParams` object is passed in as an argument to `#authorize` with a `null` or missing value for `ttl`, then the `ttl` used for every subsequent authorization will be `null`
+  * `(RSA10b)` Supports all `AuthOptions` and `TokenParams` in the function arguments
+  * `(RSA10k)` If the `AuthOption` argument's `queryTime` attribute is true, it will obtain the server time once and persist the offset from the local clock. All future token requests generated directly or indirectly via a call to `authorize` will not obtain the server time, but instead use the local clock offset to calculate the server time. The client library itself MAY internally discard the cached local clock offset in situations in which it may have been invalidated, such as if there is a local change to the date, time, or timezone, of the client device. For clarity however, there is no requirement for this cache invalidation to be available to consumers of the client library API.
+  * `(RSA10e)` If the `authOptions` contains a way of obtaining a token (an `authCallback`, `authUrl`, or `key`), that should be used to obtain a new token, as per `requestToken` (`RSA8`). If it contains a token (`token` or `tokenDetails`), that should be used as-is. If it contains both a token and a way of obtaining a token, the token should be used, with the way of obtaining a token being stored per `RSA10g` for when the token expires. (Ordering of preference within those groups is not defined and is left up to individual implementations)
+  * `(RSA10f)` Returns a `TokenDetails` object that contains the token string + token metadata
+  * `(RSA10g)` Stores the `AuthOptions` and `TokenParams` arguments as defaults for subsequent authorizations with the exception of the attributes `TokenParams#timestamp` and `AuthOptions#queryTime`
+  * `(RSA10h)` Will use the value from `Auth#clientId` by default, if not `null`
+  * `(RSA10i)` Adheres to all requirements in `RSA8` relating to `TokenParams`, `authCallback` and `authUrl`
+  * `(RSA10l)` Has an alias method `RestClient#authorise` and `RealtimeClient#authorise` that will log a deprecation warning stating that this alias method will be removed in `v1.0` and the user should instead use `authorize`
+* `(RSA16)` `Auth#tokenDetails`:
+  * `(RSA16a)` Holds a `TokenDetails` representing the token currently in use by the library, if any;
+  * `(RSA16b)` If the library is provided with a token without the corresponding `TokenDetails`, then this holds a `TokenDetails` instance in which only the `token` attribute is populated with that token string
+  * `(RSA16c)` Is set with the current token (if applicable) on instantiation and each time it is replaced, whether the result of an explicit `Auth#authorize` operation, or a library-initiated renewal resulting from expiry or a token error response
+  * `(RSA16d)` Is `null` if there is no current token, including after a previous token has been determined to be invalid or expired, or if the library is using basic auth
+* `(RSA17)` `Auth#revokeTokens` function:
+  * `(RSA17a)` This clause has been replaced by [`RSA17g`](#RSA17g). It was valid up to and including specification version `2.1`.
+  * `(RSA17g)` Takes a `TokenRevocationTargetSpecifier` or an array of `TokenRevocationTargetSpecifier`s and sends them in a POST request to /keys/{API_KEY_NAME}/revokeTokens, where `API_KEY_NAME` is the API key name obtained by reading `AuthOptions#key` up until the first `:` character.
+  * `(RSA17b)` The `TokenRevocationTargetSpecifier`s should be mapped to strings by joining the `type` and `value` with a ":" character and sent in the `targets` field of the request body
+  * `(RSA17c)` Returns a `BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult>`s.
+  * `(RSA17d)` If called from a client using token authentication, should raise an `ErrorInfo` with a `40162` error code and `401` status code
+  * `(RSA17e)` Accepts an optional `issuedBefore` timestamp, represented as milliseconds since the epoch, or a `Time` object if idiomatic to the language
+  * `(RSA17f)` If an `allowReauthMargin` boolean is supplied, it should be included in the `allowReauthMargin` field of the request body
+
+### Channels {#rest-channels}
+
+
+* `(RSN1)` `Channels` is a collection of `RestChannel` objects accessible through `RestClient#channels`
+* `(RSN2)` Methods should exist to check if a channel exists or iterate through the existing channels
+* `(RSN3)` `Channels#get` function:
+  * `(RSN3a)` Creates a new `RestChannel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be provided in an optional second argument
+  * `(RSN3b)` If options are provided, the options are set on the `RestChannel`
+  * `(RSN3c)` Accessing an existing `RestChannel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `RestChannel` object. (Note that this is soft-deprecated and may be removed in a future release, so should not be implemented in new client libraries. The supported way to update a set of `ChannelOptions` is `RestChannel#setOptions`)
+* `(RSN4)` `Channels#release` function:
+  * `(RSN4a)` Takes one argument, the channel name, and releases the corresponding channel entity (that is, deletes it to allow it to be garbage collected)
+  * `(RSN4b)` Calling `release()` with a channel name that does not correspond to an extant channel entity must return without error
+  * `(RSN4c)` This clause has been deleted.
+
+### RestChannel {#rest-channel}
+
+
+* `(RSL9)` `RestChannel#name` attribute is a string containing the channel’s name
+* `(RSL1)` `RestChannel#publish` function:
+  * `(RSL1a)` Expects either a `Message` object, an array of `Message` objects, or a `name` string and `data` payload
+  * `(RSL1b)` When `name` and `data` (or a `Message`) is provided, a single message is published to Ably
+  * `(RSL1c)` When an array of `Message` objects is provided, a single request is made to Ably
+  * `(RSL1d)` Indicates an error if the message was not successfully published to Ably
+  * `(RSL1n)` On success, returns a `PublishResult` object containing the serials of the published messages. The API response body will contain a superset of the fields of a `PublishResult`.
+    * `(RSL1n1)` In SDKs for which adding a response value would be a breaking API change and where such changes are idiomatically rare may implement any appropriate alternative that would allow a user who wishes to get a serials array on publish to do so.
+  * `(RSL1e)` Allows `name` and/or `data` to be `null`.  If any of the values are `null`, that property is not sent to Ably, e.g. a payload with a `null` value for `data` would be sent as `{"name":"click"}`
+  * `(RSL1m)` The `Message.clientId` must be left alone (that is, it will be there if it was set in the `Message` object passed to `publish()`, else left unset). The client library must not try and set it from the client-library-wide `clientId`; that is achieved by `RSA7e` for basic auth or implicit in the credentials for token auth. The following tests can be used to check for correct clientId handling:
+    * `(RSL1m1)` Publishing a `Message` with no clientId when the clientId is set to some value in the client options should result in a message received with the `clientId` property set to that value
+    * `(RSL1m2)` Publishing a `Message` with a clientId set to the same value as the clientId in the client options should result in a message received with the `clientId` property set to that value
+    * `(RSL1m3)` Publishing a `Message` with a clientId set to a value from an unidentified client (no clientId in the client options and credentials that can assume any clientId) should result in a message received with the `clientId` property set to that value
+    * `(RSL1m4)` Publishing a `Message` with a clientId set to a different value from the clientId in the client options should result in a message being rejected by the server
+  * `(RSL1h)` The `publish(name, data)` form should not take any additional arguments. If a client library has supported additional arguments to the `(name, data)` form (e.g. separate arguments for `clientId` and `extras`, or a single `attributes` argument) in any 1.x version, it should continue to do so until version 2.0.
+  * `(RSL1i)` If the total size of the message or (if publishing an array) messages, calculated per [TO3l8](#TO3l8), exceeds the `maxMessageSize`, then the client library should reject the publish and indicate an error with code 40009
+  * `(RSL1j)` When `Message` objects are provided, any valid `Message` attribute (that is, an attribute specified in [TM2](#TM2)) that is supplied by the caller must be included in the encoded message. (This does not mean it must be included _unaltered_; for example the `data` and `encoding` will be subject to processing per [RSL4](#RSL4))
+  * `(RSL1k)` Idempotent publishing via REST is supported by populating the `id` attribute of `Message` instances passed to `publish()`:
+    * `(RSL1k1)` Idempotent publishing via library-generated `Message` `id` s is supported if `idempotentRestPublishing` (see [TO3n](#TO3n)) is enabled and one or more `Message` instances are passed to `publish()` and all `Message` s have an empty `id` attribute. The library generates a base `id` string by base64-encoding  a sequence of at least 9 bytes obtained from a source of randomness. Each individual `Message` in the set of messages to be published is assigned a unique `id` of the form &lt;base id&gt;:&lt;serial&gt; (where `serial` is the zero-based index into the set).
+    * `(RSL1k2)` Idempotent publishing via client-supplied `Message` `id` s is supported where a single `Message` is passed to `publish()` and it contains a non-empty `id`. The `id` is preserved on sending the message.
+    * `(RSL1k3)` If more than one `Message` is passed to `publish()` and one or more of those messages contains a non-empty `id` attribute, then all message ids (present or absent) are preserved on sending the batch of messages.
+    * `(RSL1k4)` An explicit test for idempotency of publishes with library-generated ids shall exist that simulates an error response to a successful publish of a batch of messages, expects an automatic retry by the library, and verifies that the net outcome is that the batch is published only once.
+    * `(RSL1k5)` An explicit test for idempotency of publishes with client-supplied ids shall exist that involves multiple explicit publish requests for a given message and verifies that the net outcome is that the message is published only once.
+  * `(RSL1l)` The `publish(Message)` and `publish(Message[])` forms of the method should take an extra `Dict<String, Stringifiable>` argument. These parameters should be encoded using normal querystring-encoding and sent as part of the query string of the REST publish. (`Stringifiable` is defined in `RTC1f`)
+    * `(RSL1l1)` Publish params can be tested by publishing with a `_forceNack=true` parameter, which will result in the publish being rejected with a `40099` error code
+* `(RSL2)` `RestChannel#history` function:
+  * `(RSL2a)` Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the history request
+  * `(RSL2b)` Supports the following params:
+    * `(RSL2b1)` `start` and `end` are timestamp fields represented as milliseconds since epoch, or where suitable to the language, Time objects. `start` must be equal to or less than `end` and is unaffected by the request direction
+    * `(RSL2b2)` `direction` backwards or forwards; if omitted the direction defaults to the REST API default (backwards)
+    * `(RSL2b3)` `limit` supports up to 1,000 items; if omitted the direction defaults to the REST API default (100)
+* `(RSL3)` `RestChannel#presence` attribute contains a `RestPresence` object for this channel
+* `(RSL4)` Message encoding
+  * `(RSL4a)` Payloads must be binary, strings, or objects capable of JSON representation, or can be empty (omitted). Any other data type should not be permitted and result in an error
+  * `(RSL4b)` If a message is encoded, the `encoding` attribute represents the encoding(s) applied in right to left format i.e. "utf-8/base64" indicates that the original payload has "utf-8" encoding and has subsequently been encoded in Base64 format
+  * `(RSL4c)` When using MessagePack Message encoding
+    * `(RSL4c1)` a binary Message payload is encoded as MessagePack binary type
+    * `(RSL4c2)` a string Message payload is encoded as MessagePack string type
+    * `(RSL4c3)` a JSON Message payload is stringified either as a JSON Object or Array and encoded as MessagePack string type and the `encoding` attribute is set to "json"
+    * `(RSL4c4)` This clause has been deleted (redundant to [RSL6a](#RSL6a)).
+  * `(RSL4d)` When using JSON Message encoding
+    * `(RSL4d1)` a binary Message payload is encoded as Base64 and represented as a JSON string the `encoding` attribute is set to "base64"
+    * `(RSL4d2)` a string Message payload is represented as a JSON string
+    * `(RSL4d3)` a JSON Message payload is stringified either as a JSON Object or Array and represented as a JSON string and the `encoding` attribute is set to "json"
+    * `(RSL4d4)` This clause has been deleted (redundant to [RSL6a](#RSL6a)).
+* `(RSL5)` Message payload encryption
+  * `(RSL5a)` When a `RestChannel` is instantiated with a (non-null) `cipher` channelOption, message payloads will be automatically encrypted when sent to Ably and decrypted when received on this channel, using the `cipher` configuration
+  * `(RSL5b)` AES 256 and 128 CBC encryption must be supported
+  * `(RSL5c)` Tests must exist that encrypt and decrypt the following fixture data for [AES 128](https://github.com/ably/ably-common/blob/main/test-resources/crypto-data-128.json) and [AES 256](https://github.com/ably/ably-common/blob/main/test-resources/crypto-data-256.json) to ensure the client library encryption is compatible across libraries
+* `(RSL6)` Message decoding
+  * `(RSL6a)` All messages received will be decoded automatically based on the `encoding` field (by inverting the encoding rules of [RSL4](#RSL4) and applying the decryption rules of [RSL5](#RSL5) and, in the case of a realtime client, the delta decoding rules of [RTL19](#RTL19) and [RTL20](#RTL20)) and the payloads will be converted into the format they were originally sent using i.e. binary, string, or JSON-encodable object or array
+    * `(RSL6a1)` A set of tests must exist to ensure that the client library provides data encoding & decoding interoperability with other client libraries. The tests must use the [set of predefined interoperability message fixtures](https://github.com/ably/ably-common/blob/main/test-resources/messages-encoding.json) to 1) publish a raw message to the REST API using the JSON transport and subscribe to the message using Realtime to ensure the `data` attribute matches the fixture; 2) publish a message using the REST client library and retrieve the raw message using the history REST API using the JSON transport ensuring the `data` matches the fixture; 3) perform the client library operation using both `JSON` and `MsgPack` transports. For reference, see the [Ruby](https://github.com/ably/ably-ruby/pull/94) and [iOS](https://github.com/ably/ably-cocoa/pull/459) implementations
+    * `(RSL6a2)` A set of tests must exist to ensure that the client library provides interoperability for the `extras` field which is a JSON-encodable object (ie a value that represents a JSON `object` value and supports serialization to and from JSON text). The test, at a minimum, should publish a message with an `extras` object such as `{"push":[{"title":"Testing"}]}` and ensure it is received with an equivalent JSON-encodable object
+    * `(RSL6a3)` A set of tests should exist to ensure that the client library can successfully encode and decode binary encoded protocol messages. The tests should use the [set of predefined interoperability msgpack protocol-message fixtures](https://github.com/ably/ably-common/blob/main/test-resources/msgpack_test_fixtures.json.) The `msgpack` field in this fixture represents the base64 encoding of the entire `ProtocolMessage`, but the `data` field represents the first element of the `ProtocolMessage#messages` array.
+  * `(RSL6b)` If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be decrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc". Additional steps need to be taken if decoding failed on "vcdiff" encoding; see [RTL18](#RTL18)
+* `(RSL7)` `RestChannel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options, then indicates success
+* `(RSL8)` `RestChannel#status` function: makes a http get request to `<restHost>/channels/<channelId>` where `<restHost>` represents the current rest host as described by [`RSC11`](#RSC11)
+  * `(RSL8a)` Returns a `ChannelDetails` object
+* `(RSL10)` `RestChannel#annotations` attribute contains the `RestAnnotations` object for this channel
+* `(RSL11)` `RestChannel#getMessage` function:
+  * `(RSL11a)` Takes a first argument of a `serial` string of the message to be retrieved.
+    * `(RSL11a1)` In languages where method overloading is supported, the first argument should also accept a `Message` object (which must contain a populated `serial` field)
+  * `(RSL11b)` The SDK must send a GET request to the endpoint `/channels/{channelName}/messages/{serial}`
+  * `(RSL11c)` Returns the decoded `Message` object for the specified message serial
+* `(RSL12)` This clause has been replaced by [`RSL15`](#RSL15). It was valid up to and including specification version 5.0.0.
+* `(RSL13)` This clause has been replaced by [`RSL15`](#RSL15). It was valid up to and including specification version 5.0.0.
+* `(RSL14)` `RestChannel#getMessageVersions` function:
+  * `(RSL14a)` Takes a first argument a `serial` string of the message whose versions are to be retrieved, and an optional second argument of `Dict<string, stringifiable>` params
+    * `(RSL14a1)` In languages where method overloading is supported, the first argument should also accept a `Message` object (which must contain a populated `serial` field)
+  * `(RSL14b)` The SDK must send a GET request to the endpoint `/channels/{channelName}/messages/{serial}/versions`
+  * `(RSL14c)` Returns a `PaginatedResult<Message>`
+* `(RSL15)` `RestChannel#updateMessage`, `RestChannel#deleteMessage`, and `RestChannel#appendMessage` functions:
+  * `(RSL15a)` Take a first argument of a `Message` object (which must contain a populated `serial` field), an optional second argument of a `MessageOperation` object, and an optional third argument of `Dict<string, stringifiable>` publish params
+  * `(RSL15b)` The SDK must send a PATCH to `/channels/{channelName}/messages/{serial}`. The request body is a `Message` object (encoded per [RSL4](#RSL4)) with whatever fields were in the user-supplied `Message`, in addition to:
+    * `(RSL15b1)` `action` - set to `MESSAGE_UPDATE` for `updateMessage()`, `MESSAGE_DELETE` for `deleteMessage()`, and `MESSAGE_APPEND` for `appendMessage()`.
+    * `(RSL15b7)` `version` - set to the `MessageOperation` object if provided.
+  * `(RSL15f)` Any params provided in the third argument must be sent in the querystring, with values stringified
+  * `(RSL15c)` The SDK must not mutate the user-supplied `Message` object.
+  * `(RSL15d)` The request body must be encoded to the appropriate format per `RSC8`.
+  * `(RSL15e)` On success, returns an `UpdateDeleteResult` object. The API response body will contain a superset of the fields of a `UpdateDeleteResult`. Indicates an error if the operation was not successful.
+
+### Plugins {#plugins}
+
+* `(PC1)` Specific client library features that are not commonly used may be supplied as independent libraries, as plugins, in order to avoid excessively bloating the client library. Although such plugins are packaged as independent libraries, they are still considered logically to be part of the client library code and, as such, may be tightly coupled with the client library implementation. The client library can be assumed to be aware of the plugin specific type and capabilities, and such plugins may by design be coupled to a specific version of the client library.
+* `(PC2)` No generic plugin interface is specified, and therefore there is no common API exposed by all plugins. However, for type-safety, the opaque interface `Plugin` should be used in strongly-typed languages as the type of the `ClientOptions.plugins` collection as per [TO3o](#TO3o).
+* `(PC3)` A plugin provided with the `PluginType` enum key value of `vcdiff` should be capable of decoding "vcdiff"-encoded messages. It must implement the `VCDiffDecoder` interface and the client library must be able to use it by casting it to this interface.
+  * `(PC3a)` The base argument of the `VCDiffDecoder.decode` method should receive the stored base payload of the last message on a channel as specified by [RTL19](#RTL19). If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the `VCDiffDecoder.decode` method.
+* `(PC5)` A plugin provided with the `PluginType` enum key value of `Objects` should provide the [RealtimeObjects](../objects-features#RTO1) feature functionality for realtime channels ([RTL27](#RTL27)). The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables the Objects feature for a realtime channel, are left for individual implementations to decide.
+* `(PC4)` A client library is allowed to accept plugins other than those specified in this specification, through the use of additional `ClientOptions.plugins` keys defined by that library. The library is responsible for defining the interface of these plugins, and for making sure that these keys do not clash with the keys defined in this specification.
+
+### PluginType {#plugin-type}
+
+
+* `(PT1)` `PluginType` is an enum describing the different types of plugins that the library supports. See the `ClientOptions#plugins` property ([TO3o](#TO3o)).
+* `(PT2)` `PluginType` takes one of the following values:
+  * `(PT2a)` `vcdiff` – see [PC3](#PC3).
+  * `(PT2b)` `Objects` – see [PC5](#PC5).
+
+### VCDiffDecoder {#vcdiff-decoder}
+
+
+* `(VD1)` `VCDiffDecoder` provides an interface for decoding "vcdiff"-encoded message payloads.
+* `(VD2)` `VCDiffDecoder` has the following interface:
+  * `(VD2a)` class method `decode([byte] delta, [byte] base) -> [byte]` - as described by [PC3a](#PC3a), given a base payload and the delta provided by a subsequent message, this returns the payload of that message
+
+### RestPresence {#rest-presence}
+
+* `(RSP1)` RestPresence object is associated with a single channel and is accessible through `RestChannel#presence`
+* `(RSP2)` There is no way to register a member as present on a channel via the REST API
+* `(RSP3)` `RestPresence#get` function:
+  * `(RSP3a)` Returns a `PaginatedResult` page containing the first page of members present in the `PaginatedResult#items` attribute returned from the presence request. Each member is represented as a `PresenceMessage`. Supports the following params:
+    * `(RSP3a1)` `limit` supports up to 1,000 items; if unspecified it defaults to the REST API default (100)
+    * `(RSP3a2)` `clientId` filters members by the provided `clientId`
+    * `(RSP3a3)` `connectionId` filters members by the provided `connectionId`
+* `(RSP4)` `RestPresence#history` function:
+  * `(RSP4a)` Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the presence request
+  * `(RSP4b)` Supports the following params:
+    * `(RSP4b1)` `start` and `end` are timestamp fields represented as milliseconds since epoch, or where appropriate to the language, Date/Time objects. `start` must be equal to or less than `end` and is unaffected by the request direction
+    * `(RSP4b2)` `direction` backwards or forwards; if unspecified defaults to the REST API default (backwards)
+    * `(RSP4b3)` `limit` supports up to 1,000 items; if unspecified defaults to the REST API default (100)
+* `(RSP5)` Presence Messages retrieved are decoded in the same way that messages are decoded
+
+### Encryption {#rest-encryption}
+
+* `(RSE1)` `Crypto::getDefaultParams` function:
+  * `(RSE1a)` Returns a complete `CipherParams` instance, using the default values for any field not supplied
+  * `(RSE1b)` Takes a `CipherParamOptions` instance.
+  * `(RSE1c)` The `key` must be either a binary (e.g. a byte array, depending on the language), or a base64-encoded string. If the key is a string, the function should base64-decode it into a binary. Since the conversion to base64 is not under Ably control, this should be done leniently -- in particular, it should work with base64url (RFC 4648 s.5, which uses `-` and `_` instead of `+` and `/`) as well as base64 (RFC 4648 s.4)
+  * `(RSE1d)` Calculates a `keyLength` from the key (its size in bits).
+  * `(RSE1e)` Checks that the provided options are valid and self-consistent as best it can, raises an exception if not. At a minimum, this should include checking the calculated `keyLength` is a valid key length for the encryption algorithm (for example, 128 or 256 for `AES`)
+* `(RSE2)` `Crypto::generateRandomKey` function
+  * `(RSE2a)` Takes an optional `keyLength` parameter, which is the length in bits of the key to be generated. If unspecified, this is equal to the default `keyLength` of the default algorithm: for `AES`, 256 bits.
+  * `(RSE2b)` Returns (or calls back with, if the language cryptographic randomness primitives are blocking or async) the key as a binary (e.g. a byte array, depending on the language)
+
+### RestAnnotations {#rest-annotations}
+
+
+* `(RSAN1)` `RestAnnotations#publish` function:
+  * `(RSAN1a)` Takes a first argument of a `Message` identifier in the form of the string of the `serial` of the message to be annotated, and a second argument representing the annotation to be published.
+    * `(RSAN1a1)` In languages where method overloading is supported, the first argument should also accept a `Message` object (which must contain a populated `serial` field)
+    * `(RSAN1a2)` The form of the second argument may accept any language-idiomatic representation (e.g. plain objects in untyped languages), but must allow the user to supply at least the `type`, `clientId`, `name`, `count`, `data`, and `extras` fields
+    * `(RSAN1a3)` The SDK must validate that the user supplied a `TAN5b` `type`. (All other fields are optional)
+    * `(RSAN1a4)` The SDK may validate that the total size of the annotation or (if publishing an array) annotations, calculated identically to message size per [TO3l8](#TO3l8), exceeds the `maxMessageSize`, then the client library should reject the publish and indicate an error with code 40009
+  * `(RSAN1c)` The SDK must POST a request body consisting of an array with one element, which is the annotation to be published
+    * `(RSAN1c1)` The `Annotation.action` must be set to `ANNOTATION_CREATE`
+    * `(RSAN1c2)` The `Annotation.messageSerial` must be set to the identifier specified in the first argument to `publish()`
+    * `(RSAN1c3)` If the user has supplied an `Annotation.data`, that must be encoded (and the `encoding` set) just as it would be for a `Message`, per `RSL4`
+    * `(RSAN1c4)` If `idempotentRestPublishing` (see [TO3n](#TO3n)) is enabled and the annotation has an empty `id` attribute, the SDK should generate a string by base64-encoding a sequence of at least 9 bytes obtained from a source of randomness, append `:0`, and set it as the `Annotation.id`
+    * `(RSAN1c5)` The body must be encoded to the appropriate format per `RSC8`
+    * `(RSAN1c6)` The body must be sent as a POST request to the endpoint `/channels/{channelName}/messages/{messageSerial}/annotations`, where `messageSerial` is the identifier specified in the first argument to `publish()`
+* `(RSAN2)` `RestAnnotations#delete` function:
+  * `(RSAN2a)` Must be identical to `RSAN1` `publish()` except that the `Annotation.action` is set to `ANNOTATION_DELETE`, not `ANNOTATION_CREATE`
+* `(RSAN3)` `RestAnnotations#get` function:
+  * `(RSAN3a)` Accepts a message identifier (similar to `RSAN1a`, must at least accept a `messageSerial` string, should also accept a `Message` object containing a `serial`) and optional `Dict<string, stringifiable>` params
+  * `(RSAN3b)` Sends a GET request to the endpoint `/channels/{channelName}/messages/{messageSerial}/annotations`, where `messageSerial` is the identifier specified in the first argument, and any `params` are sent in the querystring
+  * `(RSAN3c)` Returns a `PaginatedResult<Annotation>` page containing the first page of decoded `Annotation` objects in the `PaginatedResult#items` attribute
+
+### Forwards compatibility {#rest-compatibility}
+
+* `(RSF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
+
+## Realtime client library features {#realtime}
+
+
+The Ably Realtime client libraries establish and maintain a persistent connection to Ably and provide methods to publish and subscribe to messages over a low latency realtime connection.
+
+The Realtime library is a super-set of the REST library and as such all Realtime libraries provide the functionality available in the REST library in addition to Realtime-specific features.
+
+The threading and/or asynchronous model for each realtime library will vary by language and it is therefore up to the developer to decide on the best approach for each given client library. For example, Node.js and Ruby (EventMachine) use a similar callback single threaded evented approach that ensures all public methods are non-blocking. Java and .NET use a threaded model whereby the `Connection` runs in its own thread. Go makes extensive use of goroutines and channels.
+
+### RealtimeClient {#realtimeclient}
+
+
+* `(RTC12)` Has the same constructors as `RestClient`, as defined in [RSC1](#RSC1)
+* `(RTC1)` Supports all the same `ClientOptions` as the `RestClient` in addition to:
+  * `(RTC1a)` `echoMessages` boolean is true by default. If false, it prevents messages originating from this connection being echoed back on the same connection; see [RTN2b](#RTN2b).
+  * `(RTC1b)` `autoConnect` boolean is true by default. If true, as soon as the client library is instantiated, it will connect to Ably. If false, the client library will wait for an explicit `Connection#connect` to be called before connecting
+  * `(RTC1c)` `recover` string, when set, will attempt to recover the connection state of a previous connection
+  * `(RTC1d)` This clause has been deleted. It was valid up to and including specification version `TBD`.
+  * `(RTC1e)` This clause has been deleted. It was valid up to and including specification version `TBD`.
+  * `(RTC1f)` `transportParams` map or equivalent, additional parameters to be sent in the querystring when initiating a realtime connection. Keys are `Strings`, values are `Stringifiable` (a value that can be coerced to a string in order to be sent as a querystring parameter. Supported values should be at least strings, numbers, and booleans, with booleans stringified as `true` and `false`. If this is unidiomatic to the language, the implementer may consider this as equivalent to `String`).
+    * `(RTC1f1)` If a key in `transportParams` is one the library sends by default (for example, `v` or `heartbeats`), the value in `transportParams` takes precedence.
+* `(RTC2)` `RealtimeClient#connection` attribute provides access to the underlying `Connection` object
+* `(RTC15)` `RealtimeClient#connect` function:
+  * `(RTC15a)` Calls `#connect` on the underlying `Connection` object
+* `(RTC16)` `RealtimeClient#close` function:
+  * `(RTC16a)` Calls `#close` on the underlying `Connection` object
+* `(RTC3)` `RealtimeClient#channels` attribute provides access to the underlying `Channels` object
+* `(RTC4)` `RealtimeClient#auth` attribute provides access to the `Auth` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
+  * `(RTC4a)` Unlike the stateless REST client library, the `Auth#clientId` is populated when the connection is established.  The `CONNECTED` `ProtocolMessage` contains the confirmed `clientId` for this connected client i.e. the client is considered identified. See [`RSA7b`](#RSA7b) and [`RSA12`](#RSA12) for further info
+* `(RTC5)` `RealtimeClient#stats` function:
+  * `(RTC5a)` Proxy to `RestClient#stats` presented with an async or threaded interface as appropriate
+  * `(RTC5b)` Accepts all the same params as `RestClient#stats` and provides all the same functionality
+* `(RTC6)` `RealtimeClient#time` function:
+  * `(RTC6a)` Proxy to `RestClient#time` presented with an async or threaded interface as appropriate
+* `(RTC13)` `RealtimeClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RealtimeClient` constructor
+* `(RTC7)` The client library must use the configured timeouts specified in the `ClientOptions`, falling back to the [client library defaults](#defaults) and defaults described in `ClientOptions` below
+* `(RTC8)` For a realtime client, `Auth#authorize` instructs the library to obtain a token using the provided `tokenParams` and `authOptions` and alter the current connection to use that token; or if not currently connected, to connect with the token.
+  * `(RTC8a)` If the connection is in the `CONNECTED` state and `auth#authorize` is called or Ably requests a re-authentication (see [RTN22](#RTN22)), the client must obtain a new token, then send an `AUTH` `ProtocolMessage` to Ably with an `auth` attribute containing an `AuthDetails` object with the token string
+    * `(RTC8a1)` If the authentication token change is successful, then Ably will send a new `CONNECTED` `ProtocolMessage`. The `connectionDetails` provided in the `CONNECTED` `ProtocolMessage` must override any existing defaults, see [RTN21](#RTN21).  The `Connection` should emit an `UPDATE` event per `RTN24`. A test should exist that performs a change of capabilities without any loss of continuity or connectivity during the process. Another test should exist where the capabilities are downgraded resulting in Ably sending an `ERROR` `ProtocolMessage` with a `channel` property, causing the channel to enter the `FAILED` state. That test must assert that the channel becomes failed soon after the token update and the reason is included in the channel state change event
+    * `(RTC8a2)` If the authentication token change fails, then Ably will send an `ERROR` `ProtocolMessage` triggering the connection to transition to the `FAILED` state. A test should exist for a token change that fails (such as sending a new token with an incompatible `clientId`)
+    * `(RTC8a3)` The `authorize` call should be indicated as completed with the new token or error only once realtime has responded to the `AUTH` with either a `CONNECTED` or `ERROR` respectively.
+    * `(RTC8a4)` Tests must exist that verify the inband reauthorization mechanism described in `RTC8a` succeeds in the cases of an Ably token string and a JWT token string.
+  * `(RTC8b)` If the connection is in the `CONNECTING` state when `auth#authorize` is called, all current connection attempts should be halted, and after obtaining a new token the library should immediately initiate a connection attempt using the new token
+    * `(RTC8b1)` The `authorize` call should be indicated as completed with the new token once the connection has moved to the `CONNECTED` state, or with an error if the connection instead moves to the `FAILED`, `SUSPENDED`, or `CLOSED` states
+  * `(RTC8c)` If the connection is in the `DISCONNECTED`, `SUSPENDED`, `FAILED`, or `CLOSED` state when `auth#authorize` is called, after obtaining a token the library should move to the `CONNECTING` state and initiate a connection attempt using the new token, and `RTC8b1` applies.
+* `(RTC9)` `RealtimeClient#request` is a wrapper around `RestClient#request` (see [RSC19](#RSC19)) delivered in an idiomatic way for the realtime library, e.g. in the case of Ruby, with an evented async callback interface
+* `(RTC17)` `RealtimeClient#clientId` attribute:
+  * `(RTC17a)` Returns the current value of the `#clientId` attribute of the `RealtimeClient` object’s `#auth` attribute
+* `(RTC10)` The client library should never register any listeners for internal use with the public `EventEmitter` interfaces (such as `Connection#on`) or message/event subscription interfaces (such as `RealtimeChannel#subscribe`) in such a way that a user of the library calling `Connection#off()` or `RealtimeChannel#unsubscribe()` to remove all listeners would result in the library not working as expected
+* `(RTC11)` Unexpected internal exceptions, as defined in [`RSC20`](#RSC20), must be handled as gracefully as possible and reported to Ably's error reporting service when enabled. The aim when handling unexpected exceptions should be to ensure that no invalid or inconsistent state can potentially be left after handling the exception; depending on circumstances the remedial action could include failing the transport, failing the connection, rejecting a message, reinitialising the library completely, etc.
+* `(RTC14)` `RealtimeClient#createWrapperSDKProxy`:
+  * `(RTC14a)` Returns a wrapper SDK proxy client whose underlying client is this `RealtimeClient`. See [`WP1`](#WP1) for definitions of these terms.
+  * `(RTC14b)` Accepts a single argument, a `WrapperSDKProxyOptions`.
+  * `(RTC14c)` An API commentary must be provided for this method. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
+
+
+### Connection {#realtime-connection}
+
+
+* `(RTN1)` `Connection` connects to the Ably service using a [websocket](https://ably.com/topic/websockets) connection. The [ably-js library](https://github.com/ably/ably-js) supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
+* `(RTN2)` The default host used for realtime [websocket](https://ably.com/topic/websockets) connections is the [`REC1`](#REC1) primary domain and the following query string params should be used when opening a new connection:
+  * `(RTN2a)` `format` should be `msgpack` (default) or `json`
+  * `(RTN2b)` `echo` should be `true` if the `echoMessages` client option is true; else it should be `false`, which will prevent messages published by the client being echoed back
+  * `(RTN2d)` `clientId` contains the provided `clientId` option of `ClientOptions`, unless `clientId` is `null`
+  * `(RTN2e)` Depending on the authentication scheme, either `accessToken` contains the token string, or `key` contains the API key
+  * `(RTN2f)` The API version param `v` must be included in all connections to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
+  * `(RTN2g)` The library and version (in the form described in [RSC7b](#RSC7b)) should be included as the value of a `lib` querystring param. For example, the 1.0.0 version of the JavaScript library would use the param `lib=js-1.0.0`
+* `(RTN3)` If connection option `autoConnect` is true, a connection is initiated immediately; otherwise a connection is only initiated following an explicit call to `connect()`
+* `(RTN27)` The Connection is a state machine and implements the following states, which are mutually exclusive and exhaustive:
+  * `(RTN27a)` `INITIALIZED` - the initial state of the connection. The library never transitions back to `INITIALIZED` from any other state.
+  * `(RTN27b)` `CONNECTING` - the state whenever the library is actively attempting to connect to the server (whether trying to obtain a token, trying to open a transport, or waiting for a `CONNECTED` event).
+  * `(RTN27c)` `DISCONNECTED` - a state where the library is not connected to the server and is not actively attempting to become connected, but where a reconnect attempt is scheduled in the future after the `TO3l1` `disconnectedRetryTimeout` elapses, and where if the library was previously connected, the next connect attempt  will be an `RTN15b` resume attempt.
+  * `(RTN27d)` `SUSPENDED` - a state where the library is not connected to the server and is not actively attempting to become connected, but where a reconnect attempt is scheduled in the future after the `TO3l2` `suspendedRetryTimeout` elapses, and where next connect attempt is a clean connection (not a resume attempt).
+  * `(RTN27e)` `CONNECTED` - the state whenever the library is connected to the server (there is a transport currently active which has received a `CONNECTED` `ProtocolMessage`).
+  * `(RTN27f)` `CLOSING` - the state when the user has requested the library `close()`, and the library is waiting for a `CLOSE` to be received on the active transport.
+  * `(RTN27g)` `CLOSED` - the state when the library has been explicitly closed by the user, and there is no active transport.
+  * `(RTN27h)` `FAILED` - the state when the library has encountered a failure condition it cannot recover from. It will remain in this state indefinitely, unless and until an explicit call to `connect()` is made.
+* `(RTN4)` The `Connection` implements `EventEmitter` and emits `ConnectionEvent` events, where a `ConnectionEvent` is either a `ConnectionState` or `UPDATE`, and a `ConnectionState` is either `INITIALIZED`, `CONNECTING`, `CONNECTED`, `DISCONNECTED`, `SUSPENDED`, `CLOSING`, `CLOSED`, or `FAILED`
+  * `(RTN4a)` It emits a `ConnectionState` `ConnectionEvent` for every connection state change
+  * `(RTN4h)` It emits an `UPDATE` `ConnectionEvent` for changes to connection conditions for which the `ConnectionState` (e.g. `CONNECTED`) does not change. (The library must never emit a `ConnectionState` `ConnectionEvent` for a state equal to the previous state)
+  * `(RTN4b)` A new connection will emit the following events in order when connecting: `CONNECTING`, then `CONNECTED`
+  * `(RTN4c)` A connection will emit the following events when closing the connection: `CLOSING`, then `CLOSED`
+  * `(RTN4d)` `Connection#state` attribute is the current state of the connection
+  * `(RTN4e)` A `ConnectionStateChange` object is emitted as the first argument for every `ConnectionEvent` (including both `RTN4a` connection state changes and `RTL4h` `UPDATE` events)
+  * `(RTN4f)` The `ConnectionStateChange` object may contain a `reason` consisting of an `ErrorInfo` object with details of the error that has occurred for the `Connection`. Any state change triggered by a `ProtocolMessage` that contains an `error` member should populate the `reason` with that error in the corresponding state change event
+  * `(RTN4i)` Optionally, for backwards compatibility with 0.8 libraries, the `Connection` `EventEmitter` can provide an overloaded method that supports `on(ConnectionState)`, but must issue a deprecation warning
+* `(RTN5)` A test should exist that instantiates many (50+) clients simultaneously and performs a few basic operations such as attaching to a channel, publishing a message, and expecting all of those messages to arrive on all clients to ensure that there are no concurrency issues with the client library
+* `(RTN6)` A `Connection` is successful and considered `CONNECTED` once the [websocket](https://ably.com/topic/websockets) connection is open and the initial `CONNECTED` `ProtocolMessage` has been received
+* `(RTN21)` If the `CONNECTED` `ProtocolMessage` contains a `connectionDetails` property, the attributes within `ConnectionDetails` will be used as the defaults for this client library, overriding any configured options at the time the `CONNECTED` `ProtocolMessage` is received
+* `(RTN7)` `ACK` and `NACK`:
+  * `(RTN7a)` All `PRESENCE`, `MESSAGE`, `ANNOTATION`, and `OBJECT` `ProtocolMessages` sent to Ably expect either an `ACK` or `NACK` from Ably to confirm successful receipt and acceptance or failure respectively. For clarity, it is unnecessary to fail the publish operation of a message using a timer. Instead the client library can rely on: the realtime system will send an `ACK` or `NACK` when connected; the client library will fail all awaiting messages once `SUSPENDED` (see [RTN7e](#RTN7e)); upon reconnecting, the client will resend all message awaiting a response, and the realtime system in turn will respond with an `ACK` or `NACK` (see [RTN19a](#RTN19a))
+  * `(RTN7b)` Every `ProtocolMessage` that expects an `ACK` or `NACK` sent must contain a unique serially incrementing `msgSerial` integer value starting at zero. The `msgSerial` along with the `count` for incoming `ACK` and `NACK` `ProtocolMessages` indicates which messages succeeded or failed to be delivered
+  * `(RTN7c)` This clause has been replaced by [`RTN7e`](#RTN7e) (it contained a mistake). It was valid up to and including specification version `TBD`.
+  * `(RTN7e)` If a connection enters the `SUSPENDED`, `CLOSED` or `FAILED` state, and an `ACK` or `NACK` has not yet been received for a message submitted to the connection via [`RTL6c1`](#RTL6c1) or [`RTL6c2`](#RTL6c2), the client should consider the delivery of those messages as failed, meaning their callback (or language equivalent) should be called with an error representing the reason for the state change, and they should be removed from any `RTN19a` retry queue. (Note that `PRESENCE` messages which, per [`RTP16b`](#RTP16b), have not yet been submitted to the connection are handled by [`RTL11`](#RTL11).)
+  * `(RTN7d)` If the `queueMessages` client option (`TO3g`) has been set to `false`, then when a connection enters the `DISCONNECTED` state, any messages which have not yet been `ACK`d should be considered to have failed, with the same effect as in `RTN7e`
+* `(RTN22)` Ably can request that a connected client re-authenticates by sending the client an `AUTH` `ProtocolMessage`. The client must then immediately start a new authentication process as described in [RTC8](#RTC8)
+  * `(RTN22a)` Ably reserves the right to forcibly disconnect a client that does not re-authenticate within an acceptable period of time, or at any time the token is deemed no longer valid. A client is forcibly disconnected following a `DISCONNECTED` message containing an error code in the range `40140 <= code < 40150`. This will in effect force the client to re-authenticate and resume the connection immediately, see [RTN15h](#RTN15h)
+* `(RTN8)` `Connection#id` attribute:
+  * `(RTN8a)` Is unset until connected
+  * `(RTN8b)` Is a unique string provided by Ably. You should have a test to ensure multiple connected clients have unique connection IDs
+  * `(RTN8c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
+* `(RTN9)` `Connection#key` attribute:
+  * `(RTN9a)` Is unset until connected
+  * `(RTN9b)` Is a unique private connection key provided by Ably that is used to reconnect and retain connection state following an unexpected disconnection. You should have a test to ensure multiple connected clients have unique connection keys
+  * `(RTN9c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
+* `(RTN10)` This clause has been deleted. It was valid up to and including specification version `1.2`.
+* `(RTN11)` `Connection#connect` function:
+  * `(RTN11a)` This clause has been replaced by `"RTN11e"`:#RTN11e and `[RTN11f`](#RTN11f). It was valid up to and including specification version `TBD`.
+  * `(RTN11e)` No-op if `CONNECTING` or `CONNECTED`.
+  * `(RTN11f)` Otherwise, connects to the Ably service. Subsequent spec points describe state-dependent additional behaviours that should occur before this connection attempt.
+  * `(RTN11b)` If the state is `CLOSING`, the client should make a new connection with a new transport instance and remove all references to the old one. In particular, it should make sure that, when the `CLOSED` `ProtocolMessage` arrives for the old connection, it doesn't affect the new one. Additionally, the client should ensure that all channels first transition to `DETACHED`, following [`RTL3b`](#RTL3b), and then reinitialize channels per [`RTN11d`](#RTN11d).
+  * `(RTN11c)` If the state is `DISCONNECTED` or `SUSPENDED`, skips the ongoing wait in the retry process described in [RTN14d](#RTN14d) and [RTN14e](#RTN14e), so that the next reconnection attempt happens immediately.
+  * `(RTN11d)` If the state is `CLOSED` or `FAILED`, transitions all the channels to `INITIALIZED` and unsets their `RealtimeChannel.errorReason`, clear all internal connection data (including in particular `Connection.errorReason`) and resets the `msgSerial` to `0`
+* `(RTN12)` `Connection#close` function:
+  * `(RTN12f)` If the connection state is `CONNECTING`, moves immediately to `CLOSING`. If the connection attempt succeeds, ie. a `CONNECTED` `ProtocolMessage` arrives from Ably, then do as specified in [RTN12a](#RTN12a). If it doesn't succeed, move to `CLOSED`.
+  * `(RTN12a)` If the connection state is `CONNECTED`, sends a `CLOSE` `ProtocolMessage` to the server, transitions the state to `CLOSING` and waits for a `CLOSED` `ProtocolMessage` to be received
+  * `(RTN12b)` If the `CLOSED` `ProtocolMessage` is not received within [`realtimeRequestTimeout`](#TO3l11), the transport will be disconnected and the connection will automatically transition to the `CLOSED` state
+  * `(RTN12c)` If the transport is abruptly closed following a `CLOSE` `ProtocolMessage` being sent, then the connection will automatically transition to the `CLOSED` state
+  * `(RTN12d)` If the connection state is `DISCONNECTED` or `SUSPENDED`, aborts the retry process described in [RTN14d](#RTN14d) and [RTN14e](#RTN14e) and transitions the connection immediately to the `CLOSED` state
+* `(RTN13)` `Connection#ping` function:
+  * `(RTN13d)` If the connection state is `CONNECTING` or `DISCONNECTED`, do the operation once the connection state is `CONNECTED`
+  * `(RTN13a)` Will send a `ProtocolMessage` with action `HEARTBEAT` the Ably service when connected and expects a `HEARTBEAT` message in response. If the client library language supports callbacks, then the callback will be called with the response time or error
+  * `(RTN13b)` Will indicate an error if in, or has transitioned to, the `INITIALIZED`, `SUSPENDED`, `CLOSING`, `CLOSED` or `FAILED` state
+  * `(RTN13c)` Will fail if a `HEARTBEAT` `ProtocolMessage` is not received within [`realtimeRequestTimeout`](#TO3l11)
+  * `(RTN13e)` The `ProtocolMessage` sent should include an `id` property, with value a random string. If so, only a `HEARTBEAT` response which includes an `id` property with the same value should be considered a response to that ping, in order to disambiguate from normal heartbeats and other pings.
+* `(RTN14)` `Connection` opening failures:
+  * `(RTN14a)` If an API key is invalid, then the connection will transition to the `FAILED` state and the `Connection#errorReason` will be set on the `Connection` object as well as the emitted `ConnectionStateChange`
+  * `(RTN14b)` If a connection request fails due to an `ERROR` `ProtocolMessage` being received by the client containing a token error (`statusCode` value of 401 and error `code` value in the range `40140 <= code < 40150`) and an empty `channel` attribute, then if the token is renewable, a single attempt to create a new token should be made and a new connection attempt initiated using the newly created token. If the attempt to create a new token fails, or the subsequent connection attempt fails due to another token error, then the connection will transition to the `DISCONNECTED` state, and the `Connection#errorReason` should be set. (If no means to renew the token is provided, `RSA4a` applies)
+  * `(RTN14g)` If an `ERROR` `ProtocolMessage` with an empty `channel` attribute is received for any reason other than [RTN14b](#RTN14b), then the connection will transition to the `FAILED` state and the server will terminate the connection. Additionally the `Connection#errorReason` must be set with the error from the `ERROR` `ProtocolMessage`
+  * `(RTN14c)` A new connection attempt will fail if not connected within [`realtimeRequestTimeout`](#TO3l11)
+  * `(RTN14d)` If a connection attempt fails for any recoverable reason (i.e. a network failure, a timeout such as [RTN14c](#RTN14c), or a disconnected response, other than a token failure [RTN14b](#RTN14b)), the `Connection#state` will transition to `DISCONNECTED`, the `Connection#errorReason` will be updated, a `ConnectionStateChange` with the `reason` will be emitted, and new connection attempts will periodically be made until the maximum time in that state threshold is reached.  The `retryIn` attribute of the `ConnectionStateChange` object will contain the time in milliseconds until the next connection attempt. `retryIn` should be calculated as described in [`RTB1`](#RTB1). Each time a new connection attempt is made the state will transition to `CONNECTING` and then to `CONNECTED` if successful, or `DISCONNECTED` if unsuccessful and the [default `connectionStateTtl`](#defaults) has not been exceeded. Fallback hosts are used for new connection attempts in accordance with [RTN17](#RTN17).
+  * `(RTN14e)` Once the connection state has been in the `DISCONNECTED` state for more than the [default `connectionStateTtl`](#defaults), the state will change to `SUSPENDED` and be emitted with the `reason`, and the `Connection#errorReason` will be updated. In this state, a new connection attempt will be made periodically as specified within `suspendedRetryTimeout` of `ClientOptions`
+  * `(RTN14f)` The connection will remain in the `SUSPENDED` state indefinitely, whilst periodically attempting to reestablish a connection
+* `(RTN15)` `Connection` failures once `CONNECTED`:
+  * `(RTN15h)` If a `DISCONNECTED` message is received from Ably, then that transport will subsequently be closed by Ably
+    * `(RTN15h1)` If the `DISCONNECTED` message contains a token error (`statusCode` value of 401 and error `code` value in the range `40140 <= code < 40150`) and the library does not have a means to renew the token, the connection will transition to the `FAILED` state and the `Connection#errorReason` will be set
+    * `(RTN15h2)` If the `DISCONNECTED` message contains a token error (`statusCode` value of 401 and error `code` value in the range `40140 <= code < 40150`) and the library has the means to renew the token, the library must initiate an immediate reconnect attempt, by transitioning to the `CONNECTING` state, making an attempt to obtain a new token, and initiating an `RTN15b` resume attempt to the server using that token. If the token creation fails or the next connection attempt fails due to a token error, the connection must transition to the `DISCONNECTED` state and set the `Connection#errorReason`.
+      * `(RTN15h2i)` The library MAY briefly transition through the `DISCONNECTED` state on its way from the `CONNECTED` to `CONNECTING`. (There is no need for an SDK need to implement this behaviour if it is not already present).
+    * `(RTN15h3)` If the `DISCONNECTED` message contains an error other than a token error, the library must initiate an immediate reconnect attempt, by transitioning into the `CONNECTING` state and initiating an `RTN15b` resume attempt.
+  * `(RTN15j)` If an `ERROR` `ProtocolMessage` with an empty `channel` attribute is received, this indicates a fatal error in the connection. The server will close the transport immediately after. The client should transition to the `FAILED` state triggering all attached channels to transition to the `FAILED` state as well. Additionally the `Connection#errorReason` should be set with the error received from Ably
+  * `(RTN15i)` This clause has been replaced by [`RTN15j`](#RTN15j). It was valid up to and including specification version `TBD`.
+  * `(RTN15a)` If a transport is disconnected unexpectedly (without having received a `DISCONNECTED` or `ERROR` protocol message), it should respond as if it had received a non-token `DISCONNECTED` (following `RTN15h3`).
+  * `(RTN15g)` Connection state is only maintained server-side for a brief period, given by the `connectionStateTtl` in the `connectionDetails`, see [CD2f](#CD2f). If a client has been disconnected for longer than the `connectionStateTtl`, it should not attempt to resume. Instead, it should clear the local connection state, and any connection attempts should be made as for a fresh connection
+    * `(RTN15g1)` This check should be made before each connection attempt. It is generally not sufficient to merely clear the connection state when moving to `SUSPENDED` state (though that may be done too), since the device may have been sleeping / suspended, in which case it may have been many hours since it was last actually connected, even though, having been in the `CONNECTED` state when it was put to sleep, it has only moved out of that state very recently (after waking up and noticing it's no longer connected)
+    * `(RTN15g2)` Another consequence of that is that the measure of whether the client been disconnected for too long (for the purpose of this check) cannot just be whether the client left the `CONNECTED` state more than `connectionStateTtl` ago. Instead, it should be whether the difference between the current time and the last activity time is greater than the sum of the `connectionStateTtl` and the `maxIdleInterval`, where the last activity time is the time of the last known actual sign of activity from Ably per [RTN23a](#RTN23a)
+    * `(RTN15g3)` When a connection attempt succeeds after the connection state has been cleared in this way, channels that were previously `ATTACHED`, `ATTACHING`, or `SUSPENDED` must be automatically reattached, just as if the connection was a resume attempt which failed per [RTN15c7](#RTN15c7)
+  * `(RTN15b)` In order for a connection to be resumed and connection state to be recovered, the client must have received a `CONNECTED` ProtocolMessage which will include a private connection key. To resume that connection, the library reconnects to the [websocket](https://ably.com/topic/websockets) endpoint with an additional querystring param:
+    * `(RTN15b1)` `resume` is the `ProtocolMessage#connectionKey` from the most recent `CONNECTED` `ProtocolMessage` received
+    * `(RTN15b2)` This clause has been deleted. It was valid up to and including specification version `1.2`.
+  * `(RTN15c)` The system's response to a resume request will be one of the following:
+      * `(RTN15c6)` A `CONNECTED` `ProtocolMessage` with the same `connectionId` as the current client (and no `error` property). This indicates that the resume attempt was valid. The client library should then follow `RTL3d` as normal.
+      * `(RTN15c7)` `CONNECTED` `ProtocolMessage` with a new `connectionId` and an `ErrorInfo` in the `error` field. In this case, the resume was invalid, and the error indicates the cause. The `error` should be set as the `reason` in the `CONNECTED` event, and as the `Connection#errorReason`. The internal `msgSerial` counter should be reset so that the first message published to Ably will contain a `msgSerial` of `0`. The client library should then follow `RTL3d` as normal.
+      * `(RTN15c5)` `ERROR` `ProtocolMessage` indicating a failure to authenticate as a result of a token error (see [RTN15h](#RTN15h)). The transport will be closed by the server. The spec described in [RTN15h](#RTN15h) must be followed for a connection being resumed with a token error
+      * `(RTN15c4)` Any other `ERROR` `ProtocolMessage` indicating a fatal error in the connection. The server will close the transport immediately after. The client should transition to the `FAILED` state triggering all attached channels to transition to the `FAILED` state as well. Additionally the `Connection#errorReason` will be set should be set with the error received from Ably
+      * `(RTN15c1)` This clause has been replaced by [`RTN15c6`](#RTN15c6). It was valid up to and including specification version `1.2`.
+      * `(RTN15c2)` This clause has been replaced by [`RTN15c7`](#RTN15c7). It was valid up to and including specification version `1.2`.
+      * `(RTN15c3)` This clause has been replaced by [`RTN15c7`](#RTN15c7). It was valid up to and including specification version `1.2`.
+  * `(RTN15f)` This clause has been deleted (redundant to [RTN19a](#RTN19a)). It was valid up to and including specification version 1.2.
+  * `(RTN15d)` Client libraries should have test coverage to ensure connection state recovery is working as expected by forcibly disconnecting a client and checking that messages published on channels are delivered once the connection is resumed
+  * `(RTN15e)` When a connection is resumed, the `Connection#key` may change and will be provided in the first `CONNECTED` `ProtocolMessage#connectionDetails` when the connection is established. The client library must update the `Connection#key` value with the new `connectionKey` value every time
+* `(RTN20)` When the client library can subscribe to the Operating System events for network/internet connectivity changes:
+  * `(RTN20a)` When `CONNECTED` or `CONNECTING`, if the operating system indicates that the underlying internet connection is no longer available, then the client library should immediately transition the state to `DISCONNECTED` with emit a state change with an appropriate `reason`. This state change will automatically trigger the client library to attempt to reconnect, see `RTN15` above
+  * `(RTN20b)` When `DISCONNECTED` or `SUSPENDED`, if the operating system indicates that the underlying internet connection is now available, the client library should immediately attempt to connect
+  * `(RTN20c)` When `CONNECTING`, if the operating system indicates that the underlying internet connection is now available, the client should restart the pending connection attempt
+* `(RTN16)` `Connection` recovery:
+  * `(RTN16i)` Connection recovery is similar to connection resumption (see [RTN15c](#RTN15c)), except that instead of the library resuming from a time at which that library instance was previously connected, it is doing so from external state provided in the client options, [(TO3i)](#TO3i). Since the library has no state at the time of connection, the channels must be explicitly attached by the user; continuity preservation is achieved by the `channelSerial`s for each channel being stored in the recovery key.
+  * `(RTN16f)` When a library is instantiated with the `recover` client option, it should initialize its internal `msgSerial` counter to the `msgSerial` component of the `recoveryKey`. (If the recover fails, the counter should be reset to 0 per [RTN15c7](#RTN15c7) )
+    * `(RTN16f1)` If the recovery key provided in the `recover` client option cannot be deserialized due to malformed data, then an error should be logged and the connection should be made like no `recover` option was provided.
+  * `(RTN16j)` When a library is instantiated with the `recover` client option, for every channel/channelSerial pair in the `recoveryKey`, it should instantiate a corresponding channel and set its [RTL15b](#RTL15b) `channelSerial`.
+  * `(RTN16k)` When the library first connects to Ably after being instantiated with a `recover` client option, it should add an additional `recover` querystring param to the websocket request, set from the `connectionKey` component of the `recoveryKey`. Once the library has successfully connected to Ably, it should never again supply a `recover` querystring param.
+  * `(RTN16g)` `Connection#createRecoveryKey` is a function that returns a string which incorporates the `connectionKey`, the current `msgSerial`, and a collection of pairs of channel `name` and current `channelSerial` for every currently attached channel.
+    * `(RTN16g1)` It must be serialized in a way which is able to encode any unicode channel name. The SDK may assume that the recovery key will only be consumed by the same type of SDK, so this spec does not specify any particular serialization; however, the format should be forward-compatible through the same major version of the SDK.
+    * `(RTN16g2)` It should return `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states, or when it does not have a `connectionKey` (for example, it has not yet become connected).
+  * `(RTN16d)` The library may wish to test that after a connection has been successfully recovered, the `Connection#id` should be identical to the `id` of the connection that was recovered, and `Connection#key` should have been updated to the `ConnectionDetails#connectionKey` provided in the `CONNECTED` `ProtocolMessage`.
+  * `(RTN16m)` This clause has been deleted. It was valid up to and including specification version `2.1`.
+    * `(RTN16m1)` This clause has been deleted. It was valid up to and including specification version `2.1`.
+  * `(RTN16l)` Recovery failures should be handled identically to resume failures, per [RTN15c7](#RTN15c7), [RTN15c5](#RTN15c5), and [RTN15c4](#RTN15c4).
+  * `(RTN16a)` This clause has been replaced by [`RTN16i`](#RTN16i). It was valid up to and including specification version `1.2`.
+  * `(RTN16b)` This clause has been replaced by [`RTN16g`](#RTN16g) and [`RTN16m`](#RTN16m). It was valid up to and including specification version `1.2`.
+  * `(RTN16c)` This clause has been replaced by [`RTN16g2`](#RTN16g2). It was valid up to and including specification version `1.2`.
+  * `(RTN16e)` This clause has been replaced by [`RTN16l`](#RTN16l). It was valid up to and including specification version `1.2`.
+* `(RTN17)` Domain selection and fallback behaiviour
+  * `(RTN17g)` The fallback behavior described by this section, [RTN17](#RTN17), only applies when the set of `fallback domains`, as determined by [`REC2`](#REC2) is not empty. When the set of `fallback domains` is empty, failing HTTP requests that would have [qualified for a retry against a fallback host (see RSC15d)](#RSC15d) will instead result in an error immediately.
+  * `(RTN17h)` When the use of fallbacks applies, the set of `fallback domains` is determined by [`REC2`](#REC2).
+  * `(RTN17b)` This clause has been replaced by [`RSC17h`](#RSC17h). It was valid up to and including specification version `TBD`.
+    * `(RTN17b1)` This clause has been replaced by [`RSC17h`](#RSC17h). It was valid up to and including specification version `TBD`.
+    * `(RTN17b2)` This clause has been replaced by [`RSC17h`](#RSC17h). It was valid up to and including specification version `TBD`.
+    * `(RTN17b3)` This clause has been replaced by [`RSC17h`](#RSC17h). It was valid up to and including specification version `TBD`.
+  * `(RTN17i)` By default, every connection attempt is first attempted to the `primary domain` as specified in "`REC1`"#REC1. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed. (That is, `RSC15f` does not apply)
+  * `(RTN17a)` This clause has been replaced by [`RSC17i`](#RSC17i). It was valid up to and including specification version `TBD`.
+  * `(RTN17j)` In the case of an error necessitating use of an alternative host (see [RTN17f](#RTN17f)), the `Connection` manager should first check if an internet connection is available by issuing a `GET` request to the `connectivityCheckUrl` as determined via "`REC3`"#REC3. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against `fallback domains` in random order to find an alternative healthy datacenter.
+  * `(RTN17c)` This clause has been replaced by [`RSC17j`](#RSC17j). It was valid up to and including specification version `TBD`.
+  * `(RTN17d)` This clause has been replaced by [`RTN17f`](#RTN17f).
+  * `(RTN17f)` Errors that necessitate use of an alternative host include any of the failure conditions specified in [`RSC15l`](#RSC15l), and additionally also:
+    * `(RTN17f1)` a `DISCONNECTED` response with an `error.statusCode` in the range `500 <= code <= 504`
+  * `(RTN17e)` If the realtime client is connected to a fallback host endpoint, then for the duration that the transport is connected to that host, all HTTP requests, such as history or token requests, should be first attempted to the same datacenter the realtime connection is established with i.e. the same fallback host must be used as the default HTTP request host. If however the HTTP request against that fallback host fails, then the normal fallback host behavior should be followed attempting the request against another fallback host as described in [RSC15](#RSC15)
+* `(RTN19)` Transport state side effects - when a transport is disconnected for any reason:
+  * `(RTN19a)` Any `ProtocolMessage` that is awaiting an `ACK`/`NACK` on the old transport will not receive the `ACK`/`NACK` on the new transport. The client library must therefore resend any `ProtocolMessage` that is awaiting a `ACK`/`NACK` to Ably in order to receive the expected `ACK`/`NACK` for that message (subject to `RTN7e`/`RTN7d`). The Ably service is responsible for keeping track of messages, ignoring duplicates and responding with suitable `ACK`/`NACK` messages
+    * `(RTN19a1)` One possible implementation of this requirement would be to add any in-flight messages to the `RTL6c2` connection-wide queue of messages that will be sent once the connection next becomes `CONNECTED`
+    * `(RTN19a2)` In the case of an `RTN15c6` successful resume, the `msgSerial` of the reattempted `ProtocolMessage`s should remain the same as for the original attempt. In the case of an `RTN15c7` failed resume, the message must be assigned a new `msgSerial` from the SDK's internal counter.
+  * `(RTN19b)` If there are any pending channels i.e. in the `ATTACHING` or `DETACHING` state, the respective `ATTACH` or `DETACH` message should be resent to Ably
+* `(RTN23)` Heartbeats
+  * `(RTN23a)` If a transport does not receive any indication of activity on a transport for a period greater than the sum of the `maxIdleInterval` (which will be sent in the `connectionDetails` of the most recent `CONNECTED` message received on that transport) and the [`realtimeRequestTimeout`](#TO3l11)`, that transport should be disconnected. Any message (or non-message indicator, see `RTN23b@) received counts as an indication of activity and should reset the timer, not merely heartbeat messages. However, it must be received (that is, sent from the server to the client); client-sent data does not count.
+  * `(RTN23b)` When initiating a connection, the client may send a `heartbeats` param in the querystring, with value `true` or `false`. If the value is true, the server will use Ably protocol messages (for example, a message with a `HEARTBEAT` action) to satisfy the `maxIdleInterval` requirement. If it is false or unspecified, the server is permitted to use any transport-level mechanism (for example, [websocket](https://ably.com/topic/websockets) ping frames) to satisfy this. So for example, for [websocket transports](https://ably.com/topic/websockets), if the client is able to observe websocket pings, then it should send `heartbeats=false`. If not, it should send `heartbeats=true`.
+* `(RTN24)` A connected client may receive a `CONNECTED` `ProtocolMessage` from Ably at any point (though is typically triggered by a reauth, see `RTC8a`). The `connectionDetails` in the `ProtocolMessage` must override any stored details, see `RTN21`. The `Connection` should emit an `UPDATE` event with a `ConnectionStateChange` object, which should have both `previous` and `current` attributes set to `CONNECTED`, and the `reason` attribute set to to the `error` member of the `CONNECTED` `ProtocolMessage` (if any). (Note that `UPDATE` should be the only event emitted: in particular, the library must not emit an `CONNECTED` event if the client was already connected, see `RTN4h`).
+* `(RTN25)` `Connection#errorReason` attribute is an optional `ErrorInfo` object which is set by the library when an error occurs on the connection, as described by [RSA4c1](#RSA4c1), [RSA4d](#RSA4d), [RTN11d](#RTN11d), [RTN14a](#RTN14a), [RTN14b](#RTN14b), [RTN14e](#RTN14e), [RTN14g](#RTN14g), [RTN15c7](#RTN15c7), [RTN15c4](#RTN15c4), [RTN15d](#RTN15d), [RTN15h](#RTN15h), [RTN15i](#RTN15i),  [RTN16e](#RTN16e).
+* `(RTN26)` `Connection#whenState` function:
+  * `(RTN26a)` If the connection is already in the given state, calls the listener with a `null` argument.
+  * `(RTN26b)` Else, calls `#once` with the given state and listener.
+
+### Channels {#realtime-channels}
+
+
+* `(RTS1)` `Channels` is a collection of `RealtimeChannel` objects accessible through `RealtimeClient#channels`
+* `(RTS2)` Methods should exist to check if a channel exists or iterate through the existing channels
+* `(RTS3)` `Channels#get` function:
+  * `(RTS3a)` Creates a new `RealtimeChannel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be provided in an optional second argument
+  * `(RTS3b)` If options are provided, the options are set on the `RealtimeChannel` when creating a new `RealtimeChannel`
+  * `(RTS3c)` Accessing an existing `RealtimeChannel` with options in the form `Channels#get(channel, options)` will update the options on the channel and then return the existing `RealtimeChannel` object. (Note that this is soft-deprecated and may be removed in a future release, so should not be implemented in new client libraries. The supported way to update a set of `ChannelOptions` is `RealtimeChannel#setOptions`)
+    * `(RTS3c1)` If a new set of `ChannelOptions` is supplied to `Channels#get` that would trigger a reattachment of the channel if supplied to `RealtimeChannel#setOptions` per [`RTL16a`](#RTL16a), it must raise an error, informing the user that they must use `RealtimeChannel#setOptions` instead
+* `(RTS4)` `Channels#release` function:
+  * `(RTS4a)` Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected
+* `(RTS5)` `Channels#getDerived` function:
+  * `(RTS5a)` Takes `RealtimeChannel` name and `DeriveOptions` object as argument, to create a derived channel. `ChannelOptions` can be provided as an optional third argument.
+    * `(RTS5a1)` The provided derive option (e.g filter, which is the only supported derive options at the moment) should be synthesized to the channel as [filter=<base64 encoded JMESPath string>]channelName.
+    * `(RTS5a2)` If channel options are provided on the channel (e.g rewind channel param), the options are set on the derived channel upon creation as [filter=<base64 encoded JMESPath string>?rewind=1]channelName.
+
+### RealtimeChannel {#realtime-channel}
+
+
+* `(RTL23)` `RealtimeChannel#name` attribute is a string containing the channel’s name
+* `(RTL1)` As soon as a `RealtimeChannel` becomes attached, all incoming messages, presence messages and object messages (where 'incoming' is defined as 'received from Ably over the realtime transport') are processed and emitted where applicable. `PRESENCE` and `SYNC` messages are passed to the `RealtimePresence` object ensuring it maintains a map of current members on a channel in realtime. `OBJECT` and `OBJECT_SYNC` messages are passed to the `RealtimeObjects` object ensuring it maintains an up-to-date representation of objects on a channel in realtime
+* `(RTL2)` The `RealtimeChannel` implements `EventEmitter` and emits `ChannelEvent` events, where a `ChannelEvent` is either a `ChannelState` or `UPDATE`, and a `ChannelState` is either `INITIALIZED`, `ATTACHING`, `ATTACHED`, `DETACHING`, `DETACHED`, `SUSPENDED` and `FAILED`
+  * `(RTL2a)` It emits a `ChannelState` `ChannelEvent` for every channel state change
+  * `(RTL2g)` It emits an `UPDATE` `ChannelEvent` for changes to channel conditions for which the `ChannelState` (e.g. `ATTACHED`) does not change, unless explicitly prevented by a more specific condition (see [RTL12](#RTL12)). (The library must never emit a `ChannelState` `ChannelEvent` for a state equal to the previous state)
+  * `(RTL2b)` `RealtimeChannel#state` attribute is the current state of the channel, of type `ChannelState`
+  * `(RTL2d)` A `ChannelStateChange` object is emitted as the first argument for every `ChannelEvent` (including both `RTL2a` state changes and `RTL2g` `UPDATE` events). It may optionally contain a `reason` consisting of an `ErrorInfo` object; any state change triggered by a `ProtocolMessage` that contains an `error` member should populate the `reason` with that error in the corresponding state change event
+  * `(RTL2f)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a `RESUMED` bit flag indicating that the channel has been resumed. The corresponding `ChannelStateChange` (either `ATTACHED` per `RTL2a`, or `UPDATE` per `RTL12`) will contain a `resumed` boolean attribute with value `true` if the bit flag `RESUMED` was included. When `resumed` is `true`, this indicates that the channel attach resumed the channel state from an existing connection and there has been no loss of message continuity. In all other cases, `resumed` is false. A test should exist to ensure that `resumed` is always false when a channel first becomes `ATTACHED`, it is `true` when the channel is `ATTACHED` following a successful [connection resumption](#RTN15c6) and [connection recovery](#RTN16), and is `false` when the channel is `ATTACHED` following a failed [connection resumption](#RTN15c7) or [connection recovery](#RTN16)
+  * `(RTL2h)` Optionally, for backwards compatibility with 0.8 libraries, the `RealtimeChannel` `EventEmitter` can provide an overloaded method that supports `on(ChannelState)`, but must issue a deprecation warning
+  * `(RTL2i)` `ChannelStateChange` may optionally expose a boolean `hasBacklog` property. This property should be set to `true` if and only if the state change corresponds to an `ATTACHED` `ProtocolMessage` containing a `HAS_BACKLOG` bit flag.
+* `(RTL3)` Connection state change side effects:
+  * `(RTL3e)` If the connection state enters the `DISCONNECTED` state, it will have no effect on the channel states.
+  * `(RTL3a)` If the connection state enters the `FAILED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `FAILED` and set the `RealtimeChannel#errorReason`
+  * `(RTL3b)` If the connection state enters the `CLOSED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `DETACHED`
+  * `(RTL3c)` If the connection state enters the `SUSPENDED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `SUSPENDED`
+  * `(RTL3d)` If the connection state enters the `CONNECTED` state, any channels in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states should be transitioned to `ATTACHING` (other than ones already in that state), and initiate an `RTL4c` attach sequence. (If the attach operation times out and the channel was previously `SUSPENDED`, it should return to the `SUSPENDED` state, see [RTL4f](#RTL4f)). The connection should also process any messages that had been queued per `RTL6c2` (it should do this immediately, without waiting for the attach operations to finish).
+* `(RTL11)` If a channel enters the `DETACHED`, `SUSPENDED` or `FAILED` state, then all presence actions that are still queued for send on that channel per [RTP16b](#RTP16b) should be deleted from the queue, and any callback passed to the corresponding presence method invocation should be called with an `ErrorInfo` indicating the failure
+  * `(RTL11a)` For clarity, any messages awaiting an `ACK` or `NACK` are unaffected by channel state changes i.e. a channel that becomes detached following an explicit request to detach may still receive an `ACK` or `NACK` for messages published on that channel later
+* `(RTL4)` `RealtimeChannel#attach` function:
+  * `(RTL4a)` If already `ATTACHED` nothing is done
+  * `(RTL4h)` If the channel is in a pending state `DETACHING` or `ATTACHING`, do the attach operation after the completion of the pending request
+  * `(RTL4g)` If the channel is in the `FAILED` state, the `attach` request sets its `errorReason` to `null`, and proceeds with a channel attach described in [RTL4b](#RTL4b), [RTL4i](#RTL4i) and [RTL4c](#RTL4c)
+  * `(RTL4b)` If the connection state is `CLOSED`, `CLOSING`, `SUSPENDED` or `FAILED`, the `attach` request results in an error
+  * `(RTL4i)` If the connection state is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`, the channel should be put into the `ATTACHING` state. (Attach message will be sent once the the connection becomes `CONNECTED` per `RTL3d`).
+  * `(RTL4c)` Otherwise an `ATTACH` ProtocolMessage is sent to the server, the state transitions to `ATTACHING` and the channel becomes `ATTACHED` when the confirmation `ATTACHED` ProtocolMessage is received
+    * `(RTL4c1)` The `ATTACH` ProtocolMessage `channelSerial` field must be set to the [`RTL15b`](#RTL15b) `channelSerial`. If the `RTL15b` `channelSerial` is not set, the field may be set to `null` or omitted.
+  * `(RTL4f)` Once an `ATTACH` `ProtocolMessage` is sent, if an `ATTACHED` `ProtocolMessage` is not received within [`realtimeRequestTimeout`](#TO3l11), the attach request should be treated as though it has failed and the channel should transition to the `SUSPENDED` state. The channel will then be subsequently automatically re-attached as described in [RTL13](#RTL13)
+  * `(RTL4d)` A callback (or other language-idiomatic equivalent) can be provided that is called when the channel next moves to one of `ATTACHED`, `DETACHED`, `SUSPENDED`, or `FAILED` states. In the case of `ATTACHED` the callback is called with no argument. In all other cases it is called with an `ErrorInfo` corresponding to the `ChannelStateChange.reason` of the state change (or a fallback if there is no `reason`) to indicate that the attach has failed. (Note: when combined with RTL4f, this means that if the connection is `CONNECTED`, the callback is guaranteed to be called within `realtimeRequestTimeout` of the `attach()` call)
+    * `(RTL4d1)` Optionally, upon success, the callback may be invoked with the `ChannelStateChange` object once the channel is attached. If the channel is already attached, it should be invoked with `null`.
+  * `(RTL4e)` This clause has been deleted (redundant to [`RTL14`](#RTL14)).
+  * `(RTL4j)` If the attach is not a clean attach (defined in `RTL4j1`), for example an automatic reattach triggered by [`RTN15c3`](#RTN15c3) or [`RTL13a`](#RTL13a) (non-exhaustive), the library should set the [`ATTACH_RESUME`](#TR3f) flag in the `ATTACH` message
+    * `(RTL4j1)` A 'clean attach' is an attach attempt where the channel has either not previously been attached or has been explicitly detached since the last time it was attached. Note that this is not purely a function of the immediate previous channel state. An example implementation would be to set the flag from an `attachResume` private boolean variable on the channel, that starts out set to `false`, is set to `true` when the channel moves to the `ATTACHED` state, and set to `false` when the channel moves to the `DETACHING` or `FAILED` states.
+    * `(RTL4j2)` The client library can test that the flag is being correctly encoded (and that `RTL4k` channel params are correctly included) by publishing a message on a channel, then having another two clients attach to that channel both specifying a `rewind` channel param of `"1"`, one of which has the `ATTACH_RESUME` flag forcibly set, other doesn't. The client without the flag set should receive the previously-published message once the attach succeeds; the one with that flag set should not
+  * `(RTL4k)` If the user has specified a non-empty `params` object in the `ChannelOptions` ([`TB2c`](#TB2c)), it must be included in a `params` field of the `ATTACH` `ProtocolMessage`
+    * `(RTL4k1)` If any channel parameters are requested (which may be through the `params` field of the `ATTACH` message or some other way opaque to the client library), the `ATTACHED` (and any subsequent `ATTACHED` s) will include a `params` property (also a `Dict<String, String>`) containing the subset of those params that the server has recognised and validated. This should be exposed as a read-only `params` field of the `RealtimeChannel` (or a `getParams()` method where that is more idiomatic). An `ATTACHED` message with no `params` property must be treated as equivalent to a `params` of `{}` (that is, `RealtimeChannel.params` should be set to the empty dict)
+  * `(RTL4l)` If the user has specified a `modes` array in the `ChannelOptions` ([`TB2d`](#TB2d)), it must be encoded as a bitfield per [`TR3`](#TR3) and set as the `flags` field of the `ATTACH` `ProtocolMessage`. (For the avoidance of doubt, when multiple different spec items require flags to be set in the `ATTACH`, the final `flags` field should be the bitwise OR of them all)
+  * `(RTL4m)` On receipt of an `ATTACHED`, the client library should decode the `flags` into an array of `ChannelMode` s (that is, the same format as `ChannelOptions.modes`) and expose it as a read-only `modes` field of the `RealtimeChannel` (or a `getModes()` method where that is more idiomatic). This should only contain `ChannelMode` s: it should not contain flags which are not modes (see [`TB2d`](#TB2d))
+* `(RTL5)` `RealtimeChannel#detach` function:
+  * `(RTL5a)` If the channel state is `INITIALIZED` or `DETACHED` nothing is done
+  * `(RTL5i)` If the channel is in a pending state `DETACHING` or `ATTACHING`, do the detach operation after the completion of the pending request
+  * `(RTL5b)` If the channel state is `FAILED`, the `detach` request results in an error
+  * `(RTL5j)` If the channel state is `SUSPENDED`, the `detach` request transitions the channel immediately to the `DETACHED` state
+  * `(RTL5g)` This clause has been replaced by RTL5l. It was valid until specification version 5.0.0.
+  * `(RTL5h)` This clause has been replaced by RTL5l. It was valid until specification version 5.0.0.
+  * `(RTL5l)` If the connection state is anything other than `CONNECTED` and none of the preceding channel state conditions apply, the channel transitions immediately to the `DETACHED` state
+  * `(RTL5d)` Otherwise a `DETACH` ProtocolMessage is sent to the server, the state transitions to `DETACHING` and the channel becomes `DETACHED` when the confirmation `DETACHED` ProtocolMessage is received
+  * `(RTL5f)` Once a `DETACH` `ProtocolMessage` is sent, if a `DETACHED` `ProtocolMessage` is not received within [`realtimeRequestTimeout`](#TO3l11), the detach request should be treated as though it has failed and the channel will return to its previous state
+  * `(RTL5k)` If the channel receives an `ATTACHED` message while in the `DETACHING` or `DETACHED` state, it should send a new `DETACH` message and remain in (or transition to) the `DETACHING` state
+  * `(RTL5e)` If the language permits, a callback can be provided that is called when the channel is detached successfully or the detach fails and the `ErrorInfo` error is passed as an argument to the callback
+* `(RTL6)` `RealtimeChannel#publish` function:
+  * `(RTL6a)` Messages are encoded in the same way as the `RestChannel#publish` method, and [RSL1i](#RSL1i) (size limit) applies similarly
+    * `(RTL6a1)` [RSL1k](#RSL1k) (`idempotentRestPublishing` option), [RSL1j1](#RSL1j1) (idempotent publishing test), and [RSL1l](#RSL1l) (`publish(Message, params)` form) do not apply to realtime publishes
+  * `(RTL6b)` An optional callback can be provided to the `#publish` method that is called when the message is successfully delivered or upon failure with the appropriate `ErrorInfo` error. A test should exist to publish lots of messages on a few connections to ensure all message success callbacks are called for all messages published
+  * `(RTL6j)` On success, returns a `PublishResult` object containing the serials of the published messages. The serials are obtained from the `ACK` `ProtocolMessage` response (see [TR4s](#TR4s)).
+    * `(RTL6j1)` In SDKs for which adding a response value would be a breaking API change and where such changes are idiomatically rare may implement any appropriate alternative that would allow a user who wishes to get a serials array on publish to do so.
+  * `(RTL6i)` Expects either a `Message` object, an array of `Message` objects, or a `name` string and `data` payload:
+    * `(RTL6i1)` When `name` and `data` (or a `Message`) is provided, a single `ProtocolMessage` containing one `Message` is published to Ably
+    * `(RTL6i2)` When an array of `Message` objects is provided, a single `ProtocolMessage` is used to publish all `Message` objects in the array.
+    * `(RTL6i3)` Allows `name` and or `data` to be `null`.  If any of the values are `null`, then key is not sent to Ably i.e. a payload with a `null` value for `data` would be sent as follows `{ "name": "click" }`
+  * `(RTL6c)` Connection and channel state conditions:
+    * `(RTL6c1)` If the connection is `CONNECTED` and the channel is neither `SUSPENDED` nor `FAILED` then the messages are published immediately
+    * `(RTL6c2)` If the connection is `INITIALIZED`, `CONNECTING` or `DISCONNECTED`; and the channel is neither `SUSPENDED` nor `FAILED`; and `ClientOptions#queueMessages` is `true`; then the message will be placed in a connection-wide message queue to be delivered as soon as the connection is `CONNECTED`. (The recommended implementation is to have the message be sent from the channel to the connection if it fulfils the channel state condition; the connection can then dispatch, queue, or reject it according to its own state and `queueMessages`)
+    * `(RTL6c4)` In any other case the operation should result in an error
+    * `(RTL6c5)` A publish should not trigger an implicit attach (in contrast to earlier version of this spec)
+  * `(RTL6d)` The protocol permits `Message` s that have been queued to be sent in a single `ProtocolMessage` , by bundling them into the `ProtocolMessage#messages` or `ProtocolMessage#presence` array. In general, the client library SHOULD NOT do this. If it does, it MUST conform to all of the following constraints:
+    * `(RTL6d1)` The resulting `ProtocolMessage` must not exceed the `maxMessageSize`
+    * `(RTL6d8)` The resulting `ProtocolMessage` must not contain more than 999 `Messages`
+    * `(RTL6d2)` Messages can only be bundled together if they have the same `clientId` value (or both have no `clientId` set). (Note that this constraint only applies to what the client library can autonomously do as part of queuing messages, not to what the user can do by publishing an array of `Messages`. It exists because if any `Message` in a `ProtocolMessage` has an invalid `clientId`, the entire `ProtocolMessage` is rejected. This is fine if the user has deliberately published the `Messages` together – they requested atomicity – but not if the client library has bundled them without the user's knowledge)
+    * `(RTL6d3)` Messages can only be bundled together if they are for the same `channel`
+    * `(RTL6d4)` Messages can only be bundled together if they are of the same type (that is, `Message` versus `PresenceMessage`)
+    * `(RTL6d5)` Only contiguous messages in the queue can be bundled together. For example, if the user publishes three messages, A, B, and C, of which A and C could be bundled together under `RTL6d1-4` but B could not, then no bundling should occur
+    * `(RTL6d6)` The order of messages in the resulting `ProtocolMessage` Messages must match the publish order. For example, if the user publishes `Message` D, then the `Message` array [E, F], then `Message` G, the final `messages` array should be [D, E, F, G]
+    * `(RTL6d7)` Messages must not be bundled if any have had had their `Message.id` property set
+  * `(RTL6e)` Unidentified clients using [Basic Auth](https://en.wikipedia.org/wiki/Basic_access_authentication) (i.e. any `clientId` is permitted as no `clientId` specified):
+    * `(RTL6e1)` When a `Message` with a `clientId` value is published, Ably will accept and publish that message with the provided `clientId`. A test should assert that the `clientId` of the published `Message` is populated
+  * `(RTL6g)` Identified clients with a `clientId` (as a result of either an explicitly configured `clientId` in `ClientOptions`, or implicitly through Token Auth):
+    * `(RTL6g1)` When publishing a `Message` with the `clientId` attribute set to `null`:
+      * `(RTL6g1a)` It is unnecessary for the client to set the `clientId` of the `Message` before publishing
+      * `(RTL6g1b)` Ably will assign a `clientId` upon receiving the `Message`. A test should assert that the `clientId` value is populated for the `Message` when received
+    * `(RTL6g2)` When publishing a `Message` with the `clientId` attribute value set to the identified client's `clientId`, Ably will accept the message and publish it. A test should assert that the `clientId` value is populated for the `Message` when received
+    * `(RTL6g3)` When publishing a `Message` with a different `clientId` attribute value from the identified client's `clientId`, the client library should reject that publish operation immediately. The message should not be sent to Ably and it should result in an error, typically in the form of an error callback. The connection and channel must remain available for further operations
+    * `(RTL6g4)` When using Token Auth, unless a `clientId` has been provided in `ClientOptions` or inferred following authentication, the client library is unidentified and will not be constrained when publishing messages with any explicit `clientId`. If a `Message` with a `clientId` value is published before the `clientId` is configured or inferred following authentication, the client library should not reject any explicit `clientId` specified in a message. A test should instantiate a client without an explicit `clientId` and an `authCallback` that returns a `tokenDetails` object with a `clientId`, then publish a message with the same `clientId` before authentication, and ensure that the message is published following authentication and received back with the `clientId` intact. A further test should follow the same sequence of events, but should instead use an incompatible `clientId` in the message, expecting that the message is rejected by the Ably service and the message error should contain the server error message, and the connection and channel should remain available for further operations
+  * `(RTL6h)` The `publish(name, data)` form should not take any arguments other than those two. If a client library has supported additional arguments to the `(name, data)` form (e.g. separate arguments for `clientId` and `extras`, or a single `attributes` argument) in any 1.x version, it should continue to do so until version 2.0.
+  * `(RTL6k)` The `publish(Message)` and `publish(Message[])` forms of the method may take an optional extra `Dict<String, Stringifiable>` argument. If an SDK supports this, any params provided must be set in the `TR4q` `ProtocolMessage.params` field, as a `Dict<String, String>` (that is, with the values of the provided dict stringified per `RTC1f`)
+  * `(RTL6f)` `Message#connectionId` should match the current `Connection#id` for all published messages, a test should exist to ensure the `connectionId` for received messages matches that of the publisher
+* `(RTL7)` `RealtimeChannel#subscribe` function:
+  * `(RTL7a)` Subscribe with a single listener argument subscribes a listener to all messages
+  * `(RTL7b)` Subscribe with a name argument and a listener argument subscribes a listener to only messages whose `name` member matches the string name
+  * `(RTL7c)` This clause has been replaced by [`RTL7g`](#RTL7g). It was valid up to and including specification version `3.0`.
+  * `(RTL7g)` If the `attachOnSubscribe` channel option is `true`, implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED`, `DETACHING`, or `DETACHED` states. The optional callback, if provided, is called according to [`RTL4d`](#RTL4d) based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
+  * `(RTL7h)` If the `attachOnSubscribe` channel option is `false`, then the behaviour depends on the public API that a given SDK uses to communicate the result of an [`RTL7g`](#RTL7g) implicit attach:
+    * If the SDK’s API accepts an optional callback to communicate the result of an [`RTL7g`](#RTL7g) implicit attach, then it is a programmer error to provide such a callback when the `attachOnSubscribe` channel option is `false`. This programmer error should be handled in an idiomatic fashion; if this means that the `#subscribe` call should throw an error, then this error should be an `ErrorInfo` with `statusCode` 400 and `code` 40000.
+    * If the SDK’s API communicates the result of an "`RTL7g`"#RTL7g implicit attach in some other fashion (for example by returning a `ChannelStateChange?`), then, when the `attachOnSubscribe` channel option is `false`, `#subscribe` should respond in the same way as it would if an "`RTL7g`"#RTL7g implicit attach had been performed on an already-`ATTACHED` channel (for example by returning a `null` state change).
+  * `(RTL7d)` Messages delivered are automatically decoded based on the `encoding` attribute; see `RestChannel` encoding features in [RSL6](#RSL6). Tests should exist to publish and subscribe to encoded messages using the fixture test data referenced in [RSL5c](#RSL5c).
+  * `(RTL7e)` This clause has been deleted (redundant to [RSL6b](#RSL6b)).
+  * `(RTL7f)` A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor
+* `(RTL8)` `RealtimeChannel#unsubscribe` function:
+  * `(RTL8c)` Unsubscribe with no arguments unsubscribes all listeners
+  * `(RTL8a)` Unsubscribe with a single listener argument unsubscribes the provided listener to all messages if subscribed
+  * `(RTL8b)` Unsubscribe with a name argument and a listener argument unsubscribes the provided listener if previously subscribed with a name-specific subscription
+* `(RTL9)` `RealtimeChannel#presence` attribute:
+  * `(RTL9a)` Returns the `RealtimePresence` object for this channel
+* `(RTL27)` `RealtimeChannel#objects` attribute:
+  * `(RTL27a)` Returns the `RealtimeObjects` object for this channel [RTO1](../objects-features#RTO1)
+  * `(RTL27b)` It is a programmer error to access this property without first providing the `Objects` plugin ([PC5](#PC5)) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an `ErrorInfo` with `statusCode` 400 and `code` 40019.
+* `(RTL10)` `RealtimeChannel#history` function:
+  * `(RTL10a)` Supports all the same params as `RestChannel#history`
+  * `(RTL10b)` Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an `UPDATE` indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` assigned to the channel in the `ATTACHED` `ProtocolMessage` (see [RTL15a](#RTL15a)). If the `untilAttach` param is specified when the channel is not attached, it results in an error
+  * `(RTL10c)` Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the history request
+  * `(RTL10d)` A test should exist that publishes messages from one client, and upon confirmation of message delivery, a history request should be made on another client to ensure all messages are available
+* `(RTL12)` An attached channel may receive an additional `ATTACHED` `ProtocolMessage` from Ably at any point. (This is typically triggered following a transport being resumed to indicate a partial loss of message continuity on that channel, in which case the `ProtocolMessage` will have a `resumed` flag set to false). If and only if the `resumed` flag is false, this should result in the channel emitting an `UPDATE` event with a `ChannelStateChange` object. The `ChannelStateChange` object should have both `previous` and `current` attributes set to `attached`, the `reason` attribute set to to the `error` member of the `ATTACHED` `ProtocolMessage` (if any), and the `resumed` attribute set per the `RESUMED` bitflag of the `ATTACHED` `ProtocolMessage`. (Note that `UPDATE` should be the only event emitted: in particular, the library must not emit an `ATTACHED` event if the channel was already attached, see `RTL2g`).
+* `(RTL15)` `RealtimeChannel#properties` attribute is a `ChannelProperties` object representing properties of the channel state. `properties` is a publicly accessible member of the channel, but it is an experimental and unstable API. It has the following attributes:
+  * `(RTL15a)` `attachSerial` is unset when the channel is instantiated, and is updated with the `channelSerial` from each `ATTACHED` `ProtocolMessage` received from Ably with a matching `channel` attribute. The `attachSerial` value is used for `untilAttach` queries, see [RTL10b](#RTL10b)
+  * `(RTL15b)` `channelSerial` is updated whenever a `ProtocolMessage` with either `MESSAGE`, `PRESENCE`, `ANNOTATION`, `OBJECT`, or `ATTACHED` actions is received on a channel, and is set to the `TR4c` `channelSerial` of that `ProtocolMessage`, if and only if that field (`ProtocolMessage.channelSerial`) is populated.
+    * `(RTL15b1)` If the channel enters the `DETACHED`, `SUSPENDED`, or `FAILED` state, it must clear its `channelSerial`.
+* `(RTL13)` If the channel receives a server initiated `DETACHED` message when it is in the `ATTACHING`, `ATTACHED` or `SUSPENDED` state (i.e. the client has not explicitly requested a detach putting the channel into the `DETACHING` state), then the following applies:
+  * `(RTL13a)` If the channel is in the `ATTACHED` or `SUSPENDED` states, an attempt to reattach the channel should be made immediately by sending a new `ATTACH` message and the channel should transition to the `ATTACHING` state with the error emitted in the `ChannelStateChange` event.
+  * `(RTL13b)` If the attempt to re-attach fails, or if the channel was already in the `ATTACHING` state, the channel will transition to the `SUSPENDED` state and the error will be emitted in the `ChannelStateChange` event. An attempt to re-attach the channel automatically will then be made after the period defined by [`RTB1`](#RTB1). When re-attaching the channel, the channel will transition to the `ATTACHING` state. If that request to attach fails i.e. it times out or a `DETACHED` message is received, then the process described here in `RTL13b` will be repeated, indefinitely
+  * `(RTL13c)` If the connection is no longer `CONNECTED`, then the automatic attempts to re-attach the channel described in [RTL13b](#RTL13b) must be cancelled as any implicit channel state changes subsequently will be covered by [RTL3](#RTL3)
+* `(RTL14)` If an `ERROR ProtocolMessage` is received for this channel (the channel attribute matches this channel's name), then the channel should immediately transition to the FAILED state, and the `RealtimeChannel.errorReason` should be set. (This can happen if, for example, the user does not have sufficient permissions to attach to the channel.)
+* `(RTL16)` `RealtimeChannel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options.
+  * `(RTL16a)` If the user has provided either `ChannelOptions.params` or `ChannelOptions.modes` and the channel is in either the `attached` or `attaching` state, `RealtimeChannel#setOptions` sends an `ATTACH` message to the server with the params & modes encoded per [`RTL4`](#RTL4), and indicates success once the server has replied with an `ATTACHED` (or indicates failure if the channel becomes detached or failed before that happens, as with `RealtimeChannel#attach`); else it indicates success immediately
+* `(RTL17)` No messages should be passed to subscribers if the channel is in any state other than `ATTACHED`.
+* `(RTL18)` Given "vcdiff"-encoded deltas are applied to the previous message published on a channel, when a "vcdiff" encoding fails to be decoded, it makes it impossible for a client to apply subsequent deltas received from that point of failure forward. As such, the client must automatically execute the following recovery procedure in lieu of "RTL7e":#"RTL7e":
+  * `(RTL18a)` Log error with code 40018
+  * `(RTL18b)` Discard the message
+  * `(RTL18c)` Send an `ATTACH` `ProtocolMessage` with the `channelSerial` set to the previous message to the message for which "vcdiff" decoding failed to the server, transitioning the channel state to `ATTACHING`, and waiting for a confirmation `ATTACHED`, as per `RTL4c` and `RTL4f`. `ChannelStateChange.reason` should be set to `ErrorInfo` object with with code 40018.
+* `(RTL19)` The data payload of the last message on each channel must be stored at all times since it will be needed to decode any subsequent message that has a "vcdiff" encoding step. The stored value is the "base payload" of the most recent message; this is the `data` member of the message, in string or binary form, once all application-level encoding steps have been applied. The base payload is derived initially by processing a non-delta message; the processing and bookkeeping rules are as follows:
+  * `(RTL19a)` When processing any message (whether a delta or a full message), if the message `encoding` string ends in `base64`, the message `data` should be base64-decoded (and the `encoding` string modified accordingly per [RSL6](#RSL6)).
+  * `(RTL19b)` In the case of a non-delta message, the resulting `data` value is stored as the base payload.
+  * `(RTL19c)` In the case of a delta message with a `vcdiff` `encoding` step, the `vcdiff` decoder must be used to decode the base payload of the of delta message, applying that delta to the stored base payload. The direct result of that vcdiff delta application, before performing any further decoding steps, is stored as the updated base payload.
+* `(RTL20)` The `id` of the last received message on each channel must be stored along with the base payload. When processing a delta message (i.e. one whose `encoding` contains `vcdiff` step) the stored last message `id` must be compared against the delta reference `id`, indicated in the `Message.extras.delta.from` field of the delta message. If the delta reference `id` of the received delta message does not equal the stored `id` corresponding to the base payload, the message decoding must fail. The recovery procedure from [RTL18](#RTL18) must be executed.
+* `(RTL21)` The messages in the `messages` array of a `ProtocolMessage` should each be decoded in ascending order of their index in the array.
+* `(RTL22)` Methods must be provided for attaching and removing a listener which only executes when the message matches a set of criteria.
+  * `(RTL22a)` The method must allow for filters matching one or more of: `extras.ref.timeserial`, `extras.ref.type` or `name`. See #MFI1 for an object implementation.
+  * `(RTL22b)` The method must allow for matching only messages which do not have `extras.ref`.
+  * `(RTL22c)` The listener must only execute if all provided criteria are met.
+  * `(RTL22d)` The method should use the `MessageFilter` object if possible and idiomatic for the language.
+* `(RTL24)` `RealtimeChannel#errorReason` attribute is an optional `ErrorInfo` object which is set by the library when an error occurs on the channel, as described by [RTN11d](#RTN11d), [RTL3a](#RTL3a), [RTL4g](#RTL4g), [RTL14](#RTL14).
+* `(RTL25)` `RealtimeChannel#whenState` function:
+  * `(RTL25a)` If the channel is already in the given state, calls the listener with a `null` argument.
+  * `(RTL25b)` Else, calls `#once` with the given state and listener.
+* `(RTL26)` `RealtimeChannel#annotations` attribute contains the `RealtimeAnnotations` object for this channel
+* `(RTL28)` `RealtimeChannel#getMessage` function: same as `RestChannel#getMessage`
+* `(RTL29)` This clause has been replaced by [`RTL32`](#RTL32). It was valid up to and including specification version 5.0.0.
+* `(RTL30)` This clause has been replaced by [`RTL32`](#RTL32). It was valid up to and including specification version 5.0.0.
+* `(RTL31)` `RealtimeChannel#getMessageVersions` function: same as `RestChannel#getMessageVersions`
+* `(RTL32)` `RealtimeChannel#updateMessage`, `RealtimeChannel#deleteMessage`, and `RealtimeChannel#appendMessage` functions:
+  * `(RTL32a)` Take a first argument of a `Message` object (which must contain a populated `serial` field), an optional second argument of a `MessageOperation` object, and an optional third argument of `Dict<string, stringifiable>` publish params
+  * `(RTL32b)` The SDK must send a `MESSAGE` `ProtocolMessage` to Ably, containing a single `Message` populated with whatever fields were in the user-supplied `Message`, in addition to:
+    * `(RTL32b1)` `action` - set to `MESSAGE_UPDATE` for `updateMessage()`, `MESSAGE_DELETE` for `deleteMessage()`, and `MESSAGE_APPEND` for `appendMessage()`
+    * `(RTL32b2)` `version` - set to the `MessageOperation` object if provided.
+  * `(RTL32e)` Any params provided in the third argument must be sent in the `TR4q` `ProtocolMessage.params` field, as a `Dict<String, String>` (that is, with the values of the provided dict stringified per `RTC1f`)
+  * `(RTL32c)` The SDK must not mutate the user-supplied `Message` object.
+  * `(RTL32d)` On success, returns an `UpdateDeleteResult` object containing the version serial of the published update, obtained from the first element of the `serials` array of the [TR4s](#TR4s) `res` field of the `ACK`. Indicates an error if the operation was not successful.
+
+### RealtimePresence {#realtime-presence}
+
+
+* `(RTP1)` When a channel `ATTACHED` `ProtocolMessage` is received, the `ProtocolMessage` may contain a `HAS_PRESENCE` bit flag indicating that it will perform a presence sync, see [TR3](#TR3) . (Note that this does not imply that there are definitely members present, only that there may be; the sync may be empty). If the flag is 1, the server will shortly perform a `SYNC` operation as described in [RTP18](#RTP18) . If that flag is 0 or there is no `flags` field, the presence map should be considered in sync immediately with no members present on the channel
+* `(RTP2)` A `PresenceMap` should be used to maintain a list of members present on a channel. Broadly, this is is a map of [memberKeys](#TP3h) to presence messages, all with `PRESENT` actions (during a sync there may also be ones with an `ABSENT` action, see [RTP2f](#RTP2f)).
+  * `(RTP2a)` All incoming presence messages must be compared for newness with the matching member already in the `PresenceMap`, if one exists, where "matching" means they share the same `memberKey` (or equivalently, they share both `connectionId` and `clientId`). If there is an existing message but it is `RTP2b`-newer than the incoming message, the incoming message should be discarded without taking any action
+  * `(RTP2b)` To compare for newness:
+    * `(RTP2b1)` If either presence message has a `connectionId` which is not an initial substring of its `id`, compare them by `timestamp` numerically. (This will be the case when one of them is a 'synthesized leave' event sent by realtime to indicate a connection disconnected unexpectedly 15s ago. Such messages will have an `id` that does not correspond to its `connectionId`, as it wasn't actually published by that connection)
+      * `(RTP2b1a)` If the timestamps compare equal, the newly-incoming message is considered newer than the existing one
+    * `(RTP2b2)` Else split the `id` of both presence messages (which will be of the form `connid:msgSerial:index`, e.g. `aaaaaa:0:0`) on the separator `:`, and parse the latter two as integers. Compare them first by `msgSerial` numerically, then (if `msgSerial` is equal) by `index` numerically, larger being newer in both cases
+  * `(RTP2c)` As there are no guarantees that during a `SYNC` operation presence events will arrive in order, all presence messages from a `SYNC` must also be compared for newness in the same way as they would from a `PRESENCE`
+  * `(RTP2d)` When a presence message with an action of `ENTER`, `UPDATE`, or `PRESENT` arrives (if it satisfies the `RTP2a` newness check):
+    * `(RTP2d1)` It must be emitted to `RealtimePresence` subscribers (with its original presence action, and an event name set to the stringified form of that action)
+    * `(RTP2d2)` It must be added to the presence map with the action set to `PRESENT`
+    * `(RTP2e)` This clause has been replaced by `RTP2h1`. It was valid up to and including specification version `3.0.0`.
+    * `(RTP2f)` This clause has been replaced by `RTP2h2`. It was valid up to and including specification version `3.0.0`.
+  * `(RTP2h)` When a presence message with an action of `LEAVE` arrives, if and only if there is a member with a matching `memberKey` currently in the presence map (and the incoming event satisfies the `RTP2b` newness check against it):
+    * `(RTP2h1)` If a `SYNC` is not in progress:
+      * `(RTP2h1a)` The incoming message must be emitted to `RealtimePresence` subscribers (with an event name set to the stringified form of the `LEAVE` action)
+      * `(RTP2h1b)` That member must be deleted from the presence map
+    * `(RTP2h2)` If a `SYNC` is in progress:
+      * `(RTP2h2a)` The incoming message must be stored in the presence map with the action set to `ABSENT`
+      * `(RTP2h2b)` When the `SYNC` completes, then all `ABSENT` members in the presence map must be deleted. (No leave events should be emitted other than those required by `RTP19`)
+  * `(RTP2g)` This clause has been replaced by `RTP2d1` and `RTP2h1a`. It was valid up to and including specification version `3.0.0`.
+* `(RTP18)` The realtime system reserves the right to initiate a sync of the presence members at any point once a channel is attached. A server initiated sync provides Ably with a means to send a complete list of members present on the channel at any point
+  * `(RTP18a)` The client library determines that a new sync has started whenever a `SYNC` `ProtocolMessage` is received with a `channel` attribute and a new sync sequence identifier in the `channelSerial` attribute. The `channelSerial` is used as the sync cursor and is a two-part identifier `<sync sequence id>:<cursor value>`. If a new sequence identifier is sent from Ably, then the client library must consider that to be the start of a new sync sequence and any previous in-flight sync should be discarded
+  * `(RTP18b)` The sync operation for that sequence identifier has completed once the cursor is empty; that is, when the `channelSerial` looks like `<sync sequence id>:`
+  * `(RTP18c)` a `SYNC` may also be sent with no `channelSerial` attribute. In this case, the sync data is entirely contained within that `ProtocolMessage`
+* `(RTP19)` If the `PresenceMap` has existing members when a `SYNC` is started, the client library must ensure that members no longer present on the channel are removed from the local `PresenceMap` once the sync is complete. In order to do this, the client library must keep track of any members that have not been added or updated in the `PresenceMap` during the sync process. Note that a member can be added or updated when received in a `SYNC` message or when received in a `PRESENCE` message during the sync process. Once the sync is complete, the members in the `PresenceMap` that have not been added or updated should be removed from the `PresenceMap` and a `LEAVE` event should be emitted for each. The `PresenceMessage` emitted should contain the original attributes of the presence member with the `action` set to `LEAVE`, `PresenceMessage#id` set to `null`, and the `timestamp` set to the current time. This behavior should be tested as follows: `ENTER` presence on a channel, wait for `SYNC` to complete, inject a member directly into the local `PresenceMap` so that it only exists locally and not on the server, send a `SYNC` message with the `channel` attribute populated with the current channel which will trigger a server initiated `SYNC`. A `LEAVE` event should then be emitted for the injected member, and checking the `PresenceMap` should reveal that the member was removed and the valid member entered for this connection is still present
+  * `(RTP19a)` If the `PresenceMap` has existing members when an `ATTACHED` message is received without a `HAS_PRESENCE` flag, the client library should emit a `LEAVE` event for each existing member, and the `PresenceMessage` published should contain the original attributes of the presence member with the `action` set to `LEAVE`, `PresenceMessage#id` set to `null`, and the `timestamp` set to the current time. Once complete, all members in the `PresenceMap` should be removed as there are no members present on the channel
+* `(RTP17)` The RealtimePresence object should also keep a second `PresenceMap` containing only members that match the current `connectionId`. Any incoming presence message that satisfies `RTP17b` should be applied to this object in the same way as for the normal `PresenceMap`. This object should be private and is used to maintain a list of members that need to be automatically re-entered by the `RealtimePresence` object when required to by `RTP17f`.
+  * `(RTP17a)` All members belonging to the current connection are published as a `PresenceMessage` on the `RealtimeChannel` by the server irrespective of whether the client has permission to subscribe or the `RealtimeChannel` is configured to publish presence events. A test should exist that attaches to a `RealtimeChannel` with a `presence` capability and without a `subscribe` capability. It should then enter the `RealtimeChannel` and ensure that the member entered from the current connection is present in the internal and public presence set available via [`RealtimePresence#get`](#RTP11)
+  * `(RTP17b)` The events that should be applied to the `RTP17` presence map are: any `ENTER`, `PRESENT` or `UPDATE` event with a `connectionId` that matches the current client's `connectionId`; any `LEAVE` event with a `connectionId` that matches the current client's `connectionId` and is not a 'synthesized leave' (an event that has a connectionId which is not an initial substring of its id, per [`RTP2b1`](#RTP2b1) )
+  * `(RTP17h)` Unlike the main `PresenceMap`, which is keyed by [memberKey](#TP3h) , the `RTP17` `PresenceMap` must be keyed only by `clientId`. (Otherwise, entries associated with old `connectionId`s would never be removed, even if the user deliberately leaves presence).
+  * `(RTP17f)` This clause has been replaced by [`RTP17i`](#RTP17i). It was valid up to and including specification version `3.0`.
+  * `(RTP17i)` The `RealtimePresence` object should perform automatic re-entry whenever the channel receives an `ATTACHED` `ProtocolMessage`, except in the case where the channel is already attached and the `ProtocolMessage` has the `RESUMED` bit flag set.
+  * `(RTP17g)` Automatic re-entry consists of, for each member of the `RTP17` internal `PresenceMap`, publishing a `PresenceMessage` with an `ENTER` action using the `clientId`, `data`, and `id` (subject to @RTP17g1) attributes from that member.
+    * `(RTP17g1)` If the current connection `id` is different from the `connectionId` attribute of the stored member, the published `PresenceMessage` must not have its `id` set.
+  * `(RTP17c)` This clause has been replaced by [`RTP17f`](#RTP17f). It was valid up to and including specification version `1.2`.
+    * `(RTP17c1)` This clause has been deleted. It was valid up to and including specification version `1.2`.
+    * `(RTP17c2)` This clause has been deleted. It was valid up to and including specification version `1.2`.
+  * `(RTP17d)` This clause has been replaced by [`RTP17g`](#RTP17g). It was valid up to and including specification version `1.2`.
+  * `(RTP17e)` If the publish attempt fails for an automatic presence `ENTER` (for example, by Ably rejecting it with a `NACK`), an `UPDATE` event should be emitted on the channel with `resumed` set to true and `reason` set to an `ErrorInfo` object with `code` `91004`, a `message` indicating that an automatic re-enter has failed and indicating the `clientId`, and `cause` set to the reason for the enter failure. The error should also be logged at `warn` level or higher.
+* `(RTP4)` Ensure a test exists that enters 250 members using `RealtimePresence#enterClient` on a single connection, and checks for `PRESENT` events to be emitted on another connection for each member, and once sync is complete, all 250 members should be present in a `RealtimePresence#get` request
+* `(RTP5)` RealtimeChannel state change side effects:
+  * `(RTP5a)` If the channel enters the `DETACHED` or `FAILED` state then all queued presence messages will fail immediately, and the `PresenceMap` and [internal PresenceMap (see RTP17)](#RTP17) is cleared. The latter ensures members are not automatically re-entered if the `RealtimeChannel` later becomes attached. Since channels in the `DETACHED` and `FAILED` states will not receive any presence updates from Ably, presence events (specifically `LEAVE`) should not be emitted when the `PresenceMap` is cleared as each presence member's state is unknown
+    * `(RTP5a1)` This clause has been replaced by [`RTL15b1`](#RTL15b1) (no change in content, just moved to the correct section of spec). It was valid up to and including specification version `TBD`.
+  * `(RTP5f)` If the channel enters the `SUSPENDED` state then all queued presence messages will fail immediately, and the `PresenceMap` is maintained. This ensures that if the channel later becomes `ATTACHED`, it will only emit presence events for the changes in the `PresenceMap` that have occurred whilst the client was disconnected. A test should exist for a channel that is in the `SUSPENDED` state containing presence members to transition to the `ATTACHED` state, and following the `SYNC` process after attaching, any members present before and after the sync should not emit presence events, all other changes should be reflected in the `PresenceMap` and should emit presence events on the channel
+  * `(RTP5b)` If a channel enters the `ATTACHED` state then all queued presence messages will be sent immediately. A presence `SYNC` may be initiated per [`RTP1`](#RTP1)
+* `(RTP16)` Connection state conditions:
+  * `(RTP16a)` If the channel is `ATTACHED` then the presence messages are handled per `RTL6c1` and `RTL6c2`. (That is: they should be sent to the connection, to be published immediately if the connection is `CONNECTED`, else if the connection state and `queueMessages` option allows they may be placed in a connection-wide queue to be published once the connection becomes `CONNECTED`, else rejected)
+  * `(RTP16b)` If the channel is `ATTACHING` or `INITIALIZED`, then if `ClientOptions.queueMessages` is `true`, the presence messages should be queued at a channel level, to be handled per `RTP16a` once the channel becomes `ATTACHED`, or failed per [`RTL11`](#RTL11)
+  * `(RTP16c)` In any other case the operation should result in an error
+* `(RTP6)` `RealtimePresence#subscribe` function:
+  * `(RTP6a)` Subscribe with a single listener argument subscribes a listener to all presence messages
+  * `(RTP6b)` Subscribe with an action argument and a listener argument - such as `ENTER`, `LEAVE`, `UPDATE` or `PRESENT` - subscribes a listener to receive only presence messages with that action. In lanuages where method overloading is supported the action argument may also be an array of actions to receive only presence messages with an action included in the supplied array.
+  * `(RTP6c)` This clause has been replaced by [`RTP6d`](#RTP6d). It was valid up to and including specification version `3.0`.
+  * `(RTP6d)` If the `attachOnSubscribe` channel option is `true`, implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED`, `DETACHING`, or `DETACHED` states. The optional callback, if provided, is called according to [`RTL4d`](#RTL4d) based on the implicit attach operation. The listener will always be registered regardless of the implicit attach result
+  * `(RTP6e)` If the `attachOnSubscribe` channel option is `false`, then the behaviour depends on the public API that a given SDK uses to communicate the result of an [`RTP6d`](#RTP6d) implicit attach:
+    * If the SDK’s API accepts an optional callback to communicate the result of an [`RTP6d`](#RTP6d) implicit attach, then it is a programmer error to provide such a callback when the `attachOnSubscribe` channel option is `false`. This programmer error should be handled in an idiomatic fashion; if this means that the `#subscribe` call should throw an error, then this error should be an `ErrorInfo` with `statusCode` 400 and `code` 40000.
+    * If the SDK’s API communicates the result of an "`RTP6d`"#RTP6d implicit attach in some other fashion (for example by returning a `ChannelStateChange?`), then, when the `attachOnSubscribe` channel option is `false`, `#subscribe` should respond in the same way as it would if an "`RTP6d`"#RTP6d implicit attach had been performed on an already-`ATTACHED` channel (for example by returning a `null` state change).
+* `(RTP7)` `RealtimePresence#unsubscribe` function:
+  * `(RTP7c)` Unsubscribe with no arguments unsubscribes all listeners
+  * `(RTP7a)` Unsubscribe with a single listener argument unsubscribes the listener if previously subscribed with an action-specific subscription
+  * `(RTP7b)` Unsubscribe with an action argument and a listener argument unsubscribes the provided listener to all presence messages for that action
+* `(RTP8)` `RealtimePresence#enter` function:
+  * `(RTP8a)` Enters the current client into this channel, optionally with the data and/or extras provided
+  * `(RTP8b)` Optionally a callback can be provided that is called for both success or failure to enter
+  * `(RTP8c)` A `PRESENCE ProtocolMessage` with a `PresenceMessage` with the action `ENTER` is sent to the Ably service. The `clientId` attribute of the `PresenceMessage` must not be present. Entering without an explicit `PresenceMessage#clientId`, implicitly uses the `clientId` for the current connection
+  * `(RTP8d)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in the `DETACHED` or `FAILED` state, the `enter` request results in an error
+  * `(RTP8e)` Optional data and/or extras can be included when entering a channel that will be encoded and decoded as with normal messages. A test should exist to ensure data and extras used with enter are encoded & decoded correctly. Also, when data and/or extras is provided when entering, but neither data nor extras are provided when leaving, the data attribute should be emitted in the `LEAVE` event for this client
+  * `(RTP8f)` This clause has been replaced by [RTP8j](#RTP8j) as of version 1.2 of this specification
+  * `(RTP8j)` If the connection is in the `CONNECTED` state, and the value of `RealtimeClient#clientId` is one of the following:
+- `'*'` – a wildcard value indicating that this client is permitted to associate any client identifier it wishes with the operations it performs;
+- `null` – indicating that the client is anonymous and is not permitted to associate a client identifier with the operations it performs;
+then the `enter` request results in an error immediately.
+  * `(RTP8g)` If the channel is `DETACHED` or `FAILED`, the `enter` request results in an error immediately
+  * `(RTP8h)` If the Ably service determines that the client does not have required presence permission, a `NACK` is sent to the client resulting in an error
+  * `(RTP8i)` If the Ably service determines that the client is unidentified, a `NACK` is sent to the client resulting in an error
+* `(RTP9)` `RealtimePresence#update` function:
+  * `(RTP9a)` Updates the data and/or extras for the present member with an updated value or empty value (eg `null`)
+  * `(RTP9b)` If the client was not already entered, it enters this client into this channel
+  * `(RTP9c)` Optionally a callback can be provided that is called for both success or failure to update
+  * `(RTP9d)` A `PRESENCE ProtocolMessage` with a `PresenceMessage` with the action `UPDATE` is sent to the Ably service. The `clientId` attribute of the `PresenceMessage` must not be present. Updating without an explicit `PresenceMessage#clientId`, implicitly uses the `clientId` for the current connection
+  * `(RTP9e)` In all other ways, this method is identical to `RealtimePresence#enter` and should have matching tests
+* `(RTP10)` `RealtimePresence#leave` function:
+  * `(RTP10a)` Leaves this client from the channel and the data and/or extras will be updated with the values provided. If the language permits the data argument to be omitted, then the previously set data value will be sent as a convenience
+  * `(RTP10b)` Optionally a callback can be provided that is called for both success or failure to leave
+  * `(RTP10c)` A `PRESENCE ProtocolMessage` with a `PresenceMessage` with the action `LEAVE` is sent to the Ably service. The `clientId` attribute of the `PresenceMessage` must not be present. Leaving without an explicit `PresenceMessage#clientId`, implicitly uses the `clientId` for the current connection
+  * `(RTP10d)` If the client is not currently `ENTERED`, Ably will respond with an `ACK` and the request will succeed (i.e. the outcome of asking to `LEAVE` when not present vs being present is the same)
+  * `(RTP10e)` In all other ways, this method is identical to `RealtimePresence#enter` and should have matching tests
+* `(RTP11)` `RealtimePresence#get` function:
+  * `(RTP11a)` Returns the list of current members on the channel in a callback. By default, will wait for the `SYNC` to be completed, see [RTP11c1](#RTP11c1)
+  * `(RTP11b)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in or enters the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
+  * `(RTP11d)` If the `RealtimeChannel` is in the `SUSPENDED` state then the `get` function will by default, or if `waitForSync` is set to `true`, result in an error with `code` `91005` and a `message` stating that the presence state is out of sync due to the channel being in a `SUSPENDED` state. If however the `get` function is called with `waitForSync` set to `false`, then it immediately returns the members currently stored in the `PresenceMap` giving developers access to the members that were present at the time the channel became `SUSPENDED`
+  * `(RTP11c)` An optional set of params can be provided:
+    * `(RTP11c1)` `waitForSync` (default `true`). When `true`, method will wait until `SYNC` is complete before returning a list of members. When `false`, known set of presence members is returned immediately, which may be incomplete if the `SYNC` is not finished
+    * `(RTP11c2)` `clientId` filters members by the provided `clientId`
+    * `(RTP11c3)` `connectionId` filters members by the provided `connectionId`
+* `(RTP12)` `RealtimePresence#history` function:
+  * `(RTP12a)` Supports all the same params as `RestPresence#history`
+  * `(RTP12c)` Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the history request
+  * `(RTP12d)` A test should exist that registers presence with a few clients, and upon confirmation of entering the channel for all clients, a presence history request should be made using another client to ensure all presence events are available
+* `(RTP13)` `RealtimePresence#syncComplete` attribute is `true` if the initial `SYNC` operation has completed for the members present on the channel
+* `(RTP14)` `RealtimePresence#enterClient` function:
+  * `(RTP14a)` Enters into presence on a channel on behalf of another `clientId`. This allows a single client with suitable permissions to register presence on behalf of any number of clients using a single connection
+  * `(RTP14b)` Optionally a callback can be provided that is called for both success or failure to enter
+  * `(RTP14c)` Data can optionally be provided when entering and will follow the normal encoding & decoding rules
+  * `(RTP14d)` A test should exist that registers a number of members each with a different `clientId` on a presence channel, and then a `RealtimePresence#get` should be used to verify that all members are present as expected
+* `(RTP15)` `RealtimePresence#enterClient` `RealtimePresence#updateClient` and `RealtimePresence#leaveClient` function:
+  * `(RTP15a)` Performs an enter, update or leave for given `clientId`. These methods apply if the Realtime library was not initialized with a specific `clientId`. This allows a single client with suitable permissions to update presence on behalf of any number of clients using a single connection. Otherwise these are functionality equivalent to the corresponding `enter`, `update` and `leave` methods, and equivalent test coverage should be provided
+  * `(RTP15b)` Tests should use `enterClient`, `updateClient` and `leaveClient` for many members from one `RealtimeClient` instance and check that the operations are reflected in the presence map and the expected events are emitted on a separate client
+  * `(RTP15c)` Tests should also ensure that using these methods has no side effects on a client that has entered normally using `RealtimePresence#enter`
+  * `(RTP15d)` A callback can be provided that will be called upon success or failure
+  * `(RTP15e)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in or enters the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
+  * `(RTP15f)` If the client is identified and has a valid `clientId`, and the `clientId` argument does not match the client's `clientId`, then it should indicate an error. The connection and channel remain available for further operations
+
+### RealtimeObjects {#realtime-objects}
+
+
+Reserved for `RealtimeObjects` feature specification, see [objects-features](../objects-features.) Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`
+
+### RealtimeAnnotations {#realtime-annotations}
+
+
+* `(RTAN1)` `RealtimeAnnotations#publish` function:
+  * `(RTAN1a)` Must accept the same arguments and performs the same validation, field setting, and data encoding as in `RSAN1`
+  * `(RTAN1b)` Has the same connection and channel state conditions as message publishing, see `RTL6c`
+  * `(RTAN1c)` Must put the annotation to be published into an array in the `annotations` field of a `ProtocolMessage` whose `action` field is set to `ANNOTATION`, and `channel` field is set to the channel name, and send it to the connection
+  * `(RTAN1d)` Must indicate success or failure of the publish (once `ACKed` or `NACKed`) in the same way as `RealtimeChannel#publish`
+* `(RTAN2)` `RealtimeAnnotations#delete` function:
+  * `(RTAN2a)` Must be identical to `RTAN1` `publish()` except that the `Annotation.action` is set to `ANNOTATION_DELETE`, not `ANNOTATION_CREATE`
+* `(RTAN3)` `RealtimeAnnotations#get` function:
+  * `(RTAN3a)` Is identical to `RestAnnotations#get`
+* `(RTAN4)` `RealtimeAnnotations#subscribe` function:
+  * `(RTAN4a)` Should support the same set of type signatures as `RealtimeChannel#subscribe` (`RTL7`), except that the `name` event-name argument is here called `type`
+  * `(RTAN4b)` When the library receives a `ProtocolMessage` with an action of `ANNOTATION`, every member of the `annotations` array (decoded into a `Annotation` objects) should be delivered to registered listeners
+  * `(RTAN4c)` Analagously to `name`-filtering with `RealtimeChannel#subscribe`, if the user subscribes with a `type` (or array of `type`s) the SDK must deliver only annotations whose `type` field exactly equals the requested `type`
+  * `(RTAN4d)` Has the same connection and channel state preconditions and return value as `RealtimeChannel#subscribe`, including implicitly attaching unless the user requests otherwise per `RTL7g`/`RTL7h`
+  * `(RTAN4e)` Has one additional channel state condition: once the channel is in the `attached` state, the `RTL4m` channel modes are checked for the presence of the `ANNOTATION_SUBSCRIBE` mode. (Note: the thing being checked is the mode set actually granted, according to the server, not the set of modes requested by the user per `TB2d`). If this mode is missing, the library should log a warning indicating that the user has tried to add an annotation listener without having requested the `ANNOTATION_SUBSCRIBE` channel mode in ChannelOptions, which will not work
+    * `(RTAN4e1)` This check does not apply if `attachOnSubscribe` has been set to `false` and the channel is not attached
+* `(RTAN5)` `RealtimeAnnotations#unsubscribe` function:
+  * `(RTAN5a)` Should support the same set of type signatures as `RealtimeChannel#unsubscribe` (`RTL7`), except that the `name` event-name argument is here called `type`
+
+### EventEmitter mixin / interface {#eventemitter}
+
+
+* `(RTE1)` `EventEmitter` is a generic interface for event registration and delivery used in a number of the types in the Realtime client library. For example, the `Connection` object emits events for connection state using the `EventEmitter` pattern
+* `(RTE2)` Where objects provide `subscribe` or `unsubscribe` methods, they should follow the specification for the `EventEmitter#on` and `EventEmitter#off` methods respectively
+* `(RTE3)` `EventEmitter#on` registers the provided listener for either all events when no `event` argument is provided, or for only a single named event when an `event` argument is provided. If `on` is called more than once with the same listener and `event`, the listener is added multiple times to its listener registry. Therefore, as an example, assuming the same listener is registered twice using `on`, and an event is emitted once, the listener would be invoked twice
+* `(RTE4)` `EventEmitter#once` registers the provided listener for either the first event that is emitted when no `event` argument is provided, or for only the first occurrence of a single named event when an `event` argument is provided. If `once` is called more than once with the same listener, the listener is added multiple times to its listener registry. Therefore, as an example, assuming the same listener is registered twice using `once`, and an event is emitted once, the listener would be invoked twice. However, all subsequent events emitted would not invoke the listener as `once` ensures that each registration is only invoked once
+* `(RTE5)` `EventEmitter#off` deregisters a listener. If called with a specific event and a listener, it removes all registrations that match both the given listener and the given event; if called only with a listener, it removes all registrations matching the given listener, regardless of whether they are associated with an event or not; if called with no arguments, it removes all registrations, for all events and listeners
+* `(RTE6)` `EventEmitter#emit` emits an event, calling registered listeners with the given event name and any other given arguments. If an exception is raised in any of the listeners, the exception is caught by the `EventEmitter` and the exception is logged to the Ably logger. Tests must exist to ensure exceptions raised in client code do not propagate and inhibit other event processing within the client library. This method is internal to the SDK and should not be exposed in its public interface.
+  * `(RTE6a)` The set of listeners called by `emit` must not change over the course of the `emit`. That is: If a listener being called by `emit` registers another listener, that second listener should not be called by that invocation of `emit` (even if it would have been called had it already been present); and if a listener being called by `emit` removes other listeners, but those other listeners would otherwise have been called during that `emit` invocation, they should still be called. Tests should exist for both adding and removing. See [https://goo.gl/OVTtjO](https://goo.gl/OVTtjO)
+
+### Incremental backoff and jitter {#backoff-jitter}
+
+* `(RTB1)` For connections in the `DISCONNECTED` state and realtime channels in the `SUSPENDED` state the time until retry is calculated as the product of the initial retry timeout (for `DISCONNECTED` connections this is the `disconnectedRetryTimeout`, for `SUSPENDED` channels this is the `channelRetryTimeout`), the backoff coefficient as defined by [`RTB1a`](#RTB1a), and the jitter coefficient as defined by [`RTB1b`](#RTB1b).
+  * `(RTB1a)` The backoff coefficient for the nth retry is calculated as the minimum of `(n + 2) / 3` and `2` (resulting in the sequence `[1, 4/3, 5/3, 2, 2, ...]`).
+  * `(RTB1b)` The jitter coefficient is a random number between 0.8 and 1. The randomness of this number doesn't need to be cryptographically secure but should be approximately uniformly distributed.
+
+### Forwards compatibility {#realtime-compatibility}
+
+* `(RTF1)` The library must apply the [robustness principle](https://en.wikipedia.org/wiki/Robustness_principle) in its processing of requests and responses with the Ably system. In particular, deserialization of ProtocolMessages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values, which must be ignored (in the case of unrecognised attributes) or handled in some sensible, language-idiomatic way (for unknown enum members)
+
+### Wrapper SDK proxy client {#wrapper-sdk-proxy}
+
+
+A _wrapper SDK_ is an Ably-authored non-core SDK.
+
+The core SDK provides an API for wrapper SDKs to supply Ably with analytics information that allows us track the usage of these SDKs.
+
+* `(WP1)` A _wrapper SDK proxy client_ is a client that is created by calling the `createWrapperSDKProxy` method on an instance (hereafter referred to as the _underlying client_) of `RestClient` ([`RSC26`](#RSC26)) or `RealtimeClient` ([`RTC14`](#RTC14)). It is expected that a wrapper SDK proxy client will only be created by a wrapper SDK.
+* `(WP2)` A wrapper SDK proxy client must provide the same public API (that is, methods and properties) as its underlying client. Calling a method or accessing a property of a wrapper SDK proxy client should behave as if the same action had been performed directly on the underlying client, except for some modified usage tracking behaviour which is described in [`WP6`](#WP6) and [`WP7`](#WP7).
+* `(WP3)` This specification does not prescribe how a wrapper SDK proxy client should be implemented nor its concrete type. An implementation may choose to replace the return value of methods and properties with an implementation-defined type that differs from that returned by the underlying client; for example, a wrapper SDK proxy client's `channels` property may return an object of some class which wraps the underlying `Channels` instance and forwards all method calls to it. And, in turn, this type's `#get` method may return an object of a class which wraps the underlying `RestChannel` or `RealtimeChannel` class and forwards all method calls to it.
+* `(WP4)` A wrapper SDK proxy client does not need to provide a `createWrapperSDKProxy` method.
+* `(WP5)` A wrapper SDK proxy client does not have any state of its own; rather, it shares all state with its underlying client.
+* `(WP6)` All REST requests that are initiated via a wrapper SDK proxy client must be attributed to the wrapper SDK (as defined in [`RSC7d7`](#RSC7d7)), using the `WrapperSDKProxyOptions` that were used to create the wrapper SDK proxy client. This excludes the following REST requests, which should never be attributed to a wrapper SDK proxy client:
+  * `(WP6a)` Requesting an auth token or a token request ([`RSA8a`](#RSA8a) and [`RSA8c`](#RSA8c))
+  * `(WP6b)` Fetching the server time in order to create a token request ([`RSA9d`](#RSA9d) and [`RSA10k`](#RSA10k))
+  * `(WP6c)` Any of the push activation requests described under [`RSH3`](#RSH3)
+  * `(WP6d)` The [`RTN17j`](#RTN17j) Internet connectivity check
+* `(WP7)` If the `WrapperSDKProxyOptions` that were used to create the wrapper SDK proxy client has a non-null `agents` property, then, when the [`RTS3`](#RTS3) `#channels#get` method is called on a wrapper SDK proxy client whose underlying client is a `RealtimeClient`, the wrapper SDK proxy client should behave as if `#get` had been called with a channel options formed by adding an additional `agent` key to the `params` of the passed channel options. The value for this key should be formed using the same algorithm as used to form the `Agent` library identifier in "`RSC7d1`":RSC7d1, using the key-value entries from the `agents` property of the `WrapperSDKProxyOptions` that were used to create the wrapper SDK proxy client, and _no other entries_ (i.e. disregard the "this must include at least the …" from RSC7d1).
+
+## State conditions and operations {#state-conditions-and-operations}
+
+
+### `Connection.state` effects on realtime operations {#connection-states-operations}
+
+
+<table>
+
+<tr>
+  <th></th>
+  <th>Initialized</th>
+  <th>Connecting</th>
+  <th>Connected</th>
+  <th>Disconnected</th>
+  <th>Suspended</th>
+  <th>Closing</th>
+  <th>Closed</th>
+  <th>Failed</th>
+</tr>
+
+<tr>
+  <td>`connect`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTN11f](#RTN11f)</td>
+  <!-- When CONNECTING -->
+  <td>No-op ([RTN11e](#RTN11e))</td>
+  <!-- When CONNECTED -->
+  <td>No-op ([RTN11e](#RTN11e)) </td>
+  <!-- When DISCONNECTED -->
+  <td>[RTN11f](#RTN11f), [RTN11c](#RTN11c)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTN11f](#RTN11f), [RTN11c](#RTN11c)</td>
+  <!-- When CLOSING -->
+  <td>[RTN11f](#RTN11f), [RTN11b](#RTN11b)</td>
+  <!-- When CLOSED -->
+  <td>[RTN11f](#RTN11f), [RTN11d](#RTN11d)</td>
+  <!-- When FAILED -->
+  <td>[RTN11f](#RTN11f), [RTN11d](#RTN11d)</td>
+
+</tr>
+
+<tr>
+  <td>`close`</td>
+
+  <!-- When INITIALIZED -->
+  <td>No-op</td>
+  <!-- When CONNECTING -->
+  <td>[RTN12f](#RTN12f)</td>
+  <!-- When CONNECTED -->
+  <td>[RTN12a](#RTN12a)</td>
+  <!-- When DISCONNECTED -->
+  <td>[RTN12d](#RTN12d)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTN12d](#RTN12d)</td>
+  <!-- When CLOSING -->
+  <td>No-op</td>
+  <!-- When CLOSED -->
+  <td>No-op</td>
+  <!-- When FAILED -->
+  <td>No-op</td>
+
+</tr>
+
+<tr>
+  <td>`ping`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTN13b](#RTN13b)</td>
+  <!-- When CONNECTING -->
+  <td>[RTN13c](#RTN13c)</td>
+  <!-- When CONNECTED -->
+  <td>[RTN13a](#RTN13a)</td>
+  <!-- When DISCONNECTED -->
+  <td>[RTN13c](#RTN13c)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTN13b](#RTN13b)</td>
+  <!-- When CLOSING -->
+  <td>[RTN13b](#RTN13b)</td>
+  <!-- When CLOSED -->
+  <td>[RTN13b](#RTN13b)</td>
+  <!-- When FAILED -->
+  <td>[RTN13b](#RTN13b)</td>
+
+</tr>
+
+<tr>
+  <td>RealtimeChannel `attach`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTL4h](#RTL4h)</td>
+  <!-- When CONNECTING -->
+  <td>[RTL4h](#RTL4h)</td>
+  <!-- When CONNECTED -->
+  <td>[See channel states table](#channel-states-operations)</td>
+  <!-- When DISCONNECTED -->
+  <td>[RTL4h](#RTL4h)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTL4b](#RTL4b)</td>
+  <!-- When CLOSING -->
+  <td>[RTL4b](#RTL4b)</td>
+  <!-- When CLOSED -->
+  <td>[RTL4b](#RTL4b)</td>
+  <!-- When FAILED -->
+  <td>[RTL4b](#RTL4b)</td>
+
+</tr>
+
+<tr>
+  <td>RealtimeChannel `detach`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTL5h](#RTL5h)</td>
+  <!-- When CONNECTING -->
+  <td>[RTL5h](#RTL5h)</td>
+  <!-- When CONNECTED -->
+  <td>[See channel states table](#channel-states-operations)</td>
+  <!-- When DISCONNECTED -->
+  <td>[RTL5h](#RTL5h)</td>
+  <!-- When SUSPENDED -->
+  <td>[See channel states table](#channel-states-operations)</td>
+  <!-- When CLOSING -->
+  <td>[RTL5g](#RTL5g)</td>
+  <!-- When CLOSED -->
+  <td>[See channel states table](#channel-states-operations)</td>
+  <!-- When FAILED -->
+  <td>[RTL5g](#RTL5g)</td>
+
+</tr>
+
+<tr>
+  <td>RealtimeChannel `publish`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTL6c2](#RTL6c2)</td>
+  <!-- When CONNECTING -->
+  <td>[RTL6c2](#RTL6c2)</td>
+  <!-- When CONNECTED -->
+  <td>[See channel states table](#channel-states-operations)</td>
+  <!-- When DISCONNECTED -->
+  <td>[RTL6c2](#RTL6c2)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTL6c4](#RTL6c4)</td>
+  <!-- When CLOSING -->
+  <td>[RTL6c4](#RTL6c4)</td>
+  <!-- When CLOSED -->
+  <td>[RTL6c4](#RTL6c4)</td>
+  <!-- When FAILED -->
+  <td>[RTL6c4](#RTL6c4)</td>
+
+</tr>
+
+<tr>
+  <td>Presence ops.</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTP16b](#RTP16b)</td>
+  <!-- When CONNECTING -->
+  <td>[RTP16b](#RTP16b)</td>
+  <!-- When CONNECTED -->
+  <td>[See channel states table](#channel-states-operations)</td>
+  <!-- When DISCONNECTED -->
+  <td>[RTP16b](#RTP16b)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTP16c](#RTP16c)</td>
+  <!-- When CLOSING -->
+  <td>[RTP16c](#RTP16c)</td>
+  <!-- When CLOSED -->
+  <td>[RTP16c](#RTP16c)</td>
+  <!-- When FAILED -->
+  <td>[RTP16c](#RTP16c)</td>
+
+</tr>
+
+</table>
+
+### `RealtimeChannel.state` effects on channel operations {#channel-states-operations}
+
+
+<table>
+
+<tr>
+  <th></th>
+  <th>Initialized</th>
+  <th>Attaching</th>
+  <th>Attached</th>
+  <th>Suspended</th>
+  <th>Detaching</th>
+  <th>Detached</th>
+  <th>Failed</th>
+</tr>
+
+<tr>
+  <td>`attach`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTL4c](#RTL4c)</td>
+  <!-- When ATTACHING -->
+  <td>[RTL4h](#RTL4h)</td>
+  <!-- When ATTACHED -->
+  <td>[RTL4a](#RTL4a)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTL4c](#RTL4c)</td>
+  <!-- When DETACHING -->
+  <td>[RTL4h](#RTL4h)</td>
+  <!-- When DETACHED -->
+  <td>[RTL4c](#RTL4c)</td>
+  <!-- When FAILED -->
+  <td>[RTL4g](#RTL4g)</td>
+
+</tr>
+
+<tr>
+  <td>`detach`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTL5h](#RTL5h)</td>
+  <!-- When ATTACHING -->
+  <td>[RTL5i](#RTL5i)</td>
+  <!-- When ATTACHED -->
+  <td>[RTL5d](#RTL5d)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTL5j](#RTL5j)</td>
+  <!-- When DETACHING -->
+  <td>[RTL5i](#RTL5i)</td>
+  <!-- When DETACHED -->
+  <td>[RTL5a](#RTL5a)</td>
+  <!-- When FAILED -->
+  <td>[RTL5b](#RTL5b)</td>
+
+</tr>
+
+<tr>
+  <td>`publish`</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTL6c2](#RTL6c2)</td>
+  <!-- When ATTACHING -->
+  <td>[RTL6c2](#RTL6c2)</td>
+  <!-- When ATTACHED -->
+  <td>[RTL6c1](#RTL6c1)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTL6c4](#RTL6c4)</td>
+  <!-- When DETACHING -->
+  <td>[RTL6c4](#RTL6c4)</td>
+  <!-- When DETACHED -->
+  <td>[RTL6c4](#RTL6c4)</td>
+  <!-- When FAILED -->
+  <td>[RTL6c3](#RTL6c3)</td>
+
+</tr>
+
+<tr>
+  <td>Presence ops.</td>
+
+  <!-- When INITIALIZED -->
+  <td>[RTP16b](#RTP16b)</td>
+  <!-- When ATTACHING -->
+  <td>[RTP16b](#RTP16b)</td>
+  <!-- When ATTACHED -->
+  <td>[RTP16a](#RTP16a)</td>
+  <!-- When SUSPENDED -->
+  <td>[RTP16c](#RTP16c)</td>
+  <!-- When DETACHING -->
+  <td>[RTP16c](#RTP16c)</td>
+  <!-- When DETACHED -->
+  <td>[RTP16c](#RTP16c)</td>
+  <!-- When FAILED -->
+  <td>[RTP16c](#RTP16c)</td>
+
+</tr>
+
+</table>
+
+## Push notifications {#push-notifications}
+
+
+* `(RSH1)` `Push#admin` object provides the following interface:
+  * `(RSH1a)` `#publish(recipient, data)` performs an HTTP request to [/push/publish](/api/rest-api#push-publish.) Empty values for `recipient` or `data` should be immediately rejected. An end-to-end push notification test can be made using the special test-only `ablyChannel` recipient. Additionally, tests should exist with valid and invalid recipient details
+  * `(RSH1b)` `#deviceRegistrations` provides access to the admin `PushDeviceRegistrations` object with the following methods:
+    * `(RSH1b1)` `#get(deviceId)` performs a request to [/push/deviceRegistrations/:deviceId](/api/rest-api#get-device-registration) and returns a `DeviceDetails` object if the `deviceId` is found or results in a not found error if the device cannot be found. If the client has been [activated as a push target device](#activation-state-machine), and the specified `deviceId` is that of the present client, then this request must include [push device authentication](#push-device-authentication).
+    * `(RSH1b2)` `#list(params)` performs a request to [/push/deviceRegistrations](/api/rest-api#list-device-registrations) and returns a paginated result with `DeviceDetails` objects filtered by the provided params, as supported by the REST API. A test should exist filtering by `deviceId` and separately by `clientId`, and then controlling the pagination with the `limit` attribute
+    * `(RSH1b3)` `#save(device)` issues a `PUT` request to [/push/deviceRegistrations/:deviceId](/api/rest-api#update-device-registration) using the `DeviceDetails` object argument. A test should exist for a successful save, a successful subsequent save with an update, and a failed save operation. If the client has been [activated as a push target device](#activation-state-machine), and the specified `deviceId` is that of the present client, then this request must include [push device authentication](#push-device-authentication).
+    * `(RSH1b4)` `#remove(deviceId)` issues a `DELETE` request to [/push/deviceRegistrations/:deviceId](/api/rest-api#delete-device-registration) and deletes the registered device specified  by `deviceId`. A test should exist that deletes a device and succeeds, and then also deletes a device that does not exist but still succeeds
+    * `(RSH1b5)` `#removeWhere(params)` issues a `DELETE` request to [/push/deviceRegistrations](/api/rest-api#delete-device-registrations) and deletes the registered devices matching the provided `params`. A test should exist that deletes devices by `clientId` and by `deviceId` separately, then additionally issues a delete for devices with no matching params and checks the operation still succeeds. If the client has been [activated as a push target device](#activation-state-machine), and the specified `deviceId` is that of the present client, then this request must include [push device authentication](#push-device-authentication).
+  * `(RSH1c)` `#channelSubscriptions` provides access to the admin `PushChannelSubscriptions` object with the following methods:
+    * `(RSH1c1)` `#list(params)` performs a request to [/push/channelSubscriptions](/api/rest-api#list-channel-subscriptions) and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params, as supported by the REST API. A test should exist filtering by `channel` and `deviceId` and/or `clientId`, and then controlling the pagination with the `limit` attribute
+    * `(RSH1c2)` `#listChannels(params)` performs a request to [/push/channels](/api/rest-api#list-channels) and returns a paginated result with `String` objects filtered by the provided params, as supported by the REST API. A test should exist using the `limit` attribute and pagination
+    * `(RSH1c3)` `#save(pushChannelSubscription)` issues a `POST` request to [/push/channelSubscriptions](/api/rest-api#post-channel-subscription) using the `PushChannelSubscription` object (and optionally a JSON-encodable object) argument. If the client has been [activated as a push target device](#activation-state-machine), and the specified `PushChannelSubscription` contains a `deviceId` matching that of the present client, then this request must include [push device authentication](#push-device-authentication). A test should exist for a successful save, a successful subsequent save with an update, and a failed save operation
+    * `(RSH1c4)` `#remove(push_channel_subscription)` issues a `DELETE` request to [/push/channelSubscriptions](/api/rest-api#delete-channel-subscription) and deletes the channel subscription using the attributes as params to the `DELETE` request. If the client has been [activated as a push target device](#activation-state-machine), and the specified `PushChannelSubscription` contains a `deviceId` matching that of the present client, then this request must include [push device authentication](#push-device-authentication). A test should exist that deletes a `clientId` and `deviceId` channel subscription separately and both succeed, and then also deletes a subscription that does not exist but still succeeds
+    * `(RSH1c5)` `#removeWhere(params)` issues a `DELETE` request to [/push/channelSubscriptions](/api/rest-api#delete-channel-subscription) and deletes the matching channel subscriptions provided in `params`. A test should exist that deletes channel subscriptions by `clientId` and by `deviceId` separately, then additionally issues a delete for subscriptions with no matching params and checks the operation still succeeds.
+* `(RSH2)` The following should only apply to platforms that support receiving push notifications:
+  * `(RSH2a)` `Push#activate` sends a `CalledActivate` event to [the state machine](#RSH3).
+  * `(RSH2b)` `Push#deactivate` sends a `CalledDeactivate` event to [the state machine](#RSH3).
+  * `(RSH2c)` (Moved to [`(RSH8g)`](#RSH8g) ).
+  * `(RSH2d)` (Moved to [`(RSH8h)`](#RSH8h) ).
+  * `(RSH2e)` (Moved to [`(RSH8i)`](#RSH8i) ).
+
+### Activation State Machine {#activation-state-machine}
+
+
+* `(RSH3)` In platforms that support receiving push notifications, in order to connect the device's push features with Ably's, the library must perform the process described in the following abstract state machine. While this process should be implemented in whatever way better fits the concrete platform, it should be taken into account that its lifetime is that of the _app_ that runs it, which outlives that of the `RestClient` instance or (typically) the process running the app. This typically forces some kind of on-disk storage to which the state machine's state must be persisted, so that it can be recovered later by new instances and processes running the app triggered by external events.
+  * `(RSH3a)` State `NotActivated` (the initial one).
+    * `(RSH3a1)` On event `CalledDeactivate`:
+      * `(RSH3a1a)` This clause has been deleted. It was valid up to and including specification version `3.0.0`.
+      * `(RSH3a1b)` This clause has been deleted. It was valid up to and including specification version `3.0.0`.
+      * `(RSH3a1c)` If the local device has `deviceIdentityToken`, does the same as `(RSH3d2)`.
+      * `(RSH3a1d)` Otherwise, does the same as `(RSH3g2)`.
+    * `(RSH3a2)` On event `CalledActivate`:
+      * `(RSH3a2a)` If the local device has `deviceIdentityToken`, performs a validation of the local DeviceDetails via the following steps. [`(RSH3a2b)`](#RSH3a2b) onwards then don't apply.
+***** `(RSH3a2a1)` Checks the compatibilty of the present client with the existing registration: if the `LocalDevice` has a non-empty `clientId`, and the present identified client has a different (non-null) `clientId`, then a `SyncRegistrationFailed` event should be fired containing an error with `code` 61002, and skips to [`(RSH3a2a4)`](#RSH3a2a4).
+***** `(RSH3a2a2)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails`.
+***** `(RSH3a2a3)` Otherwise, makes an asynchronous HTTP PUT request to `/push/deviceRegistrations/:deviceId` using the local `DeviceDetails` with the push details as body. When the registration validation request is complete, a `RegistrationSynced` or `SyncRegistrationFailed` event should be fired.
+***** `(RSH3a2a4)` Transitions to `WaitingForRegistrationSync`.
+      * `(RSH3a2b)` If the local device does not have `id` or `deviceSecret`, both are generated locally. The `id` must be a unique identifier (e.g. UUID, GUID). The `deviceSecret` must be created using secure random data with sufficient entropy to generate a digest of at least 32 bytes (eg using sha256) and encoding that digest with base64. The local `DeviceDetails` is updated with the resulting `deviceId` and `deviceSecret`. If either the `id` or the `deviceSecret` is lost then a new pair must be created.
+      * `(RSH3a2c)` If the local device has the necessary push details (registration token, etc.), sends a `GotPushDeviceDetails` event.
+      * `(RSH3a2d)` If the local device does not have the necessary push details, it initiates a request to the underlying platform (or otherwise generates them)
+      * `(RSH3a2e)` Transitions to `WaitingForPushDeviceDetails`.
+    * `(RSH3a3)` On event `GotPushDeviceDetails`:
+      * `(RSH3a3a)` Transitions to `NotActivated`. (This consumes the event; [`(RSH3a2)`](#RSH3a2) produces it again once `Push#activate` is called.)
+  * `(RSH3b)` State `WaitingForPushDeviceDetails`:
+    * `(RSH3b1)` On event `CalledActivate`:
+      * `(RSH3b1a)` Transitions to `WaitingForPushDeviceDetails`.
+    * `(RSH3b2)` On event `CalledDeactivate`:
+      * `(RSH3b2a)` Makes `Push#deactivate` return or call its callback with no error.
+      * `(RSH3b2b)` Transitions to `NotActivated`.
+    * `(RSH3b3)` On event `GotPushDeviceDetails`:
+      * `(RSH3b3a)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails` updated with the push details.
+      * `(RSH3b3b)` Otherwise, make an asynchronous HTTP `POST` request to [/push/deviceRegistrations](/rest-api/#post-device-registration) using the `LocalDevice` updated with the push details as body (together with the `deviceSecret`).
+      * `(RSH3b3c)` Either way, when the registration is done, a `GotDeviceRegistration` or `GettingDeviceRegistrationFailed` event should be fired.
+      * `(RSH3b3d)` Transitions to `WaitingForDeviceRegistration`.
+    * `(RSH3b4)` On event `GettingPushDeviceDetailsFailed`:
+      * `(RSH3b4a)` Makes `Push#activate` return or call its callback with the error.
+      * `(RSH3b4b)` Transitions to `NotActivated`.
+  * `(RSH3c)` State `WaitingForDeviceRegistration`:
+    * `(RSH3c1)` On event `CalledActivate`:
+      * `(RSH3c1a)` Transitions to `WaitingForDeviceRegistration`.
+    * `(RSH3c2)` On event `GotDeviceRegistration`:
+      * `(RSH3c2a)` Updates the local `DeviceDetails` with it.
+      * `(RSH3c2b)` Makes `Push#activate` return or call its callback with no error.
+      * `(RSH3c2c)` Transitions to `WaitingForNewPushDeviceDetails`.
+    * `(RSH3c3)` On event `GettingDeviceRegistrationFailed`:
+      * `(RSH3c3a)` Makes `Push#activate` return or call its callback with the error.
+      * `(RSH3c3b)` Transitions to `NotActivated`.
+  * `(RSH3d)` State `WaitingForNewPushDeviceDetails`:
+    * `(RSH3d1)` On event `CalledActivate`:
+      * `(RSH3d1a)` Makes `Push#activate` return or call its callback with no error.
+      * `(RSH3d1b)` Transitions to `WaitingForNewPushDeviceDetails`.
+    * `(RSH3d2)` On event `CalledDeactivate`:
+      * `(RSH3d2a)` If a custom `deregisterCallback` was provided to `Push#deactivate`, pass it the local `DeviceDetails` 's id.
+      * `(RSH3d2b)` Otherwise, make an asynchronous DELETE HTTP request to [/push/deviceRegistrations](/rest-api/#delete-device-registration) using the local `DeviceDetails` 's ID. This operation requires [push device authentication](#push-device-authentication) without other token or key authentication.
+      * `(RSH3d2c)` Either way, when the registration is done, a `Deregistered` or `DeregistrationFailed` event should be fired.
+      * `(RSH3d2c1)` `Deregistered` event should be fired if the HTTP request returns a status code in the 2xx range, 401 (unauthorized), or code 40005 (invalid credentials). Otherwise `DeregistrationFailed` event should be fired.
+      * `(RSH3d2d)` Transitions to `WaitingForDeregistration`.
+    * `(RSH3d3)` On event `GotPushDeviceDetails` (note that this will only happen on platforms whose push device details, after first set, can change, e. g. FCM's registration token refresh):
+      * `(RSH3d3a)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails` updated with the push details.
+      * `(RSH3d3b)` Otherwise, make an asynchronous PATCH HTTP request to [/push/deviceRegistrations/:deviceId](/rest-api/#update-device-registration) using the local `DeviceDetails` 's push details as body (but only the changed fields, as described in [the REST endpoint documentation](/rest-api/#update-device-registration)). This operation requires [push device authentication](#push-device-authentication).
+      * `(RSH3d3c)` Either way, when the registration is done, a `RegistrationSynced` or `SyncRegistrationFailed` event should be fired.
+      * `(RSH3d3d)` Transitions to `WaitingForRegistrationSync`.
+  * `(RSH3e)` State `WaitingForRegistrationSync`:
+    * `(RSH3e1)` On event `CalledActivate`, unless the machine is in state `WaitingForRegistrationSync` as a result of a `CalledActivate` event:
+      * `(RSH3e1a)` Makes `Push#activate` return or call its callback with no error.
+      * `(RSH3e1b)` Transitions to `WaitingForRegistrationSync`.
+    * `(RSH3e2)` On event `RegistrationSynced`:
+      * `(RSH3e2b)` If the machine is in state `WaitingForRegistrationSync` as a result of a `CalledActivate` event, make `Push#activate` return or call its callback with no error.
+      * `(RSH3e2c)` Otherwise, calls the `updatedCallback` provided to `Push#activate` with no error.
+      * `(RSH3e2a)` Transitions to `WaitingForNewPushDeviceDetails`.
+    * `(RSH3e3)` On event `SyncRegistrationFailed`:
+      * `(RSH3e3c)` If the machine is in state `WaitingForRegistrationSync` as a result of a `CalledActivate` event, make `Push#activate` return or call its callback with the error.
+      * `(RSH3e3a)` (deprecated) Otherwise, calls the `updateFailedCallback` provided to `Push#activate` with the error.
+      * `(RSH3e3d)` Otherwise, calls the `updatedCallback` provided to `Push#activate` with the error.
+      * `(RSH3e3b)` Transitions to `AfterRegistrationSyncFailed`.
+  * `(RSH3f)` State `AfterRegistrationSyncFailed`:
+    * `(RSH3f1)` On events `CalledActivate` or `GotPushDeviceDetails`:
+      * `(RSH3f1a)` Does the same as [RSH3a2a](#RSH3a2a).
+    * `(RSH3f2)` On events `CalledDeactivate`:
+      * `(RSH3f2a)` Does the same as [RSH3d2](#RSH3d2).
+  * `(RSH3g)` State `WaitingForDeregistration`:
+    * `(RSH3g1)` On event `CalledDeactivate`:
+      * `(RSH3g1a)` Transitions to `WaitingForDeregistration`.
+    * `(RSH3g2)` On event `Deregistered`:
+      * `(RSH3g2a)` Clears all local `DeviceDetails`.
+      * `(RSH3g2b)` Makes `Push#deactivate` return or call its callback with no error.
+      * `(RSH3g2c)` Transitions to `NotActivated`.
+    * `(RSH3g3)` On event `DeregistrationFailed`:
+      * `(RSH3g3a)` Makes `Push#deactivate` return or call its callback with the error.
+      * `(RSH3g3b)` Transitions to the previous state, which is either `WaitingForNewPushDeviceDetails` or `AfterRegistrationSyncFailed` (so, in purity, `WaitingForDeregistration` are two separate states, one for each previous state).
+* `(RSH4)` When an event is fired and a transition from the current state is not defined for such event, the event is put into a queue. Then, whenever a transition happens, an event is dequeued from the queue. If a transition from the new current state is defined for the dequeued event, such transition happens. If not, the event is put back in its place in the queue. E. g. we're `WaitingForDeregistration`, and an event `CalledActivate` happens. This event will be put in the queue, since there's no transition defined for it. Then, an event `Deregistered` arrives, causing a transition to `NotActivated`. Now we peek the next item on the queue: `CalledActivate`. Because `NotActivated` transitions on `CalledActivate`, the event is consumed and the machine transitions.
+* `(RSH5)` Event handling is atomic and sequential: while an event is being handled, the next one should be handled only after the current one has caused a state transition or has been put into the pending events queue.
+
+### Push device authentication {#push-device-authentication}
+
+
+* `(RSH6)` In platforms that support receiving push notifications, and have undergone push registration, are capable of authenticating themselves to the Ably server in order that certain push admin operations can be authorized.
+  * `(RSH6a)` If a device has completed activation and has a `deviceIdentityToken` then push device authentication is performed for a request by adding an `X-Ably-DeviceToken` request header whose value is the `deviceIdentityToken`. This header has always been `X-Ably-DeviceToken`, but has previously been mistakenly documented as `X-Ably-DeviceIdentityToken` in the hope of renaming it to avoid confusion with APNs device token. It was never renamed.
+  * `(RSH6b)` If a device has not completed but has a `deviceSecret` then push device authentication is performed for a request by adding an `X-Ably-DeviceSecret` request header whose value is the `deviceSecret`.
+
+### Push channels {#push-channels}
+
+
+* `(RSH7)` In platforms that support receiving push notifications, `RestChannel` and `RealtimeChannel` have an additional `push` field, which is a `PushChannel` object with the following interface:
+  * `(RSH7a)` `#subscribeDevice()`
+    * `(RSH7a1)` Fails if the `LocalDevice` doesn't have an `deviceIdentityToken`, ie. it isn't registered yet.
+    * `(RSH7a2)` Performs a POST request to [/push/channelSubscriptions](/api/rest-api#post-channel-subscription) with the device's `id` and the channel name.
+    * `(RSH7a3)` The request must include [push device authentication](#push-device-authentication)
+  * `(RSH7b)` `#subscribeClient()`
+    * `(RSH7b1)` Fails if the `LocalDevice` doesn't have a `clientId`.
+    * `(RSH7b2)` Performs a POST request to [/push/channelSubscriptions](/api/rest-api#post-channel-subscription) with the device's `clientId` and the channel name.
+  * `(RSH7c)` `#unsubscribeDevice()`
+    * `(RSH7c1)` Fails if the `LocalDevice` doesn't have a `deviceIdentityToken`, ie. it isn't registered yet.
+    * `(RSH7c2)` Performs a DELETE request to [/push/channelSubscriptions](/api/rest-api#delete-channel-subscription) with the device's `id` and the channel name.
+    * `(RSH7c3)` The request must include [push device authentication](#push-device-authentication)
+  * `(RSH7d)` `#unsubscribeClient()`
+    * `(RSH7d1)` Fails if the `LocalDevice` doesn't have a `clientId`.
+    * `(RSH7d2)` Performs a DELETE request to [/push/channelSubscriptions](/api/rest-api#delete-channel-subscription) with the device's `clientId` and the channel name.
+  * `(RSH7e)` `#listSubscriptions(params)` performs a GET request to [/push/channelSubscriptions](/api/rest-api#list-channel-subscriptions) and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params, the channel name, the device ID, and the client ID if it exists, as supported by the REST API. A `concatFilters` param needs to be set to `true` as well.
+
+### LocalDevice {#local-device}
+
+
+* `(RSH8)` In platforms that support receiving push notifications, the `device` method on the `RestClient` or `RealtimeClient` interfaces returns an instance of `LocalDevice` that represents the current state of the device in respect of it being a target for push notifications.
+  * `(RSH8k)` `LocalDevice` has the following attributes:
+    * `(RSH8k1)` `deviceIdentityToken` string? – populated as described in [RSH8c](#RSH8c)
+    * `(RSH8k2)` `deviceSecret` string – populated as described in [RSH8b](#RSH8b). (Note: This property being non-nullable is not actually consistent with [`RSH3a2b`](#RSH3a2b); that spec point implies that `id` and `deviceSecret` both start off unset and are only set upon a `CalledActivate` event. However, since `deviceSecret` needs to have the same nullability as `id` — since per `RSH3a2b` either both or neither should be set — to reflect the behaviour described in the spec we would have to make `LocalDevice#id` nullable, but this is incompatible with the superclass `DeviceDetails`. In reality, our implementations of `LocalDevice` actually generate `id` and `deviceSecret` when the device is fetched, i.e. not following `RSH3a2b`. What we _should_ do is either make `LocalDevice` stop inheriting from `DeviceDetails`, or change the specified behaviour for when to generate `id` and `deviceSecret` to match our implementations, or both. See spec issues [#180](https://github.com/ably/specification/issues/180) and [#25](https://github.com/ably/specification/issues/25.) For now, this note exists to reduce confusion.)
+  * `(RSH8a)` The `LocalDevice` is initialised when first required, either as a result of a call to `RestClient#device` or `RealtimeClient#device`, or as a result of an operation involving the Activation State Machine. The `LocalDevice` `id`, `clientId`, `deviceSecret` and `deviceIdentityToken` attributes are populated, together with any `recipient`-related attributes, to the extent that they exist, from the persisted state.
+  * `(RSH8b)` The `LocalDevice` `id` and `deviceSecret` attributes are generated, and persisted as part of the `LocalDevice` state, when required by step [`(RSH3a2b)`](#RSH3a2b) in the Activation State Machine. At that time, the `clientId` attribute is also initialised, if the client is identified according to [`(RSA7)`](#RSA7).
+  * `(RSH8c)` Following successful registration of a `LocalDevice`, following the procedure in [`(RSH3c2a)`](#RSH3c2a), the now known `deviceIdentityToken` is set and persisted.
+  * `(RSH8d)` If the `LocalDevice` is created by an unidentified client (see [`(RSA7)`](#RSA7) ) and therefore has no `clientId` set, but the client subsequently becomes identified (as a result of [`(RSA7b2)`](#RSA7b2) or [`(RSA7b3)`](#RSA7b3) ), then the `LocalDevice` `clientId` is set and persisted.
+  * `(RSH8e)` If the `LocalDevice` `clientId` becomes set as a result of [`(RSH8d)`](#RSH8d), and the `LocalDevice` is already registered (ie the `deviceIdentityToken` is set), and the ActivationStateMachine is in any state other than `NotActivated`, then a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3) once the effects of [`(RSH8d)`](#RSH8d) are visible, ie. once `LocalDevice` `clientId` is set.
+  * `(RSH8f)` If the `LocalDevice` is created by an unidentified client (see [`(RSA7)`](#RSA7) ) and therefore has no `clientId` set, but on receipt of a registration response (see [`(RSH3c2)`](#RSH3c2) ) the registered device has a non-empty `clientId`, then the `LocalDevice` `clientId` is set with that `clientId`.
+  * `(RSH8g)` Whenever any change arises of the push transport details for local device (eg an FCM registration token update triggered by the platform), a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3).
+  * `(RSH8h)` If an attempt to obtain the push transport details for local device (eg an FCM registration token) fails, a `GettingPushDeviceDetailsFailed` event containing the indicated error is sent to [the state machine](#RSH3).
+  * `(RSH8i)` Each time the library is instantiated, if the LocalDevice has push device details (eg an APNS deviceToken), and if the platform supports it, it must verify the validity of those details (eg by requesting a token from the platform and comparing that with the already-known token). If as a result there are updated details, then an update to the Ably server is triggered by sending a `GotPushDeviceDetails` event to [the state machine](#RSH3).
+  * `(RSH8j)` If during library initialisation the `LocalDevice` `id` or `deviceSecret` attributes are not able to be loaded then those LocalDevice details must be discarded and the ActivationStateMachine machine should transition to the `NotActivated` state. New `LocalDevice` `id` and `deviceSecret` attributes should be generated on the next activation event.
+
+## Types
+
+
+### Data types {#types}
+
+
+#### Message
+
+* `(TM1)` A `Message` represents an individual message to be sent or received via the Ably Realtime service.
+* `(TM5)` `Message` `Action` enum has the following values in order from zero: `MESSAGE_CREATE`, `MESSAGE_UPDATE`, `MESSAGE_DELETE`, `META`, `MESSAGE_SUMMARY`, `MESSAGE_APPEND`
+* `(TM2)` The attributes available in a `Message` are:
+  * `(TM2a)` `id` string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId` is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of the message inside the `messages` array of the `ProtocolMessage`
+  * `(TM2b)` `clientId` string
+  * `(TM2c)` `connectionId` string. If a message received from Ably does not contain a `connectionId`, it should be set to the `connectionId` of the encapsulating `ProtocolMessage`
+  * `(TM2h)` `connectionKey` string (note this is only ever populated by a publishing client when [publishing on behalf of another client](/rest/messages#publish-on-behalf), the `connectionKey` will never be populated for messages received. A simple test for this attribute over REST is to populate this with an invalid `connectionKey` when publishing and expecting a suitable error)
+  * `(TM2g)` `name` string
+  * `(TM2d)` `data` string, binary or JSON-encodable object or array
+  * `(TM2e)` `encoding` string
+  * `(TM2i)` `extras` JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The `extras` field is provided to contain message metadata and/or ancillary payloads in support of specific functionality, e.g. push. Each of these supported extensions is documented separately; for 1.1 the only supported extension is `push`, via the `extras.push` member; 1.2 adds the `delta` extension whose keys and values are described by the attributes of the type `DeltaExtras`, and the `headers` extension, which contains arbitrary `string->string` key-value pairs, settable at publish time, and `ref` whose keys and values are described by the attributes of the type `ReferenceExtras`. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the `extras` field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
+  * `(TM2f)` `timestamp` time in milliseconds since epoch. If a message received from Ably over a realtime transport does not contain a `timestamp`, the SDK must set it to the `timestamp` of the encapsulating `ProtocolMessage`
+  * `(TM2j)` `action` enum
+  * `(TM2p)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by `TM2s`
+  * `(TM2k)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by `TM2r`.
+  * `(TM2o)` This clause has been deleted. It was valid up to and including specification version 3.1 and its purpose moved to `TM2f`.
+  * `(TM2n)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been melded into `TM2s`.
+    * `(TM2n1)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been moved to `TM2s3`.
+    * `(TM2n2)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been moved to `TM2s4`.
+    * `(TM2n3)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been moved to `TM2s5`.
+  * `(TM2q)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by `TM2u`.
+    * `(TM2q1)` This clause has been deleted. It was valid up to and including specification version 3.1 and has been superseded by `TM2u`.
+  * `(TM2r)` `serial` string - an opaque string that uniquely identifies the message.
+  * `(TM2s)` `version` - an object containing information about the latest version of a message. If a message received from Ably (whether over realtime or REST) does not contain a `version` object the SDK must initialize a `version` object and set a subset of fields as specified below.
+    * `(TM2s1)` `serial` - an opaque string that identifies the specific version of the message. If the `version.serial` is not received over the wire, it must be set to the `TM2r` `serial`, if it is set.
+    * `(TM2s2)` `timestamp` - time in milliseconds since epoch. If the `version.timestamp` is not received over the wire, it must be set to the `TM2f` `timestamp`, if it is set.
+    * `(TM2s3)` `clientId` - string
+    * `(TM2s4)` `description` - string
+    * `(TM2s5)` `metadata` - Dict<String, string> - used to contain any arbitrary key value pairs of type string.
+  * `(TM2u)` `annotations` - an object of type `MessageAnnotations`. If not set on the wire, the SDK must set it to an empty `MessageAnnotations` object.
+* `(TM4)` `Message` has constructors `constructor(name: String?, data: Data?)` and `constructor(name: String?, data: Data?, clientId: String?)`.
+* `(TM3)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `Message`-like object (or array of such objects), and optionally a `channelOptions`, and return a `Message` (or array of such `Messages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves.
+* `(TM6)` The size of the `Message` for [TO3l8](#TO3l8) is calculated as follows:
+  * `(TM6a)` The size is the sum of the sizes of the `name`, `data`, `clientId`, and `extras` properties
+  * `(TM6b)` The size of an `Object` or `Array` `data` property is its string length after being JSON-stringified
+  * `(TM6c)` The size of a `binary` `data` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+  * `(TM6f)` The size of a `string` `data` property is its length
+  * `(TM6d)` The size of the `extras` property is the string length of its JSON representation
+  * `(TM6e)` The size of a `null` or omitted property is zero
+* `(TM7)` The SDK may expose a series of functions (static factory methods on a Message or otherwise, wherever is language idiomatic; for some languages this might just be types that can be used for type assertions, etc), that take a deserialized `JsonObject`, one of the aggregated summaries for a particular annotation type (that is, a value from the `TM2q` `summary` `Dict`), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
+  * `(TM7a)` The SDK must not try to do this conversion automatically (either by parsing the annotation type or dynamically detecting the structure). This is so that, when the server adds new annotation types that the SDK does not yet know about, when we later add support for those new types to the SDK, that does not result in a a breaking API change for the SDK.
+  * `(TM7b)` If the SDK chooses to do this, it should support at least the following set of constructors (or other language-idiomatic mechanism that achieves a similar result):
+    * `(TM7b1)` `SummaryDistinctV1(JsonObject) -> Dict<string, SummaryClientIdList>` - string key is the name of annotation
+    * `(TM7b2)` `SummaryUniqueV1(JsonObject) -> Dict<string, SummaryClientIdList>` - string key is the name of annotation
+    * `(TM7b3)` `SummaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts>` - string key is the name of annotation
+    * `(TM7b4)` `SummaryFlagV1(JsonObject) -> SummaryClientIdList`
+    * `(TM7b5)` `SummaryTotalV1(JsonObject) -> SummaryTotal`
+  * `(TM7c)` Where:
+    * `(TM7c1)` `SummaryClientIdList` is an object containing:
+      * `(TM7c1a)` `total` integer. Total number of clients who have published an annotation with this name.
+      * `(TM7c1b)` `clientIds` array of strings. A list of the clientIds of all clients who have published an annotation with this name.
+      * `(TM7c1c)` `clipped` boolean. If this field is not set over the wire, it should be set to false.
+    * `(TM7d1)` `SummaryClientIdCounts` is an object containing:
+      * `(TM7d1a)` `total` integer. The sum of the counts from all clients who have published an annotation with this name.
+      * `(TM7d1b)` `clientIds` `Dict<string, integer>`. A map of the clientIds of all clients who have published an annotation with this name, and the count each of them have contributed.
+      * `(TM7d1c)` `clipped` boolean. If this field is not set over the wire, it should be set to false.
+      * `(TM7d1d)` `totalUnidentified` integer. The sum of the counts from annotations of unidentified clients.
+      * `(TM7d1e)` `totalClientIds` integer. The number of distinct identified clients who have published an annotation with this name.
+    * `(TM7e1)` `SummaryTotal` is an object containing:
+      * `(TM7e1a)` `total` integer. The total number of annotations of this type.
+* `(TM8)` The attributes available in a `MessageAnnotations` object are:
+  * `(TM8a)` `summary` `Dict<string, JsonObject>` - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing `summary` field on the wire indicates an empty summary, equivalent to an object with no keys. The SDK must initialize this object if not present.
+    * `(TM8a1)` A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
+
+#### DeltaExtras
+
+
+* `(DE1)` `DeltaExtras` describes a message whose payload is a "vcdiff"-encoded delta generated with respect to a base message.
+* `(DE2)` `DeltaExtras` has the following attributes:
+* `(DE2a)` `from` string - the ID of the base message the delta was generated from
+* `(DE2b)` `format` string – the delta format; currently only "vcdiff" is allowed
+
+#### PresenceMessage
+
+
+* `(TP1)` A `PresenceMessage` represents an individual presence message to be sent or received via the Ably Realtime service.
+* `(TP2)` `PresenceMessage` `Action` enum has the following values in order from zero: `ABSENT`, `PRESENT`, `ENTER`, `LEAVE`, `UPDATE`
+* `(TP3)` The attributes available in a `PresenceMessage` are:
+  * `(TP3a)` `id` string - unique ID for this presence message. This attribute is always populated for presence messages received over REST. For presence messages received over Realtime, if the presence message does not contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId` is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of the presence message inside the `presence` array of the `ProtocolMessage`
+  * `(TP3b)` `action` enum
+  * `(TP3c)` `clientId` string
+  * `(TP3d)` `connectionId` string. If a presence message received from Ably does not contain a `connectionId`, it should be set to the `connectionId` of the encapsulating `ProtocolMessage`
+  * `(TP3e)` `data` string, binary or JSON-encodable object or array
+  * `(TP3f)` `encoding` string
+  * `(TP3i)` `extras` JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The `extras` field is provided to contain message metadata and/or ancillary payloads in support of specific functionality. For 1.1 no specific functionality is specified for `extras` in presence messages; 1.2 adds the `headers` extension, which contains arbitrary `string->string` key-value pairs, settable at publish time. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the `extras` field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
+  * `(TP3g)` `timestamp` time in milliseconds since epoch. If a presence message received from Ably does not contain a `timestamp`, it should be set to the `timestamp` of the encapsulating `ProtocolMessage`
+  * `(TP3h)` `memberKey` string function that combines the `connectionId` and `clientId` ensuring multiple connected clients with the same clientId are uniquely identifiable
+* `(TP4)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `PresenceMessage`-like object (or array of such objects), and optionally a `channelOptions`, and return a `PresenceMessage` (or array of such `PresenceMessages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves. This behaviour is the same as in `(TM3)`.
+* `(TP5)` The size of the `PresenceMessage` for [TO3l8](#TO3l8) is calculated in the same way as for `Message`; see [TM6](#TM6)
+
+#### ObjectMessage
+
+
+* `(OM1)` An `ObjectMessage` represents an individual object message to be sent or received via the Ably Realtime service
+* `(OM2)` The attributes available in an `ObjectMessage` are:
+  * `(OM2a)` `id` string - unique ID for this object message. This attribute is always populated for object messages received over REST. For object messages received over Realtime, if the object message does not contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId` is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of the object message inside the `state` array of the `ProtocolMessage`
+  * `(OM2b)` `clientId` string
+  * `(OM2c)` `connectionId` string. If an object message received from Ably does not contain a `connectionId`, it should be set to the `connectionId` of the encapsulating `ProtocolMessage`
+  * `(OM2d)` `extras` JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The `extras` field is provided to contain message metadata and/or ancillary payloads in support of specific functionality. For 3.1 no specific functionality is specified for `extras` in object messages. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the `extras` field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered
+  * `(OM2e)` `timestamp` time in milliseconds since epoch. If an object message received from Ably does not contain a `timestamp`, it should be set to the `timestamp` of the encapsulating `ProtocolMessage`
+  * `(OM2f)` `operation` `ObjectOperation` object. Mutually exclusive with the `object` field. This field is only set on object messages if the `action` field of the `ProtocolMessage` encapsulating it is `OBJECT`
+  * `(OM2g)` `object` `ObjectState` object. Mutually exclusive with the `operation` field. This field is only set on object messages if the `action` field of the `ProtocolMessage` encapsulating it is `OBJECT_SYNC`
+  * `(OM2h)` `serial` string - an opaque string that uniquely identifies this object message
+  * `(OM2j)` `serialTimestamp` Time - a timestamp from the `serial` field
+  * `(OM2i)` `siteCode` string - an opaque string used as a key to update the map of `serial` values on an object
+* `(OM3)` The size of the `ObjectMessage` for [TO3l8](#TO3l8) is calculated as follows:
+  * `(OM3a)` The size is the sum of the sizes of the `clientId`, `operation`, `object`, and `extras` properties
+  * `(OM3b)` The size of the `operation` property is calculated per [OOP4](#OOP4)
+  * `(OM3c)` The size of the `object` property is calculated per [OST3](#OST3)
+  * `(OM3d)` The size of the `extras` property is the string length of its JSON representation
+  * `(OM3f)` The size of the `clientId` property is its string length
+  * `(OM3e)` The size of a `null` or omitted property is zero
+* `(OM4)` For `ObjectMessage` encoding see `ObjectData` [OD4](#OD4) and `ObjectOperation` [OOP5](#OOP5) encoding
+* `(OM5)` For `ObjectMessage` decoding see `ObjectData` [OD5](#OD5) decoding
+
+#### ObjectOperation
+
+
+* `(OOP1)` An `ObjectOperation` describes an operation to be applied to an object on a channel
+* `(OOP2)` `ObjectOperationAction` enum has the following values in order from zero: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`
+* `(OOP3)` The attributes available in an `ObjectOperation` are:
+  * `(OOP3a)` `action` `ObjectOperationAction` enum - defines the operation to be applied to the object
+  * `(OOP3b)` `objectId` string - the object ID of the object on a channel to which the operation should be applied
+  * `(OOP3c)` `mapOp` `ObjectsMapOp` object - the payload for the operation if it is an operation on an `ObjectsMap` object type
+  * `(OOP3d)` `counterOp` `ObjectsCounterOp` object - the payload for the operation if it is an operation on an `ObjectsCounter` object type
+  * `(OOP3e)` `map` `ObjectsMap` object - the payload for the operation if the operation is `MAP_CREATE`. Defines the initial value for the `ObjectsMap` object
+  * `(OOP3f)` `counter` `ObjectsCounter` object - the payload for the operation if the operation is `COUNTER_CREATE`. Defines the initial value for the `ObjectsCounter` object
+  * `(OOP3g)` `nonce` string - the nonce. Must be present on `COUNTER_CREATE` and `MAP_CREATE` operations sent to the server. Should not be accessed by the client library if received from the server
+  * `(OOP3h)` `initialValue` binary - the initial value bytes for the object. Must be present on `COUNTER_CREATE` and `MAP_CREATE` operations sent to the server. Should not be accessed by the client library if received from the server
+  * `(OOP3i)` `initialValueEncoding` string - defines how the `initialValue` should be interpreted by the server. Must be `msgpack` or `json`. Must be present on `COUNTER_CREATE` and `MAP_CREATE` operations sent to the server. Should not be accessed by the client library if received from the server
+* `(OOP4)` The size of the `ObjectOperation` is calculated as follows:
+  * `(OOP4a)` The size is the sum of the sizes of the `mapOp`, `counterOp`, `map`, and `counter` properties
+  * `(OOP4b)` The size of the `mapOp` property is calculated per [OMO3](#OMO3)
+  * `(OOP4c)` The size of the `counterOp` property is calculated per [OCO3](#OCO3)
+  * `(OOP4d)` The size of the `map` property is calculated per [OMP4](#OMP4)
+  * `(OOP4e)` The size of the `counter` property is calculated per [OCN3](#OCN3)
+  * `(OOP4f)` The size of a `null` or omitted property is zero
+* `(OOP5)` `ObjectOperation` encoding:
+  * `(OOP5a)` When the MessagePack protocol is used:
+    * `(OOP5a1)` A binary `ObjectOperation.initialValue` is encoded as a MessagePack binary type
+    * `(OOP5a2)` Set `ObjectOperation.initialValueEncoding` to `msgpack`
+  * `(OOP5b)` When the JSON protocol is used:
+    * `(OOP5b1)` A binary `ObjectOperation.initialValue` is Base64-encoded and represented as a JSON string
+    * `(OOP5b2)` Set `ObjectOperation.initialValueEncoding` to `json`
+
+#### ObjectState
+
+
+* `(OST1)` An `ObjectState` describes the instantaneous state of an object on a channel
+* `(OST2)` The attributes available in an `ObjectState` are:
+  * `(OST2a)` `objectId` string - the identifier of the object
+  * `(OST2b)` `siteTimeserials` `Dict<String, String>` - a map of [serials](#OM2h) keyed by [siteCode](#OM2i), representing the last operations applied to this object
+  * `(OST2c)` `tombstone` boolean - true if the object has been tombstoned
+  * `(OST2d)` `createOp` `ObjectOperation` object - the operation that created the object
+  * `(OST2e)` `map` `ObjectsMap` object - the data that represents the result of applying all object operations to an `ObjectsMap` object excluding the initial value from the `createOp` if it is an `ObjectsMap` object type
+  * `(OST2f)` `counter` `ObjectsCounter` object - the data that represents the result of applying all object operations to an `ObjectsCounter` object excluding the initial value from the `createOp` if it is an `ObjectsCounter` object type
+* `(OST3)` The size of the `ObjectState` is calculated as follows:
+  * `(OST3a)` The size is the sum of the sizes of the `map`, `counter`, and `createOp` properties
+  * `(OST3b)` The size of the `map` property is calculated per [OMP4](#OMP4)
+  * `(OST3c)` The size of the `counter` property is calculated per [OCN3](#OCN3)
+  * `(OST3d)` The size of the `createOp` property is calculated per [OOP4](#OOP4)
+  * `(OST3e)` The size of a `null` or omitted property is zero
+
+#### ObjectsMapOp
+
+
+* `(OMO1)` An `ObjectsMapOp` describes an operation to be applied to an `ObjectsMap` object
+* `(OMO2)` The attributes available in an `ObjectsMapOp` are:
+  * `(OMO2a)` `key` string - the key of the map entry to which the operation should be applied
+  * `(OMO2b)` `data` `ObjectData` object - the data that the map entry should contain if the operation is a `MAP_SET` operation
+* `(OMO3)` The size of the `ObjectsMapOp` is calculated as follows:
+  * `(OMO3a)` The size is the sum of the sizes of the `key` and `data` properties
+  * `(OMO3b)` The size of the `data` property is calculated per [OD3](#OD3)
+  * `(OMO3d)` The size of the `key` property is its string length
+  * `(OMO3c)` The size of a `null` or omitted property is zero
+
+#### ObjectsCounterOp
+
+
+* `(OCO1)` An `ObjectsCounterOp` describes an operation to be applied to an `ObjectsCounter` object
+* `(OCO2)` The attributes available in an `ObjectsCounterOp` are:
+  * `(OCO2a)` `amount` number - the data value that should be added to the counter
+* `(OCO3)` The size of the `ObjectsCounterOp` is calculated as follows:
+  * `(OCO3a)` The size is 8 if `amount` is a number
+  * `(OCO3b)` The size is 0 if `amount` is a `null` or omitted
+
+#### ObjectsMap
+
+
+* `(OMP1)` An `ObjectsMap` object represents a map of key-value pairs
+* `(OMP2)` `ObjectsMapSemantics` enum has the following values in order from zero: `LWW`
+* `(OMP3)` The attributes available in an `ObjectsMap` are:
+  * `(OMP3a)` `semantics` `ObjectsMapSemantics` enum - the conflict-resolution semantics used by the map object
+  * `(OMP3b)` `entries` `Dict<String, ObjectsMapEntry>` - the map entries, indexed by key
+* `(OMP4)` The size of the `ObjectsMap` is calculated as follows:
+  * `(OMP4a)` The size is the sum of the sizes of all map entries in `map` property
+    * `(OMP4a1)` Includes the size of the `String` key for the map entry, calculated as its length
+    * `(OMP4a2)` Includes the size of the `ObjectsMapEntry` object for the map entry, calculated per [OME3](#OME3)
+  * `(OMP4b)` The size of a `null` or omitted property is zero
+
+#### ObjectsCounter
+
+
+* `(OCN1)` An `ObjectsCounter` object represents an incrementable and decrementable value
+* `(OCN2)` The attributes available in an `ObjectsCounter` are:
+  * `(OCN2a)` `count` number - the value of the counter
+* `(OCN3)` The size of the `ObjectsCounter` is calculated as follows:
+  * `(OCN3a)` The size is 8 if `count` is a number
+  * `(OCN3b)` The size is 0 if `count` is a `null` or omitted
+
+#### ObjectsMapEntry
+
+
+* `(OME1)` An `ObjectsMapEntry` represents the value at a given key in an `ObjectsMap` object
+* `(OME2)` The attributes available in an `ObjectsMapEntry` are:
+  * `(OME2a)` `tombstone` boolean - indicates whether the map entry has been removed
+  * `(OME2b)` `timeserial` string - the `serial`#OM2h value of the last operation that was applied to the map entry
+  * `(OME2d)` `serialTimestamp` Time - a timestamp from the `timeserial` field. It is only present if `tombstone` is `true`
+  * `(OME2c)` `data` `ObjectData` object - the data that represents the value of the map entry.
+* `(OME3)` The size of the `ObjectsMapEntry` is calculated as follows:
+  * `(OME3a)` It is equal to the size of the `data` property
+  * `(OME3b)` The size of the `data` property is calculated per [OD3](#OD3)
+  * `(OME3c)` The size of a `null` or omitted property is zero
+
+#### ObjectData
+
+
+* `(OD1)` An `ObjectData` represents a value in an object on a channel
+* `(OD2)` The attributes available in an `ObjectData` are:
+  * `(OD2a)` `objectId` string - a reference to another object
+  * `(OD2b)` `encoding` string - may be set by the client library to indicate that value in `string` field have an encoding
+  * `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+  * `(OD2d)` `bytes` binary | string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+  * `(OD2e)` `number` number - a primitive number leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+  * `(OD2f)` `string` string - a primitive string leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+* `(OD3)` The size of the `ObjectData` is calculated as follows:
+  * `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, and `string` properties
+  * `(OD3b)` If set, the size of a `boolean` property is 1
+  * `(OD3c)` If set, the size of a `bytes` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
+  * `(OD3d)` If set, the size of a `number` property is 8
+  * `(OD3e)` If set, the size of a `string` property is its length
+  * `(OD3f)` The size of a `null` or omitted property is zero
+* `(OD4)` `ObjectData` encoding:
+  * `(OD4a)` Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
+  * `(OD4b)` `ObjectData.encoding` must be left unset unless specified otherwise by the payload encoding procedure in [OD4c](#OD4c) and [OD4d](#OD4d)
+  * `(OD4c)` When the MessagePack protocol is used:
+    * `(OD4c1)` A boolean payload is encoded as a MessagePack boolean type, and the result is set on the `ObjectData.boolean` attribute
+    * `(OD4c2)` A binary payload is encoded as a MessagePack binary type, and the result is set on the `ObjectData.bytes` attribute
+    * `(OD4c3)` A number payload is encoded as a MessagePack float64 type, and the result is set on the `ObjectData.number` attribute
+    * `(OD4c4)` A string payload is encoded as a MessagePack string type, and the result is set on the `ObjectData.string` attribute
+    * `(OD4c5)` A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, encoded as a MessagePack string type, and the result is set on the `ObjectData.string` attribute. The `ObjectData.encoding` attribute is then set to "json"
+  * `(OD4d)` When the JSON protocol is used:
+    * `(OD4d1)` A boolean payload is represented as a JSON boolean and set on the `ObjectData.boolean` attribute
+    * `(OD4d2)` A binary payload is Base64-encoded and represented as a JSON string; the result is set on the `ObjectData.bytes` attribute
+    * `(OD4d3)` A number payload is represented as a JSON number and set on the `ObjectData.number` attribute
+    * `(OD4d4)` A string payload is represented as a JSON string and set on the `ObjectData.string` attribute
+    * `(OD4d5)` A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, represented as a JSON string and the result is set on the `ObjectData.string` attribute. The `ObjectData.encoding` attribute is then set to "json"
+* `(OD5)` `ObjectData` decoding:
+  * `(OD5a)` When the MessagePack protocol is used:
+    * `(OD5a1)` The payloads in `ObjectData.boolean`, `ObjectData.bytes`, `ObjectData.number`, and `ObjectData.string` are decoded as their corresponding MessagePack types
+    * `(OD5a2)` If `ObjectData.encoding` is set to "json", the `ObjectData.string` content is decoded by parsing the string as JSON
+  * `(OD5b)` When the JSON protocol is used:
+    * `(OD5b1)` The payloads in `ObjectData.boolean`, `ObjectData.number`, and `ObjectData.string` are decoded as their corresponding JSON types
+    * `(OD5b2)` The `ObjectData.bytes` payload is Base64-decoded into a binary value
+    * `(OD5b3)` If `ObjectData.encoding` is set to "json", the `ObjectData.string` content is decoded by parsing the string as JSON
+
+#### Annotation
+
+
+* `(TAN1)` An `Annotation` represents an individual annotation event sent or received from the server
+* `(TAN2)` The attributes of an `Annotation` (with optionality indicated for Annotations received from the server) are:
+  * `(TAN2a)` `id` string
+  * `(TAN2b)` `action` enum, with the following values in order from zero: `ANNOTATION_CREATE`, `ANNOTATION_DELETE`
+    * `(TAN2b1)` As with `Message` and `PresenceMessage`, in the wire protocol the action is numeric, and on decoding the library should expose it to the user in whatever enum form is idiomatic in the language and adheres to library conventions. (For example, in javascript, 'annotation.create' and 'annotation.delete' strings)
+  * `(TAN2c)` `clientId` string
+  * `(TAN2d)` `name` string (optional)
+  * `(TAN2e)` `count` integer (optional)
+  * `(TAN2f)` `data` string, binary, or JSON-encodable object or array (optional)
+    * `(TAN2f1)` encoded and decoded per `RSL4`
+  * `(TAN2g)` `encoding` string (optional)
+  * `(TAN2h)` `timestamp` number: Timestamp of when the annotation was received by the server, as milliseconds since the Unix epoch
+  * `(TAN2i)` `serial` string: The unique serial number for this annotation, assigned by the server
+  * `(TAN2j)` `messageSerial` string: The `serial` of the message that is being annotated
+  * `(TAN2k)` `type` string: a string indicating the type of the annotation, handled opaquely by the SDK
+  * `(TAN2l)` `extras` object (optional): A JSON-encodable object for arbitrary metadata
+* `(TAN3)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `Annotation`-like object (or array of such objects), and optionally a `channelOptions`, and return an `Annotation` (or array of `Annotations`) that's decoded and decrypted analagously to `TM3` and `TP4`
+
+#### ProtocolMessage
+
+
+* `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol.  A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages.
+* `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`, `ACTIVATE`, `OBJECT`, `OBJECT_SYNC`, `ANNOTATION`
+* `(TR3)` `ProtocolMessage` `Flag` enum has the following values, where a flag with value `n` is defined to be set if the bitwise AND of the `flags` field with `2ⁿ` is nonzero
+  * `(TR3a)` 0: `HAS_PRESENCE`
+  * `(TR3b)` 1: `HAS_BACKLOG`
+  * `(TR3c)` 2: `RESUMED`
+  * `(TR3e)` 4: `TRANSIENT`
+  * `(TR3f)` 5: `ATTACH_RESUME`
+  * `(TR3h)` 7: `HAS_OBJECTS`
+  * `(TR3q)` 16: `PRESENCE`
+  * `(TR3r)` 17: `PUBLISH`
+  * `(TR3s)` 18: `SUBSCRIBE` Synonymous with `MESSAGE_SUBSCRIBE`. Retained for backward compatibility.
+  * `(TR3u)` 18: `MESSAGE_SUBSCRIBE` Synonymous with `SUBSCRIBE`. This variant should be preferred.
+  * `(TR3t)` 19: `PRESENCE_SUBSCRIBE`
+  * `(TR3v)` 20: (reserved)
+  * `(TR3w)` 21: `ANNOTATION_PUBLISH`
+  * `(TR3x)` 22: `ANNOTATION_SUBSCRIBE`
+  * `(TR3ν)` 23: (reserved)
+  * `(TR3y)` 24: `OBJECT_SUBSCRIBE`
+  * `(TR3z)` 25: `OBJECT_PUBLISH`
+* `(TR4)` The attributes available in a `ProtocolMessage` are:
+  * `(TR4a)` `action` enum
+  * `(TR4n)` `id` string, which will generally be of the form `connectionId:msgSerial`
+  * `(TR4p)` `auth` AuthDetails object used for auth, see [RTC8](#RTC8)
+  * `(TR4b)` `channel` string
+  * `(TR4c)` `channelSerial` string
+  * `(TR4d)` `connectionId` string
+  * `(TR4f)` This clause has been deleted. It was valid up to and including specification version `1.2`.
+  * `(TR4o)` `connectionDetails` `ConnectionDetails` object - provides details on the constraints or defaults for the connection such as max message size, client ID or connection state TTL
+  * `(TR4g)` `count` integer
+  * `(TR4h)` `error` `ErrorInfo` object
+  * `(TR4i)` `flags` integer. Contains one or more of the bit flags specified in `TR3`
+  * `(TR4j)` `msgSerial` long
+  * `(TR4k)` `messages` Array of `Message` objects
+  * `(TR4l)` `presence` Array of `PresenceMessage` objects
+  * `(TR4m)` `timestamp` time in milliseconds since epoch
+  * `(TR4q)` `params` `Dict<String, String>` key-value pairs
+  * `(TR4r)` `state` Array of `ObjectMessage` objects
+  * `(TR4s)` `res` Array of `PublishResult` objects - present in `ACK` `ProtocolMessages`, contains one `PublishResult` per acknowledged `ProtocolMessage` in order, each containing the `serials` of the messages that were published
+
+#### PaginatedResult
+
+
+* `(TG1)` A `PaginatedResult` is a type that represents a page of results from a [paginated query](/rest-api/#pagination.) The response is accompanied by metadata that indicates the relative queries available
+* `(TG2)` `PaginatedResult` wraps all message and presence history, stats and REST presence requests. Instantiating this type should not result in an error if paging headers are not returned from the REST API
+* `(TG3)` `PaginatedResult#items` attribute contains a page of results (for example an Array of `Message` objects for a channel history request)
+* `(TG4)` `PaginatedResult#next` function returns a new `PaginatedResult` loaded with the next page of results. If there are no further pages, then `null` is returned
+* `(TG5)` `PaginatedResult#first` function returns a new `PaginatedResult` for the first page of results
+* `(TG6)` `PaginatedResult#hasNext` function returns `true` if there are further pages
+* `(TG7)` `PaginatedResult#isLast` function returns `true` if this page is the last page i.e. `!hasNext`
+
+#### HttpPaginatedResponse
+
+
+* `(HP1)` A `HttpPaginatedResponse` is a type that represents the response from an HTTP request containing an empty or JSON-encodable object response. [Paginated queries](/rest-api/#pagination) are supported
+* `(HP2)` `HttpPaginatedResponse` inherits from `PaginatedResult` and overrides `next` and `first` so that a new `HttpPaginatedResponse` is returned
+* `(HP3)` `items` attribute is overriden so that an array of `JsonObject` objects are returned if the response is a JSON array. If the response is a single JSON object then `items` returns an array with one `JsonObject`. If the response is empty, then `items` returns an empty array.
+* `(HP4)` `statusCode` is an integer attribute with the HTTP status code for the response
+* `(HP5)` `success` is a boolean attribute which is `true` when the HTTP status code indicates success i.e. `200 <= statusCode < 300`
+* `(HP6)` `errorCode` is an integer attribute populated with the error code if the `X-Ably-Errorcode` HTTP header is sent in the response
+* `(HP7)` `errorMessage` is a string attribute populated with the error code if the `X-Ably-Errormessage` HTTP header is sent in the response
+* `(HP8)` `headers` is an Array of key value pairs for each response header
+
+#### TokenRequest
+
+
+* `(TE1)` `TokenRequest` is a type containing the token request details sent to the [REST requestToken endpoint](/rest-api/#request-token)
+* `(TE2)` String attributes `keyName`, `clientId`, `nonce` and `mac`
+* `(TE3)` `capability` is a string attribute containing capabilities JSON stringified
+* `(TE5)` `timestamp` long - The timestamp (in milliseconds since the epoch) of this request. Timestamps, in conjunction with the `nonce`, are used to prevent requests from being replayed
+* `(TE4)` `ttl` attribute represents time to live (expiry) of this token in milliseconds
+* `(TE6)` `TokenRequest::fromJson` static factory method that accepts either a `JsonObject` or a string (which should be parsed as a JSON string), and returns a new `TokenRequest`. Statically typed languages (that expect the `authCallback` to result in a typed `TokenRequest` object, rather than, say, a hashmap) must implement this; others may at their discretion.
+
+#### TokenDetails
+
+
+* `(TD1)` `TokenDetails` is a type containing the token request response from the [REST requestToken endpoint](/rest-api/#request-token)
+* `(TD2)` `TokenDetails#token` attribute contains the token string
+* `(TD3)` `TokenDetails#expires` attribute contains the expiry time in milliseconds.  Where idiomatic in the language, this can be a Date/Time object
+* `(TD4)` `TokenDetails#issued` attribute contains the time the token was issued in milliseconds.  Where idiomatic in the language, this can be a Date/Time object
+* `(TD5)` `TokenDetails#capability` attribute contains the capability JSON stringified
+* `(TD6)` `TokenDetails#clientId` attribute contains the `clientId` assigned to the token. If `clientId` is `null` or omitted, then the token is prohibited from assuming a `clientId` in any operations, however if `clientId` is a wildcard string `'*'`, then the token is permitted to assume any `clientId`. Any other string value for `clientId` implies that the `clientId` is both enforced and assumed for all operations for this token
+* `(TD7)` `TokenDetails::fromJson` static factory method that accepts either a `JsonObject` or a string (which should be parsed as a JSON string), and returns a new `TokenDetails`. Statically typed languages (that expect the `authCallback` to result in a typed `TokenDetails` object, rather than, say, a hashmap) must implement this; others may at their discretion.
+
+#### Token string
+
+
+* `(TN1)` There is no `TokenString` type but in this specification "token string" refers to a string containing a token for authentication with Ably. With the exception of [RSC1a](#RSC1a) and [RSA4f](#RSA4f), token strings are handled opaquely by the library, and any use of token strings in the API and library must support any type of token string.
+* `(TN2)` A token string (referred to in this specification as an "Ably token string") may be obtained as the `TokenDetails#token` attribute of a `TokenDetails` obtained in response to a request to the [REST requestToken endpoint](/rest-api/#request-token)
+* `(TN3)` A token string (referred to in this specification as a "JWT token string") may be a [JSON Web Token](https://tools.ietf.org/html/rfc7519) satisfying [the Ably requirements for JWTs](https://ably.com/docs/api/realtime-sdk/authentication#ably-jwt.)
+
+#### AuthDetails
+
+
+* `(AD1)` `AuthDetails` is a type used with an `AUTH` protocol message to send authentication details
+* `(AD2)` `AuthDetails#accessToken` attribute contains the token string
+
+#### Stats
+
+
+* `(TS1)` `Stats` is a type encapsulating a statistics datapoint retrieved from the [REST stats endpoint](/rest-api/#stats.)  See [example statistics in JSON format](/general/statistics/)
+* `(TS2)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS12)` The attributes of a `Stats` object consist of:
+  * `(TS12a)` `intervalId` (property present in the JSON) - a `String`
+  * `(TS12b)` This clause has been replaced by [`TS12p`](#TS12p). It was valid up to and including specification version 2.1.
+  * `(TS12p)` `intervalTime` - a language-idiomatic `Time` object, parsed from the `intervalId`
+  * `(TS12c)` `unit` (property present in the JSON) - a `String` or (if idiomatic) a value of the enumerable type `StatsIntervalGranularity` whose permitted values are `minute`, `hour`, `day`, and `month`. This must be from the `unit` property of the JSON, not calculated from the `intervalId`
+  * `(TS12q)` `inProgress` (property present in the JSON) - an optional `String` containing the last sub-interval included in this entry (in format yyyy-mm-dd:hh:mm) for entries that are still in progress, such as the current month
+  * `(TS12r)` `entries` (property present in the JSON) - a `Dict<String, int>` containing statistics entries
+  * `(TS12s)` `schema` (property present in the JSON) - a `String` containing the JSON schema URI
+  * `(TS12t)` `appId` (property present in the JSON) - a `String` containing the ID of the Ably application the statistics are for.
+  * `(TS12d)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12e)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12f)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12g)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12h)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12i)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12j)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12k)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12l)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12m)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12n)` This clause has been deleted. It was valid up to and including specification version 2.1.
+  * `(TS12o)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS3)` This clause has been deleted.
+* `(TS4)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS5)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS6)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS7)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS8)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS9)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS10)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS11)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS13)` This clause has been deleted. It was valid up to and including specification version 2.1.
+* `(TS14)` This clause has been deleted. It was valid up to and including specification version 2.1.
+
+#### ErrorInfo
+
+
+* `(TI1)` Provides a generic Ably `ErrorInfo` object that contains Ably `code`, `statusCode` (analogous to HTTP status code), `message`, optional `cause`, optional `href`, and optional `requestId` (`RSC7c`) attributes
+* `(TI2)` Errors returned from the Ably server are compatible with the `ErrorInfo` structure and should result in errors that inherit from `ErrorInfo`
+* `(TI3)` [Ably-common](https://github.com/ably/ably-common) should be included as a submodule so that [consistent error codes](https://github.com/ably/ably-common/blob/main/protocol/errors.json) can be used
+* `(TI4)` Ably may additionally include a `href` attribute with a string value. This is included for REST responses to provide a URL for customers to find more help on the error code
+* `(TI5)` Log entries generated from errors, where possible, should include a URL to help developers understand the error and resolve the issue. If the URL is not already present within the contents of the `message` attribute, then it should be included in the log entry as follows: "See `[URL]`". If the `href` attribute is present, it should be used as the URL. If the `href` attribute is not present, and the `code` attribute is present, then the URL should be constructed as follows "https://help.ably.io/error/`[CODE]`". If neither the `href` or `code` attributes are present, then an additional URL should not be included in the log entry.
+
+#### ConnectionStateChange
+
+
+* `(TA1)` Whenever the connection state changes, a `ConnectionStateChange` object is emitted on the `Connection` object
+* `(TA2)` The `ConnectionStateChange` object contains the current state in attribute `current`, the previous state in attribute `previous`, and when the client is not connected and a connection attempt will be made automatically by the library, the amount of time in milliseconds until the next retry in the attribute `retryIn`
+* `(TA5)` The `ConnectionStateChange` object contains the `event` that generated the connection state change
+* `(TA3)` If the connection state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
+
+#### ChannelStateChange
+
+
+* `(TH1)` Whenever the channel state changes, a `ChannelStateChange` object is emitted on the `RealtimeChannel` object
+* `(TH2)` The `ChannelStateChange` object contains the current state in attribute `current`, the previous state in attribute `previous`
+* `(TH5)` The `ConnectionStateChange` object contains the `event` that generated the channel state change
+* `(TH3)` If the channel state change includes error information, then the `reason` attribute will contain an `ErrorInfo` object describing the reason for the error
+* `(TH4)` The `ChannelStateChange` object contains an attribute `resumed` which in combination with an `ATTACHED` state, indicates whether the channel attach successfully resumed its state following the connection being resumed or recovered. If `resumed` is true, then the attribute indicates that the attach within Ably successfully recovered the state for the channel, and as such there is no loss of message continuity. In all other cases, `resumed` is false, and may be accompanied with a [channel state change error reason](#TH3)
+* `(TH6)` The `ChannelStateChange` object may contain an attribute `hasBacklog` which, upon transitioning to `ATTACHED`, indicates whether the channel should expect a backlog of messages from a resume or rewind. This attribute should be set as defined by `RTL2i`.
+
+#### Capability - *API not defined yet*
+
+* `(TC1)` This type represents a capability for a key or token
+* `(TC2)` For now a string representation of the JSON will suffice wherever `capability` is used
+
+#### ConnectionDetails
+
+
+* `(CD1)` Connection details are optionally passed to the client library in the `CONNECTED` `ProtocolMessage#connectionDetails` attribute to inform the client about any constraints it should adhere to, and provide additional metadata about the connection. For example, if a request is made to publish a message that exceeds the `maxMessageSize`, the client library can reject the message immediately, without communicating with the Ably service
+* `(CD2)` Attributes available in `ConnectionDetails`:
+  * `(CD2a)` `clientId` contains the client ID assigned to the token. If `clientId` is `null` or omitted, then the client is prohibited from assuming a `clientId` in any operations, however if `clientId` is a wildcard string `'*'`, then the client is permitted to assume any `clientId`. Any other string value for `clientId` implies that the `clientId` is both enforced and assumed for all operations from this client
+  * `(CD2b)` `connectionKey` is the connection secret key string that is used to resume a connection and its state.
+  * `(CD2c)` `maxMessageSize` overrides the default `maxMessageSize` ([TO3l8](#TO3l8))
+  * `(CD2d)` `maxFrameSize` overrides the default `maxFrameSize` ([TO3l8](#TO3l8))
+  * `(CD2e)` `maxInboundRate` is the maximum allowable number of requests per second from a client or Ably. In the case of a realtime connection, this restriction applies to the number of `ProtocolMessage` objects sent, whereas in the case of REST, it is the total number of REST requests per second
+  * `(CD2f)` `connectionStateTtl` is the duration that Ably will persist the connection state when a Realtime client is abruptly disconnected
+  * `(CD2g)` `serverId` string is a unique identifier for the front-end server that the client has connected to. This server ID is only used for the purposes of debugging
+  * `(CD2h)` `maxIdleInterval` is the maximum length of time in milliseconds that the server will allow no activity to occur in the server->client direction. After such a period of inactivity, the server will send a `HEARTBEAT` or transport-level ping to the client. If the value is 0, the server will allow arbitrarily-long levels of inactivity.
+  * `(CD2i)` `objectsGCGracePeriod` integer - the length of time, in milliseconds, that the client library must wait before releasing resources for tombstoned objects and map entries (see [RTO10](../objects-features#RTO10))
+  * `(CD2j)` `siteCode` string - an identifier for the site that the client has connected to
+#### ChannelProperties
+
+* `(CP1)` properties of a channel and its state
+* `(CP2)` The attributes of `ChannelProperties` consist of:
+  * `(CP2a)` `attachSerial` string - contains the `channelSerial` that the current attachment started at, set per [RTL15a](#RTL15a)
+  * `(CP2b)` `channelSerial` string - contains the last `channelSerial` received on the channel, set per [RTL15b](#RTL15b)
+
+#### ChannelDetails
+
+
+* `(CHD1)` `ChannelDetails` is a type that represents information for a channel including channelId, status and occupancy
+* `(CHD2)` The attributes of `ChannelDetails` consist of:
+  * `(CHD2a)` `channelId` string - the identifier of the channel
+  * `(CHD2b)` `status` `ChannelStatus` - the status of the channel
+
+#### ChannelStatus
+
+
+* `(CHS1)` `ChannelStatus` is a type that contains status and occupancy for a channel
+* `(CHS2)` The attributes of `ChannelStatus` consist of:
+  * `(CHS2a)` `isActive` boolean - represents if the channel is active. (Currently just always true since getting metrics activates the channel, so not very useful)
+  * `(CHS2b)` `occupancy` `ChannelOccupancy` - occupancy is an object containing the metrics for the channel
+
+#### ChannelOccupancy
+
+
+* `(CHO1)` Is a type that contain channel metrics
+* `(CH02)` This clause has been renamed to #CHO2.
+* `(CHO2)` The attributes of `ChannelOccupancy` consist of:
+  * `(CHO2a)`metrics` `ChannelMetrics@
+
+#### ChannelMetrics
+
+
+* `(CHM1)` `ChannelMetrics` is a type that contains the count of publishers and subscribers, connections and presenceConnections, presenceMembers and presenceSubscribers, objectPublishers and objectSubscribers
+* `(CHM2)` The attributes of `ChannelMetrics` consist of:
+  * `(CHM2a)` `connections` integer - the total number of realtime attachments, that is, realtime connections which are attached to the channel
+  * `(CHM2b)` `presenceConnections` integer - the number of realtime attachments which are permitted to enter presence, whether or not they have currently done so
+  * `(CHM2c)` `presenceMembers` integer - the number of members in the presence set of channel (note: may be larger than presenceConnections since a given connection may enter the presence set multiple times with different clientIds)
+  * `(CHM2d)` `presenceSubscribers` integer - the number of realtime attachments which are receiving presence messages on the channel (that is, they have the `subscribe` capability and have not specified a `ChannelMode` that excludes `PRESENCE_SUBSCRIBE`)
+  * `(CHM2e)` `publishers` integer - the number of realtime attachments which are able to publish messages to the channel (that is, they have the `publish` capability and have not specified a `ChannelMode` that excludes `PUBLISH`)
+  * `(CHM2f)` `subscribers` integer - the number of realtime attachments which are receiving messages on the channel (that is, they have the `subscribe` capability and have not specified a `ChannelMode` that excludes `SUBSCRIBE` or synonymously `MESSAGE_SUBSCRIBE`)
+  * `(CHM2g)` `objectPublishers` integer - the number of realtime attachments which are able to publish object messages to the channel (that is, they have the `object-publish` capability and have specified a `ChannelMode` that includes `OBJECT_PUBLISH`)
+  * `(CHM2h)` `objectSubscribers` integer - the number of realtime attachments which are receiving object messages on the channel (that is, they have the `object-subscribe` capability and have specified a `ChannelMode` that includes `OBJECT_SUBSCRIBE`)
+
+#### BatchResult
+
+
+* `(BAR1)` Contains information about the results of a batch operation
+  * `(BAR2)` The attributes of `BatchResult` consist of:
+  * `(BAR2a)` `successCount` number - the number of successful operations
+  * `(BAR2b)` `failureCount` number - the number of unsuccessful operations
+  * `(BAR2c)` `results` array - an array of results for the batch operation
+
+#### BatchPublishSpec
+
+
+* `(BSP1)` Describes the messages that should be published by a batch publish operation, and the channels to which they should be published
+* `(BSP2)` The attributes of `BatchPublishSpec` consist of:
+  * `(BSP2a)` `channels` an array of strings - the names of the channels to which all of the messages contained in the `messages` attribute should be published
+  * `(BSP2b)` `messages` an array of `Message` objects - the messages which should be published to all of the channels named by the `channels` array
+
+#### BatchPublishSuccessResult
+
+
+* `(BPR1)` Contains information about the result of successful publishes to a channel requested by a single `BatchPublishSpec`
+* `(BPR2)` The attributes of `BatchPublishSuccessResult` consist of:
+  * `(BPR2a)` `channel` string - the name of the channel
+  * `(BPR2b)` `messageId` string - a string containing the `messageId` prefix for the published message(s)
+  * `(BPR2c)` `serials` array of `String?` - an array of message serials corresponding 1:1 to the messages that were published. A serial may be null if the message was discarded due to a configured conflation rule.
+
+#### BatchPublishFailureResult
+
+
+* `(BPF1)` Contains information about the result of unsuccessful publishes to a channel requested by a single `BatchPublishSpec`
+* `(BPF2)` The attributes of `BatchPublishFailureResult` consist of:
+  * `(BPF2a)` `channel` string - the name of the channel
+  * `(BPF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the message(s) failed to publish
+
+#### BatchPresenceSuccessResult
+
+
+* `(BGR1)` Contains information about the result of a successful batch presence request for a single channel
+* `(BGR2)` The attributes of `BatchPresenceSuccessResult` consist of:
+  * `(BGR2a)` `channel` string - the name of the channel
+  * `(BGR2b)` `presence` `PresenceMessage[]` - an array containing all members present on the channel
+
+#### BatchPresenceFailureResult
+
+
+* `(BGF1)` Contains information about the result of an unsuccessful batch presence request for a single channel
+* `(BGF2)` The attributes of `BatchPresenceFailureResult` consist of:
+  * `(BGF2a)` `channel` string - the name of the channel
+  * `(BGF2b)` `error` `ErrorInfo` - `ErrorInfo` indicating the reason the presence request failed for the given channel
+
+#### PublishResult
+
+
+* `(PBR1)` Contains the result of a publish operation
+* `(PBR2)` The attributes of `PublishResult` consist of:
+  * `(PBR2a)` `serials` array of `String?` - an array of message serials corresponding 1:1 to the messages that were published. A serial may be null if the message was discarded due to a configured conflation rule.
+
+#### UpdateDeleteResult
+
+
+* `(UDR1)` Contains the result of an update or delete message operation
+* `(UDR2)` The attributes of `UpdateDeleteResult` consist of:
+  * `(UDR2a)` `versionSerial` `String?` - the new version serial string of the updated or deleted message. Will be null if the message was superseded by a subsequent update before it could be published.
+
+#### TokenRevocationTargetSpecifier
+
+
+* `(TRT1)` Describes which tokens should be affected by a token revocation request
+* `(TRT2)` The attributes of `TokenRevocationTargetSpecifier` consist of:
+  * `(TRT2a)` `type` string - the type of token revocation target specifier (eg. "clientId", "revocationKey", "channel")
+  * `(TRT2b)` `value` string - the value of the token revocation target specifier
+
+#### TokenRevocationSuccessResult
+
+
+* `(TRS1)` Contains information about the result of a successful token revocation request for a single target specifier
+* `(TRS2)` The attributes of `TokenRevocationSuccessResult` consist of:
+  * `(TRS2a)` `target` string - the target specifier
+  * `(TRS2b)` `appliesAt` Time - a timestamp at which the token revocation will take effect
+  * `(TRS2c)` `issuedBefore` Time - a timestamp for which tokens previously issued will be revoked
+
+#### TokenRevocationFailureResult
+
+
+* `(TRF1)` Contains information about the result of an unsuccessful token revocation request for a single target specifier
+* `(TRF2)` The attributes of `TokenRevocationFailureResult` consist of:
+  * `(TRF2a)` `target` string - the target specifier
+  * `(TRF2b)` `error` `ErrorInfo` - an `ErrorInfo` indicating the reason the token revocation request failed for the given specified
+
+#### MessageFilter
+
+* `(MFI1)` Supplies filter options to subscribe as defined in #RTL22
+* `(MFI2)` Contains the following attributes:
+  * `(MFI2a)` `isRef` - A boolean for checking if a message contains an `extras.ref` field
+  * `(MFI2b)` `refTimeserial` - A string for checking if a message's `extras.ref.timeserial` matches the supplied value
+  * `(MFI2c)` `refType` - A string for checking if a message's `extras.ref.type` matches the supplied value
+  * `(MFI2d)` `name` - A string for checking if a message's `name` matches the supplied value
+  * `(MFI2e)` `clientId` - A string for checking if a message's `clientId` matches the supplied value
+
+#### ReferenceExtras
+
+* `(REX1)` Is an object attached to the `extras` field of a message to reference a previous message.
+* `(REX2)` Contains the following fields:
+  * `(REX2a)` `timeserial` - The `timeserial` of the message being referenced
+  * `(REX2b)` `type` - The type of reference, user defined
+    * `(REX2b1)` Should be written in reverse domain name notation
+    * `(REX2b2)` Types beginning with `com.ably.` are reserved
+
+### Option types {#options}
+
+
+#### ClientOptions
+
+* `(TO1)` Ably library options used when instantiating a REST or Realtime client
+* `(TO2)` Note: `ClientOptions` does not currently define a default for max message size or request size. This will be added in the future to ensure that REST requests does not exceed the limits before the request is made to the server. In the case of realtime, the connection constraints will be sent to the client in the initial `CONNECTED` `ProtocolMessage`
+* `(TO3)` The attributes of `ClientOptions` consist of:
+  * `(TO3a)` `clientId` string - the id of the client represented by this instance
+  * `(TO3b)` `logLevel` - controls the level of verbosity of log messages from the library. The implementation of this is likely to vary by platform
+  * `(TO3c)` `logHandler` - allows the client to intercept log messages and handle them in a client-specific way. The implementation of this is likely to vary by platform
+  * `(TO3m)` `logExceptionReportingUrl` (deprecated) - defaults to a string value for an Ably error reporting DSN (Data Source Name), which is typically a URL in the format <code>https://[KEY]:[SECRET]`errors.ably.io/[ID]</code>. When set to `null`, `false@ or an empty string (depending on what is idiomatic for the platform), exception reporting is disabled
+  * `(TO3d)` `tls` boolean - defaults to true. If false, will not use TLS for all connections
+  * `(TO3e)` `autoConnect` boolean - defaults to true. If false, suppresses the automatic initiation of a connection when the library is instantiated
+  * `(TO3f)` `useBinaryProtocol` boolean - defaults to true. If false, forces the library to use the JSON encoding for REST and Realtime operations, instead of the default binary msgpack encoding
+  * `(TO3g)` `queueMessages` boolean - defaults to true. If false, suppresses the default queueing of `MESSAGE`, `PRESENCE` or `OBJECT` protocol messages. See [RTL6c](#RTL6c) for connection and channel state condition details
+  * `(TO3h)` `echoMessages` boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection
+  * `(TO3i)` `recover` string - A connection recovery string, specified with the intention of inheriting the state of an earlier connection
+  * `(TO3n)` `idempotentRestPublishing` boolean - defaults to false for clients with version &lt; 1.2, otherwise true. If true, [RSL1k](#RSL1k1) applies
+  * `(TO3j)` Auth option attributes:
+    * `(TO3j1)` `key` string - Full Ably key string as obtained from dashboard
+    * `(TO3j2)` `token` string | `TokenDetails` | `TokenRequest` - An authentication token issued for this application, either in the form of a token string, a `TokenDetails` object, or a `TokenRequest` object
+    * `(TO3j3)` `tokenDetails` `TokenDetails` - An authentication token issued for this application
+    * `(TO3j4)` `useTokenAuth` boolean - When true, token authentication will always be used by the client. If `clientId` is unspecified, then the token issued will inherently be anonymous i.e. it will contain an empty `clientId`
+    * `(TO3j5)` `authCallback` - A callback to call to obtain a signed `TokenRequest`, `TokenDetails` or a token string. This enables a client to obtain token requests or tokens from another entity, so tokens can be renewed without the client requiring a key. If a JSON-encodable object is provided in the callback, then the library will determine if it's a `TokenDetails` (if it contains a `token` key) or `TokenRequest` (no `token` key) and use the `fromJson` method ([TD7](#TD7), [TE6](#TE6)) to construct an object
+    * `(TO3j6)` `authUrl` string - A URL to query to obtain a signed `TokenRequest`, `TokenDetails` or a token string. This enables a client to obtain token request or token from another entity, so tokens can be renewed without the client requiring a key
+    * `(TO3j7)` `authMethod` - The HTTP verb to be used when a request is made by the library to the `authUrl`. Defaults to `GET`, supports `GET` and `POST`
+    * `(TO3j8)` `authHeaders` - Headers to be included in any request made by the library to the `authUrl`
+    * `(TO3j9)` `authParams` - Additional params to be included in any request made by the library to the `authUrl`, either as query params added to the URL in the case of `GET`, or form-encoded in the body in the case of `POST`
+    * `(TO3j10)` `queryTime` - If true, the library will when issuing a token request query the Ably system for the current time instead of relying on a locally-available time of day
+    * `(TO3j11)` `defaultTokenParams` - When a [TokenParams](#token-params) object is provided, it will override the client library defaults described in [TokenParams](#token-params)
+  * `(TO3k)` Endpoint and connectivity-related attributes:
+    * `(TO3k8)` `endpoint` string - allows a non-default Ably endpoint to be used
+    * `(TO3k1)` `environment` string (deprecated) - allows a non-default Ably endpoint to be used
+    * `(TO3k2)` `restHost` string (deprecated) - for development environments only; allows a non-default Ably REST host to be specified. It is never valid to provide both a `restHost` and `environment` value
+    * `(TO3k3)` `realtimeHost` string (deprecated) - for development environments only; allows a non-default Ably Realtime host to be specified. It is never valid to provide both a `realtimeHost` and `environment` value
+    * `(TO3k6)` `fallbackHosts` string array - optionally allows one or more fallback hosts to be used instead of the default fallback hosts. If an empty array is specified, then fallback host functionality is disabled
+    * `(TO3k7)` `fallbackHostsUseDefault` boolean (deprecated) - optionally allows the default fallback hosts `[a-e].ably-realtime.com` to be used when `environment` is not production or a custom realtime or REST host endpoint is being used. It is never valid to configure `fallbackHost` and set `fallbackHostsUseDefault` to `true`. The `fallbackHostsUseDefault` option is deprecated and future library releases will ignore any supplied value
+    * `(TO3k4)` `port` integer - for development environments only; allows a non-default Ably non-TLS port to be specified
+    * `(TO3k5)` `tlsPort` integer - for development environments only; allows a non-default Ably TLS port to be specified
+  * `(TO3l)` The follow attributes, if set, are used to change the default behavior of the library:
+    * `(TO3l1)` `disconnectedRetryTimeout` integer - default 15,000 (15s). When the connection enters the `DISCONNECTED` state, after this delay in milliseconds, if the state is still `DISCONNECTED`, the client library will attempt to reconnect automatically
+    * `(TO3l2)` `suspendedRetryTimeout` integer - default 30,000 (30s). When the connection enters the `SUSPENDED` state, after this delay in milliseconds, if the state is still `SUSPENDED`, the client library will attempt to reconnect automatically
+    * `(TO3l7)` `channelRetryTimeout` integer - default 15,000 (15s). When a channel becomes `SUSPENDED` following a server initiated `DETACHED`, after this delay in milliseconds, if the channel is still `SUSPENDED` and the connection is `CONNECTED`, the client library will attempt to re-attach the channel automatically
+    * `(TO3l3)` `httpOpenTimeout` integer - default 4,000 (4s). Timeout for opening the connection, available in the client library if supported by the transport
+    * `(TO3l4)` `httpRequestTimeout` integer - default 10,000 (10s). Timeout for any single HTTP request and response
+    * `(TO3l11)` `realtimeRequestTimeout` integer - default 10,000 (10s). When a realtime client library is establishing a connection with Ably, or sending a `HEARTBEAT`, `CONNECT`, `ATTACH`, `DETACH` or `CLOSE` `ProtocolMessage` to Ably, this is the amount of time that the client library will wait before considering that request as failed and triggering a suitable failure condition
+    * `(TO3l5)` `httpMaxRetryCount` integer - default 3. Max number of fallback hosts to use as a fallback when an HTTP request to the primary host is unreachable or indicates that it is unserviceable
+    * `(TO3l6)` `httpMaxRetryDuration` integer - default 15,000 (15s). Max elapsed time in which fallback host retries for HTTP requests will be attempted i.e. if the first default host attempt takes 7s, and then the subsequent fallback retry attempt takes 10s, no further fallback host attempts will be made as the total elapsed time of 17s exceeds the default 15s limit
+    * `(TO3l8)` `maxMessageSize` integer - default 65536 (64KiB). The maximum size of messages that can be published in one go. That is, the size of the `ProtocolMessage.messages`, `ProtocolMessage.presence` or `ProtocolMessage.state` array for a realtime publish, presence action or object operation, or the message or array of messages being published for a REST publish. For realtime publishes, the default will be overridden by the `maxMessageSize` in the `connectionDetails`, see [CD2c](#CD2c)
+      * `(TO3l8a)` This clause has been replaced by [TO3l8f](#TO3l8f)
+      * `(TO3l8b)` This clause has been replaced by [TM6b](#TM6b)
+      * `(TO3l8c)` This clause has been replaced by [TM6c](#TM6c)
+      * `(TO3l8d)` This clause has been replaced by [TM6d](#TM6d)
+      * `(TO3l8e)` This clause has been replaced by [TM6e](#TM6e)
+      * `(TO3l8f)` The size is defined as the sum of all message sizes being published, calculated based on [TM6](#TM6), [TP5](#TP5) and [OM3](#OM3)
+    * `(TO3l9)` `maxFrameSize` integer - default 524288 (512KiB). The maximum size of a single POST body or [WebSocket](https://ably.com/topic/websockets) frame. This is mostly only relevant for `RestClient#request` (e.g. for batch publishes), since publishes will hit the `maxMessageSize` limit before this
+    * `(TO3l10)` `fallbackRetryTimeout` integer - default 600000 (10 minutes). (After a failed request to the default endpoint, followed by a successful request to a fallback endpoint), the period in milliseconds before HTTP requests are retried  against the default endpoint
+  * `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
+  * `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
+  * `(TO3q)` `transportParams` [String: Stringifiable]? - defaults to null. Described in [RTC1f](#RTC1f)
+
+#### TokenParams {#token-params}
+
+* `(TK1)` A class providing parameters of a token request. These params are used when invoking `Auth#authorize`, `Auth#requestToken` and `Auth#createTokenRequest`
+* `(TK2)` The attributes of `TokenParams` consist of:
+  * `(TK2a)` `ttl` long - Requested time to live for the token in milliseconds. When omitted, Ably will default to a TTL of 60 minutes
+  * `(TK2b)` `capability` string - Capability requirements JSON stringified for the token. When omitted, Ably will default to the capabilities of the underlying key
+  * `(TK2c)` `clientId` string - A `clientId` string to associate with this token. If `clientId` is `null` or omitted, then the token is prohibited from assuming a `clientId` in any operations, however if `clientId` is a wildcard string `'*'`, then the token is permitted to assume any `clientId`. Any other string value for `clientId` implies that the `clientId` is both enforced and assumed for all operations for this token
+  * `(TK2d)` `timestamp` long - The timestamp (in milliseconds since the epoch) of this request. Timestamps, in conjunction with the `nonce`, are used to prevent requests from being replayed. `timestamp` is a "one-time" value, and is valid in a request, but is not validly a member of any default token params such as `ClientOptions#defaultTokenParams`
+  * `(TK2e)` `nonce` optional string - Used to prevent against replay attacks. If not provided, then the library will automatically generate one if needed, as described by [RSA9c](#RSA9c).
+
+#### AuthOptions
+
+* `(AO1)` A class providing configurable authentication options used when authenticating or issuing tokens explicitly. These options are used when invoking `Auth#authorize`, `Auth#requestToken`, `Auth#createTokenRequest` and `Auth#authorize`
+* `(AO2)` The attributes of `AuthOptions` consist of:
+  * `(AO2a)` `key` string - Full Ably key string, as obtained from dashboard, used when signing token requests locally
+  * `(AO2b)` `authCallback` - A callback to call to obtain a signed `TokenRequest`, `TokenDetails` or a token string. This enables a client to obtain token requests or tokens from another entity, so tokens can be renewed without the client requiring a key. If a JSON-encodable object is provided in the callback, then the library will determine if it's a `TokenDetails` (if it contains a `token` key) or `TokenRequest` (no `token` key) and use the `fromJson` method ([TD7](#TD7), [TE6](#TE6)) to construct an object
+  * `(AO2h)` `token` string - An authentication token string issued for this application
+  * `(AO2i)` `tokenDetails` `TokenDetails` - An authentication token (token string plus associated details, per `TD1`) issued for this application
+  * `(AO2c)` `authUrl` string - A URL to query to obtain a signed `TokenRequest`, `TokenDetails` or a token string. This enables a client to obtain token request or token from another entity, so tokens can be renewed without the client requiring a key
+  * `(AO2d)` `authMethod` - The HTTP verb to be used when a request is made by the library to the `authUrl`. Defaults to `GET`, supports `GET` and `POST`
+  * `(AO2e)` `authHeaders` - Headers to be included in any request made by the library to the `authUrl`
+  * `(AO2f)` `authParams` - Additional params to be included in any request made by the library to the `authUrl`, either as query params in the case of `GET`, or form-encoded in the body in the case of `POST`
+  * `(AO2g)` `queryTime` - If true, the library will when issuing a token request query the Ably system for the current time instead of relying on a locally-available time of day
+  * `(AO2j)` `useTokenAuth` optional boolean – When true, token authentication will always be used by the client. See [RSA4](#RSA4), [TO3j4](#TO3j4)
+
+#### ChannelOptions
+
+* `(TB1)` options provided when instantiating a channel
+* `(TB2)` The attributes of `ChannelOptions` consist of:
+  * `(TB2b)` `cipher`, which is either:
+    * `(TB2b1)` A `CipherParams` instance, or
+    * `(TB2b2)` A `CipherParamOptions` instance. In this case, the client library should call `getDefaultParams`, passing it the options hash, to obtain a `CipherParams` instance
+  * `(TB2c)` `params` (for realtime client libraries only) a `Dict<string,string>` of key/value pairs
+  * `(TB2d)` `modes` (for realtime client libraries only) an array of `ChannelMode` s, where a `ChannelMode` is a member of an enum containing the names of those children of [`TR3`](#TR3) whose value is ≥16 (or see the IDL below)
+  * `(TB4)` `attachOnSubscribe` (for realtime client libraries only) a boolean which determines whether calling `subscribe` on a channel or presence object should trigger an implicit attach. Defaults to `true`.
+* `(TB3)` The client lib may optionally provide an alternative constructor `withCipherKey` for ChannelOptions that takes a `key` only. (This must be differentiated from the normal constructor such that it is clear that the value being passed in is a key). (This is intended for languages where requiring a hash map is unidiomatic)
+
+#### DeriveOptions
+
+* `(DO1)` options provided to create a derive channel
+* `(DO2)` The attributes of derive `DeriveOptions` consists of:
+  * `(DO2a)` `filter` (string) - A JMESPath string for filter expression.
+
+#### CipherParams
+
+* `(TZ1)` params to configure encryption for a channel
+* `(TZ2)` The attributes of `CipherParams` consist of anything necessary to implement the supported algorithms, in addition to the following standardised attributes:
+  * `(TZ2a)` `algorithm` string - Default is `AES`. Optionally specify the algorithm to use for encryption, currently only `AES` is supported
+  * `(TZ2b)` `keyLength` integer - the length in bits of the `key`; for example 128 or 256
+  * `(TZ2d)` `key` binary - private key used to encrypt and decrypt payloads
+  * `(TZ2c)` `mode` string - Default is `CBC`. Optionally specify cipher mode, currently only `CBC` is supported
+
+#### CipherParamOptions
+
+* `(CO1)` Values used for creating a `CipherParams` instance. Depending on the language, may be implemented as a hashmap or a class.
+* `(CO2)` The attributes of `CipherParamOptions` consist of:
+  * `(CO2a)` `algorithm` (optional) string - the algorithm to use for encryption; currently the only supported non-null value is `AES`
+  * `(CO2b)` `key` binary or string - private key used to encrypt and decrypt payloads
+  * `(CO2c)` `keyLength` (optional) integer - the length in bits of the `key`; for example 128 or 256
+  * `(C02d)` `mode` (optional) string – the cipher mode; currently the only supported non-null value is `CBC`
+
+#### WrapperSDKProxyOptions
+
+* `(WPO1)` Options for controlling the creation of a wrapper SDK proxy client ([`WP1`](#WP1)).
+* `(WPO2)` Has the following attributes:
+  * `(WPO2a)` `agents` `[String: String?]?` - a set of agents describing the wrapper SDK which is creating the proxy client. This property has the same semantics as the `ClientOptions#agents` property.
+
+### Push notifications {#types-push}
+
+
+#### PushChannelSubscription
+
+* `(PCS1)` details of a push subscription to a channel, consisting of the following attributes:
+* `(PCS2)` deviceId string - (optional, populated for subscriptions made for a specific device registration)
+* `(PCS3)` clientId string - (optional, populated for subscriptions made for a specific `clientId`)
+* `(PCS4)` channel string - the channel name associated with this subscription
+* `(PCS5)` precisely one of `deviceId` or `clientId` must be non-null – this should be enforced by a mechanism appropriate to the language, for example one constructor that takes a device ID and one that takes a client ID
+
+#### DeviceDetails
+
+* `(PCD1)` details of a registered device, consisting of the following attributes:
+* `(PCD2)` id string - the id of the device registration
+* `(PCD3)` clientId string - (optional, populated for device registrations associated with a `clientId`)
+* `(PCD4)` formFactor - the device formfactor, one of `phone`, `tablet`, `desktop`, `tv`, `watch`, `car`, `embedded`, `other`
+* `(PCD5)` metadata - a map of string key/value pairs containing any other registered metadata associated with the device registration
+* `(PCD6)` platform - the device platform, one of `android`, `ios`, `browser`
+* `(PCD7)` push DevicePushDetails - details of the push registration for this device
+
+#### DevicePushDetails
+
+* `(PCP1)` details of the push registration for a given device, consisting of the following attributes:
+* `(PCP2)` errorReason ErrorInfo - (optional) any error information associated with the registration
+* `(PCP3)` recipient - a map of string key/value pairs containing details of the push transport and address
+* `(PCP4)` state - the state of the push registration, one of  `Active`, `Failing`, `Failed`
+
+### Client library introspection {#introspection}
+
+
+#### ClientInformation
+
+* `(CR1)` Provides information about the client library and the environment in which it’s running.
+* `(CR2)` `agents` static property:
+  * `(CR2a)` Returns a `Dict<String, String?>` that lists the default key-value entries that the library uses to populate the `Agent` library identifier, as described by [`RSC7d1`](#RSC7d1). An example would be `{ "ably-java": "1.2.1", "android": "24" }`.
+* `(CR3)` `agentIdentifier` static method:
+  * `(CR3a)` The client library must only offer this method if it offers the `ClientOptions#agents` property described by [`RSC7d6`](#RSC7d6).
+  * `(CR3b)` Returns the `Agent` library identifier described by [`RSC7d`](#RSC7d).
+  * `(CR3c)` Accepts an `additionalAgents` parameter of type `Dict<String, String?>?`, whose value is to be interpreted with the same semantics as the `ClientOptions#agents` property. The `agentIdentifier` method will inject these agents into the `Agent` library identifier that it returns.
+  * `(CR3d)` An API commentary must be provided for this method. This commentary must make it clear that this interface is only to be used by Ably-authored SDKs.
+
+### Client Library defaults {#defaults}
+
+
+The following default values are configured for the client library:
+
+* `(DF1)` Realtime defaults:
+  * `(DF1a)` `connectionStateTtl` integer - default 120s. The duration that Ably will persist the connection state when a Realtime client is abruptly disconnected. When the client is in the `DISCONNECTED` state, once this TTL has passed, the client should transition the state to the `SUSPENDED` state signifying that the state is now lost i.e. channels need to be re-attached manually. Note that this default is overriden by `connectionStateTtl`, if specified in the `ConnectionDetails` of the `CONNECTED` `ProtocolMessage`
+  * `(DF1b)` This clause has been replaced by [TO3l11](#TO3l11).
+
+## Interface Definition {#idl}
+
+
+The following bespoke IDL (Interface Definition Language) describes the types and classes present in the REST and Realtime client libraries.
+
+Please note the following conventions:
+
+* Types are capitalized
+* Attribute and method names are lowercase
+* Attributes are denoted as `attributeName: Type`
+* Instance methods are denoted as `methodName(argName: Type, argName: Type) -> ReturnType` (`ReturnType` may be omitted)
+* Callback functions / closures are denoted as `(argName: Type, argName: Type) -> ReturnType` (`ReturnType` is usually omitted)
+* Values produced by I/O (e.g. a request) are prefixed with `=> io`. In some platforms (JS) those values are passed as arguments to a callback argument, instead of being returned. I/O always can fail, but how do they fail is undefined in the spec, so it's also undefined here
+* Enums are denoted as `.A | .B | .C`
+* `Type?` denotes a nullable type
+* `[Type: Othertype]` denotes a map, hash or equivalent, or (if idiomatic) a list of 2-tuples.
+* `Type default value` denotes that the thing being annotated with `Type` has `value` as default. `Type api-default value` denotes that the Ably server API uses those defaults and therefore it is unnecessary for the client library to send these default values to the API
+* Class fields (as opposed to instance fields) are prefixed with a `+`
+* `Duration` and `Time` types are typically represented as milliseconds since the epoch. Where needed, a more idiomatic language specific duration may be used such as `seconds` or `Time` respectively for Ruby
+* `Data` is a message payload type, see [RSL4a](#RSL4a) for a list of supported payload types
+* `Stringifiable` is a type used for unknown configuration parameters that need to be coerced to strings when used, see [RTC1f](#RTC1f) for definition
+* `JSONObject` and `JSONArray` denote any type or interface in the target language that represents an [RFC4627](https://www.ietf.org/rfc/rfc4627.txt) `object` or `array` value respectively. Such types serialize to, and may be deserialized from, the corresponding JSON text. In the specification text above, values of these types are collectively referred to as "JSON-encodable".
+
+Each type, method, and attribute is labelled with the name of one or more clauses from the preceding feature spec. An asterisk is used as a wildcard to mean all clauses with a given prefix.
+
+```
+class RestClient: // RSC*
+  constructor(keyOrTokenStr: String) // RSC1
+  constructor(ClientOptions) // RSC1
+  auth: Auth // RSC5
+  push: Push // RSC21
+  device() => io LocalDevice // RSH8
+  channels: Channels<RestChannel> // RSN1
+  request(
+    String method,
+    String path,
+    Int version,
+    Dict<String, String> params?,
+    JsonObject | JsonArray body?,
+    Dict<String, String> headers?
+  ) => io HttpPaginatedResponse // RSC19
+  stats(
+    start: Time api-default epoch(), // RSC6b1
+    end: Time api-default now(), // RSC6b1
+    direction: .Backwards | .Forwards api-default .Backwards, // RSC6b2
+    limit: int api-default 100, // RSC6b3
+    unit: .Minute | .Hour | .Day | .Month api-default .Minute // RSC6b4
+  ) => io PaginatedResult<Stats> // RSC6a
+  time() => io Time // RSC16
+  batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
+  batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
+  batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC24
+  createWrapperSDKProxy(WrapperSDKProxyOptions) => RestClientInterface // RSC26
+
+interface RestClientInterface // WP*
+  // This is an interface that has the same instance methods as RestClient, except for createWrapperSDKProxy.
+
+class RealtimeClient: // RTC*
+  constructor(keyOrTokenStr: String) // RTC12
+  constructor(ClientOptions) // RTC12
+  auth: Auth // RTC4
+  push: Push // RTC13
+  device() => io LocalDevice // RSH8
+  channels: Channels<RealtimeChannel> // RTC3, RTS1
+  clientId: String? // RTC17
+  connection: Connection // RTC2
+  request(
+    String method,
+    String path,
+    Dict<String, String> params?,
+    JsonObject | JsonArray body?,
+    Dict<String, String> headers?
+  ) => io HttpPaginatedResponse // RTC9
+  stats(
+    start: Time api-default epoch(),
+    end: Time api-default now(),
+    direction: .Backwards | .Forwards api-default .Backwards,
+    limit: int api-default 100,
+    unit: .Minute | .Hour | .Day | .Month api-default .Minute
+  ) => io PaginatedResult<Stats> // Same as RestClient.stats, RTC5
+  close() // RTC16
+  connect() // RTC15
+  time() => io Time // RTC6
+  batchPublish(BatchPublishSpec) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult> // RSC22
+  batchPublish(BatchPublishSpec[]) => io BatchResult<BatchPublishSuccessResult | BatchPublishFailureResult>[] // RSC22
+  batchPresence(string[]) => io BatchResult<BatchPresenceSuccessResult | BatchPresenceFailureResult> // RSC24
+  createWrapperSDKProxy(WrapperSDKProxyOptions) => RealtimeClientInterface // RTC14
+
+interface RealtimeClientInterface // WP*
+  // This is an interface that has the same instance methods as RealtimeClient, except for createWrapperSDKProxy.
+
+class ClientOptions: // TO*
+  embeds AuthOptions // This is not currently documented in the spec and needs to be – see https://github.com/ably/docs/issues/1476
+  autoConnect: Bool default true // RTC1b, TO3e
+  clientId: String? // RSC17, RSA15, TO3a
+  defaultTokenParams: TokenParams? // TO3j11
+  echoMessages: Bool default true // RTC1a, TO3h
+  environment: String? // RSC15e, TO3k1
+  endpoint: String? // RSC15e, TO3k8
+  logHandler: // platform specific - TO3c
+  logLevel: // platform specific - TO3b
+  logExceptionReportingUrl: String default "[library specific]" // TO3m (deprecated)
+  port: Int default 80 // TO3k4
+  queueMessages: Bool default true // RTP16b, TO3g
+  restHost: String default "main.realtime.ably.net" // RSC12, TO3k2
+  realtimeHost: String default "main.realtime.ably.net" // RTC1d, TO3k3
+  fallbackHosts: String[] default nil // RSC15b, RSC15a, TO3k6
+  fallbackHostsUseDefault: Bool default false // TO3k7 (deprecated)
+  recover: String? // RTC1c, TO3i
+  tls: Bool default true // RSC18, TO3d
+  tlsPort: Int default 443 // TO3k5
+  useBinaryProtocol: Bool default true // TO3f
+  transportParams: [String: Stringifiable]? // TO3q, RTC1f
+  addRequestIds: Bool default false // TO3p
+  // configurable retry and failure defaults
+  disconnectedRetryTimeout: Duration default 15s // TO3l1
+  suspendedRetryTimeout: Duration default 30s // RTN14e, TO3l2
+  channelRetryTimeout: Duration default 15s // RTL13b, TO3l7
+  httpOpenTimeout: Duration default 4s // TO3l3
+  httpRequestTimeout: Duration default 10s // TO3l4
+  realtimeRequestTimeout: Duration default 10s // TO3l11
+  httpMaxRetryCount: Int default 3 // TO3l5
+  httpMaxRetryDuration: Duration default 15s // TO3l6
+  maxMessageSize: Int default 65536 // TO3l8
+  maxFrameSize: Int default 524288 // TO3l9
+  fallbackRetryTimeout: Duration default 600s // TO3l10
+  plugins: Dict<PluginType, Plugin> // TO3o
+  idempotentRestPublishing: bool default true // RSL1k1, RTL6a1, TO3n
+  agents: [String: String?]? // RSC7d6 - interface only offered by some libraries
+  connectivityCheckUrl: String default "https://internet-up.ably-realtime.com/is-the-internet-up.txt" // REC3
+
+class AuthOptions: // AO*
+  authCallback: ((TokenParams) -> io (String | TokenDetails | TokenRequest | JsonObject))? // RSA4a, RSA4, TO3j5, AO2b
+  authHeaders: [String: Stringifiable]? // RSA8c3, TO3j8, AO2e
+  authMethod: .GET | .POST default .GET // RSA8c, TO3j7, AO2d
+  authParams: [String: Stringifiable]? // RSA8c3, RSA8c1, TO3j9, AO2f
+  authUrl: String? // RSA4a, RSA4, RSA8c, TO3j6, AO2c
+  key: String? // RSA11, RSA14, TO3j1, AO2a
+  queryTime: Bool default false // RSA9d, TO3j10, AO2g
+  token: String? | TokenDetails? | TokenRequest? // RSA4a, RSA4, TO3j2, AO2h
+  tokenDetails: TokenDetails? // RSA4a, RSA4, TO3j3, AO2i
+  useTokenAuth: Bool? // RSA4, RSA14, TO3j4, AO2j
+
+class TokenParams: // TK*
+  capability: String api-default '{"*":["*"]}' // RSA9f, TK2b
+  clientId: String? // TK2c
+  nonce: String? // RSA9c, Tk2e
+  timestamp: Time? // RSA9d, TK2d
+  ttl: Duration api-default 60min // RSA9e, TK2a
+
+class Auth: // RSA*
+  clientId: String? // RSA7, RSC17, RSA12
+  authorize(TokenParams?, AuthOptions?) => io TokenDetails // RSA10
+  createTokenRequest(TokenParams?, AuthOptions?) => io TokenRequest // RSA9
+  requestToken(TokenParams?, AuthOptions?) => io TokenDetails // RSA8
+  tokenDetails: TokenDetails? // RSA16
+  revokeTokens(TokenRevocationTargetSpecifier[], issuedBefore Time?, allowReauthMargin boolean?) => io BatchResult<TokenRevocationSuccessResult | TokenRevocationFailureResult> // RSA17
+
+class TokenDetails: // TD*
+  +fromJson(String | JsonObject) -> TokenDetails // TD7
+  capability: String // TD5
+  clientId: String? // TD6
+  expires: Time // TD3
+  issued: Time // TD4
+  token: String // TD2
+
+class TokenRequest: // TE*
+  +fromJson(String | JsonObject) -> TokenRequest // TE6
+  capability: String // TE3
+  clientId: String? // TE2
+  keyName: String // TE2
+  mac: String // TE2
+  nonce: String // TE2
+  timestamp: Time? // TE5
+  ttl: Duration? api-default 60min // TE4
+
+class Channels<ChannelType>: // RSN*, RTS*
+  exists(String) -> Bool // RSN2, RTS2
+  get(String) -> ChannelType // RSN3, RTS3
+  get(String, ChannelOptions) -> ChannelType // RSN3c, RTS3c
+  iterate() -> Iterator<ChannelType> // RSN2, RTS2
+  release(String) // RSN4, RTS4
+
+class RestChannel: // RSL*
+  name: String // RSL9
+  presence: RestPresence // RSL3
+  history(
+    start: Time, // RSL2b1
+    end: Time api-default now(), // RSL2b1
+    direction: .Backwards | .Forwards api-default .Backwards, // RSL2b2
+    limit: int api-default 100 // RSL2b3
+  ) => io PaginatedResult<Message> // RSL2
+  status() => ChannelDetails // RSL8
+  publish(Message, params?: Dict<String, Stringifiable>) => io PublishResult // RSL1
+  publish([Message], params?: Dict<String, Stringifiable>) => io PublishResult // RSL1
+  publish(name: String?, data: Data?) => io PublishResult // RSL1
+  setOptions(options: ChannelOptions) => io // RSL7 - note asynchronous return value for
+    // compatibility with RealtimeChannel#setOptions; not required for REST-only libraries
+  getMessage(serial: String) => io Message // RSL11
+  updateMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL12
+  deleteMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL13
+  getMessageVersions(serial: String, params?: Dict<String, Stringifiable>) => io PaginatedResult<Message> // RSL14
+  appendMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL15
+
+  // Only on platforms that support receiving push notifications:
+  push: PushChannel // RSH7
+
+class RealtimeChannel: // RTL*
+  embeds EventEmitter<ChannelEvent, ChannelStateChange?> // RTL2, RTL2a, RTL2d
+  name: String // RTL23
+  errorReason: ErrorInfo? // RTL24
+  state: ChannelState // RTL2b
+  whenState(ChannelState, (ChannelStateChange?) ->) // RTL25
+  presence: RealtimePresence // RTL9
+  objects: RealtimeObjects // RTL27
+  properties: ChannelProperties // RTL15
+  // Only on platforms that support receiving push notifications:
+  push: PushChannel // RSH7
+  modes: readonly [ChannelMode] // RTL4m
+  params: readonly Dict<String, String> // RTL4k1
+  attach() => io ChannelStateChange? // RTL4
+  detach() => io // RTL5
+  history(
+    start: Time, // RTL10a
+    end: Time api-default now(), // RTL10a
+    direction: .Backwards | .Forwards api-default .Backwards, // RTL10a
+    limit: int api-default 100, // RTL10a
+    untilAttach: Bool default false // RTL10b
+  ) => io PaginatedResult<Message> // RTL10
+  publish(Message, params?: Dict<String, Stringifiable>) => io PublishResult // RTL6, RTL6i
+  publish([Message], params?: Dict<String, Stringifiable>) => io PublishResult // RTL6, RTL6i
+  publish(name: String?, data: Data?) => io PublishResult // RTL6, RTL6i
+  subscribe((Message) ->) => io ChannelStateChange? // RTL7, RTL7a
+  subscribe(String, (Message) ->) => io ChannelStateChange? // RTL7, RTL7b
+  subscribe(MessageFilter, (Message) ->) io ChannelStateChange? // RTL22
+  unsubscribe() // RTL8, RTL8c
+  unsubscribe((Message) ->) // RTL8, RTL8a
+  unsubscribe(String, (Message) ->) // RTL8, RTL8b
+  unsubscribe(MessageFilter, (Message) ->) // RTL22
+  setOptions(options: ChannelOptions) => io // RTL16
+  getMessage(serial: String) => io Message // RTL28
+  updateMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RTL29
+  deleteMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RTL30
+  getMessageVersions(serial: String, params?: Dict<String, Stringifiable>) => io PaginatedResult<Message> // RTL31
+  appendMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RTL32
+
+class MessageFilter: // MFI*
+  isRef: bool // MFI2a
+  refTimeserial: string // MFI2b
+  refType: string // MFI2c
+  name: string // MFI2d
+
+class ChannelProperties: // CP*
+  attachSerial: String? // CP2a
+  channelSerial: String? // CP2b
+
+// Only on platforms that support receiving push notifications:
+class PushChannel: // RSH7
+  subscribeDevice() => io // RSH7a
+  subscribeClient() => io // RSH7b
+  unsubscribeDevice() => io // RSH7c
+  unsubscribeClient() => io // RSH7d
+  listSubscriptions(params?: Dict<String, String>) => io PaginatedResult<PushChannelSubscription> // RSH7e
+
+enum ChannelState: // RTL2
+  INITIALIZED
+  ATTACHING
+  ATTACHED
+  DETACHING
+  DETACHED
+  SUSPENDED
+  FAILED
+
+enum ChannelEvent: // RTL2
+  embeds ChannelState
+  UPDATE // RTL2g
+
+enum ChannelMode: // TB2d
+  PRESENCE
+  PUBLISH
+  SUBSCRIBE
+  MESSAGE_SUBSCRIBE
+  PRESENCE_SUBSCRIBE
+  OBJECT_SUBSCRIBE
+  OBJECT_PUBLISH
+
+class ChannelStateChange: // TH*
+  current: ChannelState // TH2, RTL2a, RTL2b
+  event: ChannelEvent // TH5
+  previous: ChannelState // TH2, RTL2a, RTL2b
+  reason: ErrorInfo? // TH3
+  resumed: Boolean // RTL2f, TH4
+  hasBacklog: Boolean // RTL2i, TH6
+
+class ChannelOptions: // TB*
+  +withCipherKey(key: Binary | String)? -> ChannelOptions // TB3
+  cipher: (CipherParams | CipherParamOptions)? // RSL5a, TB2b
+  params?: Dict<String, String> // TB2c
+  modes?: [ChannelMode] // TB2d
+  attachOnSubscribe: Bool default true // TB4
+
+class MessageOperation: // MOP*
+  clientId?: String // MOP2a
+  description?: String // MOP2b
+  metadata?: Dict<String, String> // MOP2c
+
+class DeriveOptions: // DO*
+  filter: String // DO2a (The filter string is a valid JMESPath String Expression)
+
+class ChannelDetails: // CHD*
+  channelId: String // CHD2a
+  status: ChannelStatus // CHD2b
+
+class ChannelStatus: // CHS*
+  isActive: Boolean // CHS2a
+  occupancy: ChannelOccupancy // CHS2b
+
+class ChannelOccupancy: // CHO*
+  metrics: ChannelMetrics // CHO2a
+
+class ChannelMetrics: // CHM*
+  connections: Int // CHM2a
+  presenceConnections: Int // CHM2b
+  presenceMembers: Int // CHM2c
+  presenceSubscribers: Int // CHM2d
+  publishers: Int // CHM2e
+  subscribers: Int // CHM2f
+  objectPublishers: Int // CHM2g
+  objectSubscribers: Int // CHM2h
+
+class CipherParams: // TZ*
+  algorithm: String default "AES" // TZ2a
+  key: Binary // TZ2d
+  keyLength: Int // TZ2b
+  mode: String default "CBC" // TZ2c
+
+class CipherParamOptions: // CO* (may be implemented as a hashmap or a class depending on language)
+  algorithm?: String // CO2a
+  key: Binary | String // CO2b
+  keyLength?: Int // CO2c
+  mode?: String // CO2d
+
+class Crypto: // RSE*
+  +getDefaultParams(CipherParamOptions) -> CipherParams // RSE1
+  +generateRandomKey(keyLength: Int?) => io Binary // RSE2
+
+class RestPresence: // RSP*
+  get(
+    limit: int api-default 100, // RSP3a
+    clientId: String?, // RSP3a2
+    connectionId: String?, // RSP3a3
+  ) => io PaginatedResult<PresenceMessage> // RSP3
+  history(
+    start: Time, // RSP4b1
+    end: Time api-default now(), // RSP4b1
+    direction: .Backwards | .Forwards api-default .Backwards, // RSP4b2
+    limit: int api-default 100, // RSP4b3
+  ) => io PaginatedResult<PresenceMessage> // RSP4
+
+class RealtimePresence: // RTP*
+  syncComplete: Bool // RTP13
+  get(
+    waitForSync: Bool default true, // RTP11c1
+    clientId: String?, // RTP11c2
+    connectionId: String?, // RTP11c3
+  ) => io [PresenceMessage] // RTP11
+  history(
+    start: Time, // RTP12a
+    end: Time, // RTP12a
+    direction: .Backwards | .Forwards api-default .Backwards, // RTP12a
+    limit: int api-default 100, // RTP12a
+  ) => io PaginatedResult<PresenceMessage> // RTP12
+  subscribe((PresenceMessage) ->) => io ChannelStateChange? // RTP6a
+  subscribe(PresenceAction | [PresenceAction], (PresenceMessage) ->) => io ChannelStateChange? // RTP6b
+  unsubscribe() // RTP7c
+  unsubscribe((PresenceMessage) ->) // RTP7a
+  unsubscribe(PresenceAction, (PresenceMessage) ->) // RTP7b
+  // presence state modifiers
+  enter(Data?, extras?: JsonObject) => io // RTP8
+  update(Data?, extras?: JsonObject) => io // RTP9
+  leave(Data?, extras?: JsonObject) => io // RTP10
+  enterClient(clientId: String, Data?, extras?: JsonObject) => io // RTP4, RTP14, RTP15
+  updateClient(clientId: String, Data?, extras?: JsonObject) => io // RTP15
+  leaveClient(clientId: String, Data?, extras?: JsonObject) => io // RTP15
+
+class RestAnnotations: // RSAN*
+  publish(messageSerial: String | Message, annotation: Partial<Annotation>) => io // RSAN1
+  delete(messageSerial: String | Message, annotation: Partial<Annotation>) => io // RSAN2
+  get(
+    messageSerial: String | Message,
+    params?: Dict<String, Stringifiable>
+  ) => io PaginatedResult<Annotation> // RSAN3
+
+class RealtimeAnnotations: // RTAN*
+  publish(messageSerial: String | Message, annotation: Annotation) => io // RTAN1
+  delete(messageSerial: String | Message, annotation: Annotation) => io // RTAN2
+  get(
+    messageSerial: String | Message,
+    params?: Dict<String, Stringifiable>
+  ) => io PaginatedResult<Annotation> // RTAN3
+  subscribe((Annotation) ->) => io ChannelStateChange? // RTAN4
+  subscribe(String | [String], (Annotation) ->) => io ChannelStateChange? // RTAN4
+  unsubscribe() // RTAN5
+  unsubscribe((Annotation) ->) // RTAN5
+  unsubscribe(String, (Annotation) ->) // RTAN5
+
+enum PresenceAction: // TP2
+  ABSENT // TP2
+  PRESENT // TP2
+  ENTER // TP2
+  LEAVE // TP2
+  UPDATE // TP2
+
+enum MessageAction: // TM5
+  MESSAGE_CREATE // TM5
+  MESSAGE_UPDATE // TM5
+  MESSAGE_DELETE // TM5
+  META // TM5
+  MESSAGE_SUMMARY // TM5
+  MESSAGE_APPEND // TM5
+
+enum ObjectOperationAction: // OOP2, internal
+  MAP_CREATE // OOP2
+  MAP_SET // OOP2
+  MAP_REMOVE // OOP2
+  COUNTER_CREATE // OOP2
+  COUNTER_INC // OOP2
+  OBJECT_DELETE // OOP2
+
+enum ObjectsMapSemantics: // OMP2, internal
+  LWW // OMP2
+
+enum AnnotationAction: // TAN2b
+  ANNOTATION_CREATE
+  ANNOTATION_DELETE
+
+class ConnectionDetails: // CD*, internal
+  clientId: String? // RSA12a, CD2a
+  connectionKey: String // RTN15e, CD2b
+  connectionStateTtl: Duration // CD2f, RTN14e, DF1a
+  maxFrameSize: Int // CD2d
+  maxInboundRate: Int // CD2e
+  maxMessageSize: Int // CD2c
+  serverId: String // CD2g
+  maxIdleInterval: Duration // CD2h
+  objectsGCGracePeriod: Int // CD2i
+  siteCode: String // CD2j
+
+class Message: // TM*
+  constructor(name: String?, data: Data?) // TM4
+  constructor(name: String?, data: Data?, clientId: String?) // TM4
+  +fromEncoded(JsonObject, ChannelOptions?) -> Message // TM3
+  +fromEncodedArray(JsonArray, ChannelOptions?) -> [Message] // TM3
+  +summaryDistinctV1(JsonObject) -> Dict<string, SummaryClientIdList>// TM7b1
+  +summaryUniqueV1(JsonObject) -> Dict<string, SummaryClientIdList> // TM7b2
+  +summaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts> // TM7b3
+  +summaryFlagV1(JsonObject) -> SummaryClientIdList // TM7b4
+  +summaryTotalV1(JsonObject) -> SummaryTotal // TM7b5
+  clientId: String? // TM2b
+  connectionId: String? // TM2c
+  connectionKey: String? // TM2h
+  data: Data? // TM2d
+  encoding: String? // TM2e
+  extras: JsonObject? // TM2i
+  id: String // TM2a
+  name: String? // TM2g
+  timestamp: Time // TM2f
+  action: MessageAction // TM2j
+  serial: string? // TM2r
+  version: MessageVersion // TM2s
+  annotations: MessageAnnotations // TM2u
+
+class PresenceMessage // TP*
+  +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
+  +fromEncodedArray(JsonArray, ChannelOptions?) -> [PresenceMessage] // TP4
+  action: PresenceAction // TP3b
+  clientId: String // TP3c
+  connectionId: String // TP3d
+  data: Data? // TP3e
+  encoding: String? // TP3f
+  extras: JsonObject? // TP3i
+  id: String // TP3a
+  timestamp: Time // TP3g
+  memberKey() -> String // TP3h
+
+class ObjectMessage // OM*, internal
+  id: String // OM2a
+  clientId: String // OM2b
+  connectionId: String // OM2c
+  extras: JsonObject? // OM2d
+  timestamp: Time // OM2e
+  operation: ObjectOperation? // OM2f
+  object: ObjectState? // OM2g
+  serial: String // OM2h
+  serialTimestamp: Time? // OM2j
+  siteCode: String // OM2i
+
+class ObjectOperation // OOP*, internal
+  action: ObjectOperationAction // OOP3a
+  objectId: String // OOP3b
+  mapOp: ObjectsMapOp? // OOP3c
+  counterOp: ObjectsCounterOp? // OOP3d
+  map: ObjectsMap? // OOP3e
+  counter: ObjectsCounter? // OOP3f
+  nonce: String? // OOP3g
+  initialValue: Binary? // OOP3h
+  initialValueEncoding: String? // OOP3i
+
+class ObjectState // OST*, internal
+  objectId: String // OST2a
+  siteTimeserials: Dict<String, String> // OST2b
+  tombstone: Boolean // OST2c
+  createOp: ObjectOperation? // OST2d
+  map: ObjectsMap? // OST2e
+  counter: ObjectsCounter? // OST2f
+
+class ObjectsMapOp // OMO*, internal
+  key: String // OMO2a
+  data: ObjectData? // OMO2b
+
+class ObjectsCounterOp // OCO*, internal
+  amount: Number // OCO2a
+
+class ObjectsMap // OMP*, internal
+  semantics: ObjectsMapSemantics // OMP3a
+  entries: Dict<String, ObjectsMapEntry>? // OMP3b
+
+class ObjectsCounter // OCN*, internal
+  count: Number? // OCN2a
+
+class ObjectsMapEntry // OME*, internal
+  tombstone: Boolean? // OME2a
+  timeserial: String? // OME2b
+  serialTimestamp: Time? // OME2d
+  data: ObjectData? // OME2c
+
+class ObjectData // OD*, internal
+  objectId: String? // OD2a
+  encoding: String? // OD2b
+  boolean: Boolean? // OD2c
+  bytes: Binary? | String? // OD2d
+  number: Number? // OD2e
+  string: String? // OD2f
+
+class Annotation // TAN*
+  +fromEncoded(JsonObject, ChannelOptions?) -> Annotation // TAN3
+  +fromEncodedArray(JsonArray, ChannelOptions?) -> [Annotation] // TAN3
+  id: String // TAN2a
+  action: AnnotationAction // TAN2b
+  clientId: String? // TAN2c
+  name: String? // TAN2d
+  count: Int? // TAN2e
+  data: Data? // TAN2f
+  encoding: String? // TAN2g
+  timestamp: Time // TAN2h
+  serial: String // TAN2i
+  messageSerial: String // TAN2j
+  type: String // TAN2k
+  extras: JsonObject? // TAN2l
+
+class ProtocolMessage: // internal
+  action: ProtocolMessageAction // TR2, TR4a
+  auth: AuthDetails? //
+  channel: String? // TR4b
+  channelSerial: String? // TR4c
+  connectionDetails: ConnectionDetails? // RSA7b3, RTN19, TR4o
+  connectionId: String? // RTN15c1, TR4d
+  count: Int? // TR4g
+  error: ErrorInfo? // RTN15c2, TR4h
+  flags: Int? // TR4i; bitfield containing zero or more boolean flags specified in TR3
+  id: String? // TR4b
+  messages: [Message]? // TR4k
+  msgSerial: Int? // RTN7b, TR4j
+  presence: [PresenceMessage]? // TR4l
+  timestamp: Time? // TR4m
+  params: Dict<String, String>? // TR4q, RTL4k
+  state: [ObjectMessage]? // TR4r
+  res: [PublishResult]? // TR4s
+
+enum ProtocolMessageAction: // internal
+  HEARTBEAT // TR2
+  ACK // TR2
+  NACK // TR2
+  CONNECT // TR2
+  CONNECTED // TR2
+  DISCONNECT // TR2
+  DISCONNECTED // TR2
+  CLOSE // TR2
+  CLOSED // TR2
+  ERROR // TR2
+  ATTACH // TR2
+  ATTACHED // TR2
+  DETACH // TR2
+  DETACHED // TR2
+  PRESENCE // TR2
+  MESSAGE // TR2
+  SYNC // TR2
+  AUTH // TR2
+  ACTIVATE // TR2
+  OBJECT // TR2
+  OBJECT_SYNC // TR2
+
+class AuthDetails: // AD*
+  accessToken: String // AD2, RTC8a
+
+class Connection: // RTN*
+  embeds EventEmitter<ConnectionEvent, ConnectionStateChange> // RTN4a, RTN4e
+  errorReason: ErrorInfo? // RTN25
+  id: String? // RTN8
+  key: String? // RTN9
+  createRecoveryKey(): String? // RTN16g
+  state: ConnectionState // RTN4d
+  whenState(ConnectionState, (ConnectionStateChange?) ->) // RTN26
+  close() // RTN12
+  connect() // RTC1b, RTN3, RTN11
+  ping() => io Duration // RTN13
+
+enum ConnectionState: // RTN4
+  INITIALIZED
+  CONNECTING
+  CONNECTED
+  DISCONNECTED
+  SUSPENDED
+  CLOSING
+  CLOSED
+  FAILED
+
+enum ConnectionEvent: // RTN4
+  embeds ConnectionState
+  UPDATE // RTN4h
+
+class ConnectionStateChange: // TA*
+  current: ConnectionState // TA2
+  event: ConnectionEvent // TA5
+  previous: ConnectionState // TA2
+  reason: ErrorInfo? // RTN4f, TA3
+  retryIn: Duration? // RTN14d, TA2
+
+class Stats: // TS12
+  intervalId: String // TS12a
+  intervalTime: Time // TS12p (calculated client-side)
+  unit: Stats.IntervalGranularity // TS12c
+  inProgress: String? // TS12q
+  entries: Dict<String, Int> // TS12r
+  schema: String // TS12s
+  appId: String // TS12t
+
+enum StatsIntervalGranularity: // TS12c
+  MINUTE
+  HOUR
+  DAY
+  MONTH
+
+class DeviceDetails: // PCD*
+  id: String // PCD2
+  clientId: String? // PCD3
+  formFactor: DeviceFormFactor // PCD4
+  metadata: JsonObject // PCD5
+  platform: DevicePlatform // PCD6
+  push: DevicePushDetails // PCD7
+
+class DevicePushDetails: // PCP*
+  errorReason: ErrorInfo? // PCP2
+  recipient: JsonObject // PCP3
+  state: .Active | .Failing | .Failed // PCP4
+
+class LocalDevice extends DeviceDetails: // RSH8*
+  deviceIdentityToken: String? // RSH8k1
+  deviceSecret: String // RSH8k2
+
+class Push: RSH1, RSH2
+  admin: PushAdmin // RSH1
+
+  // Only on platforms that support receiving push notifications:
+
+  activate(
+    registerCallback: ((ErrorInfo?, DeviceDetails?) -> io String)?,
+    // Only on platforms that, after first set, can update later its push
+    // device details:
+    updateFailedCallback: ((ErrorInfo) ->), // Deprecated, see RSH3e3a and RSH3e3d
+    updatedCallback: ((ErrorInfo?) ->)?
+  ) => io ErrorInfo? // RSH2a
+  deactivate(
+    deregisterCallback: ((ErrorInfo?, deviceId: String?) -> io)?
+  ) => io ErrorInfo? // RSH2b
+
+class PushAdmin: // RSH1
+  publish(recipient: JsonObject, data: JsonObject) => io // RSH1a
+  deviceRegistrations: PushDeviceRegistrations // RSH1b
+  channelSubscriptions: PushChannelSubscriptions // RSH1c
+
+class PushDeviceRegistrations: // RSH1b
+  get(deviceId: String) => io DeviceDetails // RSH1b1
+  list(params: Dict<String, String>) => io PaginatedResult<DeviceDetails> // RSH1b2
+  save(DeviceDetails) => io DeviceDetails // RSH1b3
+  remove(deviceId: String) => io // RSH1b4
+  removeWhere(params: Dict<String, String>) => io // RSH1b5
+
+class PushChannelSubscriptions: // RSH1c
+  list(params: Dict<String, String>) => io PaginatedResult<PushChannelSubscription> // RSH1c1
+  listChannels(params: Dict<String, String>?) => io PaginatedResult<String> // RSH1c2
+  save(PushChannelSubscription) => io PushChannelSubscription // RSH1c3
+  remove(PushChannelSubscription) => io // RSH1c4
+  removeWhere(params: Dict<String, String>) => io // RSH1c5
+
+enum DevicePlatform: // PCD6
+  "android"
+  "ios"
+  "browser"
+
+enum DeviceFormFactor: // PCD4
+  "phone"
+  "tablet"
+  "desktop"
+  "tv"
+  "watch"
+  "car"
+  "embedded"
+  "other"
+
+class PushChannelSubscription: // PCS*
+  +forDevice(channel: String, deviceId: String) => PushChannelSubscription // PSC5
+  +forClientId(channel: String, clientId: String) => PushChannelSubscription // PSC5
+  deviceId: String? // PCS2
+  clientId: String? // PCS3
+  channel: String // PCS4
+
+class ErrorInfo: // TI*
+  code: Int // TI1
+  href: String? // TI1, TI4
+  message: String // TI1
+  cause: ErrorInfo? // TI1
+  statusCode: Int // TI1
+  requestId: String? // TI1, RSC7c
+
+class EventEmitter<Event, Data>: // RTE*
+  on((Data...) ->) // RTE3
+  on(Event, (Data...) ->) // RTE3
+  once((Data...) ->) // RTE4
+  once(Event, (Data...) ->) // RTE4
+  off() // RTE5
+  off((Data...) ->) // RTE5
+  off(Event, (Data...) ->) // RTE5
+  emit(Event, Data...)  // internal, RTE6
+
+class PaginatedResult<T>: // TG*
+  items: [T] // TG3
+  first() => io PaginatedResult<T> // TG5
+  hasNext() -> Bool // TG6
+  isLast() -> Bool // TG7
+  next() => io PaginatedResult<T>? // TG4
+
+class HttpPaginatedResponse // HP*
+  embeds PaginatedResult<JsonObject>
+  items: [JsonObject] // HP3
+  statusCode: Int // HP4
+  success: Bool // HP5
+  errorCode: Int // HP6
+  errorMessage: String // HP7
+  headers: Dict<String, String> // HP8
+
+class Plugin // PC2
+  // Empty class/interface. Plugins are not expected to share any common interface.
+  // An opaque base interface type for plugins is defined for type-safety in statically-typed languages.
+
+enum PluginType // PT*
+  "vcdiff" // PT2a
+  "Objects" // PT2b
+
+class VCDiffDecoder // VD*
+  decode([byte] delta, [byte] base) -> [byte] // VD2a, PC3a
+
+class DeltaExtras // DE*
+  from: String // DE2a
+  format: String // DE2b
+
+class ReferenceExtras: // REX*
+  timeserial: String // REX2a
+  type: String //REX2b
+
+class ClientInformation: // CR*
+  +agents: Dict<String, String?> // CR2
+  +agentIdentifier(additionalAgents: Dict<String, String?>?) => String // CR3; interface only offered by some libraries
+
+class BatchResult<T>
+  successCount: number // BAR2a
+  failureCount: number // BAR2b
+  results: [T] // BAR2c
+
+class BatchPublishSpec:
+  channels: [String] // BSP2a
+  messages: [Message] //BSP2b
+
+class BatchPublishSuccessResult:
+  channel: string // BPR2a
+  messageId: string // BPR2b
+  serials: [String?] // BPR2c
+
+class BatchPublishFailureResult:
+  channel: string // BPF2a
+  error: ErrorInfo // BPF2c
+
+class BatchPresenceSuccessResult:
+  channel: string // BGR2a
+  presence: [PresenceMessage] // BGR2b
+
+class BatchPresenceFailureResult
+  channel: string // BGF2a
+  error: ErrorInfo // BGF2b
+
+class PublishResult:
+  serials: [String?] // PBR2a
+
+class UpdateDeleteResult:
+  versionSerial: String? // UDR2a
+
+class TokenRevocationTargetSpecifier:
+  type: string // TRT2a
+  value: string // TRT2b
+
+class TokenRevocationSuccessResult:
+  target: string // TRS2a
+  appliesAt: Time // TRS2b
+  issuedBefore: Time // TRS2c
+
+class TokenRevocationFailureResult:
+  target: string // TRF2a
+  error: ErrorInfo // TRF2b
+
+class WrapperSDKProxyOptions:
+  agents: [String: String?]? // WPO2a
+
+class SummaryClientIdList:
+  total: number // TM7c1a
+  clientIds: [string] // TM7c1b
+
+class SummaryClientIdCounts:
+  total: number // TM7d1a
+  clientIds: Dict<string, number> // TM7d1b
+
+class SummaryTotal:
+  total: number // TM7e1a
+
+class MessageAnnotations:
+  summary: Dict<string, JsonObject>? // TM8a
+
+class MessageVersion:
+  serial: string? // TM2s1
+  timestamp: number? // TM2s2
+  clientId: string? // TM2s3
+  description: string? // TM2s4
+  metadata: Dict<string, string>? //TM2s5
+```
+
+## Old specs {#old-specs}
+
+
+Use the version navigation to view older versions.  References to diffs for each version are maintained below:
+
+* v1.1 deprecated in Mar 2020. [View 1.1 → 1.2 changes](https://github.com/ably/docs/blob/main/content/client-lib-development-guide/versions/features-1-1__1-2.diff)
+* v1.0 deprecated in Jan 2019. [View 1.0 → 1.1 changes](https://github.com/ably/docs/blob/main/content/client-lib-development-guide/versions/features-1-0__1-1.diff)
+* v0.8 deprecated in Jan 2017. [View 0.8 → 1.0 changes](https://github.com/ably/docs/blob/main/content/client-lib-development-guide/versions/features-0-8__1-0.diff)
