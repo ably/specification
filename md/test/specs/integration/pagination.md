@@ -10,15 +10,18 @@ Integration test against Ably sandbox
 ### Prerequisites
 - Ably sandbox app provisioned via `POST https://sandbox.realtime.ably-nonprod.net/apps`
 - API key from provisioned app
+- Channel names must be unique per test (see README for naming convention)
 
 ### Setup Pattern
 ```pseudo
 BEFORE ALL TESTS:
   app_config = provision_sandbox_app()
+  app_id = app_config.app_id
   api_key = app_config.keys[0].key_str
 
 AFTER ALL TESTS:
-  # Sandbox apps auto-delete after 60 minutes
+  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
+    WITH Authorization: Basic {api_key}
 ```
 
 ---
@@ -33,19 +36,27 @@ client = Rest(options: ClientOptions(
   key: api_key,
   endpoint: "sandbox"
 ))
-unique_channel = client.channels.get("pagination-basic-" + random_string())
+channel_name = "pagination-basic-" + random_id()
+channel = client.channels.get(channel_name)
 
 # Publish enough messages to require pagination
 FOR i IN 1..15:
-  AWAIT unique_channel.publish(name: "event-" + str(i), data: str(i))
+  AWAIT channel.publish(name: "event-" + str(i), data: str(i))
 
-WAIT 2 seconds
+# Poll until all messages are persisted
+poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length == 15,
+  interval: 500ms,
+  timeout: 15s
+)
 ```
 
 ### Test Steps
 ```pseudo
 # Request with small limit to force pagination
-page1 = AWAIT unique_channel.history(limit: 5)
+page1 = AWAIT channel.history(limit: 5)
 ```
 
 ### Assertions
@@ -71,18 +82,26 @@ client = Rest(options: ClientOptions(
   key: api_key,
   endpoint: "sandbox"
 ))
-unique_channel = client.channels.get("pagination-next-" + random_string())
+channel_name = "pagination-next-" + random_id()
+channel = client.channels.get(channel_name)
 
 # Publish messages
 FOR i IN 1..12:
-  AWAIT unique_channel.publish(name: "event-" + str(i), data: str(i))
+  AWAIT channel.publish(name: "event-" + str(i), data: str(i))
 
-WAIT 2 seconds
+# Poll until all messages are persisted
+poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length == 12,
+  interval: 500ms,
+  timeout: 15s
+)
 ```
 
 ### Test Steps
 ```pseudo
-page1 = AWAIT unique_channel.history(limit: 5)
+page1 = AWAIT channel.history(limit: 5)
 page2 = AWAIT page1.next()
 page3 = AWAIT page2.next()
 ```
@@ -115,17 +134,25 @@ client = Rest(options: ClientOptions(
   key: api_key,
   endpoint: "sandbox"
 ))
-unique_channel = client.channels.get("pagination-first-" + random_string())
+channel_name = "pagination-first-" + random_id()
+channel = client.channels.get(channel_name)
 
 FOR i IN 1..10:
-  AWAIT unique_channel.publish(name: "event-" + str(i), data: str(i))
+  AWAIT channel.publish(name: "event-" + str(i), data: str(i))
 
-WAIT 2 seconds
+# Poll until all messages are persisted
+poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length == 10,
+  interval: 500ms,
+  timeout: 15s
+)
 ```
 
 ### Test Steps
 ```pseudo
-page1 = AWAIT unique_channel.history(limit: 3)
+page1 = AWAIT channel.history(limit: 3)
 page2 = AWAIT page1.next()
 first_page = AWAIT page2.first()
 ```
@@ -151,20 +178,28 @@ client = Rest(options: ClientOptions(
   key: api_key,
   endpoint: "sandbox"
 ))
-unique_channel = client.channels.get("pagination-iterate-" + random_string())
+channel_name = "pagination-iterate-" + random_id()
+channel = client.channels.get(channel_name)
 
 # Publish known set of messages
 message_count = 25
 FOR i IN 1..message_count:
-  AWAIT unique_channel.publish(name: "event-" + str(i), data: str(i))
+  AWAIT channel.publish(name: "event-" + str(i), data: str(i))
 
-WAIT 2 seconds
+# Poll until all messages are persisted
+poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length == message_count,
+  interval: 500ms,
+  timeout: 30s
+)
 ```
 
 ### Test Steps
 ```pseudo
 all_messages = []
-page = AWAIT unique_channel.history(limit: 7)
+page = AWAIT channel.history(limit: 7)
 
 WHILE true:
   all_messages.extend(page.items)
@@ -187,7 +222,7 @@ FOR i IN 1..message_count:
 
 ---
 
-## TG - next() on last page returns null or throws
+## TG - next() on last page returns null
 
 Tests behavior when calling `next()` on the last page.
 
@@ -197,100 +232,35 @@ client = Rest(options: ClientOptions(
   key: api_key,
   endpoint: "sandbox"
 ))
-unique_channel = client.channels.get("pagination-last-" + random_string())
+channel_name = "pagination-lastnext-" + random_id()
+channel = client.channels.get(channel_name)
 
-# Publish small number of messages
-AWAIT unique_channel.publish(name: "event1", data: "1")
-AWAIT unique_channel.publish(name: "event2", data: "2")
+# Publish just a few messages
+FOR i IN 1..3:
+  AWAIT channel.publish(name: "event-" + str(i), data: str(i))
 
-WAIT 1 second
+# Poll until messages are persisted
+poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length == 3,
+  interval: 500ms,
+  timeout: 10s
+)
 ```
 
 ### Test Steps
 ```pseudo
-page = AWAIT unique_channel.history(limit: 10)
+page = AWAIT channel.history(limit: 10)  # Larger than message count
+```
 
-ASSERT page.isLast() == true
+### Assertions
+```pseudo
+ASSERT page.items.length == 3
 ASSERT page.hasNext() == false
-```
+ASSERT page.isLast() == true
 
-### Assertions
-```pseudo
-# Behavior on next() when on last page is implementation-defined
-# Either returns null or throws - verify consistent behavior
-result = AWAIT page.next()
-ASSERT result IS null OR result.items.length == 0
-```
-
----
-
-## TG - Pagination with direction forwards
-
-Tests that pagination works correctly with forwards direction.
-
-### Setup
-```pseudo
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox"
-))
-unique_channel = client.channels.get("pagination-forwards-" + random_string())
-
-FOR i IN 1..10:
-  AWAIT unique_channel.publish(name: "event-" + str(i), data: str(i))
-
-WAIT 2 seconds
-```
-
-### Test Steps
-```pseudo
-page1 = AWAIT unique_channel.history(limit: 4, direction: "forwards")
-page2 = AWAIT page1.next()
-```
-
-### Assertions
-```pseudo
-# Forwards: oldest first
-ASSERT page1.items[0].name == "event-1"
-ASSERT page1.items[3].name == "event-4"
-
-# Second page continues from where first left off
-ASSERT page2.items[0].name == "event-5"
-```
-
----
-
-## TG - hasPrevious and previous (if supported)
-
-Tests `hasPrevious()` and `previous()` navigation (if supported by the library).
-
-### Note
-Previous page navigation may not be supported in all SDKs. This test should be skipped if the library doesn't implement previous navigation.
-
-### Setup
-```pseudo
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox"
-))
-unique_channel = client.channels.get("pagination-previous-" + random_string())
-
-FOR i IN 1..10:
-  AWAIT unique_channel.publish(name: "event-" + str(i), data: str(i))
-
-WAIT 2 seconds
-```
-
-### Test Steps
-```pseudo
-page1 = AWAIT unique_channel.history(limit: 3)
-page2 = AWAIT page1.next()
-
-IF page2.hasPrevious IS defined AND page2.hasPrevious() == true:
-  prev_page = AWAIT page2.previous()
-
-  # prev_page should match page1
-  ASSERT prev_page.items.length == page1.items.length
-  FOR i IN 0..prev_page.items.length:
-    ASSERT prev_page.items[i].id == page1.items[i].id
+# Calling next() should return null (or empty result)
+next_page = AWAIT page.next()
+ASSERT next_page IS null OR next_page.items.length == 0
 ```

@@ -1,6 +1,6 @@
 # REST Channel Publish Integration Tests
 
-Spec points: `RSL1d`, `RSL1k4`, `RSL1k5`, `RSL1l1`, `RSL1m4`, `RSL1n`
+Spec points: `RSL1d`, `RSL1l1`, `RSL1m4`, `RSL1n`
 
 ## Test Type
 Integration test against Ably sandbox
@@ -9,44 +9,60 @@ Integration test against Ably sandbox
 
 ### Prerequisites
 - Ably sandbox app provisioned via `POST https://sandbox.realtime.ably-nonprod.net/apps`
-- API key from provisioned app
+- App must include multiple keys with different capabilities (see below)
+- Channel names must be unique per test (see README for naming convention)
+
+### App Configuration
+
+The sandbox app must be provisioned with keys that have different capabilities:
+
+```json
+{
+  "keys": [
+    {
+      "name": "full-access",
+      "capability": "{\"*\":[\"*\"]}"
+    },
+    {
+      "name": "restricted",
+      "capability": "{\"allowed-channel\":[\"publish\",\"subscribe\"]}"
+    }
+  ]
+}
+```
 
 ### Setup Pattern
 ```pseudo
 BEFORE ALL TESTS:
-  app_config = provision_sandbox_app()
-  api_key = app_config.keys[0].key_str
+  app_config = provision_sandbox_app(config_with_multiple_keys)
+  app_id = app_config.app_id
+  full_access_key = app_config.keys[0].key_str
+  restricted_key = app_config.keys[1].key_str  # Limited capabilities
 
 AFTER ALL TESTS:
-  # Sandbox apps auto-delete after 60 minutes
+  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
+    WITH Authorization: Basic {full_access_key}
 ```
 
 ---
 
 ## RSL1d - Error indication on publish failure
 
-Tests that errors are properly indicated when a publish fails.
+Tests that errors are properly indicated when a publish fails due to insufficient permissions.
 
 ### Setup
 ```pseudo
-client = Rest(options: ClientOptions(
-  key: api_key,
+channel_name = "forbidden-channel-" + random_id()  # Not in restricted key's capability
+
+restricted_client = Rest(options: ClientOptions(
+  key: restricted_key,  # Key without publish capability for this channel
   endpoint: "sandbox"
 ))
-channel = client.channels.get("test-channel")
+restricted_channel = restricted_client.channels.get(channel_name)
 ```
 
 ### Test Steps
 ```pseudo
-# Attempt to publish to a channel the key doesn't have permission for
-# (requires app provisioned with restricted capabilities)
-
-restricted_client = Rest(options: ClientOptions(
-  key: restricted_api_key,  # Key without publish capability
-  endpoint: "sandbox"
-))
-restricted_channel = restricted_client.channels.get("forbidden-channel")
-
 TRY:
   AWAIT restricted_channel.publish(name: "event", data: "data")
   FAIL("Expected exception not thrown")
@@ -59,15 +75,16 @@ CATCH AblyException as e:
 
 ## RSL1n - PublishResult contains serials
 
-Tests that successful publish returns a `PublishResult` with message serials.
+Tests that successful publish returns a result with message serials.
 
 ### Setup
 ```pseudo
 client = Rest(options: ClientOptions(
-  key: api_key,
+  key: full_access_key,
   endpoint: "sandbox"
 ))
-channel = client.channels.get("test-serials-" + random_string())
+channel_name = "test-serials-" + random_id()
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -75,7 +92,6 @@ channel = client.channels.get("test-serials-" + random_string())
 # Single message
 result1 = AWAIT channel.publish(name: "event1", data: "data1")
 
-ASSERT result1 IS PublishResult
 ASSERT result1.serials IS List
 ASSERT result1.serials.length == 1
 ASSERT result1.serials[0] IS String
@@ -96,80 +112,40 @@ ASSERT result2.serials ARE all unique
 
 ---
 
-## RSL1k4 - Idempotent publish with library-generated IDs (retry verification)
-
-Tests that automatic retry after simulated failure doesn't result in duplicate messages.
-
-### Setup
-```pseudo
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox",
-  idempotentRestPublishing: true
-))
-unique_channel = client.channels.get("idempotent-test-" + random_string())
-```
-
-### Test Steps
-```pseudo
-# This test requires ability to intercept and fail the first request
-# then allow retry to succeed. Implementation options:
-# 1. Use a proxy that fails first request
-# 2. Mock at HTTP level but let retry go through
-# 3. Use Ably's test hooks if available
-
-# Simplified approach: publish twice with same library-generated ID
-# and verify only one message appears in history
-
-# First, publish a message and capture its ID
-message = Message(name: "idempotent-event", data: "test-data")
-AWAIT unique_channel.publish(message: message)
-
-# Wait for message to be persisted
-WAIT 1 second
-
-# Get history to verify single message
-history = AWAIT unique_channel.history()
-
-ASSERT history.items.length == 1
-ASSERT history.items[0].name == "idempotent-event"
-ASSERT history.items[0].data == "test-data"
-```
-
-### Note
-Full retry simulation may require HTTP-level interception. The key verification is that the message ID format follows `<base64>:<index>` pattern and history shows exactly one message.
-
----
-
-## RSL1k5 - Idempotent publish with client-supplied IDs (explicit duplicate)
+## RSL1k5 - Idempotent publish with client-supplied IDs
 
 Tests that multiple publishes with the same client-supplied ID result in single message.
 
 ### Setup
 ```pseudo
 client = Rest(options: ClientOptions(
-  key: api_key,
+  key: full_access_key,
   endpoint: "sandbox"
 ))
-unique_channel = client.channels.get("idempotent-explicit-" + random_string())
+channel_name = "idempotent-explicit-" + random_id()
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
 ```pseudo
-fixed_id = "client-supplied-id-" + random_string()
+fixed_id = "client-supplied-id-" + random_id()
 
 # Publish same message ID multiple times
 FOR i IN 1..3:
-  AWAIT unique_channel.publish(
+  AWAIT channel.publish(
     message: Message(id: fixed_id, name: "event", data: "data-" + str(i))
   )
 
-# Wait for processing
-WAIT 2 seconds
+# Poll history until message appears (avoid fixed wait)
+history = poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length > 0,
+  interval: 500ms,
+  timeout: 10s
+)
 
 # Verify only one message in history
-history = AWAIT unique_channel.history()
-
 ASSERT history.items.length == 1
 ASSERT history.items[0].id == fixed_id
 # The data should be from the first publish (subsequent ones are no-ops)
@@ -185,10 +161,11 @@ Tests that publish params are correctly transmitted by using the `_forceNack` te
 ### Setup
 ```pseudo
 client = Rest(options: ClientOptions(
-  key: api_key,
+  key: full_access_key,
   endpoint: "sandbox"
 ))
-channel = client.channels.get("force-nack-test")
+channel_name = "force-nack-test-" + random_id()
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -200,7 +177,7 @@ TRY:
   )
   FAIL("Expected exception not thrown")
 CATCH AblyException as e:
-  ASSERT e.code == 40099  # Specific code for _forceNack
+  ASSERT e.code == 40099  # Specific code for forced nack
 ```
 
 ---
@@ -211,13 +188,24 @@ Tests that server rejects message with clientId different from authenticated cli
 
 ### Setup
 ```pseudo
-# Need a token with specific clientId
-client_with_token = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox",
-  clientId: "authenticated-client-id"
+# Create a token with a specific clientId
+key_client = Rest(options: ClientOptions(
+  key: full_access_key,
+  endpoint: "sandbox"
 ))
-channel = client_with_token.channels.get("clientid-mismatch-test")
+
+token_details = AWAIT key_client.auth.requestToken(
+  tokenParams: TokenParams(clientId: "authenticated-client-id")
+)
+
+# Client using token with clientId
+token_client = Rest(options: ClientOptions(
+  token: token_details.token,
+  endpoint: "sandbox"
+))
+
+channel_name = "clientid-mismatch-" + random_id()
+channel = token_client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -232,6 +220,16 @@ TRY:
   )
   FAIL("Expected exception not thrown")
 CATCH AblyException as e:
-  ASSERT e.statusCode == 400 OR e.statusCode == 401
-  ASSERT e.message CONTAINS "clientId" OR e.message CONTAINS "mismatch"
+  ASSERT e.code == 40012  # Incompatible clientId
+  ASSERT e.statusCode == 400
 ```
+
+---
+
+## Notes
+
+### Tests moved to unit tests
+
+The following functionality is better tested via unit tests with a mocked HTTP client:
+
+- **RSL1k4 - Idempotent retry verification**: Testing that automatic retry after failure doesn't duplicate messages requires HTTP-level interception. This is better done with a mock that can fail the first request and allow the retry. See `unit/channel/idempotency.md`.

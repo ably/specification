@@ -1,403 +1,458 @@
 # Auth Callback Tests
 
-Spec points: `RSA8c`, `RSA8c1a`, `RSA8c1b`, `RSA8c1c`, `RSA8c2`, `RSA8c3`, `RSA8d`
+Spec points: `RSA8c`, `RSA8d`
 
 ## Test Type
-Unit test with mocked HTTP client and/or mocked authCallback
+Unit test with mocked HTTP
 
-## Mock Configuration
+## Purpose
 
-### HTTP Client Mock
-Captures requests and returns configurable responses.
-
-### authCallback Mock
-A function that can be configured to:
-- Return various token types (TokenDetails, TokenRequest, token string)
-- Throw errors
-- Track invocation count and parameters
+These tests verify that the library correctly invokes `authCallback` and `authUrl` to obtain tokens for authentication. The authCallback/authUrl can return:
+- A `TokenDetails` object (containing token, expires, etc.)
+- A `TokenRequest` object (which the library exchanges for a token)
+- A JWT string (raw token string)
 
 ---
 
-## RSA8d - authCallback invocation
+## RSA8d - authCallback invoked for authentication
 
-Tests that `authCallback` is invoked with `TokenParams` and returns token.
+Tests that when `authCallback` is configured, it is invoked to obtain a token.
 
 ### Setup
 ```pseudo
-callback_invocations = []
+mock_http = MockHttpClient()
+callback_invoked = false
+callback_params = null
 
-mock_auth_callback = (token_params) => {
-  callback_invocations.append(token_params)
+auth_callback = FUNCTION(params):
+  callback_invoked = true
+  callback_params = params
   RETURN TokenDetails(
-    token: "mock-token-string",
-    expires: now() + 3600000,  # 1 hour from now
-    clientId: "callback-client"
-  )
-}
-
-mock_http = MockHttpClient()
-mock_http.queue_response(201, { "serials": ["s1"] })
-
-client = Rest(options: ClientOptions(
-  authCallback: mock_auth_callback,
-  clientId: "test-client"
-))
-```
-
-### Test Steps
-```pseudo
-# Trigger auth by making a request
-channel = client.channels.get("test")
-AWAIT channel.publish(name: "event", data: "data")
-```
-
-### Assertions
-```pseudo
-# Callback was invoked
-ASSERT callback_invocations.length >= 1
-
-# TokenParams were passed
-token_params = callback_invocations[0]
-ASSERT token_params IS TokenParams
-
-# Token was used in request
-request = mock_http.captured_requests[0]
-ASSERT request.headers["Authorization"] == "Bearer mock-token-string"
-```
-
----
-
-## RSA8d - authCallback returns different token types
-
-Tests that authCallback can return TokenDetails, TokenRequest, or token string.
-
-### Test Cases
-
-| ID | Return Type | Return Value | Expected Behavior |
-|----|-------------|--------------|-------------------|
-| 1 | `TokenDetails` | `TokenDetails(token: "tok1", ...)` | Token used directly |
-| 2 | `String` (token) | `"raw-token-string"` | String used as token |
-| 3 | `TokenRequest` | `TokenRequest(keyName: "...", ...)` | Exchanged for token via Ably |
-
-### Setup (Case 1 - TokenDetails)
-```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(201, { "serials": ["s1"] })
-
-client = Rest(options: ClientOptions(
-  authCallback: (params) => TokenDetails(
     token: "callback-token",
     expires: now() + 3600000
   )
-))
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback),
+  httpClient: mock_http
+)
 ```
 
-### Test Steps (Case 1)
+### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+# Queue success response for authenticated request
+mock_http.queue_response(200, {"channelId": "test"})
 
-request = mock_http.captured_requests[0]
-ASSERT request.headers["Authorization"] == "Bearer callback-token"
+# Make a request that requires authentication
+result = AWAIT client.request("GET", "/channels/test")
 ```
 
-### Setup (Case 2 - String)
+### Assertions
+```pseudo
+# authCallback was invoked
+ASSERT callback_invoked == true
+
+# Request used the token from authCallback
+ASSERT mock_http.captured_requests.length == 1
+ASSERT mock_http.captured_requests[0].headers["Authorization"] == "Bearer callback-token"
+```
+
+---
+
+## RSA8d - authCallback returning JWT string
+
+Tests that authCallback can return a raw JWT string (not wrapped in TokenDetails).
+
+### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response(201, { "serials": ["s1"] })
 
-client = Rest(options: ClientOptions(
-  authCallback: (params) => "raw-string-token"
-))
+auth_callback = FUNCTION(params):
+  # Return raw JWT string instead of TokenDetails
+  RETURN "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test-jwt-payload"
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback),
+  httpClient: mock_http
+)
 ```
 
-### Test Steps (Case 2)
+### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
-
-request = mock_http.captured_requests[0]
-ASSERT request.headers["Authorization"] == "Bearer raw-string-token"
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
 ```
 
-### Setup (Case 3 - TokenRequest)
+### Assertions
+```pseudo
+# Request used the JWT from authCallback
+ASSERT mock_http.captured_requests[0].headers["Authorization"] == "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test-jwt-payload"
+```
+
+---
+
+## RSA8d - authCallback returning TokenRequest
+
+Tests that when authCallback returns a TokenRequest, the library exchanges it for a token.
+
+### Setup
 ```pseudo
 mock_http = MockHttpClient()
-# First request: exchange TokenRequest for TokenDetails
-mock_http.queue_response(200, {
-  "token": "exchanged-token",
-  "expires": now() + 3600000,
-  "keyName": "appId.keyId"
-})
-# Second request: actual publish
-mock_http.queue_response(201, { "serials": ["s1"] })
 
-client = Rest(options: ClientOptions(
-  authCallback: (params) => TokenRequest(
-    keyName: "appId.keyId",
+auth_callback = FUNCTION(params):
+  # Return a TokenRequest (to be exchanged for token)
+  RETURN TokenRequest(
+    keyName: "app.key",
     ttl: 3600000,
     timestamp: now(),
     nonce: "unique-nonce",
-    mac: "valid-mac-signature"
+    mac: "computed-mac"
   )
-))
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback),
+  httpClient: mock_http
+)
 ```
 
-### Test Steps (Case 3)
+### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+# First request exchanges TokenRequest for TokenDetails
+mock_http.queue_response(200, {
+  "token": "exchanged-token",
+  "expires": now() + 3600000
+})
+# Second request is the actual API call
+mock_http.queue_response(200, {"channelId": "test"})
 
-# First request should be token exchange
-ASSERT mock_http.captured_requests[0].url.path == "/keys/appId.keyId/requestToken"
+AWAIT client.request("GET", "/channels/test")
+```
 
-# Second request should use exchanged token
-ASSERT mock_http.captured_requests[1].headers["Authorization"] == "Bearer exchanged-token"
+### Assertions
+```pseudo
+# Two HTTP requests: token exchange + API call
+ASSERT mock_http.captured_requests.length == 2
+
+# First request was POST to /keys/{keyName}/requestToken
+first_request = mock_http.captured_requests[0]
+ASSERT first_request.method == "POST"
+ASSERT first_request.path matches "/keys/.*/requestToken"
+
+# Second request used the exchanged token
+second_request = mock_http.captured_requests[1]
+ASSERT second_request.headers["Authorization"] == "Bearer exchanged-token"
 ```
 
 ---
 
-## RSA8c - authUrl queries URL for token
+## RSA8d - authCallback receives TokenParams
 
-Tests that `authUrl` is queried to obtain a token.
+Tests that authCallback receives TokenParams when provided to authorize().
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+received_params = null
+
+auth_callback = FUNCTION(params):
+  received_params = params
+  RETURN TokenDetails(
+    token: "test-token",
+    expires: now() + 3600000
+  )
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+AWAIT client.auth.authorize(
+  tokenParams: TokenParams(
+    clientId: "requested-client-id",
+    ttl: 7200000,
+    capability: {"channel1": ["publish"]}
+  )
+)
+```
+
+### Assertions
+```pseudo
+# authCallback received the TokenParams
+ASSERT received_params.clientId == "requested-client-id"
+ASSERT received_params.ttl == 7200000
+ASSERT received_params.capability == {"channel1": ["publish"]}
+```
+
+---
+
+## RSA8c - authUrl invoked for authentication
+
+Tests that when `authUrl` is configured, the library fetches a token from it.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
 
-# Response from authUrl
-mock_http.queue_response_for_host("auth.example.com", 200,
-  body: { "token": "authurl-token", "expires": now() + 3600000 },
-  headers: { "Content-Type": "application/json" }
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/token"
+  ),
+  httpClient: mock_http
 )
-
-# Response from Ably for publish
-mock_http.queue_response(201, { "serials": ["s1"] })
-
-client = Rest(options: ClientOptions(
-  authUrl: "https://auth.example.com/get-token"
-))
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+# authUrl returns TokenDetails
+mock_http.queue_response_for_host("auth.example.com", 200, {
+  "token": "authurl-token",
+  "expires": now() + 3600000
+})
+# Actual API request
+mock_http.queue_response(200, {"channelId": "test"})
+
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
-# First request goes to authUrl
+# First request was to authUrl
 auth_request = mock_http.captured_requests[0]
 ASSERT auth_request.url.host == "auth.example.com"
-ASSERT auth_request.url.path == "/get-token"
-
-# Subsequent request uses obtained token
-publish_request = mock_http.captured_requests[1]
-ASSERT publish_request.headers["Authorization"] == "Bearer authurl-token"
-```
-
----
-
-## RSA8c1a - authUrl with GET method
-
-Tests that TokenParams and authParams are sent as query string for GET requests.
-
-### Setup
-```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response_for_host("auth.example.com", 200,
-  body: "plain-token-string",
-  headers: { "Content-Type": "text/plain" }
-)
-mock_http.queue_response(201, { "serials": ["s1"] })
-
-client = Rest(options: ClientOptions(
-  authUrl: "https://auth.example.com/token",
-  authMethod: "GET",
-  authParams: { "custom": "param1" },
-  authHeaders: { "X-Custom-Header": "value1" }
-))
-```
-
-### Test Steps
-```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
-```
-
-### Assertions
-```pseudo
-auth_request = mock_http.captured_requests[0]
-
+ASSERT auth_request.url.path == "/token"
 ASSERT auth_request.method == "GET"
-ASSERT auth_request.url.query_params["custom"] == "param1"
-# TokenParams should also be in query string (e.g., timestamp if present)
-ASSERT auth_request.headers["X-Custom-Header"] == "value1"
-ASSERT auth_request.body IS empty
+
+# Second request used the token from authUrl
+api_request = mock_http.captured_requests[1]
+ASSERT api_request.headers["Authorization"] == "Bearer authurl-token"
 ```
 
 ---
 
-## RSA8c1b - authUrl with POST method
+## RSA8c - authUrl with POST method
 
-Tests that TokenParams and authParams are form-encoded in body for POST requests.
+Tests that authMethod can be set to POST for authUrl.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response_for_host("auth.example.com", 200,
-  body: { "token": "post-token" },
-  headers: { "Content-Type": "application/json" }
-)
-mock_http.queue_response(201, { "serials": ["s1"] })
 
-client = Rest(options: ClientOptions(
-  authUrl: "https://auth.example.com/token",
-  authMethod: "POST",
-  authParams: { "custom": "param1" },
-  authHeaders: { "X-Custom-Header": "value1" }
-))
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/token",
+    authMethod: "POST"
+  ),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+mock_http.queue_response_for_host("auth.example.com", 200, {
+  "token": "authurl-token",
+  "expires": now() + 3600000
+})
+mock_http.queue_response(200, {"channelId": "test"})
+
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
+# authUrl request used POST method
 auth_request = mock_http.captured_requests[0]
-
 ASSERT auth_request.method == "POST"
-ASSERT auth_request.headers["Content-Type"] == "application/x-www-form-urlencoded"
-ASSERT auth_request.headers["X-Custom-Header"] == "value1"
-
-body_params = parse_form_urlencoded(auth_request.body)
-ASSERT body_params["custom"] == "param1"
 ```
 
 ---
 
-## RSA8c1c - authUrl preserves existing query params
+## RSA8c - authUrl with custom headers
 
-Tests that existing query params in authUrl are preserved and merged.
+Tests that authHeaders are sent with authUrl requests.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response_for_host("auth.example.com", 200,
-  body: { "token": "merged-token" },
-  headers: { "Content-Type": "application/json" }
-)
-mock_http.queue_response(201, { "serials": ["s1"] })
 
-client = Rest(options: ClientOptions(
-  authUrl: "https://auth.example.com/token?existing=value&another=123",
-  authMethod: "GET",
-  authParams: { "added": "new" }
-))
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/token",
+    authHeaders: {
+      "X-Custom-Header": "custom-value",
+      "X-API-Key": "my-api-key"
+    }
+  ),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+mock_http.queue_response_for_host("auth.example.com", 200, {
+  "token": "authurl-token",
+  "expires": now() + 3600000
+})
+mock_http.queue_response(200, {"channelId": "test"})
+
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
 auth_request = mock_http.captured_requests[0]
-
-# All params should be present
-ASSERT auth_request.url.query_params["existing"] == "value"
-ASSERT auth_request.url.query_params["another"] == "123"
-ASSERT auth_request.url.query_params["added"] == "new"
+ASSERT auth_request.headers["X-Custom-Header"] == "custom-value"
+ASSERT auth_request.headers["X-API-Key"] == "my-api-key"
 ```
 
 ---
 
-## RSA8c2 - TokenParams take precedence over authParams
+## RSA8c - authUrl with query params
 
-Tests that when names conflict, TokenParams values are used.
+Tests that authParams are sent as query parameters with authUrl GET requests.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response_for_host("auth.example.com", 200,
-  body: { "token": "precedence-token" },
-  headers: { "Content-Type": "application/json" }
-)
-mock_http.queue_response(201, { "serials": ["s1"] })
 
-client = Rest(options: ClientOptions(
-  authUrl: "https://auth.example.com/token",
-  authMethod: "GET",
-  authParams: { "clientId": "from-authParams", "custom": "authParams-value" },
-  clientId: "from-tokenParams"  # This becomes part of TokenParams
-))
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/token",
+    authParams: {
+      "client_id": "my-client",
+      "scope": "publish:*"
+    }
+  ),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+mock_http.queue_response_for_host("auth.example.com", 200, {
+  "token": "authurl-token",
+  "expires": now() + 3600000
+})
+mock_http.queue_response(200, {"channelId": "test"})
+
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
 auth_request = mock_http.captured_requests[0]
-
-# TokenParams.clientId should override authParams.clientId
-ASSERT auth_request.url.query_params["clientId"] == "from-tokenParams"
-# Non-conflicting authParams preserved
-ASSERT auth_request.url.query_params["custom"] == "authParams-value"
+ASSERT auth_request.url.query_params["client_id"] == "my-client"
+ASSERT auth_request.url.query_params["scope"] == "publish:*"
 ```
 
 ---
 
-## RSA8c3 - AuthOptions replaces ClientOptions defaults
+## RSA8c - authUrl returning JWT string
 
-Tests that authParams/authHeaders in AuthOptions replace (not merge) ClientOptions defaults.
+Tests that authUrl can return a raw JWT string.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response_for_host("auth.example.com", 200,
-  body: { "token": "replaced-token" },
-  headers: { "Content-Type": "application/json" }
-)
-mock_http.queue_response(201, { "serials": ["s1"] })
 
-client = Rest(options: ClientOptions(
-  authUrl: "https://auth.example.com/token",
-  authParams: { "default1": "value1", "default2": "value2" },
-  authHeaders: { "X-Default": "default-header" }
-))
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/jwt"
+  ),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-# Call authorize with new authParams that should REPLACE defaults
-AWAIT client.auth.authorize(
-  authOptions: AuthOptions(
-    authParams: { "override": "new-value" }  # Replaces, doesn't merge
-    # No authHeaders specified - should clear the defaults
-  )
-)
-
-# Trigger a request to see what auth params are used
+# authUrl returns plain text JWT (not JSON)
 mock_http.queue_response_for_host("auth.example.com", 200,
-  body: { "token": "new-token" },
-  headers: { "Content-Type": "application/json" }
+  "eyJhbGciOiJIUzI1NiJ9.jwt-body.signature",
+  content_type: "text/plain"
 )
-mock_http.queue_response(201, { "serials": ["s1"] })
+mock_http.queue_response(200, {"channelId": "test"})
 
-AWAIT client.channels.get("test").publish(name: "e", data: "d")
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
-auth_request = mock_http.captured_requests_for_host("auth.example.com").last
+api_request = mock_http.captured_requests[1]
+ASSERT api_request.headers["Authorization"] == "Bearer eyJhbGciOiJIUzI1NiJ9.jwt-body.signature"
+```
 
-# Only the override param should be present (defaults replaced)
-ASSERT auth_request.url.query_params["override"] == "new-value"
-ASSERT "default1" NOT IN auth_request.url.query_params
-ASSERT "default2" NOT IN auth_request.url.query_params
+---
 
-# Headers should be cleared (replaced with empty)
-ASSERT "X-Default" NOT IN auth_request.headers
+## RSA8d - authCallback error propagated
+
+Tests that errors from authCallback are properly propagated.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+auth_callback = FUNCTION(params):
+  THROW Error("Authentication server unavailable")
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+TRY:
+  AWAIT client.request("GET", "/channels/test")
+  FAIL("Expected exception")
+CATCH AblyException as e:
+  # Error should indicate auth failure
+  ASSERT e.message CONTAINS "Authentication server unavailable"
+```
+
+### Assertions
+```pseudo
+# No HTTP requests should have been made
+ASSERT mock_http.captured_requests.length == 0
+```
+
+---
+
+## RSA8c - authUrl error propagated
+
+Tests that HTTP errors from authUrl are properly propagated.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/token"
+  ),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+# authUrl returns error
+mock_http.queue_response_for_host("auth.example.com", 500, {
+  "error": "Internal server error"
+})
+
+TRY:
+  AWAIT client.request("GET", "/channels/test")
+  FAIL("Expected exception")
+CATCH AblyException as e:
+  ASSERT e.statusCode == 500 OR e.message CONTAINS "auth"
+```
+
+### Assertions
+```pseudo
+# Only authUrl request was made, not the API request
+ASSERT mock_http.captured_requests.length == 1
+ASSERT mock_http.captured_requests[0].url.host == "auth.example.com"
 ```

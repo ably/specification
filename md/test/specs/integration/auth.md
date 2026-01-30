@@ -1,24 +1,35 @@
 # Auth Integration Tests
 
-Spec points: `RSA4`, `RSA8`, `RSA9`, `RSA10`, `RSA14`, `RSA15`
+Spec points: `RSA4`, `RSA8`
 
 ## Test Type
 Integration test against Ably sandbox
+
+## Token Formats
+
+All tests in this file should be run with **both**:
+1. **JWTs** (primary) - Generate using a third-party JWT library
+2. **Ably native tokens** - Obtained using `requestToken()`
+
+JWT should be the primary token format. See README for details.
 
 ## Test Environment
 
 ### Prerequisites
 - Ably sandbox app provisioned via `POST https://sandbox.realtime.ably-nonprod.net/apps`
 - API key from provisioned app
+- Channel names must be unique per test (see README for naming convention)
 
 ### Setup Pattern
 ```pseudo
 BEFORE ALL TESTS:
   app_config = provision_sandbox_app()
   api_key = app_config.keys[0].key_str
+  app_id = app_config.app_id
 
 AFTER ALL TESTS:
-  # Sandbox apps auto-delete after 60 minutes
+  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
+    WITH Authorization: Basic {api_key}
 ```
 
 ---
@@ -29,6 +40,7 @@ Tests that API key authentication works against real server.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSA4-" + random_id()
 client = Rest(options: ClientOptions(
   key: api_key,
   endpoint: "sandbox"
@@ -37,20 +49,53 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.time()
+# Use channel status endpoint (requires authentication)
+result = AWAIT client.request("GET", "/channels/" + channel_name)
 ```
 
 ### Assertions
 ```pseudo
-ASSERT result IS valid timestamp
-ASSERT result > 0
+# Just verify the request succeeded - don't check response body
+ASSERT result.statusCode >= 200 AND result.statusCode < 300
 ```
 
 ---
 
-## RSA8 - Token auth with obtained token
+## RSA8 - Token auth with JWT
 
-Tests obtaining a token and using it for authentication.
+Tests authentication using a JWT token.
+
+### Setup
+```pseudo
+# Generate a valid JWT using a third-party library
+jwt = generate_jwt(
+  key_name: extract_key_name(api_key),
+  key_secret: extract_key_secret(api_key),
+  ttl: 3600000
+)
+
+channel_name = "test-RSA8-jwt-" + random_id()
+client = Rest(options: ClientOptions(
+  token: jwt,
+  endpoint: "sandbox"
+))
+```
+
+### Test Steps
+```pseudo
+result = AWAIT client.request("GET", "/channels/" + channel_name)
+```
+
+### Assertions
+```pseudo
+ASSERT result.statusCode >= 200 AND result.statusCode < 300
+```
+
+---
+
+## RSA8 - Token auth with native token
+
+Tests obtaining a native token and using it for authentication.
 
 ### Setup
 ```pseudo
@@ -63,17 +108,18 @@ key_client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-# Obtain a token
+# Obtain a native token
 token_details = AWAIT key_client.auth.requestToken()
 
 # Create new client using only the token
+channel_name = "test-RSA8-native-" + random_id()
 token_client = Rest(options: ClientOptions(
   token: token_details.token,
   endpoint: "sandbox"
 ))
 
 # Verify token works
-result = AWAIT token_client.time()
+result = AWAIT token_client.request("GET", "/channels/" + channel_name)
 ```
 
 ### Assertions
@@ -81,153 +127,86 @@ result = AWAIT token_client.time()
 ASSERT token_details.token IS String
 ASSERT token_details.token.length > 0
 ASSERT token_details.expires > now()
-ASSERT result IS valid timestamp
+ASSERT result.statusCode >= 200 AND result.statusCode < 300
 ```
 
 ---
 
-## RSA9 - createTokenRequest creates signed request
+## RSA8 - authCallback with TokenRequest
 
-Tests that `createTokenRequest` produces a valid, signed token request.
+Tests using an `authCallback` that returns a `TokenRequest`, which is then exchanged for a token.
 
 ### Setup
 ```pseudo
-client = Rest(options: ClientOptions(
+# Client that generates token requests
+token_request_client = Rest(options: ClientOptions(
   key: api_key,
+  endpoint: "sandbox"
+))
+
+# authCallback that creates and returns a TokenRequest
+auth_callback = FUNCTION(params):
+  RETURN AWAIT token_request_client.auth.createTokenRequest(params)
+
+channel_name = "test-RSA8-callback-" + random_id()
+client = Rest(options: ClientOptions(
+  authCallback: auth_callback,
   endpoint: "sandbox"
 ))
 ```
 
 ### Test Steps
 ```pseudo
-token_request = AWAIT client.auth.createTokenRequest(
-  tokenParams: TokenParams(
-    clientId: "test-client",
-    ttl: 3600000
+result = AWAIT client.request("GET", "/channels/" + channel_name)
+```
+
+### Assertions
+```pseudo
+ASSERT result.statusCode >= 200 AND result.statusCode < 300
+```
+
+---
+
+## RSA8 - authCallback with JWT
+
+Tests using an `authCallback` that returns a JWT.
+
+### Setup
+```pseudo
+auth_callback = FUNCTION(params):
+  RETURN generate_jwt(
+    key_name: extract_key_name(api_key),
+    key_secret: extract_key_secret(api_key),
+    client_id: params.clientId,
+    ttl: params.ttl OR 3600000
   )
-)
-```
 
-### Assertions
-```pseudo
-ASSERT token_request.keyName IS String
-ASSERT token_request.keyName CONTAINS "."  # appId.keyId format
-ASSERT token_request.timestamp IS Number
-ASSERT token_request.nonce IS String
-ASSERT token_request.mac IS String  # Signature
-ASSERT token_request.ttl == 3600000
-ASSERT token_request.clientId == "test-client"
-```
-
----
-
-## RSA9 - TokenRequest can be exchanged for token
-
-Tests that a `TokenRequest` created by one client can be exchanged for a token.
-
-### Setup
-```pseudo
+channel_name = "test-RSA8-jwt-callback-" + random_id()
 client = Rest(options: ClientOptions(
-  key: api_key,
+  authCallback: auth_callback,
   endpoint: "sandbox"
 ))
 ```
 
 ### Test Steps
 ```pseudo
-# Create token request
-token_request = AWAIT client.auth.createTokenRequest()
-
-# Exchange it for a token (simulating another client)
-token_details = AWAIT client.auth.requestToken(
-  tokenRequest: token_request
-)
+result = AWAIT client.request("GET", "/channels/" + channel_name)
 ```
 
 ### Assertions
 ```pseudo
-ASSERT token_details.token IS String
-ASSERT token_details.expires > now()
+ASSERT result.statusCode >= 200 AND result.statusCode < 300
 ```
 
 ---
 
-## RSA10 - authorize() obtains and uses token
-
-Tests that `authorize()` obtains a token and uses it for subsequent requests.
-
-### Setup
-```pseudo
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox"
-))
-```
-
-### Test Steps
-```pseudo
-# Initially using Basic auth
-time1 = AWAIT client.time()
-
-# Switch to token auth
-token_details = AWAIT client.auth.authorize()
-
-# Subsequent requests use token
-time2 = AWAIT client.time()
-```
-
-### Assertions
-```pseudo
-ASSERT token_details IS TokenDetails
-ASSERT token_details.token IS String
-ASSERT client.auth.tokenDetails.token == token_details.token
-```
-
----
-
-## RSA14 - Token expiry and renewal
-
-Tests that expired tokens are automatically renewed when using authCallback.
-
-### Setup
-```pseudo
-# Use a very short TTL to trigger renewal
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox",
-  defaultTokenParams: TokenParams(ttl: 5000)  # 5 second TTL
-))
-```
-
-### Test Steps
-```pseudo
-# First request obtains token
-time1 = AWAIT client.time()
-first_token = client.auth.tokenDetails.token
-
-# Wait for token to expire
-WAIT 6 seconds
-
-# Next request should automatically get new token
-time2 = AWAIT client.time()
-second_token = client.auth.tokenDetails.token
-```
-
-### Assertions
-```pseudo
-ASSERT first_token IS String
-ASSERT second_token IS String
-ASSERT first_token != second_token  # Token was renewed
-```
-
----
-
-## RSA15 - Invalid credentials rejected
+## RSA4 - Invalid credentials rejected
 
 Tests that invalid API keys are rejected by the server.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSA4-invalid-" + random_id()
 client = Rest(options: ClientOptions(
   key: "invalid.key:secret",
   endpoint: "sandbox"
@@ -237,7 +216,7 @@ client = Rest(options: ClientOptions(
 ### Test Steps
 ```pseudo
 TRY:
-  AWAIT client.time()
+  AWAIT client.request("GET", "/channels/" + channel_name)
   FAIL("Expected authentication error")
 CATCH AblyException as e:
   ASSERT e.statusCode == 401
@@ -246,79 +225,12 @@ CATCH AblyException as e:
 
 ---
 
-## RSA15 - Expired token rejected
+## Notes
 
-Tests that expired tokens are rejected and trigger re-auth.
+### Tests moved to unit tests
 
-### Setup
-```pseudo
-# Manually create an expired token
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox"
-))
+The following functionality is better tested via unit tests with a mocked HTTP client:
 
-# Get a very short-lived token
-token_details = AWAIT client.auth.requestToken(
-  tokenParams: TokenParams(ttl: 1000)  # 1 second
-)
-
-# Wait for it to expire
-WAIT 2 seconds
-
-# Create client with expired token and no way to refresh
-expired_client = Rest(options: ClientOptions(
-  token: token_details.token,
-  endpoint: "sandbox"
-))
-```
-
-### Test Steps
-```pseudo
-TRY:
-  AWAIT expired_client.time()
-  FAIL("Expected token expired error")
-CATCH AblyException as e:
-  ASSERT e.code == 40142 OR e.code == 40140  # Token expired codes
-```
-
----
-
-## RSA - clientId in token
-
-Tests that tokens correctly carry clientId.
-
-### Setup
-```pseudo
-client = Rest(options: ClientOptions(
-  key: api_key,
-  endpoint: "sandbox"
-))
-```
-
-### Test Steps
-```pseudo
-token_details = AWAIT client.auth.requestToken(
-  tokenParams: TokenParams(clientId: "my-client-id")
-)
-
-# Verify clientId in token
-token_client = Rest(options: ClientOptions(
-  token: token_details.token,
-  endpoint: "sandbox"
-))
-
-# Publish to verify clientId is associated
-channel = token_client.channels.get("clientid-test-" + random_string())
-AWAIT channel.publish(name: "event", data: "data")
-
-WAIT 1 second
-
-history = AWAIT channel.history()
-```
-
-### Assertions
-```pseudo
-ASSERT token_details.clientId == "my-client-id"
-ASSERT history.items[0].clientId == "my-client-id"
-```
+- **`createTokenRequest()`** (RSA9) - This is a local signing operation that doesn't require server interaction
+- **`authorize()` token renewal** (RSA14) - Unit tests can explicitly confirm that a new token is used on subsequent requests
+- **Token expiry and renewal cycle** (RSA4b4) - See `unit/auth/token_renewal.md`

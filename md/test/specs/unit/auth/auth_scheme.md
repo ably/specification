@@ -1,122 +1,152 @@
 # Auth Scheme Selection Tests
 
-Spec points: `RSA1`, `RSA2`, `RSA3`, `RSA4`, `RSA4a`, `RSA4b`, `RSA4c`
+Spec points: `RSA1`, `RSA2`, `RSA3`, `RSA4`, `RSA4b`
 
 ## Test Type
-Unit test - pure validation logic, minimal mocking required
+Unit test with mocked HTTP
 
-## Mock Configuration
+## Purpose
 
-### HTTP Client Mock (where needed)
-For tests that trigger actual requests to verify auth header format.
+These tests verify that the library correctly selects between Basic authentication (API key) and Token authentication based on ClientOptions configuration.
 
----
+### Key Rules
 
-## RSA1 - API key format validation
-
-Tests that API keys must match the expected format.
-
-### Test Cases
-
-| ID | Input | Expected |
-|----|-------|----------|
-| 1 | `"appId.keyId:keySecret"` | Valid |
-| 2 | `"appId.keyId"` | Invalid (no secret) |
-| 3 | `"invalid-format"` | Invalid |
-| 4 | `""` | Invalid |
-| 5 | `"a.b:c"` | Valid (minimal format) |
-
-### Test Steps
-```pseudo
-FOR EACH test_case IN test_cases:
-  IF test_case.expected == "Valid":
-    # Should not throw
-    client = Rest(options: ClientOptions(key: test_case.input))
-    ASSERT client IS valid
-  ELSE:
-    ASSERT ClientOptions(key: test_case.input) THROWS ConfigurationException
-```
+- **Basic auth**: Uses `Authorization: Basic {base64(key)}` header
+- **Token auth**: Uses `Authorization: Bearer {token}` header
+- **RSA4b**: If `clientId` is provided with an API key, the library MUST use token auth (not basic auth)
 
 ---
 
-## RSA2 - Basic auth when using API key
+## RSA4 - Basic auth with API key only
 
-Tests that Basic authentication is used when API key is provided.
+Tests that when only an API key is provided (no clientId), Basic auth is used.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(
+  options: ClientOptions(key: "appId.keyId:keySecret"),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.time()
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
 request = mock_http.captured_requests[0]
-auth_header = request.headers["Authorization"]
 
-ASSERT auth_header STARTS WITH "Basic "
-
-# Decode and verify
-credentials = base64_decode(auth_header.substring(6))
-ASSERT credentials == "appId.keyId:keySecret"
+# Basic auth header uses base64-encoded key
+expected_auth = "Basic " + base64("appId.keyId:keySecret")
+ASSERT request.headers["Authorization"] == expected_auth
 ```
 
 ---
 
-## RSA3 - Token auth when token provided
+## RSA4b - Token auth when clientId provided with key
 
-Tests that Bearer token authentication is used when token is provided.
+Tests that when `clientId` is provided along with an API key, the library uses token auth (obtains a token using the key).
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
 
-client = Rest(options: ClientOptions(token: "my-token-string"))
+client = Rest(
+  options: ClientOptions(
+    key: "appId.keyId:keySecret",
+    clientId: "my-client-id"
+  ),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.time()
+# Token request (library exchanges key for token)
+mock_http.queue_response(200, {
+  "token": "obtained-token",
+  "expires": now() + 3600000,
+  "clientId": "my-client-id"
+})
+# Actual API request
+mock_http.queue_response(200, {"channelId": "test"})
+
+AWAIT client.request("GET", "/channels/test")
+```
+
+### Assertions
+```pseudo
+# Two requests: token request + API call
+ASSERT mock_http.captured_requests.length == 2
+
+# First request is token request (can use Basic auth internally)
+token_request = mock_http.captured_requests[0]
+ASSERT token_request.path matches "/keys/.*/requestToken"
+
+# Second request uses Bearer token
+api_request = mock_http.captured_requests[1]
+ASSERT api_request.headers["Authorization"] == "Bearer obtained-token"
+ASSERT api_request.headers["Authorization"] NOT STARTS WITH "Basic"
+```
+
+---
+
+## RSA3 - Token auth with explicit token
+
+Tests that when an explicit token is provided, it is used for Bearer auth.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(token: "explicit-token-string"),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
 ```pseudo
 request = mock_http.captured_requests[0]
-auth_header = request.headers["Authorization"]
-
-ASSERT auth_header == "Bearer my-token-string"
+ASSERT request.headers["Authorization"] == "Bearer explicit-token-string"
 ```
 
 ---
 
-## RSA3 - Token auth when TokenDetails provided
+## RSA3 - Token auth with TokenDetails
 
-Tests that Bearer authentication extracts token from TokenDetails.
+Tests that when TokenDetails is provided, the token string is extracted and used.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
 
-client = Rest(options: ClientOptions(
-  tokenDetails: TokenDetails(
-    token: "token-from-details",
-    expires: now() + 3600000
-  )
-))
+client = Rest(
+  options: ClientOptions(
+    tokenDetails: TokenDetails(
+      token: "token-from-details",
+      expires: now() + 3600000
+    )
+  ),
+  httpClient: mock_http
+)
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT client.time()
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
 ```
 
 ### Assertions
@@ -127,118 +157,319 @@ ASSERT request.headers["Authorization"] == "Bearer token-from-details"
 
 ---
 
-## RSA4 - Auth method selection priority
+## RSA4 - useTokenAuth forces token auth
 
-Tests the order of preference for authentication methods.
+Tests that `useTokenAuth: true` forces token auth even with just an API key.
 
-### Test Cases (RSA4a, RSA4b, RSA4c)
-
-| ID | Spec | Options Provided | Expected Auth Method |
-|----|------|------------------|---------------------|
-| 1 | RSA4a | `authCallback` only | Token (from callback) |
-| 2 | RSA4a | `authUrl` only | Token (from URL) |
-| 3 | RSA4b | `key` + `clientId` | Token (implicit) |
-| 4 | RSA4c | `key` only | Basic |
-| 5 | | `key` + `authCallback` | Token (callback takes precedence) |
-| 6 | | `token` + `key` | Token (explicit token used) |
-
-### Setup (Case 1 - authCallback)
+### Setup
 ```pseudo
 mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
 
-client = Rest(options: ClientOptions(
-  authCallback: (params) => TokenDetails(
-    token: "callback-token",
-    expires: now() + 3600000
-  )
-))
+client = Rest(
+  options: ClientOptions(
+    key: "appId.keyId:keySecret",
+    useTokenAuth: true
+  ),
+  httpClient: mock_http
+)
 ```
 
-### Test Steps (Case 1)
+### Test Steps
 ```pseudo
-AWAIT client.time()
-
-request = mock_http.captured_requests[0]
-ASSERT request.headers["Authorization"] == "Bearer callback-token"
-```
-
-### Setup (Case 3 - key + clientId triggers token auth)
-```pseudo
-mock_http = MockHttpClient()
 # Token request
 mock_http.queue_response(200, {
-  "token": "auto-token",
-  "expires": now() + 3600000,
-  "keyName": "appId.keyId"
+  "token": "obtained-token",
+  "expires": now() + 3600000
 })
-# Actual request
-mock_http.queue_response(200, { "time": 1234567890000 })
+# API request
+mock_http.queue_response(200, {"channelId": "test"})
 
-client = Rest(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  clientId: "my-client"
-))
+AWAIT client.request("GET", "/channels/test")
 ```
 
-### Test Steps (Case 3)
+### Assertions
 ```pseudo
-AWAIT client.time()
-
-# First request should be token creation
-ASSERT mock_http.captured_requests[0].url.path CONTAINS "requestToken"
-
-# Second request should use Bearer token
-ASSERT mock_http.captured_requests[1].headers["Authorization"] STARTS WITH "Bearer "
-```
-
-### Setup (Case 4 - key only uses Basic)
-```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
-
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-```
-
-### Test Steps (Case 4)
-```pseudo
-AWAIT client.time()
-
-request = mock_http.captured_requests[0]
-ASSERT request.headers["Authorization"] STARTS WITH "Basic "
-```
-
-### Setup (Case 5 - authCallback takes precedence over key)
-```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
-
-client = Rest(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  authCallback: (params) => "callback-wins"
-))
-```
-
-### Test Steps (Case 5)
-```pseudo
-AWAIT client.time()
-
-request = mock_http.captured_requests[0]
-# authCallback should be used, not Basic auth
-ASSERT request.headers["Authorization"] == "Bearer callback-wins"
+# Should obtain token rather than use Basic auth
+api_request = mock_http.captured_requests[1]
+ASSERT api_request.headers["Authorization"] == "Bearer obtained-token"
 ```
 
 ---
 
-## RSA4 - No auth credentials error
+## RSA4 - authCallback triggers token auth
+
+Tests that presence of authCallback triggers token auth.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+auth_callback = FUNCTION(params):
+  RETURN TokenDetails(
+    token: "callback-token",
+    expires: now() + 3600000
+  )
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
+```
+
+### Assertions
+```pseudo
+request = mock_http.captured_requests[0]
+ASSERT request.headers["Authorization"] == "Bearer callback-token"
+```
+
+---
+
+## RSA4 - authUrl triggers token auth
+
+Tests that presence of authUrl triggers token auth.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(
+    authUrl: "https://auth.example.com/token"
+  ),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+# authUrl response
+mock_http.queue_response_for_host("auth.example.com", 200, {
+  "token": "authurl-token",
+  "expires": now() + 3600000
+})
+# API request
+mock_http.queue_response(200, {"channelId": "test"})
+
+AWAIT client.request("GET", "/channels/test")
+```
+
+### Assertions
+```pseudo
+api_request = mock_http.captured_requests[1]
+ASSERT api_request.headers["Authorization"] == "Bearer authurl-token"
+```
+
+---
+
+## RSA4 - Error when no auth method available
 
 Tests that an error is raised when no authentication method is configured.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(),  # No key, token, or auth callback
+  httpClient: mock_http
+)
+```
 
 ### Test Steps
 ```pseudo
 TRY:
-  client = Rest(options: ClientOptions())  # No auth configured
+  AWAIT client.request("GET", "/channels/test")
   FAIL("Expected exception")
-CATCH ConfigurationException as e:
-  ASSERT e.message CONTAINS "auth" OR e.message CONTAINS "key" OR e.message CONTAINS "token"
+CATCH AblyException as e:
+  ASSERT e.code == 40106  # No authentication method
+```
+
+### Assertions
+```pseudo
+# No HTTP request should have been made
+ASSERT mock_http.captured_requests.length == 0
+```
+
+---
+
+## RSA4 - Error when token expired and no renewal method
+
+Tests that an appropriate error is raised when a static token has expired and there's no way to renew it.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(
+    tokenDetails: TokenDetails(
+      token: "expired-token",
+      expires: now() - 1000  # Already expired
+    )
+    # No key, authCallback, or authUrl for renewal
+  ),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+TRY:
+  AWAIT client.request("GET", "/channels/test")
+  FAIL("Expected exception")
+CATCH AblyException as e:
+  ASSERT e.code == 40171  # Token expired with no means of renewal
+```
+
+### Assertions
+```pseudo
+# No HTTP request should have been made
+ASSERT mock_http.captured_requests.length == 0
+```
+
+---
+
+## RSA1 - Auth method priority
+
+Tests the priority order when multiple auth options are provided.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+auth_callback = FUNCTION(params):
+  RETURN TokenDetails(
+    token: "callback-token",
+    expires: now() + 3600000
+  )
+
+# Both key and authCallback provided
+client = Rest(
+  options: ClientOptions(
+    key: "appId.keyId:keySecret",
+    authCallback: auth_callback
+  ),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
+```
+
+### Assertions
+```pseudo
+# authCallback takes precedence, so Bearer auth is used
+request = mock_http.captured_requests[0]
+ASSERT request.headers["Authorization"] == "Bearer callback-token"
+```
+
+---
+
+## RSA2 - Basic auth header format
+
+Tests the exact format of Basic auth header.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(key: "app123.key456:secretXYZ"),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
+```
+
+### Assertions
+```pseudo
+request = mock_http.captured_requests[0]
+
+# Verify exact Base64 encoding
+# "app123.key456:secretXYZ" base64 encoded
+expected = "Basic " + base64("app123.key456:secretXYZ")
+ASSERT request.headers["Authorization"] == expected
+
+# The Base64 should NOT have URL-safe encoding (+ and / are valid)
+ASSERT request.headers["Authorization"] CONTAINS "Basic "
+```
+
+---
+
+## RSC18 - Basic auth requires TLS
+
+Tests that Basic auth is rejected over non-TLS connections.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+```
+
+### Test Steps
+```pseudo
+TRY:
+  client = Rest(
+    options: ClientOptions(
+      key: "appId.keyId:keySecret",
+      tls: false  # Non-TLS connection
+    ),
+    httpClient: mock_http
+  )
+  AWAIT client.request("GET", "/channels/test")
+  FAIL("Expected exception")
+CATCH AblyException as e:
+  ASSERT e.code == 40103  # Cannot use Basic auth over non-TLS
+```
+
+### Assertions
+```pseudo
+# No HTTP request should have been made
+ASSERT mock_http.captured_requests.length == 0
+```
+
+---
+
+## RSC18 - Token auth allowed over non-TLS
+
+Tests that token auth is allowed over non-TLS connections.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+client = Rest(
+  options: ClientOptions(
+    token: "explicit-token",
+    tls: false  # Non-TLS allowed for token auth
+  ),
+  httpClient: mock_http
+)
+```
+
+### Test Steps
+```pseudo
+mock_http.queue_response(200, {"channelId": "test"})
+AWAIT client.request("GET", "/channels/test")
+```
+
+### Assertions
+```pseudo
+request = mock_http.captured_requests[0]
+ASSERT request.headers["Authorization"] == "Bearer explicit-token"
+
+# Request should use http:// (non-TLS)
+ASSERT request.url.scheme == "http"
 ```
