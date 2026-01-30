@@ -24,6 +24,8 @@ specs/
 │   │   └── stats.md               # RSC6 - application statistics
 │   ├── encoding/
 │   │   └── message_encoding.md    # RSL4, RSL6 - data encoding/decoding
+│   ├── presence/
+│   │   └── rest_presence.md       # RSP1-5 - REST presence operations
 │   └── types/
 │       ├── error_types.md         # TI - ErrorInfo
 │       ├── message_types.md       # TM - Message
@@ -34,6 +36,7 @@ specs/
 │   ├── auth.md                    # Authentication against real server
 │   ├── history.md                 # History retrieval
 │   ├── pagination.md              # TG - pagination navigation
+│   ├── presence.md                # RSP1-5 - REST presence operations
 │   ├── publish.md                 # RSL1 - channel publish
 │   └── time_stats.md              # RSC16, RSC6 - time and stats APIs
 └── README.md                      # This file
@@ -169,6 +172,20 @@ This approach avoids flakes from minor clock skew while minimizing test duration
 | RSL1k | unit/channel/idempotency.md | Idempotent publishing |
 | RSL2 | unit/channel/history.md | Channel history |
 | RSL4, RSL6 | unit/encoding/message_encoding.md | Message encoding |
+
+### REST Presence (RSP)
+| Spec | Test File | Description |
+|------|-----------|-------------|
+| RSP1 | unit/presence/rest_presence.md | RestPresence accessible via channel |
+| RSP3 | unit/presence/rest_presence.md | RestPresence#get |
+| RSP3a1 | unit/presence/rest_presence.md | get() limit parameter |
+| RSP3a2 | unit/presence/rest_presence.md | get() clientId filter |
+| RSP3a3 | unit/presence/rest_presence.md | get() connectionId filter |
+| RSP4 | unit/presence/rest_presence.md | RestPresence#history |
+| RSP4b1 | unit/presence/rest_presence.md | history() start/end params |
+| RSP4b2 | unit/presence/rest_presence.md | history() direction param |
+| RSP4b3 | unit/presence/rest_presence.md | history() limit param |
+| RSP5 | unit/presence/rest_presence.md | Presence message decoding |
 
 ### Types (T*)
 | Spec | Test File | Description |
