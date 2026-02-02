@@ -53,10 +53,10 @@ h2(#initialization). Initialization
 
 h2(#client). Chat Client
 
-** @(CHA-CL1)@ @[Testable]@ The @ChatClient@ provides a @dispose@ method to clean up all resources and prepare the client for garbage collection.
-*** @(CHA-CL1a)@ @[Testable]@ When @dispose@ is called on a @ChatClient@, it must first dispose of all rooms. This will release all rooms currently in use.
-*** @(CHA-CL1b)@ @[Testable]@ After disposing of rooms, the @ChatClient@ must dispose of the connection instance.
-*** @(CHA-CL1c)@ This operation is naturally asynchronous, however many languages use synchronous destructor sequences. Therefore each language should implement whatever is most idiomatic, and the exact implementation details are left up to each individual SDK.
+* @(CHA-CL1)@ @[Testable]@ The @ChatClient@ provides a @dispose@ method to clean up all resources and prepare the client for garbage collection.
+** @(CHA-CL1a)@ @[Testable]@ When @dispose@ is called on a @ChatClient@, it must first dispose of all rooms. This will release all rooms currently in use.
+** @(CHA-CL1b)@ @[Testable]@ After disposing of rooms, the @ChatClient@ must dispose of the connection instance.
+** @(CHA-CL1c)@ This operation is naturally asynchronous, however many languages use synchronous destructor sequences. Therefore each language should implement whatever is most idiomatic, and the exact implementation details are left up to each individual SDK.
 
 h2(#rooms). Rooms
 
