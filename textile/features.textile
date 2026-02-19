@@ -1647,7 +1647,7 @@ h4. ObjectsMap
 ** @(OMP3a)@ @semantics@ @ObjectsMapSemantics@ enum - the conflict-resolution semantics used by the map object
 ** @(OMP3b)@ @entries@ @Dict<String, ObjectsMapEntry>@ - the map entries, indexed by key
 * @(OMP4)@ The size of the @ObjectsMap@ is calculated as follows:
-** @(OMP4a)@ The size is the sum of the sizes of all map entries in @map@ property
+** @(OMP4a)@ The size is the sum of the sizes of all map entries in @entries@ property
 *** @(OMP4a1)@ Includes the size of the @String@ key for the map entry, calculated as its length
 *** @(OMP4a2)@ Includes the size of the @ObjectsMapEntry@ object for the map entry, calculated per "OME3":#OME3
 ** @(OMP4b)@ The size of a @null@ or omitted property is zero
