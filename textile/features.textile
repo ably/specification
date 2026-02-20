@@ -1579,27 +1579,24 @@ h4. ObjectOperation
 * @(OOP3)@ The attributes available in an @ObjectOperation@ are:
 ** @(OOP3a)@ @action@ @ObjectOperationAction@ enum - defines the operation to be applied to the object
 ** @(OOP3b)@ @objectId@ string - the object ID of the object on a channel to which the operation should be applied
-** @(OOP3c)@ @mapOp@ @ObjectsMapOp@ object - the payload for the operation if it is an operation on an @ObjectsMap@ object type
-** @(OOP3d)@ @counterOp@ @ObjectsCounterOp@ object - the payload for the operation if it is an operation on an @ObjectsCounter@ object type
-** @(OOP3e)@ @map@ @ObjectsMap@ object - the payload for the operation if the operation is @MAP_CREATE@. Defines the initial value for the @ObjectsMap@ object
-** @(OOP3f)@ @counter@ @ObjectsCounter@ object - the payload for the operation if the operation is @COUNTER_CREATE@. Defines the initial value for the @ObjectsCounter@ object
-** @(OOP3g)@ @nonce@ string - the nonce. Must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server. Should not be accessed by the client library if received from the server
-** @(OOP3h)@ @initialValue@ binary - the initial value bytes for the object. Must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server. Should not be accessed by the client library if received from the server
-** @(OOP3i)@ @initialValueEncoding@ string - defines how the @initialValue@ should be interpreted by the server. Must be @msgpack@ or @json@. Must be present on @COUNTER_CREATE@ and @MAP_CREATE@ operations sent to the server. Should not be accessed by the client library if received from the server
+** @(OOP3c)@ @mapCreate@ @MapCreate@ object - the payload for a @MAP_CREATE@ operation received from the server, containing the initial value for the Map object
+** @(OOP3d)@ @mapSet@ @MapSet@ object - the payload for a @MAP_SET@ operation
+** @(OOP3e)@ @mapRemove@ @MapRemove@ object - the payload for a @MAP_REMOVE@ operation
+** @(OOP3f)@ @counterCreate@ @CounterCreate@ object - the payload for a @COUNTER_CREATE@ operation received from the server, containing the initial value for the Counter object
+** @(OOP3g)@ @counterInc@ @CounterInc@ object - the payload for a @COUNTER_INC@ operation
+** @(OOP3h)@ @objectDelete@ @ObjectDelete@ object - the payload for an @OBJECT_DELETE@ operation
+** @(OOP3i)@ @mapCreateWithObjectId@ @MapCreateWithObjectId@ object - the payload for a @MAP_CREATE@ operation sent by the client to the server
+** @(OOP3j)@ @counterCreateWithObjectId@ @CounterCreateWithObjectId@ object - the payload for a @COUNTER_CREATE@ operation sent by the client to the server
 * @(OOP4)@ The size of the @ObjectOperation@ is calculated as follows:
-** @(OOP4a)@ The size is the sum of the sizes of the @mapOp@, @counterOp@, @map@, and @counter@ properties
-** @(OOP4b)@ The size of the @mapOp@ property is calculated per "OMO3":#OMO3
-** @(OOP4c)@ The size of the @counterOp@ property is calculated per "OCO3":#OCO3
-** @(OOP4d)@ The size of the @map@ property is calculated per "OMP4":#OMP4
-** @(OOP4e)@ The size of the @counter@ property is calculated per "OCN3":#OCN3
-** @(OOP4f)@ The size of a @null@ or omitted property is zero
+** @(OOP4a)@ The size is the sum of the sizes of the @mapCreate@, @mapSet@, @mapRemove@, @counterCreate@, and @counterInc@ properties
+** @(OOP4b)@ The size of the @mapCreate@ property is calculated per "MCR3":#MCR3
+** @(OOP4c)@ The size of the @mapSet@ property is calculated per "MST3":#MST3
+** @(OOP4d)@ The size of the @mapRemove@ property is calculated per "MRM3":#MRM3
+** @(OOP4e)@ The size of the @counterCreate@ property is calculated per "CCR3":#CCR3
+** @(OOP4f)@ The size of the @counterInc@ property is calculated per "CIN3":#CIN3
+** @(OOP4g)@ The size of a @null@ or omitted property is zero
 * @(OOP5)@ @ObjectOperation@ encoding:
-** @(OOP5a)@ When the MessagePack protocol is used:
-*** @(OOP5a1)@ A binary @ObjectOperation.initialValue@ is encoded as a MessagePack binary type
-*** @(OOP5a2)@ Set @ObjectOperation.initialValueEncoding@ to @msgpack@
-** @(OOP5b)@ When the JSON protocol is used:
-*** @(OOP5b1)@ A binary @ObjectOperation.initialValue@ is Base64-encoded and represented as a JSON string
-*** @(OOP5b2)@ Set @ObjectOperation.initialValueEncoding@ to @json@
+** @(OOP5a)@ @ObjectData@ values within @mapCreate.entries@, @mapSet.value@, and @ObjectState.createOp@ fields must be encoded per "OD4":#OD4
 
 h4. ObjectState
 
@@ -1618,26 +1615,71 @@ h4. ObjectState
 ** @(OST3d)@ The size of the @createOp@ property is calculated per "OOP4":#OOP4
 ** @(OST3e)@ The size of a @null@ or omitted property is zero
 
-h4. ObjectsMapOp
+h4. MapCreate
 
-* @(OMO1)@ An @ObjectsMapOp@ describes an operation to be applied to an @ObjectsMap@ object
-* @(OMO2)@ The attributes available in an @ObjectsMapOp@ are:
-** @(OMO2a)@ @key@ string - the key of the map entry to which the operation should be applied
-** @(OMO2b)@ @data@ @ObjectData@ object - the data that the map entry should contain if the operation is a @MAP_SET@ operation
-* @(OMO3)@ The size of the @ObjectsMapOp@ is calculated as follows:
-** @(OMO3a)@ The size is the sum of the sizes of the @key@ and @data@ properties
-** @(OMO3b)@ The size of the @data@ property is calculated per "OD3":#OD3
-** @(OMO3d)@ The size of the @key@ property is its string length
-** @(OMO3c)@ The size of a @null@ or omitted property is zero
+* @(MCR1)@ A @MapCreate@ describes the payload for a @MAP_CREATE@ operation on a map object
+* @(MCR2)@ The attributes available in a @MapCreate@ are:
+** @(MCR2a)@ @semantics@ @ObjectsMapSemantics@ enum - the conflict-resolution semantics used by the map object
+** @(MCR2b)@ @entries@ @Dict<String, ObjectsMapEntry>@ - the map entries, indexed by key
+* @(MCR3)@ The size of the @MapCreate@ is calculated as follows:
+** @(MCR3a)@ The size is the sum of the sizes of all map entries in @entries@
+*** @(MCR3a1)@ Includes the size of the @String@ key for the map entry, calculated as its length
+*** @(MCR3a2)@ Includes the size of the @ObjectsMapEntry@ object for the map entry, calculated per "OME3":#OME3
 
-h4. ObjectsCounterOp
+h4. MapSet
 
-* @(OCO1)@ An @ObjectsCounterOp@ describes an operation to be applied to an @ObjectsCounter@ object
-* @(OCO2)@ The attributes available in an @ObjectsCounterOp@ are:
-** @(OCO2a)@ @amount@ number - the data value that should be added to the counter
-* @(OCO3)@ The size of the @ObjectsCounterOp@ is calculated as follows:
-** @(OCO3a)@ The size is 8 if @amount@ is a number
-** @(OCO3b)@ The size is 0 if @amount@ is a @null@ or omitted
+* @(MST1)@ A @MapSet@ describes the payload for a @MAP_SET@ operation on a map object
+* @(MST2)@ The attributes available in a @MapSet@ are:
+** @(MST2a)@ @key@ string - the key to set
+** @(MST2b)@ @value@ @ObjectData@ object - the value to set
+* @(MST3)@ The size of the @MapSet@ is calculated as follows:
+** @(MST3a)@ The size is the sum of the sizes of the @key@ and @value@ properties
+** @(MST3b)@ The size of the @value@ property is calculated per "OD3":#OD3
+** @(MST3c)@ The size of the @key@ property is its string length
+** @(MST3d)@ The size of a @null@ or omitted property is zero
+
+h4. MapRemove
+
+* @(MRM1)@ A @MapRemove@ describes the payload for a @MAP_REMOVE@ operation on a map object
+* @(MRM2)@ The attributes available in a @MapRemove@ are:
+** @(MRM2a)@ @key@ string - the key to remove
+* @(MRM3)@ The size of the @MapRemove@ is calculated as follows:
+** @(MRM3a)@ The size is the string length of the @key@ property
+
+h4. CounterCreate
+
+* @(CCR1)@ A @CounterCreate@ describes the payload for a @COUNTER_CREATE@ operation on a counter object
+* @(CCR2)@ The attributes available in a @CounterCreate@ are:
+** @(CCR2a)@ @count@ number - the initial value of the counter
+* @(CCR3)@ The size of the @CounterCreate@ is calculated as follows:
+** @(CCR3a)@ The size is 8
+
+h4. CounterInc
+
+* @(CIN1)@ A @CounterInc@ describes the payload for a @COUNTER_INC@ operation on a counter object
+* @(CIN2)@ The attributes available in a @CounterInc@ are:
+** @(CIN2a)@ @number@ number - the value to be added to the counter
+* @(CIN3)@ The size of the @CounterInc@ is calculated as follows:
+** @(CIN3a)@ The size is 8 if @number@ is a number
+** @(CIN3b)@ The size is 0 if @number@ is @null@ or omitted
+
+h4. ObjectDelete
+
+* @(ODE1)@ An @ObjectDelete@ describes the payload for an @OBJECT_DELETE@ operation. This type has no attributes
+
+h4. MapCreateWithObjectId
+
+* @(MCW1)@ A @MapCreateWithObjectId@ describes the payload for a @MAP_CREATE@ operation sent by the client to the server
+* @(MCW2)@ The attributes available in a @MapCreateWithObjectId@ are:
+** @(MCW2a)@ @initialValue@ string - a JSON string representation of the encoded @MapCreate@ that contains the initial value for the map, created per "RTO13":#RTO13
+** @(MCW2b)@ @nonce@ string - the nonce used to generate the object ID
+
+h4. CounterCreateWithObjectId
+
+* @(CCW1)@ A @CounterCreateWithObjectId@ describes the payload for a @COUNTER_CREATE@ operation sent by the client to the server
+* @(CCW2)@ The attributes available in a @CounterCreateWithObjectId@ are:
+** @(CCW2a)@ @initialValue@ string - a JSON string representation of the encoded @CounterCreate@ that contains the initial value for the counter, created per "RTO13":#RTO13
+** @(CCW2b)@ @nonce@ string - the nonce used to generate the object ID
 
 h4. ObjectsMap
 
@@ -2705,13 +2747,14 @@ class ObjectMessage // OM*, internal
 class ObjectOperation // OOP*, internal
   action: ObjectOperationAction // OOP3a
   objectId: String // OOP3b
-  mapOp: ObjectsMapOp? // OOP3c
-  counterOp: ObjectsCounterOp? // OOP3d
-  map: ObjectsMap? // OOP3e
-  counter: ObjectsCounter? // OOP3f
-  nonce: String? // OOP3g
-  initialValue: Binary? // OOP3h
-  initialValueEncoding: String? // OOP3i
+  mapCreate: MapCreate? // OOP3c
+  mapSet: MapSet? // OOP3d
+  mapRemove: MapRemove? // OOP3e
+  counterCreate: CounterCreate? // OOP3f
+  counterInc: CounterInc? // OOP3g
+  objectDelete: ObjectDelete? // OOP3h
+  mapCreateWithObjectId: MapCreateWithObjectId? // OOP3i
+  counterCreateWithObjectId: CounterCreateWithObjectId? // OOP3j
 
 class ObjectState // OST*, internal
   objectId: String // OST2a
@@ -2721,12 +2764,32 @@ class ObjectState // OST*, internal
   map: ObjectsMap? // OST2e
   counter: ObjectsCounter? // OST2f
 
-class ObjectsMapOp // OMO*, internal
-  key: String // OMO2a
-  data: ObjectData? // OMO2b
+class MapCreate // MCR*, internal
+  semantics: ObjectsMapSemantics // MCR2a
+  entries: Dict<String, ObjectsMapEntry> // MCR2b
 
-class ObjectsCounterOp // OCO*, internal
-  amount: Number // OCO2a
+class MapSet // MST*, internal
+  key: String // MST2a
+  value: ObjectData // MST2b
+
+class MapRemove // MRM*, internal
+  key: String // MRM2a
+
+class CounterCreate // CCR*, internal
+  count: Number // CCR2a
+
+class CounterInc // CIN*, internal
+  number: Number // CIN2a
+
+class ObjectDelete // ODE*, internal
+
+class MapCreateWithObjectId // MCW*, internal
+  initialValue: String // MCW2a
+  nonce: String // MCW2b
+
+class CounterCreateWithObjectId // CCW*, internal
+  initialValue: String // CCW2a
+  nonce: String // CCW2b
 
 class ObjectsMap // OMP*, internal
   semantics: ObjectsMapSemantics // OMP3a
