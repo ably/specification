@@ -1324,6 +1324,8 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OOP4c)` This clause has been replaced by [OOP4l](#OOP4l) as of specification version 6.0.0.
   - `(OOP4d)` This clause has been replaced by [OOP4h](#OOP4h) as of specification version 6.0.0.
   - `(OOP4e)` This clause has been replaced by [OOP4k](#OOP4k) as of specification version 6.0.0.
+
+[//]: # (Conflict in main)
   - `(OOP4g)` The size is the sum of the sizes of the map create, `mapSet`, `mapRemove`, counter create, and `counterInc` components
   - `(OOP4h)` The size of the map create component is:
     - `(OOP4h1)` If `mapCreate` is present, it is equal to the size of `mapCreate` calculated per [MCR3](#MCR3)
@@ -1336,6 +1338,16 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(OOP4k2)` Else if `counterCreateWithObjectId` is present, it is equal to the size of the `CounterCreate` retained in [RTO12f16](objects-features#RTO12f16), calculated per [CCR3](#CCR3)
     - `(OOP4k3)` Otherwise it is zero
   - `(OOP4l)` The size of the `counterInc` property is calculated per [CIN3](#CIN3)
+
+[//]: # (Conflict in path-based)
+  - `(OOP4g)` The size is the sum of the sizes of the `mapCreate`, `mapSet`, `mapRemove`, `counterCreate`, and `counterInc` properties
+  - `(OOP4h)` The size of the `mapCreate` property is calculated per [MCR3](#MCR3)
+  - `(OOP4i)` The size of the `mapSet` property is calculated per [MST3](#MST3)
+  - `(OOP4j)` The size of the `mapRemove` property is calculated per [MRM3](#MRM3)
+  - `(OOP4k)` The size of the `counterCreate` property is calculated per [CCR3](#CCR3)
+  - `(OOP4l)` The size of the `counterInc` property is calculated per [CIN3](#CIN3)
+
+[//]: # (Conflict in main)
   - `(OOP4f)` The size of a `null` or omitted property is zero
 - `(OOP5)` This clause has been deleted as of specification version 6.0.0.
   - `(OOP5a)` This clause has been deleted as of specification version 6.0.0.

@@ -64,7 +64,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO11f13)` This clause has been deleted as of specification version 6.0.0.
     - `(RTO11f16)` Set `ObjectMessage.operation.mapCreateWithObjectId.nonce` to the nonce value created in [RTO11f6](#RTO11f6)
     - `(RTO11f17)` Set `ObjectMessage.operation.mapCreateWithObjectId.initialValue` to the JSON string created in [RTO11f15](#RTO11f15)
-    - `(RTO11f18)` The client library must retain the `MapCreate` object from [RTO11f14](#RTO11f14) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.
+    - `(RTO11f18)` The client library must retain the `MapCreate` object from [RTO11f14](#RTO11f14) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.\
   - `(RTO11g)` This clause has been replaced by [RTO11i](#RTO11i)
   - `(RTO11i)` Publishes the `ObjectMessage` from [RTO11f](#RTO11f) using `RealtimeObjects#publishAndApply` ([RTO20](#RTO20)), passing the `ObjectMessage` as a single element in the array
     - `(RTO11i1)` The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the `createMap` operation continues
@@ -399,8 +399,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLC6b)` Set the private flag `createOperationIsMerged` to `false`
   - `(RTLC6c)` Set `data` to the value of `ObjectState.counter.count`, or to 0 if it does not exist
   - `(RTLC6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveCounter` as described in [RTLC16](#RTLC16), passing in the `ObjectState.createOp` instance. Discard the `LiveCounterUpdate` object returned by the merge operation
-    - `(RTLC6d1)` This clause has been replaced by [RTLC10a](#RTLC10a)
-    - `(RTLC6d2)` This clause has been replaced by [RTLC10b](#RTLC10b)
+    - `(RTLC6d1)` This clause has been replaced by [RTLC16a](#RTLC16a)
+    - `(RTLC6d2)` This clause has been replaced by [RTLC16b](#RTLC16b)
   - `(RTLC6h)` Calculate the diff between `previousData` from [RTLC6g](#RTLC6g) and the current `data` per [RTLC14](#RTLC14), and return the resulting `LiveCounterUpdate` object
 - `(RTLC7)` An `ObjectOperation` from `ObjectMessage.operation` can be applied to a `LiveCounter` by performing the following actions in order:
   - `(RTLC7f)` Expects the following arguments:
@@ -451,11 +451,22 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLC10b)` This clause has been replaced by [RTLC16b](#RTLC16b) as of specification version 6.0.0.
   - `(RTLC10c)` This clause has been replaced by [RTLC16c](#RTLC16c) as of specification version 6.0.0.
   - `(RTLC10d)` This clause has been replaced by [RTLC16d](#RTLC16d) as of specification version 6.0.0.
+
+[//]: # (Conflict in main)
 - `(RTLC16)` The initial value from an `ObjectOperation` can be merged into this `LiveCounter` in the following way. Let `counterCreate` be `ObjectOperation.counterCreate` if present, else the `CounterCreate` from which `ObjectOperation.counterCreateWithObjectId` was derived (see [RTO12f16](#RTO12f16)):
   - `(RTLC16a)` Add `counterCreate.count` to `data`, if it exists
   - `(RTLC16b)` Set the private flag `createOperationIsMerged` to `true`
   - `(RTLC16c)` If `counterCreate.count` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `counterCreate.count`
   - `(RTLC16d)` If `counterCreate.count` does not exist, return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`
+
+[//]: # (Conflict in path-based)
+- `(RTLC16)` The initial value from `ObjectOperation.counterCreate` can be merged into this `LiveCounter` in the following way:
+  - `(RTLC16a)` Add `ObjectOperation.counterCreate.count` to `data`, if it exists
+  - `(RTLC16b)` Set the private flag `createOperationIsMerged` to `true`
+  - `(RTLC16c)` If `ObjectOperation.counterCreate.count` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `ObjectOperation.counterCreate.count`
+  - `(RTLC16d)` If `ObjectOperation.counterCreate.count` does not exist, return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`
+
+[//]: # (End of conflict)
 - `(RTLC14)` The diff between two `LiveCounter` data values can be calculated in the following way:
   - `(RTLC14a)` Expects the following arguments:
     - `(RTLC14a1)` `previousData` `Number` - the previous `data` value
@@ -572,10 +583,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM6c1b)` Otherwise, set it to the current time using the local clock
         - `(RTLM6c1b1)` Log a debug or trace message indicating that `ObjectsMapEntry.serialTimestamp` was not provided and the local clock is being used instead for the tombstone timestamp
   - `(RTLM6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveMap` as described in [RTLM23](#RTLM23), passing in the `ObjectState.createOp` instance. Discard the `LiveMapUpdate` object returned by the merge operation
-    - `(RTLM6d1)` This clause has been replaced by [RTLM17a](#RTLM17a)
-      - `(RTLM6d1a)` This clause has been replaced by [RTLM17a1](#RTLM17a1)
-      - `(RTLM6d1b)` This clause has been replaced by [RTLM17a2](#RTLM17a2)
-    - `(RTLM6d2)` This clause has been replaced by [RTLM17b](#RTLM17b)
+    - `(RTLM6d1)` This clause has been replaced by [RTLM23a](#RTLM23a)
+      - `(RTLM6d1a)` This clause has been replaced by [RTLM23a1](#RTLM23a1)
+      - `(RTLM6d1b)` This clause has been replaced by [RTLM23a2](#RTLM23a2)
+    - `(RTLM6d2)` This clause has been replaced by [RTLM23b](#RTLM23b)
   - `(RTLM6h)` Calculate the diff between `previousData` from [RTLM6g](#RTLM6g) and the current `data` per [RTLM22](#RTLM22), and return the resulting `LiveMapUpdate` object
 - `(RTLM15)` An `ObjectOperation` from `ObjectMessage.operation` can be applied to a `LiveMap` by performing the following actions in order:
   - `(RTLM15f)` Expects the following arguments:
