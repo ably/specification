@@ -460,7 +460,7 @@ h3(#rest-annotations). RestAnnotations
 *** @(RSAN1a1)@ In languages where method overloading is supported, the first argument should also accept a @Message@ object (which must contain a populated @serial@ field)
 *** @(RSAN1a2)@ The form of the second argument may accept any language-idiomatic representation (e.g. plain objects in untyped languages), but must allow the user to supply at least the @type@, @clientId@, @name@, @count@, @data@, and @extras@ fields
 *** @(RSAN1a3)@ The SDK must validate that the user supplied a @TAN5b@ @type@. (All other fields are optional)
-*** @(RSAN1a4)@ The SDK may validate that the total size of the annotation or (if publishing an array) annotations, calculated identically to message size per "TO3l8":#TO3l8, exceeds the @maxMessageSize@, then the client library should reject the publish and indicate an error with code 40009
+*** @(RSAN1a4)@ The SDK may validate that the total size of the annotation or (if publishing an array) annotations, calculated identically to message size per "TAN4":#TAN4, exceeds the @maxMessageSize@, then the client library should reject the publish and indicate an error with code 40009
 ** @(RSAN1c)@ The SDK must POST a request body consisting of an array with one element, which is the annotation to be published
 *** @(RSAN1c1)@ The @Annotation.action@ must be set to @ANNOTATION_CREATE@
 *** @(RSAN1c2)@ The @Annotation.messageSerial@ must be set to the identifier specified in the first argument to @publish()@
@@ -1495,10 +1495,12 @@ h4. Message
 * @(TM6)@ The size of the @Message@ for "TO3l8":#TO3l8 is calculated as follows:
 ** @(TM6a)@ The size is the sum of the sizes of the @name@, @data@, @clientId@, and @extras@ properties
 ** @(TM6b)@ The size of an @Object@ or @Array@ @data@ property is its string length after being JSON-stringified
-** @(TM6c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
-** @(TM6f)@ The size of a @string@ @data@ property is its length
-** @(TM6d)@ The size of the @extras@ property is the string length of its JSON representation
-** @(TM6e)@ The size of a @null@ or omitted property is zero
+** @(TM6c)@ The size of a @binary@ @data@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use).
+** @(TM6f)@ The size of a @string@ @data@ property is its UTF-8 encoded length in bytes (because of Non-ASCII characters, i.e. 你 is 3 bytes, 😊 is 4 bytes).
+** @(TM6g)@ The size of a @string@ @name@ property is its UTF-8 encoded length in bytes.
+** @(TM6h)@ The size of a @string@ @clientId@ property is its UTF-8 encoded length in bytes.
+** @(TM6d)@ The size of the @extras@ property is the UTF-8 encoded length of its JSON string representation.
+** @(TM6e)@ The size of a @null@, omitted or missing property is zero
 * @(TM7)@ The SDK may expose a series of functions (static factory methods on a Message or otherwise, wherever is language idiomatic; for some languages this might just be types that can be used for type assertions, etc), that take a deserialized @JsonObject@, one of the aggregated summaries for a particular annotation type (that is, a value from the @TM2q@ @summary@ @Dict@), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
 ** @(TM7a)@ The SDK must not try to do this conversion automatically (either by parsing the annotation type or dynamically detecting the structure). This is so that, when the server adds new annotation types that the SDK does not yet know about, when we later add support for those new types to the SDK, that does not result in a a breaking API change for the SDK.
 ** @(TM7b)@ If the SDK chooses to do this, it should support at least the following set of constructors (or other language-idiomatic mechanism that achieves a similar result):
@@ -1689,7 +1691,7 @@ h4. ObjectData
 ** @(OD3b)@ If set, the size of a @boolean@ property is 1
 ** @(OD3c)@ If set, the size of a @bytes@ property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
 ** @(OD3d)@ If set, the size of a @number@ property is 8
-** @(OD3e)@ If set, the size of a @string@ property is its length
+** @(OD3e)@ If set, the size of a @string@ property is its UTF-8 encoded length in bytes (because of Non-ASCII characters, i.e. 你 is 3 bytes, 😊 is 4 bytes)
 ** @(OD3f)@ The size of a @null@ or omitted property is zero
 * @(OD4)@ @ObjectData@ encoding:
 ** @(OD4a)@ Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
@@ -1734,6 +1736,7 @@ h4. Annotation
 ** @(TAN2k)@ @type@ string: a string indicating the type of the annotation, handled opaquely by the SDK
 ** @(TAN2l)@ @extras@ object (optional): A JSON-encodable object for arbitrary metadata
 * @(TAN3)@ @fromEncoded@ and @fromEncodedArray@ are alternative constructors that take an (already deserialized) @Annotation@-like object (or array of such objects), and optionally a @channelOptions@, and return an @Annotation@ (or array of @Annotations@) that's decoded and decrypted analagously to @TM3@ and @TP4@
+* @(TAN4)@ The size of the @Annotation@ for "TO3l8":#TO3l8 is calculated in the same way as for @Message@; see "TM6":#TM6
 
 h4. ProtocolMessage
 
