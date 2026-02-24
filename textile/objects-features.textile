@@ -24,7 +24,7 @@ h3(#realtime-objects). RealtimeObject
 ** @(RTO23a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
 ** @(RTO23b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTO23c)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, waits for the sync state to transition to @SYNCED@
-** @(RTO23d)@ Returns the object with id @root@ from the internal @ObjectsPool@ as a @LiveMap@
+** @(RTO23d)@ Returns a @PathObject@ ("RTPO1":#RTPO1) wrapping the @LiveMap@ with id @root@ from the internal @ObjectsPool@. The @PathObject@ is created with an empty path, rooted at the @root@ @LiveMap@
 * @(RTO11)@ @RealtimeObject#createMap@ function:
 ** @(RTO11a)@ Expects the following arguments:
 *** @(RTO11a1)@ @entries@ @Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap>@ (optional) - the initial entries for the new @LiveMap@ object
@@ -682,6 +682,163 @@ h3(#livemap). LiveMap
 *** @(RTLM22b2)@ For each key that exists in the non-tombstoned entries of @newData@ but does not exist in the non-tombstoned entries of @previousData@, add the key to @LiveMapUpdate.update@ with the value @updated@
 *** @(RTLM22b3)@ For each key that exists in the non-tombstoned entries of both @previousData@ and @newData@, perform a deep comparison of the @data@ attributes from @previousData@ and @newData@. If the data values differ, add the key to @LiveMapUpdate.update@ with the value @updated@
 
+h3(#pathobject). PathObject
+
+A @PathObject@ is a lazy, path-based reference into the LiveObjects tree. It stores a path (as an ordered list of string segments) from the root @LiveMap@ and resolves it at the time each method is called. This means a @PathObject@ survives object replacements: if the object at a given path changes (e.g. via a @MAP_SET@ operation), the same @PathObject@ will resolve to the new object on subsequent calls.
+
+A @PathObject@ is obtained from @RealtimeObject#get@ ("RTO23":#RTO23), which returns a @PathObject@ rooted at the channel's root @LiveMap@ with an empty path. Further @PathObjects@ are obtained by navigating with @PathObject#get@ or @PathObject#at@.
+
+* @(RTPO1)@ The @PathObject@ class provides a path-based view over the LiveObjects tree
+** @(RTPO1a)@ A specific SDK implementation may choose to expose a subset of the methods available on the @PathObject@ class based on the expected type at the path. For example, when the user provides a type structure as a generic type parameter to @RealtimeObject#get@, the SDK may use type-specific class names (e.g. @LiveMapPathObject@, @LiveCounterPathObject@, @PrimitivePathObject@) that only expose the methods applicable to that type. The specification describes the general @PathObject@ class with the full set of methods
+* @(RTPO2)@ @PathObject@ has the following internal properties:
+** @(RTPO2a)@ @path@ - an ordered list of string segments representing the path from the root @LiveMap@ to this position in the tree
+** @(RTPO2b)@ @root@ - a reference to the root @LiveMap@ instance from the internal @ObjectsPool@
+* @(RTPO3)@ Internal path resolution procedure - resolves the stored @path@ against the LiveObjects tree:
+** @(RTPO3a)@ Starting from @root@, walk through the path segments in order. For each segment:
+*** @(RTPO3a1)@ The current object must be a @LiveMap@. If it is not, the resolution has failed
+*** @(RTPO3a2)@ Look up the segment as a key in the current @LiveMap@ using @LiveMap#get@ ("RTLM5":#RTLM5). If the result is undefined/null, the resolution has failed
+*** @(RTPO3a3)@ The result becomes the current object for the next segment
+** @(RTPO3b)@ If the path is empty, the result is the @root@ @LiveMap@ itself
+** @(RTPO3c)@ On resolution failure:
+*** @(RTPO3c1)@ For read operations (@value@, @instance@, @entries@, @keys@, @values@, @size@, @compact@, @compactJson@), return undefined/null. The client library may log a debug or trace message
+*** @(RTPO3c2)@ For write operations (@set@, @remove@, @increment@, @decrement@), the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92005, indicating that the path could not be resolved
+* @(RTPO4)@ @PathObject#path@ function:
+** @(RTPO4a)@ Returns a dot-delimited string representation of the stored path segments
+** @(RTPO4b)@ Any dot characters (@.@) occurring within individual path segments must be escaped with a backslash (@\@) in the returned string. For example, a path with segments @["a", "b.c", "d"]@ is represented as @a.b\.c.d@
+** @(RTPO4c)@ An empty path (root @PathObject@) returns an empty string
+* @(RTPO5)@ @PathObject#get@ function:
+** @(RTPO5a)@ Expects the following arguments:
+*** @(RTPO5a1)@ @key@ @String@ - the key to navigate to
+** @(RTPO5b)@ If @key@ is not of type @String@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that the key must be a @String@
+** @(RTPO5c)@ Returns a new @PathObject@ with the same @root@ and with @key@ appended to the current @path@ segments
+** @(RTPO5d)@ This is purely navigational and does not resolve the path or access any @LiveObject@ data
+* @(RTPO6)@ @PathObject#at@ function:
+** @(RTPO6a)@ Expects the following arguments:
+*** @(RTPO6a1)@ @path@ @String@ - a dot-delimited path string
+** @(RTPO6b)@ Parses the dot-delimited @path@ string into individual segments, respecting backslash-escaped dots (a @\.@ sequence is treated as a literal dot within a segment, not a separator)
+** @(RTPO6c)@ Returns a new @PathObject@ with the same @root@ and with the parsed segments appended to the current @path@ segments
+** @(RTPO6d)@ This is a convenience for chaining multiple @PathObject#get@ calls. For example, @pathObject.at("a.b.c")@ is equivalent to @pathObject.get("a").get("b").get("c")@
+* @(RTPO7)@ @PathObject#value@ function:
+** @(RTPO7a)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3)
+** @(RTPO7b)@ If the resolved value is a @LiveCounter@, returns its current numeric value (equivalent to @LiveCounter#value@, see "RTLC5":#RTLC5)
+** @(RTPO7c)@ If the resolved value is a primitive (@Boolean@, @Binary@, @Number@, @String@, @JsonArray@, @JsonObject@), returns the value directly
+** @(RTPO7d)@ If the resolved value is a @LiveMap@, returns undefined/null
+** @(RTPO7e)@ If path resolution fails, returns undefined/null per "RTPO3c1":#RTPO3c1
+* @(RTPO8)@ @PathObject#instance@ function:
+** @(RTPO8a)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3)
+** @(RTPO8b)@ If the resolved value is a @LiveObject@ (i.e. a @LiveMap@ or @LiveCounter@), returns a new @Instance@ ("RTINS1":#RTINS1) wrapping that @LiveObject@
+** @(RTPO8c)@ If the resolved value is a primitive, returns undefined/null
+** @(RTPO8d)@ If path resolution fails, returns undefined/null per "RTPO3c1":#RTPO3c1
+* @(RTPO9)@ @PathObject#entries@ function:
+** @(RTPO9a)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3)
+** @(RTPO9b)@ If the resolved value is a @LiveMap@, returns an iterator yielding @[key, PathObject]@ pairs, where each @PathObject@ is created as if by calling @PathObject#get@ with the corresponding key on this @PathObject@
+** @(RTPO9c)@ Only non-tombstoned entries are included, following the same rules as @LiveMap#entries@ ("RTLM11":#RTLM11)
+** @(RTPO9d)@ If the resolved value is not a @LiveMap@, or if path resolution fails, returns an empty iterator
+* @(RTPO10)@ @PathObject#keys@ function:
+** @(RTPO10a)@ Behaves identically to @PathObject#entries@ ("RTPO9":#RTPO9) except that it yields only the keys
+* @(RTPO11)@ @PathObject#values@ function:
+** @(RTPO11a)@ Behaves identically to @PathObject#entries@ ("RTPO9":#RTPO9) except that it yields only the @PathObject@ values
+* @(RTPO12)@ @PathObject#size@ function:
+** @(RTPO12a)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3)
+** @(RTPO12b)@ If the resolved value is a @LiveMap@, returns the number of non-tombstoned entries (equivalent to @LiveMap#size@, see "RTLM10":#RTLM10)
+** @(RTPO12c)@ If the resolved value is not a @LiveMap@, or if path resolution fails, returns undefined/null
+* @(RTPO13)@ @PathObject#compact@ function:
+** @(RTPO13a)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3)
+** @(RTPO13b)@ If the resolved value is a @LiveMap@, returns a recursively compacted representation as a plain key-value object:
+*** @(RTPO13b1)@ Each entry in the @LiveMap@ is included in the result. Tombstoned entries are excluded
+*** @(RTPO13b2)@ Nested @LiveMap@ values are recursively compacted into nested plain key-value objects
+*** @(RTPO13b3)@ Nested @LiveCounter@ values are resolved to their numeric value
+*** @(RTPO13b4)@ Primitive values (@Boolean@, @Binary@, @Number@, @String@, @JsonArray@, @JsonObject@) are included as-is
+*** @(RTPO13b5)@ Cyclic references (a @LiveMap@ that has already been visited during this compaction) are represented by reusing the same in-memory object reference to the already-compacted result for that @LiveMap@
+** @(RTPO13c)@ If the resolved value is a @LiveCounter@, returns its current numeric value (equivalent to @PathObject#value@)
+** @(RTPO13d)@ If the resolved value is a primitive, returns the value directly (equivalent to @PathObject#value@)
+** @(RTPO13e)@ If path resolution fails, returns undefined/null per "RTPO3c1":#RTPO3c1
+* @(RTPO14)@ @PathObject#compactJson@ function:
+** @(RTPO14a)@ Behaves identically to @PathObject#compact@ ("RTPO13":#RTPO13) except for the following differences, which ensure the result is JSON-serializable:
+*** @(RTPO14a1)@ @Binary@ values are encoded as base64 strings instead of being included as-is
+*** @(RTPO14a2)@ Cyclic references are represented as an object with a single @objectId@ property containing the Object ID of the referenced @LiveMap@, instead of reusing the in-memory object reference
+* @(RTPO15)@ @PathObject#set@ function:
+** @(RTPO15a)@ Expects the following arguments:
+*** @(RTPO15a1)@ @key@ @String@ - the key to set the value for
+*** @(RTPO15a2)@ @value@ - the value to assign to the key. Accepted types are the same as for @LiveMap#set@ ("RTLM20":#RTLM20)
+** @(RTPO15b)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3). On failure, throws per "RTPO3c2":#RTPO3c2
+** @(RTPO15c)@ If the resolved value is a @LiveMap@, delegates to @LiveMap#set@ ("RTLM20":#RTLM20) with the provided @key@ and @value@
+** @(RTPO15d)@ If the resolved value is not a @LiveMap@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007, indicating that the operation is not supported for the resolved object type
+* @(RTPO16)@ @PathObject#remove@ function:
+** @(RTPO16a)@ Expects the following arguments:
+*** @(RTPO16a1)@ @key@ @String@ - the key to remove the value for
+** @(RTPO16b)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3). On failure, throws per "RTPO3c2":#RTPO3c2
+** @(RTPO16c)@ If the resolved value is a @LiveMap@, delegates to @LiveMap#remove@ ("RTLM21":#RTLM21) with the provided @key@
+** @(RTPO16d)@ If the resolved value is not a @LiveMap@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+* @(RTPO17)@ @PathObject#increment@ function:
+** @(RTPO17a)@ Expects the following arguments:
+*** @(RTPO17a1)@ @amount@ @Number@ (optional) - the amount by which to increment the counter value. Defaults to 1
+** @(RTPO17b)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3). On failure, throws per "RTPO3c2":#RTPO3c2
+** @(RTPO17c)@ If the resolved value is a @LiveCounter@, delegates to @LiveCounter#increment@ ("RTLC12":#RTLC12) with the provided @amount@
+** @(RTPO17d)@ If the resolved value is not a @LiveCounter@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+* @(RTPO18)@ @PathObject#decrement@ function:
+** @(RTPO18a)@ Expects the following arguments:
+*** @(RTPO18a1)@ @amount@ @Number@ (optional) - the amount by which to decrement the counter value. Defaults to 1
+** @(RTPO18b)@ Resolves the path using the path resolution procedure ("RTPO3":#RTPO3). On failure, throws per "RTPO3c2":#RTPO3c2
+** @(RTPO18c)@ If the resolved value is a @LiveCounter@, delegates to @LiveCounter#decrement@ ("RTLC13":#RTLC13) with the provided @amount@
+** @(RTPO18d)@ If the resolved value is not a @LiveCounter@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+
+h3(#instance). Instance
+
+An @Instance@ holds a direct reference to a specific resolved @LiveObject@ or primitive value. Unlike @PathObject@ which is path-addressed and re-resolves on each call, @Instance@ is identity-addressed: it follows the specific object it was created with, regardless of where that object sits in the tree.
+
+* @(RTINS1)@ The @Instance@ class provides a direct-reference view of a @LiveObject@ or primitive value
+** @(RTINS1a)@ A specific SDK implementation may choose to expose a subset of the methods available on the @Instance@ class based on the known underlying type. For example, the SDK may use type-specific class names (e.g. @LiveMapInstance@, @LiveCounterInstance@, @PrimitiveInstance@) that only expose the methods applicable to the wrapped type. The specification describes the general @Instance@ class with the full set of methods
+* @(RTINS2)@ @Instance@ has the following internal properties:
+** @(RTINS2a)@ @value@ - a reference to the wrapped @LiveObject@ or primitive value
+* @(RTINS3)@ @Instance#id@ property:
+** @(RTINS3a)@ If the wrapped value is a @LiveObject@, returns the @objectId@ of that object
+** @(RTINS3b)@ If the wrapped value is a primitive, returns undefined/null
+* @(RTINS4)@ @Instance#value@ function:
+** @(RTINS4a)@ If the wrapped value is a @LiveCounter@, returns its current numeric value (equivalent to @LiveCounter#value@, see "RTLC5":#RTLC5)
+** @(RTINS4b)@ If the wrapped value is a primitive (@Boolean@, @Binary@, @Number@, @String@, @JsonArray@, @JsonObject@), returns the value directly
+** @(RTINS4c)@ If the wrapped value is a @LiveMap@, returns undefined/null
+* @(RTINS5)@ @Instance#get@ function:
+** @(RTINS5a)@ Expects the following arguments:
+*** @(RTINS5a1)@ @key@ @String@ - the key to look up
+** @(RTINS5b)@ If the wrapped value is a @LiveMap@, looks up the value at @key@ using @LiveMap#get@ ("RTLM5":#RTLM5) and returns a new @Instance@ wrapping the result. If the result is undefined/null, returns undefined/null
+** @(RTINS5c)@ If the wrapped value is not a @LiveMap@, returns undefined/null
+* @(RTINS6)@ @Instance#entries@ function:
+** @(RTINS6a)@ If the wrapped value is a @LiveMap@, returns an iterator yielding @[key, Instance]@ pairs, where each @Instance@ wraps the corresponding entry value from @LiveMap#entries@ ("RTLM11":#RTLM11)
+** @(RTINS6b)@ If the wrapped value is not a @LiveMap@, returns an empty iterator
+* @(RTINS7)@ @Instance#keys@ function:
+** @(RTINS7a)@ Behaves identically to @Instance#entries@ ("RTINS6":#RTINS6) except that it yields only the keys
+* @(RTINS8)@ @Instance#values@ function:
+** @(RTINS8a)@ Behaves identically to @Instance#entries@ ("RTINS6":#RTINS6) except that it yields only the @Instance@ values
+* @(RTINS9)@ @Instance#size@ function:
+** @(RTINS9a)@ If the wrapped value is a @LiveMap@, returns the number of non-tombstoned entries (equivalent to @LiveMap#size@, see "RTLM10":#RTLM10)
+** @(RTINS9b)@ If the wrapped value is not a @LiveMap@, returns undefined/null
+* @(RTINS10)@ @Instance#compact@ function:
+** @(RTINS10a)@ Behaves identically to @PathObject#compact@ ("RTPO13":#RTPO13), but operates on the wrapped value directly instead of resolving a path
+* @(RTINS11)@ @Instance#compactJson@ function:
+** @(RTINS11a)@ Behaves identically to @PathObject#compactJson@ ("RTPO14":#RTPO14), but operates on the wrapped value directly instead of resolving a path
+* @(RTINS12)@ @Instance#set@ function:
+** @(RTINS12a)@ Expects the following arguments:
+*** @(RTINS12a1)@ @key@ @String@ - the key to set the value for
+*** @(RTINS12a2)@ @value@ - the value to assign to the key. Accepted types are the same as for @LiveMap#set@ ("RTLM20":#RTLM20)
+** @(RTINS12b)@ If the wrapped value is a @LiveMap@, delegates to @LiveMap#set@ ("RTLM20":#RTLM20) with the provided @key@ and @value@
+** @(RTINS12c)@ If the wrapped value is not a @LiveMap@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+* @(RTINS13)@ @Instance#remove@ function:
+** @(RTINS13a)@ Expects the following arguments:
+*** @(RTINS13a1)@ @key@ @String@ - the key to remove the value for
+** @(RTINS13b)@ If the wrapped value is a @LiveMap@, delegates to @LiveMap#remove@ ("RTLM21":#RTLM21) with the provided @key@
+** @(RTINS13c)@ If the wrapped value is not a @LiveMap@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+* @(RTINS14)@ @Instance#increment@ function:
+** @(RTINS14a)@ Expects the following arguments:
+*** @(RTINS14a1)@ @amount@ @Number@ (optional) - the amount by which to increment the counter value. Defaults to 1
+** @(RTINS14b)@ If the wrapped value is a @LiveCounter@, delegates to @LiveCounter#increment@ ("RTLC12":#RTLC12) with the provided @amount@
+** @(RTINS14c)@ If the wrapped value is not a @LiveCounter@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+* @(RTINS15)@ @Instance#decrement@ function:
+** @(RTINS15a)@ Expects the following arguments:
+*** @(RTINS15a1)@ @amount@ @Number@ (optional) - the amount by which to decrement the counter value. Defaults to 1
+** @(RTINS15b)@ If the wrapped value is a @LiveCounter@, delegates to @LiveCounter#decrement@ ("RTLC13":#RTLC13) with the provided @amount@
+** @(RTINS15c)@ If the wrapped value is not a @LiveCounter@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+
 h2(#idl). Interface Definition
 
 Describes types for RealtimeObject.
@@ -689,7 +846,7 @@ Types and their properties/methods are public and exposed to users by default. A
 
 <pre>
 class RealtimeObject: // RTO*
-  get() => io LiveMap // RTO23
+  get() => io PathObject // RTO23
   createMap(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap> entries?) => io LiveMap // RTO11
   createCounter(Number count?) => io LiveCounter // RTO12
   on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18
@@ -750,4 +907,36 @@ class LiveMap extends LiveObject: // RTLM*, RTLM1
 
 interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a
   update: Dict<String, 'updated' | 'removed'> // RTLM18b
+
+class PathObject: // RTPO*
+  path() -> String // RTPO4
+  get(String key) -> PathObject // RTPO5
+  at(String path) -> PathObject // RTPO6
+  value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTPO7
+  instance() -> Instance? // RTPO8
+  entries() -> Iterator<[String, PathObject]> // RTPO9
+  keys() -> Iterator<String> // RTPO10
+  values() -> Iterator<PathObject> // RTPO11
+  size() -> Number? // RTPO12
+  compact() -> Object? // RTPO13
+  compactJson() -> Object? // RTPO14
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTPO15
+  remove(String key) => io // RTPO16
+  increment(Number amount?) => io // RTPO17
+  decrement(Number amount?) => io // RTPO18
+
+class Instance: // RTINS*
+  id: String? // RTINS3
+  value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTINS4
+  get(String key) -> Instance? // RTINS5
+  entries() -> Iterator<[String, Instance]> // RTINS6
+  keys() -> Iterator<String> // RTINS7
+  values() -> Iterator<Instance> // RTINS8
+  size() -> Number? // RTINS9
+  compact() -> Object? // RTINS10
+  compactJson() -> Object? // RTINS11
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTINS12
+  remove(String key) => io // RTINS13
+  increment(Number amount?) => io // RTINS14
+  decrement(Number amount?) => io // RTINS15
 </pre>
