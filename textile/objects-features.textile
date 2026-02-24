@@ -22,7 +22,9 @@ h3(#realtime-objects). RealtimeObject
 ** @(RTO1d)@ This clause has been replaced by "RTO23d":#RTO23d.
 * @(RTO23)@ @RealtimeObject#get@ function:
 ** @(RTO23a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
-** @(RTO23b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTO23b)@ This clause has been replaced by "RTO23e":#RTO23e and "RTO23f":#RTO23f.
+** @(RTO23e)@ If the channel is in the @INITIALIZED@, @DETACHED@, @DETACHING@, or @ATTACHING@ state, implicitly attach the @RealtimeChannel@ and wait for the attach to complete
+** @(RTO23f)@ If the channel is in the @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001, indicating that the channel operation failed due to the current channel state
 ** @(RTO23c)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, waits for the sync state to transition to @SYNCED@
 ** @(RTO23d)@ Returns a @PathObject@ ("RTPO1":#RTPO1) wrapping the @LiveMap@ with id @root@ from the internal @ObjectsPool@. The @PathObject@ is created with an empty path, rooted at the @root@ @LiveMap@
 * @(RTO11)@ This clause has been replaced by "RTLMV3":#RTLMV3.
