@@ -25,17 +25,17 @@ h3(#realtime-objects). RealtimeObject
 ** @(RTO23b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTO23c)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, waits for the sync state to transition to @SYNCED@
 ** @(RTO23d)@ Returns a @PathObject@ ("RTPO1":#RTPO1) wrapping the @LiveMap@ with id @root@ from the internal @ObjectsPool@. The @PathObject@ is created with an empty path, rooted at the @root@ @LiveMap@
-* @(RTO11)@ @RealtimeObject#createMap@ function:
-** @(RTO11a)@ Expects the following arguments:
-*** @(RTO11a1)@ @entries@ @Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap>@ (optional) - the initial entries for the new @LiveMap@ object
-** @(RTO11b)@ The return type is a @LiveMap@, which is returned once the required I/O has successfully completed
-** @(RTO11c)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
-** @(RTO11d)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
-** @(RTO11e)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
-** @(RTO11f)@ Creates an @ObjectMessage@ for a @MAP_CREATE@ action in the following way:
-*** @(RTO11f1)@ If @entries@ is null or not of type @Dict@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that @entries@ must be a @Dict@. Note that @entries@ is an optional argument, and if omitted, this error must not be thrown
-*** @(RTO11f2)@ If any of the keys provided in @entries@ are not of type @String@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that keys must be @String@
-*** @(RTO11f3)@ If any of the values provided in @entries@ are not of an expected type, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40013, indicating that such data type is unsupported
+* @(RTO11)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11a)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11a1)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11b)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11c)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11d)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11e)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11f)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f1)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f2)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f3)@ This clause has been replaced by "RTLMV3":#RTLMV3.
 *** @(RTO11f4)@ This clause has been replaced by "RTO11f14":#RTO11f14 as of specification version 6.0.0.
 **** @(RTO11f4a)@ This clause has been replaced by "RTO11f14a":#RTO11f14a as of specification version 6.0.0.
 **** @(RTO11f4b)@ This clause has been replaced by "RTO11f14b":#RTO11f14b as of specification version 6.0.0.
@@ -48,82 +48,81 @@ h3(#realtime-objects). RealtimeObject
 ****** @(RTO11f4c1e)@ This clause has been replaced by "RTO11f14c1e":#RTO11f14c1e as of specification version 6.0.0.
 ****** @(RTO11f4c1f)@ This clause has been replaced by "RTO11f14c1f":#RTO11f14c1f as of specification version 6.0.0.
 ***** @(RTO11f4c2)@ This clause has been replaced by "RTO11f14c2":#RTO11f14c2 as of specification version 6.0.0.
-*** @(RTO11f14)@ Create a @MapCreate@ object with the initial value for the new @LiveMap@:
-**** @(RTO11f14a)@ Set @MapCreate.semantics@ to @ObjectsMapSemantics.LWW@
-**** @(RTO11f14b)@ Set @MapCreate.entries@ to an empty map if @entries@ is omitted
-**** @(RTO11f14c)@ Otherwise, set @MapCreate.entries@ based on the provided @entries@. For each key-value pair in @entries@:
-***** @(RTO11f14c1)@ Create an @ObjectsMapEntry@ for the current value:
-****** @(RTO11f14c1a)@ If the value is of type @LiveCounter@ or @LiveMap@, set @ObjectsMapEntry.data.objectId@ to the @objectId@ of that object
-****** @(RTO11f14c1b)@ If the value is of type @JsonArray@ or @JsonObject@, set @ObjectsMapEntry.data.json@ to that value
-****** @(RTO11f14c1c)@ If the value is of type @String@, set @ObjectsMapEntry.data.string@ to that value
-****** @(RTO11f14c1d)@ If the value is of type @Number@, set @ObjectsMapEntry.data.number@ to that value
-****** @(RTO11f14c1e)@ If the value is of type @Boolean@, set @ObjectsMapEntry.data.boolean@ to that value
-****** @(RTO11f14c1f)@ If the value is of type @Binary@, set @ObjectsMapEntry.data.bytes@ to that value
-***** @(RTO11f14c2)@ Add a new entry to @MapCreate.entries@ with the current key and the created @ObjectsMapEntry@ as the value
+*** @(RTO11f14)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+**** @(RTO11f14a)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+**** @(RTO11f14b)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+**** @(RTO11f14c)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+***** @(RTO11f14c1)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+****** @(RTO11f14c1a)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+****** @(RTO11f14c1b)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+****** @(RTO11f14c1c)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+****** @(RTO11f14c1d)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+****** @(RTO11f14c1e)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+****** @(RTO11f14c1f)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+***** @(RTO11f14c2)@ This clause has been replaced by "RTLMV3":#RTLMV3.
 *** @(RTO11f5)@ This clause has been replaced by "RTO11f15":#RTO11f15 as of specification version 6.0.0.
-*** @(RTO11f15)@ Create an initial value JSON string based on @MapCreate@ object from "RTO11f14":#RTO11f14 as follows:
-**** @(RTO11f15a)@ The @MapCreate@ object may contain user-provided @ObjectData@ that requires encoding. Encode the @ObjectData@ values using the procedure described in "OD4":../features#OD4
-**** @(RTO11f15b)@ Return a JSON string representation of the encoded @MapCreate@ object
-*** @(RTO11f6)@ Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
-*** @(RTO11f7)@ Get the current server time as described in "RTO16":#RTO16
-*** @(RTO11f8)@ Create an @objectId@ for the new @LiveMap@ object as described in "RTO14":#RTO14, passing in @map@ string as the @type@, the initial value JSON string from "RTO11f15":#RTO11f15, the nonce from "RTO11f6":#RTO11f6, and the server time from "RTO11f7":#RTO11f7
-*** @(RTO11f9)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_CREATE@
-*** @(RTO11f10)@ Set @ObjectMessage.operation.objectId@ to the @objectId@ created in "RTO11f8":#RTO11f8
+*** @(RTO11f15)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+**** @(RTO11f15a)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+**** @(RTO11f15b)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f6)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f7)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f8)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f9)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f10)@ This clause has been replaced by "RTLMV3":#RTLMV3.
 *** @(RTO11f11)@ This clause has been replaced by "RTO11f16":#RTO11f16 as of specification version 6.0.0.
 *** @(RTO11f12)@ This clause has been replaced by "RTO11f17":#RTO11f17 as of specification version 6.0.0.
 *** @(RTO11f13)@ This clause has been deleted as of specification version 6.0.0.
-*** @(RTO11f16)@ Set @ObjectMessage.operation.mapCreateWithObjectId.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
-*** @(RTO11f17)@ Set @ObjectMessage.operation.mapCreateWithObjectId.initialValue@ to the JSON string created in "RTO11f15":#RTO11f15
+*** @(RTO11f16)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11f17)@ This clause has been replaced by "RTLMV3":#RTLMV3.
 ** @(RTO11g)@ This clause has been replaced by "RTO11i":#RTO11i
-** @(RTO11i)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
-*** @(RTO11i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
-** @(RTO11h)@ Returns a @LiveMap@ instance:
+** @(RTO11i)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11i1)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+** @(RTO11h)@ This clause has been replaced by "RTLMV3":#RTLMV3.
 *** @(RTO11h1)@ This clause has been deleted.
-*** @(RTO11h2)@ If an object with the @ObjectMessage.operation.objectId@ exists in the internal @ObjectsPool@, return it
-*** @(RTO11h3)@ Otherwise, if the object does not exist in the internal @ObjectsPool@:
+*** @(RTO11h2)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+*** @(RTO11h3)@ This clause has been replaced by "RTLMV3":#RTLMV3.
 **** @(RTO11h3a)@ This clause has been deleted.
 **** @(RTO11h3b)@ This clause has been deleted.
 **** @(RTO11h3c)@ This clause has been deleted.
-**** @(RTO11h3d)@ The library should throw an @ErrorInfo@ error with @statusCode@ 500 and @code@ 50000 (Note: this is not expected to happen since the object should have been created as part of applying the @MAP_CREATE@ operation via @publishAndApply@ in "RTO11i":#RTO11i)
-* @(RTO12)@ @RealtimeObject#createCounter@ function:
-** @(RTO12a)@ Expects the following arguments:
-*** @(RTO12a1)@ @count@ @Number@ (optional) - the initial count for the new @LiveCounter@ object
-** @(RTO12b)@ The return type is a @LiveCounter@, which is returned once the required I/O has successfully completed
-** @(RTO12c)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
-** @(RTO12d)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
-** @(RTO12e)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
-** @(RTO12f)@ Creates an @ObjectMessage@ for a @COUNTER_CREATE@ action in the following way:
-*** @(RTO12f1)@ If @count@ is null, not of type @Number@, or not a finite number, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that @count@ must be a valid number. Note that @count@ is an optional argument, and if omitted, this error must not be thrown
+**** @(RTO11h3d)@ This clause has been replaced by "RTLMV3":#RTLMV3.
+* @(RTO12)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12a)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12a1)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12b)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12c)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12d)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12e)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12f)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f1)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 *** @(RTO12f2)@ This clause has been replaced by "RTO12f12":#RTO12f12 as of specification version 6.0.0.
 **** @(RTO12f2a)@ This clause has been replaced by "RTO12f12a":#RTO12f12a as of specification version 6.0.0.
 **** @(RTO12f2b)@ This clause has been replaced by "RTO12f12b":#RTO12f12b as of specification version 6.0.0.
-*** @(RTO12f12)@ Create a @CounterCreate@ object with the initial value for the new @LiveCounter@:
-**** @(RTO12f12a)@ Set @CounterCreate.count@ to 0 if @count@ is omitted
-**** @(RTO12f12b)@ Otherwise, set @CounterCreate.count@ to the provided @count@ value
+*** @(RTO12f12)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+**** @(RTO12f12a)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+**** @(RTO12f12b)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 *** @(RTO12f3)@ This clause has been replaced by "RTO12f13":#RTO12f13 as of specification version 6.0.0.
-*** @(RTO12f13)@ Create an initial value JSON string by generating a JSON string representation of the @CounterCreate@ object from "RTO12f12":#RTO12f12
-*** @(RTO12f4)@ Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
-*** @(RTO12f5)@ Get the current server time as described in "RTO16":#RTO16
-*** @(RTO12f6)@ Create an @objectId@ for the new @LiveCounter@ object as described in "RTO14":#RTO14, passing in @counter@ string as the @type@, the initial value JSON string from "RTO12f13":#RTO12f13, the nonce from "RTO12f4":#RTO12f4, and the server time from "RTO12f5":#RTO12f5
-*** @(RTO12f7)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.COUNTER_CREATE@
-*** @(RTO12f8)@ Set @ObjectMessage.operation.objectId@ to the @objectId@ created in "RTO12f6":#RTO12f6
+*** @(RTO12f13)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f4)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f5)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f6)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f7)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f8)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 *** @(RTO12f9)@ This clause has been replaced by "RTO12f14":#RTO12f14 as of specification version 6.0.0.
 *** @(RTO12f10)@ This clause has been replaced by "RTO12f15":#RTO12f15 as of specification version 6.0.0.
 *** @(RTO12f11)@ This clause has been deleted as of specification version 6.0.0.
-
-*** @(RTO12f14)@ Set @ObjectMessage.operation.counterCreateWithObjectId.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
-*** @(RTO12f15)@ Set @ObjectMessage.operation.counterCreateWithObjectId.initialValue@ to the JSON string created in "RTO12f13":#RTO12f13
+*** @(RTO12f14)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12f15)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 ** @(RTO12g)@ This clause has been replaced by "RTO12i":#RTO12i
-** @(RTO12i)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
-*** @(RTO12i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
-** @(RTO12h)@ Returns a @LiveCounter@ instance:
+** @(RTO12i)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12i1)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+** @(RTO12h)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 *** @(RTO12h1)@ This clause has been deleted.
-*** @(RTO12h2)@ If an object with the @ObjectMessage.operation.objectId@ exists in the internal @ObjectsPool@, return it
-*** @(RTO12h3)@ Otherwise, if the object does not exist in the internal @ObjectsPool@:
+*** @(RTO12h2)@ This clause has been replaced by "RTLCV3":#RTLCV3.
+*** @(RTO12h3)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 **** @(RTO12h3a)@ This clause has been deleted.
 **** @(RTO12h3b)@ This clause has been deleted.
 **** @(RTO12h3c)@ This clause has been deleted.
-**** @(RTO12h3d)@ The library should throw an @ErrorInfo@ error with @statusCode@ 500 and @code@ 50000 (Note: this is not expected to happen since the object should have been created as part of applying the @COUNTER_CREATE@ operation via @publishAndApply@ in "RTO12i":#RTO12i)
+**** @(RTO12h3d)@ This clause has been replaced by "RTLCV3":#RTLCV3.
 * @(RTO2)@ Certain object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
 ** @(RTO2a)@ If the channel is in the @ATTACHED@ state, the presence of the required channel mode is checked against the set of channel modes granted by the server per "RTL4m":../features#RTL4m :
 *** @(RTO2a1)@ If the channel mode is in the set, the operation is allowed
@@ -505,12 +504,13 @@ h3(#livemap). LiveMap
 * @(RTLM20)@ @LiveMap#set@ function:
 ** @(RTLM20a)@ Expects the following arguments:
 *** @(RTLM20a1)@ @key@ @String@ - the key to set the value for
-*** @(RTLM20a2)@ @value@ @Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap@ - the value to assign to the key
+*** @(RTLM20a2)@ This clause has been replaced by "RTLM20a3":#RTLM20a3.
+*** @(RTLM20a3)@ @value@ @Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType@ - the value to assign to the key
 ** @(RTLM20b)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
 ** @(RTLM20c)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTLM20d)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
 ** @(RTLM20e)@ Creates an @ObjectMessage@ for a @MAP_SET@ action in the following way:
-*** @(RTLM20e1)@ Validates the provided @key@ and @value@ in a similar way as described in "RTO11f2":#RTO11f2 and "RTO11f3":#RTO11f3
+*** @(RTLM20e1)@ Validates the provided @key@ and @value@ in a similar way as described in "RTLMV4b":#RTLMV4b and "RTLMV4c":#RTLMV4c
 *** @(RTLM20e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_SET@
 *** @(RTLM20e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
 *** @(RTLM20e4)@ This clause has been replaced by "RTLM20e6":#RTLM20e6 as of specification version 6.0.0.
@@ -523,14 +523,20 @@ h3(#livemap). LiveMap
 **** @(RTLM20e5f)@ This clause has been replaced by "RTLM20e7f":#RTLM20e7f as of specification version 6.0.0.
 *** @(RTLM20e6)@ Set @ObjectMessage.operation.mapSet.key@ to the provided @key@ value
 *** @(RTLM20e7)@ Set @ObjectMessage.operation.mapSet.value@ depending on the type of the provided @value@:
-**** @(RTLM20e7a)@ If the @value@ is of type @LiveCounter@ or @LiveMap@, set @ObjectMessage.operation.mapSet.value.objectId@ to the @objectId@ of that object
+**** @(RTLM20e7a)@ This clause has been replaced by "RTLM20e7g":#RTLM20e7g.
+**** @(RTLM20e7g)@ If the @value@ is of type @LiveCounterValueType@ or @LiveMapValueType@:
+***** @(RTLM20e7g1)@ Consume the value type per "RTLCV4":#RTLCV4 or "RTLMV4":#RTLMV4 respectively to generate @*_CREATE@ @ObjectMessages@. Collect all generated @ObjectMessages@
+***** @(RTLM20e7g2)@ Set @ObjectMessage.operation.mapSet.value.objectId@ to the @objectId@ from the outermost @*_CREATE@ @ObjectMessage@
 **** @(RTLM20e7b)@ If the @value@ is of type @JsonArray@ or @JsonObject@, set @ObjectMessage.operation.mapSet.value.json@ to that value
 **** @(RTLM20e7c)@ If the @value@ is of type @String@, set @ObjectMessage.operation.mapSet.value.string@ to that value
 **** @(RTLM20e7d)@ If the @value@ is of type @Number@, set @ObjectMessage.operation.mapSet.value.number@ to that value
 **** @(RTLM20e7e)@ If the @value@ is of type @Boolean@, set @ObjectMessage.operation.mapSet.value.boolean@ to that value
 **** @(RTLM20e7f)@ If the @value@ is of type @Binary@, set @ObjectMessage.operation.mapSet.value.bytes@ to that value
 ** @(RTLM20f)@ This clause has been replaced by "RTLM20g":#RTLM20g
-** @(RTLM20g)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+** @(RTLM20g)@ This clause has been replaced by "RTLM20h":#RTLM20h.
+** @(RTLM20h)@ Publishes all @ObjectMessages@ using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20):
+*** @(RTLM20h1)@ If the @value@ is of type @LiveCounterValueType@ or @LiveMapValueType@, the array contains the @*_CREATE@ @ObjectMessages@ collected in "RTLM20e7g1":#RTLM20e7g1 followed by the @MAP_SET@ @ObjectMessage@ from "RTLM20e":#RTLM20e
+*** @(RTLM20h2)@ Otherwise, the @MAP_SET@ @ObjectMessage@ from "RTLM20e":#RTLM20e is passed as a single element in the array
 * @(RTLM21)@ @LiveMap#remove@ function:
 ** @(RTLM21a)@ Expects the following arguments:
 *** @(RTLM21a1)@ @key@ @String@ - the key to remove the value for
@@ -538,7 +544,7 @@ h3(#livemap). LiveMap
 ** @(RTLM21c)@ If the channel is in the @DETACHED@, @FAILED@ or @SUSPENDED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
 ** @(RTLM21d)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
 ** @(RTLM21e)@ Creates an @ObjectMessage@ for a @MAP_REMOVE@ action in the following way:
-*** @(RTLM21e1)@ Validates the provided @key@ in a similar way as described in "RTO11f2":#RTO11f2
+*** @(RTLM21e1)@ Validates the provided @key@ in a similar way as described in "RTLMV4b":#RTLMV4b
 *** @(RTLM21e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_REMOVE@
 *** @(RTLM21e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
 *** @(RTLM21e4)@ This clause has been replaced by "RTLM21e5":#RTLM21e5 as of specification version 6.0.0.
@@ -681,6 +687,75 @@ h3(#livemap). LiveMap
 *** @(RTLM22b1)@ For each key that exists in the non-tombstoned entries of @previousData@ but does not exist in the non-tombstoned entries of @newData@, add the key to @LiveMapUpdate.update@ with the value @removed@
 *** @(RTLM22b2)@ For each key that exists in the non-tombstoned entries of @newData@ but does not exist in the non-tombstoned entries of @previousData@, add the key to @LiveMapUpdate.update@ with the value @updated@
 *** @(RTLM22b3)@ For each key that exists in the non-tombstoned entries of both @previousData@ and @newData@, perform a deep comparison of the @data@ attributes from @previousData@ and @newData@. If the data values differ, add the key to @LiveMapUpdate.update@ with the value @updated@
+
+h3(#livecountervaluetype). LiveCounterValueType
+
+A @LiveCounterValueType@ is an immutable blueprint for creating a new @LiveCounter@ object. It stores the desired initial count value and is consumed when passed to a mutation method such as @LiveMap#set@ ("RTLM20":#RTLM20) or as an entry value in @LiveMap.create@ ("RTLMV3":#RTLMV3).
+
+* @(RTLCV1)@ @LiveCounterValueType@ is an immutable value type representing the intent to create a new @LiveCounter@ with a specific initial count
+* @(RTLCV2)@ @LiveCounterValueType@ has the following internal properties:
+** @(RTLCV2a)@ @count@ @Number@ - the initial count value for the @LiveCounter@ to be created
+* @(RTLCV3)@ @LiveCounter.create@ static factory function:
+** @(RTLCV3a)@ Expects the following arguments:
+*** @(RTLCV3a1)@ @initialCount@ @Number@ (optional) - the initial count for the new @LiveCounter@ object. Defaults to 0
+** @(RTLCV3b)@ Returns a new @LiveCounterValueType@ instance with the internal @count@ set to the provided @initialCount@ (or 0 if omitted)
+** @(RTLCV3c)@ No input validation is performed at creation time. Validation is deferred to the consumption procedure ("RTLCV4":#RTLCV4)
+** @(RTLCV3d)@ The returned @LiveCounterValueType@ is immutable and must not be modified after creation
+* @(RTLCV4)@ Internal consumption procedure - when a @LiveCounterValueType@ is consumed by a mutation method (e.g. @LiveMap#set@ or as an entry value during @LiveMapValueType@ consumption per "RTLMV4":#RTLMV4), a @COUNTER_CREATE@ @ObjectMessage@ is generated as follows:
+** @(RTLCV4a)@ If the internal @count@ is not undefined and (is not of type @Number@ or is not a finite number), the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that the counter value must be a valid number
+** @(RTLCV4b)@ Create a @CounterCreate@ object:
+*** @(RTLCV4b1)@ Set @CounterCreate.count@ to the internal @count@ value, or to 0 if undefined
+** @(RTLCV4c)@ Create an initial value JSON string by generating a JSON string representation of the @CounterCreate@ object
+** @(RTLCV4d)@ Create a unique string nonce with 16+ characters
+** @(RTLCV4e)@ Get the current server time as described in "RTO16":#RTO16
+** @(RTLCV4f)@ Create an @objectId@ for the new @LiveCounter@ as described in "RTO14":#RTO14, passing in @counter@ as the @type@, the initial value JSON string from "RTLCV4c":#RTLCV4c, the nonce from "RTLCV4d":#RTLCV4d, and the server time from "RTLCV4e":#RTLCV4e
+** @(RTLCV4g)@ Create an @ObjectMessage@ with:
+*** @(RTLCV4g1)@ @ObjectMessage.operation.action@ set to @ObjectOperationAction.COUNTER_CREATE@
+*** @(RTLCV4g2)@ @ObjectMessage.operation.objectId@ set to the @objectId@ from "RTLCV4f":#RTLCV4f
+*** @(RTLCV4g3)@ @ObjectMessage.operation.counterCreateWithObjectId.nonce@ set to the nonce from "RTLCV4d":#RTLCV4d
+*** @(RTLCV4g4)@ @ObjectMessage.operation.counterCreateWithObjectId.initialValue@ set to the JSON string from "RTLCV4c":#RTLCV4c
+** @(RTLCV4h)@ Return the @ObjectMessage@
+
+h3(#livemapvaluetype). LiveMapValueType
+
+A @LiveMapValueType@ is an immutable blueprint for creating a new @LiveMap@ object. It stores the desired initial entries and is consumed when passed to a mutation method such as @LiveMap#set@ ("RTLM20":#RTLM20) or as an entry value in another @LiveMap.create@ ("RTLMV3":#RTLMV3) call. Supports arbitrarily deep nesting of @LiveMapValueType@ and @LiveCounterValueType@ values within entries.
+
+* @(RTLMV1)@ @LiveMapValueType@ is an immutable value type representing the intent to create a new @LiveMap@ with specific initial entries
+* @(RTLMV2)@ @LiveMapValueType@ has the following internal properties:
+** @(RTLMV2a)@ @entries@ @Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>@ (optional) - the initial entries for the @LiveMap@ to be created
+* @(RTLMV3)@ @LiveMap.create@ static factory function:
+** @(RTLMV3a)@ Expects the following arguments:
+*** @(RTLMV3a1)@ @entries@ @Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>@ (optional) - the initial entries for the new @LiveMap@ object
+** @(RTLMV3b)@ Returns a new @LiveMapValueType@ instance with the internal @entries@ set to the provided @entries@ (or undefined if omitted)
+** @(RTLMV3c)@ No input validation is performed at creation time. Validation is deferred to the consumption procedure ("RTLMV4":#RTLMV4)
+** @(RTLMV3d)@ The returned @LiveMapValueType@ is immutable and must not be modified after creation
+* @(RTLMV4)@ Internal consumption procedure - when a @LiveMapValueType@ is consumed by a mutation method (e.g. @LiveMap#set@ or as an entry value during another @LiveMapValueType@ consumption), @ObjectMessages@ are generated as follows:
+** @(RTLMV4a)@ If the internal @entries@ is not undefined and (is null or is not of type @Dict@), the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that entries must be a @Dict@
+** @(RTLMV4b)@ If any of the keys in the internal @entries@ are not of type @String@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that keys must be @String@
+** @(RTLMV4c)@ If any of the values in the internal @entries@ are not of an expected type, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40013, indicating that such data type is unsupported
+** @(RTLMV4d)@ Build entries for the @MapCreate@ object. For each key-value pair in the internal @entries@ (if present), create an @ObjectsMapEntry@ for the value:
+*** @(RTLMV4d1)@ If the value is of type @LiveCounterValueType@, consume it per "RTLCV4":#RTLCV4 to generate a @COUNTER_CREATE@ @ObjectMessage@. Collect the generated @ObjectMessage@ and set @ObjectsMapEntry.data.objectId@ to the @objectId@ from the @ObjectMessage@
+*** @(RTLMV4d2)@ If the value is of type @LiveMapValueType@, recursively consume it per "RTLMV4":#RTLMV4 to generate @ObjectMessages@. Collect all generated @ObjectMessages@ and set @ObjectsMapEntry.data.objectId@ to the @objectId@ from the outermost @MAP_CREATE@ @ObjectMessage@
+*** @(RTLMV4d3)@ If the value is of type @JsonArray@ or @JsonObject@, set @ObjectsMapEntry.data.json@ to that value
+*** @(RTLMV4d4)@ If the value is of type @String@, set @ObjectsMapEntry.data.string@ to that value
+*** @(RTLMV4d5)@ If the value is of type @Number@, set @ObjectsMapEntry.data.number@ to that value
+*** @(RTLMV4d6)@ If the value is of type @Boolean@, set @ObjectsMapEntry.data.boolean@ to that value
+*** @(RTLMV4d7)@ If the value is of type @Binary@, set @ObjectsMapEntry.data.bytes@ to that value
+** @(RTLMV4e)@ Create a @MapCreate@ object:
+*** @(RTLMV4e1)@ Set @MapCreate.semantics@ to @ObjectsMapSemantics.LWW@
+*** @(RTLMV4e2)@ Set @MapCreate.entries@ to an empty map if the internal @entries@ is undefined, otherwise to the entries built in "RTLMV4d":#RTLMV4d
+** @(RTLMV4f)@ Create an initial value JSON string based on the @MapCreate@ object:
+*** @(RTLMV4f1)@ The @MapCreate@ object may contain user-provided @ObjectData@ that requires encoding. Encode the @ObjectData@ values using the procedure described in "OD4":../features#OD4
+*** @(RTLMV4f2)@ Return a JSON string representation of the encoded @MapCreate@ object
+** @(RTLMV4g)@ Create a unique string nonce with 16+ characters
+** @(RTLMV4h)@ Get the current server time as described in "RTO16":#RTO16
+** @(RTLMV4i)@ Create an @objectId@ for the new @LiveMap@ as described in "RTO14":#RTO14, passing in @map@ as the @type@, the initial value JSON string from "RTLMV4f":#RTLMV4f, the nonce from "RTLMV4g":#RTLMV4g, and the server time from "RTLMV4h":#RTLMV4h
+** @(RTLMV4j)@ Create an @ObjectMessage@ with:
+*** @(RTLMV4j1)@ @ObjectMessage.operation.action@ set to @ObjectOperationAction.MAP_CREATE@
+*** @(RTLMV4j2)@ @ObjectMessage.operation.objectId@ set to the @objectId@ from "RTLMV4i":#RTLMV4i
+*** @(RTLMV4j3)@ @ObjectMessage.operation.mapCreateWithObjectId.nonce@ set to the nonce from "RTLMV4g":#RTLMV4g
+*** @(RTLMV4j4)@ @ObjectMessage.operation.mapCreateWithObjectId.initialValue@ set to the JSON string from "RTLMV4f":#RTLMV4f
+** @(RTLMV4k)@ Return an ordered array containing all @ObjectMessages@ collected from nested value type consumptions in "RTLMV4d":#RTLMV4d (in depth-first order), followed by the @MAP_CREATE@ @ObjectMessage@ from "RTLMV4j":#RTLMV4j
 
 h3(#pathobject). PathObject
 
@@ -847,8 +922,6 @@ Types and their properties/methods are public and exposed to users by default. A
 <pre>
 class RealtimeObject: // RTO*
   get() => io PathObject // RTO23
-  createMap(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap> entries?) => io LiveMap // RTO11
-  createCounter(Number count?) => io LiveCounter // RTO12
   on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18
   off(() ->) // RTO19
   publish(ObjectMessage[]) => io PublishResult // RTO15, internal
@@ -870,43 +943,51 @@ enum ObjectsOperationSource: // RTO22, internal
 interface StatusSubscription: // RTO18f
   off() // RTO18f1
 
-class LiveObject: // RTLO*
-  objectId: String // RTLO3a, internal
-  siteTimeserials: Dict<String, String> // RTLO3b, internal
-  createOperationIsMerged: Boolean // RTLO3c, internal
-  isTombstone: Boolean // RTLO3d, internal
-  tombstonedAt: Time? // RTLO3e, internal
-  canApplyOperation(ObjectMessage) -> Boolean // RTLO4a, internal
-  tombstone(ObjectMessage) // RTLO4e, internal
+class LiveObject: // RTLO*, internal
+  objectId: String // RTLO3a
+  siteTimeserials: Dict<String, String> // RTLO3b
+  createOperationIsMerged: Boolean // RTLO3c
+  isTombstone: Boolean // RTLO3d
+  tombstonedAt: Time? // RTLO3e
+  canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
+  tombstone(ObjectMessage) // RTLO4e
   subscribe((LiveObjectUpdate) ->) -> LiveObjectSubscription // RTLO4b
   unsubscribe((LiveObjectUpdate) ->) // RTLO4c
 
 interface LiveObjectSubscription: // RTLO4b5
   unsubscribe() // RTLO4b5a
 
-interface LiveObjectUpdate: // RTLO4b4
+interface LiveObjectUpdate: // RTLO4b4, internal
   update: Object // RTLO4b4a
-  noop: Boolean // RTLO4b4b, internal
+  noop: Boolean // RTLO4b4b
 
 class LiveCounter extends LiveObject: // RTLC*, RTLC1
-  value() -> Number // RTLC5
-  increment(Number amount) => io // RTLC12
-  decrement(Number amount) => io // RTLC13
+  value() -> Number // RTLC5, internal
+  increment(Number amount) => io // RTLC12, internal
+  decrement(Number amount) => io // RTLC13, internal
+  static create(Number initialCount?) -> LiveCounterValueType // RTLCV3
 
-interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a
+interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a, internal
   update: { amount: Number } // RTLC11b, RTLC11b1
 
-class LiveMap extends LiveObject: // RTLM*, RTLM1
-  get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5
-  size() -> Number // RTLM10
-  entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
-  keys() -> String[] // RTLM12
-  values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13
-  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTLM20
-  remove(String key) => io // RTLM21
+class LiveMap extends LiveObject: // RTLM*, RTLM1, internal
+  get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5, internal
+  size() -> Number // RTLM10, internal
+  entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11, internal
+  keys() -> String[] // RTLM12, internal
+  values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13, internal
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTLM20, internal
+  remove(String key) => io // RTLM21, internal
+  static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
 
-interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a
+interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a, internal
   update: Dict<String, 'updated' | 'removed'> // RTLM18b
+
+class LiveCounterValueType: // RTLCV*
+  // created via LiveCounter.create(), RTLCV3
+
+class LiveMapValueType: // RTLMV*
+  // created via LiveMap.create(), RTLMV3
 
 class PathObject: // RTPO*
   path() -> String // RTPO4
@@ -920,7 +1001,7 @@ class PathObject: // RTPO*
   size() -> Number? // RTPO12
   compact() -> Object? // RTPO13
   compactJson() -> Object? // RTPO14
-  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTPO15
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTPO15
   remove(String key) => io // RTPO16
   increment(Number amount?) => io // RTPO17
   decrement(Number amount?) => io // RTPO18
@@ -935,7 +1016,7 @@ class Instance: // RTINS*
   size() -> Number? // RTINS9
   compact() -> Object? // RTINS10
   compactJson() -> Object? // RTINS11
-  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTINS12
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTINS12
   remove(String key) => io // RTINS13
   increment(Number amount?) => io // RTINS14
   decrement(Number amount?) => io // RTINS15
