@@ -13,14 +13,19 @@ This document outlines the feature specification for the Objects feature of the 
 
 Objects feature enables clients to store shared data as "objects" on a channel. When an object is updated, changes are automatically propagated to all subscribed clients in realtime, ensuring each client always sees the latest state.
 
-h3(#realtime-objects). RealtimeObjects
+h3(#realtime-objects). RealtimeObject
 
-* @(RTO1)@ @RealtimeObjects#getRoot@ function:
-** @(RTO1a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
-** @(RTO1b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
-** @(RTO1c)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, waits for the sync state to transition to @SYNCED@
-** @(RTO1d)@ Returns the object with id @root@ from the internal @ObjectsPool@ as a @LiveMap@
-* @(RTO11)@ @RealtimeObjects#createMap@ function:
+* @(RTO1)@ This clause has been replaced by "RTO23":#RTO23.
+** @(RTO1a)@ This clause has been replaced by "RTO23a":#RTO23a.
+** @(RTO1b)@ This clause has been replaced by "RTO23b":#RTO23b.
+** @(RTO1c)@ This clause has been replaced by "RTO23c":#RTO23c.
+** @(RTO1d)@ This clause has been replaced by "RTO23d":#RTO23d.
+* @(RTO23)@ @RealtimeObject#get@ function:
+** @(RTO23a)@ Requires the @OBJECT_SUBSCRIBE@ channel mode to be granted per "RTO2":#RTO2
+** @(RTO23b)@ If the channel is in the @DETACHED@ or @FAILED@ state, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 90001
+** @(RTO23c)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, waits for the sync state to transition to @SYNCED@
+** @(RTO23d)@ Returns the object with id @root@ from the internal @ObjectsPool@ as a @LiveMap@
+* @(RTO11)@ @RealtimeObject#createMap@ function:
 ** @(RTO11a)@ Expects the following arguments:
 *** @(RTO11a1)@ @entries@ @Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap>@ (optional) - the initial entries for the new @LiveMap@ object
 ** @(RTO11b)@ The return type is a @LiveMap@, which is returned once the required I/O has successfully completed
@@ -70,7 +75,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO11f16)@ Set @ObjectMessage.operation.mapCreateWithObjectId.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
 *** @(RTO11f17)@ Set @ObjectMessage.operation.mapCreateWithObjectId.initialValue@ to the JSON string created in "RTO11f15":#RTO11f15
 ** @(RTO11g)@ This clause has been replaced by "RTO11i":#RTO11i
-** @(RTO11i)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+** @(RTO11i)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 *** @(RTO11i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
 ** @(RTO11h)@ Returns a @LiveMap@ instance:
 *** @(RTO11h1)@ This clause has been deleted.
@@ -80,7 +85,7 @@ h3(#realtime-objects). RealtimeObjects
 **** @(RTO11h3b)@ This clause has been deleted.
 **** @(RTO11h3c)@ This clause has been deleted.
 **** @(RTO11h3d)@ The library should throw an @ErrorInfo@ error with @statusCode@ 500 and @code@ 50000 (Note: this is not expected to happen since the object should have been created as part of applying the @MAP_CREATE@ operation via @publishAndApply@ in "RTO11i":#RTO11i)
-* @(RTO12)@ @RealtimeObjects#createCounter@ function:
+* @(RTO12)@ @RealtimeObject#createCounter@ function:
 ** @(RTO12a)@ Expects the following arguments:
 *** @(RTO12a1)@ @count@ @Number@ (optional) - the initial count for the new @LiveCounter@ object
 ** @(RTO12b)@ The return type is a @LiveCounter@, which is returned once the required I/O has successfully completed
@@ -109,7 +114,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO12f14)@ Set @ObjectMessage.operation.counterCreateWithObjectId.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
 *** @(RTO12f15)@ Set @ObjectMessage.operation.counterCreateWithObjectId.initialValue@ to the JSON string created in "RTO12f13":#RTO12f13
 ** @(RTO12g)@ This clause has been replaced by "RTO12i":#RTO12i
-** @(RTO12i)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+** @(RTO12i)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 *** @(RTO12i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
 ** @(RTO12h)@ Returns a @LiveCounter@ instance:
 *** @(RTO12h1)@ This clause has been deleted.
@@ -186,14 +191,14 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO6b2)@ If the parsed type is @map@, create a zero-value @LiveMap@ per "RTLM4":#RTLM4 in the @ObjectsPool@
 *** @(RTO6b3)@ If the parsed type is @counter@, create a zero-value @LiveCounter@ per "RTLC4":#RTLC4 in the @ObjectsPool@
 * @(RTO7)@ The client library may receive @OBJECT@ @ProtocolMessages@ in realtime over the channel concurrently with @OBJECT_SYNC@ @ProtocolMessages@ during the object sync sequence ("RTO5":#RTO5). Some of the incoming @OBJECT@ messages may have already been applied to the objects described in the sync sequence, while others may not. Therefore, the client must buffer @OBJECT@ messages during the sync sequence so that it can determine which of them should be applied to the objects once the sync is complete. See "RTO8":#RTO8
-** @(RTO7a)@ The @RealtimeObjects@ instance has an internal attribute @bufferedObjectOperations@, which is an array of @ObjectMessage@ instances. This is used to store the buffered @ObjectMessages@, as described in "RTO8a":#RTO8a.
-*** @(RTO7a1)@ This array is empty upon @RealtimeObjects@ initialization
-** @(RTO7b)@ The @RealtimeObjects@ instance has an internal attribute @appliedOnAckSerials@, which is a set of strings. This is used to store the serial values of operations that have been applied upon receipt of an @ACK@ but for which the echo has not yet been received.
-*** @(RTO7b1)@ This set is empty upon @RealtimeObjects@ initialization
-* @(RTO8)@ When the library receives a @ProtocolMessage@ with an action of @OBJECT@, each member of the @ProtocolMessage.state@ array (decoded into @ObjectMessage@ objects) is passed to the @RealtimeObjects@ instance per "RTL1":../features#RTL1. Each @ObjectMessage@ from @OBJECT@ @ProtocolMessage@ (also referred to as an @OBJECT@ message) describes an operation to be applied to an object on a channel and must be handled as follows:
+** @(RTO7a)@ The @RealtimeObject@ instance has an internal attribute @bufferedObjectOperations@, which is an array of @ObjectMessage@ instances. This is used to store the buffered @ObjectMessages@, as described in "RTO8a":#RTO8a.
+*** @(RTO7a1)@ This array is empty upon @RealtimeObject@ initialization
+** @(RTO7b)@ The @RealtimeObject@ instance has an internal attribute @appliedOnAckSerials@, which is a set of strings. This is used to store the serial values of operations that have been applied upon receipt of an @ACK@ but for which the echo has not yet been received.
+*** @(RTO7b1)@ This set is empty upon @RealtimeObject@ initialization
+* @(RTO8)@ When the library receives a @ProtocolMessage@ with an action of @OBJECT@, each member of the @ProtocolMessage.state@ array (decoded into @ObjectMessage@ objects) is passed to the @RealtimeObject@ instance per "RTL1":../features#RTL1. Each @ObjectMessage@ from @OBJECT@ @ProtocolMessage@ (also referred to as an @OBJECT@ message) describes an operation to be applied to an object on a channel and must be handled as follows:
 ** @(RTO8a)@ If the "RTO17":#RTO17 sync state is not @SYNCED@, add the @ObjectMessages@ to the internal @bufferedObjectOperations@ array
 ** @(RTO8b)@ Otherwise, apply the @ObjectMessages@ as described in "RTO9":#RTO9, passing @source@ as @CHANNEL@
-* @(RTO9)@ @OBJECT@ messages can be applied to @RealtimeObjects@ in the following way:
+* @(RTO9)@ @OBJECT@ messages can be applied to @RealtimeObject@ in the following way:
 ** @(RTO9b)@ Expects the following arguments:
 *** @(RTO9b1)@ @ObjectMessage[]@ - the list of @ObjectMessages@ to apply
 *** @(RTO9b2)@ @source@ @ObjectsOperationSource@ - the source of the operation (see "RTO22":#RTO22)
@@ -232,7 +237,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO14b1)@ Generate a SHA-256 digest from a UTF-8 encoded string in the format @[initialValue]:[nonce]@
 *** @(RTO14b2)@ Base64URL-encode the generated digest. This must follow the URL-safe Base64 encoding as described in "RFC 4648 s.5":https://datatracker.ietf.org/doc/html/rfc4648#section-5, not standard Base64 encoding
 ** @(RTO14c)@ Return an Object ID in the format @[type]:[hash]&#64;[timestamp]@, where @timestamp@ is represented as milliseconds since the epoch
-* @(RTO15)@ Internal @RealtimeObjects#publish@ function:
+* @(RTO15)@ Internal @RealtimeObject#publish@ function:
 ** @(RTO15a)@ Expects the following arguments:
 *** @(RTO15a1)@ @ObjectMessage[]@ - an array of @ObjectMessage@ to be published on a channel
 ** @(RTO15b)@ Must adhere to the same connection and channel state conditions as message publishing, see "RTL6c":../features#RTL6c
@@ -245,10 +250,10 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO15f)@ Must send the @ProtocolMessage@ to the connection
 ** @(RTO15g)@ Must indicate success or failure of the publish (once @ACKed@ or @NACKed@) in the same way as @RealtimeChannel#publish@
 ** @(RTO15h)@ Upon success, must return the @PublishResult@ from the first element of the @ACK@'s @res@ array ("TR4s":../features#TR4s), in the same way as @RealtimeChannel#publish@ ("RTL6j":../features#RTL6j)
-* @(RTO20)@ Internal @RealtimeObjects#publishAndApply@ function:
+* @(RTO20)@ Internal @RealtimeObject#publishAndApply@ function:
 ** @(RTO20a)@ Expects the following arguments:
 *** @(RTO20a1)@ @ObjectMessage[]@ - an array of @ObjectMessage@ to be published on a channel
-** @(RTO20b)@ Calls @RealtimeObjects#publish@ ("RTO15":#RTO15) with the provided @ObjectMessage[]@ and awaits the @PublishResult@. If @publish@ fails, rethrow the error and do not proceed
+** @(RTO20b)@ Calls @RealtimeObject#publish@ ("RTO15":#RTO15) with the provided @ObjectMessage[]@ and awaits the @PublishResult@. If @publish@ fails, rethrow the error and do not proceed
 ** @(RTO20c)@ If the information needed to apply the operations locally on ACK is not available, this is unexpected incorrect behaviour from the server. Log an error indicating the reason the operations will not be applied locally, and do not proceed with the remaining steps. (The operations have already been published successfully, but cannot be applied locally on ACK; they will instead be applied when the echoed messages are received from the server.) The required information is:
 *** @(RTO20c1)@ A @siteCode@ from "CD2j":../features#CD2j @ConnectionDetails.siteCode@
 *** @(RTO20c2)@ A @PublishResult.serials@ array with the same length as the provided @ObjectMessage[]@ argument
@@ -263,13 +268,13 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO20f)@ Apply the synthetic @ObjectMessages@ as described in "RTO9":#RTO9, passing @source@ as @LOCAL@
 * @(RTO16)@ Server time can be retrieved using "@RestClient#time@":../features#RSC16
 ** @(RTO16a)@ The server time offset can be persisted by the client library and used to calculate the server time without making a request, in a similar way to how it is described in "RSA10k":../features#RSA10k. The persisted offset from either operation can be used interchangeably
-* @(RTO17)@ The @RealtimeObjects@ instance must maintain an internal sync state to track the status of synchronising the local objects data with the Ably service.
+* @(RTO17)@ The @RealtimeObject@ instance must maintain an internal sync state to track the status of synchronising the local objects data with the Ably service.
 ** @(RTO17a)@ The sync state has type @ObjectsSyncState@, which is an enum with the following cases (note that their descriptions are purely informative; the rules for state transitions are described elsewhere in this specification):
-*** @(RTO17a1)@ @INITIALIZED@ - the initial state when @RealtimeObjects@ is created
+*** @(RTO17a1)@ @INITIALIZED@ - the initial state when @RealtimeObject@ is created
 *** @(RTO17a2)@ @SYNCING@ - in this state, the local copy of objects on the channel is currently being synchronised with the Ably service
 *** @(RTO17a3)@ @SYNCED@ - in this state, the local copy of objects on the channel has been synchronised with the Ably service
-** @(RTO17b)@ When the sync state transitions, an event with the @ObjectsEvent@ value matching the new state must be emitted to any listeners registered via @RealtimeObjects#on@ ("RTO18":#RTO18).
-* @(RTO18)@ @RealtimeObjects#on@ function - registers a listener for sync state events
+** @(RTO17b)@ When the sync state transitions, an event with the @ObjectsEvent@ value matching the new state must be emitted to any listeners registered via @RealtimeObject#on@ ("RTO18":#RTO18).
+* @(RTO18)@ @RealtimeObject#on@ function - registers a listener for sync state events
 ** @(RTO18a)@ Expects the following arguments:
 *** @(RTO18a1)@ @event@ - the event name to listen for, of type @ObjectsEvent@ (see "RTO18b":#RTO18b)
 *** @(RTO18a2)@ @callback@ - the event listener function to be called when the event is emitted
@@ -282,7 +287,7 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO18f)@ The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
 *** @(RTO18f1)@ The subscription object includes an @off@ function
 *** @(RTO18f2)@ Calling @off@ deregisters the listener previously registered by the user via the corresponding @on@ call
-* @(RTO19)@ @RealtimeObjects#off@ function - deregisters an event listener previously registered via @RealtimeObjects#on@ ("RTO18":#RTO18)
+* @(RTO19)@ @RealtimeObject#off@ function - deregisters an event listener previously registered via @RealtimeObject#on@ ("RTO18":#RTO18)
 * @(RTO22)@ @ObjectsOperationSource@ is an internal enum describing the source of an operation being applied:
 ** @(RTO22a)@ @LOCAL@ - an operation that originated locally, being applied upon receipt of the @ACK@ from Realtime
 ** @(RTO22b)@ @CHANNEL@ - an operation received over a Realtime channel
@@ -316,12 +321,12 @@ h3(#liveobject). LiveObject
 *** @(RTLO4b5)@ The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
 **** @(RTLO4b5a)@ The subscription object includes an @unsubscribe@ function
 **** @(RTLO4b5b)@ Calling @unsubscribe@ deregisters the listener previously registered by the user via the corresponding @subscribe@ call
-*** @(RTLO4b6)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
+*** @(RTLO4b6)@ This operation must not have any side effects on @RealtimeObject@, the underlying channel, or their status
 ** @(RTLO4c)@ public @unsubscribe@ - unsubscribes a previously registered listener
 *** @(RTLO4c1)@ This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
 *** @(RTLO4c2)@ A user may provide a listener they wish to deregister from receiving data updates for this @LiveObject@
 *** @(RTLO4c3)@ Once deregistered, subsequent data updates for this @LiveObject@ must not result in the listener being called
-*** @(RTLO4c4)@ This operation must not have any side effects on @RealtimeObjects@, the underlying channel, or their status
+*** @(RTLO4c4)@ This operation must not have any side effects on @RealtimeObject@, the underlying channel, or their status
 ** @(RTLO4a)@ protected @canApplyOperation@ - a convenience method used to determine whether the @ObjectMessage.operation@ should be applied to this object based on a serial value
 *** @(RTLO4a1)@ Expects the following arguments:
 **** @(RTLO4a1a)@ @ObjectMessage@
@@ -371,7 +376,7 @@ h3(#livecounter). LiveCounter
 *** @(RTLC12e4)@ This clause has been replaced by "RTLC12e5":#RTLC12e5 as of specification version 6.0.0.
 *** @(RTLC12e5)@ Set @ObjectMessage.operation.counterInc.number@ to the provided @amount@ value
 ** @(RTLC12f)@ This clause has been replaced by "RTLC12g":#RTLC12g
-** @(RTLC12g)@ Publishes the @ObjectMessage@ from "RTLC12e":#RTLC12e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+** @(RTLC12g)@ Publishes the @ObjectMessage@ from "RTLC12e":#RTLC12e using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLC13)@ @LiveCounter#decrement@ function:
 ** @(RTLC13a)@ Expects the following arguments:
 *** @(RTLC13a1)@ @amount@ @Number@ - the amount by which to decrement the counter value
@@ -525,7 +530,7 @@ h3(#livemap). LiveMap
 **** @(RTLM20e7e)@ If the @value@ is of type @Boolean@, set @ObjectMessage.operation.mapSet.value.boolean@ to that value
 **** @(RTLM20e7f)@ If the @value@ is of type @Binary@, set @ObjectMessage.operation.mapSet.value.bytes@ to that value
 ** @(RTLM20f)@ This clause has been replaced by "RTLM20g":#RTLM20g
-** @(RTLM20g)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+** @(RTLM20g)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLM21)@ @LiveMap#remove@ function:
 ** @(RTLM21a)@ Expects the following arguments:
 *** @(RTLM21a1)@ @key@ @String@ - the key to remove the value for
@@ -539,7 +544,7 @@ h3(#livemap). LiveMap
 *** @(RTLM21e4)@ This clause has been replaced by "RTLM21e5":#RTLM21e5 as of specification version 6.0.0.
 *** @(RTLM21e5)@ Set @ObjectMessage.operation.mapRemove.key@ to the provided @key@ value
 ** @(RTLM21f)@ This clause has been replaced by "RTLM21g":#RTLM21g
-** @(RTLM21g)@ Publishes the @ObjectMessage@ from "RTLM21e":#RTLM21e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
+** @(RTLM21g)@ Publishes the @ObjectMessage@ from "RTLM21e":#RTLM21e using @RealtimeObject#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLM14)@ An @ObjectsMapEntry@ in the internal @data@ map can be checked for being tombstoned using the convenience method:
 ** @(RTLM14a)@ The method returns true if @ObjectsMapEntry.tombstone@ is true
 ** @(RTLM14c)@ The method returns true if @ObjectsMapEntry.data.objectId@ exists, there is an object in the local @ObjectsPool@ with that id, and that @LiveObject.isTombstone@ property is @true@
@@ -679,12 +684,12 @@ h3(#livemap). LiveMap
 
 h2(#idl). Interface Definition
 
-Describes types for RealtimeObjects.
+Describes types for RealtimeObject.
 Types and their properties/methods are public and exposed to users by default. An @internal@ label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
 
 <pre>
-class RealtimeObjects: // RTO*
-  getRoot() => io LiveMap // RTO1
+class RealtimeObject: // RTO*
+  get() => io LiveMap // RTO23
   createMap(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap> entries?) => io LiveMap // RTO11
   createCounter(Number count?) => io LiveCounter // RTO12
   on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18

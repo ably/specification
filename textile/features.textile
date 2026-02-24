@@ -23,7 +23,7 @@ jump_to:
     - Channels#realtime-channels
     - RealtimeChannel#realtime-channel
     - RealtimePresence#realtime-presence
-    - RealtimeObjects#realtime-objects
+    - RealtimeObject#realtime-objects
     - EventEmitter#eventemitter
     - Forwards compatibility#realtime-compatibility
     - State conditions and operations#state-conditions-and-operations
@@ -410,7 +410,7 @@ h3(#plugins). Plugins
 * @(PC2)@ No generic plugin interface is specified, and therefore there is no common API exposed by all plugins. However, for type-safety, the opaque interface @Plugin@ should be used in strongly-typed languages as the type of the @ClientOptions.plugins@ collection as per "TO3o":#TO3o.
 * @(PC3)@ A plugin provided with the @PluginType@ enum key value of @vcdiff@ should be capable of decoding "vcdiff"-encoded messages. It must implement the @VCDiffDecoder@ interface and the client library must be able to use it by casting it to this interface.
 ** @(PC3a)@ The base argument of the @VCDiffDecoder.decode@ method should receive the stored base payload of the last message on a channel as specified by "RTL19":#RTL19. If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the @VCDiffDecoder.decode@ method.
-* @(PC5)@ A plugin provided with the @PluginType@ enum key value of @Objects@ should provide the "RealtimeObjects":../objects-features#RTO1 feature functionality for realtime channels ("RTL27":#RTL27). The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables the Objects feature for a realtime channel, are left for individual implementations to decide.
+* @(PC5)@ A plugin provided with the @PluginType@ enum key value of @LiveObjects@ should provide the "RealtimeObject":../objects-features#RTO23 feature functionality for realtime channels ("RTL27":#RTL27). The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables the Objects feature for a realtime channel, are left for individual implementations to decide.
 * @(PC4)@ A client library is allowed to accept plugins other than those specified in this specification, through the use of additional @ClientOptions.plugins@ keys defined by that library. The library is responsible for defining the interface of these plugins, and for making sure that these keys do not clash with the keys defined in this specification.
 
 h3(#plugin-type). PluginType
@@ -704,7 +704,7 @@ h3(#realtime-channels). Channels
 h3(#realtime-channel). RealtimeChannel
 
 * @(RTL23)@ @RealtimeChannel#name@ attribute is a string containing the channel’s name
-* @(RTL1)@ As soon as a @RealtimeChannel@ becomes attached, all incoming messages, presence messages and object messages (where 'incoming' is defined as 'received from Ably over the realtime transport') are processed and emitted where applicable. @PRESENCE@ and @SYNC@ messages are passed to the @RealtimePresence@ object ensuring it maintains a map of current members on a channel in realtime. @OBJECT@ and @OBJECT_SYNC@ messages are passed to the @RealtimeObjects@ object ensuring it maintains an up-to-date representation of objects on a channel in realtime
+* @(RTL1)@ As soon as a @RealtimeChannel@ becomes attached, all incoming messages, presence messages and object messages (where 'incoming' is defined as 'received from Ably over the realtime transport') are processed and emitted where applicable. @PRESENCE@ and @SYNC@ messages are passed to the @RealtimePresence@ object ensuring it maintains a map of current members on a channel in realtime. @OBJECT@ and @OBJECT_SYNC@ messages are passed to the @RealtimeObject@ object ensuring it maintains an up-to-date representation of objects on a channel in realtime
 * @(RTL2)@ The @RealtimeChannel@ implements @EventEmitter@ and emits @ChannelEvent@ events, where a @ChannelEvent@ is either a @ChannelState@ or @UPDATE@, and a @ChannelState@ is either @INITIALIZED@, @ATTACHING@, @ATTACHED@, @DETACHING@, @DETACHED@, @SUSPENDED@ and @FAILED@
 ** @(RTL2a)@ It emits a @ChannelState@ @ChannelEvent@ for every channel state change
 ** @(RTL2g)@ It emits an @UPDATE@ @ChannelEvent@ for changes to channel conditions for which the @ChannelState@ (e.g. @ATTACHED@) does not change, unless explicitly prevented by a more specific condition (see "RTL12":#RTL12). (The library must never emit a @ChannelState@ @ChannelEvent@ for a state equal to the previous state)
@@ -797,9 +797,9 @@ h3(#realtime-channel). RealtimeChannel
 ** @(RTL8b)@ Unsubscribe with a name argument and a listener argument unsubscribes the provided listener if previously subscribed with a name-specific subscription
 * @(RTL9)@ @RealtimeChannel#presence@ attribute:
 ** @(RTL9a)@ Returns the @RealtimePresence@ object for this channel
-* @(RTL27)@ @RealtimeChannel#objects@ attribute:
-** @(RTL27a)@ Returns the @RealtimeObjects@ object for this channel "RTO1":../objects-features#RTO1
-** @(RTL27b)@ It is a programmer error to access this property without first providing the @Objects@ plugin ("PC5":#PC5) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an @ErrorInfo@ with @statusCode@ 400 and @code@ 40019.
+* @(RTL27)@ @RealtimeChannel#object@ attribute:
+** @(RTL27a)@ Returns the @RealtimeObject@ object for this channel "RTO23":../objects-features#RTO23
+** @(RTL27b)@ It is a programmer error to access this property without first providing the @LiveObjects@ plugin ("PC5":#PC5) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an @ErrorInfo@ with @statusCode@ 400 and @code@ 40019.
 * @(RTL10)@ @RealtimeChannel#history@ function:
 ** @(RTL10a)@ Supports all the same params as @RestChannel#history@
 ** @(RTL10b)@ Additionally supports the param @untilAttach@, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an @UPDATE@ indicating loss of continuity. This bound is specified by passing the querystring param @fromSerial@ with the @RealtimeChannel#properties.attachSerial@ assigned to the channel in the @ATTACHED@ @ProtocolMessage@ (see "RTL15a":#RTL15a). If the @untilAttach@ param is specified when the channel is not attached, it results in an error
@@ -967,9 +967,9 @@ then the @enter@ request results in an error immediately.
 ** @(RTP15e)@ Implicitly attaches the @RealtimeChannel@ if the channel is in the @INITIALIZED@ state. However, if the channel is in or enters the @DETACHED@ or @FAILED@ state before the operation succeeds, it will result in an error
 ** @(RTP15f)@ If the client is identified and has a valid @clientId@, and the @clientId@ argument does not match the client's @clientId@, then it should indicate an error. The connection and channel remain available for further operations
 
-h3(#realtime-objects). RealtimeObjects
+h3(#realtime-objects). RealtimeObject
 
-Reserved for @RealtimeObjects@ feature specification, see "objects-features":../objects-features. Reserved spec points: @RTO@, @RTLO@, @RTLC@, @RTLM@
+Reserved for @RealtimeObject@ feature specification, see "objects-features":../objects-features. Reserved spec points: @RTO@, @RTLO@, @RTLC@, @RTLM@
 
 h3(#realtime-annotations). RealtimeAnnotations
 
@@ -2503,7 +2503,7 @@ class RealtimeChannel: // RTL*
   state: ChannelState // RTL2b
   whenState(ChannelState, (ChannelStateChange?) ->) // RTL25
   presence: RealtimePresence // RTL9
-  objects: RealtimeObjects // RTL27
+  object: RealtimeObject // RTL27
   properties: ChannelProperties // RTL15
   // Only on platforms that support receiving push notifications:
   push: PushChannel // RSH7
