@@ -124,16 +124,19 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO12f8)` This clause has been replaced by [RTLCV3](#RTLCV3).
     - `(RTO12f9)` This clause has been replaced by [RTO12f14](#RTO12f14) as of specification version 6.0.0.
     - `(RTO12f10)` This clause has been replaced by [RTO12f15](#RTO12f15) as of specification version 6.0.0.
-    - `(RTO12f11)` This clause has been deleted as of specification version 6.0.0.\
-      ###. Conflict in main
+    - `(RTO12f11)` This clause has been deleted as of specification version 6.0.0.
+
+[//]: # (Conflict in main)
     - `(RTO12f14)` Set `ObjectMessage.operation.counterCreateWithObjectId.nonce` to the nonce value created in [RTO12f4](#RTO12f4)
     - `(RTO12f15)` Set `ObjectMessage.operation.counterCreateWithObjectId.initialValue` to the JSON string created in [RTO12f13](#RTO12f13)
     - `(RTO12f16)` The client library must retain the `CounterCreate` object from [RTO12f12](#RTO12f12) alongside the `CounterCreateWithObjectId`. It is the operation from which the `CounterCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4k2](../features#OOP4k2)) and local application of the operation ([RTLC16](#RTLC16)). This `CounterCreate` is for local use only and must not be sent over the wire.\
-      ###. Conflict in path-based
+
+[//]: # (Conflict in path-based)
     - `(RTO12f14)` This clause has been replaced by [RTLCV3](#RTLCV3).
     - `(RTO12f15)` This clause has been replaced by [RTLCV3](#RTLCV3).
   - `(RTO12g)` This clause has been replaced by [RTO12i](#RTO12i)\
-    ###. End of conflict
+
+[//]: # (End of conflict)
   - `(RTO12i)` This clause has been replaced by [RTLCV3](#RTLCV3).
     - `(RTO12i1)` This clause has been replaced by [RTLCV3](#RTLCV3).
   - `(RTO12h)` This clause has been replaced by [RTLCV3](#RTLCV3).
@@ -312,6 +315,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO22)` `ObjectsOperationSource` is an internal enum describing the source of an operation being applied:
   - `(RTO22a)` `LOCAL` - an operation that originated locally, being applied upon receipt of the `ACK` from Realtime
   - `(RTO22b)` `CHANNEL` - an operation received over a Realtime channel
+- `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
+  - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
+  - `(RTO24b)` When a `LiveObject` in the `ObjectsPool` emits a `LiveObjectUpdate` (per [RTLO4b4](#RTLO4b4)), the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified:
+    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located
+    - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
+    - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
+    - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` with a `PathObject` pointing to the event path and the `ObjectMessage` that caused the change, and call the subscription's listener
+    - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
 
 ### LiveObject
 
@@ -339,9 +350,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b4c)` When a `LiveObjectUpdate` is emitted:
         - `(RTLO4b4c1)` If `LiveObjectUpdate` is indicated to be a no-op, do nothing
         - `(RTLO4b4c2)` Otherwise, the registered listener is called with the `LiveObjectUpdate` object
-    - `(RTLO4b5)` The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
-      - `(RTLO4b5a)` The subscription object includes an `unsubscribe` function
-      - `(RTLO4b5b)` Calling `unsubscribe` deregisters the listener previously registered by the user via the corresponding `subscribe` call
+    - `(RTLO4b5)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
+      - `(RTLO4b5a)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
+      - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
+    - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
   - `(RTLO4c)` public `unsubscribe` - unsubscribes a previously registered listener
     - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
@@ -892,6 +904,31 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO18b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
   - `(RTPO18c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
   - `(RTPO18d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTPO19)` `PathObject#subscribe` function:
+  - `(RTPO19a)` Expects the following arguments:
+    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d)) when a change occurs at or below this path
+    - `(RTPO19a2)` `options` `PathObjectSubscriptionOptions` (optional) - subscription options
+  - `(RTPO19b)` `PathObjectSubscriptionOptions` has the following properties:
+    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener:
+      - `(RTPO19b1a)` If undefined (default), the subscription receives events for changes at any depth below the subscribed path
+      - `(RTPO19b1b)` If `depth` is 1, only changes to the object at the exact subscribed path trigger the listener
+      - `(RTPO19b1c)` If `depth` is `n`, changes up to `n - 1` levels of children below the subscribed path trigger the listener
+      - `(RTPO19b1d)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+  - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
+  - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
+    - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
+    - `(RTPO19d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
+  - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
+  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
+  - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTPO20)` `PathObject#unsubscribe` function:
+  - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
+  - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTPO21)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
+  - `(RTPO21a)` Expects the following arguments:
+    - `(RTPO21a1)` `options` `PathObjectSubscriptionOptions` (optional) - same options as `PathObject#subscribe` ([RTPO19b](#RTPO19b))
+  - `(RTPO21b)` Returns a stream or iterable that yields `PathObjectSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
+  - `(RTPO21c)` Internally wraps `PathObject#subscribe` ([RTPO19](#RTPO19)), converting the callback-based subscription into the appropriate streaming or iterable pattern
 
 ### Instance
 
@@ -948,6 +985,24 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
     - `(RTINS15a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
   - `(RTINS15b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
   - `(RTINS15c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTINS16)` `Instance#subscribe` function:
+  - `(RTINS16a)` Expects the following arguments:
+    - `(RTINS16a1)` `listener` - a callback function that receives an `InstanceSubscriptionEvent` ([RTINS16d](#RTINS16d)) when the wrapped object is updated
+  - `(RTINS16b)` If the wrapped value is not a `LiveObject` (i.e. it is a primitive), the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that subscribe is not supported for primitive values
+  - `(RTINS16c)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
+  - `(RTINS16d)` The listener receives an `InstanceSubscriptionEvent` object with:
+    - `(RTINS16d1)` `object` - the `Instance` representing the updated object
+    - `(RTINS16d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
+  - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
+  - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
+  - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTINS17)` `Instance#unsubscribe` function:
+  - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
+  - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTINS18)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
+  - `(RTINS18a)` If the wrapped value is not a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS18b)` Returns a stream or iterable that yields `InstanceSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
+  - `(RTINS18c)` Internally wraps `Instance#subscribe` ([RTINS16](#RTINS16)), converting the callback-based subscription into the appropriate streaming or iterable pattern
 
 ## Interface Definition {#idl}
 
@@ -985,13 +1040,10 @@ Types and their properties/methods are public and exposed to users by default. A
       tombstonedAt: Time? // RTLO3e
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       tombstone(ObjectMessage) // RTLO4e
-      subscribe((LiveObjectUpdate) ->) -> LiveObjectSubscription // RTLO4b
+      subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
       unsubscribe((LiveObjectUpdate) ->) // RTLO4c
 
-    interface LiveObjectSubscription: // RTLO4b5
-      unsubscribe() // RTLO4b5a
-
-    interface LiveObjectUpdate: // RTLO4b4, internal
+    interface LiveObjectUpdate: // RTLO4b4
       update: Object // RTLO4b4a
       noop: Boolean // RTLO4b4b
 
@@ -1023,6 +1075,17 @@ Types and their properties/methods are public and exposed to users by default. A
     class LiveMapValueType: // RTLMV*
       // created via LiveMap.create(), RTLMV3
 
+    interface PathObjectSubscriptionEvent: // RTPO19d
+      object: PathObject // RTPO19d1
+      message: ObjectMessage? // RTPO19d2
+
+    interface PathObjectSubscriptionOptions: // RTPO19b
+      depth: Number? // RTPO19b1
+
+    interface InstanceSubscriptionEvent: // RTINS16d
+      object: Instance // RTINS16d1
+      message: ObjectMessage? // RTINS16d2
+
     class PathObject: // RTPO*
       path() -> String // RTPO4
       get(String key) -> PathObject // RTPO5
@@ -1039,6 +1102,9 @@ Types and their properties/methods are public and exposed to users by default. A
       remove(String key) => io // RTPO16
       increment(Number amount?) => io // RTPO17
       decrement(Number amount?) => io // RTPO18
+      subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
+      unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
+      subscribeIterator(PathObjectSubscriptionOptions? options) -> Stream<PathObjectSubscriptionEvent> // RTPO21
 
     class Instance: // RTINS*
       id: String? // RTINS3
@@ -1054,3 +1120,6 @@ Types and their properties/methods are public and exposed to users by default. A
       remove(String key) => io // RTINS13
       increment(Number amount?) => io // RTINS14
       decrement(Number amount?) => io // RTINS15
+      subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
+      unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
+      subscribeIterator() -> Stream<InstanceSubscriptionEvent> // RTINS18

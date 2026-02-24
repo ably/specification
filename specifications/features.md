@@ -1872,6 +1872,12 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(REX2b1)` Should be written in reverse domain name notation
     - `(REX2b2)` Types beginning with `com.ably.` are reserved
 
+#### Subscription
+
+- `(SUB1)` A `Subscription` represents a registration for receiving events from a subscribe operation
+- `(SUB2)` The `Subscription` object has the following method:
+  - `(SUB2a)` `unsubscribe` - deregisters the listener that was registered by the corresponding `subscribe` call. Once `unsubscribe` called, the listener must not be called for any subsequent events
+
 ### Option types {#options}
 
 #### ClientOptions
@@ -2920,6 +2926,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       clientId: string? // TM2s3
       description: string? // TM2s4
       metadata: Dict<string, string>? //TM2s5
+
+    interface Subscription: // SUB*
+      unsubscribe() // SUB2a
 
 ## Old specs
 
