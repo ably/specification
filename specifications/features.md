@@ -936,7 +936,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### RealtimeObject {#realtime-objects}
 
-Reserved for `RealtimeObject` feature specification, see [objects-features](../objects-features). Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`, `RTPO`, `RTINS`
+Reserved for `RealtimeObject` feature specification, see [objects-features](../objects-features). Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`, `RTPO`, `RTINS`, `RTLCV`, `RTLMV`
 
 ### RealtimeAnnotations {#realtime-annotations}
 
