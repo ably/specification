@@ -44,6 +44,14 @@ Historically, before the above guidance was established - in particular around _
 This left us open to the problem that client library references to spec items could end up semantically invalid if that spec point was re-used later.
 For example, if `XXX1a` and `XXX1c` exist but `XXX1b` doesn’t because it was removed in the past (prior to this guidance being established), then we should introduce `XXX1d` for the new spec item rather than re-using `XXX1b`.
 
+## Public-API namespacing for name clashes
+
+Most spec types are public API by default (the IDL marks the exceptions with `internal`). When a public-API type would have the same natural name as an existing internal/wire concept, the first preference is to rename the internal concept so the public type can take the unqualified name. Where no good rename exists for the internal concept, or where renaming it would cause excessive churn or inconsistency across the spec, the spec instead qualifies the public type with a `PublicAPI::` namespace prefix (e.g. `PublicAPI::ObjectMessage`).
+
+This is purely a spec-side disambiguation: SDKs should expose the type to users under its unqualified name (here, `ObjectMessage`). Where an SDK's language uses a single flat namespace and cannot have two types with that name, the canonical/wire concept may be renamed internally (e.g. `WireObjectMessage`) to free up the public name.
+
+The `PublicAPI::` prefix is only introduced when there is an actual clash; the bare name remains the canonical reference everywhere else.
+
 ## SDK API docstrings
 
 The `api-docstrings.md` file is a set of language-agnostic reference API commentaries for SDK developers to use when adding docstring comments to Ably SDKs. For new fields, this file should be modified in the same PR that makes the spec changes for those fields.
