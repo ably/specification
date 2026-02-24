@@ -2126,6 +2126,12 @@ h4. ReferenceExtras
 *** @(REX2b1)@ Should be written in reverse domain name notation
 *** @(REX2b2)@ Types beginning with @com.ably.@ are reserved
 
+h4. Subscription
+
+* @(SUB1)@ A @Subscription@ represents a registration for receiving events from a subscribe operation
+* @(SUB2)@ The @Subscription@ object has the following method:
+** @(SUB2a)@ @unsubscribe@ - deregisters the listener that was registered by the corresponding @subscribe@ call. Once @unsubscribe@ called, the listener must not be called for any subsequent events
+
 h3(#options). Option types
 
 h4. ClientOptions
@@ -3162,6 +3168,9 @@ class MessageVersion:
   clientId: string? // TM2s3
   description: string? // TM2s4
   metadata: Dict<string, string>? //TM2s5
+
+interface Subscription: // SUB*
+  unsubscribe() // SUB2a
 </pre>
 
 h2(#old-specs). Old specs
