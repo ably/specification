@@ -893,6 +893,14 @@ A @PathObject@ is obtained from @RealtimeObject#get@ ("RTO23":#RTO23), which ret
 *** @(RTPO21a1)@ @options@ @PathObjectSubscriptionOptions@ (optional) - same options as @PathObject#subscribe@ ("RTPO19b":#RTPO19b)
 ** @(RTPO21b)@ Returns a stream or iterable that yields @PathObjectSubscriptionEvent@ objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
 ** @(RTPO21c)@ Internally wraps @PathObject#subscribe@ ("RTPO19":#RTPO19), converting the callback-based subscription into the appropriate streaming or iterable pattern
+* @(RTPO22)@ @PathObject#batch@ function:
+** @(RTPO22a)@ Expects a synchronous function @fn@ that receives a @BatchContext@ as its argument
+** @(RTPO22b)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
+** @(RTPO22c)@ Resolves the path to a @LiveObject@ using the internal path resolution procedure. If the path does not resolve to a @LiveObject@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+** @(RTPO22d)@ Creates a @RootBatchContext@ ("RTBC16":#RTBC16) wrapping the resolved @Instance@
+** @(RTPO22e)@ Executes @fn@, passing the @BatchContext@ as argument
+** @(RTPO22f)@ After @fn@ returns, flushes the @RootBatchContext@ ("RTBC16d":#RTBC16d) to publish all queued operations atomically
+** @(RTPO22g)@ The @RootBatchContext@ is closed after flush completes, regardless of success or failure
 
 h3(#instance). Instance
 
@@ -967,6 +975,84 @@ An @Instance@ holds a direct reference to a specific resolved @LiveObject@ or pr
 ** @(RTINS18a)@ If the wrapped value is not a @LiveObject@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
 ** @(RTINS18b)@ Returns a stream or iterable that yields @InstanceSubscriptionEvent@ objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
 ** @(RTINS18c)@ Internally wraps @Instance#subscribe@ ("RTINS16":#RTINS16), converting the callback-based subscription into the appropriate streaming or iterable pattern
+* @(RTINS19)@ @Instance#batch@ function:
+** @(RTINS19a)@ Expects a synchronous function @fn@ that receives a @BatchContext@ as its argument
+** @(RTINS19b)@ Requires the @OBJECT_PUBLISH@ channel mode to be granted per "RTO2":#RTO2
+** @(RTINS19c)@ If the wrapped value is not a @LiveObject@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+** @(RTINS19d)@ Creates a @RootBatchContext@ ("RTBC16":#RTBC16) wrapping this @Instance@
+** @(RTINS19e)@ Executes @fn@, passing the @BatchContext@ as argument
+** @(RTINS19f)@ After @fn@ returns, flushes the @RootBatchContext@ ("RTBC16d":#RTBC16d) to publish all queued operations atomically
+** @(RTINS19g)@ The @RootBatchContext@ is closed after flush completes, regardless of success or failure
+
+h3(#batchcontext). BatchContext
+
+A @BatchContext@ wraps an @Instance@ with synchronous write methods that queue operations instead of sending them immediately. All queued operations are published atomically as a single channel message when the batch function returns. This allows multiple mutations to be grouped into a single publish call.
+
+* @(RTBC1)@ The @BatchContext@ class provides a synchronous write interface for grouping multiple mutations into a single atomic publish
+** @(RTBC1a)@ A specific SDK implementation may choose to expose a subset of the methods available on the @BatchContext@ class based on the known underlying type, in a similar manner to @Instance@ ("RTINS1a":#RTINS1a)
+* @(RTBC2)@ @BatchContext@ has the following internal properties:
+** @(RTBC2a)@ @instance@ - the underlying @Instance@ that this @BatchContext@ wraps
+** @(RTBC2b)@ @rootContext@ - a reference to the @RootBatchContext@ ("RTBC16":#RTBC16) that manages the batch operation
+* @(RTBC3)@ @BatchContext#id@ property:
+** @(RTBC3a)@ Returns the @objectId@ of the underlying @Instance@ ("RTINS3":#RTINS3)
+** @(RTBC3b)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that the batch is closed
+* @(RTBC4)@ @BatchContext#get@ function:
+** @(RTBC4a)@ Expects a @key@ @String@ argument
+** @(RTBC4b)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC4c)@ Delegates to @Instance#get@ ("RTINS5":#RTINS5) on the underlying @Instance@. If the result is undefined, returns undefined
+** @(RTBC4d)@ Otherwise, wraps the resulting @Instance@ in a @BatchContext@ via the @RootBatchContext#wrapInstance@ ("RTBC16c":#RTBC16c) and returns it
+* @(RTBC5)@ @BatchContext#value@ function:
+** @(RTBC5a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC5b)@ Delegates to @Instance#value@ ("RTINS4":#RTINS4) on the underlying @Instance@
+* @(RTBC6)@ @BatchContext#entries@ function:
+** @(RTBC6a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC6b)@ Delegates to @Instance#entries@ ("RTINS6":#RTINS6) on the underlying @Instance@, wrapping each yielded @Instance@ value in a @BatchContext@ via @RootBatchContext#wrapInstance@ ("RTBC16c":#RTBC16c)
+** @(RTBC6c)@ Yields @[String, BatchContext]@ pairs
+* @(RTBC7)@ @BatchContext#keys@ function:
+** @(RTBC7a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC7b)@ Delegates to @Instance#keys@ ("RTINS7":#RTINS7) on the underlying @Instance@
+* @(RTBC8)@ @BatchContext#values@ function:
+** @(RTBC8a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC8b)@ Delegates to @Instance#values@ ("RTINS8":#RTINS8) on the underlying @Instance@, wrapping each yielded @Instance@ in a @BatchContext@ via @RootBatchContext#wrapInstance@ ("RTBC16c":#RTBC16c)
+* @(RTBC9)@ @BatchContext#size@ function:
+** @(RTBC9a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC9b)@ Delegates to @Instance#size@ ("RTINS9":#RTINS9) on the underlying @Instance@
+* @(RTBC10)@ @BatchContext#compact@ function:
+** @(RTBC10a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC10b)@ Delegates to @Instance#compact@ ("RTINS10":#RTINS10) on the underlying @Instance@
+* @(RTBC11)@ @BatchContext#compactJson@ function:
+** @(RTBC11a)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC11b)@ Delegates to @Instance#compactJson@ ("RTINS11":#RTINS11) on the underlying @Instance@
+* @(RTBC12)@ @BatchContext#set@ function. This method is synchronous:
+** @(RTBC12a)@ Expects the following arguments:
+*** @(RTBC12a1)@ @key@ @String@ - the key to set the value for
+*** @(RTBC12a2)@ @value@ @Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType@ - the value to assign to the key
+** @(RTBC12b)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC12c)@ If the wrapped value is not a @LiveMap@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+** @(RTBC12d)@ Queues a message constructor on the @RootBatchContext@ that, when executed, creates @ObjectMessages@ for a @MAP_SET@ operation in the same manner as @LiveMap#set@ ("RTLM20e":#RTLM20e)
+* @(RTBC13)@ @BatchContext#remove@ function. This method is synchronous:
+** @(RTBC13a)@ Expects a @key@ @String@ argument
+** @(RTBC13b)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC13c)@ If the wrapped value is not a @LiveMap@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+** @(RTBC13d)@ Queues a message constructor on the @RootBatchContext@ that, when executed, creates an @ObjectMessage@ for a @MAP_REMOVE@ operation in the same manner as @LiveMap#remove@ ("RTLM21e":#RTLM21e)
+* @(RTBC14)@ @BatchContext#increment@ function. This method is synchronous:
+** @(RTBC14a)@ Expects the following arguments:
+*** @(RTBC14a1)@ @amount@ @Number@ (optional) - the amount by which to increment the counter value. Defaults to 1
+** @(RTBC14b)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC14c)@ If the wrapped value is not a @LiveCounter@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+** @(RTBC14d)@ Queues a message constructor on the @RootBatchContext@ that, when executed, creates an @ObjectMessage@ for a @COUNTER_INC@ operation in the same manner as @LiveCounter#increment@ ("RTLC12":#RTLC12)
+* @(RTBC15)@ @BatchContext#decrement@ function. This method is synchronous:
+** @(RTBC15a)@ Expects the following arguments:
+*** @(RTBC15a1)@ @amount@ @Number@ (optional) - the amount by which to decrement the counter value. Defaults to 1
+** @(RTBC15b)@ If the batch is closed, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000
+** @(RTBC15c)@ If the wrapped value is not a @LiveCounter@, the library must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 92007
+** @(RTBC15d)@ Delegates to @BatchContext#increment@ ("RTBC14":#RTBC14) with the negated @amount@
+* @(RTBC16)@ Internal @RootBatchContext@ - manages the lifecycle and message queue for a batch operation:
+** @(RTBC16a)@ Maintains an internal @wrappedInstances@ map that memoizes @BatchContext@ wrappers by @objectId@
+** @(RTBC16b)@ Maintains an internal @queuedMessageConstructors@ list of deferred message constructor functions. Some @ObjectMessages@ require asynchronous I/O during construction (e.g. generating an @objectId@ for nested value types), so message constructors are queued during synchronous batch method calls and executed on flush
+** @(RTBC16c)@ @wrapInstance@ function: wraps an @Instance@ in a @BatchContext@. If the @Instance@ has an @objectId@ and a wrapper for that @objectId@ already exists in @wrappedInstances@, the existing wrapper is returned. Otherwise, a new @BatchContext@ is created and stored in @wrappedInstances@
+** @(RTBC16d)@ @flush@ function: closes the batch context, executes all queued message constructors, flattens the resulting @ObjectMessages@ into a single array, and publishes them using @RealtimeObject#publish@ ("RTO15":#RTO15). If there are no queued messages, no publish is performed
+** @(RTBC16e)@ After the batch is closed, any method call on the @BatchContext@ or its children must throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that the batch is closed
 
 h2(#idl). Interface Definition
 
@@ -1070,6 +1156,7 @@ class PathObject: // RTPO*
   subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
   unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
   subscribeIterator(PathObjectSubscriptionOptions? options) -> Stream<PathObjectSubscriptionEvent> // RTPO21
+  batch(((BatchContext) ->) fn) => io // RTPO22
 
 class Instance: // RTINS*
   id: String? // RTINS3
@@ -1088,4 +1175,20 @@ class Instance: // RTINS*
   subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
   unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
   subscribeIterator() -> Stream<InstanceSubscriptionEvent> // RTINS18
+  batch(((BatchContext) ->) fn) => io // RTINS19
+
+class BatchContext: // RTBC*
+  id: String? // RTBC3
+  get(String key) -> BatchContext? // RTBC4
+  value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTBC5
+  entries() -> Iterator<[String, BatchContext]> // RTBC6
+  keys() -> Iterator<String> // RTBC7
+  values() -> Iterator<BatchContext> // RTBC8
+  size() -> Number? // RTBC9
+  compact() -> Object? // RTBC10
+  compactJson() -> Object? // RTBC11
+  set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) // RTBC12
+  remove(String key) // RTBC13
+  increment(Number amount?) // RTBC14
+  decrement(Number amount?) // RTBC15
 </pre>

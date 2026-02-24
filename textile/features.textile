@@ -969,7 +969,7 @@ then the @enter@ request results in an error immediately.
 
 h3(#realtime-objects). RealtimeObject
 
-Reserved for @RealtimeObject@ feature specification, see "objects-features":../objects-features. Reserved spec points: @RTO@, @RTLO@, @RTLC@, @RTLM@, @RTPO@, @RTINS@, @RTLCV@, @RTLMV@
+Reserved for @RealtimeObject@ feature specification, see "objects-features":../objects-features. Reserved spec points: @RTO@, @RTLO@, @RTLC@, @RTLM@, @RTPO@, @RTINS@, @RTLCV@, @RTLMV@, @RTBC@
 
 h3(#realtime-annotations). RealtimeAnnotations
 
