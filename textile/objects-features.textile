@@ -129,13 +129,13 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO5a5)@ An @OBJECT_SYNC@ may also be sent with no @channelSerial@ attribute. In this case, the sync data is entirely contained within the @ProtocolMessage@
 ** @(RTO5b)@ This clause has been replaced by "RTO5f":#RTO5f
 ** @(RTO5f)@ During the sync sequence, @ObjectMessages@ from incoming @OBJECT_SYNC@ @ProtocolMessages@ must be temporarily stored in the internal @SyncObjectsPool@, keyed by @ObjectMessage.object.objectId@. The @SyncObjectsPool@ stores one @ObjectMessage@ per @objectId@, which may represent merged state from multiple incoming messages. For each @ObjectMessage@ in the incoming @OBJECT_SYNC@ @ProtocolMessage@, let @ObjectState@ be @ObjectMessage.object@:
+*** @(RTO5f3)@ If neither @ObjectState.map@ nor @ObjectState.counter@ is present on the incoming message, log a warning that a state message with an unsupported object type was received and skip the incoming message
 *** @(RTO5f1)@ If an entry with the given @ObjectState.objectId@ does not yet exist in the @SyncObjectsPool@, store the @ObjectMessage@
 *** @(RTO5f2)@ If an entry with the given @ObjectState.objectId@ already exists in the @SyncObjectsPool@, this indicates a partial object state - the server has split a large object across multiple @OBJECT_SYNC@ @ProtocolMessages@. The client must merge the partial state into the existing entry based on the object type:
 **** @(RTO5f2a)@ If @ObjectState.map@ is present on the incoming message, merge the map state:
 ***** @(RTO5f2a1)@ If the incoming @ObjectState.tombstone@ is @true@, replace the existing entry in the @SyncObjectsPool@ with the incoming @ObjectMessage@ entirely
 ***** @(RTO5f2a2)@ Otherwise, merge @ObjectState.map.entries@ from the incoming message into the existing @ObjectState.map.entries@. During partial sync, no two messages for the same map object contain the same map key, so no conflict resolution is needed
 **** @(RTO5f2b)@ If @ObjectState.counter@ is present on the incoming message, log an error indicating that an unexpected partial object state for a counter was received, and skip the incoming message
-**** @(RTO5f2c)@ Otherwise, log a warning that a state message with an unsupported object type was received and skip the incoming message
 ** @(RTO5c)@ When the objects sync has completed, the client library must perform the following actions in order:
 *** @(RTO5c1)@ For each @ObjectMessage@ in the @SyncObjectsPool@, let @ObjectState@ be @ObjectMessage.object@:
 **** @(RTO5c1a)@ If an object with @ObjectState.objectId@ exists in the internal @ObjectsPool@:
