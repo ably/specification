@@ -1600,11 +1600,11 @@ h4. ObjectOperation
 ** @(OOP4c)@ This clause has been replaced by "OOP4l":#OOP4l as of specification version 6.0.0.
 ** @(OOP4d)@ This clause has been replaced by "OOP4h":#OOP4h as of specification version 6.0.0.
 ** @(OOP4e)@ This clause has been replaced by "OOP4k":#OOP4k as of specification version 6.0.0.
-** @(OOP4g)@ The size is the sum of the sizes of the @mapCreate@, @mapSet@, @mapRemove@, @counterCreate@, and @counterInc@ properties
-** @(OOP4h)@ The size of the @mapCreate@ property is calculated per "MCR3":#MCR3
+** @(OOP4g)@ The size is the sum of the sizes of the map create, @mapSet@, @mapRemove@, counter create, and @counterInc@ components
+** @(OOP4h)@ The size of the map create component is: if @mapCreate@ is present, its size calculated per "MCR3":#MCR3; else if @mapCreateWithObjectId@ is present, the size of the @MapCreate@ retained in "RTO11f18":objects-features#RTO11f18, calculated per "MCR3":#MCR3; otherwise zero
 ** @(OOP4i)@ The size of the @mapSet@ property is calculated per "MST3":#MST3
 ** @(OOP4j)@ The size of the @mapRemove@ property is calculated per "MRM3":#MRM3
-** @(OOP4k)@ The size of the @counterCreate@ property is calculated per "CCR3":#CCR3
+** @(OOP4k)@ The size of the counter create component is: if @counterCreate@ is present, its size calculated per "CCR3":#CCR3; else if @counterCreateWithObjectId@ is present, the size of the @CounterCreate@ retained in "RTO12f16":objects-features#RTO12f16, calculated per "CCR3":#CCR3; otherwise zero
 ** @(OOP4l)@ The size of the @counterInc@ property is calculated per "CIN3":#CIN3
 ** @(OOP4f)@ The size of a @null@ or omitted property is zero
 * @(OOP5)@ This clause has been deleted as of specification version 6.0.0.

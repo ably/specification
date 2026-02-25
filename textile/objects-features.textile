@@ -69,6 +69,7 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO11f13)@ This clause has been deleted as of specification version 6.0.0.
 *** @(RTO11f16)@ Set @ObjectMessage.operation.mapCreateWithObjectId.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
 *** @(RTO11f17)@ Set @ObjectMessage.operation.mapCreateWithObjectId.initialValue@ to the JSON string created in "RTO11f15":#RTO11f15
+*** @(RTO11f18)@ The client library must retain the @MapCreate@ object from "RTO11f14":#RTO11f14 alongside the @MapCreateWithObjectId@. It is the operation from which the @MapCreateWithObjectId@ was derived, and is needed for message size calculation ("OOP4h":../features#OOP4h) and local application of the operation ("RTLM23":#RTLM23). This @MapCreate@ is for local use only and must not be sent over the wire.
 ** @(RTO11g)@ This clause has been replaced by "RTO11i":#RTO11i
 ** @(RTO11i)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 *** @(RTO11i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
@@ -108,6 +109,7 @@ h3(#realtime-objects). RealtimeObjects
 
 *** @(RTO12f14)@ Set @ObjectMessage.operation.counterCreateWithObjectId.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
 *** @(RTO12f15)@ Set @ObjectMessage.operation.counterCreateWithObjectId.initialValue@ to the JSON string created in "RTO12f13":#RTO12f13
+*** @(RTO12f16)@ The client library must retain the @CounterCreate@ object from "RTO12f12":#RTO12f12 alongside the @CounterCreateWithObjectId@. It is the operation from which the @CounterCreateWithObjectId@ was derived, and is needed for message size calculation ("OOP4k":../features#OOP4k) and local application of the operation ("RTLC16":#RTLC16). This @CounterCreate@ is for local use only and must not be sent over the wire.
 ** @(RTO12g)@ This clause has been replaced by "RTO12i":#RTO12i
 ** @(RTO12i)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 *** @(RTO12i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
@@ -437,11 +439,11 @@ h3(#livecounter). LiveCounter
 ** @(RTLC10b)@ This clause has been replaced by "RTLC16b":#RTLC16b as of specification version 6.0.0.
 ** @(RTLC10c)@ This clause has been replaced by "RTLC16c":#RTLC16c as of specification version 6.0.0.
 ** @(RTLC10d)@ This clause has been replaced by "RTLC16d":#RTLC16d as of specification version 6.0.0.
-* @(RTLC16)@ The initial value from @ObjectOperation.counterCreate@ can be merged into this @LiveCounter@ in the following way:
-** @(RTLC16a)@ Add @ObjectOperation.counterCreate.count@ to @data@, if it exists
+* @(RTLC16)@ The initial value from an @ObjectOperation@ can be merged into this @LiveCounter@ in the following way. Let @counterCreate@ be @ObjectOperation.counterCreate@ if present, else the @CounterCreate@ from which @ObjectOperation.counterCreateWithObjectId@ was derived (see "RTO12f16":#RTO12f16):
+** @(RTLC16a)@ Add @counterCreate.count@ to @data@, if it exists
 ** @(RTLC16b)@ Set the private flag @createOperationIsMerged@ to @true@
-** @(RTLC16c)@ If @ObjectOperation.counterCreate.count@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @ObjectOperation.counterCreate.count@
-** @(RTLC16d)@ If @ObjectOperation.counterCreate.count@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
+** @(RTLC16c)@ If @counterCreate.count@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @counterCreate.count@
+** @(RTLC16d)@ If @counterCreate.count@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
 * @(RTLC14)@ The diff between two @LiveCounter@ data values can be calculated in the following way:
 ** @(RTLC14a)@ Expects the following arguments:
 *** @(RTLC14a1)@ @previousData@ @Number@ - the previous @data@ value
@@ -659,8 +661,8 @@ h3(#livemap). LiveMap
 *** @(RTLM17a2)@ This clause has been replaced by "RTLM23a2":#RTLM23a2 as of specification version 6.0.0.
 ** @(RTLM17b)@ This clause has been replaced by "RTLM23b":#RTLM23b as of specification version 6.0.0.
 ** @(RTLM17c)@ This clause has been replaced by "RTLM23c":#RTLM23c as of specification version 6.0.0.
-* @(RTLM23)@ The initial value from @ObjectOperation.mapCreate@ can be merged into this @LiveMap@ in the following way:
-** @(RTLM23a)@ For each key-@ObjectsMapEntry@ pair in @ObjectOperation.mapCreate.entries@:
+* @(RTLM23)@ The initial value from an @ObjectOperation@ can be merged into this @LiveMap@ in the following way. Let @mapCreate@ be @ObjectOperation.mapCreate@ if present, else the @MapCreate@ from which @ObjectOperation.mapCreateWithObjectId@ was derived (see "RTO11f18":#RTO11f18):
+** @(RTLM23a)@ For each key-@ObjectsMapEntry@ pair in @mapCreate.entries@:
 *** @(RTLM23a1)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @MapSet@, and @ObjectsMapEntry.timeserial@ as @serial@. Store the returned @LiveMapUpdate@ object for use in "RTLM23c":#RTLM23c
 *** @(RTLM23a2)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @MapRemove@, @ObjectsMapEntry.timeserial@ as @serial@, and @ObjectsMapEntry.serialTimestamp@ as @serialTimestamp@. Store the returned @LiveMapUpdate@ object for use in "RTLM23c":#RTLM23c
 ** @(RTLM23b)@ Set the private flag @createOperationIsMerged@ to @true@
