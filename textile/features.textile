@@ -1836,11 +1836,12 @@ h4. Stats
 
 h4. ErrorInfo
 
-* @(TI1)@ Provides a generic Ably @ErrorInfo@ object that contains Ably @code@, @statusCode@ (analogous to HTTP status code), @message@, optional @cause@, optional @href@, and optional @requestId@ (@RSC7c@) attributes
+* @(TI1)@ Provides a generic Ably @ErrorInfo@ object that contains Ably @code@, @statusCode@ (analogous to HTTP status code), @message@, optional @cause@, optional @href@, optional @requestId@ (@RSC7c@), and optional @detail@ attributes
 * @(TI2)@ Errors returned from the Ably server are compatible with the @ErrorInfo@ structure and should result in errors that inherit from @ErrorInfo@
 * @(TI3)@ "Ably-common":https://github.com/ably/ably-common should be included as a submodule so that "consistent error codes":https://github.com/ably/ably-common/blob/main/protocol/errors.json can be used
 * @(TI4)@ Ably may additionally include a @href@ attribute with a string value. This is included for REST responses to provide a URL for customers to find more help on the error code
 * @(TI5)@ Log entries generated from errors, where possible, should include a URL to help developers understand the error and resolve the issue. If the URL is not already present within the contents of the @message@ attribute, then it should be included in the log entry as follows: "See @[URL]@". If the @href@ attribute is present, it should be used as the URL. If the @href@ attribute is not present, and the @code@ attribute is present, then the URL should be constructed as follows "https://help.ably.io/error/@[CODE]@". If neither the @href@ or @code@ attributes are present, then an additional URL should not be included in the log entry.
+* @(TI6)@ Ably may additionally include an optional @detail@ attribute, which is a map of string keys to string values. This is used to provide structured metadata associated with the error. The @detail@ field MUST be omitted when empty.
 
 h4. ConnectionStateChange
 
@@ -2876,6 +2877,7 @@ class ErrorInfo: // TI*
   cause: ErrorInfo? // TI1
   statusCode: Int // TI1
   requestId: String? // TI1, RSC7c
+  detail: Dict<String, String>? // TI1, TI6
 
 class EventEmitter<Event, Data>: // RTE*
   on((Data...) ->) // RTE3
