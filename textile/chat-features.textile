@@ -606,7 +606,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
 * @(CHA-T8)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
 * @(CHA-T9)@ This specification point has been removed. It was valid until the V1 API Review.
-* @(CHA-T16)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.current()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
+* @(CHA-T16)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.current()@ method. The list must be a copy of the up-to-date internal list of typing client IDs. This method is deprecated; use @currentTypers@ (@CHA-T18@) instead.
 * @(CHA-T15)@ @[Testable]@ Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
 ** @(CHA-T10a)@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving events). The default value shall be set to 2000ms.
@@ -640,6 +640,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T6c)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c1)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c2)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
+** @(CHA-T6d)@ @[Testable]@ The emitted typing event must include a @currentTypers@ field of type @TypingMember[]@ (see "#chat-structs-typing-member"), containing all users currently typing with their associated metadata. The @currentlyTyping@ field on the event is deprecated in favour of @currentTypers@.
 * @(CHA-T7)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to all registered listeners @(CHA-T15)@.
 ** @(CHA-T13a)@ @[Testable]@ Typing events received from the server must have a valid @clientId@ and must not be malformed, i.e they must conform to the expected "payload":#realtime-typing-message (unknown fields should be ignored). Invalid events shall not be handled or emitted to any registered listeners (@CHA-T15@).
@@ -656,6 +657,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T14b1)@ @[Testable]@ During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
 *** @(CHA-T14b2)@ @[Testable]@ If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
 * @(CHA-T17)@ @[Testable]@ The @Messages@ instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel. Any timeouts or timers associated with typing heartbeats must also be cancelled.
+* @(CHA-T18)@ @[Testable]@ Users must be able to retrieve the current set of typing users with associated metadata through a @currentTypers@ property on the @Typing@ object. It must return a copy of the up-to-date internal typing set as a @TypingMember[]@ (see "#chat-structs-typing-member"). Each entry contains the @clientId@ and, where present, the @userClaim@ of the typing user.
 
 h2(#occupancy). Occupancy
 
@@ -1595,7 +1597,22 @@ h3(#chat-structs-typing-event-V3). Typing Event V3
         "clientId": "clientId-2",
         "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
     },
-    "currentlyTyping": ["clientId-1", "clientId-2"],
+    "currentlyTyping": ["clientId-1", "clientId-2"], // deprecated; use currentTypers
+    "currentTypers": [                                // TypingMember[]
+      { "clientId": "clientId-1" },
+      { "clientId": "clientId-2", "userClaim": "optional-user-claim-from-jwt" }
+    ],
+  }
+</pre>
+
+h3(#chat-structs-typing-member). TypingMember
+
+Represents a user in the set of currently typing users, with associated metadata.
+
+<pre>
+  {
+    "clientId": "clientId-2",
+    "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
   }
 </pre>
 
