@@ -334,6 +334,7 @@ Broadly speaking, messages are published via REST calls to the Chat HTTP API and
 ** @(CHA-M2e)@ @[Testable]@ In global ordering, a @Message@ is considered to occur before another @Message@ if the @serial@ of the first @Message@ is before the latter when lexicographically sorted.
 ** @(CHA-M2f)@ @[Testable]@ In global ordering, a @Message@ is considered after another @Message@ if the @serial@ of the first @Message@ is after the latter when lexicographically sorted.
 ** @(CHA-M2g)@ @[Testable]@ Two @Messages@ are considered to be the same if they have the same @serial@, that is to say, both @Serial@ strings are identical.
+** @(CHA-M2h)@ @[Testable]@ A @Message@ may contain an optional @userClaim@ field, which is a server-provided read-only string extracted from JWT claims embedded in realtime message extras (@extras.userClaim@) or REST API response data. Clients cannot send this field when publishing messages.
 * @(CHA-M10)@ A @Message@ can be modified by applying a new @action@ to it, such as an update or delete. Applying an @action@ must generate a new @Message@ instance with the same @serial@ and an updated @version@.
 ** @(CHA-M10a)@ @[Testable]@ The @version@ of a @Message@ is a lexicographically sortable via it's @serial@ field, unique identifier for each version of the @Message@.
 ** @(CHA-M10b)@ This clause has been deleted.
@@ -481,6 +482,7 @@ Users can add reactions to messages, such as thumbs-up or heart emojis. Summarie
 * @(CHA-MR7)@ @[Testable]@ Users must be able to subscribe to raw message reactions (as individual annotations) via the @subscribeRaw@ method of the @MessagesReactions@ object (@room.messages.reactions.subscribeRaw@). The events emitted are of type @MessageReactionRawEvent@.
   ** @(CHA-MR7a)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
   ** @(CHA-MR7c)@ @[Testable]@ The attempt to subscribe to raw message reactions must throw an @ErrorInfo@ using the @FeatureNotEnabledInRoom@ error code from the "chat-specific error codes":#error-codes if the room is not configured to support raw message reactions (when room option @RoomOptions.messages.rawMessageReactions@ is not set to @true@; it defaults to @false@).
+  ** @(CHA-MR7d)@ @[Testable]@ A @MessageReactionRawEvent@ may contain an optional @userClaim@ field in its @reaction@ object, which is a server-provided read-only string extracted from JWT claims embedded in realtime annotation message extras (@extras.userClaim@). Clients cannot send this field when adding reactions.
   ** @(CHA-MR7b)@ @[Testable]@ Invalid reaction events received over realtime must still produce an event, but with fields filled in with default values.
     *** @(CHA-MR7b1)@ @[Testable]@ If the reaction type (e.g. unique, distinct) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).
     *** @(CHA-MR7b2)@ @[Testable]@ If the reaction action type (e.g. add, remove) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).
@@ -508,6 +510,7 @@ All ephemeral room reactions are handled over the Realtime connection.
 
 * @(CHA-ER1)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-ER2)@ A @Reaction@ corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a @ProtocolMessage@).
+** @(CHA-ER2a)@ @[Testable]@ A @Reaction@ may contain an optional @userClaim@ field, which is a server-provided read-only string extracted from JWT claims embedded in realtime message extras (@extras.userClaim@). Clients cannot send this field when publishing reactions.
 * @(CHA-ER3)@ Ephemeral room reactions are sent to Ably via the Realtime connection via a @send@ method.
 ** @(CHA-ER3a)@ This specification point was removed. It was valid until the single-channel migration.
 ** @(CHA-ER3f)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
@@ -573,6 +576,7 @@ Presence allows chat room users to indicate to others that they're online, as we
 ** @(CHA-PR6d)@ @[Testable]@ If the room status is @Attached@, then the @get@ call will invoke the underlying @presence.get()@ call.
 ** @(CHA-PR6e)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
 ** @(CHA-PR6f)@ This specification point has been removed. It was superseded by @CHA-PR6h@.
+** @(CHA-PR6g)@ @[Testable]@ A @PresenceMember@ may contain an optional @userClaim@ field, which is a server-provided read-only string extracted from JWT claims embedded in realtime presence message extras (@extras.userClaim@). Clients cannot send this field when entering presence.
 * @(CHA-PR7)@ Users may subscribe to presence events.
 ** @(CHA-PR7d)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
 ** @(CHA-PR7e)@ @[Testable]@ If presence events have been disabled per @CHA-PR9c@, then the client shall throw an @ErrorInfo@ using the @FeatureNotEnabledInRoom@ error code from the "chat-specific error codes":#error-codes.
@@ -602,7 +606,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 * @(CHA-T2)@ This specification point has been removed. It was replaced by @CHA-T9@.
 * @(CHA-T8)@ This specification point has been removed. It was replaced by @CHA-RC3c@.
 * @(CHA-T9)@ This specification point has been removed. It was valid until the V1 API Review.
-* @(CHA-T16)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.current()@ method. The list must be a copy of the up-to-date internal list of typing client IDs.
+* @(CHA-T16)@ @[Testable]@ Users must be able to retrieve a list of the currently typing client IDs through a @typing.current()@ method. The list must be a copy of the up-to-date internal list of typing client IDs. This method is deprecated; use @currentTypers@ (@CHA-T18@) instead.
 * @(CHA-T15)@ @[Testable]@ Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
 * @(CHA-T10)@ @[Testable]@ Users may configure a heartbeat interval (the no-op period for @typing.keystroke@ when the heartbeat timer is set active at @CHA-T4a4@). This configuration is provided at the @RoomOptions.typing.heartbeatThrottleMs@ property, or idiomatic equivalent. The default is 10000ms.
 ** @(CHA-T10a)@ A grace period shall be set by the client (the grace period on the @CHA-T10@ heartbeat interval when receiving events). The default value shall be set to 2000ms.
@@ -636,9 +640,11 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 ** @(CHA-T6c)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c1)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
 *** @(CHA-T6c2)@ This specification point has been removed, it has been superseded by @CHA-T6d@.
+** @(CHA-T6d)@ @[Testable]@ The emitted typing event must include a @currentTypers@ field of type @TypingMember[]@ (see "#chat-structs-typing-member"), containing all users currently typing with their associated metadata. The @currentlyTyping@ field on the event is deprecated in favour of @currentTypers@.
 * @(CHA-T7)@ This specification point has been removed. It was valid up until the single-channel migration.
 * @(CHA-T13)@ When a typing event (@typing.start@ or @typing.stop@) is received from the realtime client, the Chat client shall emit appropriate events to all registered listeners @(CHA-T15)@.
 ** @(CHA-T13a)@ @[Testable]@ Typing events received from the server must have a valid @clientId@ and must not be malformed, i.e they must conform to the expected "payload":#realtime-typing-message (unknown fields should be ignored). Invalid events shall not be handled or emitted to any registered listeners (@CHA-T15@).
+*** @(CHA-T13a1)@ @[Testable]@ A @TypingEvent@ may contain an optional @userClaim@ field in its @change@ object, which is a server-provided read-only string extracted from JWT claims embedded in realtime typing message extras (@extras.userClaim@). Clients cannot send this field when publishing typing events. When a typing event is received, the client must update the @userClaim@ for that @clientId@ in the typing set to match the value from the incoming event. If a subsequent event (including heartbeat events) for the same @clientId@ arrives without a @userClaim@, or with a different value, the entry in the typing set must be updated to reflect this, and an updated typing event must be emitted to listeners.
 ** @(CHA-T13b)@ @[Testable]@ When a typing event is received on the realtime client:
 *** @(CHA-T13b1)@ @[Testable]@ If the event represents a new client typing, then the Chat client shall add the typers @clientId@ to the typing set and a emit the updated set, via a new "typing event":#chat-structs-typing-event-V3, to any listeners. It shall also begin a timer with a timeout period that is the sum of the @CHA-T10@ heartbeat interval and the @CHA-T10a@ graсe period.
 *** @(CHA-T13b2)@ @[Testable]@ Each additional @typing.started@ event from the same client shall reset the @(CHA-T13b1)@ timer for that client.
@@ -651,6 +657,7 @@ For the purpose of this section, an @ephemeral message@ is understood to mean a 
 *** @(CHA-T14b1)@ @[Testable]@ During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
 *** @(CHA-T14b2)@ @[Testable]@ If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
 * @(CHA-T17)@ @[Testable]@ The @Messages@ instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel. Any timeouts or timers associated with typing heartbeats must also be cancelled.
+* @(CHA-T18)@ @[Testable]@ Users must be able to retrieve the current set of typing users with associated metadata through a @currentTypers@ property on the @Typing@ object. It must return a copy of the up-to-date internal typing set as a @TypingMember[]@ (see "#chat-structs-typing-member"). Each entry contains the @clientId@ and, where present, the @userClaim@ of the typing user.
 
 h2(#occupancy). Occupancy
 
@@ -1292,6 +1299,7 @@ h4(#chat-structs-message-v4). Messages V4
   {
     "serial": "01726585978590-001@abcdefghij:001",
     "clientId": "who-sent-the-message",
+    "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
     "text": "my-message",
     "timestamp": DateTime(),
     "metadata": {
@@ -1414,6 +1422,7 @@ The @MessageReactionRawEvent@ interface provides information about individual me
       name: ":like:",
       count: 3,
       clientId: "user1",
+      userClaim: "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
     };
   }
 </pre>
@@ -1477,6 +1486,7 @@ As part of the Chat v1 API review, the "type" field was renamed to "name".
   {
     "name": ":heart:",
     "clientId": "who-sent-the-message",
+    "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
     "createdAt": DateTime(),
     "metadata": {
       "foo": {
@@ -1499,6 +1509,7 @@ As part of the Chat v1 API review, the "type" field was renamed to "name".
     "reaction": {
       "name": ":heart:",
       "clientId": "who-sent-the-message",
+      "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
       "createdAt": DateTime(),
       "metadata": {
         "foo": {
@@ -1517,6 +1528,7 @@ h3(#chat-structs-presence-member). Presence Member
 <pre>
   {
     "clientId": "who-sent-the-message",
+    "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
     "updatedAt": DateTime(),
     "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
     "extras": {
@@ -1545,6 +1557,7 @@ h3(#chat-structs-presence-event-v2). Presence Event V2
     "type": PresenceEventType,
     "member": { // PresenceMember
       "clientId": "who-is-in-presence",
+      "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
       "updatedAt": DateTime(),
       "data": { … },
       "extras": {},
@@ -1582,8 +1595,24 @@ h3(#chat-structs-typing-event-V3). Typing Event V3
     "change": {
         "type": TypingEventType,
         "clientId": "clientId-2",
+        "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
     },
-    "currentlyTyping": ["clientId-1", "clientId-2"],
+    "currentlyTyping": ["clientId-1", "clientId-2"], // deprecated; use currentTypers
+    "currentTypers": [                                // TypingMember[]
+      { "clientId": "clientId-1" },
+      { "clientId": "clientId-2", "userClaim": "optional-user-claim-from-jwt" }
+    ],
+  }
+</pre>
+
+h3(#chat-structs-typing-member). TypingMember
+
+Represents a user in the set of currently typing users, with associated metadata.
+
+<pre>
+  {
+    "clientId": "clientId-2",
+    "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
   }
 </pre>
 
