@@ -146,7 +146,7 @@ h3(#realtime-objects). RealtimeObjects
 ***** @(RTO5c1b1)@ Create a new @LiveObject@ using the data from @ObjectState@ and add it to the internal @ObjectsPool@:
 ****** @(RTO5c1b1a)@ If @ObjectState.counter@ is present, create a zero-value @LiveCounter@ (per "RTLC4":#RTLC4), set its private @objectId@ equal to @ObjectState.objectId@ and replace its internal data using the current @ObjectState@ per "RTLC6":#RTLC6
 ****** @(RTO5c1b1b)@ If @ObjectState.map@ is present, create a zero-value @LiveMap@ (per "RTLM4":#RTLM4), set its private @objectId@ equal to @ObjectState.objectId@, set its private @semantics@ equal to @ObjectState.map.semantics@ and replace its internal data using the current @ObjectState@ per "RTLM6":#RTLM6
-****** @(RTO5c1b1c)@ Otherwise, log a warning that an unsupported object state message has been received, and discard the current @ObjectState@ without taking any action
+****** @(RTO5c1b1c)@ This clause has been deleted (redundant to "RTO5f3":#RTO5f3).
 *** @(RTO5c2)@ Remove any objects from the internal @ObjectsPool@ for which @objectId@s were not received during the sync sequence
 **** @(RTO5c2a)@ The object with ID @root@ must not be removed from @ObjectsPool@, as per "RTO3b":#RTO3b
 *** @(RTO5c7)@ For each previously existing object that was updated as a result of "RTO5c1a":#RTO5c1a, emit the corresponding stored @LiveObjectUpdate@ object from "RTO5c1a2":#RTO5c1a2
