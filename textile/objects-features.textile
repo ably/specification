@@ -429,14 +429,15 @@ h3(#livemap). LiveMap
 ** @(RTLM5d)@ Returns the value from the current @data@ at the specified key, as follows:
 *** @(RTLM5d1)@ If no @ObjectsMapEntry@ exists at the key, return undefined/null
 *** @(RTLM5d2)@ If an @ObjectsMapEntry@ exists at the key:
-**** @(RTLM5d2a)@ If @ObjectsMapEntry.tombstone@ is @true@, return undefined/null
+**** @(RTLM5d2h)@ If the @ObjectsMapEntry@ is tombstoned (per "RTLM14":#RTLM14), return undefined/null
+**** @(RTLM5d2a)@ This clause has been replaced by "RTLM5d2h":#RTLM5d2h
 **** @(RTLM5d2b)@ If @ObjectsMapEntry.data.boolean@ exists, return it
 **** @(RTLM5d2c)@ If @ObjectsMapEntry.data.bytes@ exists, return it
 **** @(RTLM5d2d)@ If @ObjectsMapEntry.data.number@ exists, return it
 **** @(RTLM5d2e)@ If @ObjectsMapEntry.data.string@ exists, return it
 **** @(RTLM5d2f)@ If @ObjectsMapEntry.data.objectId@ exists, get the object stored at that @objectId@ from the internal @ObjectsPool@:
 ***** @(RTLM5d2f1)@ If an object with id @objectId@ does not exist, return undefined/null
-***** @(RTLM5d2f3)@ If an object with id @objectId@ exists and its @LiveObject.isTombstone@ is @true@, return undefined/null
+***** @(RTLM5d2f3)@ This clause has been replaced by "RTLM5d2h":#RTLM5d2h
 ***** @(RTLM5d2f2)@ Otherwise, return the object with id @objectId@
 **** @(RTLM5d2g)@ Otherwise, return undefined/null
 * @(RTLM10)@ @LiveMap#size@:
