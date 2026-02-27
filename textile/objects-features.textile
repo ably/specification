@@ -31,27 +31,45 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO11f1)@ If @entries@ is null or not of type @Dict@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that @entries@ must be a @Dict@. Note that @entries@ is an optional argument, and if omitted, this error must not be thrown
 *** @(RTO11f2)@ If any of the keys provided in @entries@ are not of type @String@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that keys must be @String@
 *** @(RTO11f3)@ If any of the values provided in @entries@ are not of an expected type, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40013, indicating that such data type is unsupported
-*** @(RTO11f4)@ Create a partial @ObjectOperation@ with the initial value for the new @LiveMap@:
-**** @(RTO11f4a)@ Set @ObjectOperation.map.semantics@ to @ObjectsMapSemantics.LWW@
-**** @(RTO11f4b)@ Set @ObjectOperation.map.entries@ to an empty map if @entries@ is omitted
-**** @(RTO11f4c)@ Otherwise, set @ObjectOperation.map.entries@ based on the provided @entries@. For each key-value pair in @entries@:
-***** @(RTO11f4c1)@ Create an @ObjectsMapEntry@ for the current value:
-****** @(RTO11f4c1a)@ If the value is of type @LiveCounter@ or @LiveMap@, set @ObjectsMapEntry.data.objectId@ to the @objectId@ of that object
-****** @(RTO11f4c1b)@ If the value is of type @JsonArray@ or @JsonObject@, set @ObjectsMapEntry.data.json@ to that value
-****** @(RTO11f4c1c)@ If the value is of type @String@, set @ObjectsMapEntry.data.string@ to that value
-****** @(RTO11f4c1d)@ If the value is of type @Number@, set @ObjectsMapEntry.data.number@ to that value
-****** @(RTO11f4c1e)@ If the value is of type @Boolean@, set @ObjectsMapEntry.data.boolean@ to that value
-****** @(RTO11f4c1f)@ If the value is of type @Binary@, set @ObjectsMapEntry.data.bytes@ to that value
-***** @(RTO11f4c2)@ Add a new entry to @ObjectOperation.map.entries@ with the current key and the created @ObjectsMapEntry@ as the value
-*** @(RTO11f5)@ Create an initial value JSON string as described in "RTO13":#RTO13, passing in the partial @ObjectOperation@ from "RTO11f4":#RTO11f4
+*** @(RTO11f4)@ This clause has been replaced by "RTO11f14":#RTO11f14 as of specification version 6.0.0.
+**** @(RTO11f4a)@ This clause has been replaced by "RTO11f14a":#RTO11f14a as of specification version 6.0.0.
+**** @(RTO11f4b)@ This clause has been replaced by "RTO11f14b":#RTO11f14b as of specification version 6.0.0.
+**** @(RTO11f4c)@ This clause has been replaced by "RTO11f14c":#RTO11f14c as of specification version 6.0.0.
+***** @(RTO11f4c1)@ This clause has been replaced by "RTO11f14c1":#RTO11f14c1 as of specification version 6.0.0.
+****** @(RTO11f4c1a)@ This clause has been replaced by "RTO11f14c1a":#RTO11f14c1a as of specification version 6.0.0.
+****** @(RTO11f4c1b)@ This clause has been replaced by "RTO11f14c1b":#RTO11f14c1b as of specification version 6.0.0.
+****** @(RTO11f4c1c)@ This clause has been replaced by "RTO11f14c1c":#RTO11f14c1c as of specification version 6.0.0.
+****** @(RTO11f4c1d)@ This clause has been replaced by "RTO11f14c1d":#RTO11f14c1d as of specification version 6.0.0.
+****** @(RTO11f4c1e)@ This clause has been replaced by "RTO11f14c1e":#RTO11f14c1e as of specification version 6.0.0.
+****** @(RTO11f4c1f)@ This clause has been replaced by "RTO11f14c1f":#RTO11f14c1f as of specification version 6.0.0.
+***** @(RTO11f4c2)@ This clause has been replaced by "RTO11f14c2":#RTO11f14c2 as of specification version 6.0.0.
+*** @(RTO11f14)@ Create a @MapCreate@ object with the initial value for the new @LiveMap@:
+**** @(RTO11f14a)@ Set @MapCreate.semantics@ to @ObjectsMapSemantics.LWW@
+**** @(RTO11f14b)@ Set @MapCreate.entries@ to an empty map if @entries@ is omitted
+**** @(RTO11f14c)@ Otherwise, set @MapCreate.entries@ based on the provided @entries@. For each key-value pair in @entries@:
+***** @(RTO11f14c1)@ Create an @ObjectsMapEntry@ for the current value:
+****** @(RTO11f14c1a)@ If the value is of type @LiveCounter@ or @LiveMap@, set @ObjectsMapEntry.data.objectId@ to the @objectId@ of that object
+****** @(RTO11f14c1b)@ If the value is of type @JsonArray@ or @JsonObject@, set @ObjectsMapEntry.data.json@ to that value
+****** @(RTO11f14c1c)@ If the value is of type @String@, set @ObjectsMapEntry.data.string@ to that value
+****** @(RTO11f14c1d)@ If the value is of type @Number@, set @ObjectsMapEntry.data.number@ to that value
+****** @(RTO11f14c1e)@ If the value is of type @Boolean@, set @ObjectsMapEntry.data.boolean@ to that value
+****** @(RTO11f14c1f)@ If the value is of type @Binary@, set @ObjectsMapEntry.data.bytes@ to that value
+***** @(RTO11f14c2)@ Add a new entry to @MapCreate.entries@ with the current key and the created @ObjectsMapEntry@ as the value
+*** @(RTO11f5)@ This clause has been replaced by "RTO11f15":#RTO11f15 as of specification version 6.0.0.
+*** @(RTO11f15)@ Create an initial value JSON string based on @MapCreate@ object from "RTO11f14":#RTO11f14 as follows:
+**** @(RTO11f15a)@ The @MapCreate@ object may contain user-provided @ObjectData@ that requires encoding. Encode the @ObjectData@ values using the procedure described in "OD4":../features#OD4
+**** @(RTO11f15b)@ Return a JSON string representation of the encoded @MapCreate@ object
 *** @(RTO11f6)@ Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
 *** @(RTO11f7)@ Get the current server time as described in "RTO16":#RTO16
-*** @(RTO11f8)@ Create an @objectId@ for the new @LiveMap@ object as described in "RTO14":#RTO14, passing in @map@ string as the @type@, the initial value JSON string from "RTO11f5":#RTO11f5, the nonce from "RTO11f6":#RTO11f6, and the server time from "RTO11f7":#RTO11f7
+*** @(RTO11f8)@ Create an @objectId@ for the new @LiveMap@ object as described in "RTO14":#RTO14, passing in @map@ string as the @type@, the initial value JSON string from "RTO11f15":#RTO11f15, the nonce from "RTO11f6":#RTO11f6, and the server time from "RTO11f7":#RTO11f7
 *** @(RTO11f9)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_CREATE@
 *** @(RTO11f10)@ Set @ObjectMessage.operation.objectId@ to the @objectId@ created in "RTO11f8":#RTO11f8
-*** @(RTO11f11)@ Set @ObjectMessage.operation.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
-*** @(RTO11f12)@ Set @ObjectMessage.operation.initialValue@ to the JSON string created in "RTO11f5":#RTO11f5
-*** @(RTO11f13)@ Merge values from the partial @ObjectOperation@ created in "RTO11f4":#RTO11f4 into @ObjectMessage.operation@
+*** @(RTO11f11)@ This clause has been replaced by "RTO11f16":#RTO11f16 as of specification version 6.0.0.
+*** @(RTO11f12)@ This clause has been replaced by "RTO11f17":#RTO11f17 as of specification version 6.0.0.
+*** @(RTO11f13)@ This clause has been deleted as of specification version 6.0.0.
+*** @(RTO11f16)@ Set @ObjectMessage.operation.mapCreateWithObjectId.nonce@ to the nonce value created in "RTO11f6":#RTO11f6
+*** @(RTO11f17)@ Set @ObjectMessage.operation.mapCreateWithObjectId.initialValue@ to the JSON string created in "RTO11f15":#RTO11f15
+*** @(RTO11f18)@ The client library must retain the @MapCreate@ object from "RTO11f14":#RTO11f14 alongside the @MapCreateWithObjectId@. It is the operation from which the @MapCreateWithObjectId@ was derived, and is needed for message size calculation ("OOP4h2":../features#OOP4h2) and local application of the operation ("RTLM23":#RTLM23). This @MapCreate@ is for local use only and must not be sent over the wire.
 ** @(RTO11g)@ This clause has been replaced by "RTO11i":#RTO11i
 ** @(RTO11i)@ Publishes the @ObjectMessage@ from "RTO11f":#RTO11f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 *** @(RTO11i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createMap@ operation continues
@@ -72,18 +90,26 @@ h3(#realtime-objects). RealtimeObjects
 ** @(RTO12e)@ If "@echoMessages@":../features#TO3h client option is @false@, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40000, indicating that @echoMessages@ must be enabled for this operation
 ** @(RTO12f)@ Creates an @ObjectMessage@ for a @COUNTER_CREATE@ action in the following way:
 *** @(RTO12f1)@ If @count@ is null, not of type @Number@, or not a finite number, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that @count@ must be a valid number. Note that @count@ is an optional argument, and if omitted, this error must not be thrown
-*** @(RTO12f2)@ Create a partial @ObjectOperation@ with the initial value for the new @LiveCounter@:
-**** @(RTO12f2a)@ Set @ObjectOperation.counter.count@ to 0 if @count@ is omitted
-**** @(RTO12f2b)@ Otherwise, set @ObjectOperation.counter.count@ to the provided @count@ value
-*** @(RTO12f3)@ Create an initial value JSON string as described in "RTO13":#RTO13, passing in the partial @ObjectOperation@ from "RTO12f2":#RTO12f2
+*** @(RTO12f2)@ This clause has been replaced by "RTO12f12":#RTO12f12 as of specification version 6.0.0.
+**** @(RTO12f2a)@ This clause has been replaced by "RTO12f12a":#RTO12f12a as of specification version 6.0.0.
+**** @(RTO12f2b)@ This clause has been replaced by "RTO12f12b":#RTO12f12b as of specification version 6.0.0.
+*** @(RTO12f12)@ Create a @CounterCreate@ object with the initial value for the new @LiveCounter@:
+**** @(RTO12f12a)@ Set @CounterCreate.count@ to 0 if @count@ is omitted
+**** @(RTO12f12b)@ Otherwise, set @CounterCreate.count@ to the provided @count@ value
+*** @(RTO12f3)@ This clause has been replaced by "RTO12f13":#RTO12f13 as of specification version 6.0.0.
+*** @(RTO12f13)@ Create an initial value JSON string by generating a JSON string representation of the @CounterCreate@ object from "RTO12f12":#RTO12f12
 *** @(RTO12f4)@ Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
 *** @(RTO12f5)@ Get the current server time as described in "RTO16":#RTO16
-*** @(RTO12f6)@ Create an @objectId@ for the new @LiveCounter@ object as described in "RTO14":#RTO14, passing in @counter@ string as the @type@, the initial value JSON string from "RTO12f3":#RTO12f3, the nonce from "RTO12f4":#RTO12f4, and the server time from "RTO12f5":#RTO12f5
+*** @(RTO12f6)@ Create an @objectId@ for the new @LiveCounter@ object as described in "RTO14":#RTO14, passing in @counter@ string as the @type@, the initial value JSON string from "RTO12f13":#RTO12f13, the nonce from "RTO12f4":#RTO12f4, and the server time from "RTO12f5":#RTO12f5
 *** @(RTO12f7)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.COUNTER_CREATE@
 *** @(RTO12f8)@ Set @ObjectMessage.operation.objectId@ to the @objectId@ created in "RTO12f6":#RTO12f6
-*** @(RTO12f9)@ Set @ObjectMessage.operation.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
-*** @(RTO12f10)@ Set @ObjectMessage.operation.initialValue@ to the JSON string created in "RTO12f3":#RTO12f3
-*** @(RTO12f11)@ Merge values from the partial @ObjectOperation@ created in "RTO12f2":#RTO12f2 into @ObjectMessage.operation@
+*** @(RTO12f9)@ This clause has been replaced by "RTO12f14":#RTO12f14 as of specification version 6.0.0.
+*** @(RTO12f10)@ This clause has been replaced by "RTO12f15":#RTO12f15 as of specification version 6.0.0.
+*** @(RTO12f11)@ This clause has been deleted as of specification version 6.0.0.
+
+*** @(RTO12f14)@ Set @ObjectMessage.operation.counterCreateWithObjectId.nonce@ to the nonce value created in "RTO12f4":#RTO12f4
+*** @(RTO12f15)@ Set @ObjectMessage.operation.counterCreateWithObjectId.initialValue@ to the JSON string created in "RTO12f13":#RTO12f13
+*** @(RTO12f16)@ The client library must retain the @CounterCreate@ object from "RTO12f12":#RTO12f12 alongside the @CounterCreateWithObjectId@. It is the operation from which the @CounterCreateWithObjectId@ was derived, and is needed for message size calculation ("OOP4k2":../features#OOP4k2) and local application of the operation ("RTLC16":#RTLC16). This @CounterCreate@ is for local use only and must not be sent over the wire.
 ** @(RTO12g)@ This clause has been replaced by "RTO12i":#RTO12i
 ** @(RTO12i)@ Publishes the @ObjectMessage@ from "RTO12f":#RTO12f using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 *** @(RTO12i1)@ The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the @createCounter@ operation continues
@@ -194,15 +220,15 @@ h3(#realtime-objects). RealtimeObjects
 *** @(RTO10c1)@ For each @LiveObject@ in the @ObjectsPool@:
 **** @(RTO10c1a)@ Check if the @LiveObject@ needs to release any resources, see "RTLM19":#RTLM19
 **** @(RTO10c1b)@ If @LiveObject.isTombstone@ is @true@, and the difference between the current time and @LiveObject.tombstonedAt@ is greater than or equal to the "grace period":#RTO10b, remove the object from the @ObjectsPool@ and release resources for the corresponding object entity to allow it to be garbage collected
-* @(RTO13)@ The initial value JSON string can be created from a partial @ObjectOperation@ in the following way:
-** @(RTO13a)@ Expects the following arguments:
-*** @(RTO13a1)@ @ObjectOperation@
-** @(RTO13b)@ The @ObjectOperation@ may contain user-provided @ObjectData@ that requires encoding. For example, binary data must be encoded to ensure it can be correctly represented in a JSON string and parsed by the Ably server. Therefore, create an encoded instance of @ObjectOperation@ using the same encoding procedure described for the @ObjectMessage@ in "OM4":../features#OM4
-** @(RTO13c)@ Return a JSON string representation of the encoded @ObjectOperation@
+* @(RTO13)@ This clause has been deleted (redundant to "RTO11f15":#RTO11f15 and "RTO12f13":#RTO12f13) as of specification version 6.0.0.
+** @(RTO13a)@ This clause has been deleted as of specification version 6.0.0.
+*** @(RTO13a1)@ This clause has been deleted as of specification version 6.0.0.
+** @(RTO13b)@ This clause has been deleted as of specification version 6.0.0.
+** @(RTO13c)@ This clause has been deleted as of specification version 6.0.0.
 * @(RTO14)@ An Object ID can be created in the client library for a new @LiveObject@ instance in the following way:
 ** @(RTO14a)@ Expects the following arguments:
 *** @(RTO14a1)@ @type@ @String@ - the type of object this Object ID is generated for. Must be one of @map@ or @counter@
-*** @(RTO14a2)@ @initialValue@ @String@ - a JSON string representation of the initial value for the object, based on the encoded @ObjectOperation@. This protects against Object IDs being reused for create operations with differing content
+*** @(RTO14a2)@ @initialValue@ @String@ - a JSON string representation of the initial value for the object. This protects against Object IDs being reused for create operations with differing content
 *** @(RTO14a3)@ @nonce@ @String@ - a random string to ensure uniqueness across clients
 *** @(RTO14a4)@ @timestamp@ @Time@ - the current server time. This protects against Object IDs being reused across time
 ** @(RTO14b)@ Generate a @hash@ string for the Object ID:
@@ -345,7 +371,8 @@ h3(#livecounter). LiveCounter
 *** @(RTLC12e1)@ If @amount@ is null, not of type @Number@, not a finite number, or omitted, the library should throw an @ErrorInfo@ error with @statusCode@ 400 and @code@ 40003, indicating that @amount@ must be a valid number
 *** @(RTLC12e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.COUNTER_INC@
 *** @(RTLC12e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveCounter@
-*** @(RTLC12e4)@ Set @ObjectMessage.operation.counterOp.amount@ to the provided @amount@ value
+*** @(RTLC12e4)@ This clause has been replaced by "RTLC12e5":#RTLC12e5 as of specification version 6.0.0.
+*** @(RTLC12e5)@ Set @ObjectMessage.operation.counterInc.number@ to the provided @amount@ value
 ** @(RTLC12f)@ This clause has been replaced by "RTLC12g":#RTLC12g
 ** @(RTLC12g)@ Publishes the @ObjectMessage@ from "RTLC12e":#RTLC12e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLC13)@ @LiveCounter#decrement@ function:
@@ -362,7 +389,7 @@ h3(#livecounter). LiveCounter
 ** @(RTLC6g)@ Store the current @data@ value as @previousData@ for use in "RTLC6h":#RTLC6h
 ** @(RTLC6b)@ Set the private flag @createOperationIsMerged@ to @false@
 ** @(RTLC6c)@ Set @data@ to the value of @ObjectState.counter.count@, or to 0 if it does not exist
-** @(RTLC6d)@ If @ObjectState.createOp@ is present, merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectState.createOp@ instance. Discard the @LiveCounterUpdate@ object returned by the merge operation
+** @(RTLC6d)@ If @ObjectState.createOp@ is present, merge the initial value into the @LiveCounter@ as described in "RTLC16":#RTLC16, passing in the @ObjectState.createOp@ instance. Discard the @LiveCounterUpdate@ object returned by the merge operation
 *** @(RTLC6d1)@ This clause has been replaced by "RTLC10a":#RTLC10a
 *** @(RTLC6d2)@ This clause has been replaced by "RTLC10b":#RTLC10b
 ** @(RTLC6h)@ Calculate the diff between @previousData@ from "RTLC6g":#RTLC6g and the current @data@ per "RTLC14":#RTLC14, and return the resulting @LiveCounterUpdate@ object
@@ -379,9 +406,12 @@ h3(#livecounter). LiveCounter
 *** @(RTLC7d1)@ If @ObjectMessage.operation.action@ is set to @COUNTER_CREATE@, apply the operation as described in "RTLC8":#RTLC8, passing in @ObjectMessage.operation@
 **** @(RTLC7d1a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
 **** @(RTLC7d1b)@ Return @true@
-*** @(RTLC7d2)@ If @ObjectMessage.operation.action@ is set to @COUNTER_INC@, apply the operation as described in "RTLC9":#RTLC9, passing in @ObjectMessage.operation.counterOp@
-**** @(RTLC7d2a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
-**** @(RTLC7d2b)@ Return @true@
+*** @(RTLC7d2)@ This clause has been replaced by "RTLC7d5":#RTLC7d5 as of specification version 6.0.0.
+**** @(RTLC7d2a)@ This clause has been replaced by "RTLC7d5a":#RTLC7d5a as of specification version 6.0.0.
+**** @(RTLC7d2b)@ This clause has been replaced by "RTLC7d5b":#RTLC7d5b as of specification version 6.0.0.
+*** @(RTLC7d5)@ If @ObjectMessage.operation.action@ is set to @COUNTER_INC@, apply the operation as described in "RTLC9":#RTLC9, passing in @ObjectMessage.operation.counterInc@
+**** @(RTLC7d5a)@ Emit the @LiveCounterUpdate@ object returned as a result of applying the operation
+**** @(RTLC7d5b)@ Return @true@
 *** @(RTLC7d4)@ If @ObjectMessage.operation.action@ is set to @OBJECT_DELETE@, apply the operation as described in "RTLO5":#RTLO5, passing in @ObjectMessage@
 **** @(RTLC7d4a)@ Emit a @LiveCounterUpdate@ object after applying the @OBJECT_DELETE@ operation, with @LiveCounterUpdate.update.amount@ set to the negated value that this @LiveCounter@ held before the operation was applied
 **** @(RTLC7d4b)@ Return @true@
@@ -391,20 +421,30 @@ h3(#livecounter). LiveCounter
 *** @(RTLC8a1)@ @ObjectOperation@
 ** @(RTLC8d)@ The return type is a @LiveCounterUpdate@ object, which indicates the data update for this @LiveCounter@
 ** @(RTLC8b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @COUNTER_CREATE@ operation has already been applied to this @LiveCounter@. Discard the operation without taking any further action, and return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@, indicating that no update was made to the object
-** @(RTLC8c)@ Otherwise merge the initial value into the @LiveCounter@ as described in "RTLC10":#RTLC10, passing in the @ObjectOperation@ instance
-** @(RTLC8e)@ Return the @LiveCounterUpdate@ object returned by "RTLC10":#RTLC10
+** @(RTLC8c)@ Otherwise merge the initial value into the @LiveCounter@ as described in "RTLC16":#RTLC16, passing in the @ObjectOperation@ instance
+** @(RTLC8e)@ Return the @LiveCounterUpdate@ object returned by "RTLC16":#RTLC16
+
 * @(RTLC9)@ A @COUNTER_INC@ operation can be applied to a @LiveCounter@ in the following way:
 ** @(RTLC9a)@ Expects the following arguments:
-*** @(RTLC9a1)@ @ObjectsCounterOp@
+*** @(RTLC9a1)@ This clause has been replaced by "RTLC9a2":#RTLC9a2 as of specification version 6.0.0.
+*** @(RTLC9a2)@ @CounterInc@
 ** @(RTLC9c)@ The return type is a @LiveCounterUpdate@ object, which indicates the data update for this @LiveCounter@
-** @(RTLC9b)@ Add @ObjectsCounterOp.amount@ to @data@, if it exists
-** @(RTLC9d)@ If @ObjectsCounterOp.amount@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @ObjectsCounterOp.amount@
-** @(RTLC9e)@ If @ObjectsCounterOp.amount@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
-* @(RTLC10)@ The initial value from @ObjectOperation.counter@ can be merged into this @LiveCounter@ in the following way:
-** @(RTLC10a)@ Add @ObjectOperation.counter.count@ to @data@, if it exists
-** @(RTLC10b)@ Set the private flag @createOperationIsMerged@ to @true@
-** @(RTLC10c)@ If @ObjectOperation.counter.count@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @ObjectOperation.counter.count@
-** @(RTLC10d)@ If @ObjectOperation.counter.count@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
+** @(RTLC9b)@ This clause has been replaced by "RTLC9f":#RTLC9f as of specification version 6.0.0.
+** @(RTLC9d)@ This clause has been replaced by "RTLC9g":#RTLC9g as of specification version 6.0.0.
+** @(RTLC9e)@ This clause has been replaced by "RTLC9h":#RTLC9h as of specification version 6.0.0.
+** @(RTLC9f)@ Add @CounterInc.number@ to @data@, if it exists
+** @(RTLC9g)@ If @CounterInc.number@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @CounterInc.number@
+** @(RTLC9h)@ If @CounterInc.number@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
+* @(RTLC10)@ This clause has been replaced by "RTLC16":#RTLC16 as of specification version 6.0.0.
+** @(RTLC10a)@ This clause has been replaced by "RTLC16a":#RTLC16a as of specification version 6.0.0.
+** @(RTLC10b)@ This clause has been replaced by "RTLC16b":#RTLC16b as of specification version 6.0.0.
+** @(RTLC10c)@ This clause has been replaced by "RTLC16c":#RTLC16c as of specification version 6.0.0.
+** @(RTLC10d)@ This clause has been replaced by "RTLC16d":#RTLC16d as of specification version 6.0.0.
+* @(RTLC16)@ The initial value from an @ObjectOperation@ can be merged into this @LiveCounter@ in the following way. Let @counterCreate@ be @ObjectOperation.counterCreate@ if present, else the @CounterCreate@ from which @ObjectOperation.counterCreateWithObjectId@ was derived (see "RTO12f16":#RTO12f16):
+** @(RTLC16a)@ Add @counterCreate.count@ to @data@, if it exists
+** @(RTLC16b)@ Set the private flag @createOperationIsMerged@ to @true@
+** @(RTLC16c)@ If @counterCreate.count@ exists, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.update.amount@ set to @counterCreate.count@
+** @(RTLC16d)@ If @counterCreate.count@ does not exist, return a @LiveCounterUpdate@ object with @LiveCounterUpdate.noop@ set to @true@
 * @(RTLC14)@ The diff between two @LiveCounter@ data values can be calculated in the following way:
 ** @(RTLC14a)@ Expects the following arguments:
 *** @(RTLC14a1)@ @previousData@ @Number@ - the previous @data@ value
@@ -471,14 +511,22 @@ h3(#livemap). LiveMap
 *** @(RTLM20e1)@ Validates the provided @key@ and @value@ in a similar way as described in "RTO11f2":#RTO11f2 and "RTO11f3":#RTO11f3
 *** @(RTLM20e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_SET@
 *** @(RTLM20e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
-*** @(RTLM20e4)@ Set @ObjectMessage.operation.mapOp.key@ to the provided @key@ value
-*** @(RTLM20e5)@ Set @ObjectMessage.operation.mapOp.data@ depending on the type of the provided @value@:
-**** @(RTLM20e5a)@ If the @value@ is of type @LiveCounter@ or @LiveMap@, set @ObjectMessage.operation.mapOp.data.objectId@ to the @objectId@ of that object
-**** @(RTLM20e5b)@ If the @value@ is of type @JsonArray@ or @JsonObject@, set @ObjectMessage.operation.mapOp.data.json@ to that value
-**** @(RTLM20e5c)@ If the @value@ is of type @String@, set @ObjectMessage.operation.mapOp.data.string@ to that value
-**** @(RTLM20e5d)@ If the @value@ is of type @Number@, set @ObjectMessage.operation.mapOp.data.number@ to that value
-**** @(RTLM20e5e)@ If the @value@ is of type @Boolean@, set @ObjectMessage.operation.mapOp.data.boolean@ to that value
-**** @(RTLM20e5f)@ If the @value@ is of type @Binary@, set @ObjectMessage.operation.mapOp.data.bytes@ to that value
+*** @(RTLM20e4)@ This clause has been replaced by "RTLM20e6":#RTLM20e6 as of specification version 6.0.0.
+*** @(RTLM20e5)@ This clause has been replaced by "RTLM20e7":#RTLM20e7 as of specification version 6.0.0.
+**** @(RTLM20e5a)@ This clause has been replaced by "RTLM20e7a":#RTLM20e7a as of specification version 6.0.0.
+**** @(RTLM20e5b)@ This clause has been replaced by "RTLM20e7b":#RTLM20e7b as of specification version 6.0.0.
+**** @(RTLM20e5c)@ This clause has been replaced by "RTLM20e7c":#RTLM20e7c as of specification version 6.0.0.
+**** @(RTLM20e5d)@ This clause has been replaced by "RTLM20e7d":#RTLM20e7d as of specification version 6.0.0.
+**** @(RTLM20e5e)@ This clause has been replaced by "RTLM20e7e":#RTLM20e7e as of specification version 6.0.0.
+**** @(RTLM20e5f)@ This clause has been replaced by "RTLM20e7f":#RTLM20e7f as of specification version 6.0.0.
+*** @(RTLM20e6)@ Set @ObjectMessage.operation.mapSet.key@ to the provided @key@ value
+*** @(RTLM20e7)@ Set @ObjectMessage.operation.mapSet.value@ depending on the type of the provided @value@:
+**** @(RTLM20e7a)@ If the @value@ is of type @LiveCounter@ or @LiveMap@, set @ObjectMessage.operation.mapSet.value.objectId@ to the @objectId@ of that object
+**** @(RTLM20e7b)@ If the @value@ is of type @JsonArray@ or @JsonObject@, set @ObjectMessage.operation.mapSet.value.json@ to that value
+**** @(RTLM20e7c)@ If the @value@ is of type @String@, set @ObjectMessage.operation.mapSet.value.string@ to that value
+**** @(RTLM20e7d)@ If the @value@ is of type @Number@, set @ObjectMessage.operation.mapSet.value.number@ to that value
+**** @(RTLM20e7e)@ If the @value@ is of type @Boolean@, set @ObjectMessage.operation.mapSet.value.boolean@ to that value
+**** @(RTLM20e7f)@ If the @value@ is of type @Binary@, set @ObjectMessage.operation.mapSet.value.bytes@ to that value
 ** @(RTLM20f)@ This clause has been replaced by "RTLM20g":#RTLM20g
 ** @(RTLM20g)@ Publishes the @ObjectMessage@ from "RTLM20e":#RTLM20e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLM21)@ @LiveMap#remove@ function:
@@ -491,7 +539,8 @@ h3(#livemap). LiveMap
 *** @(RTLM21e1)@ Validates the provided @key@ in a similar way as described in "RTO11f2":#RTO11f2
 *** @(RTLM21e2)@ Set @ObjectMessage.operation.action@ to @ObjectOperationAction.MAP_REMOVE@
 *** @(RTLM21e3)@ Set @ObjectMessage.operation.objectId@ to the Object ID of this @LiveMap@
-*** @(RTLM21e4)@ Set @ObjectMessage.operation.mapOp.key@ to the provided @key@ value
+*** @(RTLM21e4)@ This clause has been replaced by "RTLM21e5":#RTLM21e5 as of specification version 6.0.0.
+*** @(RTLM21e5)@ Set @ObjectMessage.operation.mapRemove.key@ to the provided @key@ value
 ** @(RTLM21f)@ This clause has been replaced by "RTLM21g":#RTLM21g
 ** @(RTLM21g)@ Publishes the @ObjectMessage@ from "RTLM21e":#RTLM21e using @RealtimeObjects#publishAndApply@ ("RTO20":#RTO20), passing the @ObjectMessage@ as a single element in the array
 * @(RTLM14)@ An @ObjectsMapEntry@ in the internal @data@ map can be checked for being tombstoned using the convenience method:
@@ -511,7 +560,7 @@ h3(#livemap). LiveMap
 **** @(RTLM6c1a)@ Set it equal to @ObjectsMapEntry.serialTimestamp@ if it exists
 **** @(RTLM6c1b)@ Otherwise, set it to the current time using the local clock
 ***** @(RTLM6c1b1)@ Log a debug or trace message indicating that @ObjectsMapEntry.serialTimestamp@ was not provided and the local clock is being used instead for the tombstone timestamp
-** @(RTLM6d)@ If @ObjectState.createOp@ is present, merge the initial value into the @LiveMap@ as described in "RTLM17":#RTLM17, passing in the @ObjectState.createOp@ instance. Discard the @LiveMapUpdate@ object returned by the merge operation
+** @(RTLM6d)@ If @ObjectState.createOp@ is present, merge the initial value into the @LiveMap@ as described in "RTLM23":#RTLM23, passing in the @ObjectState.createOp@ instance. Discard the @LiveMapUpdate@ object returned by the merge operation
 *** @(RTLM6d1)@ This clause has been replaced by "RTLM17a":#RTLM17a
 **** @(RTLM6d1a)@ This clause has been replaced by "RTLM17a1":#RTLM17a1
 **** @(RTLM6d1b)@ This clause has been replaced by "RTLM17a2":#RTLM17a2
@@ -530,12 +579,18 @@ h3(#livemap). LiveMap
 *** @(RTLM15d1)@ If @ObjectMessage.operation.action@ is set to @MAP_CREATE@, apply the operation as described in "RTLM16":#RTLM16, passing in @ObjectMessage.operation@
 **** @(RTLM15d1a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
 **** @(RTLM15d1b)@ Return @true@
-*** @(RTLM15d2)@ If @ObjectMessage.operation.action@ is set to @MAP_SET@, apply the operation as described in "RTLM7":#RTLM7, passing in @ObjectMessage.operation.mapOp@ and @ObjectMessage.serial@
-**** @(RTLM15d2a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
-**** @(RTLM15d2b)@ Return @true@
-*** @(RTLM15d3)@ If @ObjectMessage.operation.action@ is set to @MAP_REMOVE@, apply the operation as described in "RTLM8":#RTLM8, passing in @ObjectMessage.operation.mapOp@, @ObjectMessage.serial@ and @ObjectMessage.serialTimestamp@
-**** @(RTLM15d3a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
-**** @(RTLM15d3b)@ Return @true@
+*** @(RTLM15d2)@ This clause has been replaced by "RTLM15d6":#RTLM15d6 as of specification version 6.0.0.
+**** @(RTLM15d2a)@ This clause has been replaced by "RTLM15d6a":#RTLM15d6a as of specification version 6.0.0.
+**** @(RTLM15d2b)@ This clause has been replaced by "RTLM15d6b":#RTLM15d6b as of specification version 6.0.0.
+*** @(RTLM15d6)@ If @ObjectMessage.operation.action@ is set to @MAP_SET@, apply the operation as described in "RTLM7":#RTLM7, passing in @ObjectMessage.operation.mapSet@ and @ObjectMessage.serial@
+**** @(RTLM15d6a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
+**** @(RTLM15d6b)@ Return @true@
+*** @(RTLM15d3)@ This clause has been replaced by "RTLM15d7":#RTLM15d7 as of specification version 6.0.0.
+**** @(RTLM15d3a)@ This clause has been replaced by "RTLM15d7a":#RTLM15d7a as of specification version 6.0.0.
+**** @(RTLM15d3b)@ This clause has been replaced by "RTLM15d7b":#RTLM15d7b as of specification version 6.0.0.
+*** @(RTLM15d7)@ If @ObjectMessage.operation.action@ is set to @MAP_REMOVE@, apply the operation as described in "RTLM8":#RTLM8, passing in @ObjectMessage.operation.mapRemove@, @ObjectMessage.serial@ and @ObjectMessage.serialTimestamp@
+**** @(RTLM15d7a)@ Emit the @LiveMapUpdate@ object returned as a result of applying the operation
+**** @(RTLM15d7b)@ Return @true@
 *** @(RTLM15d5)@ If @ObjectMessage.operation.action@ is set to @OBJECT_DELETE@, apply the operation as described in "RTLO5":#RTLO5, passing in @ObjectMessage@
 **** @(RTLM15d5a)@ Emit a @LiveMapUpdate@ object with @LiveMapUpdate.update@ consisting of entries for the keys that were removed as a result of applying the @OBJECT_DELETE@ operation, each set to @removed@
 **** @(RTLM15d5b)@ Return @true@
@@ -546,30 +601,36 @@ h3(#livemap). LiveMap
 ** @(RTLM16e)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
 ** @(RTLM16b)@ If the private flag @createOperationIsMerged@ is @true@, log a debug or trace message indicating that the operation will not be applied because a @MAP_CREATE@ operation has already been applied to this @LiveMap@. Discard the operation without taking any further action, and return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
 ** @(RTLM16c)@ This clause has been deleted.
-** @(RTLM16d)@ Otherwise merge the initial value into the @LiveMap@ as described in "RTLM17":#RTLM17, passing in the @ObjectOperation@ instance
-** @(RTLM16f)@ Return the @LiveMapUpdate@ object returned by "RTLM17":#RTLM17
+** @(RTLM16d)@ Otherwise merge the initial value into the @LiveMap@ as described in "RTLM23":#RTLM23, passing in the @ObjectOperation@ instance
+** @(RTLM16f)@ Return the @LiveMapUpdate@ object returned by "RTLM23":#RTLM23
 * @(RTLM7)@ A @MAP_SET@ operation for a key can be applied to a @LiveMap@ in the following way:
 ** @(RTLM7d)@ Expects the following arguments:
-*** @(RTLM7d1)@ @ObjectsMapOp@
+*** @(RTLM7d1)@ This clause has been replaced by "RTLM7d3":#RTLM7d3 as of specification version 6.0.0.
+*** @(RTLM7d3)@ @MapSet@
 *** @(RTLM7d2)@ @serial@ string - operation's serial value
 ** @(RTLM7e)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
 ** @(RTLM7a)@ If an @ObjectsMapEntry@ exists in the private @data@ for the specified key:
 *** @(RTLM7a1)@ If the operation cannot be applied to the existing entry as per "RTLM9":#RTLM9, discard the operation without taking any action. Return a @LiveMapUpdate@ object with @LiveMapUpdate.noop@ set to @true@, indicating that no update was made to the object
 *** @(RTLM7a2)@ Otherwise, apply the operation to the existing entry:
-**** @(RTLM7a2a)@ Set @ObjectsMapEntry.data@ to the @ObjectData@ from the operation
+**** @(RTLM7a2a)@ This clause has been replaced by "RTLM7a2e":#RTLM7a2e as of specification version 6.0.0.
+**** @(RTLM7a2e)@ Set @ObjectsMapEntry.data@ to the @MapSet.value@
 **** @(RTLM7a2b)@ Set @ObjectsMapEntry.timeserial@ to the provided @serial@
 **** @(RTLM7a2c)@ Set @ObjectsMapEntry.tombstone@ to @false@
 **** @(RTLM7a2d)@ Set @ObjectsMapEntry.tombstonedAt@ to undefined/null
 ** @(RTLM7b)@ If an entry does not exist in the private @data@ for the specified key:
-*** @(RTLM7b1)@ Create a new @ObjectsMapEntry@ in @data@ for the specified key, with @ObjectsMapEntry.data@ set to the provided @ObjectData@ and @ObjectsMapEntry.timeserial@ set to @serial@
+*** @(RTLM7b1)@ This clause has been replaced by "RTLM7b4":#RTLM7b4 as of specification version 6.0.0.
+*** @(RTLM7b4)@ Create a new @ObjectsMapEntry@ in @data@ for the specified key, with @ObjectsMapEntry.data@ set to @MapSet.value@ and @ObjectsMapEntry.timeserial@ set to @serial@
 *** @(RTLM7b2)@ Set @ObjectsMapEntry.tombstone@ for the new entry to @false@
 *** @(RTLM7b3)@ Set @ObjectsMapEntry.tombstonedAt@ for the new entry to undefined/null
-** @(RTLM7c)@ If the operation has a non-empty @ObjectData.objectId@ attribute:
-*** @(RTLM7c1)@ Create a zero-value @LiveObject@ for this @ObjectData.objectId@ in the internal @ObjectsPool@ per "RTO6":#RTO6
+** @(RTLM7c)@ This clause has been replaced by "RTLM7g":#RTLM7g as of specification version 6.0.0.
+*** @(RTLM7c1)@ This clause has been replaced by "RTLM7g1":#RTLM7g1 as of specification version 6.0.0.
+** @(RTLM7g)@ If @MapSet.value.objectId@ is non-empty:
+*** @(RTLM7g1)@ Create a zero-value @LiveObject@ for this @objectId@ in the internal @ObjectsPool@ per "RTO6":#RTO6
 ** @(RTLM7f)@ Return a @LiveMapUpdate@ object with a @LiveMapUpdate.update@ map containing the key used in this operation set to @updated@
 * @(RTLM8)@ A @MAP_REMOVE@ operation for a key can be applied to a @LiveMap@ in the following way:
 ** @(RTLM8c)@ Expects the following arguments:
-*** @(RTLM8c1)@ @ObjectsMapOp@
+*** @(RTLM8c1)@ This clause has been replaced by "RTLM8c4":#RTLM8c4 as of specification version 6.0.0.
+*** @(RTLM8c4)@ @MapRemove@
 *** @(RTLM8c2)@ @serial@ string - operation's serial value
 *** @(RTLM8c3)@ @serialTimestamp@ Time - operation's serial timestamp value
 ** @(RTLM8d)@ The return type is a @LiveMapUpdate@ object, which indicates the data update for this @LiveMap@
@@ -595,12 +656,18 @@ h3(#livemap). LiveMap
 ** @(RTLM9c)@ If only the entry serial exists and is not an empty string, the missing operation serial is considered lower than the existing entry serial, so the operation must not be applied
 ** @(RTLM9d)@ If only the operation serial exists and is not an empty string, it is considered greater than the missing entry serial, so the operation can be applied
 ** @(RTLM9e)@ If both serials exist and are not empty strings, compare them lexicographically and allow operation to be applied only if the operation's serial is greater than the entry's serial
-* @(RTLM17)@ The initial value from @ObjectOperation.map@ can be merged into this @LiveMap@ in the following way:
-** @(RTLM17a)@ For each key-@ObjectsMapEntry@ pair in @ObjectOperation.map.entries@:
-*** @(RTLM17a1)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @ObjectsMapOp@, and @ObjectsMapEntry.timeserial@ as @serial@. Store the returned @LiveMapUpdate@ object for use in "RTLM17c":#RTLM17c
-*** @(RTLM17a2)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @ObjectsMapOp@, @ObjectsMapEntry.timeserial@ as @serial@, and @ObjectsMapEntry.serialTimestamp@ as @serialTimestamp@. Store the returned @LiveMapUpdate@ object for use in "RTLM17c":#RTLM17c
-** @(RTLM17b)@ Set the private flag @createOperationIsMerged@ to @true@
-** @(RTLM17c)@ Return a single @LiveMapUpdate@ object, where @LiveMapUpdate.update@ is a merged map containing all key-value pairs from the @LiveMapUpdate.update@ maps of the stored @LiveMapUpdate@ objects. Skip any stored @LiveMapUpdate@ objects marked as no-op
+* @(RTLM17)@ This clause has been replaced by "RTLM23":#RTLM23 as of specification version 6.0.0.
+** @(RTLM17a)@ This clause has been replaced by "RTLM23a":#RTLM23a as of specification version 6.0.0.
+*** @(RTLM17a1)@ This clause has been replaced by "RTLM23a1":#RTLM23a1 as of specification version 6.0.0.
+*** @(RTLM17a2)@ This clause has been replaced by "RTLM23a2":#RTLM23a2 as of specification version 6.0.0.
+** @(RTLM17b)@ This clause has been replaced by "RTLM23b":#RTLM23b as of specification version 6.0.0.
+** @(RTLM17c)@ This clause has been replaced by "RTLM23c":#RTLM23c as of specification version 6.0.0.
+* @(RTLM23)@ The initial value from an @ObjectOperation@ can be merged into this @LiveMap@ in the following way. Let @mapCreate@ be @ObjectOperation.mapCreate@ if present, else the @MapCreate@ from which @ObjectOperation.mapCreateWithObjectId@ was derived (see "RTO11f18":#RTO11f18):
+** @(RTLM23a)@ For each key-@ObjectsMapEntry@ pair in @mapCreate.entries@:
+*** @(RTLM23a1)@ If @ObjectsMapEntry.tombstone@ is @false@ or omitted, apply the @MAP_SET@ operation to the current key as described in "RTLM7":#RTLM7, passing in @ObjectsMapEntry.data@ and the current key as @MapSet@, and @ObjectsMapEntry.timeserial@ as @serial@. Store the returned @LiveMapUpdate@ object for use in "RTLM23c":#RTLM23c
+*** @(RTLM23a2)@ If @ObjectsMapEntry.tombstone@ is @true@, apply the @MAP_REMOVE@ operation to the current key as described in "RTLM8":#RTLM8, passing in the current key as @MapRemove@, @ObjectsMapEntry.timeserial@ as @serial@, and @ObjectsMapEntry.serialTimestamp@ as @serialTimestamp@. Store the returned @LiveMapUpdate@ object for use in "RTLM23c":#RTLM23c
+** @(RTLM23b)@ Set the private flag @createOperationIsMerged@ to @true@
+** @(RTLM23c)@ Return a single @LiveMapUpdate@ object, where @LiveMapUpdate.update@ is a merged map containing all key-value pairs from the @LiveMapUpdate.update@ maps of the stored @LiveMapUpdate@ objects. Skip any stored @LiveMapUpdate@ objects marked as no-op
 * @(RTLM19)@ The @LiveMap@ can be checked to determine whether it should release resources for its tombstoned @ObjectsMapEntry@ entries as follows:
 ** @(RTLM19a)@ For each @ObjectsMapEntry@ in the internal @data@:
 *** @(RTLM19a1)@ If @ObjectsMapEntry.tombstone@ is @true@, and the difference between the current time and @ObjectsMapEntry.tombstonedAt@ is greater than or equal to the "grace period":#RTO10b, remove the entry from the internal @data@ map and release resources for the corresponding @ObjectsMapEntry@ entity to allow it to be garbage collected
