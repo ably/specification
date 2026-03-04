@@ -504,7 +504,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN1)` `Connection` connects to the Ably service using a [websocket](https://ably.com/topic/websockets) connection. The [ably-js library](https://github.com/ably/ably-js) supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
 - `(RTN2)` The default host used for realtime [websocket](https://ably.com/topic/websockets) connections is the [`REC1`](#REC1) primary domain and the following query string params should be used when opening a new connection:
   - `(RTN2a)` `format` should be `msgpack` (default) or `json`
-  - `(RTN2b)` `echo` should be `true` if the `echoMessages` client option is true; else it should be `false`, which will prevent messages published by the client being echoed back
+  - `(RTN2b)` `echo` should be `true` if the `echoMessages` client option is true; else it should be `false`, which will prevent messages published by the client being echoed back. The connection-level `echo` setting may be overridden on a per-channel basis using the `echo` channel param; see [`RTL4n`](#RTL4n)
   - `(RTN2d)` `clientId` contains the provided `clientId` option of `ClientOptions`, unless `clientId` is `null`
   - `(RTN2e)` Depending on the authentication scheme, either `accessToken` contains the token string, or `key` contains the API key
   - `(RTN2f)` The API version param `v` must be included in all connections to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
@@ -707,6 +707,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
     - `(RTL4k1)` If any channel parameters are requested (which may be through the `params` field of the `ATTACH` message or some other way opaque to the client library), the `ATTACHED` (and any subsequent `ATTACHED` s) will include a `params` property (also a `Dict<String, String>`) containing the subset of those params that the server has recognised and validated. This should be exposed as a read-only `params` field of the `RealtimeChannel` (or a `getParams()` method where that is more idiomatic). An `ATTACHED` message with no `params` property must be treated as equivalent to a `params` of `{}` (that is, `RealtimeChannel.params` should be set to the empty dict)
   - `(RTL4l)` If the user has specified a `modes` array in the `ChannelOptions` ([`TB2d`](#TB2d)), it must be encoded as a bitfield per [`TR3`](#TR3) and set as the `flags` field of the `ATTACH` `ProtocolMessage`. (For the avoidance of doubt, when multiple different spec items require flags to be set in the `ATTACH`, the final `flags` field should be the bitwise OR of them all)
   - `(RTL4m)` On receipt of an `ATTACHED`, the client library should decode the `flags` into an array of `ChannelMode` s (that is, the same format as `ChannelOptions.modes`) and expose it as a read-only `modes` field of the `RealtimeChannel` (or a `getModes()` method where that is more idiomatic). This should only contain `ChannelMode` s: it should not contain flags which are not modes (see [`TB2d`](#TB2d))
+  - `(RTL4n)` If the `params` object includes an `echo` key with value `"false"`, messages originating from this connection must not be echoed back on this channel, regardless of the connection-level `echoMessages` setting ([`TO3h`](#TO3h)). The only valid value for the `echo` channel param is `"false"`. If the `echo` param is absent or empty, the connection-level `echoMessages` setting applies.
+    - `(RTL4n1)` The `echo` channel param only affects messages (action `MESSAGE`). Presence messages must always be delivered regardless of the `echo` setting, consistent with connection-level `echoMessages` behavior ([`RTN2b`](#RTN2b)).
+    - `(RTL4n2)` The `echo` channel param is a continuing property: changing it via `setOptions` ([`RTL16a`](#RTL16a)) on an already-attached channel must trigger a new `ATTACH` to update the server.
 - `(RTL5)` `RealtimeChannel#detach` function:
   - `(RTL5a)` If the channel state is `INITIALIZED` or `DETACHED` nothing is done
   - `(RTL5i)` If the channel is in a pending state `DETACHING` or `ATTACHING`, do the detach operation after the completion of the pending request
@@ -758,6 +761,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL7d)` Messages delivered are automatically decoded based on the `encoding` attribute; see `RestChannel` encoding features in [RSL6](#RSL6). Tests should exist to publish and subscribe to encoded messages using the fixture test data referenced in [RSL5c](#RSL5c).
   - `(RTL7e)` This clause has been deleted (redundant to [RSL6b](#RSL6b)).
   - `(RTL7f)` A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor
+  - `(RTL7i)` A test should exist ensuring published messages are not echoed back to the subscriber when `echo` is set to `"false"` in the channel `params` ([`RTL4n`](#RTL4n)), even when `echoMessages` is `true` (default) at the connection level.
+  - `(RTL7j)` A test should exist ensuring that on a connection with `echoMessages: false`, a channel without the `echo` param still suppresses echo (inherits connection-level behavior).
 - `(RTL8)` `RealtimeChannel#unsubscribe` function:
   - `(RTL8c)` Unsubscribe with no arguments unsubscribes all listeners
   - `(RTL8a)` Unsubscribe with a single listener argument unsubscribes the provided listener to all messages if subscribed
@@ -1875,7 +1880,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(TO3e)` `autoConnect` boolean - defaults to true. If false, suppresses the automatic initiation of a connection when the library is instantiated
   - `(TO3f)` `useBinaryProtocol` boolean - defaults to true. If false, forces the library to use the JSON encoding for REST and Realtime operations, instead of the default binary msgpack encoding
   - `(TO3g)` `queueMessages` boolean - defaults to true. If false, suppresses the default queueing of `MESSAGE`, `PRESENCE`, `ANNOTATION` or `OBJECT` protocol messages. See [RTL6c](#RTL6c) for connection and channel state condition details
-  - `(TO3h)` `echoMessages` boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection
+  - `(TO3h)` `echoMessages` boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection. Per-channel echo suppression can also be configured using the `echo` channel param; see [`RTL4n`](#RTL4n)
   - `(TO3i)` `recover` string - A connection recovery string, specified with the intention of inheriting the state of an earlier connection
   - `(TO3n)` `idempotentRestPublishing` boolean - defaults to false for clients with version \< 1.2, otherwise true. If true, [RSL1k](#RSL1k1) applies
   - `(TO3j)` Auth option attributes:
