@@ -346,15 +346,19 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO4e1)` Expects the following arguments:
       - `(RTLO4e1a)` `ObjectMessage`
     - `(RTLO4e2)` Set `LiveObject.isTombstone` to `true`
-    - `(RTLO4e3)` Set `LiveObject.tombstonedAt` as follows:
-      - `(RTLO4e3a)` Set it equal to `ObjectMessage.serialTimestamp` if it exists
-      - `(RTLO4e3b)` Otherwise, set it to the current time using the local clock
-        - `(RTLO4e3b1)` Log a debug or trace message indicating that `serialTimestamp` was not found in the message and the local clock is being used instead for the tombstone timestamp
+    - `(RTLO4e3)` Set `LiveObject.tombstonedAt` to the value calculated per [RTLO6](#RTLO6), using `ObjectMessage.serialTimestamp`
+      - `(RTLO4e3a)` This clause has been replaced by [RTLO6a](#RTLO6a)
+      - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
+        - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
     - `(RTLO4e4)` Set the data for the `LiveObject` to a zero-value, as described in [RTLC4](#RTLC4) or [RTLM4](#RTLM4) depending on the object type
 - `(RTLO5)` An `OBJECT_DELETE` operation can be applied to a `LiveObject` in the following way:
   - `(RTLO5a)` Expects the following arguments:
     - `(RTLO5a1)` `ObjectMessage`
   - `(RTLO5b)` Tombstone the current `LiveObject` using [`LiveObject.tombstone`](#RTLO4e), passing in the `ObjectMessage`
+- `(RTLO6)` A `tombstonedAt` value can be calculated from a provided `serialTimestamp` as follows:
+  - `(RTLO6a)` It is equal to `serialTimestamp` if it exists
+  - `(RTLO6b)` Otherwise, it is equal to the current time using the local clock
+    - `(RTLO6b1)` Log a debug or trace message indicating that `serialTimestamp` was not provided and the local clock is being used instead for the tombstone timestamp
 
 ### LiveCounter
 
@@ -567,10 +571,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM6g)` Store the current `data` value as `previousData` for use in [RTLM6h](#RTLM6h)
   - `(RTLM6b)` Set the private flag `createOperationIsMerged` to `false`
   - `(RTLM6c)` Set `data` to `ObjectState.map.entries`, or to an empty map if it does not exist
-    - `(RTLM6c1)` For each `ObjectsMapEntry` with `ObjectsMapEntry.tombstone` equal to `true`, additionally set the `ObjectsMapEntry.tombstonedAt` field as follows:
-      - `(RTLM6c1a)` Set it equal to `ObjectsMapEntry.serialTimestamp` if it exists
-      - `(RTLM6c1b)` Otherwise, set it to the current time using the local clock
-        - `(RTLM6c1b1)` Log a debug or trace message indicating that `ObjectsMapEntry.serialTimestamp` was not provided and the local clock is being used instead for the tombstone timestamp
+    - `(RTLM6c1)` For each `ObjectsMapEntry` with `ObjectsMapEntry.tombstone` equal to `true`, additionally set the `ObjectsMapEntry.tombstonedAt` field to the value calculated per [RTLO6](#RTLO6), using `ObjectsMapEntry.serialTimestamp`
+      - `(RTLM6c1a)` This clause has been replaced by [RTLO6a](#RTLO6a)
+      - `(RTLM6c1b)` This clause has been replaced by [RTLO6b](#RTLO6b)
+        - `(RTLM6c1b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
   - `(RTLM6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveMap` as described in [RTLM23](#RTLM23), passing in the `ObjectState.createOp` instance. Discard the `LiveMapUpdate` object returned by the merge operation
     - `(RTLM6d1)` This clause has been replaced by [RTLM17a](#RTLM17a)
       - `(RTLM6d1a)` This clause has been replaced by [RTLM17a1](#RTLM17a1)
@@ -651,15 +655,15 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM8a2a)` Set `ObjectsMapEntry.data` to undefined/null
       - `(RTLM8a2b)` Set `ObjectsMapEntry.timeserial` to the provided `serial`
       - `(RTLM8a2c)` Set `ObjectsMapEntry.tombstone` to `true`
-      - `(RTLM8a2d)` Set `ObjectsMapEntry.tombstonedAt` to the value from [RTLM8f](#RTLM8f)
+      - `(RTLM8a2d)` Set `ObjectsMapEntry.tombstonedAt` to the value calculated per [RTLO6](#RTLO6), using the provided `serialTimestamp`
   - `(RTLM8b)` If an entry does not exist in the private `data` for the specified key:
     - `(RTLM8b1)` Create a new `ObjectsMapEntry` in `data` for the specified key, with `ObjectsMapEntry.data` set to undefined/null and `ObjectsMapEntry.timeserial` set to the provided `serial`
     - `(RTLM8b2)` Set `ObjectsMapEntry.tombstone` for the new entry to `true`
-    - `(RTLM8b3)` Set `ObjectsMapEntry.tombstonedAt` for the new entry to the value from [RTLM8f](#RTLM8f)
-  - `(RTLM8f)` The `tombstonedAt` value for the map entry can be calculated in the following way:
-    - `(RTLM8f1)` It is equal to `serialTimestamp` if it exists
-    - `(RTLM8f2)` Otherwise, it is equal to the current time using the local clock
-      - `(RTLM8f2a)` Log a debug or trace message that `serialTimestamp` was not provided for the message and the local clock is used for the tombstone timestamp instead
+    - `(RTLM8b3)` Set `ObjectsMapEntry.tombstonedAt` for the new entry to the value calculated per [RTLO6](#RTLO6), using the provided `serialTimestamp`
+  - `(RTLM8f)` This clause has been replaced by [RTLO6](#RTLO6)
+    - `(RTLM8f1)` This clause has been replaced by [RTLO6a](#RTLO6a)
+    - `(RTLM8f2)` This clause has been replaced by [RTLO6b](#RTLO6b)
+      - `(RTLM8f2a)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
   - `(RTLM8e)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `removed`
 - `(RTLM9)` Whether a map operation can be applied to a map entry is determined as follows:
   - `(RTLM9a)` For a `LiveMap` with `semantics` set to `ObjectsMapSemantics.LWW` (Last-Write-Wins CRDT semantics), the operation must only be applied if its serial is strictly greater ("after") than the entry's serial when compared lexicographically
