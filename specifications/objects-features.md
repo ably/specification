@@ -213,7 +213,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO9a1)` If `ObjectMessage.operation` is null or omitted, log a warning indicating that an unsupported object operation message has been received, and discard the current `ObjectMessage` without taking any action
     - `(RTO9a3)` If the `appliedOnAckSerials` set ([RTO7b](#RTO7b)) contains `ObjectMessage.serial`, log a debug or trace message indicating that the operation has already been applied upon receipt of the ACK, remove this value from the set, and discard the current `ObjectMessage` without taking any further action
     - `(RTO9a2)` The `ObjectMessage.operation.action` field (see [`ObjectOperationAction`](../features#OOP2)) determines the type of operation to apply:
-      - `(RTO9a2a)` If `ObjectMessage.operation.action` is one of the following: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, or `OBJECT_DELETE`, then:
+      - `(RTO9a2a)` If `ObjectMessage.operation.action` is one of the following: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`, or `MAP_CLEAR`, then:
         - `(RTO9a2a1)` If it does not already exist, create a zero-value `LiveObject` in the internal `ObjectsPool` per [RTO6](#RTO6) using the `objectId` from `ObjectMessage.operation.objectId`
         - `(RTO9a2a2)` Get the `LiveObject` instance from the internal `ObjectsPool` using the `objectId` from `ObjectMessage.operation.objectId`
         - `(RTO9a2a3)` Apply the `ObjectMessage.operation` to the `LiveObject`; see [RTLC7](#RTLC7), [RTLM15](#RTLM15), passing the `source` parameter. The operation returns a boolean indicating whether the operation was successfully applied
@@ -473,6 +473,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTLM3)` Holds a `Dict<String, ObjectsMapEntry>` as a private `data` map
   - `(RTLM3a)` `ObjectsMapEntry` entries in a `LiveMap` have the following attributes in addition to those defined in [OME2](../features#OME2):
     - `(RTLM3a1)` `tombstonedAt` (optional) Time - a timestamp indicating when this map entry was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if the corresponding `ObjectsMapEntry.tombstone` is `true`
+- `(RTLM25)` Holds a nullable private `clearTimeserial` string, initially `null`. Set to the [serial](../features#OM2h) of the last `MAP_CLEAR` operation applied to this `LiveMap`
 - `(RTLM4)` The zero-value `LiveMap` is a `LiveMap` with `data` set to an empty map
 - `(RTLM18)` Data updates for a `LiveMap` are emitted using the `LiveMapUpdate` object:
   - `(RTLM18a)` `LiveMapUpdate` extends `LiveObjectUpdate`
@@ -570,6 +571,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM6f1)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of the object being tombstoned, each set to `removed`
   - `(RTLM6g)` Store the current `data` value as `previousData` for use in [RTLM6h](#RTLM6h)
   - `(RTLM6b)` Set the private flag `createOperationIsMerged` to `false`
+  - `(RTLM6i)` Set the private `clearTimeserial` to `ObjectState.map.clearTimeserial`, or to `null` if not provided
   - `(RTLM6c)` Set `data` to `ObjectState.map.entries`, or to an empty map if it does not exist
     - `(RTLM6c1)` For each `ObjectsMapEntry` with `ObjectsMapEntry.tombstone` equal to `true`, additionally set the `ObjectsMapEntry.tombstonedAt` field to the value calculated per [RTLO6](#RTLO6), using `ObjectsMapEntry.serialTimestamp`
       - `(RTLM6c1a)` This clause has been replaced by [RTLO6a](#RTLO6a)
@@ -609,6 +611,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM15d5)` If `ObjectMessage.operation.action` is set to `OBJECT_DELETE`, apply the operation as described in [RTLO5](#RTLO5), passing in `ObjectMessage`
       - `(RTLM15d5a)` Emit a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of applying the `OBJECT_DELETE` operation, each set to `removed`
       - `(RTLM15d5b)` Return `true`
+    - `(RTLM15d8)` If `ObjectMessage.operation.action` is set to `MAP_CLEAR`, apply the operation as described in [RTLM24](#RTLM24), passing in `ObjectMessage.serial` and `ObjectMessage.serialTimestamp`
+      - `(RTLM15d8a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
+      - `(RTLM15d8b)` Return `true`
     - `(RTLM15d4)` Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current `ObjectMessage` without taking any further action. No data update event is emitted. Return `false`
 - `(RTLM16)` A `MAP_CREATE` operation can be applied to a `LiveMap` in the following way:
   - `(RTLM16a)` Expects the following arguments:
@@ -624,6 +629,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM7d3)` `MapSet`
     - `(RTLM7d2)` `serial` string - operation's serial value
   - `(RTLM7e)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
+  - `(RTLM7h)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM7a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM7a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
     - `(RTLM7a2)` Otherwise, apply the operation to the existing entry:
@@ -665,6 +671,21 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM8f2)` This clause has been replaced by [RTLO6b](#RTLO6b)
       - `(RTLM8f2a)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
   - `(RTLM8e)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `removed`
+- `(RTLM24)` A `MAP_CLEAR` operation can be applied to a `LiveMap` in the following way:
+  - `(RTLM24a)` Expects the following arguments:
+    - `(RTLM24a1)` `serial` string - the operation's serial value
+    - `(RTLM24a2)` `serialTimestamp` Time - the operation's serial timestamp value
+  - `(RTLM24b)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
+  - `(RTLM24c)` If the private `clearTimeserial` is non-null and is lexicographically greater than or equal to the provided `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
+  - `(RTLM24d)` Set the private `clearTimeserial` to the provided `serial`
+  - `(RTLM24e)` For each `ObjectsMapEntry` in the internal `data`:
+    - `(RTLM24e1)` If `ObjectsMapEntry.timeserial` is null or empty, or the `serial` is lexicographically greater than or equal to `ObjectsMapEntry.timeserial`:
+      - `(RTLM24e1a)` Set `ObjectsMapEntry.data` to undefined/null
+      - `(RTLM24e1b)` Set `ObjectsMapEntry.timeserial` to the `serial`
+      - `(RTLM24e1c)` Set `ObjectsMapEntry.tombstone` to `true`
+      - `(RTLM24e1d)` Set `ObjectsMapEntry.tombstonedAt` to the value calculated per [RTLO6](#RTLO6), using the provided `serialTimestamp`
+      - `(RTLM24e1e)` Record the key for the `LiveMapUpdate` as `removed`
+  - `(RTLM24f)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` containing each key recorded in [RTLM24e1e](#RTLM24e1e) set to `removed`
 - `(RTLM9)` Whether a map operation can be applied to a map entry is determined as follows:
   - `(RTLM9a)` For a `LiveMap` with `semantics` set to `ObjectsMapSemantics.LWW` (Last-Write-Wins CRDT semantics), the operation must only be applied if its serial is strictly greater ("after") than the entry's serial when compared lexicographically
   - `(RTLM9b)` If both the entry serial and the operation serial are null or empty strings, they are treated as the "earliest possible" serials and considered "equal", so the operation must not be applied
@@ -752,6 +773,7 @@ Types and their properties/methods are public and exposed to users by default. A
       update: { amount: Number } // RTLC11b, RTLC11b1
 
     class LiveMap extends LiveObject: // RTLM*, RTLM1
+      clearTimeserial: String? // RTLM25, internal
       get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5
       size() -> Number // RTLM10
       entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
