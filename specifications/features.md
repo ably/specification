@@ -504,7 +504,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN1)` `Connection` connects to the Ably service using a [websocket](https://ably.com/topic/websockets) connection. The [ably-js library](https://github.com/ably/ably-js) supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
 - `(RTN2)` The default host used for realtime [websocket](https://ably.com/topic/websockets) connections is the [`REC1`](#REC1) primary domain and the following query string params should be used when opening a new connection:
   - `(RTN2a)` `format` should be `msgpack` (default) or `json`
-  - `(RTN2b)` `echo` should be `true` if the `echoMessages` client option is true; else it should be `false`, which will prevent messages published by the client being echoed back. The connection-level `echo` setting may be overridden on a per-channel basis using the `echo` channel param; see [`RTL4n`](#RTL4n)
+  - `(RTN2b)` `echo` should be `true` if the `echoMessages` client option is true; else it should be `false`, which will prevent messages published by the client being echoed back
   - `(RTN2d)` `clientId` contains the provided `clientId` option of `ClientOptions`, unless `clientId` is `null`
   - `(RTN2e)` Depending on the authentication scheme, either `accessToken` contains the token string, or `key` contains the API key
   - `(RTN2f)` The API version param `v` must be included in all connections to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
@@ -1880,7 +1880,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(TO3e)` `autoConnect` boolean - defaults to true. If false, suppresses the automatic initiation of a connection when the library is instantiated
   - `(TO3f)` `useBinaryProtocol` boolean - defaults to true. If false, forces the library to use the JSON encoding for REST and Realtime operations, instead of the default binary msgpack encoding
   - `(TO3g)` `queueMessages` boolean - defaults to true. If false, suppresses the default queueing of `MESSAGE`, `PRESENCE`, `ANNOTATION` or `OBJECT` protocol messages. See [RTL6c](#RTL6c) for connection and channel state condition details
-  - `(TO3h)` `echoMessages` boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection. Per-channel echo suppression can also be configured using the `echo` channel param; see [`RTL4n`](#RTL4n)
+  - `(TO3h)` `echoMessages` boolean - defaults to true. If false, suppresses messages originating from this connection being echoed back on the same connection
   - `(TO3i)` `recover` string - A connection recovery string, specified with the intention of inheriting the state of an earlier connection
   - `(TO3n)` `idempotentRestPublishing` boolean - defaults to false for clients with version \< 1.2, otherwise true. If true, [RSL1k](#RSL1k1) applies
   - `(TO3j)` Auth option attributes:
