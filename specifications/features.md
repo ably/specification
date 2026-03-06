@@ -93,14 +93,14 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(REC2a)` If the `fallbackHosts` client option is specified then:
     - `(REC2a1)` If the deprecated `fallbackHostsUseDefault` option is specified then the options as a set are invalid.
     - `(REC2a2)` Otherwise, the set of `fallback domains` is given by the value of the `fallbackHosts` option.
-  - `(REC2b)` Otherwise, if the deprecated `fallbackHostsUseDefault` option is specified then the set of `fallback domains` is the default set defined in `(REC2c1)`.
-  - `(REC2c)` Otherwise, the set of `fallback domains` is defined implicitly by the options used to define the `primary domain` as specified in `(REC1)`:
-    - `(REC2c1)` If the `primary domain` is determined to be the default via `(REC1a)` then the set of `fallback domains` is the default `main.a.fallback.ably-realtime.com`, `main.b.fallback.ably-realtime.com`, `main.c.fallback.ably-realtime.com`, `main.d.fallback.ably-realtime.com`, and `main.e.fallback.ably-realtime.com`.
-    - `(REC2c2)` Otherwise, if the `primary domain` is determined to be an explicit hostname via `(REC1b2)` then the set of `fallback domains` is empty.
-    - `(REC2c3)` Otherwise, if the `primary domain` is determined by a non-production routing policy ID via `(REC1b3)` then the set of `fallback domains` is `[id].a.fallback.ably-realtime-nonprod.com`, `[id].b.fallback.ably-realtime-nonprod.com`, `[id].c.fallback.ably-realtime-nonprod.com`, `[id].d.fallback.ably-realtime-nonprod.com`, `[id].e.fallback.ably-realtime-nonprod.com`.
-    - `(REC2c4)` Otherwise, if the `primary domain` is determined by a production routing policy ID via `(REC1b4)` then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
-    - `(REC2c5)` Otherwise, if the `primary domain` is determined by a production routing policy ID via `(REC1c2)` then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
-    - `(REC2c6)` Otherwise, if the `primary domain` is determined by the deprecated `restHost` or `realtimeHost` option via `(REC1d)` then the set of fallback domains is empty.
+  - `(REC2b)` Otherwise, if the deprecated `fallbackHostsUseDefault` option is specified then the set of `fallback domains` is the default set defined in [`REC2c1`](#REC2c1).
+  - `(REC2c)` Otherwise, the set of `fallback domains` is defined implicitly by the options used to define the `primary domain` as specified in [`REC1`](#REC1):
+    - `(REC2c1)` If the `primary domain` is determined to be the default via [`REC1a`](#REC1a) then the set of `fallback domains` is the default `main.a.fallback.ably-realtime.com`, `main.b.fallback.ably-realtime.com`, `main.c.fallback.ably-realtime.com`, `main.d.fallback.ably-realtime.com`, and `main.e.fallback.ably-realtime.com`.
+    - `(REC2c2)` Otherwise, if the `primary domain` is determined to be an explicit hostname via [`REC1b2`](#REC1b2) then the set of `fallback domains` is empty.
+    - `(REC2c3)` Otherwise, if the `primary domain` is determined by a non-production routing policy ID via [`REC1b3`](#REC1b3) then the set of `fallback domains` is `[id].a.fallback.ably-realtime-nonprod.com`, `[id].b.fallback.ably-realtime-nonprod.com`, `[id].c.fallback.ably-realtime-nonprod.com`, `[id].d.fallback.ably-realtime-nonprod.com`, `[id].e.fallback.ably-realtime-nonprod.com`.
+    - `(REC2c4)` Otherwise, if the `primary domain` is determined by a production routing policy ID via [`REC1b4`](#REC1b4) then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
+    - `(REC2c5)` Otherwise, if the `primary domain` is determined by a production routing policy ID via [`REC1c2`](#REC1c2) then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
+    - `(REC2c6)` Otherwise, if the `primary domain` is determined by the deprecated `restHost` or `realtimeHost` option via [`REC1d`](#REC1d) then the set of fallback domains is empty.
 
 <!-- -->
 
@@ -222,7 +222,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
   - `(RSA3a)` Can be used over HTTP or HTTPs
   - `(RSA3b)` For REST requests, the token string is optionally Base64-encoded and used in the `Authorization: Bearer` header
   - `(RSA3c)` For Realtime [websocket connections](https://ably.com/topic/websockets), the querystring param `accessToken` is appended to the URL endpoint
-  - `(RSA3d)` A test must exist that each type of token string is correctly passed in requests (ie according to `(RSA3b)` and `(RSA3c)`)
+  - `(RSA3d)` A test must exist that each type of token string is correctly passed in requests (ie according to [`RSA3b`](#RSA3b) and [`RSA3c`](#RSA3c))
 - `(RSA4)` Token Auth is used if `useTokenAuth` is set to true, or if `useTokenAuth` is unspecified and any one of `authUrl`, `authCallback`, `token`, or `TokenDetails` is provided
   - `(RSA4a)` When a `token` or `tokenDetails` is used to instantiate the library, and no means to renew the token is provided (either an API key, `authCallback` or `authUrl`):
     - `(RSA4a1)` At instantiation time, a message at `info` log level with error code `40171` should be logged indicating that no means has been provided to renew the supplied token, including an associated url per `TI5`
@@ -1654,9 +1654,9 @@ Presence ops.
 - `(RSH2)` The following should only apply to platforms that support receiving push notifications:
   - `(RSH2a)` `Push#activate` sends a `CalledActivate` event to [the state machine](#RSH3).
   - `(RSH2b)` `Push#deactivate` sends a `CalledDeactivate` event to [the state machine](#RSH3).
-  - `(RSH2c)` (Moved to [`(RSH8g)`](#RSH8g) ).
-  - `(RSH2d)` (Moved to [`(RSH8h)`](#RSH8h) ).
-  - `(RSH2e)` (Moved to [`(RSH8i)`](#RSH8i) ).
+  - `(RSH2c)` (Moved to [`RSH8g`](#RSH8g) ).
+  - `(RSH2d)` (Moved to [`RSH8h`](#RSH8h) ).
+  - `(RSH2e)` (Moved to [`RSH8i`](#RSH8i) ).
 
 ### Activation State Machine
 
@@ -1665,11 +1665,11 @@ Presence ops.
     - `(RSH3a1)` On event `CalledDeactivate`:
       - `(RSH3a1a)` This clause has been deleted. It was valid up to and including specification version `3.0.0`.
       - `(RSH3a1b)` This clause has been deleted. It was valid up to and including specification version `3.0.0`.
-      - `(RSH3a1c)` If the local device has `deviceIdentityToken`, does the same as `(RSH3d2)`.
-      - `(RSH3a1d)` Otherwise, does the same as `(RSH3g2)`.
+      - `(RSH3a1c)` If the local device has `deviceIdentityToken`, does the same as [`RSH3d2`](#RSH3d2).
+      - `(RSH3a1d)` Otherwise, does the same as [`RSH3g2`](#RSH3g2).
     - `(RSH3a2)` On event `CalledActivate`:
-      - `(RSH3a2a)` If the local device has `deviceIdentityToken`, performs a validation of the local DeviceDetails via the following steps. [`(RSH3a2b)`](#RSH3a2b) onwards then don't apply.
-        - `(RSH3a2a1)` Checks the compatibilty of the present client with the existing registration: if the `LocalDevice` has a non-empty `clientId`, and the present identified client has a different (non-null) `clientId`, then a `SyncRegistrationFailed` event should be fired containing an error with `code` 61002, and skips to [`(RSH3a2a4)`](#RSH3a2a4).
+      - `(RSH3a2a)` If the local device has `deviceIdentityToken`, performs a validation of the local DeviceDetails via the following steps. [`RSH3a2b`](#RSH3a2b) onwards then don't apply.
+        - `(RSH3a2a1)` Checks the compatibilty of the present client with the existing registration: if the `LocalDevice` has a non-empty `clientId`, and the present identified client has a different (non-null) `clientId`, then a `SyncRegistrationFailed` event should be fired containing an error with `code` 61002, and skips to [`RSH3a2a4`](#RSH3a2a4).
         - `(RSH3a2a2)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails`.
         - `(RSH3a2a3)` Otherwise, makes an asynchronous HTTP PUT request to `/push/deviceRegistrations/:deviceId` using the local `DeviceDetails` with the push details as body. When the registration validation request is complete, a `RegistrationSynced` or `SyncRegistrationFailed` event should be fired.
         - `(RSH3a2a4)` Transitions to `WaitingForRegistrationSync`.
@@ -1678,7 +1678,7 @@ Presence ops.
       - `(RSH3a2d)` If the local device does not have the necessary push details, it initiates a request to the underlying platform (or otherwise generates them)
       - `(RSH3a2e)` Transitions to `WaitingForPushDeviceDetails`.
     - `(RSH3a3)` On event `GotPushDeviceDetails`:
-      - `(RSH3a3a)` Transitions to `NotActivated`. (This consumes the event; [`(RSH3a2)`](#RSH3a2) produces it again once `Push#activate` is called.)
+      - `(RSH3a3a)` Transitions to `NotActivated`. (This consumes the event; [`RSH3a2`](#RSH3a2) produces it again once `Push#activate` is called.)
   - `(RSH3b)` State `WaitingForPushDeviceDetails`:
     - `(RSH3b1)` On event `CalledActivate`:
       - `(RSH3b1a)` Transitions to `WaitingForPushDeviceDetails`.
@@ -1781,11 +1781,11 @@ Presence ops.
     - `(RSH8k1)` `deviceIdentityToken` string? -- populated as described in [RSH8c](#RSH8c)
     - `(RSH8k2)` `deviceSecret` string -- populated as described in [RSH8b](#RSH8b). (Note: This property being non-nullable is not actually consistent with [`RSH3a2b`](#RSH3a2b); that spec point implies that `id` and `deviceSecret` both start off unset and are only set upon a `CalledActivate` event. However, since `deviceSecret` needs to have the same nullability as `id` --- since per `RSH3a2b` either both or neither should be set --- to reflect the behaviour described in the spec we would have to make `LocalDevice#id` nullable, but this is incompatible with the superclass `DeviceDetails`. In reality, our implementations of `LocalDevice` actually generate `id` and `deviceSecret` when the device is fetched, i.e. not following `RSH3a2b`. What we *should* do is either make `LocalDevice` stop inheriting from `DeviceDetails`, or change the specified behaviour for when to generate `id` and `deviceSecret` to match our implementations, or both. See spec issues [#180](https://github.com/ably/specification/issues/180) and [#25](https://github.com/ably/specification/issues/25). For now, this note exists to reduce confusion.)
   - `(RSH8a)` The `LocalDevice` is initialised when first required, either as a result of a call to `RestClient#device` or `RealtimeClient#device`, or as a result of an operation involving the Activation State Machine. The `LocalDevice` `id`, `clientId`, `deviceSecret` and `deviceIdentityToken` attributes are populated, together with any `recipient`-related attributes, to the extent that they exist, from the persisted state.
-  - `(RSH8b)` The `LocalDevice` `id` and `deviceSecret` attributes are generated, and persisted as part of the `LocalDevice` state, when required by step [`(RSH3a2b)`](#RSH3a2b) in the Activation State Machine. At that time, the `clientId` attribute is also initialised, if the client is identified according to [`(RSA7)`](#RSA7).
-  - `(RSH8c)` Following successful registration of a `LocalDevice`, following the procedure in [`(RSH3c2a)`](#RSH3c2a), the now known `deviceIdentityToken` is set and persisted.
-  - `(RSH8d)` If the `LocalDevice` is created by an unidentified client (see [`(RSA7)`](#RSA7) ) and therefore has no `clientId` set, but the client subsequently becomes identified (as a result of [`(RSA7b2)`](#RSA7b2) or [`(RSA7b3)`](#RSA7b3) ), then the `LocalDevice` `clientId` is set and persisted.
-  - `(RSH8e)` If the `LocalDevice` `clientId` becomes set as a result of [`(RSH8d)`](#RSH8d), and the `LocalDevice` is already registered (ie the `deviceIdentityToken` is set), and the ActivationStateMachine is in any state other than `NotActivated`, then a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3) once the effects of [`(RSH8d)`](#RSH8d) are visible, ie. once `LocalDevice` `clientId` is set.
-  - `(RSH8f)` If the `LocalDevice` is created by an unidentified client (see [`(RSA7)`](#RSA7) ) and therefore has no `clientId` set, but on receipt of a registration response (see [`(RSH3c2)`](#RSH3c2) ) the registered device has a non-empty `clientId`, then the `LocalDevice` `clientId` is set with that `clientId`.
+  - `(RSH8b)` The `LocalDevice` `id` and `deviceSecret` attributes are generated, and persisted as part of the `LocalDevice` state, when required by step [`RSH3a2b`](#RSH3a2b) in the Activation State Machine. At that time, the `clientId` attribute is also initialised, if the client is identified according to [`RSA7`](#RSA7).
+  - `(RSH8c)` Following successful registration of a `LocalDevice`, following the procedure in [`RSH3c2a`](#RSH3c2a), the now known `deviceIdentityToken` is set and persisted.
+  - `(RSH8d)` If the `LocalDevice` is created by an unidentified client (see [`RSA7`](#RSA7) ) and therefore has no `clientId` set, but the client subsequently becomes identified (as a result of [`RSA7b2`](#RSA7b2) or [`RSA7b3`](#RSA7b3) ), then the `LocalDevice` `clientId` is set and persisted.
+  - `(RSH8e)` If the `LocalDevice` `clientId` becomes set as a result of [`RSH8d`](#RSH8d), and the `LocalDevice` is already registered (ie the `deviceIdentityToken` is set), and the ActivationStateMachine is in any state other than `NotActivated`, then a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3) once the effects of [`RSH8d`](#RSH8d) are visible, ie. once `LocalDevice` `clientId` is set.
+  - `(RSH8f)` If the `LocalDevice` is created by an unidentified client (see [`RSA7`](#RSA7) ) and therefore has no `clientId` set, but on receipt of a registration response (see [`RSH3c2`](#RSH3c2) ) the registered device has a non-empty `clientId`, then the `LocalDevice` `clientId` is set with that `clientId`.
   - `(RSH8g)` Whenever any change arises of the push transport details for local device (eg an FCM registration token update triggered by the platform), a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3).
   - `(RSH8h)` If an attempt to obtain the push transport details for local device (eg an FCM registration token) fails, a `GettingPushDeviceDetailsFailed` event containing the indicated error is sent to [the state machine](#RSH3).
   - `(RSH8i)` Each time the library is instantiated, if the LocalDevice has push device details (eg an APNS deviceToken), and if the platform supports it, it must verify the validity of those details (eg by requesting a token from the platform and comparing that with the already-known token). If as a result there are updated details, then an update to the Ably server is triggered by sending a `GotPushDeviceDetails` event to [the state machine](#RSH3).
@@ -1882,7 +1882,7 @@ Presence ops.
   - `(TP3i)` `extras` JSON-encodable object, used to contain any arbitrary key value pairs which may also contain other primitive JSON types, JSON-encodable objects or JSON-encodable arrays. The `extras` field is provided to contain message metadata and/or ancillary payloads in support of specific functionality. For 1.1 no specific functionality is specified for `extras` in presence messages; 1.2 adds the `headers` extension, which contains arbitrary `string->string` key-value pairs, settable at publish time. Unless otherwise specified, the client library should not attempt to do any filtering or validation of the `extras` field itself, but should treat it opaquely, encoding it and passing it to realtime unaltered.
   - `(TP3g)` `timestamp` time in milliseconds since epoch. If a presence message received from Ably does not contain a `timestamp`, it should be set to the `timestamp` of the encapsulating `ProtocolMessage`
   - `(TP3h)` `memberKey` string function that combines the `connectionId` and `clientId` ensuring multiple connected clients with the same clientId are uniquely identifiable
-- `(TP4)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `PresenceMessage`-like object (or array of such objects), and optionally a `channelOptions`, and return a `PresenceMessage` (or array of such `PresenceMessages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves. This behaviour is the same as in `(TM3)`.
+- `(TP4)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `PresenceMessage`-like object (or array of such objects), and optionally a `channelOptions`, and return a `PresenceMessage` (or array of such `PresenceMessages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves. This behaviour is the same as in [`TM3`](#TM3).
 - `(TP5)` The size of the `PresenceMessage` for [TO3l8](#TO3l8) is calculated in the same way as for `Message`; see [TM6](#TM6)
 
 #### ObjectMessage
