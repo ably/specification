@@ -1,16 +1,5 @@
-------------------------------------------------------------------------
-
-title: Realtime Protocol Definition\
-section: client-lib-development-guide\
-index: 10\
-jump_to:\
-Help with:\
-- Overview\
-- Formats\
-- Actions\
-- Protocol Message fields\
-- Other message structs\
-- Message acknowledgement protocol\
+---
+title: Realtime Protocol Definition
 ----
 
 ## Overview

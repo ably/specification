@@ -1,9 +1,6 @@
-------------------------------------------------------------------------
-
-title: Client Library Development Guide\
-section: client-lib-development-guide\
-index: 0\
-----
+---
+title: Client Library Development Guide
+---
 
 Ably has invested in the development of comprehensive and consistent client libraries for all widely used platforms and languages. Comprehensive, in that all client libraries are feature complete, consistent, in that, where possible, the exposed API is the same in all languages and platforms.
 

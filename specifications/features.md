@@ -1,47 +1,6 @@
-------------------------------------------------------------------------
-
-title: Features spec\
-section: client-lib-development-guide\
-index: 1\
-anchor_specs: true\
-languages:\
-- none\
-jump_to:\
-General:\
-- Test guidelines\
-REST client library:\
-- RestClient\
-- Auth#rest-auth\
-- Channels#rest-channels\
-- RestChannel#rest-channel\
-- Plugins#plugins\
-- RestPresence#rest-presence\
-- Encryption#rest-encryption\
-- Forwards compatibility#rest-compatibility\
-Realtime client library:\
-- RealtimeClient\
-- Connection#realtime-connection\
-- Channels#realtime-channels\
-- RealtimeChannel#realtime-channel\
-- RealtimePresence#realtime-presence\
-- RealtimeObjects#realtime-objects\
-- EventEmitter#eventemitter\
-- Forwards compatibility#realtime-compatibility\
-- State conditions and operations#state-conditions-and-operations\
-Push notifications:\
-- Push notifications#push-notifications\
-- Push channels#push-channels\
-- Activation state machine#activation-state-machine\
-Types:\
-- Data types#types\
-- Options#options\
-- Push notifications#types-push\
-- Client library introspection#introspection\
-Interface Definition:\
-- Complete API IDL#idl\
-Previous version:\
-- Old specs\
-----
+---
+title: Features spec
+---
 
 This document outlines the complete feature set of both the REST and Realtime client libraries. It is expected that every client library developer refers to this document to ensure that their client library provides the same API and features as the existing Ably client libraries. In addition to this, it is essential that there is test coverage over all of the features described below. As an example, see the Ruby library [test specification and coverage](https://github.com/ably/ably-ruby/blob/main/SPEC.md) generated from the test suite.
 

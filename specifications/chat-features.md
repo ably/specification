@@ -1,12 +1,6 @@
-------------------------------------------------------------------------
-
-title: Chat Features\
-section: client-lib-development-guide\
-index: 55\
-jump_to:\
-Help with:\
-- Chat Features Overview#overview\
-----
+---
+title: Chat Features
+---
 
 ## Overview
 

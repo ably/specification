@@ -1,9 +1,6 @@
-------------------------------------------------------------------------
-
-title: Feature prioritisation\
-section: client-lib-development-guide\
-index: 5\
-----
+---
+title: Feature prioritisation
+---
 
 Whilst all [officially supported Ably client libraries](https://ably.com/download) support all features defined in the [specification](https://github.com/ably/ably-ruby/blob/main/SPEC.md), we recommend an approach that focuses on the most commonly used features first.
 

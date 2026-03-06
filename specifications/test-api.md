@@ -1,13 +1,5 @@
-------------------------------------------------------------------------
-
-title: Sandbox Test API\
-section: client-lib-development-guide\
-index: 20\
-jump_to:\
-Help with:\
-- Overview#title\
-- Provisioning an app#new-app\
-- Creating stats fixture data#stats-data\
+---
+title: Sandbox Test API
 ----
 
 ## Overview

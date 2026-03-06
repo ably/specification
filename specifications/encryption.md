@@ -1,14 +1,6 @@
-------------------------------------------------------------------------
-
-title: Encryption\
-section: client-lib-development-guide\
-index: 30\
-jump_to:\
-Help with:\
-- Objectives and Scope\
-- Encrypted message format\
-- Examples\
-----
+---
+title: Encryption
+---
 
 Ably client libraries support encryption of message content, making it easier to build apps that encrypt content fully end-to-end.
 

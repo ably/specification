@@ -1,7 +1,5 @@
 ---
 title: Ably API docstrings
-section: client-lib-development-guide
-index: 50
 ---
 
 # Classes and types

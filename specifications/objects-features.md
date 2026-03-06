@@ -1,12 +1,6 @@
-------------------------------------------------------------------------
-
-title: Objects Features\
-section: client-lib-development-guide\
-index: 65\
-jump_to:\
-Help with:\
-- Objects Features Overview#overview\
-----
+---
+title: Objects Features
+---
 
 ## Overview
 
