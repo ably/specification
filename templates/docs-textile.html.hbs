@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ root_path }}tailwind.css" rel="stylesheet">
+    <title>{{ title }} | Ably Specification</title>
+  </head>
+  <body>
+    <div class="my-1 mx-4">
+      <h1>
+        <a href="{{ root_path }}">Ably Specification</a>:
+        {{ title }}
+      </h1>
+      <div class="flex flex-row flex-wrap my-4 border-y-2 border-gray-500 pt-0 pb-1">
+        <div class="mr-2">
+          <strong>See also:</strong>
+        </div>
+      {{#each file_names as |file_name|}}
+        <div class="mx-1">
+          <a href="{{ root_path }}{{ file_name }}/">
+            {{ file_name }}
+          </a>
+        </div>
+      {{/each}}
+      </div>
+      {{{ bodyContent }}}
+      <div class="flex flex-row flex-wrap justify-center my-4 pt-2 border-t-2 border-gray-500 pt-0 pb-1">
+        <div class="mx-2">
+          <a href="https://ably.com/" target="_blank" rel="noopener noreferrer">
+            {{ copyright }}
+          </a>
+        </div>
+
+        {{#if build_context_title}}
+        {{#if build_context_url}}
+        <div class="mx-2">
+          <a href="{{ build_context_url }}" target="_blank" rel="noopener noreferrer">
+            {{ build_context_title }}
+          </a>
+        </div>
+        {{/if}}
+        {{/if}}
+
+        {{#if build_context_sha}}
+        <div class="mx-2">
+          at
+          <a href="https://github.com/ably/specification/commit/{{ build_context_sha }}" target="_blank" rel="noopener noreferrer">
+            {{ build_context_sha }}
+          </a>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </body>
+</html>

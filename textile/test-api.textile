@@ -11,25 +11,26 @@ jump_to:
 
 h2. Overview
 
-All "client libraries":https://www.ably.io/download have test suites that by default will run their tests against temporary applications that are created during test setup. Although Ably does not provide a public provisioning API for account management (in the production system this is available only through the "website registration":https://www.ably.io/#signup and "dashboard":https://www.ably.io/dashboard) there is a limited API provided via the REST
-interface in the sandbox environment to enable test applications and keys to be provisioned. Therefore, all tests are set up to run against the special client-library focussed sandbox environment.
+All "client libraries":https://ably.com/download have test suites that by default will run their tests against temporary applications that are created during test setup. Although Ably does not provide a public provisioning API for account management (in the production system this is available only through the "website registration":https://ably.com/signup and "dashboard":https://ably.com/dashboard) there is a limited API provided via the REST
+interface in the sandbox environment to enable test applications and keys to be provisioned. Therefore, all tests are set up to run against the special client-library focused sandbox environment.
 
 h3(#new-app). Provisioning a new App
 
 h6. POST sandbox-rest.ably.io/apps
 
-Provisioning a new app in the sandbox environment does not require any authentication, however the apps created have low message and connection limits and are automatically deleted soon after they are created.  Apps created in the sandbox environment are designed to be used for client library tests only. If you require a sandbox app for your realtime application, you should provision an app from within your "Ably dashboard":https://www.ably.io/dashboard that will be isolated from any other apps you have within your account, but will offer all the features and scalability of any production application.
+Provisioning a new app in the sandbox environment does not require any authentication, however the apps created have low message and connection limits and are automatically deleted soon after they are created.  Apps created in the sandbox environment are designed to be used for client library tests only. If you require a sandbox app for your realtime application, you should provision an app from within your "Ably dashboard":https://ably.com/dashboard that will be isolated from any other apps you have within your account, but will offer all the features and scalability of any production application.
 
 The request body contains message details and is an object of the form:
 
-bc[javascript]. {
+<pre lang="javascript">
+{
   keys: [
     /* Array of requested API keys & capabilities
-       See https://www.ably.io/documentation/general/authentication */
+       See https://ably.com/docs/core-features/authentication */
   ],
   namespaces: [
     /* Array of channel namespace rules
-       See https://www.ably.io/documentation/general/channel-rules-namespaces */
+       See https://ably.com/docs/general/channel-rules-namespaces */
   ],
   channels: [
     /* Array of fixture data to persist in history for tests */
@@ -41,10 +42,12 @@ bc[javascript]. {
     }
   ]
 }
+</pre>
 
 Example request:
 
-bc[sh]. curl -X POST https://sandbox-rest.ably.io/apps \
+<pre>
+curl -X POST https://sandbox-rest.ably.io/apps \
  -H "Content-Type: application/json" \
  --data '
   {
@@ -71,6 +74,7 @@ bc[sh]. curl -X POST https://sandbox-rest.ably.io/apps \
       }
     ]
   }'
+</pre>
 
 h5. Options
 
@@ -84,7 +88,8 @@ Once the app, keys and associated fixture data is provisioned within the sandbox
 
 Example @json_result@:
 
-bc[json]. {
+<pre lang="json">
+{
   "status": 1,
   "created": 1427027306492,
   "modified": 1427027306492,
@@ -168,19 +173,20 @@ bc[json]. {
     }
   ]
 }
-
+</pre>
 
 h3(#stats-data). Creating stats fixture data
 
 h6. POST sandbox-rest.ably.io/stats
 
-In order to streamline the development of client libraries, Ably provides a mechanism to inject stats fixture data into an application set up within the sandbox environment. Without this end point, to test statistics you have to generate real events and wait or the stats to become available (they are aggregrated in one minute intervals globally).
+In order to streamline the development of client libraries, Ably provides a mechanism to inject stats fixture data into an application set up within the sandbox environment. Without this endpoint, to test statistics you have to generate real events and wait or the stats to become available (they are aggregrated in one minute intervals globally).
 
 See "application statistics":/general/statistics for more information on the metrics available for each app.
 
 Example request:
 
-bc[sh]. curl https://sandbox-rest.ably.io/stats \
+<pre>
+curl https://sandbox-rest.ably.io/stats \
   -H "Content-Type: application/json" \
   -u "[[API_KEY_FROM_APP_CREATION]]" \
   --data '[
@@ -212,6 +218,7 @@ bc[sh]. curl https://sandbox-rest.ably.io/stats \
     }
   }
 ]'
+</pre>
 
 h5. Options
 

@@ -1,0 +1,9 @@
+---
+title: Ably Versioning
+section: client-lib-development-guide
+index: 19
+---
+
+This content has been superseded.
+
+Please see: "Guidance on Versioning":https://github.com/ably/engineering/blob/main/best-practices/versioning.md

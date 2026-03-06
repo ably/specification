@@ -1,0 +1,33 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Read Tool Versions
+        id: tool-versions
+        run: |
+          echo "::set-output name=ruby::$(sed -nr 's/ruby ([0-9]+)/\1/p' .tool-versions)"
+          echo "::set-output name=nodejs::$(sed -nr 's/nodejs ([0-9]+)/\1/p' .tool-versions)"
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.tool-versions.outputs.ruby }}
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ steps.tool-versions.outputs.nodejs }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint

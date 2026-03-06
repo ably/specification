@@ -1,0 +1,53 @@
+name: Assemble
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: ably/github-event-context-action@v1
+        id: context
+
+      - name: Read Tool Versions
+        id: tool-versions
+        run: |
+          echo "::set-output name=ruby::$(sed -nr 's/ruby ([0-9]+)/\1/p' .tool-versions)"
+          echo "::set-output name=nodejs::$(sed -nr 's/nodejs ([0-9]+)/\1/p' .tool-versions)"
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.tool-versions.outputs.ruby }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run build
+        env:
+          ABLY_BUILD_CONTEXT_SHA: ${{ steps.context.outputs.sha }}
+          ABLY_BUILD_CONTEXT_URL: ${{ steps.context.outputs.url }}
+          ABLY_BUILD_CONTEXT_TITLE: ${{ steps.context.outputs.title }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ secrets.ABLY_AWS_ACCOUNT_ID_SDK }}:role/ably-sdk-builds-specification
+          role-session-name: "${{ github.run_id }}-${{ github.run_number }}"
+
+      - uses: ably/sdk-upload-action@v2
+        with:
+          sourcePath: output
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
