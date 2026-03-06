@@ -1,0 +1,12 @@
+baseURL: "/"
+title: "Ably Specification"
+disableKinds: ["taxonomy", "term"]
+markup:
+  goldmark:
+    renderer:
+      unsafe: true        # allow raw HTML in .md (needed for anchor injection)
+params:
+  copyright: "Copyright 2015-2026 Ably Realtime Ltd (ably.com)"
+  buildContextSha: ""     # overridden by HUGO_PARAMS_BUILDCONTEXTSHA
+  buildContextUrl: ""     # overridden by HUGO_PARAMS_BUILDCONTEXTURL
+  buildContextTitle: ""   # overridden by HUGO_PARAMS_BUILDCONTEXTTITLE

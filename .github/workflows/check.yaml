@@ -10,24 +10,18 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Read Tool Versions
+      - name: Read Node.js version
         id: tool-versions
-        run: |
-          echo "::set-output name=ruby::$(sed -nr 's/ruby ([0-9]+)/\1/p' .tool-versions)"
-          echo "::set-output name=nodejs::$(sed -nr 's/nodejs ([0-9]+)/\1/p' .tool-versions)"
+        run: echo "nodejs=$(grep nodejs .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ steps.tool-versions.outputs.ruby }}
-
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.tool-versions.outputs.nodejs }}
 
-      - name: Install Dependencies
-        run: npm ci
+      - run: npm ci
+        working-directory: build
 
-      - name: Lint
-        run: npm run lint
+      - run: npm run lint
+        working-directory: build

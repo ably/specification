@@ -15,33 +15,35 @@ jobs:
       deployments: write
       id-token: write
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - uses: ably/github-event-context-action@v1
         id: context
 
-      - name: Read Tool Versions
+      - name: Read Node.js version
         id: tool-versions
-        run: |
-          echo "::set-output name=ruby::$(sed -nr 's/ruby ([0-9]+)/\1/p' .tool-versions)"
-          echo "::set-output name=nodejs::$(sed -nr 's/nodejs ([0-9]+)/\1/p' .tool-versions)"
+        run: echo "nodejs=$(grep nodejs .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
 
-      - uses: ruby/setup-ruby@v1
+      - uses: peaceiris/actions-hugo@v3
         with:
-          ruby-version: ${{ steps.tool-versions.outputs.ruby }}
+          hugo-version: 'latest'
 
-      - name: Install Dependencies
-        run: npm ci
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.tool-versions.outputs.nodejs }}
 
-      - name: Lint
+      - run: npm ci
+        working-directory: build
+
+      - name: Build
         run: npm run build
+        working-directory: build
         env:
-          ABLY_BUILD_CONTEXT_SHA: ${{ steps.context.outputs.sha }}
-          ABLY_BUILD_CONTEXT_URL: ${{ steps.context.outputs.url }}
-          ABLY_BUILD_CONTEXT_TITLE: ${{ steps.context.outputs.title }}
+          HUGO_PARAMS_BUILDCONTEXTSHA: ${{ steps.context.outputs.sha }}
+          HUGO_PARAMS_BUILDCONTEXTURL: ${{ steps.context.outputs.url }}
+          HUGO_PARAMS_BUILDCONTEXTTITLE: ${{ steps.context.outputs.title }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ secrets.ABLY_AWS_ACCOUNT_ID_SDK }}:role/ably-sdk-builds-specification
@@ -49,5 +51,5 @@ jobs:
 
       - uses: ably/sdk-upload-action@v2
         with:
-          sourcePath: output
+          sourcePath: build/public
           githubToken: ${{ secrets.GITHUB_TOKEN }}

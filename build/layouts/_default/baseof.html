@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {{- $root := cond .IsHome "" "../" -}}
+  <link href="{{ $root }}tailwind.css" rel="stylesheet">
+  <title>{{ .Title }} | Ably Specification</title>
+</head>
+<body>
+  <div class="my-1 mx-4">
+    <h1>
+      <a href="{{ $root }}">Ably Specification</a>:
+      {{ .Title }}
+    </h1>
+    <div class="flex flex-row flex-wrap my-4 border-y-2 border-gray-500 pt-0 pb-1">
+      <div class="mr-2"><strong>See also:</strong></div>
+      {{- $root := cond $.IsHome "" "../" }}
+      {{- range .Site.Pages }}
+      {{- if and (ne .RelPermalink $.RelPermalink) (or (eq .Kind "page") (eq .Kind "home")) }}
+      <div class="mx-1"><a href="{{ $root }}{{ .RelPermalink | strings.TrimPrefix "/" }}">{{ .Title }}</a></div>
+      {{- end }}
+      {{- end }}
+    </div>
+    {{ block "main" . }}{{ end }}
+    <div class="flex flex-row flex-wrap justify-center my-4 pt-2 border-t-2 border-gray-500 pb-1">
+      <div class="mx-2">
+        <a href="https://ably.com/" target="_blank" rel="noopener noreferrer">
+          {{ .Site.Params.copyright }}
+        </a>
+      </div>
+      {{- with .Site.Params.buildContextTitle }}
+      {{- with $.Site.Params.buildContextUrl }}
+      <div class="mx-2">
+        <a href="{{ . }}" target="_blank" rel="noopener noreferrer">
+          {{ $.Site.Params.buildContextTitle }}
+        </a>
+      </div>
+      {{- end }}
+      {{- end }}
+      {{- with .Site.Params.buildContextSha }}
+      <div class="mx-2">
+        at <a href="https://github.com/ably/specification/commit/{{ . }}" target="_blank" rel="noopener noreferrer">
+          {{ . }}
+        </a>
+      </div>
+      {{- end }}
+    </div>
+  </div>
+</body>
+</html>
