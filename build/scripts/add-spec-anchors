@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Post-process Hugo output to wrap spec ID code spans with named anchors.
+# Transforms: <code>(RTN1)</code>
+# Into:       <a id="RTN1" name="RTN1" href="#RTN1"><code>(RTN1)</code></a>
+# Matches IDs like RTN1, CHA-V1, RSH3a2b, etc.
+set -euo pipefail
+
+perl -i -pe \
+  's|<code>\(([A-Za-z][A-Za-z0-9-]*)\)</code>|<a id="$1" name="$1" href="#$1"><code>($1)</code></a>|g' \
+  $(find public -name '*.html')

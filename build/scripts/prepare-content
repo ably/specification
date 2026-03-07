@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SPEC_VER=$(grep 'specification:' data/versions.yaml | awk '{print $2}' | tr -d '"')
+PROTO_VER=$(grep 'protocol:' data/versions.yaml | awk '{print $2}')
+
+rm -rf content && mkdir -p content
+
+for f in ../specifications/*.md; do
+  name=$(basename "$f" .md)
+  # Strip the Textile-derived metadata block: everything between the first
+  # and second all-hyphen lines (e.g. "---..." ... "----") at the top of file.
+  body=$(awk '
+    FNR==1 && /^-+$/ { in_header=1; next }
+    in_header && /^-+$/  { in_header=0; next }
+    !in_header { print }
+  ' "$f" | sed "s/{{ *SPECIFICATION_VERSION *}}/${SPEC_VER}/g; \
+                s/{{ *PROTOCOL_VERSION *}}/${PROTO_VER}/g")
+  title=$(echo "$name" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')
+
+  if [ "$name" = "index" ]; then
+    printf -- "---\ntitle: \"%s\"\n---\n%s" "$title" "$body" > content/_index.md
+  else
+    mkdir -p "content/$name"
+    printf -- "---\ntitle: \"%s\"\n---\n%s" "$title" "$body" > "content/$name/index.md"
+  fi
+done

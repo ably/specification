@@ -1,0 +1,1654 @@
+---
+title: Chat Features
+---
+
+## Overview
+
+This document outlines the feature specification for the Ably Chat product.
+
+The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may", and "optional" (whether lowercased or uppercased) in this document are to be interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
+
+## Chat Specification Version {#version}
+
+- `(CHA-V1)` **Specification Version**: This document defines the Ably chat library features specification ('features spec').
+  - `(CHA-V1a)` The current version of the Chat library feature specification is version `1.0.0`.
+
+## Major Revision History
+
+This specification has undergone the following major revisions, stemming from a review process. A major revision is understood to mean a significant public API change that affects a wide-range of functionality or implementation in the library. Specification points that were removed due to a major review/revision are marked as such.
+
+- Single Channel Migration: CHADR-097, March 2025
+- V1 API Review: CHADR-101, May 2025
+- Pre-V1 Error Code Review: CHA-1207, October 2025
+- V1 released (no changes), October 2025
+
+## General Principles {#general}
+
+- `(CHA-GP1)` As far as is practicable, the implementation details such as underlying Realtime Channels should be hidden from the public API. This allows developers to interact with Chat without having to understand many low-level primitives.
+- `(CHA-GP2)` The public API should avoid implicit operations as a side-effect to some other operation. For example, adding a subscriber to messages in a Chat Room should not automatically trigger that Room to attach. This is in contrast to the current core SDKs. Avoiding side-effects provides a clean, easy to understand API.
+  - `(CHA-GP2a)` `[Testable]` Whenever the Chat SDK fetches a realtime channel, it must do so with the `attachOnSubscribe` channel option set to `false`.
+- `(CHA-GP3)` Wherever possible, Chat features should be exposed in the public API as properties of their parent. For example, `messages` would be considered a property of a `room` object. This allows for greater composability and extensibility in the future.
+- `(CHA-GP4)` Avoid overloading methods and optional parameters. Prefer object-type parameters wherever practical and idiomatic.
+- `(CHA-GP5)` When raising an `ErrorInfo`, avoid relying on the generic `40000` and `50000` codes.
+  - `(CHA-GP5a)` Prefer codes already defined in `ably-common`, for example - use `InvalidArgument` for an invalid argument passed to a function.
+  - `(CHA-GP5b)` If the error is chat-specific, define a new code in the `102000 - 103000` range reserved for chat.
+- `(CHA-GP6)` Error messages must follow the standard format `unable to <op>; <reason>`.
+  - `(CHA-GP6a)` Error messages must be written assuming that the audience is the customer developer, not an Ably engineer.
+
+## Initialization
+
+- `(CHA-IN1)` In order to initialize a chat client, the user must supply an instance of `RealtimeClient`. Upon initialization, the chat client must configure this client in order to allow Ably to track usage of the Chat SDK, as described in the sub-items below.
+  - `(CHA-IN1a)` `[Testable]` Upon initialization of the chat client, it must create a wrapper SDK proxy client by calling `createWrapperSDKProxy` on the `RealtimeClient`.
+  - `(CHA-IN1b)` `[Testable]` When creating the `CHA-IN1a` wrapper SDK proxy client, the chat client must pass a `WrapperSDKProxyOptions` whose `agents` describe the Chat SDK and its version. For example, `{ "agents": { "chat-js": "1.0.1" } }`.
+    - `(CHA-IN1b1)` `[Testable]` When SDKs utilise themselves as a wrapper (e.g. JS in the context of React), both agents must be specified. For example, `{ "agents": { "chat-js": "1.0.1", "chat-react": "1.0.1" } }`.
+  - `(CHA-IN1c)` SDK authors must ensure that they have registered the agents used by `CHA-IN1b` in the common repository, per [`RSC7d5`](../features#RSC7d5).
+  - `(CHA-IN1d)` `[Testable]` The chat client must use the wrapper SDK proxy client created in `CHA-IN1a` as the realtime client on which it performs all subsequent actions (for example, fetching channels or calling `#request`).
+  - `(CHA-IN1e)` `[Testable]` Where `WrapperSDKProxyOptions` does not exist, these agents must be injected into the Realtime client's agents properties, as well as channel params on `channels.get` calls.
+
+## Chat Client {#client}
+
+- `(CHA-CL1)` `[Testable]` The `ChatClient` provides a `dispose` method to clean up all resources and prepare the client for garbage collection.
+  - `(CHA-CL1a)` `[Testable]` When `dispose` is called on a `ChatClient`, it must first dispose of all rooms. This will release all rooms currently in use.
+  - `(CHA-CL1b)` `[Testable]` After disposing of rooms, the `ChatClient` must dispose of the connection instance.
+  - `(CHA-CL1c)` This operation is naturally asynchronous, however many languages use synchronous destructor sequences. Therefore each language should implement whatever is most idiomatic, and the exact implementation details are left up to each individual SDK.
+
+## Rooms
+
+### General Information {#rooms-general}
+
+A Room is the atomic unit of Chat. All chat operations are performed in the context of a room that a client is currently attached to. As the Room is the atomic unit, its state should be considered as the combination of the states of underlying resources.
+
+### Connection Status
+
+The connection status of the Chat client closely reflects the status of the underlying Realtime client.
+
+- `(CHA-CS1)` Every chat client has a `status`, which describes the current status of the connection.
+  - `(CHA-CS1a)` The `INITIALIZED` status is a default status when the realtime client is first initialized. This value may be seen if the realtime client doesn't have autoconnect turned on.
+  - `(CHA-CS1b)` The `CONNECTING` status is used when the client is in the process of connecting to Ably servers.
+  - `(CHA-CS1c)` The `CONNECTED` status is used when the client connected to Ably servers.
+  - `(CHA-CS1d)` The `DISCONNECTED` status is used when the client is not currently connected to Ably servers. This state may be temporary as the underlying Realtime SDK seeks to reconnect.
+  - `(CHA-CS1e)` The `SUSPENDED` status is used when the client is in an extended state of disconnection, but will attempt to reconnect.
+  - `(CHA-CS1f)` The `FAILED` status is used when the client is disconnected from the Ably servers due to some non-retriable failure such as authentication failure. It will not attempt to reconnect.
+  - `(CHA-CS1g)` The `CLOSING` status is used when a user has called `close` on the underlying Realtime client and it is attempting to close the connection with Ably. The library will not attempt to reconnect.
+  - `(CHA-CS1h)` The `CLOSED` status is used when the `close` call on the underlying Realtime client has succeeded, either via mutual agreement with the server or forced after a time out. The library will not attempt to reconnect.
+- `(CHA-CS2)` The connection must expose its current status.
+  - `(CHA-CS2a)` `[Testable]` The chat client must expose its current connection status, a single value from the list in `CHA-CS1`.
+  - `(CHA-CS2b)` `[Testable]` The chat client must expose the latest error, if any, associated with its current status.
+- `(CHA-CS3)` `[Testable]` The initial status and error of the connection must be whatever status the realtime client returns whilst the connection status object is constructed.
+- `(CHA-CS4)` The chat client must allow its connection status to be observed by clients.
+  - `(CHA-CS4a)` `[Testable]` Connection status update events must contain the newly entered connection status.
+  - `(CHA-CS4b)` `[Testable]` Connection status update events must contain the previous connection status.
+  - `(CHA-CS4c)` `[Testable]` Connection status update events must contain the connection error (if any) that pertains to the newly entered connection status.
+  - `(CHA-CS4d)` `[Testable]` Clients must be able to register a listener for connection status events and receive such events.
+  - `(CHA-CS4e)` `[Testable]` Clients must be able to unregister a listener for connection status events and from that point onwards, cease to receive such events on that listener.
+  - `(CHA-CS4f)` This specification point has been removed. It was valid until the V1 API Review.
+- `(CHA-CS5)` The chat client must monitor the underlying realtime connection for connection status changes.
+  - `(CHA-CS5a)` This specification point has been removed. It was valid until the V1 API Review.
+    - `(CHA-CS5a1)` This specification point has been removed. It was valid until the V1 API Review.
+    - `(CHA-CS5a2)` This specification point has been removed. It was valid until the V1 API Review.
+    - `(CHA-CS5a3)` This specification point has been removed. It was valid until the V1 API Review.
+    - `(CHA-CS5a4)` This specification point has been removed. It was valid until the V1 API Review.
+  - `(CHA-CS5b)` This specification point has been removed. It was valid until the V1 API Review.
+  - `(CHA-CS5c)` `[Testable]` If a connection state event is observed from the underlying realtime library, the client must emit a status change event. The current status of that event shall reflect the status change in the underlying realtime library, along with the accompanying error.
+
+### Room Statuses {#rooms-status}
+
+The status of any given Chat Room is determined by the state of the underlying realtime channel. For more information on this, see [`Room Lifecycle`](#rooms-lifecycle).
+
+- `(CHA-RS1)` Every room has a `status`, which describes the current status of the room.
+  - `(CHA-RS1a)` The `INITIALIZED` status is the initial status before any attachment operations have taken place.
+  - `(CHA-RS1b)` The `ATTACHING` status is used when the room is in the process of attaching to Ably.
+  - `(CHA-RS1c)` The `ATTACHED` status means that the room is fully connected to Ably and functioning normally.
+  - `(CHA-RS1d)` The `DETACHING` status is used when the room is in the process of detaching from Ably.
+  - `(CHA-RS1e)` The `DETACHED` status means that the room has been detached from Ably by a user-initiated request. It will not attempt to re-connect without explicit intervention.
+  - `(CHA-RS1f)` The `SUSPENDED` status is when the room has been detached from Ably for an extended period of time. The room will periodically attempt to reconnect.
+  - `(CHA-RS1g)` The `FAILED` status means that something has gone wrong with the room (such as lack of permissions). The room will not attempt to connect to Ably and will require user intervention.
+  - `(CHA-RS1h)` The `RELEASING` status means that the room is being released and the underlying resources are being cleaned up.
+  - `(CHA-RS1i)` The `RELEASED` status means that the room has been cleaned up and the object can no longer be used.
+  - `(CHA-RS1j)` The `INITIALIZING` status is reserved for React uses, and should not be included outside of the JS/TS SDK.
+- `(CHA-RS2)` A room must expose its current status.
+  - `(CHA-RS2a)` `[Testable]` A room must expose its current status, a single value from the list provided above.
+  - `(CHA-RS2b)` A room must expose the latest error, if any, associated with its current status.
+    - `(CHA-RS2b1)` `[Testable]` If an error is associated with the current status, then this must be exposed.
+    - `(CHA-RS2b2)` `[Testable]` If there is no error is associated with the current status, then the room status should not expose any errors.
+- `(CHA-RS3)` `[Testable]` A newly created room must have a current status of `INITIALIZED`.
+- `(CHA-RS4)` A room must allow changes to room status to be observed by clients.
+  - `(CHA-RS4a)` `[Testable]` Room status update events must contain the newly entered room status.
+  - `(CHA-RS4b)` `[Testable]` Room status update events must contain the previous room status.
+  - `(CHA-RS4c)` `[Testable]` Room status update events must not contain an error, where that error pertains to the current status.
+  - `(CHA-RS4d)` `[Testable]` Room status update events must contain an error, where that error pertains to the current status.
+  - `(CHA-RS4e)` `[Testable]` Clients must be able to register a listener for room status updates and receive such events.
+  - `(CHA-RS4f)` `[Testable]` Clients must be able to unregister a listener for room status updates and from that point onwards, cease to receive such events on that listener only.
+  - `(CHA-RS4g)` This specification point has been removed. It was valid until the V1 API Review.
+- `(CHA-RS5)` `[Testable]` The initial status and error of the connection must be whatever status the realtime client returns whilst the connection status object is constructed.
+
+### Room Lifecycle {#rooms-lifecycle}
+
+Rooms are considered the atomic units of chat, and each is underpinned by a dedicated realtime channel.
+
+There are three room lifecycle operations: `ATTACH`, `DETACH`, `RELEASE`.
+
+Discontinuities in Realtime connections can happen - whereby continuity of message delivery is disrupted. Therefore, a room and its associated features may also experience discontinuity events - where the user may need to take some action to restore continuity in their application. In Chat, we explicitly tell the user when there's a discontinuity, rather than require them to implement the monitoring themselves.
+
+#### Room Lifecycle Operations {#rooms-lifecycle-operations}
+
+- `(CHA-RL13)` The room lifecycle shall maintain a `hasAttachedOnce` flag, which represents whether or not the next `ATTACHED` channel state change is the first one received (i.e. the product of a call to `ATTACH`). It defaults to `false`. Subsequent specification items will explain how this flag is manipulated.
+- `(CHA-RL14)` The room lifecycle shall maintain a `isExplicitlyDetached` flag, which represents whether or not the current room `DETACHED` status is the result of a user-initiated `detach` operation. It defaults to `false`. Subsequent specification items will explain how this flag is manipulated.
+- `(CHA-RL1)` A room must be explicitly attached via the `ATTACH` operation.
+  - `(CHA-RL1a)` `[Testable]` If the room is already in the `ATTACHED` status, then this operation is no-op.
+  - `(CHA-RL1j)` This specification point has been removed.
+  - `(CHA-RL1b)` This specification point has been removed, it was valid up until the single-channel migration.
+  - `(CHA-RL1c)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-RL1l)` `[Testable]` If the room is in the `RELEASED` status, the operation shall be rejected with an `ErrorInfo` with the `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes).
+  - `(CHA-RL1d)` `[Testable]` If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to `CHA-RL7`.
+  - `(CHA-RL1e)` `[Testable]` Notwithstanding the above points, when the attachment operation begins, the room shall be transitioned to the `ATTACHING` status before attempting to attach to the realtime channel.
+  - `(CHA-RL1k)` `[Testable]` Following the `CHA-RL1e` transition, the client shall initiate and await the attachment of the realtime channel.
+    - `(CHA-RL1k1)` `[Testable]` If the attachment is successful, the room status shall be transitioned to `ATTACHED`, the `isExplicitlyDetached` flag shall be set to `false` and the `hasAttachedOnce` flags set to `true`.
+    - `(CHA-RL1k2)` `[Testable]` If the attachment is unsuccessful (i.e. `channel.attach()` throws an error), the attach error is the `ErrorInfo` from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the attach error.
+    - `(CHA-RL1k3)` `[Testable]` If the attachment is unsuccessful (i.e. `channel.attach()` throws an error), the attach error will be thrown as the result of the room `attach()` operation.
+  - `(CHA-RL1f)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL1g)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1g1)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1g2)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1g3)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL1h)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1h1)` This clause has been deleted.
+    - `(CHA-RL1h2)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1h3)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1h4)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1h5)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL1h6)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL1i)` This specification point has been removed. It was superseded by CHA-RC1f.
+    - `(CHA-RL1i1)` This specification point has been removed. It was made redundant by the introduction of `CHA-RC1`.
+- `(CHA-RL2)` A room must be explicitly detached via the `DETACH` operation.
+  - `(CHA-RL2i)` `[Testable]` If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to `CHA-RL7`.
+  - `(CHA-RL2a)` `[Testable]` If the room status is already `DETACHED`, then this operation is a no-op.
+  - `(CHA-RL2b)` `[Testable]` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL2c)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-RL2l)` `[Testable]` If the room is in the `RELEASED` status, the operation shall be rejected with an `ErrorInfo` with the `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes).
+  - `(CHA-RL2d)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-RL2m)` `[Testable]` If the room is in the `FAILED` status, the operation shall be rejected with an `ErrorInfo` with `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes).
+  - `(CHA-RL2j)` `[Testable]` Notwithstanding the above points, when the detachment operation begins, the room shall be transitioned to the `DETACHING` status before attempting to detach from the realtime channel.
+  - `(CHA-RL2k)` `[Testable]` Following the `CHA-RL2j` transition, the client shall initiate and await the detachment of the realtime channel.
+    - `(CHA-RL2k1)` `[Testable]` If the detachment is successful, the room status shall be transitioned to `DETACHED`, and the `isExplicitlyDetached` flag set to `true`.
+    - `(CHA-RL2k2)` `[Testable]` If the detachment is unsuccessful (i.e. `channel.detach()` throws an error), the detach error is the `ErrorInfo` from the underlying channel operation. The current channel state shall be used to determine the new room status, which will be enacted, accompanied by the detach error.
+    - `(CHA-RL2k3)` `[Testable]` If the detachment is unsuccessful (i.e. `channel.detach()` throws an error), the detach error will be thrown as the result of the room `detach()` operation.
+  - `(CHA-RL2e)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL2f)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL2g)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL2h)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL2h1)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL2h2)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL2h3)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-RL3)` A room must be explicitly released via the `RELEASE` operation. This operation is not performed directly on a Room object by the client, but is described here.
+  - `(CHA-RL3k)` `[Testable]` If a room lifecycle operation is already in progress, this operation shall wait until the current operation completes before continuing, subject to `CHA-RL7`.
+  - `(CHA-RL3a)` `[Testable]` If the room is already in the `RELEASED` status, this operation is no-op.
+  - `(CHA-RL3b)` `[Testable]` If the room is in the `DETACHED` status, then the room is immediately transitioned to `RELEASED` and the operation succeeds.
+  - `(CHA-RL3j)` `[Testable]` If the room is in the `INITIALIZED` status, then the room is immediately transitioned to `RELEASED` and the operation succeeds.
+  - `(CHA-RL3c)` This specification point has been removed.
+  - `(CHA-RL3i)` This specification point has been removed.
+  - `(CHA-RL3m)` `[Testable]` When the release operation commences, the room will transition into the `RELEASING` status.
+  - `(CHA-RL3n)` After `CHA-RL3m`, the room enters a detach loop.
+    - `(CHA-RL3n1)` `[Testable]` If the channel state is `FAILED`, the client shall immediately breaks from the loop.
+    - `(CHA-RL3n2)` `[Testable]` The client shall initiate and await a `channel.detach()` operation. If this operation succeeds, the client shall exit the loop.
+    - `(CHA-RL3n3)` `[Testable]` If the `channel.detach()` operation fails, and the realtime channel state is `FAILED` (checked after the failure), the loop shall terminate.
+    - `(CHA-RL3n4)` `[Testable]` If the `channel.detach()` operation fails otherwise, the client shall wait a short time (250ms) and restart the loop from `CHA-RL3n1`.
+  - `(CHA-RL3o)` `[Testable]` Upon operation completion, the room status shall be transitioned to `RELEASED`.
+  - `(CHA-RL3h)` `[Testable]` Upon operation completion, the underlying Realtime Channel shall be released from the core SDK to prevent leakage.
+  - `(CHA-RL3l)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL3d)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL3e)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL3f)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL3g)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-RL7)` Room lifecycle operations are atomic and exclusive operations: one operation must complete (whether that's failure or success) before the next one may begin.
+  - `(CHA-RL7a)` `[Testable]` Room lifecycle operations have a precedence. If multiple operations are scheduled to run, they run in the following order:
+    - `(CHA-RL7a1)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL7a2)` 1. The `RELEASE` operation - Highest priority.
+    - `(CHA-RL7a3)` 2. The `ATTACH` and `DETACH` operations have equal precedence.
+- `(CHA-RL9)` Many operations in the Chat SDK will still attempt to proceed if the room is in an `ATTACHING` status. However, their ability to proceed will depend on the subsequent status that the room takes. This specification point is defined here to avoid unnecessary repetition. It is primarily testable via the points that refer to it.
+  - `(CHA-RL9a)` `[Testable]` When the room status is `ATTACHING` at the point of operation commencement, the caller will subscribe a one-time listener to the room status.
+  - `(CHA-RL9b)` `[Testable]` If the next room status received by the caller is `ATTACHED`, the operation shall proceed as normal.
+  - `(CHA-RL9c)` `[Testable]` If the next room status received is any other value, the operation must throw an error. The `ErrorInfo` shall have the `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes). The `cause` field must contain any error associated with the room status change, if present.
+  - `(CHA-RL9d)` `[Testable]` Once execution has resumed, the client MAY check the room status again, to handle spurious changes or race conditions.
+- `(CHA-RL10)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-RL5)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL5a)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL5a1)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL5b)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL5c)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL5d)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL5e)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL5f)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL5f1)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL5f2)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL5f3)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-RL6)` This specification point has been removed. It was superseded by `CHA-RL8`.
+- `(CHA-RL6a)` This specification point has been removed. It was superseded by `CHA-RL8`.
+- `(CHA-RL8)` This specification point has been removed. It was a duplicate of `CHA-RS3`.
+
+#### Room Lifecycle Monitoring {#rooms-lifecycle-monitoring}
+
+As well as user-initiated operations, the room must monitor its underlying resources and act accordingly. This includes handling disconnections from the server, as well as discontinuities in channel messages.
+
+- `(CHA-RL4)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL4a)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4a1)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4a2)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4a3)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4a4)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RL4b)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b1)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b2)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b3)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b4)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b5)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b6)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b7)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b8)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b9)` This specification point has been removed. It was valid up until the single-channel migration.
+    - `(CHA-RL4b10)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-RL11)` The room must monitor the underlying realtime channel state, and update the room status accordingly.
+  - `(CHA-RL11a)` `[Testable]` The room will subscribe to non-`UPDATE` channel state events on the underlying realtime channel.
+  - `(CHA-RL11b)` `[Testable]` If a room lifecycle operation is in progress and such a channel state event is received, the operation is no-op.
+  - `(CHA-RL11c)` `[Testable]` If a room lifecycle operation is not in progress and such a channel state event is received, then the room status is set according to the underlying channel state, along with any associated error.
+- `(CHA-RL12)` The room must monitor the underlying realtime channel state and emit notifications of discontinuity.
+  - `(CHA-RL12a)` `[Testable]` The room will subscribe to `UPDATE` and `ATTACHED` state events on the underlying realtime channel.
+  - `(CHA-RL12b)` `[Testable]` If such a channel event is received, and the `resumed` flag is `false`, and the `hasAttachedOnce` property is `true` and the `isExplicitlyDetached` flag is `false`, then a discontinuity event will be emitted, using an `ErrorInfo` with the `RoomDiscontinuity` code from the [error codes](#error-codes) and the error from the `ChannelStateChange` as the cause.
+- `(CHA-RL15)` The room must allow users to subscribe to discontinuity events.
+  - `(CHA-RL15a)` `[Testable]` The room must allow users to supply a listener that shall receive events when a room discontinuity is detected.
+  - `(CHA-RL15b)` `[Testable]` Users must be able to unsubscribe a previously added listener, after which point events shall no longer be received.
+  - `(CHA-RL15c)` `[Testable]` Attempting to unsubscribe a previously removed listener shall result in a no-op.
+
+## Room Configuration
+
+Each chat room can be configured individually, allowing options to be passed as to which features are enabled and also feature-specific settings.
+
+- `(CHA-RC1)` Chat Rooms are singleton objects with respect to the Chat Client on which they are created.
+  - `(CHA-RC1a)` This specification point has been removed. It was superseded by CHA-RC1f.
+  - `(CHA-RC1f)` `[Testable]` Requesting a room from the Chat Client shall return a future, that eventually resolves to an instance of a room with the provided id and (optional) options.
+    - `(CHA-RC1f7)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+    - `(CHA-RC1f8)` `[Testable]` If the `Rooms` instance has been disposed (following a call to `dispose`), attempting to get a room must throw an error with code `ResourceDiposed`.
+    - `(CHA-RC1f1)` `[Testable]` If the room name exists in the room map, but the room has been requested with different options, then an `ErrorInfo` with the `RoomExistsWithDifferentOptions` error code from the [chat-specific error codes](#error-codes) shall be thrown.
+    - `(CHA-RC1f2)` `[Testable]` If the room name exists in the room map, and it is requested with the same options, then the same instance of the room must be reused.
+    - `(CHA-RC1f3)` `[Testable]` If no `CHA-RC1g` release operation is in progress, a new room instance shall be created, added to the room map and returned as the future value.
+    - `(CHA-RC1f4)` `[Testable]` If a `CHA-RC1g` release operation is in progress, the entry shall be added to the room map, but the new room instance must not be created until the release operation has resolved. The future shall then subsequently resolve with the new room value.
+    - `(CHA-RC1f5)` In relation to `CHA-RC1f4`, we recommend storing a future in the room map.
+    - `(CHA-RC1f6)` It should be noted that the "get" operations in this section are interruptible by a `CHA-RC1g` release call.
+  - `(CHA-RC1b)` This specification point has been removed, it was superseded by `CHA-RC1f2`
+  - `(CHA-RC1c)` This specification point has been removed, it was superseded by `CHA-RC1f3`
+  - `(CHA-RC1d)` This specification point has been removed.
+    - `(CHA-RC1d1)` This specification point has been removed.
+  - `(CHA-RC1e)` This specification point has been removed.
+  - `(CHA-RC1g)` A room may be `released`, which causes it to be disposed of and eligible for garbage collection.
+    - `(CHA-RC1g1)` The release operation returns a future that shall resolve when the operation completes.
+    - `(CHA-RC1g2)` `[Testable]` If the room does not exist in the room map, and no release operation is in progress, this operation is no-op.
+    - `(CHA-RC1g3)` `[Testable]` If the room does not exist in the room map, and a release operation is already in progress, then the associated future will be returned.
+    - `(CHA-RC1g4)` `[Testable]` If a release operation is already in progress, any pending `CHA-RC1f` future shall be rejected / throw an error. The error must use the `RoomReleasedBeforeOperationCompleted` error code from the [chat-specific error codes](#error-codes). The room shall be removed from the room map and the operation must return the future associated with the previous operation.
+    - `(CHA-RC1g5)` `[Testable]` The room is removed from the room map and a `CHA-RL3` release operation is initiated for the room object. A future is returned which resolves when the release operation completes.
+    - `(CHA-RC1g6)` `[Testable]` Once the `CHA-RL3` release operation completes, each individual feature must be cleaned up for garbage collection via its individual `dispose` method.
+- `(CHA-RC5)` `[Testable]` All chat feature properties (e.g. `room.messages`) are enabled by default. The specific behaviour of each feature is controlled by its respective room options `CHA-RC2`.
+- `(CHA-RC2)` Chat rooms are configurable, so as to enable or disable certain functionality. When requesting a room, options as to what functionality should be enabled/disabled, can be provided (`RoomOptions`).
+  - `(CHA-RC2a)` `[Testable]` If a room is requested with invalid configuration, for example: a negative typing timeout, an `ErrorInfo` with code `InvalidArgument` must be thrown.
+  - `(CHA-RC2c)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RC2b)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RC2d)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RC2e)` This specification point has been removed. It was valid up until the single-channel migration.
+  - `(CHA-RC2f)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-RC3)` Multiple chat features share one realtime channel (for example, presence and messages). Each feature may have different channel modes/options that need to be applied.
+  - `(CHA-RC3a)` This specification point has been replaced by `CHA-RC3d`.
+  - `(CHA-RC3b)` This specification point has been replaced by `CHA-RC3d`.
+  - `(CHA-RC3c)` `[Testable]` Unless explicitly stated otherwise, the channel used shall be `<roomName>::$chat`. So if your room name is `foo`, the channel will be `foo::$chat`.
+  - `(CHA-RC3d)` `[Testable]` When retrieving the `CHA-RC3c` channel via `channels.get()`, the channel modes in the `ChannelOptions` should be set as follows. Set `ChannelOptions.modes` to an initial value of `['PUBLISH', 'SUBSCRIBE', 'PRESENCE', 'ANNOTATION_PUBLISH']`. Then follow these steps:
+    - `(CHA-RC3d1)` `[Testable]` If the `presence.enableEvents` room option (`CHA-PR9c`) is `true`, then add `PRESENCE_SUBSCRIBE` to `ChannelOptions.modes`.
+    - `(CHA-RC3d2)` `[Testable]` If the `messages.rawMessageReactions` room option (`CHA-MR9`) is `true`, then add `ANNOTATION_SUBSCRIBE` to `ChannelOptions.modes`.
+- `(CHA-RC4)` Users may provide room options to the `rooms.get()` call to control the behaviour of the room.
+  - `(CHA-RC4a)` `[Testable]` Where room options have not been provided, the client shall provide defaults.
+  - `(CHA-RC4b)` `[Testable]` Where a partial room options have been provided, the client shall deep-merge the provided values with the defaults.
+
+## Rooms Disposal {#roos-disposal}
+
+Rooms in the Chat SDK are a complex type that register many different listeners and consume many different events. Therefore, there must be methods available to clean up any listeners to allow for garbage collection.
+
+- `(CHA-RD1)` `[Testable]` The `Rooms` map / manager must offer an internal API for disposal, that must prepare the rooms manager for garbage collection and release all managed rooms.
+  - `(CHA-RD1a)` `[Testable]` When disposal is called, it must mark the instance as disposed to prevent future room operations.
+  - `(CHA-RD1b)` `[Testable]` If no rooms exist when `dispose` is called, the method must complete successfully without error.
+  - `(CHA-RD1c)` `[Testable]` If rooms exist in the map, the procedure must release all rooms currently in the rooms map concurrently.
+  - `(CHA-RD1d)` `[Testable]` The procedure must wait for all room release operations to complete before resolving.
+
+## Messages
+
+Messages are the quintessential component of a chat room - the purpose of chat is for users to talk to each other!
+
+Broadly speaking, messages are published via REST calls to the Chat HTTP API and message events are received in Realtime over a corresponding realtime channel.\
+`Messages` shall be exposed to consumers via the `messages` property of a `Room`.
+
+- `(CHA-M1)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-M2)` A `Message` corresponds to a single message in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a `ProtocolMessage`).
+  - `(CHA-M2d)` `[Testable]` A `Message` contains a unique, immutable `serial`, which is a lexicographically sortable string. Global message order can be determined by a simple string comparison of the serials. The SDK must not attempt to parse timeserial strings.
+  - `(CHA-M2e)` `[Testable]` In global ordering, a `Message` is considered to occur before another `Message` if the `serial` of the first `Message` is before the latter when lexicographically sorted.
+  - `(CHA-M2f)` `[Testable]` In global ordering, a `Message` is considered after another `Message` if the `serial` of the first `Message` is after the latter when lexicographically sorted.
+  - `(CHA-M2g)` `[Testable]` Two `Messages` are considered to be the same if they have the same `serial`, that is to say, both `Serial` strings are identical.
+  - `(CHA-M2h)` `[Testable]` A `Message` may contain an optional `userClaim` field, which is a server-provided read-only string extracted from JWT claims embedded in realtime message extras (`extras.userClaim`) or REST API response data. Clients cannot send this field when publishing messages.
+- `(CHA-M10)` A `Message` can be modified by applying a new `action` to it, such as an update or delete. Applying an `action` must generate a new `Message` instance with the same `serial` and an updated `version`.
+  - `(CHA-M10a)` `[Testable]` The `version` of a `Message` is a lexicographically sortable via it's `serial` field, unique identifier for each version of the `Message`.
+  - `(CHA-M10b)` This clause has been deleted.
+  - `(CHA-M10c)` This clause has been deleted.
+  - `(CHA-M10d)` This clause has been deleted.
+  - `(CHA-M10e)` `[Testable]` To sort `Message` `versions` of the same `Message` (instances with the same `serial`) in global order, sort `Message` instances lexicographically by their `version.serial` property.
+    - `(CHA-M10e1)` `[Testable]` Two `Message` instances of the same `serial` are considered the same version if they have the same `version.serial` property.
+    - `(CHA-M10e2)` `[Testable]` Among `Message` instances of the same `serial`, the one with a lexicographically higher `version.serial` is newer.
+    - `(CHA-M10e3)` `[Testable]` Among `Message` instances of the same `serial`, the one with a lexicographically lower `version.serial` is older.
+  - `(CHA-M10f)` This specification point has been removed.
+  - `(CHA-M10g)` This specification point has been removed.
+  - `(CHA-M10h)` This specification point has been removed.
+- `(CHA-M3)` A client must be able to send a message to a room.
+  - `(CHA-M3f)` `[Testable]` A client may send a message via the Chat REST API.
+  - `(CHA-M3a)` `[Testable]` When a message is sent successfully via the Chat REST API, the caller shall receive a struct representing the [`Message`](#chat-structs-message) in response, as if it were received via Realtime event.
+    - `(CHA-M3a1)` `[Testable]` The message shall be populated directly from the data returned in the server response.
+  - `(CHA-M3b)` `[Testable]` A message may be sent via the Chat REST API without `metadata` or `headers`. When these are not specified by the user, they must be omitted from the REST payload.
+  - `(CHA-M3c)` This clause has been deleted.
+  - `(CHA-M3d)` This clause has been deleted.
+  - `(CHA-M3e)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation shall be thrown as the result of the `send` call.
+- `(CHA-M8)` A client must be able to update a message in a room.
+  - `(CHA-M8a)` `[Testable]` A client may update a message via the Chat REST API by calling the `update` method.
+  - `(CHA-M8b)` `[Testable]` When a message is updated successfully via the REST API, the caller shall receive a struct representing the [Messagev4](#chat-structs-message-v4) in response, as if it were received via Realtime event.
+    - `(CHA-M8b1)` `[Testable]` The message shall be populated directly from the data returned in the server response.
+  - `(CHA-M8c)` `[Testable]` An update operation has PUT semantics. If a field is not specified in the update, it is assumed to be removed.
+  - `(CHA-M8d)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation must be thrown as the result of the `update` call.
+  - `(CHA-M8e)` `[Testable]` A client must be able to update a message without requiring the full `Message` type. At minimum, it must be able to provide a `serial` string and an object/other parameters to update and an (optional) operation information.
+    - `(CHA-M8e1) The exact idiom for the method signature is left to the best practice for the language.
+      ** `(CHA-M8f)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-M8g)` `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code `InvalidArgument` must be thrown.
+- `(CHA-M9)` A client must be able to delete a message in a room.
+  - `(CHA-M9a)` `[Testable]` A client may delete a message via the Chat REST API by calling the `delete` method.
+  - `(CHA-M9b)` `[Testable]` When a message is deleted successfully via the REST API, the caller shall receive a struct representing the [Messagev4](#chat-structs-message-v4) in response, as if it were received via Realtime event.
+    - `(CHA-M9b1)` `[Testable]` The message shall be populated directly from the data returned in the server response.
+  - `(CHA-M9c)` `[Testable]` If an error is returned from the REST API, its `ErrorInfo` representation must be thrown as the result of the `delete` call.
+  - `(CHA-M9d)` `[Testable]` A client must be able to delete a message without requiring the full `Message` type. At minimum, it must be able to provide a `serial` string and an (optional) operation information.
+    - `(CHA-M9d1) The exact idiom for the method signature is left to the best practice for the language.
+      ** `(CHA-M9e)@ This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-M9f)` `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code `InvalidArgument` must be thrown.
+- `(CHA-M4)` Messages can be received via a subscription in realtime.
+  - `(CHA-M4a)` `[Testable]` A subscription can be registered to receive incoming messages. Adding a subscription has no side effects on the status of the room or the underlying realtime channel.
+  - `(CHA-M4b)` `[Testable]` A subscription can de-registered from incoming messages. Removing a subscription has no side effects on the status of the room or the underlying realtime channel.
+  - `(CHA-M4c)` This specification point has been removed. It was valid up until the v1 API review.
+  - `(CHA-M4l)` When a realtime message with the `name` field set to `chat.message` is received, it shall be translated into a message event based on its `action`. This message event contains a `type` field with the event type as well as a `message` field containing the [Messagev4](#chat-structs-message-v4). This event shall then broadcast to all subscribers.
+  - `(CHA-M4d)` `[Testable]` If a realtime message with an unknown `name` is received, the SDK shall silently discard the message, though it may log at `DEBUG` or `TRACE` level.
+  - `(CHA-M4m)` `[Testable]` The `action` field of the realtime message determines the type of chat message event that is emitted, based on the following rules.
+    - `(CHA-M4m1)` `[Testable]` If `action` is set to `MESSAGE_CREATE`, then an event with `type` set to `message.created` shall be emitted.
+    - `(CHA-M4m2)` `[Testable]` If `action` is set to `MESSAGE_UPDATE`, then an event with `type` set to `message.updated` shall be emitted.
+    - `(CHA-M4m3)` `[Testable]` If `action` is set to `MESSAGE_DELETE`, then an event with `type` set to `message.deleted` shall be emitted.
+    - `(CHA-M4m4)` `[Testable]` This specification point has been removed. It was valid until the introduction of CHADR-108.
+    - `(CHA-M4m5)` If an event is to be ignored (i.e. because the `action` is unknown), the library must log the fact at `INFO` level.
+  - `(CHA-M4k)` `[Testable]` Incoming realtime events that are malformed, or have incomplete data, shall still emit an event, but fields will be replaced with default values.
+    - `(CHA-M4k1)` `[Testable]` Text fields (e.g. serial, string, clientId) shall be empty strings. The `version` field specification has been superseded by `CHA-M4k5`.
+    - `(CHA-M4k2)` `[Testable]` Object fields (e.g. headers, metadata) shall be empty maps/objects.
+    - `(CHA-M4k3)` This specification point has been removed.
+    - `(CHA-M4k4)` This specification point has been removed.
+    - `(CHA-M4k5)` `[Testable]` The `message.timestamp` field shall be 0 (the unix epoch).
+    - `(CHA-M4k6)` `[Testable]` The `message.version.serial` field shall match `message.serial`.
+    - `(CHA-M4k7)` `[Testable]` The `message.version.timestamp` field shall match `message.timestamp`.
+- `(CHA-M5)` For a given subscription, messages prior to the point of subscription can be retrieved in a history-like request. Note that this is the point in the message flow `(subscription point)` at which the subscription was made, NOT the channel attachment point.
+  - `(CHA-M5a)` `[Testable]` If a subscription is added when the underlying realtime channel is `ATTACHED`, then the `subscription point` is the current `channelSerial` of the realtime channel.
+  - `(CHA-M5b)` `[Testable]` If a subscription is added when the underlying realtime channel is in any other state, then its `subscription point` becomes the `attachSerial` at the the point of channel attachment.
+  - `(CHA-M5c)` `[Testable]` If a channel leaves the `ATTACHED` state and then re-enters `ATTACHED` with `resumed=false`, then it must be assumed that messages have been missed. The `subscription point` of any subscribers must be reset to the `attachSerial`.
+  - `(CHA-M5d)` `[Testable]` If a channel `UPDATE` event is received and `resumed=false`, then it must be assumed that messages have been missed. The `subscription point` of any subscribers must be reset to the `attachSerial`.
+  - `(CHA-M5e)` Each subscription shall expose a method or callback that allows for messages to be queried. These messages are queried via the "REST API"#rest-fetching-messages-history.
+  - `(CHA-M5f)` `[Testable]` This method must accept any of the standard history query options, except for `orderBy`, which must always be `newestFirst`.
+  - `(CHA-M5g)` `[Testable]` The subscribers `subscription point` must be additionally specified (internally, by us) in the `fromSerial` query parameter.
+  - `(CHA-M5h)` `[Testable]` The method must return a standard `PaginatedResult` , which can be further inspected to paginate across results.
+  - `(CHA-M5i)` `[Testable]` If the REST API returns an error, then the method must throw its `ErrorInfo` representation.
+  - `(CHA-M5j)` This specification point has been removed.
+- `(CHA-M6)` Messages (history) must be queryable from a paginated REST API.
+- `(CHA-M6a)` `[Testable]` A method must be exposed that accepts the standard Ably REST API query parameters. It shall call the "REST API history endpoint"#rest-fetching-messages-history and return a `PaginatedResult` containing messages, which can then be paginated through. Each message must be represented by the standard `Message` object.
+- `(CHA-M6b)` `[Testable]` If the REST API returns an error, then the method must throw its `ErrorInfo` representation.
+- `(CHA-M13)` A single message must be retrievable from the REST API.
+  - `(CHA-M13a)` `[Testable]` A method must be exposed that accepts a message serial and returns a single `Message` object. It shall call the "REST API single message endpoint"#rest-fetching-single-message and return the message if found.
+  - `(CHA-M13b)` `[Testable]` If the REST API returns an error, then the method must throw its `ErrorInfo` representation.
+- `(CHA-M7)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-M11)` A `Message` must have a method `with` to apply changes from events (`MessageEvent` and `MessageReactionSummaryEvent`) to produce updated message instances.\
+  `(CHA-M11a)` This specification point has been removed. It was valid up until the pre-v1 error code review.\
+  `(CHA-M11h)` `[Testable]` When the method receives a `MessageEvent` of type `created`, it must throw an `ErrorInfo` with code `InvalidArgument`.\
+  `(CHA-M11b)` This specification point has been removed. It was valid up until the pre-v1 error code review.\
+  `(CHA-M11i)` `[Testable]` For `MessageEvent` the method must verify that the `message.serial` in the event matches the message's own serial. If they don't match, an error with code `InvalidArgument` must be thrown.\
+  `(CHA-M11c)` `[Testable]` For `MessageEvent` of type `update` and `delete`, if the event message is older or the same (see CHA-M10), the original message must be returned unchanged.\
+  `(CHA-M11d)` `[Testable]` For `MessageEvent` of type `update` and `delete`, if the event message is newer (see CHA-M10), the method must return a new message based on the event and deep-copying the reactions from the original message.\
+  `(CHA-M11e)` This specification point has been removed. It was valid up until the pre-v1 error code review.\
+  `(CHA-M11j)` `[Testable]` For `MessageReactionSummaryEvent`, the method must verify that the `messageSerial` in the event matches the message's own serial. If they don't match, an error with code `InvalidArgument` must be thrown.\
+  `(CHA-M11f)` `[Testable]` For `MessageReactionSummaryEvent`, the method must return a new `Message` instance (deep copy) with the updated reactions, preserving all other properties of the original message.\
+  `(CHA-M11g)` `[Testable]` For `MessageReactionSummaryEvent`, the method must deep-copy the reactions from the event before applying them to the returned message instance.
+- `(CHA-M12)` `[Testable]` The `Messages` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+
+## Message Reactions {#messageReactions}
+
+Users can add reactions to messages, such as thumbs-up or heart emojis. Summaries (counts per reaction name, and who reacted) of the message reactions are stored with the message and are visible to all users in the room. Message reactions are powered by Pub/Sub message annotations.
+
+`MessagesReactions` object is the entry point for interacting with Message Reactions. It shall be exposed to consumers via a `reactions` property inside the `Messages` obejct. From the `Room` level: `room.messages.reactions`.
+
+- `(CHA-MR1)` Message reactions are powered by Pub/Sub message annotations. The annotation type used is of the format `reaction:<aggregation>`.
+
+<!-- -->
+
+- `(CHA-MR2)` There are three types of message reactions, each corresponding to a different annotation aggregation type.\
+  `(CHA-MR2a)` Reactions of type `unique` use the annotation type `reaction:unique.v1`. In this type, each client can add only one reaction (by `name`). Reacting again changes the reaction to the new one (similar to WhatsApp or iMessage).\
+  `(CHA-MR2b)` Reactions of type `distinct` use the annotation type `reaction:distinct.v1`. Each client can add multiple reaction with different names, but each unique `name` only once (similar to Slack).\
+  `(CHA-MR2c)` Reactions of type `multiple` use the annotation type `reaction:multiple.v1`. In this type, each client can add any reaction `name` multiple times including duplicates. Reactions can include a `count` field indicating how many times the reaction should be counted towards the total (similar to claps on Medium).
+
+<!-- -->
+
+- `(CHA-MR3)` `[Testable]` The `reactions` property of the `Message` object is an object or map that contains summaries for all message reaction types. For convenience when using this in the public API, these are keyed by reaction type and not annotation type (eg. "distinct" and not "reaction:distinct.v1").
+  - `(CHA-MR3a)` `[Testable]` The values for each reaction type summary are the same as defined in PubSub for the respective annotation aggregation types.\
+    `(CHA-MR3b)` `[Testable]` For `unique` reaction types, the summary is at `Message.reactions.unique` and is of type `Dict<string, SummaryClientIdList>` (see `TM7b2`).\
+    `(CHA-MR3b3)` `[Testable]` For `distinct` reaction types, the summary is at `Message.reactions.distinct` and is of type `Dict<string, SummaryClientIdList>` (see `TM7b1`).\
+    `(CHA-MR3b2)` `[Testable]` For `multiple` reaction types, the summary is at `Message.reactions.multiple` and is of type `Dict<string, SummaryClientIdCounts>` (see `TM7b3`).
+
+<!-- -->
+
+- `(CHA-MR4)` `[Testable]` Users should be able to send a reaction to a message via the \`send\` method of the \`MessagesReactions\` object (`room.messages.reactions.send`).
+  - `(CHA-MR4a)` `[Testable]` The \`send\` method accepts a message serial as the first parameter to identify which message to react to.
+    - `(CHA-MR4a1)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+    - `(CHA-MR4a2)` `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code `InvalidArgument` must be thrown.
+  - `(CHA-MR4b)` `[Testable]` The \`send\` method accepts a \`params\` object as the second parameter with the following properties:
+    - `(CHA-MR4b1)` `[Testable]` A \`name\` property (required) specifying the reaction identifier (e.g., emoji string).
+    - `(CHA-MR4b2)` `[Testable]` A \`type\` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
+    - `(CHA-MR4b3)` `[Testable]` A \`count\` property (optional) specifying the reaction count. This is only valid for reactions of type \`multiple\`. Defaults to 1 and must be a positive integer.
+
+<!-- -->
+
+- `(CHA-MR11)` `[Testable]` Users should be able to delete a reaction from a message via the \`delete\` method of the \`MessagesReactions\` object (`room.messages.reactions.delete`).
+  - `(CHA-MR11a)` `[Testable]` The \`delete\` method accepts a message serial as the first parameter to identify which message to delete the reaction from.
+    - `(CHA-MR11a1)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+    - `(CHA-MR11a2)` `[Testable]` If the `serial` passed to this method is invalid: `undefined, null, empty string`, an error with code `InvalidArgument` must be thrown.
+  - `(CHA-MR11b)` `[Testable]` The \`delete\` method accepts a \`params\` object as the second parameter with the following properties:
+    - `(CHA-MR11b1)` `[Testable]` A \`name\` property specifying the reaction identifier (e.g., emoji string). It is required for all reaction types except for `Unique`.
+    - `(CHA-MR11b1a)` `[Testable]` If the reaction type is not `Unique` and the `name` param is not provided, an error with code `InvalidArgument` must be thrown.
+    - `(CHA-MR11b2)` `[Testable]` A \`type\` property (optional) specifying the reaction type. If not provided, the default reaction type for the room is used.
+
+<!-- -->
+
+- `(CHA-MR13)` `[Testable]` Users should be able to fetch the message reaction summary for a given client ID via the `clientReactions` method of the `MessageReactions` object.
+  - `(CHA-MR13a)` This method accepts the following arguments:
+    - `(CHA-MR13a1)` `messageSerial`, string: the `serial` of the message for which reactions should be fetched
+    - `(CHA-MR13a2)` `clientId`, optional string: the `clientId` whose reactions should be fetched (absent means the current client, to be determined implicitly from the authenticated user)
+  - `(CHA-MR13b)` `[Testable]` Calls the [REST API fetch reactions summary endpoint](#rest-fetching-reactions-summary) and returns the summary.
+    - `(CHA-MR13b1)` `[Testable]` If the user does not pass the `clientId` argument, then the REST API call must not include the `forClientId` parameter.
+  - `(CHA-MR13c)` `[Testable]` If the REST API returns an error, then the method must throw its `ErrorInfo` representation.
+
+<!-- -->
+
+- `(CHA-MR5)` `[Testable]` Users may configure a default message reactions type for a room. This configuration is provided at the `RoomOptions.messages.defaultMessageReactionType` property, or idiomatic equivalent. The default value is `distinct`.
+
+<!-- -->
+
+- `(CHA-MR6)` `[Testable]` Users must be able to subscribe to message reaction summaries via the `subscribe` method of the `MessagesReactions` object (`room.messages.reactions.subscribe`). The events emitted will be of type `MessageReactionSummaryEvent`.\
+  `(CHA-MR6a)` `[Testable]` Invalid reaction summary events received over realtime must still produce an event, but with fields filled in with default values.\
+  \* `(CHA-MR6a1)` `[Testable]` The summary shall be assumed to be an empty object if unspecified.\
+  \* `(CHA-MR6a2)` `[Testable]` If the reaction type (e.g. unique, distinct) is unknown - then it shall be ignored.\
+  \* `(CHA-MR6a3)` `[Testable]` If data for a known reaction type (e.g. unique, distinct, multiple) is missing - then it shall be set to an empty object.\
+  \* `(CHA-MR6a4)` If an event is to be ignored, the library must log the fact at `INFO` level.
+
+<!-- -->
+
+- `(CHA-MR7)` `[Testable]` Users must be able to subscribe to raw message reactions (as individual annotations) via the `subscribeRaw` method of the `MessagesReactions` object (`room.messages.reactions.subscribeRaw`). The events emitted are of type `MessageReactionRawEvent`.\
+  `(CHA-MR7a)` This specification point has been removed. It was valid up until the pre-v1 error code review.\
+  `(CHA-MR7c)` `[Testable]` The attempt to subscribe to raw message reactions must throw an `ErrorInfo` using the `FeatureNotEnabledInRoom` error code from the [chat-specific error codes](#error-codes) if the room is not configured to support raw message reactions (when room option `RoomOptions.messages.rawMessageReactions` is not set to `true`; it defaults to `false`).\
+  `(CHA-MR7d)` `[Testable]` A `MessageReactionRawEvent` may contain an optional `userClaim` field in its `reaction` object, which is a server-provided read-only string extracted from JWT claims embedded in realtime annotation message extras (`extras.userClaim`). Clients cannot send this field when adding reactions.\
+  `(CHA-MR7b)` `[Testable]` Invalid reaction events received over realtime must still produce an event, but with fields filled in with default values.\
+  \* `(CHA-MR7b1)` `[Testable]` If the reaction type (e.g. unique, distinct) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).\
+  \* `(CHA-MR7b2)` `[Testable]` If the reaction action type (e.g. add, remove) is unknown - the event shall be ignored (we would be guessing the semantics and likely get it wrong).\
+  \* `(CHA-MR7b3)` `[Testable]` String fields (e.g. name, clientId, serial) must take a default value of empty string.\
+  \* `(CHA-MR7b4)` If an event is to be ignored, the library must log the fact at `INFO` level.
+
+<!-- -->
+
+- `(CHA-MR8)` Raw message reactions must not be used to update the message reaction summary on the client-side as this is likely to produce wrong results. Message reaction summaries are to be used for this.
+
+<!-- -->
+
+- `(CHA-MR9)` `[Testable]` The room option `RoomOptions.messages.rawMessageReactions` controls whether raw message reactions are enabled or not. `CHA-RC3d2` describes how to implement this. The default value is `false`.\
+  `(CHA-MR9a)` This specification point has been replaced by `CHA-RC3d2`.
+
+<!-- -->
+
+- `(CHA-MR10)` This specification point has been replaced by `CHA-RC3d`.
+
+<!-- -->
+
+- `(CHA-MR12)` `[Testable]` The `MessageReactions` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+
+## Ephemeral Room Reactions {#reactions}
+
+Ephemeral room reactions are one-time events that are sent to the room, such as thumbs-up or heart emojis. They are supposed to capture the current emotions in the room (e.g. everyone spamming the :tada: emoji when a team scores the winning goal).
+
+They are ephemeral as we do not currently store these messages do not support server-authoritative counting.
+
+All ephemeral room reactions are handled over the Realtime connection.
+
+`Reactions` shall be exposed to consumers via the `reactions` property of a `Room`.
+
+- `(CHA-ER1)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-ER2)` A `Reaction` corresponds to a single reaction in a chat room. This is analogous to a single user-specified message on an Ably channel (NOTE: **not** a `ProtocolMessage`).
+  - `(CHA-ER2a)` `[Testable]` A `Reaction` may contain an optional `userClaim` field, which is a server-provided read-only string extracted from JWT claims embedded in realtime message extras (`extras.userClaim`). Clients cannot send this field when publishing reactions.
+- `(CHA-ER3)` Ephemeral room reactions are sent to Ably via the Realtime connection via a `send` method.
+  - `(CHA-ER3a)` This specification point was removed. It was valid until the single-channel migration.
+  - `(CHA-ER3f)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-ER3g)` `[Testable]` If the connection state is not `CONNECTED`, the operation shall throw an `ErrorInfo` with code `Disconnected`.
+  - `(CHA-ER3d)` `[Testable]` Reactions are sent on the channel using an `ephemeral` message in [this format](#realtime-room-reactions).
+  - `(CHA-ER3b)` This clause has been deleted.
+  - `(CHA-ER3c)` This clause has been deleted.
+- `(CHA-ER4)` A user may subscribe to reaction events in Realtime.
+  - `(CHA-ER4a)` `[Testable]` A user may provide a listener to subscribe to reaction events. This operation must have no side-effects in relation to room or underlying status. When a [realtime message](#realtime-room-reactions) with name `roomReaction` is received, this message is converted into a [reaction object](#chat-structs-ephemeral-reactions) and emitted to subscribers.
+  - `(CHA-ER4b)` `[Testable]` A user may unsubscribe a registered listener. This operation must have no side-effects in relation to room or underlying status. Once unsubscribed, subsequent reaction events must not be emitted to this listener.
+  - `(CHA-ER4c)` `[Testable]` Realtime events with an unknown `name` shall be silently discarded.
+  - `(CHA-ER4d)` `[Testable]` This specification point has been removed. It was valid until the introduction of CHADR-108.
+  - `(CHA-ER4e)` `[Testable]` Realtime events that are malformed, or incomplete, must trigger an event, but fields shall be populated with default values.
+    - `(CHA-ER4e1)` `[Testable]` If the `name` field within the realtime message `data` is omitted, it shall be replaced with an empty string. NOTE: this is NOT the same as the `name` field on the message itself.
+    - `(CHA-ER4e2)` `[Testable]` The metadata and headers fields shall be replaced with empty objects.
+    - `(CHA-ER4e3)` `[Testable]` The clientId field shall be an empty string.
+    - `(CHA-ER4e4)` `[Testable]` Timestamp fields shall be the current timestamp.
+- `(CHA-ER5)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-ER6)` `[Testable]` The `RoomReactions` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+
+## Online Status (Presence) {#presence}
+
+Presence allows chat room users to indicate to others that they're online, as well as other information including their profile picture URL etc.
+
+`Presence` shall be exposed to consumers via the `presence` property of a `Room`.
+
+- `(CHA-PR1)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-PR2)` This specification point has been removed. It was valid up until the adoption of CHADR-107.
+  - `(CHA-PR2a)` `[Testable]` This specification point has been removed. It was valid up until the adoption of CHADR-107.
+  - `(CHA-PR2b)` This specification point has been removed. It was valid up until the adoption of CHADR-107.
+- `(CHA-PR3)` Users may enter presence. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
+  - `(CHA-PR3a)` `[Testable]` Users may choose to enter presence, optionally providing custom data to enter with.
+  - `(CHA-PR3b)` This clause has been replaced by `CHA-PR3c - CHA-PR3g`.
+  - `(CHA-PR3c)` This specification point has been removed.
+    - `(CHA-PR3c1) This specification point has been removed.
+      *** `(CHA-PR3c2)@ This specification point has been removed.
+  - `(CHA-PR3d)` `[Testable]` If the room status is `Attaching`, then the operation shall invoke a `CHA-RL9` pending room status operation and wait for it to complete. If this operation fails, then the error from `CHA-RL9` must be raised. If this succeeds (i.e the room becomes `ATTACHED`), the library must invoke the underlying `presence.enter()` call.
+  - `(CHA-PR3h)` `[Testable]` If the room status is anything other than `Attached` or `Attaching`, an `ErrorInfo` using the `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes) must be thrown. The message shall explain that attach must be called first.
+  - `(CHA-PR3e)` `[Testable]` If the room status is `Attached`, then the `enter` call will invoke the underlying `presence.enter()` call.
+  - `(CHA-PR3f)` This specification point has been removed. It was superseded by `CHA-PR3h`.
+  - `(CHA-PR3g)` This specification point has been removed. It was superseded by `CHA-PR3h`.
+- `(CHA-PR10)` Users may update their presence data. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
+  - `(CHA-PR10a)` `[Testable]` Users may choose to update their presence data, optionally providing custom data to update with.
+  - `(CHA-PR10b)` This clause has been replaced by `CHA-PR10c - CHA-PR10g`.
+  - `(CHA-PR10c)` This specification point has been removed.
+    - `(CHA-PR10c1)` This specification point has been removed.
+    - `(CHA-PR10c2)` This specification point has been removed.
+  - `(CHA-PR10d)` `[Testable]` If the room status is `Attaching`, then the operation shall invoke a `CHA-RL9` pending room status operation and wait for it to complete. If this operation fails, then the error from `CHA-RL9` must be raised. If this succeeds (i.e the room becomes `ATTACHED`), the library must invoke the underlying `presence.update()` call.
+  - `(CHA-PR10h)` `[Testable]` If the room status is anything other than `Attached` or `Attaching`, an `ErrorInfo` using the `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes) must be thrown. The message shall explain that attach must be called first.
+  - `(CHA-PR10e)` `[Testable]` If the room status is `Attached`, then the `update` call will invoke the underlying `presence.enter()` call.
+  - `(CHA-PR10f)` This specification point has been removed. It was superseded by `CHA-PR10h`.
+  - `(CHA-PR10g)` This specification point has been removed. It was superseded by `CHA-PR10h`.
+- `(CHA-PR4)` Users may leave presence.
+  - `(CHA-PR4a)` `[Testable]` Users may choose to leave presence, which results in them being removed from the Realtime presence set. The user may optionally provide custom data to leave with.
+- `(CHA-PR5)` `[Testable]` It must be possible to query if a given clientId is in the presence set.
+- `(CHA-PR6)` `[Testable]` It must be possible to retrieve all the "`Members":#chat-structs-presence-member of the presence set. The behaviour depends on the current room status, as presence operations in a Realtime Client cause implicit attaches.
+  ** `(CHA-PR6a)@ This clause has been replaced by `CHA-PR6b - CHA-PR6f`.
+  - `(CHA-PR6b)` This specification point has been removed.
+    - `(CHA-PR6b1)` This specification point has been removed.
+    - `(CHA-PR6b2)` This specification point has been removed.
+  - `(CHA-PR6c)` `[Testable]` If the room status is `Attaching`, then the operation shall invoke a `CHA-RL9` pending room status operation and wait for it to complete. If this operation fails, then the error from `CHA-RL9` must be raised. If this succeeds (i.e the room becomes `ATTACHED`), the library must invoke the underlying `presence.get()` call.
+  - `(CHA-PR6h)` `[Testable]` If the room status is anything other than `Attached` or `Attaching`, an `ErrorInfo` using the `RoomInInvalidState` error code from the [chat-specific error codes](#error-codes) must be thrown. The message shall explain that attach must be called first.
+  - `(CHA-PR6d)` `[Testable]` If the room status is `Attached`, then the `get` call will invoke the underlying `presence.get()` call.
+  - `(CHA-PR6e)` This specification point has been removed. It was superseded by `CHA-PR6h`.
+  - `(CHA-PR6f)` This specification point has been removed. It was superseded by `CHA-PR6h`.
+  - `(CHA-PR6g)` `[Testable]` A `PresenceMember` may contain an optional `userClaim` field, which is a server-provided read-only string extracted from JWT claims embedded in realtime presence message extras (`extras.userClaim`). Clients cannot send this field when entering presence.
+- `(CHA-PR7)` Users may subscribe to presence events.
+  - `(CHA-PR7d)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-PR7e)` `[Testable]` If presence events have been disabled per `CHA-PR9c`, then the client shall throw an `ErrorInfo` using the `FeatureNotEnabledInRoom` error code from the [chat-specific error codes](#error-codes).
+  - `(CHA-PR7a)` `[Testable]` Users may provide a listener to subscribe to all [presence events](#chat-structs-presence-event-v2) in a room.
+  - `(CHA-PR7b)` `[Testable]` This specification point has been removed.
+  - `(CHA-PR7c)` `[Testable]` A subscription to presence may be removed, after which it shall receive no further events.
+- `(CHA-PR8)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-PR9)` Users may configure their presence options via the `RoomOptions` provided at room configuration time.
+  - `(CHA-PR9a)` This specification point has been removed. It was valid up until the single-channel migration and was replaced by `CHA-PR9c`.
+  - `(CHA-PR9b)` This specification point has been removed. It was valid up until the single-channel migration and was replaced by `CHA-PR9c`.
+  - `(CHA-PR9c)` The option `presence.enableEvents` controls whether or not the client should receive presence events from the server. `CHA-RC3d1` describes how to implement this.
+    - `(CHA-PR9c1)` `[Testable]` This option defaults to `true`.
+    - `(CHA-PR9c2)` This specification point has been replaced by `CHA-RC3d1`.
+- `(CHA-PR11)` `[Testable]` The `Presence` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+
+## Typing Indicators {#typing}
+
+Typing Indicators allow chat room users to indicate to others that they are typing. This is most common in 1:1 and community chat, where a UI would display somthing like "Alice and Bob are typing..." to users.
+
+This system uses ephemeral non-persisted heartbeat messages. They do not appear in channel history, resume or rewind.
+
+`Typing Indicators` shall be exposed to consumers via the `typing` property of a `Room`.
+
+For the purpose of this section, an `ephemeral message` is understood to mean a regular message where `message.extras.ephemeral` is set to `true`, i.e [typing-message-format](#realtime-typing-message).
+
+- `(CHA-T1)` This specification point has been removed. It was replaced by `CHA-RC3c`.
+- `(CHA-T2)` This specification point has been removed. It was replaced by `CHA-T9`.
+- `(CHA-T8)` This specification point has been removed. It was replaced by `CHA-RC3c`.
+- `(CHA-T9)` This specification point has been removed. It was valid until the V1 API Review.
+- `(CHA-T16)` `[Testable]` Users must be able to retrieve a list of the currently typing client IDs through a `typing.current()` method. The list must be a copy of the up-to-date internal list of typing client IDs. This method is deprecated; use `currentTypers` (`CHA-T18`) instead.
+- `(CHA-T15)` `[Testable]` Users must be able to provide a listener to subscribe to new typing events that the Chat client emits. This operation must have no side effects on the status of the room or the underlying realtime channel.
+- `(CHA-T10)` `[Testable]` Users may configure a heartbeat interval (the no-op period for `typing.keystroke` when the heartbeat timer is set active at `CHA-T4a4`). This configuration is provided at the `RoomOptions.typing.heartbeatThrottleMs` property, or idiomatic equivalent. The default is 10000ms.
+  - `(CHA-T10a)` A grace period shall be set by the client (the grace period on the `CHA-T10` heartbeat interval when receiving events). The default value shall be set to 2000ms.
+    - `(CHA-T10a1)` This grace period is used to determine how long to wait (since the last recorded received typing event), beyond the heartbeat interval, before removing a client from the typing set. This is used to prevent flickering when a user is typing and stops typing for a short period of time. See `CHA-T13b1` for a detailed description of how this is used.
+- `(CHA-T3)` This specification point has been removed. It was replaced by `CHA-T10`.
+- `(CHA-T4)` Users may indicate that they have started typing using the `keystroke` method.
+  - `(CHA-T4d)` This specification point has been removed. It was valid until the V1 API Review.
+  - `(CHA-T4e)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-T4f)` `[Testable]` If the connection state is not `CONNECTED`, the operation shall throw an `ErrorInfo` with code `Disconnected`.
+  - `(CHA-T4a)` If typing is not already in progress (i.e. a heartbeat timer has not been set by the successful publish `CHA-T4a4` of a `typing.started` event):
+    - `(CHA-T4a1)` This specification point has been removed. It was replaced by `CHA-T4a3+`.
+    - `(CHA-T4a2)` This specification point has been removed. It was replaced by `CHA-T4a3+`.
+    - `(CHA-T4a3)` `[Testable]` The client shall publish an ephemeral message to the channel with the `name` field set to `typing.started`, the format of which is detailed [here](#realtime-typing-message).
+    - `(CHA-T4a4)` `[Testable]` Upon successful publish, a heartbeat timer shall be set according to the `CHA-T10` timeout interval.
+    - `(CHA-T4a5)` `[Testable]` The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
+  - `(CHA-T4b)` This specification point has been removed. It was superseded by `CHA-T4c`.
+  - `(CHA-T4c)` If typing is already in progress (i.e. a heartbeat timer set according to `CHA-T4a4` exists and has not expired):
+    - `(CHA-T4c1)` `[Testable]` The client must not send a `typing.started` event, instead it shall return a successful no-op to the caller.
+- `(CHA-T5)` Users may explicitly indicate that they have stopped typing using `stop` method.
+  - `(CHA-T5a)` `[Testable]` If typing is not in progress (i.e. a `CHA-T4a4` heartbeat timer does not exist or is expired), this operation is a no-op.
+  - `(CHA-T5b)` This specification point has been removed.
+  - `(CHA-T5c)` This specification point has been removed. It was valid until the V1 API Review.
+  - `(CHA-T5f)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-T5g)` `[Testable]` If the connection state is not `CONNECTED`, the operation shall throw an `ErrorInfo` with code `Disconnected`.
+  - `(CHA-T5d)` `[Testable]` The client shall publish an ephemeral message to the channel with the name field set to `typing.stopped`, the format of which is detailed [here](#realtime-typing-message). The client must wait for the publish to succeed or fail before returning the result to the caller.
+  - `(CHA-T5d1)` `[Testable]` The client must wait for the publish to succeed or fail before returning the result to the caller. If the publish fails, the client must handle this transparently and re-throw the error directly to the caller.
+  - `(CHA-T5e)` `[Testable]` On successfully publishing the message in `(CHA-T5d)`, the `CHA-T4a4` timer shall be unset.
+- `(CHA-T6)` Users may subscribe to typing events - updates to a set of clientIDs that are typing. This operation, like all subscription operations, has no side-effects in relation to room lifecycle.
+  - `(CHA-T6a)` `[Testable]` Users may provide a listener to subscribe to [typing events](#chat-structs-typing-event-V3) in a chat room.
+  - `(CHA-T6b)` `[Testable]` A subscription to typing may be removed, after which it shall receive no further events.
+  - `(CHA-T6c)` This specification point has been removed, it has been superseded by `CHA-T6d`.
+    - `(CHA-T6c1)` This specification point has been removed, it has been superseded by `CHA-T6d`.
+    - `(CHA-T6c2)` This specification point has been removed, it has been superseded by `CHA-T6d`.
+  - `(CHA-T6d)` `[Testable]` The emitted typing event must include a `currentTypers` field of type `TypingMember[]` (see "#chat-structs-typing-member"), containing all users currently typing with their associated metadata. The `currentlyTyping` field on the event is deprecated in favour of `currentTypers`.
+- `(CHA-T7)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-T13)` When a typing event (`typing.start` or `typing.stop`) is received from the realtime client, the Chat client shall emit appropriate events to all registered listeners `(CHA-T15)`.
+  - `(CHA-T13a)` `[Testable]` Typing events received from the server must have a valid `clientId` and must not be malformed, i.e they must conform to the expected [payload](#realtime-typing-message) (unknown fields should be ignored). Invalid events shall not be handled or emitted to any registered listeners (`CHA-T15`).
+    - `(CHA-T13a1)` `[Testable]` A `TypingEvent` may contain an optional `userClaim` field in its `change` object, which is a server-provided read-only string extracted from JWT claims embedded in realtime typing message extras (`extras.userClaim`). Clients cannot send this field when publishing typing events. When a typing event is received, the client must update the `userClaim` for that `clientId` in the typing set to match the value from the incoming event. If a subsequent event (including heartbeat events) for the same `clientId` arrives without a `userClaim`, or with a different value, the entry in the typing set must be updated to reflect this, and an updated typing event must be emitted to listeners.
+  - `(CHA-T13b)` `[Testable]` When a typing event is received on the realtime client:
+    - `(CHA-T13b1)` `[Testable]` If the event represents a new client typing, then the Chat client shall add the typers `clientId` to the typing set and a emit the updated set, via a new [typing event](#chat-structs-typing-event-V3), to any listeners. It shall also begin a timer with a timeout period that is the sum of the `CHA-T10` heartbeat interval and the `CHA-T10a` graсe period.
+    - `(CHA-T13b2)` `[Testable]` Each additional `typing.started` event from the same client shall reset the `(CHA-T13b1)` timer for that client.
+    - `(CHA-T13b3)` `[Testable]` If the `(CHA-T13b1)` timer expires, the client shall remove the `clientId` from the typing set and emit a typing stopped event for the given client to all registered listeners (`CHA-T15`).
+    - `(CHA-T13b4)` `[Testable]` If the event represents a client that has stopped typing, the Chat client shall remove the `clientId` from the typing set and emit a typing stopped event to any registered listeners (`CHA-T15`). It shall also cancel the `(CHA-T13b1)` timer for the given typing client.
+    - `(CHA-T13b5)` `[Testable]` If the event represents a client that has stopped typing, but the `clientId` for that client is not present in the typing set, then no stop typing event shall be emitted to any registered listeners (`CHA-T15`).
+- `(CHA-T14)` `[Testable]` Multiple asynchronous calls to keystroke/stop typing must eventually converge to a consistent state.
+  - `(CHA-T14a)` `[Testable]` When a call to `keystroke` or `stop` is made, it should attempt to acquire a mutex lock.
+  - `(CHA-T14b)` `[Testable]` Once the lock is acquired, if another call is made to either function, the second call shall be queued and wait until it can acquire the lock before executing.
+    - `(CHA-T14b1)` `[Testable]` During this time, each new subsequent call to either function shall abort the previously queued call, this should be registered as a successful no-op to the caller. In doing so, there shall only ever be one pending call while the mutex is held, thus the most recent call shall "win" and execute once the mutex is released.
+    - `(CHA-T14b2)` `[Testable]` If an error occurs while the lock is held, the mutex shall be released and the error shall be thrown to the caller.
+- `(CHA-T17)` `[Testable]` The `Messages` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel. Any timeouts or timers associated with typing heartbeats must also be cancelled.
+- `(CHA-T18)` `[Testable]` Users must be able to retrieve the current set of typing users with associated metadata through a `currentTypers` property on the `Typing` object. It must return a copy of the up-to-date internal typing set as a `TypingMember[]` (see "#chat-structs-typing-member"). Each entry contains the `clientId` and, where present, the `userClaim` of the typing user.
+
+## Occupancy
+
+Occupancy allows chat room users to find out how many people are currently online in the Chat Room, which is useful for showing statistics such as the viewer count in a livestream. It allows this to happen without\
+the overhead of having everyone in presence.
+
+`Occupancy` shall be exposed to consumers via the `occupancy` property of a `Room`.
+
+- `(CHA-O1)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-O2)` The occupancy event format is shown [here](#chat-structs-occupancy-event)
+- `(CHA-O3)` `[Testable]` Users can request an instantaneous occupancy check via the REST API. The request is detailed [here](#rest-occupancy-request), with the response format being a simple [occupancy data struct](#chat-structs-occupancy-data)
+- `(CHA-O4)` Users can subscribe to realtime occupancy updates.
+  - `(CHA-O4e)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-O4h)` `[Testable]` If occupancy events have been disabled per `CHA-O6`, then the client shall throw an `ErrorInfo` using the `FeatureNotEnabledInRoom` error code from the [chat-specific error codes](#error-codes).
+  - `(CHA-O4a)` `[Testable]` Users may register a listener that receives occupancy events in realtime.
+  - `(CHA-O4b)` `[Testable]` A subscription to occupancy events may be removed, after which it shall receive no further events.
+  - `(CHA-O4c)` This specification point has been removed. It was valid until the V1 API Review.
+  - `(CHA-O4f)` `[Testable]` When a regular occupancy event is received on the channel (a standard PubSub occupancy event per the docs), the SDK will convert it into [occupancy event V2](#chat-structs-occupancy-event-v2) format, with type `OccupancyEventType.Updated`, and broadcast it to subscribers.
+  - `(CHA-O4d)` `[Testable]` This specification point has been removed. It was valid until the introduction of CHADR-108.
+  - `(CHA-O4g)` `[Testable]` If an invalid occupancy event is received from the channel, or is incomplete, then an event must be emitted but the values shall be 0.
+- `(CHA-O5)` This specification point has been removed. It was valid up until the single-channel migration.
+- `(CHA-O6)` Enabling occupancy events causes extra messages to be received by the client. Therefore, whether to receive these messages shall be user-configurable.
+  - `(CHA-O6a)` `[Testable]` If `occupancy.enableEvents` is set to `true`, then the client shall set the `options.params.occupancy` channel parameter to `"metrics"` on the underlying realtime channel per `CHA-RC3`.
+  - `(CHA-O6b)` `[Testable]` If `occupancy.enableEvents` is set to `false`, then the client shall not set the `options.params.occupancy` channel parameter.
+  - `(CHA-O6c)` `[Testable]` The default value of `occupancy.enableEvents` is `false`.
+- `(CHA-O7)` Users can access the latest occupancy received in realtime, via the `occupancy.current()` method.
+  - `(CHA-O7a)` `[Testable]` The `current` method should return the latest occupancy numbers received over the realtime connection in a `[meta]occupancy` event.
+  - `(CHA-O7b)` `[Testable]` If no realtime events have been received yet, `current()` returns undefined/null.
+  - `(CHA-O7c)` This specification point has been removed. It was valid up until the pre-v1 error code review.
+  - `(CHA-O7d)` `[Testable]` If occupancy events are not enabled via `RoomOptions.occupancy.enableEvents`, `current()` throws an `ErrorInfo` using the `FeatureNotEnabledInRoom` error code from the [chat-specific error codes](#error-codes).
+- `(CHA-O8)` `[Testable]` The `Occupancy` instance must provide an internal disposal mechanism, that removes all user-provided listeners, and un-registers any internal listeners that have been associated with the Realtime channel.
+
+## Chat HTTP REST API {#rest-api}
+
+### General {#rest-general}
+
+- `(CHA-RST1)` REST API requests shall be made via the `request()` method on the underling Ably SDK.
+- `(CHA-RST2)` REST API requests shall use the API Protocol Version of the underlying core SDK.
+- `(CHA-RST3)` `[Testable]` REST API requests must be supported using `JSON` and `msgpack` as a `Content-Type` (`useBinaryProtocol` on the underlying Ably SDK)
+- `(CHA-RST6)` `[Testable]` All URL path variables (that is, the path segments given in angle brackets, e.g. `<roomName>`) must be percent-encoded as follows: the path variable must first be encoded to UTF-8 octets, and then each octet that does not satisfy the `pchar` rule in section 3.3 of [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986) must be percent-encoded using the mechanism described in section 2.1 of the same RFC. Implementations are free to percent-encode any other octets that do not satisfy the `unreserved` rule in section 2.3 of the same RFC; this allows implementations to use standard library URI-encoding functions that also percent-encode some characters satisfying `pchar`, for example JavaScript's `encodeURIComponent` function. (Be careful when selecting a standard library function for URI-encoding to ensure that it does indeed produce output suitable for use in a URI path segment; for example, JavaScript's `encodeURI` does not percent-encode the `/` character, rendering it unsuitable.)
+- `(CHA-RST4)` `[Testable]` This specification point has been replaced by `CHA-RST6`.
+- `(CHA-RST5)` `[Testable]` This specification point has been replaced by `CHA-RST6`.
+
+### Sending Messages {#rest-sending-messages}
+
+#### Request V4 {#rest-sending-messages-request-v4}
+
+Below is the full REST payload format for the V4 endpoint. The `metadata` and `headers` keys are optional.
+
+      POST /chat/v4/rooms/<roomName>/messages
+      {
+        "text": "the message text",
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+      }
+
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-sending-messages-response-v3}
+
+A successful request shall result in status code `201 Created`.
+
+The response body is as follows.
+
+      {
+        "serial": "01726585978590-001@abcdefghij:001",
+        "createdAt": 1726232498871
+      }
+
+#### Response V4 {#rest-sending-messages-response-v4}
+
+A successful request shall result in status code `201 Created`.
+
+The response body is as follows.
+
+      {
+        // A full message object
+      }
+
+#### Corresponding Realtime Event V3 (Deprecated as of endpoint v4) {#rest-sending-messages-realtime-v3}
+
+      {
+        "type": "message.created"
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
+            }
+          },
+          "timestamp": 1726232498871,
+          "createdAt": 1726232498871,
+          "extras": {
+            "headers": {
+              "baz": "qux"
+            },
+          },
+          "serial": "01726585978590-001@abcdefghij:001",
+          "action": "message.create",
+          "version": "01726585978590-001@abcdefghij:001",
+          "operation": {}
+        }
+      }
+
+#### Corresponding Realtime Event V4 {#rest-sending-messages-realtime-v4}
+
+      {
+        "type": "message.created"
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
+            }
+          },
+          "timestamp": 1726232498871,
+          "extras": {
+            "headers": {
+              "baz": "qux"
+            },
+          },
+          "serial": "01726585978590-001@abcdefghij:001",
+          "action": "message.create",
+          "version": {
+            serial: "01726585978590-001@abcdefghij:001",
+            timestamp: 1726232498871,
+        }
+      }
+
+### Updating Messages {#rest-updating-messages}
+
+#### Request {#rest-updating-messages-request}
+
+Below is the full REST payload format for the endpoint. The `description`, `headers` and both `metadata` keys are optional.
+
+      PUT /chat/v4/rooms/<roomName>/messages/<serial>
+      {
+        "message": {
+          "text": "the new message text",
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          },
+          "headers": {
+            "baz": "qux"
+          },
+        },
+        "description": "why-the-action-was-performed"
+        "metadata": {
+          "foo": "bar"
+        }
+      }
+
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-updating-messages-response-v3}
+
+A successful request shall result in status code `200 Ok`.
+
+The response body is as follows.
+
+      {
+        "version": "01726585978590-001@abcdefghij:001",
+        "timestamp": 1726585978590,
+        "message": {
+          // A full message object
+        }
+      }
+
+#### Response V4 {#rest-updating-messages-response-v4}
+
+A successful request shall result in status code `200 Ok`.
+
+The response body is as follows.
+
+      {
+          // A full message object
+      }
+
+#### Corresponding Realtime Event {#rest-updating-messages-request}
+
+      {
+        "type": "message.updated"
+        "message": {
+          "name": "chat.message"
+          "encoding": "json"
+          "data": {
+            "text": "the new message text",
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
+            }
+          },
+          "createdAt": 1726232498871,
+          "timestamp": 1726585978590,
+          "extras": {
+            "headers": {
+              "baz": "qux"
+            }
+          }
+          "serial": "01726232498871-001@abcdefghij:001",
+          "version": "01726585978590-001@abcdefghij:001"
+          "action": "message.update"
+          "operation": {
+            "clientId": "who-performed-the-action",
+            "description": "why-the-action-was-performed"
+            "metadata": {
+              "foo": "bar"
+            }
+          }
+        }
+      }
+
+### Deleting Messages {#rest-deleting-messages}
+
+#### Request {#rest-deleting-messages-request}
+
+Below is the full REST payload format for the endpoint.
+
+      POST /chat/v4/rooms/<roomName>/messages/<serial>/delete
+      {
+        "description": "why-the-action-was-performed"
+        "metadata": {
+          "foo": "bar"
+        }
+      }
+
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-deleting-messages-response-v3}
+
+A successful request shall result in status code `200 Ok`.
+
+The response body is as follows.
+
+      {
+        "version": "01826232498871-001@abcdefghij:001",
+        "timestamp": 1826232498871,
+        "message": {
+          // A full message object
+        }
+      }
+
+#### Response V4 {#rest-deleting-messages-response-v4}
+
+A successful request shall result in status code `200 Ok`.
+
+The response body is as follows.
+
+      {
+        // A full message object
+      }
+
+#### Corresponding Realtime Event {#rest-deleting-messages-request}
+
+    {
+      "type": "message.deleted",
+      "message": {
+        "name": "chat.message",
+        "encoding": "json",
+        "data": {
+          "text": "the original message text",
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          }
+        },
+        "timestamp": "1726232498871",
+        "extras": {
+          "headers": {
+            "baz": "qux"
+          }
+        },
+        "serial": "01726585978590-001@abcdefghij:001",
+        "action": "message.deleted",
+        "version": {
+          "serial": "01826232498871-001@abcdefghij:001",
+          "timestamp": 1826232498871,
+          "clientId": "who-performed-the-action",
+          "description": "why-the-action-was-performed",
+          "metadata": {
+            "foo": "bar"
+          }
+        }
+      }
+    }
+
+### Fetching a Single Message {#rest-fetching-single-message}
+
+#### Request V3 `(deprecated as of endpoint v4)` {#rest-fetching-single-message-request}
+
+      GET /chat/v3/rooms/<roomName>/messages/<serial>
+
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-fetching-single-message-response}
+
+A single V3 [`Message` struct](#chat-structs-message-v2) or status 404 if not found.
+
+#### Request V4 {#rest-fetching-single-message-request}
+
+      GET /chat/v4/rooms/<roomName>/messages/<serial>
+
+#### Response V4 {#rest-fetching-single-message-response}
+
+A single V4 [`Message` struct](#chat-structs-message-v4) or status 404 if not found.
+
+### Fetching Message History {#rest-fetching-messages-history}
+
+#### Request V3 `(deprecated as of endpoint v4)` {#rest-fetching-messages-request}
+
+      GET /chat/v4/rooms/<roomName>/messages
+
+The method accepts query parameters identical to the standard Ably REST API.
+
+#### Response V3 `(deprecated as of endpoint v4)` {#rest-fetching-messages-response-v3}
+
+An array of V2 [`Message` structs](#chat-structs-message-v2)
+
+#### Request V4 {#rest-fetching-messages-request}
+
+      GET /chat/v4/rooms/<roomName>/messages
+
+The method accepts query parameters identical to the standard Ably REST API.
+
+#### Response V4 {#rest-fetching-messages-response-v4}
+
+An array of V4 [`Message` structs](#chat-structs-message-v4)
+
+### Sending message reactions {#rest-sending-message-reactions}
+
+#### Request V4 {#rest-sending-messages-reactions-request-v4}
+
+Below is the full REST payload format for the V4 endpoint. The `count` field is optional, defaults to 1, and it is only accepted for reactions of type `multiple`.
+
+      POST /chat/v4/rooms/<roomId>/messages/<serial>/reactions
+      {
+        "type": "multiple",
+        "name": "🔥",
+        "count": 5
+      }
+
+#### Response V4 {#rest-sending-messages-response-v4}
+
+A successful request shall result in status code `201 Created`.
+
+The response body is as follows showing the serial of the new annotation.
+
+      {
+        "serial": "01746631786947-000@cbfVqJopQBorrt95348450",
+      }
+
+#### Corresponding Realtime Event V4 {#rest-sending-messages-realtime-v4}
+
+Note this is an Annotation not a Message. ChannelMessage action is 21. The annotations are under the `annotations` key.
+
+      {
+        "action" : 0,
+        "clientId" : "user-1",
+        "messageSerial" : "01746631762878-000@cbfVqJopQBorrt95348450:000",
+        "name" : "🔥",
+        "serial" : "01746631786947-000@cbfVqJopQBorrt95348450:000",
+        "type" : "multiple",
+        "count": 5
+      }
+
+A message summary event is also broadcast to the channel after adding or removing one or more annotations.
+
+### Deleting message reactions {#rest-deleting-message-reactions}
+
+#### Request V4 {#rest-deleting-messages-reactions-request-v4}
+
+Below is the full REST payload format for the V4 endpoint. The `name` param is ignored for reactions of type `unique` but it is required for all other reaction types.
+
+      DELETE /chat/v4/rooms/<roomId>/messages/<serial>/reactions?type=<reactionType>&name=<reaction>
+
+#### Response V4 {#rest-sending-messages-response-v4}
+
+A successful request shall result in status code `200 OK`.
+
+The response body is as follows showing the serial of the new annotation (annotation delete is also an annotation with annotation `action=1`).
+
+      {
+        "serial": "01746632464399-000@cbfVqJopQBorrt95348450",
+      }
+
+#### Corresponding Realtime Event V4 {#rest-sending-messages-realtime-v4}
+
+Note this is an Annotation not a Message. ChannelMessage action is 21. The annotations are under the `annotations` key.
+
+      {
+        "action" : 1,
+        "clientId" : "user-1",
+        "messageSerial" : "01746631762878-000@cbfVqJopQBorrt95348450:000",
+        "name" : "❤️",
+        "serial" : "01746632464399-000@cbfVqJopQBorrt95348450:000",
+        "type" : "distinct"
+      }
+
+A message summary event is also broadcast to the channel after adding or removing one or more annotations.
+
+### Fetching Summary of Reactions for a Message {#rest-fetching-reactions-summary}
+
+#### Request V4 {#rest-fetching-reactions-summary-request}
+
+      GET /chat/v4/rooms/<roomName>/messages/<serial>/client-reactions
+
+Accepts the following query parameters:
+
+- `forClientId` (optional): The client ID for which the message summary should be fetched. Defaults to the client ID of the authenticated user.
+
+#### Response V4 {#rest-fetching-reactions-summary-response}
+
+A single V4 [`Message.reactions` struct](#chat-structs-message-v4) or status 404 if not found.
+
+## Chat Realtime API {#realtime-api}
+
+This section describes the message formats for chat events that occur over a Realtime connection.
+
+### Ephemeral Room Reactions (Deprecated) {#realtime-room-reactions-deprecated}
+
+This was valid until the Chat v1 API review.
+
+      {
+        "name": "roomReaction"
+        "encoding": "json"
+        "data": {
+          "type": ":heart:",
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          }
+        },
+        "timestamp": "1726232498871", // Only on incoming messages
+        "extras": {
+          "headers": {
+            "baz": "qux"
+          },
+          "ephemeral": true, // This is set by the Chat SDK
+        }
+      }
+
+### Ephemeral Room Reactions {#realtime-room-reactions}
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+      {
+        "name": "roomReaction"
+        "encoding": "json"
+        "data": {
+          "name": ":heart:",
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          }
+        },
+        "timestamp": "1726232498871", // Only on incoming messages
+        "extras": {
+          "headers": {
+            "baz": "qux"
+          },
+          "ephemeral": true, // This is set by the Chat SDK
+        }
+      }
+
+### Typing Message {#realtime-typing-message}
+
+      {
+        "name": "typing.started" // Required, must be either "typing.started" or "typing.stopped"
+        "clientId": "who-is-typing", // Required, cannot be empty string or null - This is automatically set by the underlying pubsub SDK.
+        "extras": { "ephemeral": true } // Required, must be set to true
+      }
+
+### Occupancy {#rest-occupancy}
+
+#### Request {#rest-occupancy-request}
+
+      GET /chat/v4/rooms/<roomName>/occupancy
+
+#### Response {#rest-occupancy-response}
+
+An [`OccupancyEvent` struct](#chat-structs-occupancy)
+
+## Chat Structs and Types {#chat-structs}
+
+This section contains an overview of the key types in Chat. This is not intended to be prescriptive to implementation and different ecosystems may expose the underlying properties\
+in whichever format is most idiomatic to the platform.
+
+### RoomOptions {#chat-structs-room-options}
+
+The RoomOptions struct describes configuration options for a Chat room. It is an optional argument when getting the room, with defaults provided. Below describes the structure, along with the default values.
+
+      {
+        "presence": {
+          "enableEvents": true
+        },
+        "typing": {
+          "heartbeatThrottleMs": 10000
+        },
+        "occupancy": {
+          "enableEvents": false
+        },
+        "messages": {
+          "rawMessageReactions": false,
+          "defaultMessageReactionType": MessageReactionType.Distinct
+        }
+      }
+
+### Messages {#chat-structs-message}
+
+#### Messages V1 `(deprecated)` {#chat-structs-message-v1}
+
+      {
+        "timeserial": "cbfqxperABgItU52203559@1726232498871-0",
+        "clientId": "who-sent-the-message",
+        "text": "my-message",
+        "createdAt": DateTime(),
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+      }
+
+`(deprecated)` Determining the global order of messages may be achieved by comparing the timeserials. See `CHA-M2` for more information.
+
+#### Messages V2 `(deprecated)` {#chat-structs-message-v2}
+
+      {
+        "serial": "01726585978590-001@abcdefghij:001",
+        "clientId": "who-sent-the-message",
+        "text": "my-message",
+        "createdAt": DateTime(),
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+        "action": "message.created",
+        "version": "01726585978590-001@abcdefghij:001",
+        "timestamp": DateTime(),
+        "operation": {
+            "clientId": "who-performed-the-action",
+            "description": "why-the-action-was-performed"
+            "metadata": {
+              "foo": {
+                "bar": 1
+              }
+            },
+        },
+        "reactions": {
+          "unique": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userThree"]}},
+          "distinct": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userOne"]}},
+          "multiple": {"like": {"total": 5, "clientIds": {"userOne": 3, "userTwo": 2}}, "love": {"total": 10, "clientIds": {"userOne": 10}}},
+        }
+      }
+
+#### Messages V4 {#chat-structs-message-v4}
+
+      {
+        "serial": "01726585978590-001@abcdefghij:001",
+        "clientId": "who-sent-the-message",
+        "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+        "text": "my-message",
+        "timestamp": DateTime(),
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+        "action": "message.created",
+        "version": {
+          "serial": "01726585978590-001@abcdefghij:001",
+          "timestamp": DateTime(),
+          "clientId": "who-performed-the-action",
+          "description": "why-the-action-was-performed",
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          }
+        },
+        "reactions": {
+          "unique": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userThree"]}},
+          "distinct": {"like": {"total": 2, "clientIds": ["userOne", "userTwo"]}, "love": {"total": 1, "clientIds": ["userOne"]}},
+          "multiple": {"like": {"total": 5, "clientIds": {"userOne": 3, "userTwo": 2}}, "love": {"total": 10, "clientIds": {"userOne": 10}}},
+        }
+      }
+
+Determining the global order of messages may be achieved by lexicographically comparing the serials. See `CHA-M2` for more information.
+
+Determining the global order of message versions may be achieved by lexicographically comparing the `version.serial`. See `CHA-M10` for more information.
+
+When keeping a `Message` updated, use the `Message.with(event)` method to apply events to ensure correctness. The `with` method returnes message instances with the event applied to them. If the event is not applicable due to being for an older version of the message, the method will return the message unchanged. If the event is applicable, a new instance will be returned with the event applied. `Message.with()` correctly handles message reactions. See `CHA-M11` for more information.
+
+### Message reactions reaction summary {#chat-structs-message-reactions-summary-event}
+
+The `MessageReactionSummaryEvent` interface provides information about reaction summaries for messages.
+
+- The event must include a `type` field set to indicate it's a reaction summary event.
+- The event must include a `summary` object containing:\
+  The `messageSerial` identifying which message the reactions belong to.\
+  A `unique` field containing reaction summaries for unique-type reactions.\
+  A `distinct` field containing reaction summaries for distinct-type reactions.\
+  A `multiple` field containing reaction summaries for multiple-type reactions.
+
+Example:
+
+      {
+        type: "reaction.summary",
+        messageSerial: "01726585978590-001@abcdefghij:001",
+        reactions: {
+          "unique": {
+            "like": {
+              "total": 2,
+              "clientIds": ["userOne", "userTwo"]
+            },
+            "love": {
+              "total": 1,
+              "clientIds": ["userThree"]
+            }
+          },
+          "distinct": {
+            "like" : {
+                "clientIds" : [
+                  "userOne",
+                  "userTwo"
+                ],
+                "total" : 2
+            },
+            "love" : {
+                "clientIds" : [
+                  "userOne"
+                ],
+                "total" : 1
+            }
+          },
+          "multiple": {
+            "like" : {
+                "clientIds" : {
+                  "userOne" : 3,
+                  "userTwo" : 2
+                },
+                "total" : 5
+            },
+            "love" : {
+                "clientIds" : {
+                  "userOne" : 10
+                },
+                "total" : 10
+            }
+          }
+        }
+      }
+
+### Message reactions raw reaction event {#chat-structs-message-reactions-raw-event}
+
+The `MessageReactionRawEvent` interface provides information about individual message reaction events.
+
+- The event must include a `type` field indicating whether a reaction was added or removed.
+- The event must include a `timestamp` field containing the date/time when the event occurred.
+- The event must include a `reaction` object containing:\
+  A `messageSerial` identifying which message the reaction belongs to.\
+  A `type` field indicating the reaction type (unique, distinct, or multiple).\
+  A `name` field containing the name of the reaction (e.g. emoji string).\
+  An optional `count` field for reactions of type `multiple`.\
+  A `clientId` identifying the user who added or removed the reaction.
+
+<!-- -->
+
+      {
+        type: "reaction.create",
+        timestamp: DateTime(),
+        reaction: {
+          messageSerial: "01726585978590-001@abcdefghij:001",
+          type: "multiple",
+          name: ":like:",
+          count: 3,
+          clientId: "user1",
+          userClaim: "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+        };
+      }
+
+Event `type` can be `reaction.update` or `reaction.delete`.
+
+Event `reaction.type` can be `unique`, `distinct` or `multiple`.
+
+`reaction.count` is optional and only set for `multiple`.
+
+### Ephemeral Room Reactions (Deprecated) {#chat-structs-ephemeral-reactions-old}
+
+This was valid until the Chat v1 API review.
+
+      {
+        "type": ":heart:",
+        "clientId": "who-sent-the-message",
+        "createdAt": DateTime(),
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+      }
+
+### Ephemeral Room Reaction Event (Deprecated) {#chat-structs-ephemeral-reactions-old}
+
+This was valid until the Chat v1 API review.
+
+      {
+        "type": RoomReactionEventType.Reaction,
+        "reaction": {
+          "type": ":heart:",
+          "clientId": "who-sent-the-message",
+          "createdAt": DateTime(),
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          },
+          "headers": {
+            "baz": "qux"
+          }
+        }
+      }
+
+### Ephemeral Room Reactions {#chat-structs-ephemeral-reactions}
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+      {
+        "name": ":heart:",
+        "clientId": "who-sent-the-message",
+        "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+        "createdAt": DateTime(),
+        "metadata": {
+          "foo": {
+            "bar": 1
+          }
+        },
+        "headers": {
+          "baz": "qux"
+        }
+      }
+
+### Ephemeral Room Reaction Event {#chat-structs-ephemeral-reactions}
+
+As part of the Chat v1 API review, the "type" field was renamed to "name".
+
+      {
+        "type": RoomReactionEventType.Reaction,
+        "reaction": {
+          "name": ":heart:",
+          "clientId": "who-sent-the-message",
+          "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+          "createdAt": DateTime(),
+          "metadata": {
+            "foo": {
+              "bar": 1
+            }
+          },
+          "headers": {
+            "baz": "qux"
+          }
+        }
+      }
+
+### Presence Member {#chat-structs-presence-member}
+
+      {
+        "clientId": "who-sent-the-message",
+        "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+        "updatedAt": DateTime(),
+        "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+        "extras": {
+          "headers": {
+            "baz": "qux"
+          }
+        }
+      }
+
+### Presence Event (deprecated) {#chat-structs-presence-event}
+
+      {
+          "clientId": "who-is-in-presence",
+          "action": "enter",
+          "timestamp": DateTime(),
+          "data": { … }, // A presence data object containing any user-provided data. The structure of this object is described by CHA-PR2.
+      }
+
+### Presence Event V2 {#chat-structs-presence-event-v2}
+
+      {
+        "type": PresenceEventType,
+        "member": { // PresenceMember
+          "clientId": "who-is-in-presence",
+          "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+          "updatedAt": DateTime(),
+          "data": { … },
+          "extras": {},
+          "connectionId": "foo",
+          "encoding": "json"
+        }
+      }
+
+### Typing Event `(deprecated)` {#chat-structs-typing-event}
+
+      {
+        "currentlyTyping": ["clientId-1", "clientID-2"]
+      }
+
+### Typing Event V2 `(deprecated)` {#chat-structs-typing-event-V2}
+
+      {
+        "change": {
+            "type": "typing.started",
+            "clientId": "clientId-2",
+        },
+        "currentlyTyping": ["clientId-1", "clientId-2"],
+      }
+
+### Typing Event V3 {#chat-structs-typing-event-V3}
+
+      {
+        "type": TypingSetEventType.SetChanged
+        "change": {
+            "type": TypingEventType,
+            "clientId": "clientId-2",
+            "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+        },
+        "currentlyTyping": ["clientId-1", "clientId-2"], // deprecated; use currentTypers
+        "currentTypers": [                                // TypingMember[]
+          { "clientId": "clientId-1" },
+          { "clientId": "clientId-2", "userClaim": "optional-user-claim-from-jwt" }
+        ],
+      }
+
+### TypingMember {#chat-structs-typing-member}
+
+Represents a user in the set of currently typing users, with associated metadata.
+
+      {
+        "clientId": "clientId-2",
+        "userClaim": "optional-user-claim-from-jwt", // Optional, server-provided from JWT claims
+      }
+
+### Occupancy Event (Deprecated) {#chat-structs-occupancy-event}
+
+      {
+        "connections": 5,
+        "presenceMembers" 2
+      }
+
+### Occupancy Event V2 {#chat-structs-occupancy-event-v2}
+
+      {
+        "type": OccupancyEventType.Updated,
+        "occupancy": { // Of type OccupancyData
+          "connections": 5,
+          "presenceMembers" 2
+        }
+      }
+
+### Occupancy Data {#chat-structs-occupancy-data}
+
+      {
+        "connections": 5,
+        "presenceMembers" 2
+      }
+
+## Common Error Codes used by Chat {#common-error-codes}
+
+This section contains error codes that are common across Ably, but the Chat SDK makes use of. The status code for the error should align with the error code (i.e. 4xxxx and 5xxxx shall have statuses 400 and 500 respectively).
+
+The codes listed here shall be defined in any error enums that exist in client library.
+
+        // The request was invalid.
+        // To be accompanied by status code 400.
+        BadRequest = 40000,
+
+        // Invalid argument provided.
+        // To be accompanied by status code 400.
+        InvalidArgument = 40003,
+
+        // Invalid client ID.
+        // To be accompanied by status code 400.
+        InvalidClientId = 40012,
+
+        // Resource has been disposed.
+        // To be accompanied by status code 400.
+        ResourceDisposed = 40014,
+
+        // The message was rejected before publishing by a rule on the chat room.
+        // To be accompanied by status code 422.
+        MessageRejectedByBeforePublishRule = 42211,
+
+        // The message was rejected before publishing by a moderation rule on the chat room.
+        // To be accompanied by status code 422.
+        MessageRejectedByModeration = 42213,
+
+        // The client is not connected to Ably.
+        // To be accompanied by status code 400.
+        Disconnected = 80003,
+
+        // Could not re-enter presence automatically after a room re-attach occurred.
+        // To be accompanied by status code 400.
+        PresenceAutoReentryFailed = 91004,
+
+## Chat-specific Error Codes {#error-codes}
+
+This section contains error codes that are specific to Chat. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used according to the guidelines of `CHA-GP5`. For example `400xx` for client errors or `500xx` for server errors.
+
+The chat reserved error code range is `102000 - 102999`.
+
+The codes listed here shall be defined in any error enums that exist in client library.
+
+
+        // The room has experienced a discontinuity.
+        // To be accompanied by status code 500.
+        RoomDiscontinuity = 102100,
+
+        // Cannot perform operation because the room is in an invalid state.
+        // To be accompanied by status code 400.
+        RoomInInvalidState = 102112,
+
+        // Room was released before the operation could complete.
+        // To be accompanied by status code 400.
+        RoomReleasedBeforeOperationCompleted = 102106,
+
+        // A room already exists with different options.
+        // To be accompanied by status code 400.
+        RoomExistsWithDifferentOptions = 102107,
+
+        // Feature is not enabled in room options.
+        // To be accompanied by status code 400.
+        FeatureNotEnabledInRoom = 102108,
+
+        // Failed to enforce sequential execution of the operation.
+        // To be accompanied by status code 500.
+        OperationSerializationFailed = 102113,
+
+        // 102200 - 102300 are reserved for React errors
+
+        // React hook must be used within the appropriate provider.
+        // To be accompanied by status code 400.
+        ReactHookMustBeUsedWithinProvider = 102200,
+
+        // React component has been unmounted.
+        // To be accompanied by status code 400.
+        ReactComponentUnmounted = 102201,
+
+        // Failed to fetch presence data after maximum retries.
+        // To be accompanied by status code 500.
+        PresenceFetchFailed = 102202,

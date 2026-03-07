@@ -2,10 +2,12 @@
   "name": "@ably/specification-build",
   "version": "1.0.0",
   "scripts": {
-    "clean": "rm -rf ./output",
-    "build": "npm-run-all clean build:generate build:tailwind",
-    "build:generate": "./scripts/build",
-    "build:tailwind": "tailwindcss -i ./templates/main.css -o ./output/tailwind.css --minify",
+    "clean": "rm -rf ./content ./public",
+    "build": "npm-run-all clean build:prepare build:hugo build:anchors build:tailwind",
+    "build:prepare": "./scripts/prepare-content",
+    "build:hugo": "hugo",
+    "build:anchors": "./scripts/add-spec-anchors",
+    "build:tailwind": "tailwindcss -i ./layouts/main.css -o ./public/tailwind.css --minify",
     "lint": "npm-run-all format:*:check",
     "format:textile:check": "./scripts/find-duplicate-spec-items"
   },

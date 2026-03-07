@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# Script to detect duplicate spec IDs in the client library spec
+# This tends to happen when concurrent spec PRs are merged
+
+SPEC_FILES=("features" "chat-features" "objects-features")
+
+has_errors=0
+
+for i in "${!SPEC_FILES[@]}"; do
+  spec_file="${SPEC_FILES[$i]}"
+  file_name="../specifications/${spec_file}.md"
+
+  echo "Checking ${file_name}"
+
+  ids=$(grep -oE '`\([A-Za-z]+[0-9]+[a-z0-9]*\)`' "${file_name}" | sort)
+
+  if [ -z "$ids" ]; then
+    echo "✓ Spec is valid. No duplicates found"
+  else
+    duplicates=$(echo "$ids" | uniq -d)
+
+    if [ -z "$duplicates" ]; then
+      echo "✓ Spec is valid. No duplicates found"
+    else
+      dup_count=$(echo "$duplicates" | wc -l | tr -d ' ')
+      while IFS= read -r dup; do
+        total=$(echo "$ids" | grep -cF "$dup" || true)
+        echo "${dup} has $((total - 1)) duplicate(s)"
+      done <<< "$duplicates"
+      echo ""
+      echo "✘ INVALID SPEC: ${dup_count} duplicate(s) found"
+      has_errors=1
+    fi
+  fi
+
+  if [ "$i" -lt "$((${#SPEC_FILES[@]} - 1))" ]; then
+    echo ""
+  fi
+done
+
+exit $has_errors
