@@ -655,6 +655,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM8c2)` `serial` string - operation's serial value
     - `(RTLM8c3)` `serialTimestamp` Time - operation's serial timestamp value
   - `(RTLM8d)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
+  - `(RTLM8g)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM8a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM8a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
     - `(RTLM8a2)` Otherwise, apply the operation to the existing entry:
