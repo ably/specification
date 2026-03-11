@@ -375,7 +375,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(PC2)` No generic plugin interface is specified, and therefore there is no common API exposed by all plugins. However, for type-safety, the opaque interface `Plugin` should be used in strongly-typed languages as the type of the `ClientOptions.plugins` collection as per [TO3o](#TO3o).
 - `(PC3)` A plugin provided with the `PluginType` enum key value of `vcdiff` should be capable of decoding "vcdiff"-encoded messages. It must implement the `VCDiffDecoder` interface and the client library must be able to use it by casting it to this interface.
   - `(PC3a)` The base argument of the `VCDiffDecoder.decode` method should receive the stored base payload of the last message on a channel as specified by [RTL19](#RTL19). If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the `VCDiffDecoder.decode` method.
-- `(PC5)` A plugin provided with the `PluginType` enum key value of `Objects` should provide the [RealtimeObjects](../objects-features#RTO1) feature functionality for realtime channels ([RTL27](#RTL27)). The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables the Objects feature for a realtime channel, are left for individual implementations to decide.
+- `(PC5)` A plugin provided with the `PluginType` enum key value of `LiveObjects` should provide the [RealtimeObject](../objects-features#RTO23) feature functionality for realtime channels ([RTL27](#RTL27)). The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables the Objects feature for a realtime channel, are left for individual implementations to decide.
 - `(PC4)` A client library is allowed to accept plugins other than those specified in this specification, through the use of additional `ClientOptions.plugins` keys defined by that library. The library is responsible for defining the interface of these plugins, and for making sure that these keys do not clash with the keys defined in this specification.
 
 ### PluginType {#plugin-type}
@@ -671,7 +671,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 ### RealtimeChannel {#realtime-channel}
 
 - `(RTL23)` `RealtimeChannel#name` attribute is a string containing the channel's name
-- `(RTL1)` As soon as a `RealtimeChannel` becomes attached, all incoming messages, presence messages and object messages (where 'incoming' is defined as 'received from Ably over the realtime transport') are processed and emitted where applicable. `PRESENCE` and `SYNC` messages are passed to the `RealtimePresence` object ensuring it maintains a map of current members on a channel in realtime. `OBJECT` and `OBJECT_SYNC` messages are passed to the `RealtimeObjects` object ensuring it maintains an up-to-date representation of objects on a channel in realtime
+- `(RTL1)` As soon as a `RealtimeChannel` becomes attached, all incoming messages, presence messages and object messages (where 'incoming' is defined as 'received from Ably over the realtime transport') are processed and emitted where applicable. `PRESENCE` and `SYNC` messages are passed to the `RealtimePresence` object ensuring it maintains a map of current members on a channel in realtime. `OBJECT` and `OBJECT_SYNC` messages are passed to the `RealtimeObject` object ensuring it maintains an up-to-date representation of objects on a channel in realtime
 - `(RTL2)` The `RealtimeChannel` implements `EventEmitter` and emits `ChannelEvent` events, where a `ChannelEvent` is either a `ChannelState` or `UPDATE`, and a `ChannelState` is either `INITIALIZED`, `ATTACHING`, `ATTACHED`, `DETACHING`, `DETACHED`, `SUSPENDED` and `FAILED`
   - `(RTL2a)` It emits a `ChannelState` `ChannelEvent` for every channel state change
   - `(RTL2g)` It emits an `UPDATE` `ChannelEvent` for changes to channel conditions for which the `ChannelState` (e.g. `ATTACHED`) does not change, unless explicitly prevented by a more specific condition (see [RTL12](#RTL12)). (The library must never emit a `ChannelState` `ChannelEvent` for a state equal to the previous state)
@@ -764,9 +764,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL8b)` Unsubscribe with a name argument and a listener argument unsubscribes the provided listener if previously subscribed with a name-specific subscription
 - `(RTL9)` `RealtimeChannel#presence` attribute:
   - `(RTL9a)` Returns the `RealtimePresence` object for this channel
-- `(RTL27)` `RealtimeChannel#objects` attribute:
-  - `(RTL27a)` Returns the `RealtimeObjects` object for this channel [RTO1](../objects-features#RTO1)
-  - `(RTL27b)` It is a programmer error to access this property without first providing the `Objects` plugin ([PC5](#PC5)) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an `ErrorInfo` with `statusCode` 400 and `code` 40019.
+- `(RTL27)` `RealtimeChannel#object` attribute:
+  - `(RTL27a)` Returns the `RealtimeObject` object for this channel [RTO23](../objects-features#RTO23)
+  - `(RTL27b)` It is a programmer error to access this property without first providing the `LiveObjects` plugin ([PC5](#PC5)) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an `ErrorInfo` with `statusCode` 400 and `code` 40019.
 - `(RTL10)` `RealtimeChannel#history` function:
   - `(RTL10a)` Supports all the same params as `RestChannel#history`
   - `(RTL10b)` Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an `UPDATE` indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` assigned to the channel in the `ATTACHED` `ProtocolMessage` (see [RTL15a](#RTL15a)). If the `untilAttach` param is specified when the channel is not attached, it results in an error
@@ -934,9 +934,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP15e)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in or enters the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
   - `(RTP15f)` If the client is identified and has a valid `clientId`, and the `clientId` argument does not match the client's `clientId`, then it should indicate an error. The connection and channel remain available for further operations
 
-### RealtimeObjects {#realtime-objects}
+### RealtimeObject {#realtime-objects}
 
-Reserved for `RealtimeObjects` feature specification, see [objects-features](../objects-features). Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`
+Reserved for `RealtimeObject` feature specification, see [objects-features](../objects-features). Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`, `RTPO`, `RTINS`, `RTLCV`, `RTLMV`, `RTBC`
 
 ### RealtimeAnnotations {#realtime-annotations}
 
@@ -1324,6 +1324,8 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OOP4c)` This clause has been replaced by [OOP4l](#OOP4l) as of specification version 6.0.0.
   - `(OOP4d)` This clause has been replaced by [OOP4h](#OOP4h) as of specification version 6.0.0.
   - `(OOP4e)` This clause has been replaced by [OOP4k](#OOP4k) as of specification version 6.0.0.
+
+[//]: # (Conflict in main)
   - `(OOP4g)` The size is the sum of the sizes of the map create, `mapSet`, `mapRemove`, counter create, and `counterInc` components
   - `(OOP4h)` The size of the map create component is:
     - `(OOP4h1)` If `mapCreate` is present, it is equal to the size of `mapCreate` calculated per [MCR3](#MCR3)
@@ -1336,6 +1338,16 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(OOP4k2)` Else if `counterCreateWithObjectId` is present, it is equal to the size of the `CounterCreate` retained in [RTO12f16](objects-features#RTO12f16), calculated per [CCR3](#CCR3)
     - `(OOP4k3)` Otherwise it is zero
   - `(OOP4l)` The size of the `counterInc` property is calculated per [CIN3](#CIN3)
+
+[//]: # (Conflict in path-based)
+  - `(OOP4g)` The size is the sum of the sizes of the `mapCreate`, `mapSet`, `mapRemove`, `counterCreate`, and `counterInc` properties
+  - `(OOP4h)` The size of the `mapCreate` property is calculated per [MCR3](#MCR3)
+  - `(OOP4i)` The size of the `mapSet` property is calculated per [MST3](#MST3)
+  - `(OOP4j)` The size of the `mapRemove` property is calculated per [MRM3](#MRM3)
+  - `(OOP4k)` The size of the `counterCreate` property is calculated per [CCR3](#CCR3)
+  - `(OOP4l)` The size of the `counterInc` property is calculated per [CIN3](#CIN3)
+
+[//]: # (Conflict in main)
   - `(OOP4f)` The size of a `null` or omitted property is zero
 - `(OOP5)` This clause has been deleted as of specification version 6.0.0.
   - `(OOP5a)` This clause has been deleted as of specification version 6.0.0.
@@ -1860,6 +1872,12 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(REX2b1)` Should be written in reverse domain name notation
     - `(REX2b2)` Types beginning with `com.ably.` are reserved
 
+#### Subscription
+
+- `(SUB1)` A `Subscription` represents a registration for receiving events from a subscribe operation
+- `(SUB2)` The `Subscription` object has the following method:
+  - `(SUB2a)` `unsubscribe` - deregisters the listener that was registered by the corresponding `subscribe` call. Once `unsubscribe` called, the listener must not be called for any subsequent events
+
 ### Option types {#options}
 
 #### ClientOptions
@@ -2248,7 +2266,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       state: ChannelState // RTL2b
       whenState(ChannelState, (ChannelStateChange?) ->) // RTL25
       presence: RealtimePresence // RTL9
-      objects: RealtimeObjects // RTL27
+      object: RealtimeObject // RTL27
       properties: ChannelProperties // RTL15
       // Only on platforms that support receiving push notifications:
       push: PushChannel // RSH7
@@ -2908,6 +2926,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       clientId: string? // TM2s3
       description: string? // TM2s4
       metadata: Dict<string, string>? //TM2s5
+
+    interface Subscription: // SUB*
+      unsubscribe() // SUB2a
 
 ## Old specs
 
