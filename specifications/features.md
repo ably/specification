@@ -1299,7 +1299,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 #### ObjectOperation
 
 - `(OOP1)` An `ObjectOperation` describes an operation to be applied to an object on a channel
-- `(OOP2)` `ObjectOperationAction` enum has the following values in order from zero: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`
+- `(OOP2)` `ObjectOperationAction` enum has the following values in order from zero: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`, `MAP_CLEAR`
 - `(OOP3)` The attributes available in an `ObjectOperation` are:
   - `(OOP3a)` `action` `ObjectOperationAction` enum - defines the operation to be applied to the object
   - `(OOP3b)` `objectId` string - the object ID of the object on a channel to which the operation should be applied
@@ -1318,6 +1318,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OOP3o)` `objectDelete` `ObjectDelete` object - the payload for an `OBJECT_DELETE` operation
   - `(OOP3p)` `mapCreateWithObjectId` `MapCreateWithObjectId` object - the payload for a `MAP_CREATE` operation when sent to the server with a client-specified object ID
   - `(OOP3q)` `counterCreateWithObjectId` `CounterCreateWithObjectId` object - the payload for a `COUNTER_CREATE` operation when sent to the server with a client-specified object ID
+  - `(OOP3r)` `mapClear` `MapClear` object - the payload for a `MAP_CLEAR` operation
 - `(OOP4)` The size of the `ObjectOperation` is calculated as follows:
   - `(OOP4a)` This clause has been replaced by [OOP4g](#OOP4g) as of specification version 6.0.0.
   - `(OOP4b)` This clause has been replaced by [OOP4i](#OOP4i) and [OOP4j](#OOP4j) as of specification version 6.0.0.
@@ -1432,6 +1433,11 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(CCRO2a)` `initialValue` string - a JSON string representation of the encoded `CounterCreate` that contains the initial value for the counter
   - `(CCRO2b)` `nonce` string - the nonce used to generate the object ID
 
+#### MapClear
+
+- `(MCL1)` A `MapClear` describes the payload for a `MAP_CLEAR` operation on a map object
+- `(MCL2)` This type has no attributes
+
 #### ObjectsMapOp
 
 - `(OMO1)` This clause has been deleted (redundant to [MST1](#MST1) and [MRM1](#MRM1)) as of specification version 6.0.0.
@@ -1460,6 +1466,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(OMP3)` The attributes available in an `ObjectsMap` are:
   - `(OMP3a)` `semantics` `ObjectsMapSemantics` enum - the conflict-resolution semantics used by the map object
   - `(OMP3b)` `entries` `Dict<String, ObjectsMapEntry>` - the map entries, indexed by key
+  - `(OMP3c)` `clearTimeserial` string - the [serial](#OM2h) value of the last `MAP_CLEAR` operation applied to the map. If no `MAP_CLEAR` has been applied, this field is omitted
 - `(OMP4)` The size of the `ObjectsMap` is calculated as follows:
   - `(OMP4a)` The size is the sum of the sizes of all map entries in `entries` property
     - `(OMP4a1)` Includes the size of the `String` key for the map entry, calculated as its length
@@ -1480,7 +1487,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(OME1)` An `ObjectsMapEntry` represents the value at a given key in an `ObjectsMap` object
 - `(OME2)` The attributes available in an `ObjectsMapEntry` are:
   - `(OME2a)` `tombstone` boolean - indicates whether the map entry has been removed
-  - `(OME2b)` `timeserial` string - the `serial`#OM2h value of the last operation that was applied to the map entry
+  - `(OME2b)` `timeserial` string - the "serial":#OM2h value of the last operation that was applied to the map entry
   - `(OME2d)` `serialTimestamp` Time - a timestamp from the `timeserial` field. It is only present if `tombstone` is `true`
   - `(OME2c)` `data` `ObjectData` object - the data that represents the value of the map entry.
 - `(OME3)` The size of the `ObjectsMapEntry` is calculated as follows:
@@ -2462,6 +2469,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       COUNTER_CREATE // OOP2
       COUNTER_INC // OOP2
       OBJECT_DELETE // OOP2
+      MAP_CLEAR // OOP2
 
     enum ObjectsMapSemantics: // OMP2, internal
       LWW // OMP2
@@ -2542,6 +2550,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       objectDelete: ObjectDelete? // OOP3o
       mapCreateWithObjectId: MapCreateWithObjectId? // OOP3p
       counterCreateWithObjectId: CounterCreateWithObjectId? // OOP3q
+      mapClear: MapClear? // OOP3r
 
     class ObjectState // OST*, internal
       objectId: String // OST2a
@@ -2570,6 +2579,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
 
     class ObjectDelete // ODE*, internal
 
+    class MapClear // MCL*, internal
+
     class MapCreateWithObjectId // MCRO*, internal
       initialValue: String // MCRO2a
       nonce: String // MCRO2b
@@ -2581,6 +2592,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class ObjectsMap // OMP*, internal
       semantics: ObjectsMapSemantics // OMP3a
       entries: Dict<String, ObjectsMapEntry>? // OMP3b
+      clearTimeserial: String? // OMP3c
 
     class ObjectsCounter // OCN*, internal
       count: Number? // OCN2a
