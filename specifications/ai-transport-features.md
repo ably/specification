@@ -70,3 +70,46 @@ The codec layer defines the contract between domain event streams and Ably's nat
 ### Encoder Hooks
 
 - `(AIT-CD14)` The encoder core must invoke an optional `onMessage` hook before each Ably message is published. The hook receives the message before it is sent to the channel writer. If the hook throws, the encoder must catch and log the exception without interrupting the publish.
+
+## Server Transport {#server-transport}
+
+The server transport manages the server-side turn lifecycle over an Ably channel. It composes a `TurnManager` for lifecycle event publishing and pipes event streams through the encoder.
+
+### Factory
+
+- `(AIT-ST1)` The SDK must provide a `createServerTransport` factory that accepts a channel, codec, optional logger, and optional `onError` callback, and returns a `ServerTransport`.
+- `(AIT-ST2)` On construction, the transport must subscribe to the cancel message name (`x-ably-cancel`) on the channel so that cancel messages from clients are routed to active turns.
+
+### Turn Lifecycle
+
+- `(AIT-ST3)` `newTurn` must synchronously return a `Turn` object. No channel activity must occur until `start()` is called.
+  - `(AIT-ST3a)` The turn must be registered for cancel routing immediately on creation, so that cancel messages arriving before `start()` still fire the turn's abort signal.
+- `(AIT-ST4)` `start()` must publish a turn-start event (`x-ably-turn-start`) with the turn's `x-ably-turn-id` and `x-ably-turn-client-id` headers. It must be idempotent.
+  - `(AIT-ST4a)` If the turn was cancelled before `start()`, `start()` must raise an error.
+  - `(AIT-ST4b)` If the turn-start publish fails, the per-turn `onError` callback must be invoked and the error re-thrown.
+- `(AIT-ST5)` `addMessages()` must require that `start()` has been called. For each input message, it must create a codec encoder with transport headers (`x-ably-role: "user"`, `x-ably-turn-id`, `x-ably-msg-id`, and optional parent/forkOf headers) and publish the message through the encoder.
+  - `(AIT-ST5a)` Per-operation options (parent, forkOf, clientId) must override turn-level defaults.
+  - `(AIT-ST5b)` The transport must track the `x-ably-msg-id` of the last published user message for auto-linking the assistant response parent.
+- `(AIT-ST6)` `streamResponse()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-turn-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
+  - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation override, last published user msg-id, turn-level parent.
+  - `(AIT-ST6b)` `streamResponse()` must return a `StreamResult` with a `reason` field indicating `"complete"`, `"cancelled"`, or `"error"`.
+    - `(AIT-ST6b1)` Reason `"complete"`: the source stream was fully consumed and the encoder was closed.
+    - `(AIT-ST6b2)` Reason `"cancelled"`: the turn's abort signal fired. If an `onAbort` callback was provided in the turn options, it must be invoked with a write function before the stream ends.
+    - `(AIT-ST6b3)` Reason `"error"`: the source stream threw. The encoder must be closed best-effort; failure to close must not propagate.
+  - `(AIT-ST6c)` `streamResponse()` must NOT call `end()` — the caller is responsible for calling `end()` after the stream finishes.
+- `(AIT-ST7)` `end()` must require that `start()` has been called. It must publish a turn-end event (`x-ably-turn-end`) with the turn's ID, clientId, and reason header. It must be idempotent.
+  - `(AIT-ST7a)` After `end()`, the turn must be deregistered from cancel routing regardless of whether the publish succeeds.
+
+### Cancel Routing
+
+- `(AIT-ST8)` The server transport must route cancel messages from the channel to registered turns by parsing cancel filter headers from the incoming message.
+  - `(AIT-ST8a)` `x-ably-cancel-turn-id`: cancel a specific turn by ID.
+  - `(AIT-ST8b)` `x-ably-cancel-own` (value `"true"`): cancel all turns belonging to the sender's `clientId`.
+  - `(AIT-ST8c)` `x-ably-cancel-client-id`: cancel all turns belonging to a specific `clientId`.
+  - `(AIT-ST8d)` `x-ably-cancel-all` (value `"true"`): cancel all turns on the channel.
+- `(AIT-ST9)` If a per-turn `onCancel` hook is provided, it must be invoked before aborting. If it returns `false`, the turn must not be aborted.
+  - `(AIT-ST9a)` If the `onCancel` hook throws, the error must be reported via the per-turn or transport-level `onError` callback, and processing must continue for remaining matched turns.
+
+### Transport Close
+
+- `(AIT-ST11)` `close()` must unsubscribe from cancel messages, abort all registered turns, and clean up the turn manager.
