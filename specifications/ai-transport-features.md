@@ -130,6 +130,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
   - `(AIT-CT3b)` If the HTTP POST fails (network error or non-2xx response), the error must be emitted via `on('error')`, not thrown. The turn's stream must be closed.
   - `(AIT-CT3c)` Each user message must be assigned a unique `x-ably-msg-id` and optimistically inserted into the conversation tree before the POST is sent.
   - `(AIT-CT3d)` If `parent` is not explicitly provided and `forkOf` is not set, the parent must be auto-computed from the last message in the current thread.
+  - `(AIT-CT3e)` When multiple messages are sent in a single `send()` call, they must be chained — each subsequent message must parent off the previous message in the batch, not the original auto-computed parent.
 - `(AIT-CT4)` `send()` must throw if the transport is closed.
 
 ### Regenerate
