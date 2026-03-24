@@ -89,9 +89,9 @@ The server transport manages the server-side turn lifecycle over an Ably channel
   - `(AIT-ST4b)` If the turn-start publish fails, the per-turn `onError` callback must be invoked and the error re-thrown.
 - `(AIT-ST5)` `addMessages()` must require that `start()` has been called. For each input message, it must create a codec encoder with transport headers (`x-ably-role: "user"`, `x-ably-turn-id`, `x-ably-msg-id`, and optional parent/forkOf headers) and publish the message through the encoder.
   - `(AIT-ST5a)` Per-operation options (parent, forkOf, clientId) must override turn-level defaults.
-  - `(AIT-ST5b)` The transport must track the `x-ably-msg-id` of the last published user message for auto-linking the assistant response parent.
+  - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `x-ably-msg-id` of each published message, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
 - `(AIT-ST6)` `streamResponse()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-turn-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
-  - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation override, last published user msg-id, turn-level parent.
+  - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation `parent` override, then turn-level `parent`.
   - `(AIT-ST6b)` `streamResponse()` must return a `StreamResult` with a `reason` field indicating `"complete"`, `"cancelled"`, or `"error"`.
     - `(AIT-ST6b1)` Reason `"complete"`: the source stream was fully consumed and the encoder was closed.
     - `(AIT-ST6b2)` Reason `"cancelled"`: the turn's abort signal fired. If an `onAbort` callback was provided in the turn options, it must be invoked with a write function before the stream ends.
