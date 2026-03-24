@@ -113,3 +113,91 @@ The server transport manages the server-side turn lifecycle over an Ably channel
 ### Transport Close
 
 - `(AIT-ST11)` `close()` must unsubscribe from cancel messages, abort all registered turns, and clean up the turn manager.
+
+## Client Transport {#client-transport}
+
+The client transport manages the client-side conversation lifecycle over an Ably channel. It composes a ConversationTree for branching message history, a StreamRouter for per-turn event streams, and a codec decoder for processing incoming Ably messages.
+
+### Factory
+
+- `(AIT-CT1)` The SDK must provide a `createClientTransport` factory that accepts a channel, codec, and transport options, and returns a `ClientTransport`.
+- `(AIT-CT2)` On construction, the transport must subscribe to the channel for incoming messages before the channel attaches (Ably RTL7g) to guarantee no messages are missed.
+
+### Send
+
+- `(AIT-CT3)` `send()` must create a new turn, optimistically insert user messages into the conversation tree, and return an `ActiveTurn` handle containing a decoded event stream, the turn ID, and a cancel function.
+  - `(AIT-CT3a)` The HTTP POST to the server must be fire-and-forget — the returned stream must be available immediately, without waiting for the POST to complete.
+  - `(AIT-CT3b)` If the HTTP POST fails (network error or non-2xx response), the error must be emitted via `on('error')`, not thrown. The turn's stream must be closed.
+  - `(AIT-CT3c)` Each user message must be assigned a unique `x-ably-msg-id` and optimistically inserted into the conversation tree before the POST is sent.
+  - `(AIT-CT3d)` If `parent` is not explicitly provided and `forkOf` is not set, the parent must be auto-computed from the last message in the current thread.
+- `(AIT-CT4)` `send()` must throw if the transport is closed.
+
+### Regenerate
+
+- `(AIT-CT5)` `regenerate()` must create a new turn that forks the target message with `forkOf` set to the target, `parent` set to the target's parent, and truncated history (everything before the target). No new user messages are sent.
+
+### Edit
+
+- `(AIT-CT6)` `edit()` must create a new turn that forks the target message with replacement user messages. `forkOf` must be set to the target, `parent` to the target's parent.
+
+### Cancel
+
+- `(AIT-CT7)` `cancel()` must publish a cancel message to the channel with the appropriate filter headers and close matching local streams.
+  - `(AIT-CT7a)` If no filter is provided, `cancel()` must default to `{ own: true }`.
+
+### Event Subscription
+
+- `(AIT-CT8)` The transport must support event subscriptions via `on(event, handler)` returning an unsubscribe function.
+  - `(AIT-CT8a)` `on('message')` must notify when the message list changes (messages added, updated, or removed).
+  - `(AIT-CT8b)` `on('turn')` must notify on turn lifecycle events (start and end) with the turn ID, client ID, and end reason.
+  - `(AIT-CT8c)` `on('error')` must surface non-fatal transport errors as `ErrorInfo`.
+  - `(AIT-CT8d)` If the transport is closed, `on()` must return a no-op unsubscribe function.
+
+### Message Access
+
+- `(AIT-CT9)` `getMessages()` must return the flattened conversation tree along the currently selected branches.
+- `(AIT-CT10)` `getTree()` must expose the conversation tree for branch navigation (sibling listing, selection, node lookup).
+
+### History
+
+- `(AIT-CT11)` `history()` must load decoded messages from channel history using `untilAttach` for gapless continuity with the live subscription.
+  - `(AIT-CT11a)` History messages must be inserted into the conversation tree and trigger a message notification.
+  - `(AIT-CT11b)` The `limit` option must control the number of complete domain messages returned, not the number of Ably wire messages fetched. The implementation must page through Ably history until enough complete messages are assembled.
+  - `(AIT-CT11c)` The returned `PaginatedMessages` must support `next()` for loading older pages. Older messages are withheld from `getMessages()` until released by `next()`.
+
+### Close
+
+- `(AIT-CT12)` `close()` must unsubscribe from the channel, close all active turn streams, clear all event handlers, and prevent further operations.
+  - `(AIT-CT12a)` An optional `cancel` filter must publish a cancel message before teardown. Cancel publish failure must be swallowed (best-effort).
+  - `(AIT-CT12b)` `close()` must be idempotent.
+
+### Conversation Tree
+
+- `(AIT-CT13)` The SDK must provide a `ConversationTree` that materializes a branching conversation from a flat oplog of messages.
+  - `(AIT-CT13a)` Messages must be ordered by Ably serial (lexicographic). Messages without a serial (optimistic inserts) must sort after all serial-bearing messages.
+  - `(AIT-CT13b)` Fork points must create sibling groups. Messages with the same `x-ably-parent` whose `x-ably-fork-of` chains trace to a common root form a sibling group. The default selection must be the latest sibling.
+  - `(AIT-CT13c)` `select()` must update the active branch at a fork point. `flatten()` must reflect the current selection.
+  - `(AIT-CT13d)` `upsert()` must promote null serials to server-assigned serials on echo, re-sorting the message in the list.
+
+### Stream Router
+
+- `(AIT-CT14)` The client transport must route decoded events to per-turn `ReadableStream`s via a stream router.
+  - `(AIT-CT14a)` Terminal events (as determined by the codec's `isTerminal` predicate) must close the stream after enqueue.
+  - `(AIT-CT14b)` `closeStream()` must close the controller and remove the entry, allowing the consumer to read the stream to completion.
+
+### Echo Detection
+
+- `(AIT-CT15)` Own messages (matched by `x-ably-msg-id`) must be detected on the channel subscription and handled as updates to optimistic entries, not as new inserts.
+
+### Observer / Multi-Client Sync
+
+- `(AIT-CT16)` Events from non-own turns must be accumulated through the codec's `MessageAccumulator` and upserted into the conversation tree, enabling multi-client synchronization.
+  - `(AIT-CT16a)` Turn lifecycle events (`x-ably-turn-start`, `x-ably-turn-end`) must update active turn tracking for all clients on the channel.
+
+### Active Turn Tracking
+
+- `(AIT-CT17)` `getActiveTurnIds()` must return currently active turns grouped by client ID.
+
+### Wait for Turn
+
+- `(AIT-CT18)` `waitForTurn()` must return a promise that resolves when all active turns matching the filter have completed. It must resolve immediately if no matching turns are active. If no filter is provided, it must default to `{ own: true }`.
