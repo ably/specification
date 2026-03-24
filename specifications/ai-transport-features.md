@@ -178,7 +178,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
   - `(AIT-CT13a)` Messages must be ordered by Ably serial (lexicographic). Messages without a serial (optimistic inserts) must sort after all serial-bearing messages.
   - `(AIT-CT13b)` Fork points must create sibling groups. Messages with the same `x-ably-parent` whose `x-ably-fork-of` chains trace to a common root form a sibling group. The default selection must be the latest sibling.
   - `(AIT-CT13c)` `select()` must update the active branch at a fork point. `flatten()` must reflect the current selection.
-  - `(AIT-CT13d)` `upsert()` must promote null serials to server-assigned serials on echo, re-sorting the message in the list.
+  - `(AIT-CT13d)` `upsert()` must promote null serials to server-assigned serials on relay, re-sorting the message in the list.
 
 ### Stream Router
 
@@ -186,9 +186,9 @@ The client transport manages the client-side conversation lifecycle over an Ably
   - `(AIT-CT14a)` Terminal events (as determined by the codec's `isTerminal` predicate) must close the stream after enqueue.
   - `(AIT-CT14b)` `closeStream()` must close the controller and remove the entry, allowing the consumer to read the stream to completion.
 
-### Echo Detection
+### Optimistic Reconciliation
 
-- `(AIT-CT15)` Own messages (matched by `x-ably-msg-id`) must be detected on the channel subscription and handled as updates to optimistic entries, not as new inserts.
+- `(AIT-CT15)` Own messages (matched by `x-ably-msg-id`) must be detected as relayed messages and reconciled with optimistic entries, not inserted as duplicates.
 
 ### Observer / Multi-Client Sync
 
