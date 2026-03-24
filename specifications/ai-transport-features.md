@@ -201,3 +201,55 @@ The client transport manages the client-side conversation lifecycle over an Ably
 ### Wait for Turn
 
 - `(AIT-CT18)` `waitForTurn()` must return a promise that resolves when all active turns matching the filter have completed. It must resolve immediately if no matching turns are active. If no filter is provided, it must default to `{ own: true }`.
+
+## Common Error Codes used by AI Transport {#common-error-codes}
+
+This section contains error codes that are common across Ably, but the AI Transport SDK makes use of. The status code for the error should align with the error code (i.e. 4xxxx and 5xxxx shall have statuses 400 and 500 respectively).
+
+The codes listed here shall be defined in any error enums that exist in the client library.
+
+        // The request was invalid.
+        // To be accompanied by status code 400.
+        BadRequest = 40000,
+
+        // Invalid argument provided.
+        // To be accompanied by status code 400.
+        InvalidArgument = 40003,
+
+## AI Transport-specific Error Codes {#error-codes}
+
+This section contains error codes that are specific to AI Transport. If a specific error code is not listed for a given circumstance, the most appropriate general error code shall be used according to the guidelines of `AIT-GP6`. For example `400xx` for client errors or `500xx` for server errors.
+
+The AI Transport reserved error code range is `104000 - 104999`.
+
+The codes listed here shall be defined in any error enums that exist in the client library.
+
+        // Encoder recovery failed after flush — one or more updateMessage calls
+        // could not recover a failed append pipeline.
+        // To be accompanied by status code 500.
+        // Spec: AIT-CD6
+        EncoderRecoveryFailed = 104000,
+
+        // A transport-level channel subscription callback threw unexpectedly.
+        // To be accompanied by status code 500.
+        TransportSubscriptionError = 104001,
+
+        // Cancel listener or onCancel hook threw while processing a cancel message.
+        // To be accompanied by status code 500.
+        // Spec: AIT-ST9a
+        CancelListenerError = 104002,
+
+        // A turn lifecycle event (turn-start or turn-end) failed to publish.
+        // To be accompanied by status code 500.
+        // Spec: AIT-ST4b
+        TurnLifecycleError = 104003,
+
+        // An operation was attempted on a transport that has already been closed.
+        // To be accompanied by status code 400.
+        // Spec: AIT-CT4, AIT-CT12
+        TransportClosed = 104004,
+
+        // The HTTP POST to the server endpoint failed (network error or non-2xx response).
+        // To be accompanied by status code 500.
+        // Spec: AIT-CT3b
+        TransportSendFailed = 104005,
