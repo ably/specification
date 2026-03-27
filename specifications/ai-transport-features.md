@@ -87,9 +87,9 @@ The server transport manages the server-side turn lifecycle over an Ably channel
 - `(AIT-ST4)` `start()` must publish a turn-start event (`x-ably-turn-start`) with the turn's `x-ably-turn-id` and `x-ably-turn-client-id` headers. It must be idempotent.
   - `(AIT-ST4a)` If the turn was cancelled before `start()`, `start()` must raise an error.
   - `(AIT-ST4b)` If the turn-start publish fails, the per-turn `onError` callback must be invoked and the error re-thrown.
-- `(AIT-ST5)` `addMessages()` must require that `start()` has been called. For each input message, it must create a codec encoder with transport headers (`x-ably-role: "user"`, `x-ably-turn-id`, `x-ably-msg-id`, and optional parent/forkOf headers) and publish the message through the encoder.
-  - `(AIT-ST5a)` Per-operation options (parent, forkOf, clientId) must override turn-level defaults.
-  - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `x-ably-msg-id` of each published message, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
+- `(AIT-ST5)` `addMessages()` must accept `ConversationNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
+  - `(AIT-ST5a)` Per-node `parentId` and `forkOf` fields take precedence; turn-level defaults apply when those fields are undefined.
+  - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `msgId` of each published node, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
 - `(AIT-ST6)` `streamResponse()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-turn-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
   - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation `parent` override, then turn-level `parent`.
   - `(AIT-ST6b)` `streamResponse()` must return a `StreamResult` with a `reason` field indicating `"complete"`, `"cancelled"`, or `"error"`.
@@ -157,6 +157,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
 ### Message Access
 
 - `(AIT-CT9)` `getMessages()` must return the flattened conversation tree along the currently selected branches.
+- `(AIT-CT9a)` `getNodes()` must return the flattened conversation tree as `ConversationNode[]` along the currently selected branches, including typed `msgId`, `parentId`, `forkOf`, `headers`, and `serial` fields.
 - `(AIT-CT10)` `getTree()` must expose the conversation tree for branch navigation (sibling listing, selection, node lookup).
 
 ### History
