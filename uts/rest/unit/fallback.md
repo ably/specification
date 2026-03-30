@@ -35,13 +35,10 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  # Should fail without retry
-  ASSERT mock_http.captured_requests.length == 1
-  ASSERT e.statusCode == 500
+AWAIT client.time() FAILS WITH error
+# Should fail without retry
+ASSERT mock_http.captured_requests.length == 1
+ASSERT error.statusCode == 500
 ```
 
 ---
@@ -67,11 +64,8 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception after all retries")
-CATCH AblyException:
-  PASS  # Expected
+AWAIT client.time() FAILS WITH error
+# Expected to fail after all retries
 ```
 
 ### Assertions
@@ -149,10 +143,8 @@ FOR EACH test_case IN [400, 401, 404]:
 
   client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
-  TRY:
-    AWAIT client.time()
-  CATCH AblyException:
-    PASS
+  AWAIT client.time() FAILS WITH error
+  # Expected to fail
 
   # Should NOT have retried
   ASSERT mock_http.captured_requests.length == 1
@@ -382,11 +374,8 @@ FOR EACH status_code IN [400, 401, 404]:
   
   client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
   
-  TRY:
-    AWAIT client.time()
-    FAIL("Expected error")
-  CATCH AblyException as e:
-    ASSERT e.statusCode == status_code
+  AWAIT client.time() FAILS WITH error
+  ASSERT error.statusCode == status_code
   
   # Should NOT have retried
   ASSERT request_count == 1
@@ -692,15 +681,12 @@ Tests that specifying both `endpoint` and `environment` is invalid.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    endpoint: "sandbox",
-    environment: "production"  # Deprecated, conflicts with endpoint
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  endpoint: "sandbox",
+  environment: "production"  # Deprecated, conflicts with endpoint
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -716,15 +702,12 @@ Tests that specifying both `endpoint` and `restHost` is invalid.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    endpoint: "sandbox",
-    restHost: "custom.host.com"  # Deprecated, conflicts with endpoint
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  endpoint: "sandbox",
+  restHost: "custom.host.com"  # Deprecated, conflicts with endpoint
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -740,15 +723,12 @@ Tests that specifying both `endpoint` and `realtimeHost` is invalid.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    endpoint: "sandbox",
-    realtimeHost: "custom.realtime.com"  # Deprecated, conflicts with endpoint
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  endpoint: "sandbox",
+  realtimeHost: "custom.realtime.com"  # Deprecated, conflicts with endpoint
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -764,15 +744,12 @@ Tests that specifying both `endpoint` and `fallbackHostsUseDefault` is invalid.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    endpoint: "sandbox",
-    fallbackHostsUseDefault: true  # Deprecated, conflicts with endpoint
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  endpoint: "sandbox",
+  fallbackHostsUseDefault: true  # Deprecated, conflicts with endpoint
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -815,15 +792,12 @@ Tests that specifying both `environment` and `restHost` is invalid.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    environment: "sandbox",
-    restHost: "custom.host.com"
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  environment: "sandbox",
+  restHost: "custom.host.com"
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -839,15 +813,12 @@ Tests that specifying both `environment` and `realtimeHost` is invalid.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    environment: "sandbox",
-    realtimeHost: "custom.realtime.com"
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  environment: "sandbox",
+  realtimeHost: "custom.realtime.com"
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -1017,15 +988,12 @@ Tests that specifying both `fallbackHosts` and `fallbackHostsUseDefault` is inva
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    fallbackHosts: ["fb1.example.com"],
-    fallbackHostsUseDefault: true
-  ))
-  FAIL("Expected exception for conflicting options")
-CATCH AblyException as e:
-  ASSERT e.code == 40000 OR e.message CONTAINS "invalid" OR e.message CONTAINS "conflict"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  fallbackHosts: ["fb1.example.com"],
+  fallbackHostsUseDefault: true
+)) FAILS WITH error
+ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
 ```
 
 ---
@@ -1087,11 +1055,8 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException:
-  PASS
+AWAIT client.time() FAILS WITH error
+# Expected to fail with no fallback
 ```
 
 ### Assertions
@@ -1234,11 +1199,8 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException:
-  PASS
+AWAIT client.time() FAILS WITH error
+# Expected to fail with no fallback
 ```
 
 ### Assertions
@@ -1267,11 +1229,8 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException:
-  PASS
+AWAIT client.time() FAILS WITH error
+# Expected to fail with no fallback
 ```
 
 ### Assertions

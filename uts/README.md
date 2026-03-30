@@ -249,11 +249,8 @@ ASSERT "key" NOT IN object
 
 ### Error Testing
 ```pseudo
-TRY:
-  AWAIT operation_that_fails()
-  FAIL("Expected exception")
-CATCH ExceptionType as e:
-  ASSERT e.code == expected_code
+AWAIT operation_that_fails() FAILS WITH error
+ASSERT error.code == expected_code
 ```
 
 ### Loops

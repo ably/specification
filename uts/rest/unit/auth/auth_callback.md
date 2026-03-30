@@ -502,12 +502,9 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.request("GET", "/channels/test")
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  # Error should indicate auth failure
-  ASSERT e.message CONTAINS "Authentication server unavailable"
+AWAIT client.request("GET", "/channels/test") FAILS WITH error
+# Error should indicate auth failure
+ASSERT error.message CONTAINS "Authentication server unavailable"
 ```
 
 ### Assertions
@@ -552,11 +549,8 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.request("GET", "/channels/test")
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 500 OR e.message CONTAINS "auth"
+AWAIT client.request("GET", "/channels/test") FAILS WITH error
+ASSERT error.statusCode == 500 OR error.message CONTAINS "auth"
 ```
 
 ### Assertions

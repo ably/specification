@@ -288,12 +288,9 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps (Case 1)
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 500
-  ASSERT e.message CONTAINS "unsupported" OR e.message CONTAINS "content"
+AWAIT client.time() FAILS WITH error
+ASSERT error.statusCode == 500
+ASSERT error.message CONTAINS "unsupported" OR error.message CONTAINS "content"
 ```
 
 ### Setup (Case 2 - Success status but bad content)
@@ -309,12 +306,9 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps (Case 2)
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 400
-  ASSERT e.code == 40013
+AWAIT client.time() FAILS WITH error
+ASSERT error.statusCode == 400
+ASSERT error.code == 40013
 ```
 
 ---
@@ -346,11 +340,8 @@ time_future = client.time()
 request = AWAIT mock_http.await_request()
 request.respond_with_delay(5000, 200, {"time": 1234567890000})
 
-TRY:
-  AWAIT time_future
-  FAIL("Expected timeout exception")
-CATCH AblyException as e:
-  ASSERT e.code == 50003 OR e.message CONTAINS "timeout"
+AWAIT time_future FAILS WITH error
+ASSERT error.code == 50003 OR error.message CONTAINS "timeout"
 ```
 
 ### Note
@@ -409,16 +400,11 @@ Tests that Basic authentication is rejected when TLS is disabled.
 
 ### Test Steps
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions(
-    key: "appId.keyId:keySecret",
-    tls: false
-  ))
-  # Attempt any operation that requires auth
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 40103 OR e.message CONTAINS "insecure" OR e.message CONTAINS "TLS"
+Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  tls: false
+)) FAILS WITH error
+ASSERT error.code == 40103 OR error.message CONTAINS "insecure" OR error.message CONTAINS "TLS"
 ```
 
 ### Note

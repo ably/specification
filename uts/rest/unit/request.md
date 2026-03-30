@@ -790,11 +790,8 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  response = AWAIT client.request("GET", "/test", version: 3)
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 80000 OR e.message CONTAINS "network" OR e.message CONTAINS "connection"
+AWAIT client.request("GET", "/test", version: 3) FAILS WITH error
+ASSERT error.code == 80000 OR error.message CONTAINS "network" OR error.message CONTAINS "connection"
 ```
 
 ---
@@ -821,11 +818,8 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  response = AWAIT client.request("GET", "/test", version: 3)
-  FAIL("Expected timeout exception")
-CATCH AblyException as e:
-  ASSERT e.code == 50003 OR e.message CONTAINS "timeout"
+AWAIT client.request("GET", "/test", version: 3) FAILS WITH error
+ASSERT error.code == 50003 OR error.message CONTAINS "timeout"
 ```
 
 ---

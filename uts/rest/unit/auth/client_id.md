@@ -366,11 +366,8 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps (Case 2)
 ```pseudo
-TRY:
-  AWAIT client.channels.get("test").status()  # Or any operation requiring auth
-  FAIL("Expected exception due to clientId mismatch")
-CATCH AblyException as e:
-  ASSERT e.message CONTAINS "clientId" OR e.message CONTAINS "mismatch"
+AWAIT client.channels.get("test").status() FAILS WITH error  # Or any operation requiring auth
+ASSERT error.message CONTAINS "clientId" OR error.message CONTAINS "mismatch"
 ```
 
 ### Note

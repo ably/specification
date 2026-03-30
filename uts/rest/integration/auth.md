@@ -227,12 +227,9 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.request("GET", "/channels/" + channel_name)
-  FAIL("Expected authentication error")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 401
-  ASSERT e.code >= 40100 AND e.code < 40200
+AWAIT client.request("GET", "/channels/" + channel_name) FAILS WITH error
+ASSERT error.statusCode == 401
+ASSERT error.code >= 40100 AND error.code < 40200
 ```
 
 ---

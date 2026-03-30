@@ -363,11 +363,8 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.request("GET", "/channels/test")
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 40106  # No authentication method
+AWAIT client.request("GET", "/channels/test") FAILS WITH error
+ASSERT error.code == 40106  # No authentication method
 ```
 
 ### Assertions
@@ -410,11 +407,8 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.request("GET", "/channels/test")
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 40171  # Token expired with no means of renewal
+AWAIT client.request("GET", "/channels/test") FAILS WITH error
+ASSERT error.code == 40171  # Token expired with no means of renewal
 ```
 
 ### Assertions
@@ -539,18 +533,15 @@ install_mock(mock_http)
 
 ### Test Steps
 ```pseudo
-TRY:
-  # Error is thrown at construction time - the client cannot be created
-  # with Basic auth (API key only) over non-TLS
-  client = Rest(
-    options: ClientOptions(
-      key: "appId.keyId:keySecret",
-      tls: false  # Non-TLS connection with Basic auth
-    )
+# Error is thrown at construction time - the client cannot be created
+# with Basic auth (API key only) over non-TLS
+Rest(
+  options: ClientOptions(
+    key: "appId.keyId:keySecret",
+    tls: false  # Non-TLS connection with Basic auth
   )
-  FAIL("Expected exception at construction")
-CATCH AblyException as e:
-  ASSERT e.code == 40103  # Cannot use Basic auth over non-TLS
+) FAILS WITH error
+ASSERT error.code == 40103  # Cannot use Basic auth over non-TLS
 ```
 
 ### Assertions

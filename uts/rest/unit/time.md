@@ -228,10 +228,7 @@ client = Rest(options: ClientOptions(key: "app.key:secret"))
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.time()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 500
-  ASSERT e.code == 50000
+AWAIT client.time() FAILS WITH error
+ASSERT error.statusCode == 500
+ASSERT error.code == 50000
 ```

@@ -243,11 +243,8 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.channels.get("test").history()
-  FAIL("Expected token expired error")
-CATCH AblyException as e:
-  ASSERT e.code == 40142
+AWAIT client.channels.get("test").history() FAILS WITH error
+ASSERT error.code == 40142
 ```
 
 ### Assertions
@@ -371,12 +368,9 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.channels.get("test").history()
-  FAIL("Expected error after max retries")
-CATCH AblyException as e:
-  # Should eventually give up
-  ASSERT e.code == 40142
+AWAIT client.channels.get("test").history() FAILS WITH error
+# Should eventually give up
+ASSERT error.code == 40142
 ```
 
 ### Assertions

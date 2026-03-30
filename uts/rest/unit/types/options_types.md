@@ -276,22 +276,16 @@ Tests that conflicting options are detected.
 
 ### Test Steps (Case 2 - Conflicting hosts)
 ```pseudo
-TRY:
-  options = ClientOptions(
-    key: "appId.keyId:keySecret",
-    restHost: "custom.host.com",
-    endpoint: "sandbox"
-  )
-  FAIL("Expected configuration error")
-CATCH ConfigurationException as e:
-  ASSERT e.message CONTAINS "restHost" OR e.message CONTAINS "endpoint"
+ClientOptions(
+  key: "appId.keyId:keySecret",
+  restHost: "custom.host.com",
+  endpoint: "sandbox"
+) FAILS WITH error
+ASSERT error.message CONTAINS "restHost" OR error.message CONTAINS "endpoint"
 ```
 
 ### Test Steps (Case 3 - No auth)
 ```pseudo
-TRY:
-  client = Rest(options: ClientOptions())
-  FAIL("Expected configuration error")
-CATCH ConfigurationException as e:
-  ASSERT e.message CONTAINS "auth" OR e.message CONTAINS "key" OR e.message CONTAINS "token"
+Rest(options: ClientOptions()) FAILS WITH error
+ASSERT error.message CONTAINS "auth" OR error.message CONTAINS "key" OR error.message CONTAINS "token"
 ```

@@ -531,12 +531,9 @@ client = Rest(options: ClientOptions(
   endpoint: "sandbox"
 ))
 
-TRY:
-  AWAIT client.channels.get("test").presence.get()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 401
-  ASSERT e.code >= 40100 AND e.code < 40200
+AWAIT client.channels.get("test").presence.get() FAILS WITH error
+ASSERT error.statusCode == 401
+ASSERT error.code >= 40100 AND error.code < 40200
 ```
 
 ### RSP_Error_Integration_2 - Insufficient permissions rejected

@@ -411,10 +411,7 @@ client = Rest(options: ClientOptions(key: "app.key:secret"))
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.stats()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 401
-  ASSERT e.code == 40100
+AWAIT client.stats() FAILS WITH error
+ASSERT error.statusCode == 401
+ASSERT error.code == 40100
 ```

@@ -462,11 +462,8 @@ ASSERT client.auth.tokenDetails.token == "first-token"
 
 # Make a request that fails with 40142
 # Renewal will be attempted but will fail
-TRY:
-  AWAIT client.channels.get("test").status()
-CATCH:
-  # Expected to fail
-  PASS
+AWAIT client.channels.get("test").status() FAILS WITH error
+# Expected to fail - error is expected
 ```
 
 #### Assertions

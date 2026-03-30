@@ -1277,12 +1277,9 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.channels.get("test").presence.get()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 50000
-  ASSERT e.statusCode == 500
+AWAIT client.channels.get("test").presence.get() FAILS WITH error
+ASSERT error.code == 50000
+ASSERT error.statusCode == 500
 ```
 
 ---
@@ -1315,12 +1312,9 @@ client = Rest(options: ClientOptions(key: "invalid.key:secret"))
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.channels.get("test").presence.history()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 40101
-  ASSERT e.statusCode == 401
+AWAIT client.channels.get("test").presence.history() FAILS WITH error
+ASSERT error.code == 40101
+ASSERT error.statusCode == 401
 ```
 
 ---
@@ -1353,12 +1347,9 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT client.channels.get("nonexistent").presence.get()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.code == 40400
-  ASSERT e.statusCode == 404
+AWAIT client.channels.get("nonexistent").presence.get() FAILS WITH error
+ASSERT error.code == 40400
+ASSERT error.statusCode == 404
 ```
 
 ---

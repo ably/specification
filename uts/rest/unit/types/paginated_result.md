@@ -746,10 +746,7 @@ channel = client.channels.get("test")
 ```pseudo
 page1 = AWAIT channel.history()
 
-TRY:
-  page2 = AWAIT page1.next()
-  FAIL("Expected exception")
-CATCH AblyException as e:
-  ASSERT e.statusCode == 404
-  ASSERT e.code == 40400
+AWAIT page1.next() FAILS WITH error
+ASSERT error.statusCode == 404
+ASSERT error.code == 40400
 ```

@@ -65,12 +65,9 @@ restricted_channel = restricted_client.channels.get(channel_name)
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT restricted_channel.publish(name: "event", data: "data")
-  FAIL("Expected exception not thrown")
-CATCH AblyException as e:
-  ASSERT e.code == 40160  # Not permitted
-  ASSERT e.statusCode == 401
+AWAIT restricted_channel.publish(name: "event", data: "data") FAILS WITH error
+ASSERT error.code == 40160  # Not permitted
+ASSERT error.statusCode == 401
 ```
 
 ---
@@ -178,14 +175,11 @@ channel = client.channels.get(channel_name)
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT channel.publish(
-    message: Message(name: "event", data: "data"),
-    params: { "_forceNack": "true" }
-  )
-  FAIL("Expected exception not thrown")
-CATCH AblyException as e:
-  ASSERT e.code == 40099  # Specific code for forced nack
+AWAIT channel.publish(
+  message: Message(name: "event", data: "data"),
+  params: { "_forceNack": "true" }
+) FAILS WITH error
+ASSERT error.code == 40099  # Specific code for forced nack
 ```
 
 ---
@@ -220,18 +214,15 @@ channel = token_client.channels.get(channel_name)
 
 ### Test Steps
 ```pseudo
-TRY:
-  AWAIT channel.publish(
-    message: Message(
-      name: "event",
-      data: "data",
-      clientId: "different-client-id"  # Doesn't match authenticated clientId
-    )
+AWAIT channel.publish(
+  message: Message(
+    name: "event",
+    data: "data",
+    clientId: "different-client-id"  # Doesn't match authenticated clientId
   )
-  FAIL("Expected exception not thrown")
-CATCH AblyException as e:
-  ASSERT e.code == 40012  # Incompatible clientId
-  ASSERT e.statusCode == 400
+) FAILS WITH error
+ASSERT error.code == 40012  # Incompatible clientId
+ASSERT error.statusCode == 400
 ```
 
 ---
