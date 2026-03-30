@@ -173,7 +173,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN4 | Connection event emission (RTN4a–RTN4i) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN4b, RTN4c; `realtime/unit/connection/update_events_test.md` covers RTN4h |
 | RTN5 | Concurrency test (50+ clients) | |
 | RTN6 | Successful connection definition | |
-| RTN7 | ACK and NACK handling (RTN7a–RTN7e) | |
+| RTN7 | ACK and NACK handling (RTN7a–RTN7e) | Partial — `realtime/unit/channels/channel_publish.md` covers RTN7a, RTN7b (via RTL6j tests) |
 | RTN8 | Connection#id attribute (RTN8a–RTN8c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
 | RTN9 | Connection#key attribute (RTN9a–RTN9c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
 | RTN11 | Connect function (RTN11a–RTN11f) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN11; `realtime/unit/connection/error_reason_test.md` covers RTN11d |
@@ -212,7 +212,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL3 | Connection state side effects (RTL3a–RTL3e) | Yes — `realtime/unit/channels/channel_connection_state.md` |
 | RTL4 | Attach function (RTL4a–RTL4m) | Yes — `realtime/unit/channels/channel_attach.md` |
 | RTL5 | Detach function (RTL5a–RTL5l) | Yes — `realtime/unit/channels/channel_detach.md` |
-| RTL6 | Publish function (RTL6a–RTL6k) | |
+| RTL6 | Publish function (RTL6a–RTL6k) | Yes — `realtime/unit/channels/channel_publish.md` |
 | RTL7 | Subscribe function (RTL7a–RTL7h) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL8 | Unsubscribe function (RTL8a–RTL8c) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL9 | Presence attribute (RTL9a) | |
@@ -345,7 +345,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | BSP1–BSP2 | BatchPublishSpec | |
 | BPR1–BPR2, BPF1–BPF2 | BatchPublish result types | |
 | BGR1–BGR2, BGF1–BGF2 | BatchPresence result types | |
-| PBR1–PBR2 | PublishResult | |
+| PBR1–PBR2 | PublishResult | Yes — `realtime/unit/channels/channel_publish.md` |
 | UDR1–UDR2 | UpdateDeleteResult | |
 | TRT1–TRT2, TRS1–TRS2, TRF1–TRF2 | TokenRevocation types | |
 | MFI1–MFI2 | MessageFilter | |
@@ -401,7 +401,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Realtime client** (RTC) | 14 | 8 | Partial |
 | **Connection** (RTN) | 23 | 16 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
-| **Realtime channel** (RTL) | 24 | 13 | Partial |
+| **Realtime channel** (RTL) | 24 | 14 | Partial |
 | **Realtime presence** (RTP) | 15 | 0 | None |
 | **Realtime annotations** (RTAN) | 5 | 0 | None |
 | **EventEmitter** (RTE) | 6 | 0 | None |
