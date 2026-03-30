@@ -74,7 +74,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSA14 | Error when token auth selected without token | Yes — `rest/unit/auth/token_renewal.md`, `rest/integration/auth.md` |
 | RSA15 | ClientId validation (RSA15a–RSA15c) | Yes — `rest/unit/auth/client_id.md`, `realtime/integration/auth.md` (RSA15c Realtime case) |
 | RSA16 | TokenDetails attribute (RSA16a–RSA16d) | Yes — `rest/unit/auth/token_details.md` |
-| RSA17 | RevokeTokens (RSA17a–RSA17g) | |
+| RSA17 | RevokeTokens (RSA17a–RSA17g) | Yes — `rest/unit/auth/revoke_tokens.md`, `rest/integration/revoke_tokens.md` |
 
 ### Channels (REST)
 
@@ -114,7 +114,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | RSP1 | Associated with single channel | Yes — `rest/unit/presence/rest_presence.md`, `rest/integration/presence.md` |
-| RSP2 | No presence registration via REST | |
+| RSP2 | No presence registration via REST | Information only   |
 | RSP3 | Get function (RSP3a–RSP3a3) | Yes — `rest/unit/presence/rest_presence.md`, `rest/integration/presence.md` |
 | RSP4 | History function (RSP4a–RSP4b3) | Yes — `rest/unit/presence/rest_presence.md`, `rest/integration/presence.md` |
 | RSP5 | Presence message decoding | Yes — `rest/unit/presence/rest_presence.md`, `rest/integration/presence.md` |
@@ -155,7 +155,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC7 | Uses configured timeouts | |
 | RTC8 | Authorize function for realtime (RTC8a–RTC8c) | Yes — `realtime/unit/auth/realtime_authorize.md`, `realtime/integration/auth.md` |
 | RTC9 | Request function | Yes — `realtime/unit/client/realtime_request.md` (proxies to RSC19 tests) |
-| RTC10–RTC11 | Deleted | |
+| RTC10–RTC11 | Deleted | N/A |
 | RTC12 | Same constructors as RestClient | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC13 | Push object attribute | |
 | RTC14 | CreateWrapperSDKProxy (RTC14a–RTC14c) | |
@@ -167,12 +167,12 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RTN1 | Uses websocket connection | |
+| RTN1 | Uses websocket connection | Information only |
 | RTN2 | Default host and query string params (RTN2a–RTN2g) | Partial — `realtime/unit/auth/connection_auth_test.md` covers RTN2e |
 | RTN3 | AutoConnect option | |
 | RTN4 | Connection event emission (RTN4a–RTN4i) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN4b, RTN4c; `realtime/unit/connection/update_events_test.md` covers RTN4h |
 | RTN5 | Concurrency test (50+ clients) | |
-| RTN6 | Successful connection definition | |
+| RTN6 | Successful connection definition | Information only|
 | RTN7 | ACK and NACK handling (RTN7a–RTN7e) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN7a, RTN7b (via RTL6j tests), RTN7d, RTN7e |
 | RTN8 | Connection#id attribute (RTN8a–RTN8c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
 | RTN9 | Connection#key attribute (RTN9a–RTN9c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
@@ -347,7 +347,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | BGR1–BGR2, BGF1–BGF2 | BatchPresence result types | Yes — `rest/unit/batch_presence.md`, `rest/integration/batch_presence.md` |
 | PBR1–PBR2 | PublishResult | Yes — `realtime/unit/channels/channel_publish.md` |
 | UDR1–UDR2 | UpdateDeleteResult | |
-| TRT1–TRT2, TRS1–TRS2, TRF1–TRF2 | TokenRevocation types | |
+| TRT1–TRT2, TRS1–TRS2, TRF1–TRF2 | TokenRevocation types | Yes — `rest/unit/auth/revoke_tokens.md` |
 | MFI1–MFI2 | MessageFilter | |
 | REX1–REX2 | ReferenceExtras | |
 
@@ -409,7 +409,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Wrapper SDK** (WP) | 7 | 0 | None |
 | **Push notifications** (RSH) | 8 | 0 | None |
 | **Plugins** (PC/PT/VD) | 3 | 0 | None |
-| **Data types** | 30 | 8 | Partial |
+| **Data types** | 30 | 9 | Partial |
 | **Option types** | 8 | 5 | Partial |
 | **Push types** | 3 | 0 | None |
 | **Introspection** (CR) | 1 | 0 | None |

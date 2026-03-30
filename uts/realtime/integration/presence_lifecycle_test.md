@@ -14,21 +14,22 @@ presence events via subscribe and verifies member state via get().
 These tests complement the unit tests by verifying that the real server correctly
 broadcasts presence events, delivers SYNC data, and maintains presence state.
 
-## Test Environment
+## Sandbox Setup
 
-### Prerequisites
-- Ably sandbox app provisioned via `POST https://sandbox-rest.ably.io/apps`
-- API key with `{"*":["*"]}` capability
-- `useBinaryProtocol: false` (SDK does not implement msgpack)
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
 
-### Setup Pattern
+**Note:** `useBinaryProtocol: false` is required if the SDK does not implement msgpack.
+
+### App Provisioning
+
 ```pseudo
 BEFORE ALL TESTS:
-  app_config = provision_sandbox_app(
-    keys: [{ capability: '{"*":["*"]}' }]
-  )
-  app_id = app_config.app_id
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
   api_key = app_config.keys[0].key_str
+  app_id = app_config.app_id
 
 AFTER ALL TESTS:
   DELETE https://sandbox-rest.ably.io/apps/{app_id}
