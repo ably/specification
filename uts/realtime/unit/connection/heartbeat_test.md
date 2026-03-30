@@ -145,7 +145,6 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 5000 + 2000 = 7000ms
 ADVANCE_TIME(7100)
-PUMP_EVENT_QUEUE()
 
 # Wait for the reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
@@ -223,26 +222,18 @@ ASSERT connection_attempt_count == 1
 
 # Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
 ADVANCE_TIME(2000)
-PUMP_EVENT_QUEUE()
-
 # Send HEARTBEAT from server - resets timer
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: HEARTBEAT
 ))
-PUMP_EVENT_QUEUE()
-
 # Advance time again (2000ms since HEARTBEAT, still within threshold)
 ADVANCE_TIME(2000)
-PUMP_EVENT_QUEUE()
-
 # Connection should still be alive - no reconnection triggered
 ASSERT client.connection.state == ConnectionState.connected
 ASSERT connection_attempt_count == 1
 
 # Advance time past the timeout window (4100ms since last HEARTBEAT)
 ADVANCE_TIME(2100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -312,19 +303,13 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Advance time (timeout is 2000+1000=3000ms)
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Send ACK message from server - resets timer
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: ACK,
   msgSerial: 0
 ))
-PUMP_EVENT_QUEUE()
-
 # Advance time again (1500ms since ACK, still within threshold)
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Connection should still be alive (timer was reset)
 ASSERT client.connection.state == ConnectionState.connected
 
@@ -336,19 +321,13 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
     Message(name: "event", data: "data")
   ]
 ))
-PUMP_EVENT_QUEUE()
-
 # Advance time again (1500ms since MESSAGE)
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Still only one connection attempt - no timeout yet
 ASSERT connection_attempt_count == 1
 
 # Advance time past timeout without any message (3100ms since last activity)
 ADVANCE_TIME(3100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -429,8 +408,6 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 2000 + 1000 = 3000ms
 ADVANCE_TIME(3100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete (immediate per RTN15a)
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -515,8 +492,6 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Advance time past timeout to trigger disconnection and reconnection
 ADVANCE_TIME(3100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -658,7 +633,6 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 5000 + 2000 = 7000ms
 ADVANCE_TIME(7100)
-PUMP_EVENT_QUEUE()
 
 # Wait for the reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
@@ -736,24 +710,16 @@ ASSERT connection_attempt_count == 1
 
 # Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
 ADVANCE_TIME(2000)
-PUMP_EVENT_QUEUE()
-
 # Server sends ping frame - resets timer
 mock_ws.active_connection.send_ping_frame()
-PUMP_EVENT_QUEUE()
-
 # Advance time again (2000ms since ping, still within threshold)
 ADVANCE_TIME(2000)
-PUMP_EVENT_QUEUE()
-
 # Connection should still be alive - no reconnection triggered
 ASSERT client.connection.state == ConnectionState.connected
 ASSERT connection_attempt_count == 1
 
 # Advance time past the timeout window (4100ms since last ping)
 ADVANCE_TIME(2100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -823,16 +789,10 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Advance time
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Send ping frame - resets timer
 mock_ws.active_connection.send_ping_frame()
-PUMP_EVENT_QUEUE()
-
 # Advance time
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Still connected
 ASSERT client.connection.state == ConnectionState.connected
 
@@ -844,30 +804,20 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
     Message(name: "event", data: "data")
   ]
 ))
-PUMP_EVENT_QUEUE()
-
 # Advance time
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Still connected
 ASSERT client.connection.state == ConnectionState.connected
 
 # Send another ping frame
 mock_ws.active_connection.send_ping_frame()
-PUMP_EVENT_QUEUE()
-
 # Advance time
 ADVANCE_TIME(1500)
-PUMP_EVENT_QUEUE()
-
 # Still only one connection attempt
 ASSERT connection_attempt_count == 1
 
 # Advance time past timeout without any activity
 ADVANCE_TIME(1600)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -948,8 +898,6 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 2000 + 1000 = 3000ms
 ADVANCE_TIME(3100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete (immediate per RTN15a)
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -1034,8 +982,6 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Advance time past timeout to trigger disconnection and reconnection
 ADVANCE_TIME(3100)
-PUMP_EVENT_QUEUE()
-
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
