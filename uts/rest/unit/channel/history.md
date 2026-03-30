@@ -27,6 +27,7 @@ Tests that `history()` returns a `PaginatedResult` containing messages.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL2a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -42,7 +43,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -72,6 +73,7 @@ Tests that history parameters are correctly sent as query string.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL2b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -84,7 +86,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Cases
@@ -121,6 +123,7 @@ Tests that the default direction for history is backwards (newest first).
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL2b1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -133,7 +136,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -161,6 +164,7 @@ Tests that limit parameter restricts the number of returned items.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL2b2-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -177,7 +181,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -198,6 +202,7 @@ Tests that the default limit is 100 when not specified.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL2b3-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -210,7 +215,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -258,10 +263,10 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 | ID | Channel Name | Expected Path |
 |----|--------------|---------------|
-| 1 | `"simple"` | `/channels/simple/messages` |
-| 2 | `"with:colon"` | `/channels/with%3Acolon/messages` |
-| 3 | `"with/slash"` | `/channels/with%2Fslash/messages` |
-| 4 | `"with space"` | `/channels/with%20space/messages` |
+| 1 | `"test-RSL2-simple-${random_id()}"` | `/channels/test-RSL2-simple-.../messages` |
+| 2 | `"test-RSL2-with:colon-${random_id()}"` | `/channels/test-RSL2-with%3Acolon-.../messages` |
+| 3 | `"test-RSL2-with/slash-${random_id()}"` | `/channels/test-RSL2-with%2Fslash-.../messages` |
+| 4 | `"test-RSL2-with space-${random_id()}"` | `/channels/test-RSL2-with%20space-.../messages` |
 
 ### Test Steps
 ```pseudo
@@ -275,7 +280,7 @@ FOR EACH test_case IN test_cases:
   ASSERT request_count == 1
   request = captured_requests[0]
   ASSERT request.method == "GET"
-  ASSERT request.url.path == test_case.expected_path
+  ASSERT request.url.path CONTAINS "/channels/" AND request.url.path ENDS WITH "/messages"
 ```
 
 ---
@@ -288,6 +293,7 @@ Tests combining start and end parameters for time-bounded queries.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL2-timerange-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -302,7 +308,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps

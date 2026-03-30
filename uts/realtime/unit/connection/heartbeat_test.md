@@ -20,6 +20,8 @@ Tests that the client disconnects when no server activity is detected.
 ### Setup
 
 ```pseudo
+channel_name = "test-RTN23a-${random_id()}"
+
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
@@ -90,6 +92,8 @@ Tests that receiving HEARTBEAT messages keeps the connection alive.
 ### Setup
 
 ```pseudo
+channel_name = "test-RTN23a-heartbeat-${random_id()}"
+
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
@@ -171,6 +175,8 @@ Tests that receiving any protocol message (e.g., ACK, MESSAGE) keeps the connect
 ### Setup
 
 ```pseudo
+channel_name = "test-RTN23a-message-${random_id()}"
+
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
@@ -224,7 +230,7 @@ ASSERT client.connection.state == ConnectionState.connected
 # Send MESSAGE from server
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: MESSAGE,
-  channel: "test-channel",
+  channel: channel_name,
   messages: [
     Message(name: "event", data: "data")
   ]

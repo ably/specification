@@ -27,6 +27,7 @@ Tests should use the encoding fixtures from `ably-common` where available for cr
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -42,7 +43,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false  # Use JSON for easier inspection
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -67,6 +68,7 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -82,7 +84,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -109,6 +111,7 @@ ASSERT body["encoding"] == "json"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -124,7 +127,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false  # JSON protocol requires base64 for binary
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -150,6 +153,7 @@ ASSERT base64_decode(body["data"]) == bytes([0x00, 0x01, 0x02, 0xFF, 0xFE])
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4c-msgpack-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -165,7 +169,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: true  # MessagePack
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -192,6 +196,7 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4d-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -207,7 +212,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -232,6 +237,7 @@ ASSERT parse_json(body["data"]) == [1, 2, "three", { "four": 4 }]
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL6a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -252,7 +258,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -275,6 +281,7 @@ ASSERT message.encoding IS null  # Encoding consumed after decode
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL6a-json-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -295,7 +302,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -318,6 +325,7 @@ ASSERT message.encoding IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL6a-chained-${random_id()}"
 captured_requests = []
 
 # Data: {"key":"value"} -> JSON string -> base64 encoded
@@ -342,7 +350,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -365,6 +373,7 @@ ASSERT message.encoding IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL6b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -385,7 +394,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -417,6 +426,7 @@ encoding_fixtures = load_fixtures("encoding.json")
 ### Test Steps
 ```pseudo
 FOR EACH fixture IN encoding_fixtures:
+  channel_name = "test-RSL4-fixture-${random_id()}"
   captured_requests = []
   
   mock_http = MockHttpClient(
@@ -432,7 +442,7 @@ FOR EACH fixture IN encoding_fixtures:
     key: "appId.keyId:keySecret",
     useBinaryProtocol: fixture.use_binary_protocol
   ))
-  channel = client.channels.get("test")
+  channel = client.channels.get(channel_name)
 
   # Publish with input data
   AWAIT channel.publish(name: "event", data: fixture.input_data)
@@ -459,6 +469,7 @@ FOR EACH fixture IN encoding_fixtures:
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-null-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -474,7 +485,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -499,6 +510,7 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-number-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -514,7 +526,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -539,6 +551,7 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-bool-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -554,7 +567,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -579,6 +592,7 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL6-utf8-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -599,7 +613,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -623,6 +637,7 @@ ASSERT message.encoding IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL6-complex-${random_id()}"
 captured_requests = []
 
 # Create data: object -> JSON -> UTF-8 bytes -> base64
@@ -649,7 +664,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -675,6 +690,7 @@ ASSERT message.encoding IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-json-ct-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -690,7 +706,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -713,6 +729,7 @@ ASSERT request.headers["Accept"] == "application/json"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-msgpack-ct-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -728,7 +745,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: true
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -753,6 +770,7 @@ ASSERT request.headers["Accept"] == "application/x-msgpack"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-empty-str-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -768,7 +786,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -793,6 +811,7 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-empty-arr-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -808,7 +827,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -833,6 +852,7 @@ ASSERT parse_json(body["data"]) == []
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL4-empty-obj-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -848,7 +868,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   useBinaryProtocol: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps

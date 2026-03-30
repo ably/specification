@@ -25,11 +25,13 @@ The mock supports:
 **Spec requirement:** Each `RestChannel` provides access to a `RestPresence` object via the `presence` property.
 
 ```pseudo
+channel_name = "test-RSP1a-${random_id()}"
+
 Given a REST client with mocked HTTP
-And a channel "test-channel"
+And a channel channel_name
 When accessing channel.presence
 Then a RestPresence object is returned
-And the presence object is associated with "test-channel"
+And the presence object is associated with channel_name
 ```
 
 ### RSP1b - Same presence object returned for same channel
@@ -37,8 +39,10 @@ And the presence object is associated with "test-channel"
 **Spec requirement:** The same `RestPresence` instance must be returned for multiple accesses to the same channel's presence property.
 
 ```pseudo
+channel_name = "test-RSP1b-${random_id()}"
+
 Given a REST client with mocked HTTP
-And a channel = client.channels.get("test-channel")
+And a channel = client.channels.get(channel_name)
 When accessing channel.presence multiple times
 Then the same RestPresence instance is returned each time
 ```
@@ -53,6 +57,7 @@ Then the same RestPresence instance is returned each time
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3a-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -74,14 +79,14 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test-channel").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
 ```pseudo
 ASSERT request_count == 1
 ASSERT captured_requests[0].method == "GET"
-ASSERT captured_requests[0].url.path == "/channels/test-channel/presence"
+ASSERT captured_requests[0].url.path == "/channels/" + channel_name + "/presence"
 ASSERT result IS PaginatedResult<PresenceMessage>
 ASSERT result.items.length == 2
 ```
@@ -94,6 +99,7 @@ ASSERT result.items.length == 2
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -119,7 +125,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -141,6 +147,7 @@ ASSERT result.items[0].timestamp == 1234567890000
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -157,7 +164,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("empty-channel").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -175,6 +182,7 @@ ASSERT result.hasNext() == false
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3a1a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -194,7 +202,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get(limit: 50)
+AWAIT client.channels.get(channel_name).presence.get(limit: 50)
 ```
 
 ### Assertions
@@ -210,6 +218,7 @@ ASSERT captured_requests[0].url.query_params["limit"] == "50"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3a1b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -226,7 +235,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get()
+AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -243,6 +252,7 @@ ASSERT "limit" NOT IN captured_requests[0].url.query_params
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3a1c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -259,7 +269,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get(limit: 1000)
+AWAIT client.channels.get(channel_name).presence.get(limit: 1000)
 ```
 
 ### Assertions
@@ -275,6 +285,7 @@ ASSERT captured_requests[0].url.query_params["limit"] == "1000"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3a2-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -293,7 +304,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get(clientId: "specific-client")
+AWAIT client.channels.get(channel_name).presence.get(clientId: "specific-client")
 ```
 
 ### Assertions
@@ -309,6 +320,7 @@ ASSERT captured_requests[0].url.query_params["clientId"] == "specific-client"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3a3-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -327,7 +339,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get(connectionId: "conn123")
+AWAIT client.channels.get(channel_name).presence.get(connectionId: "conn123")
 ```
 
 ### Assertions
@@ -343,6 +355,7 @@ ASSERT captured_requests[0].url.query_params["connectionId"] == "conn123"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP3-multi-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -359,7 +372,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get(
+AWAIT client.channels.get(channel_name).presence.get(
   limit: 25,
   clientId: "user1",
   connectionId: "conn1"
@@ -386,6 +399,7 @@ ASSERT captured_requests[0].url.query_params["connectionId"] == "conn1"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -405,13 +419,13 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test-channel").presence.history()
+result = AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions
 ```pseudo
 ASSERT captured_requests[0].method == "GET"
-ASSERT captured_requests[0].url.path == "/channels/test-channel/presence/history"
+ASSERT captured_requests[0].url.path == "/channels/" + channel_name + "/presence/history"
 ASSERT result IS PaginatedResult<PresenceMessage>
 ```
 
@@ -423,6 +437,7 @@ ASSERT result IS PaginatedResult<PresenceMessage>
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4a-result-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -443,7 +458,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.history()
+result = AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions
@@ -463,6 +478,7 @@ ASSERT result.items[2].action == PresenceAction.leave   # action 4
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b1a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -480,7 +496,7 @@ start_time = 1609459200000  # 2021-01-01 00:00:00 UTC
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(start: start_time)
+AWAIT client.channels.get(channel_name).presence.history(start: start_time)
 ```
 
 ### Assertions
@@ -496,6 +512,7 @@ ASSERT captured_requests[0].url.query_params["start"] == "1609459200000"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b1b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -513,7 +530,7 @@ end_time = 1609545600000  # 2021-01-02 00:00:00 UTC
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(end: end_time)
+AWAIT client.channels.get(channel_name).presence.history(end: end_time)
 ```
 
 ### Assertions
@@ -529,6 +546,7 @@ ASSERT captured_requests[0].url.query_params["end"] == "1609545600000"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b1c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -547,7 +565,7 @@ end_time = 1609545600000
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(
+AWAIT client.channels.get(channel_name).presence.history(
   start: start_time,
   end: end_time
 )
@@ -567,6 +585,7 @@ ASSERT captured_requests[0].url.query_params["end"] == "1609545600000"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b1d-${random_id()}"
 # Language-specific: if the language supports DateTime/Date objects
 captured_requests = []
 
@@ -585,7 +604,7 @@ start_datetime = DateTime(2021, 1, 1, 0, 0, 0, UTC)  # language-specific
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(start: start_datetime)
+AWAIT client.channels.get(channel_name).presence.history(start: start_datetime)
 ```
 
 ### Assertions
@@ -601,6 +620,7 @@ ASSERT captured_requests[0].url.query_params["start"] == "1609459200000"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b2a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -617,7 +637,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history()
+AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions
@@ -634,6 +654,7 @@ ASSERT "direction" NOT IN captured_requests[0].url.query_params
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b2b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -650,7 +671,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(direction: "forwards")
+AWAIT client.channels.get(channel_name).presence.history(direction: "forwards")
 ```
 
 ### Assertions
@@ -666,6 +687,7 @@ ASSERT captured_requests[0].url.query_params["direction"] == "forwards"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b2c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -682,7 +704,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(direction: "backwards")
+AWAIT client.channels.get(channel_name).presence.history(direction: "backwards")
 ```
 
 ### Assertions
@@ -698,6 +720,7 @@ ASSERT captured_requests[0].url.query_params["direction"] == "backwards"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b3a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -714,7 +737,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(limit: 50)
+AWAIT client.channels.get(channel_name).presence.history(limit: 50)
 ```
 
 ### Assertions
@@ -730,6 +753,7 @@ ASSERT captured_requests[0].url.query_params["limit"] == "50"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b3b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -746,7 +770,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history()
+AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions
@@ -763,6 +787,7 @@ ASSERT "limit" NOT IN captured_requests[0].url.query_params
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4b3c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -779,7 +804,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(limit: 1000)
+AWAIT client.channels.get(channel_name).presence.history(limit: 1000)
 ```
 
 ### Assertions
@@ -795,6 +820,7 @@ ASSERT captured_requests[0].url.query_params["limit"] == "1000"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP4-all-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -811,7 +837,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history(
+AWAIT client.channels.get(channel_name).presence.history(
   start: 1609459200000,
   end: 1609545600000,
   direction: "forwards",
@@ -837,6 +863,7 @@ ASSERT captured_requests[0].url.query_params["limit"] == "50"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -855,7 +882,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -872,6 +899,7 @@ ASSERT result.items[0].data IS String
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5b-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -895,7 +923,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -914,6 +942,7 @@ ASSERT result.items[0].encoding == null  # encoding consumed
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5c-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -937,7 +966,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -955,6 +984,7 @@ ASSERT result.items[0].encoding == null  # encoding consumed
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5d-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -978,7 +1008,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -995,6 +1025,7 @@ ASSERT result.items[0].data IS String
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5e-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1018,7 +1049,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -1036,6 +1067,7 @@ ASSERT result.items[0].data["key"] == "value"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5f-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1059,7 +1091,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.history()
+result = AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions
@@ -1076,6 +1108,7 @@ ASSERT result.items[0].data["event"] == "entered"
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP5g-${random_id()}"
 captured_requests = []
 cipher_key = base64_decode("WUP6u0K7MXI5Zeo0VppPwg==")
 
@@ -1099,7 +1132,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("encrypted", options: RestChannelOptions(
+channel = client.channels.get(channel_name, options: RestChannelOptions(
   cipher: CipherParams(key: cipher_key, algorithm: "aes", mode: "cbc")
 ))
 ```
@@ -1125,6 +1158,7 @@ ASSERT result.items[0].data IS Object/Map
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-pagination1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1137,7 +1171,7 @@ mock_http = MockHttpClient(
         { "action": 1, "clientId": "client2" }
       ],
       headers: {
-        "Link": "</channels/test/presence?page=2>; rel=\"next\""
+        "Link": "</channels/" + channel_name + "/presence?page=2>; rel=\"next\""
       }
     )
   }
@@ -1149,7 +1183,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.get()
+result = AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -1166,6 +1200,7 @@ ASSERT result.hasNext() == true
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-pagination2-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -1178,7 +1213,7 @@ mock_http = MockHttpClient(
     IF request_count == 1:
       req.respond_with(200,
         body: [{ "action": 1, "clientId": "client1" }],
-        headers: { "Link": "</channels/test/presence?page=2>; rel=\"next\"" }
+        headers: { "Link": "</channels/" + channel_name + "/presence?page=2>; rel=\"next\"" }
       )
     ELSE:
       req.respond_with(200, body: [{ "action": 1, "clientId": "client2" }])
@@ -1191,7 +1226,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-page1 = AWAIT client.channels.get("test").presence.get()
+page1 = AWAIT client.channels.get(channel_name).presence.get()
 page2 = AWAIT page1.next()
 ```
 
@@ -1210,6 +1245,7 @@ ASSERT page2.hasNext() == false
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-pagination3-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -1222,7 +1258,7 @@ mock_http = MockHttpClient(
     IF request_count == 1:
       req.respond_with(200,
         body: [{ "action": 2, "clientId": "c1", "timestamp": 3000 }],
-        headers: { "Link": "</channels/test/presence/history?page=2>; rel=\"next\"" }
+        headers: { "Link": "</channels/" + channel_name + "/presence/history?page=2>; rel=\"next\"" }
       )
     ELSE:
       req.respond_with(200, body: [{ "action": 4, "clientId": "c1", "timestamp": 1000 }])
@@ -1235,7 +1271,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-page1 = AWAIT client.channels.get("test").presence.history()
+page1 = AWAIT client.channels.get(channel_name).presence.history()
 page2 = AWAIT page1.next()
 ```
 
@@ -1255,6 +1291,7 @@ ASSERT page2.items[0].action == PresenceAction.leave
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-error1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1277,7 +1314,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get() FAILS WITH error
+AWAIT client.channels.get(channel_name).presence.get() FAILS WITH error
 ASSERT error.code == 50000
 ASSERT error.statusCode == 500
 ```
@@ -1290,6 +1327,7 @@ ASSERT error.statusCode == 500
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-error2-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1312,7 +1350,7 @@ client = Rest(options: ClientOptions(key: "invalid.key:secret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history() FAILS WITH error
+AWAIT client.channels.get(channel_name).presence.history() FAILS WITH error
 ASSERT error.code == 40101
 ASSERT error.statusCode == 401
 ```
@@ -1325,6 +1363,7 @@ ASSERT error.statusCode == 401
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-error3-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1347,7 +1386,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("nonexistent").presence.get() FAILS WITH error
+AWAIT client.channels.get(channel_name).presence.get() FAILS WITH error
 ASSERT error.code == 40400
 ASSERT error.statusCode == 404
 ```
@@ -1362,6 +1401,7 @@ ASSERT error.statusCode == 404
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-headers1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1378,7 +1418,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get()
+AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -1396,6 +1436,7 @@ ASSERT "Accept" IN captured_requests[0].headers
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-headers2-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1412,7 +1453,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.history()
+AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions
@@ -1429,6 +1470,7 @@ ASSERT captured_requests[0].headers["Authorization"] starts with "Basic "
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-headers3-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1448,7 +1490,7 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-AWAIT client.channels.get("test").presence.get()
+AWAIT client.channels.get(channel_name).presence.get()
 ```
 
 ### Assertions
@@ -1467,6 +1509,7 @@ ASSERT captured_requests[0].url.query_params["request_id"] IS NOT empty
 
 ### Setup
 ```pseudo
+channel_name = "test-RSP-action1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -1489,7 +1532,7 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.channels.get("test").presence.history()
+result = AWAIT client.channels.get(channel_name).presence.history()
 ```
 
 ### Assertions

@@ -49,6 +49,7 @@ Tests that library-generated message IDs follow the `<base64>:<serial>` format.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k2-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -64,7 +65,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: true
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -102,6 +103,7 @@ Tests that serial numbers increment for each message in a batch.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k2-batch-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -117,7 +119,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: true
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -161,6 +163,7 @@ Tests that separate publish calls generate unique base IDs.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k3-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -176,7 +179,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: true
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -207,6 +210,7 @@ Tests that message IDs are not automatically generated when disabled.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k3-disabled-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -222,7 +226,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: false
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -249,6 +253,7 @@ Tests that client-supplied message IDs are not overwritten.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k-preserved-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -264,7 +269,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: true  # Even with this enabled
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -293,6 +298,7 @@ Tests that the same message ID is used when retrying after failure.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k2-retry-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -316,7 +322,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: true
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -345,6 +351,7 @@ Tests batch publishing with some messages having client IDs and some not.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1k-mixed-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -360,7 +367,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   idempotentRestPublishing: true
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps

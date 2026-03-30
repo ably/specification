@@ -30,6 +30,7 @@ Tests that `publish(name, data)` sends a single message.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1a-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -42,7 +43,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -56,7 +57,7 @@ request = captured_requests[0]
 
 # RSL1b - single message published
 ASSERT request.method == "POST"
-ASSERT request.url.path == "/channels/test-channel/messages"
+ASSERT request.url.path == "/channels/" + channel_name + "/messages"
 
 body = parse_json(request.body)
 ASSERT body IS List
@@ -78,6 +79,7 @@ Tests that `publish(messages: [...])` sends all messages in a single request.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1c-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -92,7 +94,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -131,6 +133,7 @@ Tests that null values are omitted from the transmitted message.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1e-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -143,7 +146,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Cases
@@ -177,6 +180,7 @@ Tests that the two-argument form takes no additional arguments and works correct
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1h-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -191,7 +195,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -220,6 +224,7 @@ Tests that messages exceeding `maxMessageSize` are rejected with error 40009.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1i-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -237,7 +242,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   maxMessageSize: 1024  # 1KB limit for testing
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Cases
@@ -276,6 +281,7 @@ Tests that all valid Message attributes are included in the encoded message.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1j-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -288,7 +294,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -325,6 +331,7 @@ Tests that additional params are sent as querystring parameters.
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1l-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -337,7 +344,7 @@ mock_http = MockHttpClient(
 install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -375,6 +382,7 @@ Tests that the library does not automatically set `Message.clientId` from the cl
 
 ### Setup
 ```pseudo
+channel_name = "test-RSL1m-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -390,7 +398,7 @@ client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   clientId: "library-client-id"
 ))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Cases (RSL1m1-RSL1m3)
@@ -403,6 +411,10 @@ channel = client.channels.get("test-channel")
 
 ### Test Steps
 ```pseudo
+channel_name_m1 = "test-RSL1m1-${random_id()}"
+channel_name_m2 = "test-RSL1m2-${random_id()}"
+channel_name_m3 = "test-RSL1m3-${random_id()}"
+
 # RSL1m1 - Message with no clientId
 captured_requests = []
 
@@ -410,7 +422,7 @@ client_with_id = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
   clientId: "lib-client"
 ))
-AWAIT client_with_id.channels.get("ch").publish(name: "e", data: "d")
+AWAIT client_with_id.channels.get(channel_name_m1).publish(name: "e", data: "d")
 
 body = parse_json(captured_requests[0].body)[0]
 ASSERT "clientId" NOT IN body  # Library should not inject its clientId
@@ -419,7 +431,7 @@ ASSERT "clientId" NOT IN body  # Library should not inject its clientId
 # RSL1m2 - Message clientId matches library
 captured_requests = []
 
-AWAIT client_with_id.channels.get("ch").publish(
+AWAIT client_with_id.channels.get(channel_name_m2).publish(
   message: Message(name: "e", data: "d", clientId: "lib-client")
 )
 
@@ -431,7 +443,7 @@ ASSERT body["clientId"] == "lib-client"  # Explicit clientId preserved
 captured_requests = []
 
 client_no_id = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-AWAIT client_no_id.channels.get("ch").publish(
+AWAIT client_no_id.channels.get(channel_name_m3).publish(
   message: Message(name: "e", data: "d", clientId: "msg-client")
 )
 

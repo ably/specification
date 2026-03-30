@@ -41,22 +41,25 @@ Tests the `exists()` method returns correct boolean for existing and non-existin
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS2-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Before creating any channel
-exists_before = client.channels.exists("test-channel")
+exists_before = client.channels.exists(channel_name)
 
 # Create the channel
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 
 # After creating the channel
-exists_after = client.channels.exists("test-channel")
+exists_after = client.channels.exists(channel_name)
 
 # Check for non-existent channel
-exists_other = client.channels.exists("other-channel")
+other_channel_name = "test-RTS2-other-${random_id()}"
+exists_other = client.channels.exists(other_channel_name)
 ```
 
 ### Assertions
@@ -76,15 +79,19 @@ Tests that channel names can be iterated.
 
 ### Setup
 ```pseudo
+channel_name_a = "test-RTS2-a-${random_id()}"
+channel_name_b = "test-RTS2-b-${random_id()}"
+channel_name_c = "test-RTS2-c-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Create several channels
-client.channels.get("channel-a")
-client.channels.get("channel-b")
-client.channels.get("channel-c")
+client.channels.get(channel_name_a)
+client.channels.get(channel_name_b)
+client.channels.get(channel_name_c)
 
 # Get all channel names
 names = client.channels.names
@@ -92,9 +99,9 @@ names = client.channels.names
 
 ### Assertions
 ```pseudo
-ASSERT "channel-a" IN names
-ASSERT "channel-b" IN names
-ASSERT "channel-c" IN names
+ASSERT channel_name_a IN names
+ASSERT channel_name_b IN names
+ASSERT channel_name_c IN names
 ASSERT length(names) == 3
 ```
 
@@ -108,20 +115,22 @@ Tests that `get()` creates a new channel when called with a new name.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3a-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Get a channel that doesn't exist yet
-channel = client.channels.get("new-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Assertions
 ```pseudo
 ASSERT channel IS RealtimeChannel
-ASSERT channel.name == "new-channel"
-ASSERT client.channels.exists("new-channel") == true
+ASSERT channel.name == channel_name
+ASSERT client.channels.exists(channel_name) == true
 ```
 
 ---
@@ -134,23 +143,25 @@ Tests that `get()` returns the same channel instance when called multiple times.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3a-existing-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Get a channel
-channel1 = client.channels.get("test-channel")
+channel1 = client.channels.get(channel_name)
 
 # Get the same channel again
-channel2 = client.channels.get("test-channel")
+channel2 = client.channels.get(channel_name)
 ```
 
 ### Assertions
 ```pseudo
 ASSERT channel1 IS SAME AS channel2  # Same object reference
-ASSERT channel1.name == "test-channel"
-ASSERT channel2.name == "test-channel"
+ASSERT channel1.name == channel_name
+ASSERT channel2.name == channel_name
 ```
 
 ---
@@ -163,26 +174,28 @@ Tests that the subscript operator `[]` behaves the same as `get()`.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3a-subscript-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Use subscript to get channel
-channel1 = client.channels["test-channel"]
+channel1 = client.channels[channel_name]
 
 # Use get() to get same channel
-channel2 = client.channels.get("test-channel")
+channel2 = client.channels.get(channel_name)
 
 # Use subscript again
-channel3 = client.channels["test-channel"]
+channel3 = client.channels[channel_name]
 ```
 
 ### Assertions
 ```pseudo
 ASSERT channel1 IS SAME AS channel2
 ASSERT channel2 IS SAME AS channel3
-ASSERT channel1.name == "test-channel"
+ASSERT channel1.name == channel_name
 ```
 
 ---
@@ -195,22 +208,24 @@ Tests that `release()` removes the channel from the collection.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS4a-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Create a channel
-channel = client.channels.get("test-channel")
-ASSERT client.channels.exists("test-channel") == true
+channel = client.channels.get(channel_name)
+ASSERT client.channels.exists(channel_name) == true
 
 # Release the channel
-AWAIT client.channels.release("test-channel")
+AWAIT client.channels.release(channel_name)
 ```
 
 ### Assertions
 ```pseudo
-ASSERT client.channels.exists("test-channel") == false
+ASSERT client.channels.exists(channel_name) == false
 ```
 
 ---
@@ -223,19 +238,21 @@ Tests that releasing a channel that doesn't exist completes without error.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS4a-nonexistent-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Release a channel that was never created
-AWAIT client.channels.release("nonexistent-channel")
+AWAIT client.channels.release(channel_name)
 ```
 
 ### Assertions
 ```pseudo
 # Should complete without throwing
-ASSERT client.channels.exists("nonexistent-channel") == false
+ASSERT client.channels.exists(channel_name) == false
 ```
 
 ---
@@ -248,13 +265,15 @@ Tests that releasing an attached channel detaches it first.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS4a-attached-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 ```
 
 ### Test Steps
 ```pseudo
 # Create and attach a channel
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 AWAIT channel.attach()
 ASSERT channel.state == ChannelState.attached
 
@@ -262,13 +281,13 @@ ASSERT channel.state == ChannelState.attached
 state_before_release = channel.state
 
 # Release the channel
-AWAIT client.channels.release("test-channel")
+AWAIT client.channels.release(channel_name)
 ```
 
 ### Assertions
 ```pseudo
 ASSERT state_before_release == ChannelState.attached
-ASSERT client.channels.exists("test-channel") == false
+ASSERT client.channels.exists(channel_name) == false
 # Channel should have been detached before removal
 ```
 
@@ -282,24 +301,26 @@ Tests that getting a channel after release creates a fresh instance.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3a-release-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
 # Create a channel
-channel1 = client.channels.get("test-channel")
+channel1 = client.channels.get(channel_name)
 
 # Release it
-AWAIT client.channels.release("test-channel")
+AWAIT client.channels.release(channel_name)
 
 # Get the same channel name again
-channel2 = client.channels.get("test-channel")
+channel2 = client.channels.get(channel_name)
 ```
 
 ### Assertions
 ```pseudo
 ASSERT channel1 IS NOT SAME AS channel2  # Different object instances
-ASSERT channel2.name == "test-channel"
-ASSERT client.channels.exists("test-channel") == true
+ASSERT channel2.name == channel_name
+ASSERT client.channels.exists(channel_name) == true
 ```
