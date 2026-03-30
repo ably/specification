@@ -93,9 +93,9 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSL4 | Message encoding (RSL4a–RSL4d4) | Yes — `rest/unit/encoding/message_encoding.md` |
 | RSL5 | Message encryption (RSL5a–RSL5c) | |
 | RSL6 | Message decoding (RSL6a–RSL6b) | Yes — `rest/unit/encoding/message_encoding.md` |
-| RSL7 | SetOptions function | |
-| RSL8 | Status function (RSL8a) | |
-| RSL9 | Name attribute | |
+| RSL7 | SetOptions function | Yes — `rest/unit/channel/rest_channel_attributes.md` |
+| RSL8 | Status function (RSL8a) | Yes — `rest/unit/channel/rest_channel_attributes.md` |
+| RSL9 | Name attribute | Yes — `rest/unit/channel/rest_channel_attributes.md` |
 | RSL10 | Annotations attribute | |
 | RSL11 | GetMessage function (RSL11a–RSL11c) | |
 | RSL14 | GetMessageVersions (RSL14a–RSL14c) | |
@@ -152,7 +152,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC4 | Auth object attribute (RTC4a) | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC5 | Stats function (RTC5a–RTC5b) | Yes — `realtime/unit/client/realtime_stats.md` (proxies to RSC6 tests) |
 | RTC6 | Time function (RTC6a) | Yes — `realtime/unit/client/realtime_time.md` (proxies to RSC16 tests) |
-| RTC7 | Uses configured timeouts | |
+| RTC7 | Uses configured timeouts | Yes — `realtime/unit/client/realtime_timeouts.md` |
 | RTC8 | Authorize function for realtime (RTC8a–RTC8c) | Yes — `realtime/unit/auth/realtime_authorize.md`, `realtime/integration/auth.md` |
 | RTC9 | Request function | Yes — `realtime/unit/client/realtime_request.md` (proxies to RSC19 tests) |
 | RTC10–RTC11 | Deleted | N/A |
@@ -169,7 +169,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 |-----------|-------------|---------------|
 | RTN1 | Uses websocket connection | Information only |
 | RTN2 | Default host and query string params (RTN2a–RTN2g) | Partial — `realtime/unit/auth/connection_auth_test.md` covers RTN2e |
-| RTN3 | AutoConnect option | |
+| RTN3 | AutoConnect option | Yes — `realtime/unit/connection/auto_connect_test.md` |
 | RTN4 | Connection event emission (RTN4a–RTN4i) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN4b, RTN4c; `realtime/unit/connection/update_events_test.md` covers RTN4h |
 | RTN5 | Concurrency test (50+ clients) | |
 | RTN6 | Successful connection definition | Information only|
@@ -229,9 +229,9 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL20 | Last message ID storage | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
 | RTL21 | Message ordering in arrays | Yes — `realtime/unit/channels/channel_delta_decoding.md` |
 | RTL22 | Message filtering (RTL22a–RTL22d) | |
-| RTL23 | Name attribute | |
-| RTL24 | ErrorReason attribute | |
-| RTL25 | WhenState function (RTL25a–RTL25b) | |
+| RTL23 | Name attribute | Yes — `realtime/unit/channels/channel_attributes.md` |
+| RTL24 | ErrorReason attribute | Yes — `realtime/unit/channels/channel_attributes.md` |
+| RTL25 | WhenState function (RTL25a–RTL25b) | Yes — `realtime/unit/channels/channel_when_state_test.md` |
 | RTL26 | Annotations attribute | |
 | RTL27 | Objects attribute (RTL27a–RTL27b) | |
 | RTL28 | GetMessage function | |
@@ -394,14 +394,14 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **REST client** (RSC) | 18 | 15 | Partial |
 | **REST auth** (RSA) | 15 | 15 | Full |
 | **REST channels** (RSN) | 4 | 0 | None |
-| **REST channel** (RSL) | 13 | 7 | Partial |
+| **REST channel** (RSL) | 13 | 10 | Partial |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
 | **REST encryption** (RSE) | 2 | 0 | None |
 | **REST annotations** (RSAN) | 3 | 0 | None |
-| **Realtime client** (RTC) | 14 | 12 | Partial |
-| **Connection** (RTN) | 23 | 17 | Partial |
+| **Realtime client** (RTC) | 14 | 13 | Partial |
+| **Connection** (RTN) | 23 | 18 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
-| **Realtime channel** (RTL) | 24 | 20 | Partial |
+| **Realtime channel** (RTL) | 24 | 23 | Partial |
 | **Realtime presence** (RTP) | 15 | 15 | Full |
 | **Realtime annotations** (RTAN) | 5 | 0 | None |
 | **EventEmitter** (RTE) | 6 | 0 | None |
