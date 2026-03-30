@@ -78,7 +78,7 @@ ASSERT message.extras["push"]["notification"]["title"] == "Hello"
 
 ## TM3 - Message from JSON (wire format)
 
-**Spec requirement:** Message type must support deserialization from JSON wire format, including handling encoded data payloads.
+**Spec requirement:** Message type must support deserialization from JSON wire format, including handling encoded data payloads. Field names in the JSON wire format use camelCase (e.g., `clientId`, `connectionId`). SDKs MUST map these to their idiomatic naming conventions (e.g., `client_id` in snake_case languages).
 
 Tests that `Message` can be deserialized from JSON wire format.
 
