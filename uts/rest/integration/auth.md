@@ -220,8 +220,14 @@ Tests that invalid API keys are rejected by the server.
 ### Setup
 ```pseudo
 channel_name = "test-RSA4-invalid-" + random_id()
+
+# Use the real app_id with a fabricated key to guarantee a 401 response.
+# Using a completely fake app ID (e.g. "invalid.key:secret") may return
+# 404 (app not found) instead of 401 (unauthorized), depending on the server.
+invalid_key = app_id + ".invalidKey:invalidSecret"
+
 client = Rest(options: ClientOptions(
-  key: "invalid.key:secret",
+  key: invalid_key,
   endpoint: "sandbox"
 ))
 ```
@@ -314,18 +320,17 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-# Request to allowed channel should succeed
-allowed_result = AWAIT client.request("GET", "/channels/" + allowed_channel)
+# Publish to allowed channel should succeed — the JWT grants "publish" capability.
+# Note: Do NOT use client.request("GET", "/channels/...") here — that is a channel
+# status request which requires "channel-metadata" capability, not "publish".
+AWAIT client.channels.get(allowed_channel).publish(name: "test", data: "hello")
 
-# Request to denied channel should fail with 40160 (capability refused)
-AWAIT client.request("POST", "/channels/" + denied_channel + "/messages",
-  body: {"name": "test", "data": "hello"}
-) FAILS WITH error
+# Publish to denied channel should fail with 40160 (capability refused)
+AWAIT client.channels.get(denied_channel).publish(name: "test", data: "hello") FAILS WITH error
 ```
 
 ### Assertions
 ```pseudo
-ASSERT allowed_result.statusCode >= 200 AND allowed_result.statusCode < 300
 ASSERT error.code == 40160
 ASSERT error.statusCode == 401
 ```

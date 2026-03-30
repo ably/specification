@@ -33,6 +33,24 @@ AFTER ALL TESTS:
 - All clients use `endpoint: "sandbox"`
 - All channel names use the `mutable:` namespace prefix — the test app setup configures the `mutable` namespace with `mutableMessages: true`, which is required for getMessage, updateMessage, deleteMessage, appendMessage, and annotations
 
+### Annotation HTTP Body Format
+
+The annotation publish and delete endpoints (`POST /channels/{channel}/messages/{serial}/annotations`)
+expect the HTTP request body to be a **JSON array** containing a single annotation object:
+
+```json
+[{"type": "com.ably.reactions", "name": "like", "action": 0}]
+```
+
+Sending a bare object (not wrapped in an array) returns HTTP 400 "invalid request body".
+
+The `action` field is **required** by the server and must be set by the SDK:
+- `0` = `ANNOTATION_CREATE` (for publish)
+- `1` = `ANNOTATION_DELETE` (for delete)
+
+The SDK's `annotations.publish()` and `annotations.delete()` methods must set the
+`action` field and wrap the annotation in an array before sending.
+
 ---
 
 ## RSL1n — publish returns serials from sandbox
@@ -154,8 +172,14 @@ ASSERT update_result IS UpdateDeleteResult
 ASSERT update_result.versionSerial IS String
 ASSERT update_result.versionSerial.length > 0
 
-# Verify via getMessage
-updated_msg = AWAIT channel.getMessage(serial)
+# Verify via getMessage — poll until the update is visible
+updated_msg = poll_until(
+  condition: FUNCTION() =>
+    msg = AWAIT channel.getMessage(serial)
+    RETURN msg.action == MessageAction.MESSAGE_UPDATE,
+  interval: 500ms,
+  timeout: 10s
+)
 ASSERT updated_msg.name == "updated"
 ASSERT updated_msg.data == "updated-data"
 ASSERT updated_msg.action == MessageAction.MESSAGE_UPDATE
@@ -199,8 +223,14 @@ ASSERT delete_result IS UpdateDeleteResult
 ASSERT delete_result.versionSerial IS String
 ASSERT delete_result.versionSerial.length > 0
 
-# Verify via getMessage — action should be MESSAGE_DELETE
-deleted_msg = AWAIT channel.getMessage(serial)
+# Verify via getMessage — poll until the delete is visible
+deleted_msg = poll_until(
+  condition: FUNCTION() =>
+    msg = AWAIT channel.getMessage(serial)
+    RETURN msg.action == MessageAction.MESSAGE_DELETE,
+  interval: 500ms,
+  timeout: 10s
+)
 ASSERT deleted_msg.action == MessageAction.MESSAGE_DELETE
 ```
 
@@ -239,8 +269,14 @@ AWAIT channel.updateMessage(
   operation: MessageOperation(description: "second edit")
 )
 
-# Get version history
-versions = AWAIT channel.getMessageVersions(serial)
+# Poll version history until all versions appear
+versions = poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.getMessageVersions(serial)
+    RETURN result.items.length >= 3,
+  interval: 500ms,
+  timeout: 10s
+)
 ```
 
 ### Assertions
@@ -328,8 +364,14 @@ AWAIT channel.annotations.publish(serial, Annotation(
   name: "like"
 ))
 
-# Verify annotation exists
-annotations = AWAIT channel.annotations.get(serial)
+# Verify annotation exists — poll until it appears
+annotations = poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.annotations.get(serial)
+    RETURN result.items.length >= 1,
+  interval: 500ms,
+  timeout: 10s
+)
 ASSERT annotations.items.length >= 1
 
 found = false
@@ -382,8 +424,14 @@ AWAIT channel.annotations.publish(serial, Annotation(
   name: "heart"
 ))
 
-# Retrieve annotations
-result = AWAIT channel.annotations.get(serial)
+# Retrieve annotations — poll until both appear
+result = poll_until(
+  condition: FUNCTION() =>
+    r = AWAIT channel.annotations.get(serial)
+    RETURN r.items.length >= 2,
+  interval: 500ms,
+  timeout: 10s
+)
 ```
 
 ### Assertions
