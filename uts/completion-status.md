@@ -154,7 +154,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC6 | Time function (RTC6a) | Yes — `realtime/unit/client/realtime_time.md` (proxies to RSC16 tests) |
 | RTC7 | Uses configured timeouts | |
 | RTC8 | Authorize function for realtime (RTC8a–RTC8c) | |
-| RTC9 | Request function | |
+| RTC9 | Request function | Yes — `realtime/unit/client/realtime_request.md` (proxies to RSC19 tests) |
 | RTC10–RTC11 | Deleted | |
 | RTC12 | Same constructors as RestClient | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC13 | Push object attribute | |
