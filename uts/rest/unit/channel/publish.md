@@ -57,7 +57,7 @@ request = captured_requests[0]
 
 # RSL1b - single message published
 ASSERT request.method == "POST"
-ASSERT request.url.path == "/channels/" + channel_name + "/messages"
+ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "/messages"
 
 body = parse_json(request.body)
 ASSERT body IS List

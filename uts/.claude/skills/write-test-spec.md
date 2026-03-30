@@ -259,6 +259,18 @@ Tests that all REST requests include the `Ably-Agent` header with correct format
 
 ## Pseudocode Conventions
 
+### URI Path Component Encoding
+
+Use `encode_uri_component()` for any variable path segment or query parameter in URL assertions. This is defined in `uts/test/README.md`. Always use exact equality (`==`) for path assertions, not `CONTAINS`.
+
+```pseudo
+# Correct — exact path with encoded variable
+ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "/messages"
+
+# Wrong — loose match, misses encoding bugs
+ASSERT request.url.path CONTAINS "/channels/"
+```
+
 ### Type Assertions
 
 Type assertions verify object types/interfaces. Implementation varies by language:
@@ -869,3 +881,6 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
 
 16. ❌ Using exact `ADVANCE_TIME` calculations for multi-retry scenarios: `ADVANCE_TIME(6000); ADVANCE_TIME(1000)`
     ✅ Use a time-advancement loop: `LOOP up to N times: ADVANCE_TIME(increment)`
+
+17. ❌ Loose path assertions: `ASSERT request.url.path CONTAINS "/channels/"`
+    ✅ Exact path with encoding: `ASSERT request.url.path == "/channels/" + encode_uri_component(name) + "/messages"`

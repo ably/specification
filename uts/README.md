@@ -253,6 +253,24 @@ AWAIT operation_that_fails() FAILS WITH error
 ASSERT error.code == expected_code
 ```
 
+### URI Path Component Encoding
+```pseudo
+encode_uri_component(value)
+```
+
+Encodes a string for use as a single URI path segment or query parameter value,
+per [RFC 3986 Section 2.1](https://datatracker.ietf.org/doc/html/rfc3986#section-2.1).
+All characters except unreserved characters (`A-Z a-z 0-9 - _ . ~`) are
+percent-encoded. In particular, `/`, `:`, and space are encoded as `%2F`,
+`%3A`, and `%20` respectively.
+
+Language equivalents:
+- Dart: `Uri.encodeComponent()`
+- JavaScript: `encodeURIComponent()`
+- Python: `urllib.parse.quote(, safe="")`
+- Go: `url.PathEscape()`
+- Java: `URLEncoder.encode(, "UTF-8")` (then replace `+` with `%20`)
+
 ### Loops
 ```pseudo
 FOR EACH item IN collection:

@@ -86,7 +86,7 @@ result = AWAIT client.channels.get(channel_name).presence.get()
 ```pseudo
 ASSERT request_count == 1
 ASSERT captured_requests[0].method == "GET"
-ASSERT captured_requests[0].url.path == "/channels/" + channel_name + "/presence"
+ASSERT captured_requests[0].url.path == "/channels/" + encode_uri_component(channel_name) + "/presence"
 ASSERT result IS PaginatedResult<PresenceMessage>
 ASSERT result.items.length == 2
 ```
@@ -425,7 +425,7 @@ result = AWAIT client.channels.get(channel_name).presence.history()
 ### Assertions
 ```pseudo
 ASSERT captured_requests[0].method == "GET"
-ASSERT captured_requests[0].url.path == "/channels/" + channel_name + "/presence/history"
+ASSERT captured_requests[0].url.path == "/channels/" + encode_uri_component(channel_name) + "/presence/history"
 ASSERT result IS PaginatedResult<PresenceMessage>
 ```
 
