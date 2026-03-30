@@ -508,3 +508,72 @@ ASSERT request_count == 1
 # Auth callback was called once (initial token only, no renewal)
 ASSERT callback_count == 1
 ```
+
+---
+
+## RSA4b4 - Token renewal with MessagePack error response
+
+**Spec requirement:** Token renewal must work correctly when the server returns the 401 token-error response in MessagePack format (which is the default when `useBinaryProtocol: true`). The SDK must decode the msgpack error body to extract the token-error code (40140–40149) and trigger renewal.
+
+### Setup
+```pseudo
+callback_count = 0
+request_count = 0
+
+auth_callback = FUNCTION(params):
+  callback_count = callback_count + 1
+  RETURN TokenDetails(
+    token: "token-" + str(callback_count),
+    expires: now() + 3600000
+  )
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    request_count = request_count + 1
+    IF request_count == 1:
+      # First request fails with token expired — returned as msgpack
+      req.respond_with(401,
+        body: msgpack_encode({
+          "error": {
+            "code": 40142,
+            "statusCode": 401,
+            "message": "Token expired"
+          }
+        }),
+        headers: { "Content-Type": "application/x-msgpack" }
+      )
+    ELSE:
+      # Retry succeeds — also returned as msgpack
+      req.respond_with(200,
+        body: msgpack_encode([1234567890000]),
+        headers: { "Content-Type": "application/x-msgpack" }
+      )
+  }
+)
+install_mock(mock_http)
+
+client = Rest(
+  options: ClientOptions(
+    authCallback: auth_callback,
+    useBinaryProtocol: true  # Default — msgpack
+  )
+)
+```
+
+### Test Steps
+```pseudo
+result = AWAIT client.time()
+```
+
+### Assertions
+```pseudo
+# Auth callback was called twice (initial + renewal)
+ASSERT callback_count == 2
+
+# Two HTTP requests were made (original + retry)
+ASSERT request_count == 2
+
+# Result is successful
+ASSERT result == 1234567890000
+```

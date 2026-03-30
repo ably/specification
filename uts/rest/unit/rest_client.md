@@ -337,6 +337,57 @@ ASSERT error.code == 40013
 
 ---
 
+## RSC8 - Error response decoded from MessagePack
+
+**Spec requirement:** When the server returns an error response with `Content-Type: application/x-msgpack`, the SDK must decode the error body using MessagePack (not JSON). The error code, status code, and message must be correctly extracted. This is the default behaviour when `useBinaryProtocol` is `true` (the default), because the `Accept: application/x-msgpack` header causes the server to return all responses — including errors — in MessagePack format.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(400,
+      body: msgpack_encode({
+        "error": {
+          "code": 40099,
+          "statusCode": 400,
+          "message": "Test error"
+        }
+      }),
+      headers: { "Content-Type": "application/x-msgpack" }
+    )
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: true  # Default — server returns msgpack
+))
+```
+
+### Test Steps
+```pseudo
+AWAIT client.time() FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 40099
+ASSERT error.statusCode == 400
+ASSERT error.message == "Test error"
+```
+
+### Note
+A common implementation bug is to always parse error response bodies as JSON
+(e.g. `response.json()`), regardless of the response `Content-Type`. When the
+server returns a MessagePack-encoded error body, the JSON parse fails silently
+and the SDK falls back to a generic error code (e.g. 50000 InternalError),
+losing the real error information. The SDK must check the response
+`Content-Type` and use the appropriate deserializer.
+
+---
+
 ## RSC13 - Request timeouts
 
 **Spec requirement:** HTTP requests must respect the `httpRequestTimeout` option and fail with code 50003 when the timeout is exceeded.

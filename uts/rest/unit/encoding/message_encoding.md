@@ -413,6 +413,105 @@ ASSERT message.data IS bytes  # Result of base64 decode
 
 ---
 
+## RSL6 - Decoding binary data from MessagePack response
+
+**Spec requirement:** When the server returns a MessagePack response containing binary data (msgpack `bin` type), it must be decoded as binary, not as a string — even if the bytes are valid UTF-8. The msgpack wire format distinguishes `str` and `bin` types, and the SDK must preserve this distinction.
+
+### Setup
+```pseudo
+channel_name = "test-RSL6-msgpack-binary-${random_id()}"
+
+# Construct a msgpack response where the data field uses the msgpack
+# bin type (raw bytes), NOT the str type.
+binary_payload = bytes([0x48, 0x65, 0x6C, 0x6C, 0x6F])  # "Hello" as bytes — valid UTF-8
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200,
+      body: msgpack_encode([
+        { "name": "event", "data": binary_payload }  # data as msgpack bin type
+      ]),
+      headers: { "Content-Type": "application/x-msgpack" }
+    )
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: true
+))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+history = AWAIT channel.history()
+message = history.items[0]
+```
+
+### Assertions
+```pseudo
+# Binary data must remain binary, NOT be converted to a string
+ASSERT message.data IS Binary/Uint8List/[]byte
+ASSERT message.data == bytes([0x48, 0x65, 0x6C, 0x6C, 0x6F])
+ASSERT message.encoding IS null
+```
+
+### Note
+This test specifically validates that the SDK does not conflate msgpack `bin`
+and `str` types during deserialization. A common bug is for SDKs to deserialize
+both types as strings (since the bytes may be valid UTF-8), losing the type
+distinction that the server intended. The msgpack `bin` type must always produce
+the SDK's binary data type, and the msgpack `str` type must always produce a
+string.
+
+---
+
+## RSL6 - Decoding string data from MessagePack response
+
+**Spec requirement:** When the server returns a MessagePack response containing string data (msgpack `str` type), it must be decoded as a string — not as binary.
+
+### Setup
+```pseudo
+channel_name = "test-RSL6-msgpack-string-${random_id()}"
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200,
+      body: msgpack_encode([
+        { "name": "event", "data": "Hello World" }  # data as msgpack str type
+      ]),
+      headers: { "Content-Type": "application/x-msgpack" }
+    )
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: true
+))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+history = AWAIT channel.history()
+message = history.items[0]
+```
+
+### Assertions
+```pseudo
+ASSERT message.data IS String
+ASSERT message.data == "Hello World"
+ASSERT message.encoding IS null
+```
+
+---
+
 ## RSL4 - Encoding fixtures from ably-common
 
 **Spec requirement:** Implementations must correctly encode data according to standardized test fixtures from `ably-common`.

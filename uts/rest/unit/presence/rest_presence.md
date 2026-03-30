@@ -978,6 +978,51 @@ ASSERT result.items[0].encoding == null  # encoding consumed
 
 ---
 
+### RSP5 - Binary presence data decoded from MessagePack response
+
+**Spec requirement:** When a presence response is returned in MessagePack format with binary data (msgpack `bin` type), the data must be decoded as binary, not as a string — even if the bytes are valid UTF-8. This parallels the RSL6 msgpack binary decoding test for channel messages.
+
+### Setup
+```pseudo
+channel_name = "test-RSP5-msgpack-binary-${random_id()}"
+
+# Binary payload using msgpack bin type (valid UTF-8 bytes)
+binary_payload = bytes([0x73, 0x6F, 0x6D, 0x65, 0x20, 0x64, 0x61, 0x74, 0x61])  # "some data"
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200,
+      body: msgpack_encode([
+        { "action": 1, "clientId": "client1", "data": binary_payload }
+      ]),
+      headers: { "Content-Type": "application/x-msgpack" }
+    )
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: true
+))
+```
+
+### Test Steps
+```pseudo
+result = AWAIT client.channels.get(channel_name).presence.get()
+```
+
+### Assertions
+```pseudo
+# Binary data must remain binary, NOT be converted to a string
+ASSERT result.items[0].data IS Binary/Uint8List/[]byte
+ASSERT result.items[0].data == bytes([0x73, 0x6F, 0x6D, 0x65, 0x20, 0x64, 0x61, 0x74, 0x61])
+ASSERT result.items[0].encoding IS null
+```
+
+---
+
 ### RSP5d - UTF-8 encoded data decoded correctly
 
 **Spec requirement:** Data with `encoding: "utf-8/base64"` must be decoded through both layers.
