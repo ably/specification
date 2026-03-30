@@ -117,6 +117,9 @@ ASSERT api_request.headers["Authorization"] == "Bearer obtained-token"
 ASSERT api_request.headers["Authorization"] NOT STARTS WITH "Basic"
 ```
 
+### Note
+The detection of `clientId` triggering token auth MAY be performed at client construction time or deferred to the first authenticated request. The key requirement is that when an API request is made, the `clientId` presence causes token auth to be used instead of basic auth.
+
 ---
 
 ## RSA3 - Token auth with explicit token
