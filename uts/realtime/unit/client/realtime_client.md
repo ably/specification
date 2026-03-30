@@ -56,9 +56,9 @@ The Realtime client has the same constructors as the REST client.
 **See:** `uts/test/realtime/unit/client/client_options.md` - RSC1, RSC1a, RSC1c
 
 The same test cases apply:
-- API key string (`"appId.keyId:keySecret"`) → Basic auth
-- Token string (no `:` delimiter) → Token auth
-- Empty string → Error
+- API key string (`"appId.keyId:keySecret"`) -> Basic auth
+- Token string (no `:` delimiter) -> Token auth
+- Empty string -> Error
 
 ---
 
@@ -109,6 +109,8 @@ Tests that `RealtimeClient#channels` provides access to the Channels collection.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTC3-${random_id()}"
+
 mock_ws = create_mock_websocket()
 install_mock(mock_ws)
 
@@ -124,9 +126,9 @@ ASSERT client.channels IS NOT null
 ASSERT client.channels IS Channels
 
 # Should be able to get/create channels
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ASSERT channel IS RealtimeChannel
-ASSERT channel.name == "test-channel"
+ASSERT channel.name == channel_name
 ```
 
 ---
