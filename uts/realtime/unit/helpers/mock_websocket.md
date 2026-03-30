@@ -90,12 +90,27 @@ mock_ws = MockWebSocket(
     conn.respond_with_success(CONNECTED_MESSAGE)
   },
   onMessageFromClient: (msg) => {
-    # Handle messages from client
+    # Handle decoded messages from client
+  },
+  onTextDataFrame: (text) => {
+    # Handle raw text WebSocket data frame (JSON protocol)
+  },
+  onBinaryDataFrame: (bytes) => {
+    # Handle raw binary WebSocket data frame (msgpack protocol)
   }
 )
 ```
 
 Handlers are called automatically when connection attempts or messages occur. The await-based API should always be available for tests that need to coordinate responses with test state.
+
+### Raw Data Frame Hooks
+
+The `onTextDataFrame` and `onBinaryDataFrame` handlers provide access to the raw WebSocket data frames before they are decoded into `ProtocolMessage` objects. This is useful for tests that need to verify the wire encoding (e.g., that null fields are omitted from the encoded representation).
+
+- **`onTextDataFrame(text: String)`** — Called when the client sends a text WebSocket frame. This occurs when using the JSON protocol (`useBinaryProtocol: false`). The `text` parameter is the raw JSON string.
+- **`onBinaryDataFrame(bytes: Bytes)`** — Called when the client sends a binary WebSocket frame. This occurs when using the msgpack protocol (`useBinaryProtocol: true`). The `bytes` parameter is the raw msgpack-encoded bytes.
+
+Both raw frame handlers are called **in addition to** `onMessageFromClient` (which receives the decoded `ProtocolMessage`). If only `onMessageFromClient` is provided, raw frames are not surfaced to the test.
 
 ### When to Use Each Pattern
 
