@@ -150,8 +150,8 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC2 | Connection object attribute | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC3 | Channels object attribute | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC4 | Auth object attribute (RTC4a) | Yes — `realtime/unit/client/realtime_client.md` |
-| RTC5 | Stats function (RTC5a–RTC5b) | |
-| RTC6 | Time function (RTC6a) | |
+| RTC5 | Stats function (RTC5a–RTC5b) | Yes — `realtime/unit/client/realtime_stats.md` (proxies to RSC6 tests) |
+| RTC6 | Time function (RTC6a) | Yes — `realtime/unit/client/realtime_time.md` (proxies to RSC16 tests) |
 | RTC7 | Uses configured timeouts | |
 | RTC8 | Authorize function for realtime (RTC8a–RTC8c) | |
 | RTC9 | Request function | |
