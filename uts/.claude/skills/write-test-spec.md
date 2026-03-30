@@ -884,3 +884,13 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
 
 17. ❌ Loose path assertions: `ASSERT request.url.path CONTAINS "/channels/"`
     ✅ Exact path with encoding: `ASSERT request.url.path == "/channels/" + encode_uri_component(name) + "/messages"`
+
+18. ❌ Mock echo missing fields that the test later asserts on (e.g. omitting `data` from a PRESENCE echo, then asserting `member.data`)
+    ✅ Include all fields in the mock echo that the test assertions depend on
+
+### Keeping UTS and Dart Tests in Sync
+
+When a Dart test reveals a bug or gap in a UTS spec (or vice versa), **always update both**. Common cases:
+- Mock missing a field (e.g. `data: p.data` in a PRESENCE echo) — fix in both
+- Loop index bugs (e.g. hardcoded `:0` instead of `:${idx}`) — fix in both
+- Dart-specific patterns (e.g. `authCallback` to avoid real HTTP for clientId) don't need UTS changes, but note the reason if the approaches differ significantly
