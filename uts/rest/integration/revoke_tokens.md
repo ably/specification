@@ -17,6 +17,26 @@ All tests use JWTs generated using a third-party JWT library, signed with
 the key secret using HMAC-SHA256. This avoids needing to call `requestToken()`
 and keeps the tests self-contained.
 
+## Server Response Format
+
+The Ably server returns token revocation results as a **plain JSON array** of
+per-target results:
+
+```json
+[{"target": "clientId:xxx", "appliesAt": 1234567890, "issuedBefore": 1234567890}]
+```
+
+On failure for a specific target, the element contains an `error` field instead:
+
+```json
+[{"target": "invalidType:abc", "error": {"code": 40000, "statusCode": 400, "message": "..."}}]
+```
+
+There is no `BatchResult` envelope — the `successCount` and `failureCount` fields
+(RSA17c) must be computed **client-side** by counting elements with and without an
+`error` field. This is consistent with how batch presence responses work (see
+`batch_presence.md`).
+
 ## Sandbox Setup
 
 Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
@@ -55,7 +75,7 @@ the token must be rejected by the server.
 |------|-------------|
 | RSA17g | POST to `/keys/{keyName}/revokeTokens` |
 | RSA17b | Targets mapped to `type:value` strings |
-| RSA17c | Returns `BatchResult` with `successCount`, `failureCount`, `results` |
+| RSA17c | Returns per-target results; SDK computes `successCount`, `failureCount` client-side |
 | TRS2a | Success result contains `target` string |
 | TRS2b | Success result contains `appliesAt` timestamp |
 | TRS2c | Success result contains `issuedBefore` timestamp |
@@ -100,6 +120,8 @@ revoke_result = AWAIT key_client.auth.revokeTokens([
 ])
 
 # Step 3: Verify the revokeTokens response structure (RSA17c, TRS2)
+# Note: The server returns a plain array of per-target results.
+# successCount/failureCount are computed client-side (see Server Response Format).
 ASSERT revoke_result.successCount == 1
 ASSERT revoke_result.failureCount == 0
 ASSERT revoke_result.results.length == 1
@@ -210,6 +232,7 @@ revoke_result = AWAIT key_client.auth.revokeTokens(
   options: { issuedBefore: server_time, allowReauthMargin: true }
 )
 
+# successCount is computed client-side (see Server Response Format)
 ASSERT revoke_result.successCount == 1
 ASSERT revoke_result.results.length == 1
 
@@ -284,6 +307,7 @@ revoke_result = AWAIT key_client.auth.revokeTokens([
 ])
 
 # Step 3: Verify the response contains both success and failure
+# successCount/failureCount are computed client-side (see Server Response Format)
 ASSERT revoke_result.successCount == 1
 ASSERT revoke_result.failureCount == 1
 ASSERT revoke_result.results.length == 2
