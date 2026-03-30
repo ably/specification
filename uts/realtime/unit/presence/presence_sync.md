@@ -460,6 +460,97 @@ ASSERT map.isSyncInProgress == false
 
 ---
 
+## RTP19 - Stale SYNC message still removes member from residuals
+
+**Spec requirement:** When a member exists from a PRESENCE event and a SYNC starts,
+a SYNC message arriving with the same or older id for that member is stale (rejected
+by the newness check). However, the member has been "seen" during sync — it must NOT
+be evicted as residual on endSync. The residual removal must happen before the newness
+check in put().
+
+### Setup
+```pseudo
+map = PresenceMap()
+```
+
+### Test Steps
+```pseudo
+# Pre-populate with a member via ENTER
+map.put(PresenceMessage(action: ENTER, clientId: "alice", connectionId: "c1", id: "c1:5:0", timestamp: 500, data: "original"))
+
+# Start sync
+map.startSync()
+
+# SYNC message arrives with OLDER id (stale — same connectionId, lower msgSerial)
+result = map.put(PresenceMessage(action: PRESENT, clientId: "alice", connectionId: "c1", id: "c1:3:0", timestamp: 300, data: "stale"))
+
+leave_events = map.endSync()
+```
+
+### Assertions
+```pseudo
+# The stale put was rejected (returns null)
+ASSERT result IS null
+
+# But alice must NOT be evicted — she was "seen" during sync
+ASSERT leave_events.length == 0
+ASSERT map.values().length == 1
+ASSERT map.get("c1:alice") IS NOT null
+
+# Original data is preserved (stale message did not overwrite)
+ASSERT map.get("c1:alice").data == "original"
+```
+
+---
+
+## RTP19 - PRESENCE echoes followed by SYNC preserves all members
+
+**Spec requirement:** When a client enters multiple members, the server echoes each
+as a PRESENCE event. When the server subsequently sends a SYNC containing the same
+members, all members should survive even though the SYNC messages may have the same
+or older ids as the PRESENCE echoes.
+
+This tests the real protocol flow where PRESENCE echoes populate the map before SYNC.
+
+### Setup
+```pseudo
+map = PresenceMap()
+```
+
+### Test Steps
+```pseudo
+# Simulate server echoing PRESENCE events for 3 members
+map.put(PresenceMessage(action: ENTER, clientId: "user-0", connectionId: "c1", id: "c1:0:0", timestamp: 100, data: "data-0"))
+map.put(PresenceMessage(action: ENTER, clientId: "user-1", connectionId: "c1", id: "c1:1:0", timestamp: 100, data: "data-1"))
+map.put(PresenceMessage(action: ENTER, clientId: "user-2", connectionId: "c1", id: "c1:2:0", timestamp: 100, data: "data-2"))
+
+ASSERT map.values().length == 3
+
+# Server starts SYNC — members already exist from PRESENCE echoes
+map.startSync()
+
+# SYNC messages arrive with the SAME ids as the PRESENCE echoes (stale)
+map.put(PresenceMessage(action: PRESENT, clientId: "user-0", connectionId: "c1", id: "c1:0:0", timestamp: 100, data: "data-0"))
+map.put(PresenceMessage(action: PRESENT, clientId: "user-1", connectionId: "c1", id: "c1:1:0", timestamp: 100, data: "data-1"))
+map.put(PresenceMessage(action: PRESENT, clientId: "user-2", connectionId: "c1", id: "c1:2:0", timestamp: 100, data: "data-2"))
+
+leave_events = map.endSync()
+```
+
+### Assertions
+```pseudo
+# No members evicted — all were seen during sync despite stale ids
+ASSERT leave_events.length == 0
+ASSERT map.values().length == 3
+
+FOR i IN 0..2:
+  member = map.get("c1:user-${i}")
+  ASSERT member IS NOT null
+  ASSERT member.data == "data-${i}"
+```
+
+---
+
 ## RTP19 - New member added during sync is not stale
 
 **Spec requirement:** A member can be added during the sync process. New members
