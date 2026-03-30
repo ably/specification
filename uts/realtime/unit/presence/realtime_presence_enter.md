@@ -866,20 +866,23 @@ ASSERT captured_presence[2].presence[0].clientId == "other-user"
 
 ---
 
-## RTP4 - 250 members via enterClient
+## RTP4 - 50 members via enterClient (same connection)
 
 **Spec requirement:** Ensure a test exists that enters 250 members using
 RealtimePresence#enterClient on a single connection, and checks for PRESENT events
-to be emitted on another connection for each member, and once sync is complete, all
-250 members should be present in a RealtimePresence#get request.
+to be emitted for each member, and once sync is complete, all members should be
+present in a RealtimePresence#get request.
 
 Note: The spec says 250 but we use 50 as a practical test size that validates the
 same behavior (bulk enterClient, SYNC delivery, get correctness) without excessive
 test runtime.
 
+This test variant uses a single connection that both enters members and subscribes
+to presence. The server echoes ENTER events back on the same connection.
+
 ### Setup
 ```pseudo
-channel_name = "test-RTP4-${random_id()}"
+channel_name = "test-RTP4-same-${random_id()}"
 member_count = 50
 
 captured_presence = []
@@ -898,8 +901,8 @@ mock_ws = MockWebSocket(
       captured_presence.append(msg)
       mock_ws.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
 
-      # Server echoes back the ENTER as a PRESENCE event (as it would for a second client)
-      FOR p IN msg.presence:
+      # Server echoes back the ENTER as a PRESENCE event
+      FOR idx, p IN enumerate(msg.presence):
         mock_ws.send_to_client(ProtocolMessage(
           action: PRESENCE,
           channel: channel_name,
@@ -908,8 +911,9 @@ mock_ws = MockWebSocket(
               action: ENTER,
               clientId: p.clientId,
               connectionId: "conn-1",
-              id: "conn-1:${msg.msgSerial}:0",
-              timestamp: NOW()
+              id: "conn-1:${msg.msgSerial}:${idx}",
+              timestamp: NOW(),
+              data: p.data
             )
           ]
         ))
@@ -976,4 +980,142 @@ FOR i IN 0..member_count-1:
   member = members.find(m => m.clientId == "user-${i}")
   ASSERT member IS NOT null
   ASSERT member.data == "data-${i}"
+```
+
+---
+
+## RTP4 - 50 members via enterClient (different connections)
+
+**Spec requirement:** Same as above, but the original intent: one connection enters
+members, a different connection observes the ENTER events and verifies all members
+via get(). This is the more realistic scenario where one client populates presence
+and another client discovers the members.
+
+### Setup
+```pseudo
+channel_name = "test-RTP4-diff-${random_id()}"
+member_count = 50
+
+# --- Connection A: the entering client ---
+captured_presence_a = []
+mock_ws_a = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionId: "conn-A")
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws_a.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name,
+        flags: HAS_PRESENCE
+      ))
+    ELSE IF msg.action == PRESENCE:
+      captured_presence_a.append(msg)
+      mock_ws_a.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
+  }
+)
+
+# --- Connection B: the observing client ---
+mock_ws_b = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionId: "conn-B")
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws_b.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name,
+        flags: HAS_PRESENCE
+      ))
+  }
+)
+
+install_mock(mock_ws_a, client: "A")
+install_mock(mock_ws_b, client: "B")
+
+client_a = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+client_b = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
+channel_a = client_a.channels.get(channel_name)
+channel_b = client_b.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+# Connect and attach both clients
+client_a.connect()
+AWAIT_STATE client_a.connection.state == ConnectionState.connected
+AWAIT channel_a.attach()
+
+client_b.connect()
+AWAIT_STATE client_b.connection.state == ConnectionState.connected
+AWAIT channel_b.attach()
+
+# Subscribe on client B to observe remote presence events
+received_enters_b = []
+channel_b.presence.subscribe(action: ENTER, (event) => {
+  received_enters_b.append(event)
+})
+
+# Client A enters 50 members
+FOR i IN 0..member_count-1:
+  AWAIT channel_a.presence.enterClient("user-${i}", data: "data-${i}")
+
+# Server delivers those ENTER events to client B as PRESENCE messages
+# (In real Ably, the server broadcasts to all connections on the channel)
+FOR i IN 0..member_count-1:
+  mock_ws_b.send_to_client(ProtocolMessage(
+    action: PRESENCE,
+    channel: channel_name,
+    presence: [
+      PresenceMessage(
+        action: ENTER,
+        clientId: "user-${i}",
+        connectionId: "conn-A",
+        id: "conn-A:${i}:0",
+        timestamp: NOW(),
+        data: "data-${i}"
+      )
+    ]
+  ))
+
+# Server sends a SYNC to client B with all 50 members
+sync_members = []
+FOR i IN 0..member_count-1:
+  sync_members.append(PresenceMessage(
+    action: PRESENT,
+    clientId: "user-${i}",
+    connectionId: "conn-A",
+    id: "conn-A:${i}:0",
+    timestamp: NOW(),
+    data: "data-${i}"
+  ))
+
+mock_ws_b.send_to_client(ProtocolMessage(
+  action: SYNC,
+  channel: channel_name,
+  channelSerial: "seq1:",
+  presence: sync_members
+))
+
+# Client B gets all members
+members = AWAIT channel_b.presence.get()
+```
+
+### Assertions
+```pseudo
+# Client A sent all 50 presence messages
+ASSERT captured_presence_a.length == member_count
+
+# Client B received all 50 ENTER events
+ASSERT received_enters_b.length == member_count
+
+# All 50 members present via get() on client B
+ASSERT members.length == member_count
+
+# Verify each member has correct data and connectionId from conn-A
+FOR i IN 0..member_count-1:
+  member = members.find(m => m.clientId == "user-${i}")
+  ASSERT member IS NOT null
+  ASSERT member.data == "data-${i}"
+  ASSERT member.connectionId == "conn-A"
 ```
