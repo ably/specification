@@ -521,7 +521,7 @@ ASSERT request.headers["Authorization"] CONTAINS "Basic "
 
 **Spec requirement:** Basic auth is rejected over non-TLS connections (code 40103).
 
-Tests that Basic auth is rejected over non-TLS connections.
+Tests that Basic auth is rejected over non-TLS connections. The error is thrown at client construction time when the configuration would result in Basic auth over non-TLS.
 
 ### Setup
 ```pseudo
@@ -531,7 +531,7 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, {"channelId": "test"})
+    req.respond_with(200, {"channelId": "test", "status": {"isActive": true}})
   }
 )
 install_mock(mock_http)
@@ -540,23 +540,29 @@ install_mock(mock_http)
 ### Test Steps
 ```pseudo
 TRY:
+  # Error is thrown at construction time - the client cannot be created
+  # with Basic auth (API key only) over non-TLS
   client = Rest(
     options: ClientOptions(
       key: "appId.keyId:keySecret",
-      tls: false  # Non-TLS connection
+      tls: false  # Non-TLS connection with Basic auth
     )
   )
-  AWAIT client.request("GET", "/channels/test")
-  FAIL("Expected exception")
+  FAIL("Expected exception at construction")
 CATCH AblyException as e:
   ASSERT e.code == 40103  # Cannot use Basic auth over non-TLS
 ```
 
 ### Assertions
 ```pseudo
-# No HTTP request should have been made
+# No HTTP request should have been made - error thrown at construction
 ASSERT captured_requests.length == 0
 ```
+
+### Note
+The RSC18 check only applies when the client configuration would result in Basic authentication (API key sent directly). It does NOT apply to:
+- Token auth (Bearer tokens are allowed over non-TLS)
+- Unauthenticated endpoints like `time()` which don't send credentials
 
 ---
 
@@ -574,7 +580,7 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, {"channelId": "test"})
+    req.respond_with(200, {"channelId": "test", "status": {"isActive": true}})
   }
 )
 install_mock(mock_http)
@@ -589,7 +595,7 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-AWAIT client.request("GET", "/channels/test")
+AWAIT client.channels.get("test").status()
 ```
 
 ### Assertions

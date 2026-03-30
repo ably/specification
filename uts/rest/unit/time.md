@@ -110,9 +110,9 @@ ASSERT "Ably-Agent" IN request.headers
 
 ## RSC16 - time() does not require authentication
 
-**Spec requirement:** The `/time` endpoint does not require authentication and should succeed without credentials.
+**Spec requirement:** The `/time` endpoint does not require authentication and should not send an Authorization header, even when credentials are available.
 
-Tests that time() works without authentication credentials.
+Tests that time() does not send authentication credentials, even when the client has them.
 
 ### Setup
 ```pseudo
@@ -127,8 +127,8 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-# Client with no authentication
-client = Rest(options: ClientOptions())  # No key or token
+# Client has credentials, but time() should not use them
+client = Rest(options: ClientOptions(key: "app.key:secret"))
 ```
 
 ### Test Steps
@@ -138,14 +138,66 @@ result = AWAIT client.time()
 
 ### Assertions
 ```pseudo
-# Should succeed without authentication
+# Should succeed
 ASSERT result IS DateTime
 
-# Request should not have Authorization header
+# Request should not have Authorization header even though client has credentials
 ASSERT captured_requests.length == 1
 request = captured_requests[0]
 ASSERT "Authorization" NOT IN request.headers
 ```
+
+---
+
+## RSC16 - time() works without TLS
+
+**Spec requirement:** The `/time` endpoint does not require authentication, so it should be callable over HTTP (non-TLS) without sending credentials. The RSC18 restriction (no basic auth over non-TLS) does not apply because time() doesn't send authentication.
+
+Tests that time() succeeds over HTTP (non-TLS) without sending credentials.
+
+### Setup
+```pseudo
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.push(req)
+    req.respond_with(200, [1704067200000])
+  }
+)
+install_mock(mock_http)
+
+# Client with API key but using token auth to avoid RSC18 restriction
+# on authenticated operations. time() should still work over HTTP.
+client = Rest(options: ClientOptions(
+  key: "app.key:secret",
+  tls: false,
+  useTokenAuth: true
+))
+```
+
+### Test Steps
+```pseudo
+result = AWAIT client.time()
+```
+
+### Assertions
+```pseudo
+# Should succeed without sending authentication over HTTP
+ASSERT result IS DateTime
+
+# Request should use HTTP (not HTTPS)
+ASSERT captured_requests.length == 1
+request = captured_requests[0]
+ASSERT request.url.scheme == "http"
+
+# Request should not have Authorization header
+ASSERT "Authorization" NOT IN request.headers
+```
+
+### Note
+This test verifies that the RSC18 check (which rejects basic auth over non-TLS connections) is only applied to operations that require authentication. The `time()` endpoint is unauthenticated, so it should work regardless of TLS settings. The client constructor still requires credentials, but time() doesn't use them.
 
 ---
 

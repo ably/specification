@@ -43,7 +43,7 @@ Tests that `clientId` is derived from `TokenDetails` when token auth is used.
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -75,7 +75,7 @@ Tests that `clientId` is extracted from `TokenDetails` returned by `authCallback
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -92,7 +92,7 @@ client = Rest(options: ClientOptions(
 ### Test Steps
 ```pseudo
 # Trigger auth by making a request
-AWAIT client.time()
+AWAIT client.channels.get("test").status()
 ```
 
 ### Assertions
@@ -132,7 +132,7 @@ Tests that `auth.clientId` is null when token has no `clientId`.
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -171,7 +171,7 @@ mock_auth_callback = (params) => {
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -185,7 +185,7 @@ client = Rest(options: ClientOptions(
 ### Test Steps
 ```pseudo
 # Trigger auth
-AWAIT client.time()
+AWAIT client.channels.get("test").status()
 ```
 
 ### Assertions
@@ -216,7 +216,7 @@ mock_http = MockHttpClient(
         headers: { "Content-Type": "application/json" }
       )
     ELSE:
-      req.respond_with(200, { "time": 1234567890000 })
+      req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -229,7 +229,7 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-AWAIT client.time()
+AWAIT client.channels.get("test").status()
 ```
 
 ### Assertions
@@ -269,7 +269,7 @@ mock_auth_callback = (params) => {
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -280,7 +280,7 @@ client = Rest(options: ClientOptions(authCallback: mock_auth_callback))
 ### Test Steps
 ```pseudo
 # First auth
-AWAIT client.time()
+AWAIT client.channels.get("test").status()
 
 ASSERT client.auth.clientId == "client-1"
 
@@ -303,7 +303,7 @@ Tests handling of wildcard `*` clientId.
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -349,7 +349,7 @@ Tests that `clientId` in `ClientOptions` is consistent with token's `clientId`.
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -367,7 +367,7 @@ client = Rest(options: ClientOptions(
 ### Test Steps (Case 2)
 ```pseudo
 TRY:
-  AWAIT client.time()  # Or any operation requiring auth
+  AWAIT client.channels.get("test").status()  # Or any operation requiring auth
   FAIL("Expected exception due to clientId mismatch")
 CATCH AblyException as e:
   ASSERT e.message CONTAINS "clientId" OR e.message CONTAINS "mismatch"

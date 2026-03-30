@@ -34,7 +34,7 @@ mock_http = MockHttpClient(
       })
     ELSE:
       # Subsequent request to verify token is used
-      req.respond_with(200, { "time": 1234567890000 })
+      req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -53,7 +53,7 @@ ASSERT token_details IS TokenDetails
 ASSERT token_details.token == "obtained-token"
 
 # Verify token is now used for requests
-AWAIT client.time()
+AWAIT client.channels.get("test").status()
 ASSERT captured_requests.last.headers["Authorization"] == "Bearer obtained-token"
 ```
 
@@ -128,7 +128,7 @@ mock_auth_callback = (params) => {
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "time": 1234567890000 })
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
   }
 )
 install_mock(mock_http)
@@ -147,7 +147,7 @@ AWAIT client.auth.authorize(
 WAIT 1500 milliseconds
 
 # Force re-auth via request - should reuse saved params
-AWAIT client.time()
+AWAIT client.channels.get("test").status()
 ```
 
 ### Assertions
