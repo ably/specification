@@ -207,7 +207,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RTL1 | Message and presence processing | |
+| RTL1 | Message and presence processing | Information only |
 | RTL2 | Channel event emission (RTL2a–RTL2i) | Yes — `realtime/unit/channels/channel_state_events.md` |
 | RTL3 | Connection state side effects (RTL3a–RTL3e) | Yes — `realtime/unit/channels/channel_connection_state.md` |
 | RTL4 | Attach function (RTL4a–RTL4m) | Yes — `realtime/unit/channels/channel_attach.md` |
@@ -218,7 +218,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL9 | Presence attribute (RTL9a) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTL10 | History function (RTL10a–RTL10d) | Yes — `realtime/unit/channels/channel_history.md` covers RTL10a, RTL10b, RTL10c (proxies to RSL2 tests); `realtime/integration/channel_history_test.md` covers RTL10d |
 | RTL11 | Channel state effect on presence (RTL11a) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
-| RTL12 | Additional ATTACHED message handling | |
+| RTL12 | Additional ATTACHED message handling | Yes — `realtime/unit/channels/channel_additional_attached.md` |
 | RTL13 | Server-initiated DETACHED handling (RTL13a–RTL13c) | Yes — `realtime/unit/channels/channel_server_initiated_detach.md` |
 | RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md` |
 | RTL15 | Channel#properties attribute (RTL15a–RTL15b1) | Yes — `realtime/unit/channels/channel_properties.md` |
