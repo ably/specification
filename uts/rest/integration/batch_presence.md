@@ -29,38 +29,29 @@ The Ably server returns batch presence in two formats depending on success:
 The `successCount` and `failureCount` fields (BAR2a, BAR2b) are computed
 client-side from the per-channel results, not returned by the server.
 
-## Test Environment
+## Sandbox Setup
 
-### Prerequisites
-- Ably sandbox app provisioned via `POST https://sandbox-rest.ably.io/apps`
-- Two keys: one with full access, one with restricted capability
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
 
-### App Configuration
+### App Provisioning
+
+Uses `ably-common/test-resources/test-app-setup.json` which provides:
+- `keys[0]` — full access (default capability `{"*":["*"]}`)
+- `keys[2]` — per-channel capabilities including `"channel6":["*"]`
 
 The restricted key uses an **explicit channel name** (not a wildcard pattern).
 Wildcard capability patterns (e.g. `"allowed-*"`) do not work reliably with the
 batch presence endpoint.
 
-```json
-{
-  "keys": [
-    {
-      "capability": "{\"*\":[\"*\"]}"
-    },
-    {
-      "capability": "{\"batch-allowed\":[\"*\"]}"
-    }
-  ]
-}
-```
-
-### Setup Pattern
 ```pseudo
 BEFORE ALL TESTS:
-  app_config = provision_sandbox_app(config_with_multiple_keys)
-  app_id = app_config.app_id
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
   full_access_key = app_config.keys[0].key_str
-  restricted_key = app_config.keys[1].key_str
+  restricted_key = app_config.keys[2].key_str  # has "channel6":["*"]
+  app_id = app_config.app_id
 
 AFTER ALL TESTS:
   DELETE https://sandbox-rest.ably.io/apps/{app_id}
@@ -160,8 +151,8 @@ array and builds results from it.
 
 ### Setup
 ```pseudo
-# Use the fixed channel name matching the restricted key capability
-allowed_channel = "batch-allowed"
+# Use the fixed channel name matching keys[2] capability from ably-common
+allowed_channel = "channel6"
 denied_channel = "denied-batch-" + random_id()
 
 # Enter members on both channels using the full-access key
