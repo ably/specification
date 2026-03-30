@@ -457,6 +457,26 @@ ASSERT client.clientId == client.auth.clientId
 
 ---
 
+## RSC17 - ClientId Attribute
+
+**Spec requirement:** When instantiating a `RestClient`, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`.
+
+### Setup
+```pseudo
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  clientId: "explicit-client-id"
+))
+```
+
+### Assertions
+```pseudo
+ASSERT client.clientId == "explicit-client-id"
+ASSERT client.clientId == client.auth.clientId
+```
+
+---
+
 ## RSC18 - TLS configuration
 
 **Spec requirement:** The `tls` option controls whether HTTPS (true, default) or HTTP (false) is used for REST requests.

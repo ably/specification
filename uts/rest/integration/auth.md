@@ -234,6 +234,103 @@ ASSERT error.code >= 40100 AND error.code < 40200
 
 ---
 
+## RSC10 - Token renewal with expired JWT
+
+**Spec requirement:** RSC10 - When a REST request fails with a token error (40140-40149), the client should automatically renew the token and retry the request.
+
+Tests that an expired JWT triggers automatic token renewal via authCallback.
+
+### Setup
+```pseudo
+# Track how many times the callback is invoked
+callback_count = 0
+
+auth_callback = FUNCTION(params):
+  callback_count = callback_count + 1
+  IF callback_count == 1:
+    # First call: return an already-expired JWT (expired 5 seconds ago)
+    RETURN generate_jwt(
+      key_name: extract_key_name(api_key),
+      key_secret: extract_key_secret(api_key),
+      expires_at: now() - 5_seconds
+    )
+  ELSE:
+    # Subsequent calls: return a valid JWT
+    RETURN generate_jwt(
+      key_name: extract_key_name(api_key),
+      key_secret: extract_key_secret(api_key),
+      ttl: 3600000
+    )
+
+channel_name = "test-RSC10-renewal-" + random_id()
+client = Rest(options: ClientOptions(
+  authCallback: auth_callback,
+  endpoint: "sandbox"
+))
+```
+
+### Test Steps
+```pseudo
+# Make a REST request — first token is expired, should trigger renewal
+result = AWAIT client.request("GET", "/channels/" + channel_name)
+```
+
+### Assertions
+```pseudo
+# The request succeeded (token was renewed and retried)
+ASSERT result.statusCode >= 200 AND result.statusCode < 300
+
+# The authCallback was called twice: once for expired token, once for renewal
+ASSERT callback_count == 2
+```
+
+---
+
+## RSA8 - Capability restriction
+
+**Spec requirement:** RSA8 - Tokens with restricted capabilities should only allow the permitted operations.
+
+Tests that a JWT with restricted capability is enforced by the server.
+
+### Setup
+```pseudo
+# Create a JWT with capability restricted to a specific channel
+allowed_channel = "test-RSA8-cap-allowed-" + random_id()
+denied_channel = "test-RSA8-cap-denied-" + random_id()
+
+jwt = generate_jwt(
+  key_name: extract_key_name(api_key),
+  key_secret: extract_key_secret(api_key),
+  capability: '{"' + allowed_channel + '":["publish","subscribe"]}',
+  ttl: 3600000
+)
+
+client = Rest(options: ClientOptions(
+  token: jwt,
+  endpoint: "sandbox"
+))
+```
+
+### Test Steps
+```pseudo
+# Request to allowed channel should succeed
+allowed_result = AWAIT client.request("GET", "/channels/" + allowed_channel)
+
+# Request to denied channel should fail with 40160 (capability refused)
+AWAIT client.request("POST", "/channels/" + denied_channel + "/messages",
+  body: {"name": "test", "data": "hello"}
+) FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT allowed_result.statusCode >= 200 AND allowed_result.statusCode < 300
+ASSERT error.code == 40160
+ASSERT error.statusCode == 401
+```
+
+---
+
 ## Notes
 
 ### Tests moved to unit tests

@@ -13,7 +13,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| CSV1–CSV2 | Specification & protocol versions | |
+| CSV1–CSV2 | Specification & protocol versions | Information only |
 
 ## Client Library Endpoint Configuration
 
@@ -35,16 +35,16 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSC2 | Logger default | Yes — `rest/unit/logging.md` |
 | RSC3 | Log level configuration | Yes — `rest/unit/logging.md` |
 | RSC4 | Custom logger | Yes — `rest/unit/logging.md` |
-| RSC5 | Auth object attribute | |
+| RSC5 | Auth object attribute | Yes — `rest/unit/rest_client.md` |
 | RSC6 | Stats function (RSC6a–RSC6b4) | Yes — `rest/unit/stats.md`, `rest/integration/time_stats.md` |
 | RSC7 | HTTP request headers (RSC7a–RSC7d7) | Yes — `rest/unit/rest_client.md` |
 | RSC8 | Protocol support (RSC8a–RSC8e2) | Yes — `rest/unit/rest_client.md` |
-| RSC9 | Auth usage for authentication | |
-| RSC10 | Token error retry handling | |
+| RSC9 | Auth usage for authentication | Information only |
+| RSC10 | Token error retry handling | Yes — `rest/unit/auth/token_renewal.md`, `rest/integration/auth.md` |
 | RSC13 | Connection and request timeouts | Yes — `rest/unit/rest_client.md` |
 | RSC15 | Host fallback behaviour (RSC15a–RSC15n) | Yes — `rest/unit/fallback.md` |
 | RSC16 | Time function | Yes — `rest/unit/time.md`, `rest/integration/time_stats.md` |
-| RSC17 | ClientId attribute | |
+| RSC17 | ClientId attribute | Yes — `rest/unit/rest_client.md` |
 | RSC18 | TLS configuration | Yes — `rest/unit/rest_client.md`, `rest/unit/time.md` |
 | RSC19 | Request function (RSC19a–RSC19f1) | Yes — `rest/unit/request.md` |
 | RSC20 | Deprecated exception reporting (RSC20a–RSC20f) |N/A |
@@ -63,16 +63,16 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSA2 | Basic Auth default | Yes — `rest/unit/auth/auth_scheme.md` |
 | RSA3 | Token Auth support (RSA3a–RSA3d) | Yes — `rest/unit/auth/auth_scheme.md` |
 | RSA4 | Token Auth selection logic (RSA4a–RSA4g) | Partial — `rest/unit/auth/auth_scheme.md` covers RSA4, RSA4b; `rest/unit/auth/token_renewal.md` covers RSA4b4; `realtime/unit/auth/connection_auth_test.md` covers RSA4; `realtime/unit/connection/error_reason_test.md` covers RSA4c1, RSA4d |
-| RSA5 | TTL for tokens | |
-| RSA6 | Capability JSON | |
-| RSA7 | ClientId and authenticated clients (RSA7a–RSA7e2) | Partial — `rest/unit/auth/client_id.md` covers RSA7, RSA7a–RSA7c |
-| RSA8 | RequestToken function (RSA8a–RSA8g) | Partial — `rest/unit/auth/auth_callback.md` covers RSA8c, RSA8d; `realtime/unit/auth/connection_auth_test.md` covers RSA8d |
+| RSA5 | TTL for tokens | Yes — `rest/unit/auth/token_request_params.md`, `rest/integration/auth.md` |
+| RSA6 | Capability JSON | Yes — `rest/unit/auth/token_request_params.md`, `rest/integration/auth.md` |
+| RSA7 | ClientId and authenticated clients (RSA7a–RSA7e2) | Partial — `rest/unit/auth/client_id.md` covers RSA7, RSA7a–RSA7c; `realtime/integration/auth.md` covers RSA7 |
+| RSA8 | RequestToken function (RSA8a–RSA8g) | Partial — `rest/unit/auth/auth_callback.md` covers RSA8c, RSA8d; `realtime/unit/auth/connection_auth_test.md` covers RSA8d; `rest/integration/auth.md` covers RSA8; `realtime/integration/auth.md` covers RSA8 |
 | RSA9 | CreateTokenRequest (RSA9a–RSA9i) | Partial — `rest/integration/auth.md` covers RSA9 |
 | RSA10 | Authorize function (RSA10a–RSA10l) | Yes — `rest/unit/auth/authorize.md` |
-| RSA11 | Base64 encoded API key | |
+| RSA11 | Base64 encoded API key | Yes — `rest/unit/auth/auth_scheme.md` (with RSA2) |
 | RSA12 | Auth#clientId attribute (RSA12a–RSA12b) | Yes — `rest/unit/auth/client_id.md` |
 | RSA14 | Error when token auth selected without token | Yes — `rest/unit/auth/token_renewal.md`, `rest/integration/auth.md` |
-| RSA15 | ClientId validation (RSA15a–RSA15c) | |
+| RSA15 | ClientId validation (RSA15a–RSA15c) | Yes — `rest/unit/auth/client_id.md`, `realtime/integration/auth.md` (RSA15c Realtime case) |
 | RSA16 | TokenDetails attribute (RSA16a–RSA16d) | Yes — `rest/unit/auth/token_details.md` |
 | RSA17 | RevokeTokens (RSA17a–RSA17g) | |
 
@@ -153,7 +153,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC5 | Stats function (RTC5a–RTC5b) | Yes — `realtime/unit/client/realtime_stats.md` (proxies to RSC6 tests) |
 | RTC6 | Time function (RTC6a) | Yes — `realtime/unit/client/realtime_time.md` (proxies to RSC16 tests) |
 | RTC7 | Uses configured timeouts | |
-| RTC8 | Authorize function for realtime (RTC8a–RTC8c) | |
+| RTC8 | Authorize function for realtime (RTC8a–RTC8c) | Yes — `realtime/unit/auth/realtime_authorize.md`, `realtime/integration/auth.md` |
 | RTC9 | Request function | Yes — `realtime/unit/client/realtime_request.md` (proxies to RSC19 tests) |
 | RTC10–RTC11 | Deleted | |
 | RTC12 | Same constructors as RestClient | Yes — `realtime/unit/client/realtime_client.md` |
@@ -186,7 +186,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN19 | Transport state side effects (RTN19a–RTN19b) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN19a, RTN19a2, RTN19b |
 | RTN20 | OS network change handling (RTN20a–RTN20c) | |
 | RTN21 | ConnectionDetails override defaults | Partial — `realtime/unit/connection/update_events_test.md` covers RTN21; `realtime/integration/connection_lifecycle_test.md` covers RTN21 |
-| RTN22 | Re-authentication request handling (RTN22a) | |
+| RTN22 | Re-authentication request handling (RTN22a) | Yes — `realtime/unit/connection/server_initiated_reauth_test.md` |
 | RTN23 | Heartbeats (RTN23a–RTN23b) | Yes — `realtime/unit/connection/heartbeat_test.md` |
 | RTN24 | UPDATE event on CONNECTED while connected | Yes — `realtime/unit/connection/update_events_test.md` |
 | RTN25 | Connection#errorReason attribute | Yes — `realtime/unit/connection/error_reason_test.md` |
@@ -391,15 +391,15 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Area | Spec groups | With UTS spec | Coverage |
 |------|-------------|---------------|----------|
 | **Endpoint config** (REC) | 3 | 3 | Full |
-| **REST client** (RSC) | 18 | 12 | Partial |
-| **REST auth** (RSA) | 15 | 10 | Partial |
+| **REST client** (RSC) | 18 | 15 | Partial |
+| **REST auth** (RSA) | 15 | 15 | Full |
 | **REST channels** (RSN) | 4 | 0 | None |
 | **REST channel** (RSL) | 13 | 6 | Partial |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
 | **REST encryption** (RSE) | 2 | 0 | None |
 | **REST annotations** (RSAN) | 3 | 0 | None |
-| **Realtime client** (RTC) | 14 | 8 | Partial |
-| **Connection** (RTN) | 23 | 16 | Partial |
+| **Realtime client** (RTC) | 14 | 12 | Partial |
+| **Connection** (RTN) | 23 | 17 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
 | **Realtime channel** (RTL) | 24 | 14 | Partial |
 | **Realtime presence** (RTP) | 15 | 0 | None |
