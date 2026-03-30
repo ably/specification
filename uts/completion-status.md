@@ -50,8 +50,8 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSC20 | Deprecated exception reporting (RSC20a–RSC20f) |N/A |
 | RSC21 | Push object attribute | |
 | RSC22 | BatchPublish (RSC22a–RSC22d) | Yes — `rest/unit/batch_publish.md` |
-| RSC23 | Deleted | |
-| RSC24 | BatchPresence | |
+| RSC23 | Deleted | N/A |
+| RSC24 | BatchPresence | Yes — `rest/unit/batch_presence.md`, `rest/integration/batch_presence.md` |
 | RSC25 | Request endpoint | Yes — `rest/unit/request_endpoint.md` |
 | RSC26 | CreateWrapperSDKProxy (RSC26a–RSC26c) | |
 
@@ -341,10 +341,10 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | CD1–CD2 | ConnectionDetails | |
 | CP1–CP2 | ChannelProperties | |
 | CHD1–CHD2, CHS1–CHS2, CHO1–CHO2, CHM1–CHM2 | Channel status types | |
-| BAR1–BAR2 | BatchResult | |
+| BAR1–BAR2 | BatchResult | Partial — `rest/unit/batch_presence.md` covers BAR2 |
 | BSP1–BSP2 | BatchPublishSpec | |
 | BPR1–BPR2, BPF1–BPF2 | BatchPublish result types | |
-| BGR1–BGR2, BGF1–BGF2 | BatchPresence result types | |
+| BGR1–BGR2, BGF1–BGF2 | BatchPresence result types | Yes — `rest/unit/batch_presence.md`, `rest/integration/batch_presence.md` |
 | PBR1–PBR2 | PublishResult | Yes — `realtime/unit/channels/channel_publish.md` |
 | UDR1–UDR2 | UpdateDeleteResult | |
 | TRT1–TRT2, TRS1–TRS2, TRF1–TRF2 | TokenRevocation types | |
