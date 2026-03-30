@@ -5,42 +5,28 @@ Spec points: `RSL1d`, `RSL1l1`, `RSL1m4`, `RSL1n`
 ## Test Type
 Integration test against Ably sandbox
 
-## Test Environment
+## Sandbox Setup
 
-### Prerequisites
-- Ably sandbox app provisioned via `POST https://sandbox.realtime.ably-nonprod.net/apps`
-- App must include multiple keys with different capabilities (see below)
-- Channel names must be unique per test (see README for naming convention)
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
 
-### App Configuration
+### App Provisioning
 
-The sandbox app must be provisioned with keys that have different capabilities:
+Uses `ably-common/test-resources/test-app-setup.json` which provides:
+- `keys[0]` — full access (default capability `{"*":["*"]}`)
+- `keys[2]` — per-channel capabilities including `"channel2":["publish","subscribe"]`
 
-```json
-{
-  "keys": [
-    {
-      "name": "full-access",
-      "capability": "{\"*\":[\"*\"]}"
-    },
-    {
-      "name": "restricted",
-      "capability": "{\"allowed-channel\":[\"publish\",\"subscribe\"]}"
-    }
-  ]
-}
-```
-
-### Setup Pattern
 ```pseudo
 BEFORE ALL TESTS:
-  app_config = provision_sandbox_app(config_with_multiple_keys)
-  app_id = app_config.app_id
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
   full_access_key = app_config.keys[0].key_str
-  restricted_key = app_config.keys[1].key_str  # Limited capabilities
+  restricted_key = app_config.keys[2].key_str  # per-channel capabilities
+  app_id = app_config.app_id
 
 AFTER ALL TESTS:
-  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
+  DELETE https://sandbox-rest.ably.io/apps/{app_id}
     WITH Authorization: Basic {full_access_key}
 ```
 

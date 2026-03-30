@@ -5,16 +5,35 @@ Spec points: `RSP1`, `RSP3`, `RSP3a`, `RSP4`, `RSP4b`, `RSP5`
 ## Test Type
 Integration test against Ably sandbox
 
-## Test Environment
+## Sandbox Setup
 
-### Prerequisites
-- Ably sandbox app provisioned via `POST https://sandbox.realtime.ably-nonprod.net/apps`
-- API key from provisioned app
-- Channel names must be unique per test (see README for naming convention)
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
 
-### Sandbox Presence Fixtures
+### App Provisioning
 
-The sandbox test app (from `ably-common/test-resources/test-app-setup.json`) includes pre-populated presence members on the channel `persisted:presence_fixtures`:
+Uses `ably-common/test-resources/test-app-setup.json` which provides:
+- `keys[0]` — full access (default capability `{"*":["*"]}`)
+- `keys[3]` — subscribe-only (`{"*":["subscribe"]}`)
+- Pre-populated presence fixtures on `persisted:presence_fixtures` channel
+- Cipher configuration for encrypted fixture data
+
+```pseudo
+BEFORE ALL TESTS:
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
+  api_key = app_config.keys[0].key_str
+  app_id = app_config.app_id
+
+AFTER ALL TESTS:
+  DELETE https://sandbox-rest.ably.io/apps/{app_id}
+    WITH Authorization: Basic {api_key}
+```
+
+### Presence Fixtures
+
+The `ably-common/test-resources/test-app-setup.json` includes pre-populated presence members on the channel `persisted:presence_fixtures`:
 
 | clientId | data | encoding |
 |----------|------|----------|
@@ -25,24 +44,12 @@ The sandbox test app (from `ably-common/test-resources/test-app-setup.json`) inc
 | `client_decoded` | `{"example":{"json":"Object"}}` | `json` |
 | `client_encoded` | (encrypted) | `json/utf-8/cipher+aes-128-cbc/base64` |
 
-**Cipher configuration** for `client_encoded`:
+**Cipher configuration** for `client_encoded` (from `test-app-setup.json` `cipher` section):
 - Algorithm: `aes`
 - Mode: `cbc`
 - Key length: 128
 - Key (base64): `WUP6u0K7MXI5Zeo0VppPwg==`
 - IV (base64): `HO4cYSP8LybPYBPZPHQOtg==`
-
-### Setup Pattern
-```pseudo
-BEFORE ALL TESTS:
-  app_config = provision_sandbox_app()
-  app_id = app_config.app_id
-  api_key = app_config.keys[0].key_str
-
-AFTER ALL TESTS:
-  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
-    WITH Authorization: Basic {api_key}
-```
 
 ---
 

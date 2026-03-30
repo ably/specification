@@ -5,22 +5,23 @@ Spec points: `TG1`, `TG2`, `TG3`, `TG4`, `TG5`
 ## Test Type
 Integration test against Ably sandbox
 
-## Test Environment
+## Sandbox Setup
 
-### Prerequisites
-- Ably sandbox app provisioned via `POST https://sandbox.realtime.ably-nonprod.net/apps`
-- API key from provisioned app
-- Channel names must be unique per test (see README for naming convention)
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
 
-### Setup Pattern
+### App Provisioning
+
 ```pseudo
 BEFORE ALL TESTS:
-  app_config = provision_sandbox_app()
-  app_id = app_config.app_id
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
   api_key = app_config.keys[0].key_str
+  app_id = app_config.app_id
 
 AFTER ALL TESTS:
-  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
+  DELETE https://sandbox-rest.ably.io/apps/{app_id}
     WITH Authorization: Basic {api_key}
 ```
 

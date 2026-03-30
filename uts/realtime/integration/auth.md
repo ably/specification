@@ -9,17 +9,18 @@ Integration test against Ably sandbox
 
 Tests use JWTs generated using a third-party JWT library, signed with the app key secret using HMAC-SHA256.
 
-## Test Environment
+## Sandbox Setup
 
-### Prerequisites
-- Ably sandbox app provisioned via `POST https://sandbox-rest.ably.io/apps`
-- API key from provisioned app
-- Channel names must be unique per test (see README for naming convention)
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
 
-### Setup Pattern
+### App Provisioning
+
 ```pseudo
 BEFORE ALL TESTS:
-  app_config = provision_sandbox_app()
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
   api_key = app_config.keys[0].key_str
   app_id = app_config.app_id
 
