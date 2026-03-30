@@ -25,8 +25,8 @@ mock_ws = MockWebSocket(
     # WebSocket connects successfully
     conn.respond_with_success()
     
-    # But server immediately sends ERROR for invalid key
-    conn.send_to_client(ProtocolMessage(
+    # But server immediately sends ERROR for invalid key and closes connection
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       error: ErrorInfo(
         code: 40005,
@@ -112,8 +112,8 @@ mock_ws = MockWebSocket(
     conn.respond_with_success()
     
     IF connection_attempt_count == 1:
-      # First attempt: token error
-      conn.send_to_client(ProtocolMessage(
+      # First attempt: token error, close connection
+      conn.send_to_client_and_close(ProtocolMessage(
         action: ERROR,
         error: ErrorInfo(
           code: 40142,
@@ -181,7 +181,7 @@ Tests that non-renewable token errors cause disconnection.
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
-    conn.send_to_client(ProtocolMessage(
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       error: ErrorInfo(
         code: 40142,
@@ -511,7 +511,7 @@ Tests that fatal protocol errors cause FAILED state.
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
-    conn.send_to_client(ProtocolMessage(
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       channel: null,  # Empty channel = connection-level error
       error: ErrorInfo(

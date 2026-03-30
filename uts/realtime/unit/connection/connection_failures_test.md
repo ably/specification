@@ -54,8 +54,8 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Get reference to the WebSocket connection
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 
-# Server sends DISCONNECTED with token error
-ws_connection.send_to_client(ProtocolMessage(
+# Server sends DISCONNECTED with token error and closes connection
+ws_connection.send_to_client_and_close(ProtocolMessage(
   action: DISCONNECTED,
   error: ErrorInfo(
     code: 40142,
@@ -165,8 +165,8 @@ first_connection_key = client.connection.key
 # Get WebSocket connection
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 
-# Server sends DISCONNECTED with token error
-ws_connection.send_to_client(ProtocolMessage(
+# Server sends DISCONNECTED with token error and closes connection
+ws_connection.send_to_client_and_close(ProtocolMessage(
   action: DISCONNECTED,
   error: ErrorInfo(
     code: 40142,
@@ -262,8 +262,8 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Get WebSocket connection
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 
-# Server sends DISCONNECTED with token error
-ws_connection.send_to_client(ProtocolMessage(
+# Server sends DISCONNECTED with token error and closes connection
+ws_connection.send_to_client_and_close(ProtocolMessage(
   action: DISCONNECTED,
   error: ErrorInfo(
     code: 40142,
@@ -355,8 +355,8 @@ original_connection_id = client.connection.id
 # Get WebSocket connection
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 
-# Server sends DISCONNECTED with non-token error
-ws_connection.send_to_client(ProtocolMessage(
+# Server sends DISCONNECTED with non-token error and closes connection
+ws_connection.send_to_client_and_close(ProtocolMessage(
   action: DISCONNECTED,
   error: ErrorInfo(
     code: 80003,
@@ -433,8 +433,8 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Get WebSocket connection
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 
-# Server sends ERROR with empty channel (connection-level error)
-ws_connection.send_to_client(ProtocolMessage(
+# Server sends ERROR with empty channel (connection-level error) and closes connection
+ws_connection.send_to_client_and_close(ProtocolMessage(
   action: ERROR,
   channel: null,  # Empty = connection-level error
   error: ErrorInfo(

@@ -195,9 +195,9 @@ mock_ws = MockWebSocket(
     connection_attempts.push(conn.url.host)
     
     IF connection_attempts.length == 1:
-      # Primary domain: connect then send DISCONNECTED with 503
+      # Primary domain: connect then send DISCONNECTED with 503 and close
       conn.respond_with_success()
-      conn.send_to_client(ProtocolMessage(
+      conn.send_to_client_and_close(ProtocolMessage(
         action: DISCONNECTED,
         error: ErrorInfo(
           code: 50003,
