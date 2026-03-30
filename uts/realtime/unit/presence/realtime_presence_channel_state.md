@@ -567,6 +567,13 @@ state, then all presence actions that are still queued for send on that channel 
 RTP16b should be deleted from the queue, and any callback passed to the corresponding
 presence method invocation should be called with an ErrorInfo indicating the failure.
 
+**Note on ATTACHING → DETACHED transition:** Per RTL13b, when a channel is in the
+ATTACHING state and receives a DETACHED ProtocolMessage from the server, the SDK
+should retry the attach. If the retry fails or the connection is not in a state
+that permits re-attach, the channel may transition to SUSPENDED rather than DETACHED.
+The test below puts the channel into DETACHED state via an explicit `detach()` call
+after a successful attach, which avoids the RTL13b retry path.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL11-detached-${random_id()}"
@@ -576,7 +583,9 @@ mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
-      # Do NOT respond — leave channel in ATTACHING so presence queues
+      mock_ws.send_to_client(ProtocolMessage(action: ATTACHED, channel: channel_name))
+    ELSE IF msg.action == DETACH:
+      mock_ws.send_to_client(ProtocolMessage(action: DETACHED, channel: channel_name))
     ELSE IF msg.action == PRESENCE:
       captured_presence.append(msg)
   }
@@ -592,33 +601,21 @@ channel = client.channels.get(channel_name)
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Start attach — channel goes to ATTACHING
-channel.attach()
-AWAIT_STATE channel.state == ChannelState.attaching
+# Attach then detach to put channel in DETACHED state
+AWAIT channel.attach()
+AWAIT channel.detach()
+ASSERT channel.state == ChannelState.detached
 
-# Queue presence while channel is ATTACHING (per RTP16b)
-enter_future = channel.presence.enter(data: "queued-enter")
-
-# Verify nothing sent yet
-ASSERT captured_presence.length == 0
-
-# Server sends DETACHED — channel transitions to DETACHED
-mock_ws.send_to_client(ProtocolMessage(
-  action: DETACHED,
-  channel: channel_name,
-  error: ErrorInfo(code: 90001, message: "Channel detached")
-))
-
-AWAIT_STATE channel.state == ChannelState.detached
+# Attempting presence on a DETACHED channel should error immediately
+AWAIT channel.presence.enter(data: "queued-enter") FAILS WITH error
 ```
 
 ### Assertions
 ```pseudo
-# Queued presence was NOT sent
+# No presence messages were sent
 ASSERT captured_presence.length == 0
 
-# The enter future completed with an error
-AWAIT enter_future FAILS WITH error
+# The enter completed with an error
 ASSERT error IS ErrorInfo
 ASSERT error.code IS NOT null
 ```

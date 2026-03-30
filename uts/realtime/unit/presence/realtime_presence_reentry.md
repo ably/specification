@@ -12,6 +12,12 @@ RealtimePresence object maintains an internal PresenceMap (RTP17) of locally-ent
 members. When the channel receives an ATTACHED ProtocolMessage (except when already
 attached with RESUMED flag), it re-publishes an ENTER for each member in the internal map.
 
+**Important:** The internal PresenceMap (LocalPresenceMap) is populated from server
+PRESENCE echoes — messages with the current connection's connectionId — NOT directly
+from the client's `enter()` or `enterClient()` calls. The server always echoes presence
+events back to the originating client. Mock WebSocket setups must simulate this echo
+for the LocalPresenceMap to contain any members for re-entry.
+
 ---
 
 ## RTP17i - Automatic re-entry on ATTACHED (non-RESUMED)
@@ -40,6 +46,25 @@ mock_ws = MockWebSocket(
     ELSE IF msg.action == PRESENCE:
       captured_presence.append(msg)
       mock_ws.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
+      # Server echoes the presence event back to the client.
+      # This populates the LocalPresenceMap (RTP17) which is keyed by
+      # server echoes, not by the client's own enter() calls.
+      FOR idx, p IN enumerate(msg.presence):
+        mock_ws.send_to_client(ProtocolMessage(
+          action: PRESENCE,
+          channel: channel_name,
+          connectionId: "conn-${connection_count}",
+          presence: [
+            PresenceMessage(
+              action: p.action,
+              clientId: p.clientId OR "my-client",
+              connectionId: "conn-${connection_count}",
+              id: "conn-${connection_count}:${msg.msgSerial}:${idx}",
+              timestamp: NOW(),
+              data: p.data
+            )
+          ]
+        ))
   }
 )
 install_mock(mock_ws)
@@ -108,12 +133,31 @@ mock_ws = MockWebSocket(
     ELSE IF msg.action == PRESENCE:
       captured_presence.append(msg)
       mock_ws.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
+      # Server echoes the presence event back to populate LocalPresenceMap
+      FOR idx, p IN enumerate(msg.presence):
+        mock_ws.send_to_client(ProtocolMessage(
+          action: PRESENCE,
+          channel: channel_name,
+          connectionId: "conn-${connection_count}",
+          presence: [
+            PresenceMessage(
+              action: p.action,
+              clientId: p.clientId,
+              connectionId: "conn-${connection_count}",
+              id: "conn-${connection_count}:${msg.msgSerial}:${idx}",
+              timestamp: NOW(),
+              data: p.data
+            )
+          ]
+        ))
   }
 )
 install_mock(mock_ws)
 
-# Wildcard client to test enterClient with multiple members
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Use a non-wildcard clientId that has enterClient permission.
+# Note: Some SDKs reject wildcard clientId "*" at the ClientOptions level.
+# Use a concrete clientId and rely on server-side permission for enterClient.
+client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "admin", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
 
@@ -123,7 +167,7 @@ client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 
-# Enter multiple members
+# Enter multiple members via enterClient
 AWAIT channel.presence.enterClient("alice", data: "alice-data")
 AWAIT channel.presence.enterClient("bob", data: "bob-data")
 
@@ -188,6 +232,23 @@ mock_ws = MockWebSocket(
     ELSE IF msg.action == PRESENCE:
       captured_presence.append(msg)
       mock_ws.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
+      # Server echoes the presence event back to populate LocalPresenceMap
+      FOR idx, p IN enumerate(msg.presence):
+        mock_ws.send_to_client(ProtocolMessage(
+          action: PRESENCE,
+          channel: channel_name,
+          connectionId: "conn-${connection_count}",
+          presence: [
+            PresenceMessage(
+              action: p.action,
+              clientId: p.clientId OR "my-client",
+              connectionId: "conn-${connection_count}",
+              id: "conn-${connection_count}:${msg.msgSerial}:${idx}",
+              timestamp: NOW(),
+              data: p.data
+            )
+          ]
+        ))
   }
 )
 install_mock(mock_ws)
@@ -252,6 +313,23 @@ mock_ws = MockWebSocket(
     ELSE IF msg.action == PRESENCE:
       captured_presence.append(msg)
       mock_ws.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
+      # Server echoes the presence event back to populate LocalPresenceMap
+      FOR idx, p IN enumerate(msg.presence):
+        mock_ws.send_to_client(ProtocolMessage(
+          action: PRESENCE,
+          channel: channel_name,
+          connectionId: "conn-1",
+          presence: [
+            PresenceMessage(
+              action: p.action,
+              clientId: p.clientId OR "my-client",
+              connectionId: "conn-1",
+              id: "conn-1:${msg.msgSerial}:${idx}",
+              timestamp: NOW(),
+              data: p.data
+            )
+          ]
+        ))
   }
 )
 install_mock(mock_ws)
@@ -312,8 +390,24 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(ProtocolMessage(action: ATTACHED, channel: channel_name))
     ELSE IF msg.action == PRESENCE:
       IF connection_count == 1:
-        # First connection: ACK the enter
+        # First connection: ACK the enter and echo back the presence event
         mock_ws.send_to_client(ProtocolMessage(action: ACK, msgSerial: msg.msgSerial, count: 1))
+        FOR idx, p IN enumerate(msg.presence):
+          mock_ws.send_to_client(ProtocolMessage(
+            action: PRESENCE,
+            channel: channel_name,
+            connectionId: "conn-1",
+            presence: [
+              PresenceMessage(
+                action: p.action,
+                clientId: p.clientId OR "my-client",
+                connectionId: "conn-1",
+                id: "conn-1:${msg.msgSerial}:${idx}",
+                timestamp: NOW(),
+                data: p.data
+              )
+            ]
+          ))
       ELSE:
         # Second connection: NACK the re-entry
         mock_ws.send_to_client(ProtocolMessage(
@@ -338,10 +432,14 @@ AWAIT channel.attach()
 
 AWAIT channel.presence.enter(data: "hello")
 
-# Listen for channel UPDATE events
+# Listen for channel UPDATE events with the re-entry failure error code.
+# Note: The ATTACHED state change itself may also emit an UPDATE event
+# (e.g., when transitioning from ATTACHED to ATTACHED with resumed=false).
+# Filter for the specific 91004 error code to distinguish re-entry failure.
 channel_events = []
 channel.on(ChannelEvent.update, (change) => {
-  channel_events.append(change)
+  IF change.reason IS NOT null AND change.reason.code == 91004:
+    channel_events.append(change)
 })
 
 # Disconnect and reconnect — re-entry will be NACKed

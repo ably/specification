@@ -392,11 +392,13 @@ leave_events = map.endSync()
 
 ### Assertions
 ```pseudo
-# Bob's ABSENT entry is cleaned up — no additional LEAVE emitted since
-# bob was explicitly marked ABSENT (not stale-by-absence-from-sync)
-# Implementation note: ABSENT members are simply deleted on endSync.
-# The stale-member LEAVE events are only for members that were PRESENT
-# but not updated during sync.
+# Bob's ABSENT entry is cleaned up on endSync (RTP2h2b) — no synthesized
+# LEAVE event is emitted for bob because he was explicitly marked ABSENT
+# via a LEAVE message (not stale-by-absence-from-sync). ABSENT members
+# are simply deleted on endSync without generating LEAVE events.
+# Synthesized LEAVE events (RTP19) are only for PRESENT members that
+# were not updated during sync (residuals).
+ASSERT leave_events.length == 0
 ASSERT map.get("c2:bob") IS null
 
 # Alice survives
