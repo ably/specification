@@ -48,7 +48,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSC18 | TLS configuration | Yes — `rest/unit/rest_client.md`, `rest/unit/time.md` |
 | RSC19 | Request function (RSC19a–RSC19f1) | Yes — `rest/unit/request.md` |
 | RSC20 | Deprecated exception reporting (RSC20a–RSC20f) |N/A |
-| RSC21 | Push object attribute | |
+| RSC21 | Push object attribute | Yes — `rest/unit/push/push_admin_publish.md` (RSH1 type assertions) |
 | RSC22 | BatchPublish (RSC22a–RSC22d) | Yes — `rest/unit/batch_publish.md` |
 | RSC23 | Deleted | N/A |
 | RSC24 | BatchPresence | Yes — `rest/unit/batch_presence.md`, `rest/integration/batch_presence.md` |
@@ -157,7 +157,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC9 | Request function | Yes — `realtime/unit/client/realtime_request.md` (proxies to RSC19 tests) |
 | RTC10–RTC11 | Deleted | N/A |
 | RTC12 | Same constructors as RestClient | Yes — `realtime/unit/client/realtime_client.md` |
-| RTC13 | Push object attribute | |
+| RTC13 | Push object attribute | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC14 | CreateWrapperSDKProxy (RTC14a–RTC14c) | |
 | RTC15 | Connect function (RTC15a) | Yes — `realtime/unit/client/realtime_client.md` |
 | RTC16 | Close function (RTC16a) | Yes — `realtime/unit/client/realtime_client.md` |
@@ -297,7 +297,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RSH1 | Push#admin object (RSH1a–RSH1c5) | |
+| RSH1 | Push#admin object (RSH1a–RSH1c5) | Yes — `rest/unit/push/push_admin_publish.md` (RSH1, RSH1a), `rest/unit/push/push_device_registrations.md` (RSH1b1–RSH1b5), `rest/unit/push/push_channel_subscriptions.md` (RSH1c1–RSH1c5), `rest/integration/push_admin.md` (RSH1a–RSH1c5) |
 | RSH2 | Platform-specific push operations (RSH2a–RSH2e) | |
 | RSH3 | Activation state machine (RSH3a–RSH3g3) | |
 | RSH4–RSH5 | Event queueing and sequential handling | |
@@ -391,14 +391,14 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Area | Spec groups | With UTS spec | Coverage |
 |------|-------------|---------------|----------|
 | **Endpoint config** (REC) | 3 | 3 | Full |
-| **REST client** (RSC) | 18 | 15 | Partial |
+| **REST client** (RSC) | 18 | 16 | Partial |
 | **REST auth** (RSA) | 15 | 15 | Full |
 | **REST channels** (RSN) | 4 | 0 | None |
 | **REST channel** (RSL) | 13 | 13 | Full |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
 | **REST encryption** (RSE) | 2 | 0 | None |
 | **REST annotations** (RSAN) | 3 | 3 | Full |
-| **Realtime client** (RTC) | 14 | 13 | Partial |
+| **Realtime client** (RTC) | 14 | 14 | Full |
 | **Connection** (RTN) | 23 | 18 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
 | **Realtime channel** (RTL) | 28 | 26 | Partial |
@@ -407,7 +407,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **EventEmitter** (RTE) | 6 | 0 | None |
 | **Backoff/jitter** (RTB) | 1 | 0 | None |
 | **Wrapper SDK** (WP) | 7 | 0 | None |
-| **Push notifications** (RSH) | 8 | 0 | None |
+| **Push notifications** (RSH) | 8 | 1 | Partial |
 | **Plugins** (PC/PT/VD) | 3 | 2 | Partial |
 | **Data types** | 30 | 12 | Partial |
 | **Option types** | 8 | 5 | Partial |

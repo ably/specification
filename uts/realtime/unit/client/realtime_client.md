@@ -1,6 +1,6 @@
 # Realtime Client Tests
 
-Spec points: `RTC1`, `RTC1a`, `RTC1b`, `RTC1c`, `RTC1f`, `RTC2`, `RTC3`, `RTC4`, `RTC12`, `RTC15`, `RTC16`, `RTC17`
+Spec points: `RTC1`, `RTC1a`, `RTC1b`, `RTC1c`, `RTC1f`, `RTC2`, `RTC3`, `RTC4`, `RTC12`, `RTC13`, `RTC15`, `RTC16`, `RTC17`
 
 ## Test Type
 Unit test with mocked WebSocket connection
@@ -154,6 +154,32 @@ client = Realtime(options: ClientOptions(
 ```pseudo
 ASSERT client.auth IS NOT null
 ASSERT client.auth IS Auth
+```
+
+---
+
+## RTC13 - Push Attribute
+
+**Spec requirement:** RTC13 — `RealtimeClient#push` attribute provides access to the `Push` object.
+
+Tests that `RealtimeClient#push` provides access to the Push object.
+
+### Setup
+```pseudo
+mock_ws = create_mock_websocket()
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+```
+
+### Assertions
+```pseudo
+ASSERT client.push IS NOT null
+ASSERT client.push IS Push
+ASSERT client.push.admin IS PushAdmin
 ```
 
 ---
