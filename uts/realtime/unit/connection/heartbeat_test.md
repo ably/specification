@@ -21,6 +21,17 @@ RTN23 defines how the client detects connection liveness:
 
 A concrete implementation should implement either RTN23a with HEARTBEAT messages OR RTN23b with ping frames, depending on platform capabilities. The test cases below cover both approaches.
 
+### Verifying Transient States
+
+When testing heartbeat timeout behavior, the connection will pass through the DISCONNECTED state very quickly due to immediate reconnection (RTN15a). Attempting to `AWAIT_STATE disconnected` as an intermediate step in the middle of a test is unreliable. Instead, all tests that involve disconnection should:
+
+1. Record the full sequence of state changes from the start of the test
+2. Let the complete connect → disconnect → reconnect cycle play out
+3. `AWAIT_STATE connected` after the final reconnection
+4. Assert the recorded state change sequence and other invariants at the end
+
+This pattern is used consistently throughout these tests.
+
 ---
 
 # RTN23a Tests (HEARTBEAT Protocol Messages)
@@ -79,23 +90,27 @@ ASSERT captured_url.query_params["heartbeats"] == "true"
 
 ---
 
-## RTN23a - Disconnect after maxIdleInterval + realtimeRequestTimeout
+## RTN23a - Disconnect and reconnect after maxIdleInterval + realtimeRequestTimeout
 
-**Spec requirement:** If no message is received from the server for `maxIdleInterval + realtimeRequestTimeout` milliseconds, the connection is considered lost and the client transitions to DISCONNECTED state.
+**Spec requirement:** If no message is received from the server for `maxIdleInterval + realtimeRequestTimeout` milliseconds, the connection is considered lost and the client transitions to DISCONNECTED state, then immediately reconnects (RTN15a).
 
-Tests that the client disconnects and closes the WebSocket when no server activity is detected.
+Tests the full disconnect/reconnect cycle when no server activity is detected.
 
 ### Setup
 
 ```pseudo
+connection_attempt_count = 0
+state_changes = []
+
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
+    connection_attempt_count++
     conn.respond_with_success(ProtocolMessage(
       action: CONNECTED,
-      connectionId: "connection-id",
-      connectionKey: "connection-key",
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
       connectionDetails: ConnectionDetails(
-        connectionKey: "connection-key",
+        connectionKey: "connection-key-" + connection_attempt_count,
         maxIdleInterval: 5000,  # 5 seconds
         connectionStateTtl: 120000
       )
@@ -110,6 +125,11 @@ client = Realtime(options: ClientOptions(
   realtimeRequestTimeout: 2000,  # 2 seconds
   autoConnect: false
 ))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
 ```
 
 ### Test Steps
@@ -120,20 +140,36 @@ enable_fake_timers()
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
+ASSERT connection_attempt_count == 1
+
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 5000 + 2000 = 7000ms
 ADVANCE_TIME(7100)
+PUMP_EVENT_QUEUE()
 
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Wait for the reconnection to complete
+AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
 ### Assertions
 
 ```pseudo
-ASSERT client.connection.state == ConnectionState.disconnected
-ASSERT client.connection.errorReason IS NOT null
+# Verify the full state change sequence
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
 
-# Verify the client closed the WebSocket connection
+# Verify two connection attempts were made (initial + reconnect)
+ASSERT connection_attempt_count == 2
+
+# Verify we're connected with new connection details
+ASSERT client.connection.id == "connection-id-2"
+
+# Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
 ```
@@ -144,169 +180,7 @@ ASSERT client_close_events.length == 1
 
 **Spec requirement:** Any message from the server, including HEARTBEAT messages, resets the idle timer.
 
-Tests that receiving HEARTBEAT messages keeps the connection alive, and that the client closes the WebSocket when it eventually times out.
-
-### Setup
-
-```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => {
-    conn.respond_with_success(ProtocolMessage(
-      action: CONNECTED,
-      connectionId: "connection-id",
-      connectionKey: "connection-key",
-      connectionDetails: ConnectionDetails(
-        connectionKey: "connection-key",
-        maxIdleInterval: 3000,  # 3 seconds
-        connectionStateTtl: 120000
-      )
-    ))
-  }
-)
-install_mock(mock_ws)
-
-client = Realtime(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  realtimeRequestTimeout: 1000,  # 1 second
-  autoConnect: false
-))
-```
-
-### Test Steps
-
-```pseudo
-enable_fake_timers()
-
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-
-# Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
-ADVANCE_TIME(2000)
-
-# Send HEARTBEAT from server - resets timer
-mock_ws.active_connection.send_to_client(ProtocolMessage(
-  action: HEARTBEAT
-))
-
-# Advance time again (2000ms since HEARTBEAT, still within threshold)
-ADVANCE_TIME(2000)
-
-# Connection should still be alive
-ASSERT client.connection.state == ConnectionState.connected
-
-# Advance time past the timeout window (4100ms since last HEARTBEAT)
-ADVANCE_TIME(2100)
-
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
-```
-
-### Assertions
-
-```pseudo
-ASSERT client.connection.state == ConnectionState.disconnected
-
-# Verify the client closed the WebSocket connection
-client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
-ASSERT client_close_events.length == 1
-```
-
----
-
-## RTN23a - Any protocol message resets idle timer
-
-**Spec requirement:** Any message from the server resets the idle timer, not just HEARTBEAT messages.
-
-Tests that receiving any protocol message (e.g., ACK, MESSAGE) keeps the connection alive, and that the client closes the WebSocket when it eventually times out.
-
-### Setup
-
-```pseudo
-channel_name = "test-RTN23a-message-${random_id()}"
-
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => {
-    conn.respond_with_success(ProtocolMessage(
-      action: CONNECTED,
-      connectionId: "connection-id",
-      connectionKey: "connection-key",
-      connectionDetails: ConnectionDetails(
-        connectionKey: "connection-key",
-        maxIdleInterval: 2000,  # 2 seconds
-        connectionStateTtl: 120000
-      )
-    ))
-  }
-)
-install_mock(mock_ws)
-
-client = Realtime(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  realtimeRequestTimeout: 1000,  # 1 second
-  autoConnect: false
-))
-```
-
-### Test Steps
-
-```pseudo
-enable_fake_timers()
-
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-
-# Advance time
-ADVANCE_TIME(1500)
-
-# Send ACK message from server - resets timer
-mock_ws.active_connection.send_to_client(ProtocolMessage(
-  action: ACK,
-  msgSerial: 0
-))
-
-# Advance time again
-ADVANCE_TIME(1500)
-
-# Connection should still be alive (timer was reset)
-ASSERT client.connection.state == ConnectionState.connected
-
-# Send MESSAGE from server - resets timer again
-mock_ws.active_connection.send_to_client(ProtocolMessage(
-  action: MESSAGE,
-  channel: channel_name,
-  messages: [
-    Message(name: "event", data: "data")
-  ]
-))
-
-# Advance time again
-ADVANCE_TIME(1500)
-
-# Still connected
-ASSERT client.connection.state == ConnectionState.connected
-
-# Advance time past timeout without any message
-ADVANCE_TIME(1600)
-
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
-```
-
-### Assertions
-
-```pseudo
-ASSERT client.connection.state == ConnectionState.disconnected
-
-# Verify the client closed the WebSocket connection
-client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
-ASSERT client_close_events.length == 1
-```
-
----
-
-## RTN23a - Heartbeat timeout triggers immediate reconnection
-
-**Spec requirement:** When a heartbeat timeout causes disconnection, the client should immediately attempt to reconnect (per RTN15a - DISCONNECTED state triggers reconnection).
-
-Tests that the client attempts to reconnect after a heartbeat timeout.
+Tests that receiving HEARTBEAT messages keeps the connection alive, and that when the timer eventually expires the client disconnects and reconnects.
 
 ### Setup
 
@@ -322,7 +196,7 @@ mock_ws = MockWebSocket(
       connectionKey: "connection-key-" + connection_attempt_count,
       connectionDetails: ConnectionDetails(
         connectionKey: "connection-key-" + connection_attempt_count,
-        maxIdleInterval: 2000,  # 2 seconds
+        maxIdleInterval: 3000,  # 3 seconds
         connectionStateTtl: 120000
       )
     ))
@@ -347,23 +221,232 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 ASSERT connection_attempt_count == 1
 
-# Advance time past maxIdleInterval + realtimeRequestTimeout to trigger timeout
-# = 2000 + 1000 = 3000ms
-ADVANCE_TIME(3100)
+# Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
+ADVANCE_TIME(2000)
+PUMP_EVENT_QUEUE()
 
-# Client should disconnect
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Send HEARTBEAT from server - resets timer
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: HEARTBEAT
+))
+PUMP_EVENT_QUEUE()
 
-# Client should immediately attempt to reconnect (RTN15a)
-# Allow time for the reconnection attempt
-ADVANCE_TIME(100)
+# Advance time again (2000ms since HEARTBEAT, still within threshold)
+ADVANCE_TIME(2000)
+PUMP_EVENT_QUEUE()
 
+# Connection should still be alive - no reconnection triggered
+ASSERT client.connection.state == ConnectionState.connected
+ASSERT connection_attempt_count == 1
+
+# Advance time past the timeout window (4100ms since last HEARTBEAT)
+ADVANCE_TIME(2100)
+PUMP_EVENT_QUEUE()
+
+# Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
 ### Assertions
 
 ```pseudo
+# Verify reconnection happened
+ASSERT connection_attempt_count == 2
+
+# Verify the client closed the first WebSocket connection
+client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
+ASSERT client_close_events.length == 1
+```
+
+---
+
+## RTN23a - Any protocol message resets idle timer
+
+**Spec requirement:** Any message from the server resets the idle timer, not just HEARTBEAT messages.
+
+Tests that receiving any protocol message (e.g., ACK, MESSAGE) keeps the connection alive, and that when the timer eventually expires the client disconnects and reconnects.
+
+### Setup
+
+```pseudo
+channel_name = "test-RTN23a-message-${random_id()}"
+connection_attempt_count = 0
+state_changes = []
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key-" + connection_attempt_count,
+        maxIdleInterval: 2000,  # 2 seconds
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  realtimeRequestTimeout: 1000,  # 1 second
+  autoConnect: false
+))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
+```
+
+### Test Steps
+
+```pseudo
+enable_fake_timers()
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Advance time (timeout is 2000+1000=3000ms)
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Send ACK message from server - resets timer
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: ACK,
+  msgSerial: 0
+))
+PUMP_EVENT_QUEUE()
+
+# Advance time again (1500ms since ACK, still within threshold)
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Connection should still be alive (timer was reset)
+ASSERT client.connection.state == ConnectionState.connected
+
+# Send MESSAGE from server - resets timer again
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "event", data: "data")
+  ]
+))
+PUMP_EVENT_QUEUE()
+
+# Advance time again (1500ms since MESSAGE)
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Still only one connection attempt - no timeout yet
+ASSERT connection_attempt_count == 1
+
+# Advance time past timeout without any message (3100ms since last activity)
+ADVANCE_TIME(3100)
+PUMP_EVENT_QUEUE()
+
+# Wait for reconnection to complete
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+### Assertions
+
+```pseudo
+# Verify the state change sequence includes disconnected
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
+# Verify two connection attempts were made
+ASSERT connection_attempt_count == 2
+
+# Verify the client closed the first WebSocket connection
+client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
+ASSERT client_close_events.length == 1
+```
+
+---
+
+## RTN23a - Heartbeat timeout triggers immediate reconnection
+
+**Spec requirement:** When a heartbeat timeout causes disconnection, the client should immediately attempt to reconnect (per RTN15a - DISCONNECTED state triggers reconnection).
+
+Tests that the client attempts to reconnect after a heartbeat timeout, verifying the complete state change sequence.
+
+### Setup
+
+```pseudo
+connection_attempt_count = 0
+state_changes = []
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key-" + connection_attempt_count,
+        maxIdleInterval: 2000,  # 2 seconds
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  realtimeRequestTimeout: 1000,  # 1 second
+  autoConnect: false
+))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
+```
+
+### Test Steps
+
+```pseudo
+enable_fake_timers()
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+ASSERT connection_attempt_count == 1
+
+# Advance time past maxIdleInterval + realtimeRequestTimeout
+# = 2000 + 1000 = 3000ms
+ADVANCE_TIME(3100)
+PUMP_EVENT_QUEUE()
+
+# Wait for reconnection to complete (immediate per RTN15a)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+### Assertions
+
+```pseudo
+# Verify the state change sequence shows disconnect then reconnect
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
 # Verify two connection attempts were made (initial + reconnect)
 ASSERT connection_attempt_count == 2
 
@@ -388,6 +471,7 @@ Tests that the reconnection attempt includes the resume parameters.
 
 ```pseudo
 connection_attempts = []
+state_changes = []
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
@@ -414,6 +498,11 @@ client = Realtime(options: ClientOptions(
   realtimeRequestTimeout: 1000,  # 1 second
   autoConnect: false
 ))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
 ```
 
 ### Test Steps
@@ -424,20 +513,26 @@ enable_fake_timers()
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Advance time past timeout to trigger disconnection
+# Advance time past timeout to trigger disconnection and reconnection
 ADVANCE_TIME(3100)
+PUMP_EVENT_QUEUE()
 
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
-
-# Allow reconnection
-ADVANCE_TIME(100)
-
+# Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
 ### Assertions
 
 ```pseudo
+# Verify the state change sequence
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
 ASSERT connection_attempts.length == 2
 
 # First connection should not have resume parameter
@@ -508,23 +603,27 @@ ASSERT captured_url.query_params["heartbeats"] == "false"
 
 ---
 
-## RTN23b - Disconnect after maxIdleInterval + realtimeRequestTimeout (no ping frames)
+## RTN23b - Disconnect and reconnect after maxIdleInterval + realtimeRequestTimeout (no ping frames)
 
-**Spec requirement:** If no activity (including ping frames) is received for `maxIdleInterval + realtimeRequestTimeout`, disconnect.
+**Spec requirement:** If no activity (including ping frames) is received for `maxIdleInterval + realtimeRequestTimeout`, disconnect and reconnect.
 
-Tests that the client disconnects and closes the WebSocket when no ping frames or messages are received.
+Tests the full disconnect/reconnect cycle when no ping frames or messages are received.
 
 ### Setup
 
 ```pseudo
+connection_attempt_count = 0
+state_changes = []
+
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
+    connection_attempt_count++
     conn.respond_with_success(ProtocolMessage(
       action: CONNECTED,
-      connectionId: "connection-id",
-      connectionKey: "connection-key",
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
       connectionDetails: ConnectionDetails(
-        connectionKey: "connection-key",
+        connectionKey: "connection-key-" + connection_attempt_count,
         maxIdleInterval: 5000,  # 5 seconds
         connectionStateTtl: 120000
       )
@@ -539,6 +638,11 @@ client = Realtime(options: ClientOptions(
   realtimeRequestTimeout: 2000,  # 2 seconds
   autoConnect: false
 ))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
 ```
 
 ### Test Steps
@@ -549,20 +653,36 @@ enable_fake_timers()
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
+ASSERT connection_attempt_count == 1
+
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 5000 + 2000 = 7000ms
 ADVANCE_TIME(7100)
+PUMP_EVENT_QUEUE()
 
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Wait for the reconnection to complete
+AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
 ### Assertions
 
 ```pseudo
-ASSERT client.connection.state == ConnectionState.disconnected
-ASSERT client.connection.errorReason IS NOT null
+# Verify the full state change sequence
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
 
-# Verify the client closed the WebSocket connection
+# Verify two connection attempts were made (initial + reconnect)
+ASSERT connection_attempt_count == 2
+
+# Verify we're connected with new connection details
+ASSERT client.connection.id == "connection-id-2"
+
+# Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
 ```
@@ -573,173 +693,7 @@ ASSERT client_close_events.length == 1
 
 **Spec requirement:** WebSocket ping frames count as activity indication and reset the idle timer.
 
-Tests that receiving ping frames keeps the connection alive, and that the client closes the WebSocket when it eventually times out.
-
-### Setup
-
-```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => {
-    conn.respond_with_success(ProtocolMessage(
-      action: CONNECTED,
-      connectionId: "connection-id",
-      connectionKey: "connection-key",
-      connectionDetails: ConnectionDetails(
-        connectionKey: "connection-key",
-        maxIdleInterval: 3000,  # 3 seconds
-        connectionStateTtl: 120000
-      )
-    ))
-  }
-)
-install_mock(mock_ws)
-
-client = Realtime(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  realtimeRequestTimeout: 1000,  # 1 second
-  autoConnect: false
-))
-```
-
-### Test Steps
-
-```pseudo
-enable_fake_timers()
-
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-
-# Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
-ADVANCE_TIME(2000)
-
-# Server sends ping frame - resets timer
-mock_ws.active_connection.send_ping_frame()
-
-# Advance time again (2000ms since ping, still within threshold)
-ADVANCE_TIME(2000)
-
-# Connection should still be alive
-ASSERT client.connection.state == ConnectionState.connected
-
-# Advance time past the timeout window (4100ms since last ping)
-ADVANCE_TIME(2100)
-
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
-```
-
-### Assertions
-
-```pseudo
-ASSERT client.connection.state == ConnectionState.disconnected
-
-# Verify the client closed the WebSocket connection
-client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
-ASSERT client_close_events.length == 1
-```
-
----
-
-## RTN23b - Any protocol message also resets idle timer
-
-**Spec requirement:** Any message from the server resets the idle timer, not just ping frames.
-
-Tests that both ping frames AND protocol messages reset the timer, and that the client closes the WebSocket when it eventually times out.
-
-### Setup
-
-```pseudo
-channel_name = "test-RTN23b-message-${random_id()}"
-
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => {
-    conn.respond_with_success(ProtocolMessage(
-      action: CONNECTED,
-      connectionId: "connection-id",
-      connectionKey: "connection-key",
-      connectionDetails: ConnectionDetails(
-        connectionKey: "connection-key",
-        maxIdleInterval: 2000,  # 2 seconds
-        connectionStateTtl: 120000
-      )
-    ))
-  }
-)
-install_mock(mock_ws)
-
-client = Realtime(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  realtimeRequestTimeout: 1000,  # 1 second
-  autoConnect: false
-))
-```
-
-### Test Steps
-
-```pseudo
-enable_fake_timers()
-
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-
-# Advance time
-ADVANCE_TIME(1500)
-
-# Send ping frame - resets timer
-mock_ws.active_connection.send_ping_frame()
-
-# Advance time
-ADVANCE_TIME(1500)
-
-# Still connected
-ASSERT client.connection.state == ConnectionState.connected
-
-# Send MESSAGE from server - also resets timer
-mock_ws.active_connection.send_to_client(ProtocolMessage(
-  action: MESSAGE,
-  channel: channel_name,
-  messages: [
-    Message(name: "event", data: "data")
-  ]
-))
-
-# Advance time
-ADVANCE_TIME(1500)
-
-# Still connected
-ASSERT client.connection.state == ConnectionState.connected
-
-# Send another ping frame
-mock_ws.active_connection.send_ping_frame()
-
-# Advance time
-ADVANCE_TIME(1500)
-
-# Still connected
-ASSERT client.connection.state == ConnectionState.connected
-
-# Advance time past timeout without any activity
-ADVANCE_TIME(1600)
-
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
-```
-
-### Assertions
-
-```pseudo
-ASSERT client.connection.state == ConnectionState.disconnected
-
-# Verify the client closed the WebSocket connection
-client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
-ASSERT client_close_events.length == 1
-```
-
----
-
-## RTN23b - Ping frame timeout triggers immediate reconnection
-
-**Spec requirement:** When a ping frame timeout causes disconnection, the client should immediately attempt to reconnect (per RTN15a - DISCONNECTED state triggers reconnection).
-
-Tests that the client attempts to reconnect after a ping frame timeout.
+Tests that receiving ping frames keeps the connection alive, and that when the timer eventually expires the client disconnects and reconnects.
 
 ### Setup
 
@@ -755,7 +709,7 @@ mock_ws = MockWebSocket(
       connectionKey: "connection-key-" + connection_attempt_count,
       connectionDetails: ConnectionDetails(
         connectionKey: "connection-key-" + connection_attempt_count,
-        maxIdleInterval: 2000,  # 2 seconds
+        maxIdleInterval: 3000,  # 3 seconds
         connectionStateTtl: 120000
       )
     ))
@@ -780,23 +734,238 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 ASSERT connection_attempt_count == 1
 
-# Advance time past maxIdleInterval + realtimeRequestTimeout to trigger timeout
-# = 2000 + 1000 = 3000ms
-ADVANCE_TIME(3100)
+# Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
+ADVANCE_TIME(2000)
+PUMP_EVENT_QUEUE()
 
-# Client should disconnect
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Server sends ping frame - resets timer
+mock_ws.active_connection.send_ping_frame()
+PUMP_EVENT_QUEUE()
 
-# Client should immediately attempt to reconnect (RTN15a)
-# Allow time for the reconnection attempt
-ADVANCE_TIME(100)
+# Advance time again (2000ms since ping, still within threshold)
+ADVANCE_TIME(2000)
+PUMP_EVENT_QUEUE()
 
+# Connection should still be alive - no reconnection triggered
+ASSERT client.connection.state == ConnectionState.connected
+ASSERT connection_attempt_count == 1
+
+# Advance time past the timeout window (4100ms since last ping)
+ADVANCE_TIME(2100)
+PUMP_EVENT_QUEUE()
+
+# Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
 ### Assertions
 
 ```pseudo
+# Verify reconnection happened
+ASSERT connection_attempt_count == 2
+
+# Verify the client closed the first WebSocket connection
+client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
+ASSERT client_close_events.length == 1
+```
+
+---
+
+## RTN23b - Any protocol message also resets idle timer
+
+**Spec requirement:** Any message from the server resets the idle timer, not just ping frames.
+
+Tests that both ping frames AND protocol messages reset the timer, and that when the timer eventually expires the client disconnects and reconnects.
+
+### Setup
+
+```pseudo
+channel_name = "test-RTN23b-message-${random_id()}"
+connection_attempt_count = 0
+state_changes = []
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key-" + connection_attempt_count,
+        maxIdleInterval: 2000,  # 2 seconds
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  realtimeRequestTimeout: 1000,  # 1 second
+  autoConnect: false
+))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
+```
+
+### Test Steps
+
+```pseudo
+enable_fake_timers()
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Advance time
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Send ping frame - resets timer
+mock_ws.active_connection.send_ping_frame()
+PUMP_EVENT_QUEUE()
+
+# Advance time
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Still connected
+ASSERT client.connection.state == ConnectionState.connected
+
+# Send MESSAGE from server - also resets timer
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "event", data: "data")
+  ]
+))
+PUMP_EVENT_QUEUE()
+
+# Advance time
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Still connected
+ASSERT client.connection.state == ConnectionState.connected
+
+# Send another ping frame
+mock_ws.active_connection.send_ping_frame()
+PUMP_EVENT_QUEUE()
+
+# Advance time
+ADVANCE_TIME(1500)
+PUMP_EVENT_QUEUE()
+
+# Still only one connection attempt
+ASSERT connection_attempt_count == 1
+
+# Advance time past timeout without any activity
+ADVANCE_TIME(1600)
+PUMP_EVENT_QUEUE()
+
+# Wait for reconnection to complete
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+### Assertions
+
+```pseudo
+# Verify the state change sequence includes disconnected
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
+# Verify two connection attempts
+ASSERT connection_attempt_count == 2
+
+# Verify the client closed the first WebSocket connection
+client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
+ASSERT client_close_events.length == 1
+```
+
+---
+
+## RTN23b - Ping frame timeout triggers immediate reconnection
+
+**Spec requirement:** When a ping frame timeout causes disconnection, the client should immediately attempt to reconnect (per RTN15a - DISCONNECTED state triggers reconnection).
+
+Tests that the client attempts to reconnect after a ping frame timeout, verifying the complete state change sequence.
+
+### Setup
+
+```pseudo
+connection_attempt_count = 0
+state_changes = []
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key-" + connection_attempt_count,
+        maxIdleInterval: 2000,  # 2 seconds
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  realtimeRequestTimeout: 1000,  # 1 second
+  autoConnect: false
+))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
+```
+
+### Test Steps
+
+```pseudo
+enable_fake_timers()
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+ASSERT connection_attempt_count == 1
+
+# Advance time past maxIdleInterval + realtimeRequestTimeout
+# = 2000 + 1000 = 3000ms
+ADVANCE_TIME(3100)
+PUMP_EVENT_QUEUE()
+
+# Wait for reconnection to complete (immediate per RTN15a)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+### Assertions
+
+```pseudo
+# Verify the state change sequence shows disconnect then reconnect
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
 # Verify two connection attempts were made (initial + reconnect)
 ASSERT connection_attempt_count == 2
 
@@ -821,6 +990,7 @@ Tests that the reconnection attempt includes the resume parameters.
 
 ```pseudo
 connection_attempts = []
+state_changes = []
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
@@ -847,6 +1017,11 @@ client = Realtime(options: ClientOptions(
   realtimeRequestTimeout: 1000,  # 1 second
   autoConnect: false
 ))
+
+# Record all state changes
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
 ```
 
 ### Test Steps
@@ -857,20 +1032,26 @@ enable_fake_timers()
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Advance time past timeout to trigger disconnection
+# Advance time past timeout to trigger disconnection and reconnection
 ADVANCE_TIME(3100)
+PUMP_EVENT_QUEUE()
 
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
-
-# Allow reconnection
-ADVANCE_TIME(100)
-
+# Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
 ### Assertions
 
 ```pseudo
+# Verify the state change sequence
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
 ASSERT connection_attempts.length == 2
 
 # First connection should not have resume parameter
@@ -971,30 +1152,11 @@ These tests use `enable_fake_timers()` and `ADVANCE_TIME()` to avoid slow tests.
 3. **Or use very short timeout values** (e.g., 50ms instead of 5s)
 4. **Last resort:** Use actual delays with generous test timeouts
 
-## Verifying Transient States
+## State Sequence Assertion Pattern
 
-When testing heartbeat timeout behavior, the connection may pass through DISCONNECTED state very quickly due to immediate reconnection (RTN15a). Do not attempt to catch the DISCONNECTED state directly - instead, record the full sequence of state changes and verify it at the end:
+All heartbeat tests that involve disconnection follow the same pattern: record the full sequence of state changes, let the complete cycle play out, then assert the sequence at the end. This avoids flaky tests caused by trying to observe transient intermediate states (like DISCONNECTED) that may pass too quickly due to immediate reconnection (RTN15a).
 
-```pseudo
-state_changes = []
-client.connection.on().listen((change) => {
-  state_changes.append(change.current)
-})
-
-# Trigger timeout and reconnection
-ADVANCE_TIME(maxIdleInterval + realtimeRequestTimeout + buffer)
-PUMP_EVENT_QUEUE()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-
-# Verify the sequence included DISCONNECTED
-ASSERT state_changes CONTAINS_IN_ORDER [
-  ConnectionState.connecting,
-  ConnectionState.connected,
-  ConnectionState.disconnected,
-  ConnectionState.connecting,
-  ConnectionState.connected
-]
-```
+The `CONTAINS_IN_ORDER` assertion verifies that the expected states appear in the recorded sequence in the correct order, without requiring that they are the only states present (allowing for implementation-specific intermediate states).
 
 See `mock_websocket.md` for more details on event sequence verification.
 
