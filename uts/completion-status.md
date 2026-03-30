@@ -173,7 +173,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN4 | Connection event emission (RTN4a–RTN4i) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN4b, RTN4c; `realtime/unit/connection/update_events_test.md` covers RTN4h |
 | RTN5 | Concurrency test (50+ clients) | |
 | RTN6 | Successful connection definition | |
-| RTN7 | ACK and NACK handling (RTN7a–RTN7e) | Partial — `realtime/unit/channels/channel_publish.md` covers RTN7a, RTN7b (via RTL6j tests) |
+| RTN7 | ACK and NACK handling (RTN7a–RTN7e) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN7a, RTN7b (via RTL6j tests), RTN7d, RTN7e |
 | RTN8 | Connection#id attribute (RTN8a–RTN8c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
 | RTN9 | Connection#key attribute (RTN9a–RTN9c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
 | RTN11 | Connect function (RTN11a–RTN11f) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN11; `realtime/unit/connection/error_reason_test.md` covers RTN11d |
@@ -183,7 +183,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN15 | Connection failures when CONNECTED (RTN15a–RTN15j) | Yes — `realtime/unit/connection/connection_failures_test.md` |
 | RTN16 | Connection recovery (RTN16a–RTN16m1) | Partial — `realtime/unit/connection/error_reason_test.md` covers RTN16e |
 | RTN17 | Domain selection and fallback (RTN17a–RTN17j) | Yes — `realtime/unit/connection/fallback_hosts_test.md` |
-| RTN19 | Transport state side effects (RTN19a–RTN19b) | |
+| RTN19 | Transport state side effects (RTN19a–RTN19b) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN19a, RTN19a2, RTN19b |
 | RTN20 | OS network change handling (RTN20a–RTN20c) | |
 | RTN21 | ConnectionDetails override defaults | Partial — `realtime/unit/connection/update_events_test.md` covers RTN21; `realtime/integration/connection_lifecycle_test.md` covers RTN21 |
 | RTN22 | Re-authentication request handling (RTN22a) | |
