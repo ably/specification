@@ -449,23 +449,10 @@ poll_until(
   timeout: 10s
 )
 
-# Good - pump event queue and wait for state
+# Good - advance time and wait for state
 ADVANCE_TIME(3000)
-PUMP_EVENT_QUEUE()
 AWAIT_STATE state == disconnected
 ```
-
-### Pumping the Event Queue
-
-After advancing fake timers, async callbacks may be scheduled but not yet executed. Use `PUMP_EVENT_QUEUE()` to process pending microtasks and timer events:
-
-```pseudo
-ADVANCE_TIME(5000)        # Schedules timeout callback
-PUMP_EVENT_QUEUE()        # Executes scheduled callbacks
-AWAIT_STATE state == x    # Wait for resulting state change
-```
-
-In Dart, this is typically `await Future.delayed(Duration.zero)`. Multiple chained async operations may require multiple pumps.
 
 ### Verifying Transient States (Record-and-Verify Pattern)
 
@@ -486,7 +473,6 @@ client.connection.on((change) => {
 
 # 2. Trigger disconnect and let cycle complete
 ws_connection.simulate_disconnect()
-PUMP_EVENT_QUEUE()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # 3. Verify the full sequence at the end
@@ -512,7 +498,6 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 state_changes = []
 client.connection.on((change) => { state_changes.append(change.current) })
 ws_connection.simulate_disconnect()
-PUMP_EVENT_QUEUE()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ASSERT state_changes CONTAINS_IN_ORDER [disconnected, connecting, connected]
 ```
@@ -531,11 +516,9 @@ enable_fake_timers()
 # Trigger disconnect, then advance time in increments
 # until the client reconnects or we give up
 ws_connection.simulate_disconnect()
-PUMP_EVENT_QUEUE()
 
 LOOP up to 15 times:
   ADVANCE_TIME(2500)
-  PUMP_EVENT_QUEUE()
   IF client.connection.state == ConnectionState.connected:
     BREAK
 
@@ -753,6 +736,10 @@ uts/test/
 └── README.md
 ```
 
+## Completion Status Matrix
+
+When adding a new test spec, update the completion status matrix at `uts/test/completion-status.md` to reflect the newly covered spec items. This matrix tracks which spec items have UTS test specs and which do not.
+
 ## Writing Tips
 
 1. **Reference spec points** in test names and file headers
@@ -767,6 +754,7 @@ uts/test/
 10. **Use handler pattern for simple tests**, await pattern for complex coordination
 11. **Distinguish connection-level vs request-level failures**
 12. **Use unique channel names** to avoid test interference
+13. **Update `uts/test/completion-status.md`** when adding new test specs
 
 ## Example Test Spec (Modern Pattern)
 
@@ -880,4 +868,4 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
     ✅ Record all state changes and use `CONTAINS_IN_ORDER` to verify the sequence at the end
 
 16. ❌ Using exact `ADVANCE_TIME` calculations for multi-retry scenarios: `ADVANCE_TIME(6000); ADVANCE_TIME(1000)`
-    ✅ Use a time-advancement loop: `LOOP up to N times: ADVANCE_TIME(increment); PUMP_EVENT_QUEUE()`
+    ✅ Use a time-advancement loop: `LOOP up to N times: ADVANCE_TIME(increment)`

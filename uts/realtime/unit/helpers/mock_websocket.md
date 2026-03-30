@@ -348,32 +348,6 @@ respond_with_success(connected_message):
   })
 ```
 
-### Pumping the Event Queue
-
-After advancing fake timers or triggering async operations, tests may need to "pump" the event queue to allow scheduled callbacks to execute:
-
-```pseudo
-# Pump the event queue to process pending microtasks and timer events
-PUMP_EVENT_QUEUE()
-```
-
-**Implementation notes:**
-
-- **Microtasks** (e.g., `scheduleMicrotask`, `Future.value().then()`) run before timer events
-- **Timer events** (e.g., `Timer.run`, `Future.delayed(Duration.zero)`) run after all microtasks
-- Multiple chained async operations may require multiple pumps
-
-In Dart, `await Future.delayed(Duration.zero)` yields to the event loop and allows pending timer events to fire. For nested async chains, multiple pumps may be needed:
-
-```dart
-// Pump the event queue multiple times for nested async operations
-Future<void> pumpEventQueue([int times = 5]) async {
-  for (var i = 0; i < times; i++) {
-    await Future<void>.delayed(Duration.zero);
-  }
-}
-```
-
 ### Avoiding Arbitrary Real-Time Delays
 
 Tests should **never** use fixed real-time delays like `await Future.delayed(Duration(milliseconds: 100))`. These cause:
@@ -383,7 +357,6 @@ Tests should **never** use fixed real-time delays like `await Future.delayed(Dur
 
 Instead:
 - Use fake timers with `ADVANCE_TIME()`
-- Pump the event queue with `PUMP_EVENT_QUEUE()` or `await Future.delayed(Duration.zero)`
 - Wait for specific state changes with `AWAIT_STATE`
 
 ```pseudo
@@ -392,9 +365,8 @@ ADVANCE_TIME(3000)
 WAIT 100ms  # Real-time delay - flaky!
 ASSERT state == disconnected
 
-# GOOD - pump event queue and wait for state
+# GOOD - advance time and wait for state
 ADVANCE_TIME(3000)
-PUMP_EVENT_QUEUE()
 AWAIT_STATE state == disconnected
 ```
 
@@ -414,7 +386,6 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Trigger disconnect and reconnect
 mock_ws.active_connection.simulate_disconnect()
-PUMP_EVENT_QUEUE()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Verify the sequence included the expected states
