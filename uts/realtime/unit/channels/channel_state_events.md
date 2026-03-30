@@ -268,9 +268,13 @@ ASSERT attached_events[0].event == ChannelEvent.attached
 
 ## RTL2g - UPDATE event for condition changes without state change
 
-**Spec requirement:** It emits an UPDATE ChannelEvent for changes to channel conditions for which the ChannelState does not change.
+**Spec requirement:** It emits an UPDATE ChannelEvent for changes to channel
+conditions for which the ChannelState does not change, unless explicitly
+prevented by a more specific condition (see RTL12).
 
-Tests that UPDATE events are emitted when channel conditions change without state change.
+Tests that UPDATE events are emitted when channel conditions change without
+state change. Per RTL12, the additional ATTACHED must NOT have the RESUMED flag
+set (resumed=true suppresses the UPDATE event).
 
 ### Setup
 ```pseudo
@@ -301,25 +305,27 @@ client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 
-# Server sends another ATTACHED message (e.g., after resume)
-# This should trigger UPDATE, not a state change
+# Server sends another ATTACHED message without RESUMED flag
+# (e.g., loss of message continuity after transport resume)
+# Per RTL12, this should trigger UPDATE because resumed=false
 mock_ws.send_to_client(ProtocolMessage(
   action: ATTACHED,
-  channel: channel_name,
-  flags: RESUMED  # Indicates resumed attachment (TR3c, bit 2)
+  channel: channel_name
+  # No RESUMED flag — indicates loss of continuity
 ))
 
 # Wait for the event to be processed
-AWAIT Future.delayed(Duration(milliseconds: 100))
+AWAIT Future.delayed(Duration.zero)
 ```
 
 ### Assertions
 ```pseudo
 ASSERT channel.state == ChannelState.attached  # State unchanged
-ASSERT length(update_events) >= 1
+ASSERT length(update_events) == 1
 ASSERT update_events[0].event == ChannelEvent.update
 ASSERT update_events[0].current == ChannelState.attached
 ASSERT update_events[0].previous == ChannelState.attached
+ASSERT update_events[0].resumed == false
 ```
 
 ---
@@ -361,13 +367,14 @@ AWAIT channel.attach()
 
 initial_count = length(all_events)
 
-# Server sends another ATTACHED message
+# Server sends another ATTACHED message (no RESUMED flag)
+# Per RTL12, this triggers UPDATE (not a duplicate state event)
 mock_ws.send_to_client(ProtocolMessage(
   action: ATTACHED,
   channel: channel_name
 ))
 
-AWAIT Future.delayed(Duration(milliseconds: 100))
+AWAIT Future.delayed(Duration.zero)
 ```
 
 ### Assertions
