@@ -184,6 +184,8 @@ ASSERT request_id_1 == request_id_2  # Same ID for retry
 
 Tests that the correct protocol (MessagePack or JSON) is used based on configuration.
 
+**Note:** This test covers both `Content-Type` and `Accept` headers for the configured protocol. RSC8c below tests the same assertions in a single-case form for clarity. The two tests are complementary — RSC8a/b focuses on protocol *selection*, RSC8c on header *consistency*.
+
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
