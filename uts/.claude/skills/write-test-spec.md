@@ -271,6 +271,39 @@ ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "
 ASSERT request.url.path CONTAINS "/channels/"
 ```
 
+### Serialization and Deserialization
+
+Use `toJson()` and `fromJson()` as the portable pseudocode names for serializing to and deserializing from wire format. These are language-agnostic — implementations will map them to the appropriate mechanism (e.g., `toMap()`/`fromMap()` in Dart, `toJSON()`/`fromJSON()` in JavaScript, `to_dict()`/`from_dict()` in Python).
+
+```pseudo
+# Serializing to wire format
+json_data = message.toJson()
+ASSERT json_data["action"] == 1
+ASSERT json_data["serial"] == "s1"
+
+# Deserializing from wire format
+msg = Message.fromJson({
+  "serial": "msg-serial-1",
+  "name": "test",
+  "data": "hello"
+})
+ASSERT msg.serial == "msg-serial-1"
+```
+
+**Do NOT use language-specific names:**
+```pseudo
+# BAD - Dart-specific
+map = message.toMap()
+msg = Message.fromMap({...})
+
+# BAD - Python-specific
+d = message.to_dict()
+
+# GOOD - portable
+json_data = message.toJson()
+msg = Message.fromJson({...})
+```
+
 ### Type Assertions
 
 Type assertions verify object types/interfaces. Implementation varies by language:
@@ -887,6 +920,9 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
 
 18. ❌ Mock echo missing fields that the test later asserts on (e.g. omitting `data` from a PRESENCE echo, then asserting `member.data`)
     ✅ Include all fields in the mock echo that the test assertions depend on
+
+19. ❌ Using language-specific serialization names: `toMap()`, `fromMap()`, `to_dict()`
+    ✅ Use portable `toJson()` / `fromJson()` for wire format serialization
 
 ### Keeping UTS and Dart Tests in Sync
 
