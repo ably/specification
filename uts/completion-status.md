@@ -244,14 +244,14 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 |-----------|-------------|---------------|
 | RTP1 | HAS_PRESENCE flag and SYNC | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTP2 | PresenceMap maintenance (RTP2a–RTP2h2) | Yes — `realtime/unit/presence/presence_map.md` |
-| RTP4 | Large member count test | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP4 | Large member count test | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
 | RTP5 | Channel state side effects (RTP5a–RTP5f) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
-| RTP6 | Subscribe function (RTP6a–RTP6e) | Yes — `realtime/unit/presence/realtime_presence_subscribe.md` |
+| RTP6 | Subscribe function (RTP6a–RTP6e) | Yes — `realtime/unit/presence/realtime_presence_subscribe.md`, `realtime/integration/presence_lifecycle_test.md` |
 | RTP7 | Unsubscribe function (RTP7a–RTP7c) | Yes — `realtime/unit/presence/realtime_presence_subscribe.md` |
-| RTP8 | Enter function (RTP8a–RTP8j) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
-| RTP9 | Update function (RTP9a–RTP9e) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
-| RTP10 | Leave function (RTP10a–RTP10e) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
-| RTP11 | Get function (RTP11a–RTP11d) | Yes — `realtime/unit/presence/realtime_presence_get.md` |
+| RTP8 | Enter function (RTP8a–RTP8j) | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
+| RTP9 | Update function (RTP9a–RTP9e) | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
+| RTP10 | Leave function (RTP10a–RTP10e) | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
+| RTP11 | Get function (RTP11a–RTP11d) | Yes — `realtime/unit/presence/realtime_presence_get.md`, `realtime/integration/presence_lifecycle_test.md` |
 | RTP12 | History function (RTP12a–RTP12d) | Yes — `realtime/unit/presence/realtime_presence_history.md` |
 | RTP13 | SyncComplete attribute | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTP14 | EnterClient function (RTP14a–RTP14d) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
