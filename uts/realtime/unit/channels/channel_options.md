@@ -128,6 +128,8 @@ Tests that get() with options sets them on new channels.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3b-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 channelOptions = RealtimeChannelOptions(
@@ -138,7 +140,7 @@ channelOptions = RealtimeChannelOptions(
 
 ### Test Steps
 ```pseudo
-channel = client.channels.get("test-channel", channelOptions)
+channel = client.channels.get(channel_name, channelOptions)
 ```
 
 ### Assertions
@@ -157,11 +159,13 @@ Tests that get() with options updates existing channel (when no reattachment nee
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3c-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 # Create channel with initial options
 initialOptions = RealtimeChannelOptions(attachOnSubscribe: false)
-channel = client.channels.get("test-channel", initialOptions)
+channel = client.channels.get(channel_name, initialOptions)
 ```
 
 ### Test Steps
@@ -171,7 +175,7 @@ newOptions = RealtimeChannelOptions(
   cipherParams: CipherParams.fromKey(someKey),
   attachOnSubscribe: true
 )
-sameChannel = client.channels.get("test-channel", newOptions)
+sameChannel = client.channels.get(channel_name, newOptions)
 ```
 
 ### Assertions
@@ -191,10 +195,12 @@ Tests that get() throws error when params/modes change on attached channel.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3c1-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 # Create and attach channel
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 AWAIT channel.attach()
 ASSERT channel.state == ChannelState.attached
 ```
@@ -206,7 +212,7 @@ newOptions = RealtimeChannelOptions(
   params: {"rewind": "1"}  # params triggers reattachment
 )
 
-client.channels.get("test-channel", newOptions) FAILS WITH error
+client.channels.get(channel_name, newOptions) FAILS WITH error
 ASSERT error.code == 40000
 
 # Channel options should not have changed
@@ -223,9 +229,11 @@ Tests error when modes change on attaching channel.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTS3c1-attaching-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 # Put channel in attaching state (implementation detail)
 ```
 
@@ -235,7 +243,7 @@ newOptions = RealtimeChannelOptions(
   modes: [ChannelMode.subscribe]  # modes triggers reattachment
 )
 
-client.channels.get("test-channel", newOptions) FAILS WITH error
+client.channels.get(channel_name, newOptions) FAILS WITH error
 ASSERT error.code == 40000
 ```
 
@@ -249,8 +257,10 @@ Tests that setOptions updates the channel options.
 
 ### Setup
 ```pseudo
+channel_name = "test-RTL16-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
@@ -278,8 +288,10 @@ Tests that setOptions with params/modes on attached channel triggers reattachmen
 
 ### Setup
 ```pseudo
+channel_name = "test-RTL16a-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 AWAIT channel.attach()
 ASSERT channel.state == ChannelState.attached
 ```
@@ -313,6 +325,8 @@ Tests that getDerived creates a channel with the correct derived name.
 
 ### Setup
 ```pseudo
+base_channel_name = "test-RTS5a-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 deriveOptions = DeriveOptions(filter: "name == 'foo'")
@@ -320,14 +334,14 @@ deriveOptions = DeriveOptions(filter: "name == 'foo'")
 
 ### Test Steps
 ```pseudo
-channel = client.channels.getDerived("base-channel", deriveOptions)
+channel = client.channels.getDerived(base_channel_name, deriveOptions)
 ```
 
 ### Assertions
 ```pseudo
 # Channel name should be encoded with filter
 ASSERT channel.name STARTS WITH "[filter="
-ASSERT channel.name ENDS WITH "]base-channel"
+ASSERT channel.name ENDS WITH "]" + base_channel_name
 ```
 
 ---
@@ -340,6 +354,8 @@ Tests that the filter expression is base64 encoded in the channel name.
 
 ### Setup
 ```pseudo
+base_channel_name = "test-RTS5a1-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 filter = "name == 'test'"
@@ -348,13 +364,13 @@ deriveOptions = DeriveOptions(filter: filter)
 
 ### Test Steps
 ```pseudo
-channel = client.channels.getDerived("my-channel", deriveOptions)
+channel = client.channels.getDerived(base_channel_name, deriveOptions)
 expectedEncoded = base64_encode(filter)  # "bmFtZSA9PSAndGVzdCc="
 ```
 
 ### Assertions
 ```pseudo
-ASSERT channel.name == "[filter=" + expectedEncoded + "]my-channel"
+ASSERT channel.name == "[filter=" + expectedEncoded + "]" + base_channel_name
 ```
 
 ---
@@ -367,6 +383,8 @@ Tests that channel params are included in the derived channel name.
 
 ### Setup
 ```pseudo
+base_channel_name = "test-RTS5a2-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 deriveOptions = DeriveOptions(filter: "type == 'message'")
@@ -377,14 +395,14 @@ channelOptions = RealtimeChannelOptions(
 
 ### Test Steps
 ```pseudo
-channel = client.channels.getDerived("events", deriveOptions, channelOptions)
+channel = client.channels.getDerived(base_channel_name, deriveOptions, channelOptions)
 ```
 
 ### Assertions
 ```pseudo
 # Parse the channel name to extract the qualifier and base name
 # Expected format: [filter=<base64>?param1=val1&param2=val2]baseName
-ASSERT channel.name ENDS WITH "]events"
+ASSERT channel.name ENDS WITH "]" + base_channel_name
 
 # Extract the qualifier (everything between [ and ])
 qualifier = extract_between(channel.name, "[", "]")
@@ -413,6 +431,8 @@ Tests that getDerived passes options to the created channel.
 
 ### Setup
 ```pseudo
+base_channel_name = "test-RTS5-${random_id()}"
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 
 deriveOptions = DeriveOptions(filter: "true")
@@ -424,7 +444,7 @@ channelOptions = RealtimeChannelOptions(
 
 ### Test Steps
 ```pseudo
-channel = client.channels.getDerived("test", deriveOptions, channelOptions)
+channel = client.channels.getDerived(base_channel_name, deriveOptions, channelOptions)
 ```
 
 ### Assertions
