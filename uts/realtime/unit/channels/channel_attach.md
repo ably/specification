@@ -731,8 +731,8 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT captured_attach_message IS NOT null
 ASSERT captured_attach_message.flags IS NOT null
-# Flags should include PUBLISH (65536) and SUBSCRIBE (262144) bits
-ASSERT (captured_attach_message.flags AND 65536) != 0   # PUBLISH bit set
+# Flags should include PUBLISH (131072, TR3r bit 17) and SUBSCRIBE (262144, TR3s bit 18) bits
+ASSERT (captured_attach_message.flags AND 131072) != 0   # PUBLISH bit set
 ASSERT (captured_attach_message.flags AND 262144) != 0  # SUBSCRIBE bit set
 ```
 
@@ -755,7 +755,7 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(ProtocolMessage(
         action: ATTACHED,
         channel: channel_name,
-        flags: 327680  # PUBLISH (65536) + SUBSCRIBE (262144)
+        flags: 393216  # PUBLISH (131072, TR3r) + SUBSCRIBE (262144, TR3s)
       ))
   }
 )
