@@ -25,7 +25,7 @@ nullable types (e.g. `int?` / `String?` in Dart, `Integer` / `String` in Java,
 
 ## RSA5 - TTL is null when not specified
 
-**Spec requirement:** TTL for new tokens is specified in milliseconds. If the user-provided `tokenParams` does not specify a TTL, the TTL field should be null in the `tokenRequest`, and Ably will supply a token with a TTL of 60 minutes.
+**Spec requirement:** TTL for new tokens is specified in milliseconds. If the user-provided `tokenParams` does not specify a TTL, the TTL field MUST be null (or the equivalent absent/unset value) in the `tokenRequest`, and Ably will supply a token with a TTL of 60 minutes. Implementations MUST NOT default this to 3600000 client-side.
 
 Tests that `createTokenRequest()` without explicit TTL produces a token request
 with a null `ttl`, rather than a client-side default like 3600000.
@@ -123,7 +123,7 @@ ASSERT token_request.ttl == 600000
 
 ## RSA6 - Capability is null when not specified
 
-**Spec requirement:** The `capability` for new tokens is JSON stringified. If the user-provided `tokenParams` does not specify capabilities, the `capability` field should be null in the `tokenRequest`, and Ably will supply a token with the capabilities of the underlying key.
+**Spec requirement:** The `capability` for new tokens is JSON stringified. If the user-provided `tokenParams` does not specify capabilities, the `capability` field MUST be null (or the equivalent absent/unset value) in the `tokenRequest`, and Ably will supply a token with the capabilities of the underlying key. Implementations MUST NOT default this to '{"*":["*"]}' client-side.
 
 Tests that `createTokenRequest()` without explicit capability produces a token
 request with a null `capability`, rather than a client-side default like `{"*":["*"]}`.
