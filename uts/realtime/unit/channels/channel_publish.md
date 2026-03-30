@@ -1,6 +1,6 @@
 # RealtimeChannel Publish Tests
 
-Spec points: `RTL6`, `RTL6a`, `RTL6c`, `RTL6c1`, `RTL6c2`, `RTL6c4`, `RTL6c5`, `RTL6i`, `RTL6i1`, `RTL6i2`, `RTL6i3`, `RTL6j`
+Spec points: `RTL6`, `RTL6a`, `RTL6c`, `RTL6c1`, `RTL6c2`, `RTL6c4`, `RTL6c5`, `RTL6i`, `RTL6i1`, `RTL6i2`, `RTL6i3`, `RTL6j`, `RTN7d`, `RTN7e`, `RTN19a`, `RTN19a2`, `RTN19b`
 
 ## Test Type
 Unit test with mocked WebSocket
@@ -1252,4 +1252,846 @@ AWAIT channel.publish(name: "rejected", data: "data") FAILS WITH error
 ASSERT error IS NOT null
 ASSERT error.code == 40160
 ASSERT error.message == "Publish rejected"
+```
+
+---
+
+## RTN7e - Pending publishes fail when connection enters SUSPENDED
+
+| Spec | Requirement |
+|------|-------------|
+| RTN7e | If a connection enters the SUSPENDED, CLOSED or FAILED state, and an ACK or NACK has not yet been received for a message submitted to the connection, the client should consider the delivery of those messages as failed, meaning their callback should be called with an error representing the reason for the state change, and they should be removed from any RTN19a retry queue. |
+
+Tests that messages awaiting ACK/NACK are failed with the state change reason when the connection enters SUSPENDED.
+
+### Setup
+```pseudo
+channel_name = "test-RTN7e-suspended-${random_id()}"
+
+enable_fake_timers()
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      # Do NOT send ACK — leave message pending
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false,
+  disconnectedRetryTimeout: 1000,
+  connectionStateTtl: 5000
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish but don't ACK — message stays pending
+publish_future = channel.publish(name: "pending", data: "data")
+
+# Disconnect and refuse all reconnection attempts so connection enters SUSPENDED
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_refused()
+)
+install_mock(mock_ws)
+
+mock_ws.active_connection.simulate_disconnect()
+
+# Advance time until connection enters SUSPENDED
+LOOP up to 15 times:
+  ADVANCE_TIME(2000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.suspended
+
+# The pending publish should now fail
+AWAIT publish_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error IS NOT null
+ASSERT error.code IS NOT null
+```
+
+---
+
+## RTN7e - Pending publishes fail when connection enters CLOSED
+
+**Spec requirement:** If a connection enters the CLOSED state, pending messages are failed with an error representing the reason for the state change.
+
+Tests that messages awaiting ACK/NACK are failed when the connection is explicitly closed.
+
+### Setup
+```pseudo
+channel_name = "test-RTN7e-closed-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      # Do NOT send ACK — leave message pending
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish but don't ACK — message stays pending
+publish_future = channel.publish(name: "pending", data: "data")
+
+# Close the connection
+AWAIT client.close()
+ASSERT client.connection.state == ConnectionState.closed
+
+# The pending publish should now fail
+AWAIT publish_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error IS NOT null
+ASSERT error.code IS NOT null
+```
+
+---
+
+## RTN7e - Pending publishes fail when connection enters FAILED
+
+**Spec requirement:** If a connection enters the FAILED state, pending messages are failed with an error representing the reason for the state change.
+
+Tests that messages awaiting ACK/NACK are failed when the connection enters FAILED.
+
+### Setup
+```pseudo
+channel_name = "test-RTN7e-failed-${random_id()}"
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    IF connection_count == 1:
+      conn.respond_with_success(CONNECTED_MESSAGE)
+    ELSE:
+      # Fatal error on reconnection attempt
+      conn.respond_with_success()
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      # Do NOT send ACK — leave message pending
+      # Send a fatal error to force FAILED state
+      mock_ws.active_connection.send_to_client_and_close(ProtocolMessage(
+        action: ERROR,
+        error: ErrorInfo(code: 80000, message: "Fatal error")
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish — server responds with fatal ERROR instead of ACK
+publish_future = channel.publish(name: "pending", data: "data")
+
+AWAIT_STATE client.connection.state == ConnectionState.failed
+
+# The pending publish should now fail
+AWAIT publish_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error IS NOT null
+ASSERT error.code IS NOT null
+```
+
+---
+
+## RTN7e - Multiple pending publishes all fail on state change
+
+**Spec requirement:** All messages awaiting ACK/NACK are failed when the connection enters a terminal state.
+
+Tests that when multiple publishes are pending and the connection enters CLOSED, all of them fail.
+
+### Setup
+```pseudo
+channel_name = "test-RTN7e-multi-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      # Do NOT send ACK — leave all messages pending
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish multiple messages, none will be ACK'd
+future1 = channel.publish(name: "msg1", data: "data1")
+future2 = channel.publish(name: "msg2", data: "data2")
+future3 = channel.publish(name: "msg3", data: "data3")
+
+# Close the connection
+AWAIT client.close()
+
+# All pending publishes should fail
+AWAIT future1 FAILS WITH error1
+AWAIT future2 FAILS WITH error2
+AWAIT future3 FAILS WITH error3
+```
+
+### Assertions
+```pseudo
+ASSERT error1 IS NOT null
+ASSERT error2 IS NOT null
+ASSERT error3 IS NOT null
+```
+
+---
+
+## RTN7d - Pending publishes fail on DISCONNECTED when queueMessages is false
+
+| Spec | Requirement |
+|------|-------------|
+| RTN7d | If the `queueMessages` client option (TO3g) has been set to false, then when a connection enters the DISCONNECTED state, any messages which have not yet been ACK'd should be considered to have failed, with the same effect as in RTN7e. |
+
+Tests that when queueMessages is false and the connection becomes DISCONNECTED, pending messages awaiting ACK/NACK are failed immediately.
+
+### Setup
+```pseudo
+channel_name = "test-RTN7d-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      # Do NOT send ACK — leave message pending
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false,
+  queueMessages: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish but don't ACK — message stays pending
+publish_future = channel.publish(name: "pending", data: "data")
+
+# Disconnect — triggers DISCONNECTED state
+mock_ws.active_connection.simulate_disconnect()
+
+# Record state changes to verify DISCONNECTED was reached
+state_changes = []
+client.connection.on((change) => {
+  state_changes.append(change.current)
+})
+
+AWAIT_STATE client.connection.state == ConnectionState.disconnected
+
+# The pending publish should fail immediately on DISCONNECTED
+AWAIT publish_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error IS NOT null
+ASSERT error.code IS NOT null
+```
+
+---
+
+## RTN7d - Pending publishes survive DISCONNECTED when queueMessages is true (default)
+
+**Spec requirement:** The RTN7d behavior (failing on DISCONNECTED) only applies when `queueMessages` is false. With the default `queueMessages: true`, pending messages should NOT be failed on DISCONNECTED — they are retained for resending per RTN19a.
+
+Tests that with the default queueMessages=true, pending messages are not failed when the connection enters DISCONNECTED.
+
+### Setup
+```pseudo
+channel_name = "test-RTN7d-default-${random_id()}"
+captured_messages = []
+
+enable_fake_timers()
+
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    conn.respond_with_success(CONNECTED_MESSAGE)
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      captured_messages.append(msg)
+      IF connection_count >= 2:
+        # ACK on reconnection
+        mock_ws.send_to_client(ProtocolMessage(
+          action: ACK,
+          msgSerial: msg.msgSerial,
+          count: 1,
+          res: [PublishResult(serials: ["serial-ack"])]
+        ))
+      # First connection: do NOT ACK — leave pending
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish but don't ACK — message stays pending
+publish_future = channel.publish(name: "pending", data: "data")
+
+# Disconnect
+mock_ws.active_connection.simulate_disconnect()
+
+# Reconnect
+ADVANCE_TIME(2000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# The publish should eventually succeed (resent on new transport, then ACK'd)
+result = AWAIT publish_future
+```
+
+### Assertions
+```pseudo
+ASSERT result IS PublishResult
+ASSERT result.serials[0] == "serial-ack"
+```
+
+---
+
+## RTN19a - Pending messages resent on new transport after disconnect
+
+| Spec | Requirement |
+|------|-------------|
+| RTN19a | Any ProtocolMessage that is awaiting an ACK/NACK on the old transport will not receive the ACK/NACK on the new transport. The client library must therefore resend any ProtocolMessage that is awaiting an ACK/NACK to Ably in order to receive the expected ACK/NACK for that message. |
+
+Tests that after a transport disconnect and reconnect, messages that were awaiting ACK/NACK are resent on the new transport.
+
+### Setup
+```pseudo
+channel_name = "test-RTN19a-${random_id()}"
+captured_messages = []
+
+enable_fake_timers()
+
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    conn.respond_with_success(CONNECTED_MESSAGE)
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      captured_messages.append({
+        msg: msg,
+        connection: connection_count
+      })
+      IF connection_count >= 2:
+        # ACK on second connection
+        mock_ws.send_to_client(ProtocolMessage(
+          action: ACK,
+          msgSerial: msg.msgSerial,
+          count: 1,
+          res: [PublishResult(serials: ["serial-resent"])]
+        ))
+      # First connection: do NOT ACK
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish — will be sent on first transport, no ACK received
+publish_future = channel.publish(name: "resend-me", data: "data")
+
+# Verify message was sent on first transport
+first_transport_messages = filter(captured_messages, (m) => m.connection == 1 AND m.msg.action == MESSAGE)
+ASSERT length(first_transport_messages) == 1
+
+# Disconnect
+mock_ws.active_connection.simulate_disconnect()
+
+# Reconnect
+ADVANCE_TIME(2000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# The publish should succeed (resent and ACK'd on new transport)
+result = AWAIT publish_future
+```
+
+### Assertions
+```pseudo
+# Message should have been sent on both transports
+second_transport_messages = filter(captured_messages, (m) => m.connection == 2 AND m.msg.action == MESSAGE)
+ASSERT length(second_transport_messages) >= 1
+
+# The resent message should have the same content
+ASSERT second_transport_messages[0].msg.messages[0].name == "resend-me"
+
+# Publish should have resolved successfully
+ASSERT result IS PublishResult
+ASSERT result.serials[0] == "serial-resent"
+```
+
+---
+
+## RTN19a2 - Resent messages keep same msgSerial on successful resume
+
+| Spec | Requirement |
+|------|-------------|
+| RTN19a2 | In the case of an RTN15c6 successful resume, the msgSerial of the reattempted ProtocolMessages should remain the same as for the original attempt. |
+| RTN15c6 | A CONNECTED ProtocolMessage with the same connectionId as the current client (and no error property) indicates that the resume attempt was valid. |
+
+Tests that when messages are resent after a successful connection resume, they retain their original msgSerial values.
+
+### Setup
+```pseudo
+channel_name = "test-RTN19a2-resume-${random_id()}"
+captured_messages = []
+original_connection_id = "connection-abc"
+
+enable_fake_timers()
+
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    # Both connections use the same connectionId = successful resume (RTN15c6)
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: original_connection_id,
+      connectionKey: "key-${connection_count}"
+    ))
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      captured_messages.append({
+        msg: msg,
+        connection: connection_count
+      })
+      IF connection_count >= 2:
+        mock_ws.send_to_client(ProtocolMessage(
+          action: ACK,
+          msgSerial: msg.msgSerial,
+          count: 1,
+          res: [PublishResult(serials: ["serial-resumed"])]
+        ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish two messages — neither will be ACK'd
+future1 = channel.publish(name: "msg1", data: "data1")
+future2 = channel.publish(name: "msg2", data: "data2")
+
+# Capture original msgSerials
+first_transport_msgs = filter(captured_messages, (m) => m.connection == 1 AND m.msg.action == MESSAGE)
+original_serial_1 = first_transport_msgs[0].msg.msgSerial
+original_serial_2 = first_transport_msgs[1].msg.msgSerial
+
+# Disconnect and reconnect (successful resume — same connectionId)
+mock_ws.active_connection.simulate_disconnect()
+ADVANCE_TIME(2000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+result1 = AWAIT future1
+result2 = AWAIT future2
+```
+
+### Assertions
+```pseudo
+# Messages resent on second transport should have the SAME msgSerials
+second_transport_msgs = filter(captured_messages, (m) => m.connection == 2 AND m.msg.action == MESSAGE)
+ASSERT length(second_transport_msgs) == 2
+ASSERT second_transport_msgs[0].msg.msgSerial == original_serial_1
+ASSERT second_transport_msgs[1].msg.msgSerial == original_serial_2
+```
+
+---
+
+## RTN19a2 - Resent messages get new msgSerial on failed resume
+
+| Spec | Requirement |
+|------|-------------|
+| RTN19a2 | In the case of an RTN15c7 failed resume, the message must be assigned a new msgSerial from the SDK's internal counter. |
+| RTN15c7 | CONNECTED ProtocolMessage with a new connectionId and an ErrorInfo in the error field. The internal msgSerial counter should be reset so that the first message published will contain a msgSerial of 0. |
+
+Tests that when messages are resent after a failed connection resume, they are assigned new msgSerial values starting from 0.
+
+### Setup
+```pseudo
+channel_name = "test-RTN19a2-failed-resume-${random_id()}"
+captured_messages = []
+
+enable_fake_timers()
+
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    IF connection_count == 1:
+      conn.respond_with_success(ProtocolMessage(
+        action: CONNECTED,
+        connectionId: "connection-first",
+        connectionKey: "key-first"
+      ))
+    ELSE:
+      # Failed resume — different connectionId + error (RTN15c7)
+      conn.respond_with_success(ProtocolMessage(
+        action: CONNECTED,
+        connectionId: "connection-new",
+        connectionKey: "key-new",
+        error: ErrorInfo(code: 80018, message: "Connection not resumable")
+      ))
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      captured_messages.append({
+        msg: msg,
+        connection: connection_count
+      })
+      IF connection_count >= 2:
+        mock_ws.send_to_client(ProtocolMessage(
+          action: ACK,
+          msgSerial: msg.msgSerial,
+          count: 1,
+          res: [PublishResult(serials: ["serial-new"])]
+        ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish two messages with msgSerials 0 and 1 — neither will be ACK'd
+future1 = channel.publish(name: "msg1", data: "data1")
+future2 = channel.publish(name: "msg2", data: "data2")
+
+# Verify original serials
+first_transport_msgs = filter(captured_messages, (m) => m.connection == 1 AND m.msg.action == MESSAGE)
+ASSERT first_transport_msgs[0].msg.msgSerial == 0
+ASSERT first_transport_msgs[1].msg.msgSerial == 1
+
+# Disconnect and reconnect (failed resume — different connectionId + error)
+mock_ws.active_connection.simulate_disconnect()
+ADVANCE_TIME(2000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+result1 = AWAIT future1
+result2 = AWAIT future2
+```
+
+### Assertions
+```pseudo
+# Messages resent on second transport should have NEW msgSerials starting from 0
+# (RTN15c7 resets the internal msgSerial counter)
+second_transport_msgs = filter(captured_messages, (m) => m.connection == 2 AND m.msg.action == MESSAGE)
+ASSERT length(second_transport_msgs) == 2
+ASSERT second_transport_msgs[0].msg.msgSerial == 0
+ASSERT second_transport_msgs[1].msg.msgSerial == 1
+```
+
+---
+
+## RTN19b - Pending ATTACH resent on new transport after disconnect
+
+| Spec | Requirement |
+|------|-------------|
+| RTN19b | If there are any pending channels i.e. in the ATTACHING or DETACHING state, the respective ATTACH or DETACH message should be resent to Ably. |
+
+Tests that after a transport disconnect and reconnect, channels in the ATTACHING state have their ATTACH message resent.
+
+### Setup
+```pseudo
+channel_name = "test-RTN19b-attach-${random_id()}"
+captured_attach_messages = []
+
+enable_fake_timers()
+
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    conn.respond_with_success(CONNECTED_MESSAGE)
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      captured_attach_messages.append({
+        msg: msg,
+        connection: connection_count
+      })
+      IF connection_count >= 2:
+        # Respond with ATTACHED on second connection
+        mock_ws.send_to_client(ProtocolMessage(
+          action: ATTACHED,
+          channel: msg.channel
+        ))
+      # First connection: don't respond — leave channel ATTACHING
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Start attach but don't respond — channel stays ATTACHING
+attach_future = channel.attach()
+AWAIT_STATE channel.state == ChannelState.attaching
+
+# Verify ATTACH was sent on first transport
+first_transport_attaches = filter(captured_attach_messages, (m) => m.connection == 1)
+ASSERT length(first_transport_attaches) == 1
+ASSERT first_transport_attaches[0].msg.channel == channel_name
+
+# Disconnect and reconnect
+mock_ws.active_connection.simulate_disconnect()
+ADVANCE_TIME(2000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Attach should complete (ATTACH resent and responded to on new transport)
+AWAIT attach_future
+```
+
+### Assertions
+```pseudo
+ASSERT channel.state == ChannelState.attached
+
+# ATTACH should have been resent on second transport
+second_transport_attaches = filter(captured_attach_messages, (m) => m.connection == 2)
+ASSERT length(second_transport_attaches) >= 1
+ASSERT second_transport_attaches[0].msg.channel == channel_name
+```
+
+---
+
+## RTN19b - Pending DETACH resent on new transport after disconnect
+
+**Spec requirement:** If there are any pending channels in the DETACHING state, the respective DETACH message should be resent to Ably.
+
+Tests that after a transport disconnect and reconnect, channels in the DETACHING state have their DETACH message resent.
+
+### Setup
+```pseudo
+channel_name = "test-RTN19b-detach-${random_id()}"
+captured_detach_messages = []
+
+enable_fake_timers()
+
+connection_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_count++
+    conn.respond_with_success(CONNECTED_MESSAGE)
+  },
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel
+      ))
+    ELSE IF msg.action == DETACH:
+      captured_detach_messages.append({
+        msg: msg,
+        connection: connection_count
+      })
+      IF connection_count >= 2:
+        # Respond with DETACHED on second connection
+        mock_ws.send_to_client(ProtocolMessage(
+          action: DETACHED,
+          channel: msg.channel
+        ))
+      # First connection: don't respond — leave channel DETACHING
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Start detach but don't respond — channel stays DETACHING
+detach_future = channel.detach()
+AWAIT_STATE channel.state == ChannelState.detaching
+
+# Verify DETACH was sent on first transport
+first_transport_detaches = filter(captured_detach_messages, (m) => m.connection == 1)
+ASSERT length(first_transport_detaches) == 1
+
+# Disconnect and reconnect
+mock_ws.active_connection.simulate_disconnect()
+ADVANCE_TIME(2000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Detach should complete (DETACH resent and responded to on new transport)
+AWAIT detach_future
+```
+
+### Assertions
+```pseudo
+ASSERT channel.state == ChannelState.detached
+
+# DETACH should have been resent on second transport
+second_transport_detaches = filter(captured_detach_messages, (m) => m.connection == 2)
+ASSERT length(second_transport_detaches) >= 1
+ASSERT second_transport_detaches[0].msg.channel == channel_name
 ```
