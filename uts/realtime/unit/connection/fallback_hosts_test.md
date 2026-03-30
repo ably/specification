@@ -21,6 +21,7 @@ Tests that the client always tries the primary domain first, even after failures
 ### Setup
 
 ```pseudo
+channel_name = "test-RTN17i-${random_id()}"
 connection_attempts = []
 
 mock_ws = MockWebSocket(
@@ -261,6 +262,7 @@ Tests that connectivity check is performed before trying fallback hosts.
 ### Setup
 
 ```pseudo
+channel_name = "test-RTN17j-${random_id()}"
 http_requests = []
 connection_attempts = []
 
@@ -552,6 +554,7 @@ Tests that HTTP requests prefer the same host as the active realtime connection.
 ### Setup
 
 ```pseudo
+channel_name = "test-RTN17e-${random_id()}"
 connection_attempts = []
 http_requests = []
 
@@ -619,7 +622,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 connected_fallback_host = connection_attempts[1]
 
 # Make an HTTP request (e.g., channel history)
-channel = client.channels.get("test-channel")
+channel = client.channels.get(channel_name)
 await channel.history()
 
 # Wait for HTTP request to complete
