@@ -47,12 +47,12 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSC17 | ClientId attribute | |
 | RSC18 | TLS configuration | Yes — `rest/unit/rest_client.md`, `rest/unit/time.md` |
 | RSC19 | Request function (RSC19a–RSC19f1) | Yes — `rest/unit/request.md` |
-| RSC20 | Deprecated exception reporting (RSC20a–RSC20f) | |
+| RSC20 | Deprecated exception reporting (RSC20a–RSC20f) |N/A |
 | RSC21 | Push object attribute | |
 | RSC22 | BatchPublish (RSC22a–RSC22d) | Yes — `rest/unit/batch_publish.md` |
 | RSC23 | Deleted | |
 | RSC24 | BatchPresence | |
-| RSC25 | Request endpoint | |
+| RSC25 | Request endpoint | Yes — `rest/unit/request_endpoint.md` |
 | RSC26 | CreateWrapperSDKProxy (RSC26a–RSC26c) | |
 
 ### Auth
@@ -80,7 +80,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RSN1–RSN4 | REST channels collection (RSN1–RSN4c) | |
+| RSN1–RSN4 | REST channels collection (RSN1–RSN4c) | Yes — `rest/unit/channels_collection.md` |
 
 ### RestChannel
 
@@ -216,7 +216,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL7 | Subscribe function (RTL7a–RTL7h) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL8 | Unsubscribe function (RTL8a–RTL8c) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL9 | Presence attribute (RTL9a) | |
-| RTL10 | History function (RTL10a–RTL10d) | |
+| RTL10 | History function (RTL10a–RTL10d) | Yes — `realtime/unit/channels/channel_history.md` covers RTL10a, RTL10b, RTL10c (proxies to RSL2 tests); `realtime/integration/channel_history_test.md` covers RTL10d |
 | RTL11 | Channel state effect on presence (RTL11a) | |
 | RTL12 | Additional ATTACHED message handling | |
 | RTL13 | Server-initiated DETACHED handling (RTL13a–RTL13c) | Yes — `realtime/unit/channels/channel_server_initiated_detach.md` |
