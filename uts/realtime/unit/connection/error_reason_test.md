@@ -23,7 +23,7 @@ Tests that errorReason is populated correctly across various error scenarios.
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
-    conn.send_to_client(ProtocolMessage(
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       error: ErrorInfo(
         code: 40005,
@@ -184,7 +184,7 @@ Tests that errorReason captures token-related errors.
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
-    conn.send_to_client(ProtocolMessage(
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       error: ErrorInfo(
         code: 40142,
@@ -323,7 +323,7 @@ Tests that connection-level protocol errors populate errorReason.
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
-    conn.send_to_client(ProtocolMessage(
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       channel: null,  # Empty channel = connection-level error
       error: ErrorInfo(
@@ -377,7 +377,7 @@ Tests that state change events include error information.
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
     conn.respond_with_success()
-    conn.send_to_client(ProtocolMessage(
+    conn.send_to_client_and_close(ProtocolMessage(
       action: ERROR,
       error: ErrorInfo(
         code: 40003,
