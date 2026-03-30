@@ -467,35 +467,87 @@ AWAIT_STATE state == x    # Wait for resulting state change
 
 In Dart, this is typically `await Future.delayed(Duration.zero)`. Multiple chained async operations may require multiple pumps.
 
-### Verifying Transient States
+### Verifying Transient States (Record-and-Verify Pattern)
 
-When testing behavior involving transient states (e.g., DISCONNECTED during reconnection), **do not** try to catch the state at a specific moment. Instead, record the full sequence of state changes and verify it at the end:
+**When testing disconnect/reconnect behavior, always use the record-and-verify pattern.** Do not use intermediate `AWAIT_STATE` calls to observe transient states like DISCONNECTED or SUSPENDED mid-test. The Ably spec mandates immediate reconnection on unexpected disconnect (RTN15a), which means transient states pass too quickly to be reliably observed between test steps.
+
+**The pattern:**
+
+1. Start recording state changes before triggering the behavior
+2. Let the full cycle play out (disconnect → reconnect)
+3. Assert the recorded sequence at the end with `CONTAINS_IN_ORDER`
 
 ```pseudo
+# 1. Record state changes
 state_changes = []
-client.connection.on().listen((change) => {
+client.connection.on((change) => {
   state_changes.append(change.current)
 })
 
-# Trigger behavior
-ADVANCE_TIME(timeout_duration)
+# 2. Trigger disconnect and let cycle complete
+ws_connection.simulate_disconnect()
 PUMP_EVENT_QUEUE()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Verify sequence included expected states
+# 3. Verify the full sequence at the end
 ASSERT state_changes CONTAINS_IN_ORDER [
-  ConnectionState.connecting,
-  ConnectionState.connected,
-  ConnectionState.disconnected,  # Transient state we want to verify
+  ConnectionState.disconnected,
   ConnectionState.connecting,
   ConnectionState.connected
 ]
 ```
 
-This approach is robust because:
-- It doesn't depend on catching a transient state at exactly the right moment
-- It works even when immediate reconnection (RTN15a) causes rapid state transitions
-- It verifies the complete behavior, not just the final state
+**`CONTAINS_IN_ORDER` semantics:** This assertion verifies that the listed states appear in the recorded sequence in the correct order, but does not require them to be the *only* states present. This allows for implementation-specific intermediate states (e.g., additional CONNECTING states between retries) without causing false failures.
+
+**Why NOT intermediate `AWAIT_STATE`:**
+
+```pseudo
+# BAD - unreliable, DISCONNECTED may pass before this line executes
+ws_connection.simulate_disconnect()
+AWAIT_STATE client.connection.state == ConnectionState.disconnected  # May miss it!
+ADVANCE_TIME(6000)
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# GOOD - record everything, verify at the end
+state_changes = []
+client.connection.on((change) => { state_changes.append(change.current) })
+ws_connection.simulate_disconnect()
+PUMP_EVENT_QUEUE()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+ASSERT state_changes CONTAINS_IN_ORDER [disconnected, connecting, connected]
+```
+
+### Time-Advancement Loops for Retry Scenarios
+
+When tests involve multiple retries with fake timers (e.g., reconnection attempts that fail before eventually succeeding, or waiting for TTL expiry), use a **time-advancement loop** rather than calculating exact `ADVANCE_TIME` durations. This is more robust because:
+
+- The exact timing of retries, backoff, and state transitions is implementation-dependent
+- A loop naturally accommodates varying numbers of retries
+- It mirrors what the real-world clock does: time passes continuously, not in exact jumps
+
+```pseudo
+enable_fake_timers()
+
+# Trigger disconnect, then advance time in increments
+# until the client reconnects or we give up
+ws_connection.simulate_disconnect()
+PUMP_EVENT_QUEUE()
+
+LOOP up to 15 times:
+  ADVANCE_TIME(2500)
+  PUMP_EVENT_QUEUE()
+  IF client.connection.state == ConnectionState.connected:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+Use this pattern when:
+- Reconnection attempts may fail multiple times before succeeding
+- The test needs to advance through multiple retry/backoff cycles
+- State transitions depend on cumulative elapsed time (e.g., `connectionStateTtl` expiry triggering SUSPENDED)
+
+The final `AWAIT_STATE` after the loop acts as a safety net in case the loop iterations weren't quite enough.
 
 ## Test Structure
 
@@ -823,3 +875,9 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
 
 14. ❌ Creating client without credentials for time() tests: `ClientOptions(tls: false)`
     ✅ Constructor requires credentials - use `ClientOptions(key: "...", tls: false, useTokenAuth: true)`
+
+15. ❌ Using intermediate `AWAIT_STATE disconnected` to observe transient states mid-test
+    ✅ Record all state changes and use `CONTAINS_IN_ORDER` to verify the sequence at the end
+
+16. ❌ Using exact `ADVANCE_TIME` calculations for multi-retry scenarios: `ADVANCE_TIME(6000); ADVANCE_TIME(1000)`
+    ✅ Use a time-advancement loop: `LOOP up to N times: ADVANCE_TIME(increment); PUMP_EVENT_QUEUE()`
