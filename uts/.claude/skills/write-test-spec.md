@@ -430,20 +430,72 @@ For unit tests, any string works as a token value since tokens are opaque to the
 
 ## Avoiding Flaky Tests
 
-**Never use fixed WAITs.** Use polling instead:
+**Never use fixed WAITs or arbitrary real-time delays.**
 
 ```pseudo
 # Bad - flaky
 WAIT 5 seconds
 ASSERT condition
 
-# Good - reliable
+# Bad - arbitrary delay that may not be enough (or may be too slow)
+ADVANCE_TIME(3000)
+WAIT 100ms  # Real-time delay - flaky!
+ASSERT state == disconnected
+
+# Good - poll until condition
 poll_until(
   condition,
   interval: 500ms,
   timeout: 10s
 )
+
+# Good - pump event queue and wait for state
+ADVANCE_TIME(3000)
+PUMP_EVENT_QUEUE()
+AWAIT_STATE state == disconnected
 ```
+
+### Pumping the Event Queue
+
+After advancing fake timers, async callbacks may be scheduled but not yet executed. Use `PUMP_EVENT_QUEUE()` to process pending microtasks and timer events:
+
+```pseudo
+ADVANCE_TIME(5000)        # Schedules timeout callback
+PUMP_EVENT_QUEUE()        # Executes scheduled callbacks
+AWAIT_STATE state == x    # Wait for resulting state change
+```
+
+In Dart, this is typically `await Future.delayed(Duration.zero)`. Multiple chained async operations may require multiple pumps.
+
+### Verifying Transient States
+
+When testing behavior involving transient states (e.g., DISCONNECTED during reconnection), **do not** try to catch the state at a specific moment. Instead, record the full sequence of state changes and verify it at the end:
+
+```pseudo
+state_changes = []
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
+
+# Trigger behavior
+ADVANCE_TIME(timeout_duration)
+PUMP_EVENT_QUEUE()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Verify sequence included expected states
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,  # Transient state we want to verify
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+```
+
+This approach is robust because:
+- It doesn't depend on catching a transient state at exactly the right moment
+- It works even when immediate reconnection (RTN15a) causes rapid state transitions
+- It verifies the complete behavior, not just the final state
 
 ## Test Structure
 
