@@ -761,7 +761,16 @@ ASSERT client.connection.key == "key-1-updated"
 
 **Spec requirement:** If disconnected longer than connectionStateTtl, don't attempt resume. Clear local state and make fresh connection.
 
-Tests that stale connections don't attempt resume.
+Tests that stale connections don't attempt resume. After disconnecting, reconnection
+attempts fail repeatedly, causing the client to eventually transition to SUSPENDED
+(once connectionStateTtl expires). When the client eventually reconnects from
+SUSPENDED state, it makes a fresh connection without resume parameters.
+
+> **Note on verifying transient states:** Rather than trying to observe intermediate
+> states (e.g. DISCONNECTED, SUSPENDED) mid-test with `AWAIT_STATE`, we record all
+> state changes and verify the full sequence at the end. This avoids flaky tests
+> caused by the SDK (correctly) attempting immediate reconnection per RTN15a, which
+> makes transient states difficult to observe reliably.
 
 ### Setup
 
@@ -774,10 +783,9 @@ mock_ws = MockWebSocket(
     connection_attempt_count++
     captured_connection_attempts.append(conn)
     
-    conn.respond_with_success()
-    
     IF connection_attempt_count == 1:
-      # Initial connection
+      # Initial connection succeeds
+      conn.respond_with_success()
       conn.send_to_client(ProtocolMessage(
         action: CONNECTED,
         connectionId: "connection-1",
@@ -788,8 +796,13 @@ mock_ws = MockWebSocket(
           connectionStateTtl: 5000  # 5 seconds TTL
         )
       ))
+    ELSE IF connection_attempt_count < 6:
+      # Reconnection attempts 2-5 fail (connection refused)
+      # This keeps the client retrying while TTL expires
+      conn.respond_with_refused()
     ELSE:
-      # Fresh connection (no resume)
+      # After TTL expires, fresh connection succeeds (no resume)
+      conn.respond_with_success()
       conn.send_to_client(ProtocolMessage(
         action: CONNECTED,
         connectionId: "connection-2",  # New ID
@@ -804,10 +817,17 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
+mock_http = MockHttpClient(
+  onRequest: (req) => req.respond_with(200, "yes")  # Connectivity check
+)
+install_mock(mock_http)
+
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   disconnectedRetryTimeout: 1000,
-  autoConnect: false
+  suspendedRetryTimeout: 2000,
+  autoConnect: false,
+  fallbackHosts: []
 ))
 ```
 
@@ -816,26 +836,36 @@ client = Realtime(options: ClientOptions(
 ```pseudo
 enable_fake_timers()
 
+# Record all state changes
+state_changes = []
+client.connection.on((change) => {
+  state_changes.append(change.current)
+})
+
 # Initial connection
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
 original_connection_id = client.connection.id
+original_connection_key = client.connection.key
 
-# Force disconnect
+# Force disconnect - triggers immediate reconnect per RTN15a
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 ws_connection.simulate_disconnect()
+PUMP_EVENT_QUEUE()
 
-# Wait for DISCONNECTED
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Reconnection attempts keep failing (connection refused).
+# Advance time in increments to allow retries, TTL expiry,
+# transition to SUSPENDED, and eventual successful reconnection.
+# TTL is 5000ms, disconnectedRetryTimeout is 1000ms,
+# suspendedRetryTimeout is 2000ms.
+LOOP up to 15 times:
+  ADVANCE_TIME(2500)
+  PUMP_EVENT_QUEUE()
+  IF client.connection.state == ConnectionState.connected:
+    BREAK
 
-# Advance time past connectionStateTtl
-ADVANCE_TIME(6000)  # Past the 5s TTL
-
-# Trigger reconnection
-ADVANCE_TIME(1000)  # Past disconnectedRetryTimeout
-
-# Wait for reconnection
+# Wait for final successful reconnection
 AWAIT_STATE client.connection.state == ConnectionState.connected
   WITH timeout: 5 seconds
 ```
@@ -843,15 +873,28 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ### Assertions
 
 ```pseudo
-# New connection (different ID, not resumed)
+# Verify the full state change sequence includes SUSPENDED
+# (TTL expired while reconnection attempts were failing)
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.suspended,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+
+# RTN15g: New connection (different ID, not resumed - TTL expired)
 ASSERT client.connection.id == "connection-2"
 ASSERT client.connection.id != original_connection_id
 
-# Second connection did NOT include resume parameter
-ASSERT "resume" NOT IN captured_connection_attempts[1].url.query_params
-
 # Fresh connection key
 ASSERT client.connection.key == "key-2"
+ASSERT client.connection.key != original_connection_key
+
+# Final reconnection URL did NOT include resume parameter
+# (because TTL expired and connection state was cleared)
+ASSERT "resume" NOT IN captured_connection_attempts.last.url.query_params
 ```
 
 ---
