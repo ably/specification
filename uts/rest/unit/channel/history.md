@@ -280,7 +280,7 @@ FOR EACH test_case IN test_cases:
   ASSERT request_count == 1
   request = captured_requests[0]
   ASSERT request.method == "GET"
-  ASSERT request.url.path CONTAINS "/channels/" AND request.url.path ENDS WITH "/messages"
+  ASSERT request.url.path == "/channels/${url_encode(test_case.channel_name)}/messages"
 ```
 
 ---

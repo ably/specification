@@ -1,6 +1,6 @@
 # REST Presence Unit Tests
 
-Spec points: `RSP1`, `RSP1a`, `RSP1b`, `RSP3`, `RSP3a1`, `RSP3a2`, `RSP3a3`, `RSP4`, `RSP4a`, `RSP4b1`, `RSP4b2`, `RSP4b3`, `RSP5`
+Spec points: `RSL3`, `RSP1`, `RSP1a`, `RSP1b`, `RSP3`, `RSP3a1`, `RSP3a2`, `RSP3a3`, `RSP4`, `RSP4a`, `RSP4b1`, `RSP4b2`, `RSP4b3`, `RSP5`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -18,11 +18,11 @@ The mock supports:
 
 ---
 
-## RSP1 - RestPresence object associated with channel
+## RSP1, RSL3 - RestPresence object associated with channel
 
-### RSP1a - Presence accessible via RestChannel#presence
+### RSP1a, RSL3 - Presence accessible via RestChannel#presence
 
-**Spec requirement:** Each `RestChannel` provides access to a `RestPresence` object via the `presence` property.
+**Spec requirement:** Each `RestChannel` provides access to a `RestPresence` object via the `presence` property (RSP1a). The `RestChannel#presence` attribute contains a `RestPresence` object for this channel (RSL3).
 
 ```pseudo
 channel_name = "test-RSP1a-${random_id()}"

@@ -201,11 +201,11 @@ ASSERT callback_count == 2
 
 # Only ONE HTTP request to the API (history)
 # No failed request with expired token
-requests_to_channels = captured_requests.filter(
-  r => r.path.contains("/channels/")
+requests_to_history = captured_requests.filter(
+  r => r.path == "/channels/test/messages"
 )
-ASSERT requests_to_channels.length == 1
-ASSERT requests_to_channels[0].headers["Authorization"] == "Bearer fresh-token"
+ASSERT requests_to_history.length == 1
+ASSERT requests_to_history[0].headers["Authorization"] == "Bearer fresh-token"
 ```
 
 ---
@@ -442,7 +442,7 @@ result = AWAIT client.channels.get("test").status()
 ASSERT result IS ChannelDetails
 
 # Two HTTP requests were made to /channels/test (original + retry)
-channel_requests = captured_requests.filter(r => r.path CONTAINS "/channels/test")
+channel_requests = captured_requests.filter(r => r.path == "/channels/test")
 ASSERT channel_requests.length == 2
 
 # Auth callback was called twice (initial token + renewal)
