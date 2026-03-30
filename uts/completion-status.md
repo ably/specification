@@ -89,7 +89,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSL1 | Publish function (RSL1a–RSL1n1) | Yes — `rest/unit/channel/publish.md`, `rest/integration/publish.md` |
 | RSL1k | Idempotent publishing (RSL1k1–RSL1k5) | Yes — `rest/unit/channel/idempotency.md` |
 | RSL2 | History function (RSL2a–RSL2b3) | Yes — `rest/unit/channel/history.md`, `rest/integration/history.md` |
-| RSL3 | Presence attribute | |
+| RSL3 | Presence attribute | Yes — `rest/unit/presence/rest_presence.md` (with RSP1a) |
 | RSL4 | Message encoding (RSL4a–RSL4d4) | Yes — `rest/unit/encoding/message_encoding.md` |
 | RSL5 | Message encryption (RSL5a–RSL5c) | |
 | RSL6 | Message decoding (RSL6a–RSL6b) | Yes — `rest/unit/encoding/message_encoding.md` |
@@ -215,9 +215,9 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL6 | Publish function (RTL6a–RTL6k) | Yes — `realtime/unit/channels/channel_publish.md` |
 | RTL7 | Subscribe function (RTL7a–RTL7h) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL8 | Unsubscribe function (RTL8a–RTL8c) | Yes — `realtime/unit/channels/channel_subscribe.md` |
-| RTL9 | Presence attribute (RTL9a) | |
+| RTL9 | Presence attribute (RTL9a) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTL10 | History function (RTL10a–RTL10d) | Yes — `realtime/unit/channels/channel_history.md` covers RTL10a, RTL10b, RTL10c (proxies to RSL2 tests); `realtime/integration/channel_history_test.md` covers RTL10d |
-| RTL11 | Channel state effect on presence (RTL11a) | |
+| RTL11 | Channel state effect on presence (RTL11a) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTL12 | Additional ATTACHED message handling | |
 | RTL13 | Server-initiated DETACHED handling (RTL13a–RTL13c) | Yes — `realtime/unit/channels/channel_server_initiated_detach.md` |
 | RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md` |
@@ -242,24 +242,24 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RTP1 | HAS_PRESENCE flag and SYNC | |
-| RTP2 | PresenceMap maintenance (RTP2a–RTP2h2) | |
-| RTP4 | Large member count test | |
-| RTP5 | Channel state side effects (RTP5a–RTP5f) | |
-| RTP6 | Subscribe function (RTP6a–RTP6e) | |
-| RTP7 | Unsubscribe function (RTP7a–RTP7c) | |
-| RTP8 | Enter function (RTP8a–RTP8j) | |
-| RTP9 | Update function (RTP9a–RTP9e) | |
-| RTP10 | Leave function (RTP10a–RTP10e) | |
-| RTP11 | Get function (RTP11a–RTP11d) | |
-| RTP12 | History function (RTP12a–RTP12d) | |
-| RTP13 | SyncComplete attribute | |
-| RTP14 | EnterClient function (RTP14a–RTP14d) | |
-| RTP15 | EnterClient/UpdateClient/LeaveClient (RTP15a–RTP15f) | |
-| RTP16 | Connection state conditions (RTP16a–RTP16c) | |
-| RTP17 | Internal PresenceMap (RTP17a–RTP17j) | |
-| RTP18 | Server-initiated sync (RTP18a–RTP18c) | |
-| RTP19 | PresenceMap cleanup on sync (RTP19a) | |
+| RTP1 | HAS_PRESENCE flag and SYNC | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
+| RTP2 | PresenceMap maintenance (RTP2a–RTP2h2) | Yes — `realtime/unit/presence/presence_map.md` |
+| RTP4 | Large member count test | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP5 | Channel state side effects (RTP5a–RTP5f) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
+| RTP6 | Subscribe function (RTP6a–RTP6e) | Yes — `realtime/unit/presence/realtime_presence_subscribe.md` |
+| RTP7 | Unsubscribe function (RTP7a–RTP7c) | Yes — `realtime/unit/presence/realtime_presence_subscribe.md` |
+| RTP8 | Enter function (RTP8a–RTP8j) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP9 | Update function (RTP9a–RTP9e) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP10 | Leave function (RTP10a–RTP10e) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP11 | Get function (RTP11a–RTP11d) | Yes — `realtime/unit/presence/realtime_presence_get.md` |
+| RTP12 | History function (RTP12a–RTP12d) | Yes — `realtime/unit/presence/realtime_presence_history.md` |
+| RTP13 | SyncComplete attribute | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
+| RTP14 | EnterClient function (RTP14a–RTP14d) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP15 | EnterClient/UpdateClient/LeaveClient (RTP15a–RTP15f) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP16 | Connection state conditions (RTP16a–RTP16c) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
+| RTP17 | Internal PresenceMap (RTP17a–RTP17j) | Partial — `realtime/unit/presence/local_presence_map.md` covers RTP17, RTP17b, RTP17h; `realtime/unit/presence/realtime_presence_reentry.md` covers RTP17a, RTP17e, RTP17g, RTP17g1, RTP17i |
+| RTP18 | Server-initiated sync (RTP18a–RTP18c) | Yes — `realtime/unit/presence/presence_sync.md` |
+| RTP19 | PresenceMap cleanup on sync (RTP19a) | Yes — `realtime/unit/presence/presence_sync.md`, `realtime/unit/presence/realtime_presence_channel_state.md` |
 
 ### RealtimeAnnotations
 
@@ -315,7 +315,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 |-----------|-------------|---------------|
 | TM1–TM8 | Message (TM1–TM8a1) | Partial — `rest/unit/types/message_types.md` covers TM1–TM5 |
 | DE1–DE2 | DeltaExtras | |
-| TP1–TP5 | PresenceMessage | |
+| TP1–TP5 | PresenceMessage | Yes — `rest/unit/types/presence_message_types.md` |
 | OM1–OM5 | ObjectMessage | |
 | OOP1–OOP5 | ObjectOperation | |
 | OST1–OST3 | ObjectState | |
@@ -394,22 +394,22 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **REST client** (RSC) | 18 | 15 | Partial |
 | **REST auth** (RSA) | 15 | 15 | Full |
 | **REST channels** (RSN) | 4 | 0 | None |
-| **REST channel** (RSL) | 13 | 6 | Partial |
+| **REST channel** (RSL) | 13 | 7 | Partial |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
 | **REST encryption** (RSE) | 2 | 0 | None |
 | **REST annotations** (RSAN) | 3 | 0 | None |
 | **Realtime client** (RTC) | 14 | 12 | Partial |
 | **Connection** (RTN) | 23 | 17 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
-| **Realtime channel** (RTL) | 24 | 14 | Partial |
-| **Realtime presence** (RTP) | 15 | 0 | None |
+| **Realtime channel** (RTL) | 24 | 16 | Partial |
+| **Realtime presence** (RTP) | 15 | 15 | Full |
 | **Realtime annotations** (RTAN) | 5 | 0 | None |
 | **EventEmitter** (RTE) | 6 | 0 | None |
 | **Backoff/jitter** (RTB) | 1 | 0 | None |
 | **Wrapper SDK** (WP) | 7 | 0 | None |
 | **Push notifications** (RSH) | 8 | 0 | None |
 | **Plugins** (PC/PT/VD) | 3 | 0 | None |
-| **Data types** | 30 | 7 | Partial |
+| **Data types** | 30 | 8 | Partial |
 | **Option types** | 8 | 5 | Partial |
 | **Push types** | 3 | 0 | None |
 | **Introspection** (CR) | 1 | 0 | None |
