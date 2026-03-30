@@ -386,6 +386,31 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 ---
 
+### Proxy Integration Tests
+
+| Spec item | Description | UTS test spec |
+|-----------|-------------|---------------|
+| RTN14a | Fatal error during connection open → FAILED | Yes — `realtime/integration/proxy/connection_open_failures.md` |
+| RTN14b | Token error during connection → renew and retry | Yes — `realtime/integration/proxy/connection_open_failures.md` |
+| RTN14c | Connection timeout (no CONNECTED received) | Yes — `realtime/integration/proxy/connection_open_failures.md` |
+| RTN14d | Retry after connection refused | Yes — `realtime/integration/proxy/connection_open_failures.md` |
+| RTN14g | Connection-level ERROR during open → FAILED | Yes — `realtime/integration/proxy/connection_open_failures.md` |
+| RTN15a | Unexpected disconnect triggers resume | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN15b/c6 | Resume preserves connectionId | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN15c7 | Failed resume gets new connectionId | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN15h1 | DISCONNECTED with token error, non-renewable → FAILED | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN15h3 | DISCONNECTED with non-token error → reconnect | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN23a | Heartbeat starvation causes disconnect | Yes — `realtime/integration/proxy/heartbeat.md` |
+| RTN23a | heartbeats=true in connection URL | Yes — `realtime/integration/proxy/heartbeat.md` |
+| RTL4f | Attach timeout (server doesn't respond) | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL4h | Server responds with ERROR to ATTACH | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL5f | Detach timeout (server doesn't respond) | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL13a | Server sends unsolicited DETACHED → reattach | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL14 | Server sends channel ERROR → FAILED | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RSC10 | Token renewal on HTTP 401 | Yes — `realtime/integration/proxy/rest_faults.md` |
+| RSC15a | HTTP 503 error (no fallback) | Yes — `realtime/integration/proxy/rest_faults.md` |
+| RTL6 | End-to-end publish and history | Yes — `realtime/integration/proxy/rest_faults.md` |
+
 ## Summary
 
 | Area | Spec groups | With UTS spec | Coverage |
