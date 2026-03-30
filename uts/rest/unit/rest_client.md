@@ -147,14 +147,15 @@ Tests that the same `request_id` is used when retrying to a fallback host.
 ### Setup
 ```pseudo
 mock_http = MockHttpClient()
-# First request fails with 500
+# First request fails with 500 (triggers fallback retry)
 mock_http.queue_response(500, { "error": { "code": 50000 } })
 # Retry succeeds
 mock_http.queue_response(200, { "time": 1234567890000 })
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  addRequestIds: true
+  addRequestIds: true,
+  fallbackHosts: ["a.example.com", "b.example.com"]
 ))
 ```
 
