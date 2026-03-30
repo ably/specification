@@ -466,8 +466,8 @@ result = AWAIT client.channels.get(channel_name).presence.history()
 ASSERT result IS PaginatedResult<PresenceMessage>
 ASSERT result.items.length == 3
 ASSERT result.items[0].action == PresenceAction.enter   # action 2
-ASSERT result.items[1].action == PresenceAction.update  # action 3
-ASSERT result.items[2].action == PresenceAction.leave   # action 4
+ASSERT result.items[1].action == PresenceAction.leave   # action 3
+ASSERT result.items[2].action == PresenceAction.update  # action 4
 ```
 
 ---
