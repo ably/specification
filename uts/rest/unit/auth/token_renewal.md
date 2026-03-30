@@ -375,9 +375,11 @@ ASSERT error.code == 40142
 
 ### Assertions
 ```pseudo
-# Should not retry indefinitely (implementation-specific limit)
-ASSERT callback_count <= 3  # Reasonable retry limit
-ASSERT request_count <= 3  # Should stop making requests
+# The library MUST retry at most once per original request (one renewal
+# attempt). After the renewed token is also rejected, the error is
+# propagated to the caller.
+ASSERT callback_count == 2  # Initial token + one renewal
+ASSERT request_count == 2   # Original request + one retry
 ```
 
 ---
