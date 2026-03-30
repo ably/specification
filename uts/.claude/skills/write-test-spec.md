@@ -22,6 +22,12 @@ This skill provides comprehensive guidance for writing portable test specificati
 - Provision apps via `POST /apps` with body from `ably-common/test-resources/test-app-setup.json`
 - Use `endpoint: "sandbox"` in ClientOptions
 
+### Proxy Integration Tests (Ably Sandbox via Proxy)
+- Run against Ably Sandbox through a programmable proxy (`uts/test/proxy/`)
+- Proxy transparently forwards traffic but can inject faults via rules
+- Use for testing fault behaviour: connection failures, token renewal under errors, heartbeat starvation, channel error injection
+- See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec
+
 ## Mock Infrastructure Patterns
 
 ### HTTP Mock Infrastructure
@@ -227,6 +233,189 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 
 # Unexpected disconnect (no message, just closes)
 mock_ws.active_connection.simulate_disconnect()
+```
+
+## Proxy Integration Tests
+
+For detailed proxy infrastructure documentation, see `uts/test/realtime/integration/helpers/proxy.md`.
+
+### When to Use Proxy Tests
+
+| Test type | When to use |
+|-----------|-------------|
+| **Unit test** (mock HTTP/WebSocket) | Client-side logic, state machines, request formation, error parsing. Fast, deterministic. |
+| **Direct sandbox integration** | Happy-path behaviour: connect, publish, subscribe. No fault injection needed. |
+| **Proxy integration test** | Fault behaviour against real backend: connection failures, resume, heartbeat starvation, token renewal under network errors, channel error injection. |
+
+### Proxy Test Structure
+
+```markdown
+# Feature Name Proxy Integration Tests
+
+Spec points: `RTN14a`, `RTN14b`, ...
+
+## Test Type
+Proxy integration test against Ably Sandbox endpoint
+
+## Proxy Infrastructure
+See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure specification.
+
+## Corresponding Unit Tests
+- `uts/test/realtime/unit/connection/connection_failures_test.md` — RTN15a, RTN15b
+
+## Sandbox Setup
+[standard app provisioning — same as direct sandbox tests]
+
+---
+
+## RTN14a - Test name
+
+| Spec | Requirement |
+|------|-------------|
+| RTN14a | ... |
+
+**Corresponding unit test:** `connection_open_failures_test.md` RTN14a
+
+Tests that [behaviour] when the proxy injects [fault].
+
+### Setup
+
+```pseudo
+session = create_proxy_session(
+  target: TargetConfig(realtimeHost: "sandbox-realtime.ably.io", restHost: "sandbox-rest.ably.io"),
+  port: allocated_port,
+  rules: [{
+    "match": { ... },
+    "action": { ... },
+    "times": 1,
+    "comment": "description"
+  }]
+)
+
+client = Realtime(options: ClientOptions(
+  key: api_key,
+  endpoint: "localhost",
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false,
+  autoConnect: false
+))
+```
+
+### Test Steps
+
+```pseudo
+state_changes = []
+client.connection.on(change => state_changes.append(change.current))
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.failed
+  WITH timeout: 15 seconds
+```
+
+### Assertions
+
+```pseudo
+ASSERT client.connection.state == ConnectionState.failed
+ASSERT client.connection.errorReason.code == 40005
+```
+```
+
+### Common Proxy Rule Patterns
+
+**Replace server response with error:**
+```json
+{
+  "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
+  "action": {
+    "type": "replace",
+    "message": { "action": 9, "error": { "code": 40005, "statusCode": 400, "message": "Error" } }
+  },
+  "times": 1
+}
+```
+
+**Refuse connection (one-shot):**
+```json
+{
+  "match": { "type": "ws_connect", "count": 1 },
+  "action": { "type": "refuse_connection" },
+  "times": 1
+}
+```
+
+**Suppress frame (cause timeout):**
+```json
+{
+  "match": { "type": "ws_frame_to_server", "action": "ATTACH" },
+  "action": { "type": "suppress" }
+}
+```
+
+**Temporal trigger (timed fault injection):**
+```json
+{
+  "match": { "type": "delay_after_ws_connect", "delayMs": 2000 },
+  "action": { "type": "suppress_onwards" },
+  "times": 1
+}
+```
+
+**Inject message to client:**
+```json
+{
+  "match": { "type": "delay_after_ws_connect", "delayMs": 1000 },
+  "action": {
+    "type": "inject_to_client_and_close",
+    "message": { "action": 6, "error": { "code": 40142, "statusCode": 401, "message": "Token expired" } }
+  },
+  "times": 1
+}
+```
+
+**HTTP fault (return custom response):**
+```json
+{
+  "match": { "type": "http_request", "pathContains": "/channels/" },
+  "action": {
+    "type": "http_respond",
+    "status": 401,
+    "body": { "error": { "code": 40142, "statusCode": 401, "message": "Token expired" } }
+  },
+  "times": 1
+}
+```
+
+### Proxy Test Conventions
+
+1. Each test references the spec point AND the corresponding unit test
+2. Tests use `create_proxy_session()` with rules, then connect SDK through the proxy
+3. Tests use `AWAIT_STATE` for state assertions and record state changes for sequence verification
+4. Tests verify behaviour via SDK state AND proxy event log where useful
+5. All tests use `useBinaryProtocol: false` (SDK doesn't implement msgpack)
+6. All tests use `endpoint: "localhost"` which auto-disables fallback hosts (REC2c2)
+7. Timeouts are generous (10-30s) since real network is involved
+8. Each test file provisions a sandbox app in `BEFORE ALL TESTS` and cleans up in `AFTER ALL TESTS`
+9. Each test creates its own proxy session and cleans it up after
+10. Use imperative actions (`session.trigger_action()`) when you need to disconnect at a specific point in the test flow, rather than timing-based rules
+11. Use `add_rules()` to add rules dynamically during a test (e.g., after channel attach succeeds, add a rule to suppress DETACH)
+
+### Proxy Event Log Assertions
+
+```pseudo
+# Verify resume was attempted on reconnection
+log = session.get_log()
+ws_connects = log.filter(e => e.type == "ws_connect")
+ASSERT ws_connects.length >= 2
+ASSERT ws_connects[1].queryParams["resume"] IS NOT null
+
+# Verify heartbeats=true in connection URL
+ASSERT ws_connects[0].queryParams["heartbeats"] == "true"
+
+# Verify specific frames were sent
+frames = log.filter(e => e.type == "ws_frame" AND e.direction == "client_to_server")
+attach_frames = frames.filter(f => f.message.action == 10)  # ATTACH = 10
+ASSERT attach_frames.length == 1
 ```
 
 ## Spec Requirement Summaries
@@ -777,7 +966,17 @@ uts/test/
 │   │       ├── connection_open_failures_test.md
 │   │       └── ...
 │   └── integration/
-│       └── (future Realtime integration tests)
+│       ├── helpers/
+│       │   └── proxy.md              # Proxy infrastructure spec
+│       ├── proxy/
+│       │   ├── connection_open_failures.md  # RTN14 tests via proxy
+│       │   ├── connection_resume.md         # RTN15 tests via proxy
+│       │   ├── heartbeat.md                 # RTN23 tests via proxy
+│       │   ├── channel_faults.md            # RTL4, RTL5, RTL13, RTL14 via proxy
+│       │   ├── rest_faults.md               # RSC10, RSC15 via proxy
+│       │   └── end_to_end.md                # RTL6 publish + history via proxy
+│       ├── connection_lifecycle_test.md      # Direct sandbox tests
+│       └── ...
 └── README.md
 ```
 
