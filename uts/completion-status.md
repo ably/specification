@@ -213,8 +213,8 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL4 | Attach function (RTL4a–RTL4m) | Yes — `realtime/unit/channels/channel_attach.md` |
 | RTL5 | Detach function (RTL5a–RTL5l) | Yes — `realtime/unit/channels/channel_detach.md` |
 | RTL6 | Publish function (RTL6a–RTL6k) | |
-| RTL7 | Subscribe function (RTL7a–RTL7h) | |
-| RTL8 | Unsubscribe function (RTL8a–RTL8c) | |
+| RTL7 | Subscribe function (RTL7a–RTL7h) | Yes — `realtime/unit/channels/channel_subscribe.md` |
+| RTL8 | Unsubscribe function (RTL8a–RTL8c) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL9 | Presence attribute (RTL9a) | |
 | RTL10 | History function (RTL10a–RTL10d) | |
 | RTL11 | Channel state effect on presence (RTL11a) | |
@@ -223,7 +223,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md` |
 | RTL15 | Channel#properties attribute (RTL15a–RTL15b1) | Yes — `realtime/unit/channels/channel_properties.md` |
 | RTL16 | SetOptions function (RTL16a) | Yes — `realtime/unit/channels/channel_options.md` |
-| RTL17 | No messages outside ATTACHED state | |
+| RTL17 | No messages outside ATTACHED state | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL18 | Vcdiff decoding failure recovery (RTL18a–RTL18c) | |
 | RTL19 | Base payload storage for vcdiff (RTL19a–RTL19c) | |
 | RTL20 | Last message ID storage | |
@@ -401,7 +401,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Realtime client** (RTC) | 14 | 8 | Partial |
 | **Connection** (RTN) | 23 | 16 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
-| **Realtime channel** (RTL) | 24 | 10 | Partial |
+| **Realtime channel** (RTL) | 24 | 13 | Partial |
 | **Realtime presence** (RTP) | 15 | 0 | None |
 | **Realtime annotations** (RTAN) | 5 | 0 | None |
 | **EventEmitter** (RTE) | 6 | 0 | None |
