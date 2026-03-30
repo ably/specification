@@ -62,7 +62,7 @@ result = AWAIT channel.presence.history(
 ### Assertions
 ```pseudo
 ASSERT captured_history_requests.length == 1
-ASSERT captured_history_requests[0].path == "/channels/${channel_name}/presence/history"
+ASSERT captured_history_requests[0].path == "/channels/${encode_uri_component(channel_name)}/presence/history"
 ASSERT captured_history_requests[0].params.start == 1000
 ASSERT captured_history_requests[0].params.end == 2000
 ASSERT captured_history_requests[0].params.direction == "backwards"
