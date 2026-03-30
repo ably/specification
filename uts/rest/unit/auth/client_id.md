@@ -1,6 +1,6 @@
 # Client ID Tests
 
-Spec points: `RSA7`, `RSA7a`, `RSA7b`, `RSA7c`, `RSA12`, `RSA12a`, `RSA12b`
+Spec points: `RSA7`, `RSA7a`, `RSA7b`, `RSA7c`, `RSA12`, `RSA12a`, `RSA12b`, `RSA15`, `RSA15a`, `RSA15b`, `RSA15c`
 
 ## Test Type
 Unit test with mocked HTTP client and/or authCallback
@@ -372,3 +372,95 @@ ASSERT error.message CONTAINS "clientId" OR error.message CONTAINS "mismatch"
 
 ### Note
 The exact timing of mismatch detection (constructor vs first use) may vary by implementation. The key requirement is that the mismatch is detected and reported as an error.
+
+---
+
+## RSA15a - Token clientId must match ClientOptions clientId
+
+**Spec requirement:** Any `clientId` provided in `ClientOptions` must match any non-wildcard `clientId` value in `TokenDetails`.
+
+This is tested by the RSA7 consistency test above (cases 1 and 2). When Token Auth is used and both `ClientOptions.clientId` and `TokenDetails.clientId` are set to non-wildcard values, they must match.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
+  }
+)
+install_mock(mock_http)
+
+# Matching case — should succeed
+client_match = Rest(options: ClientOptions(
+  clientId: "my-client",
+  tokenDetails: TokenDetails(
+    token: "matching-token",
+    expires: now() + 3600000,
+    clientId: "my-client"
+  )
+))
+
+# Mismatching case — should error
+ASSERT Rest(options: ClientOptions(
+  clientId: "my-client",
+  tokenDetails: TokenDetails(
+    token: "mismatched-token",
+    expires: now() + 3600000,
+    clientId: "other-client"
+  )
+)) THROWS error
+```
+
+### Assertions
+```pseudo
+ASSERT client_match.auth.clientId == "my-client"
+ASSERT error.code == 40102
+```
+
+---
+
+## RSA15b - Wildcard token clientId permits any ClientOptions clientId
+
+**Spec requirement:** If the `clientId` from `TokenDetails` is a wildcard string `'*'`, then the client is permitted to be either unidentified or identified by providing a `clientId`.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
+  }
+)
+install_mock(mock_http)
+
+# Wildcard token with explicit clientId — should succeed
+client = Rest(options: ClientOptions(
+  clientId: "any-client",
+  tokenDetails: TokenDetails(
+    token: "wildcard-token",
+    expires: now() + 3600000,
+    clientId: "*"
+  )
+))
+```
+
+### Assertions
+```pseudo
+# No error thrown — wildcard allows any clientId
+ASSERT client.auth.clientId == "any-client"
+```
+
+---
+
+## RSA15c - Incompatible clientId results in error (REST) or FAILED (Realtime)
+
+**Spec requirement:** Following an auth request which uses a `TokenDetails` that contains an incompatible `clientId`, the library should in the case of REST result in an appropriate error response, and in the case of Realtime transition the connection state to `FAILED`.
+
+### REST case
+
+See RSA15a mismatch case above — the REST client raises an error with code 40102.
+
+### Realtime case
+
+See `realtime/integration/auth.md` RSA7 test — the Realtime client transitions to FAILED state when a token with a mismatched clientId is used.

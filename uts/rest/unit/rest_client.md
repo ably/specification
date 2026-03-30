@@ -1,6 +1,6 @@
 # REST Client Tests
 
-Spec points: `RSC7`, `RSC7b`, `RSC7c`, `RSC7d`, `RSC7e`, `RSC8`, `RSC8a`, `RSC8b`, `RSC8c`, `RSC8d`, `RSC8e`, `RSC13`, `RSC18`
+Spec points: `RSC5`, `RSC7`, `RSC7b`, `RSC7c`, `RSC7d`, `RSC7e`, `RSC8`, `RSC8a`, `RSC8b`, `RSC8c`, `RSC8d`, `RSC8e`, `RSC13`, `RSC17`, `RSC18`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -8,6 +8,25 @@ Unit test with mocked HTTP client
 ## Mock HTTP Infrastructure
 
 See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
+
+---
+
+## RSC5 - Auth Attribute
+
+**Spec requirement:** `RestClient#auth` attribute provides access to the `Auth` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor.
+
+### Setup
+```pseudo
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret"
+))
+```
+
+### Assertions
+```pseudo
+ASSERT client.auth IS NOT null
+ASSERT client.auth IS Auth
+```
 
 ---
 
@@ -346,6 +365,26 @@ ASSERT error.code == 50003 OR error.message CONTAINS "timeout"
 
 ### Note
 This test should use timer mocking where available (see Test Infrastructure Notes) to avoid 1+ second test delays.
+
+---
+
+## RSC17 - ClientId Attribute
+
+**Spec requirement:** When instantiating a `RestClient`, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`.
+
+### Setup
+```pseudo
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  clientId: "explicit-client-id"
+))
+```
+
+### Assertions
+```pseudo
+ASSERT client.clientId == "explicit-client-id"
+ASSERT client.clientId == client.auth.clientId
+```
 
 ---
 

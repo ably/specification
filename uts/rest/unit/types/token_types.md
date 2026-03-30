@@ -108,13 +108,21 @@ Tests that `TokenParams` has all required attributes.
 
 ### Test Steps
 ```pseudo
-# TK1 - ttl attribute (milliseconds)
+# TK1 - ttl attribute (milliseconds, nullable)
 params = TokenParams(ttl: 3600000)
 ASSERT params.ttl == 3600000
 
-# TK2 - capability attribute
+# TK1 - ttl defaults to null when not specified (RSA5 depends on this)
+params = TokenParams()
+ASSERT params.ttl IS null
+
+# TK2 - capability attribute (nullable)
 params = TokenParams(capability: "{\"*\":[\"subscribe\"]}")
 ASSERT params.capability == "{\"*\":[\"subscribe\"]}"
+
+# TK2 - capability defaults to null when not specified (RSA6 depends on this)
+params = TokenParams()
+ASSERT params.capability IS null
 
 # TK3 - clientId attribute
 params = TokenParams(clientId: "param-client")
@@ -193,7 +201,7 @@ request = TokenRequest(
 )
 ASSERT request.keyName == "appId.keyId"
 
-# TE2 - ttl attribute
+# TE2 - ttl attribute (nullable)
 request = TokenRequest(
   keyName: "appId.keyId",
   ttl: 3600000,
@@ -202,7 +210,15 @@ request = TokenRequest(
 )
 ASSERT request.ttl == 3600000
 
-# TE3 - capability attribute
+# TE2 - ttl defaults to null when not specified (RSA5 depends on this)
+request = TokenRequest(
+  keyName: "appId.keyId",
+  timestamp: 1234567890000,
+  nonce: "nonce-2b"
+)
+ASSERT request.ttl IS null
+
+# TE3 - capability attribute (nullable)
 request = TokenRequest(
   keyName: "appId.keyId",
   capability: "{\"*\":[\"*\"]}",
@@ -210,6 +226,14 @@ request = TokenRequest(
   nonce: "nonce-3"
 )
 ASSERT request.capability == "{\"*\":[\"*\"]}"
+
+# TE3 - capability defaults to null when not specified (RSA6 depends on this)
+request = TokenRequest(
+  keyName: "appId.keyId",
+  timestamp: 1234567890000,
+  nonce: "nonce-3b"
+)
+ASSERT request.capability IS null
 
 # TE4 - clientId attribute
 request = TokenRequest(

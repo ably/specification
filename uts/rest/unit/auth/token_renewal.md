@@ -1,6 +1,6 @@
 # Token Renewal Tests
 
-Spec points: `RSA4b4`, `RSA14`
+Spec points: `RSA4b4`, `RSA14`, `RSC10`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -378,4 +378,131 @@ ASSERT error.code == 40142
 # Should not retry indefinitely (implementation-specific limit)
 ASSERT callback_count <= 3  # Reasonable retry limit
 ASSERT request_count <= 3  # Should stop making requests
+```
+
+---
+
+## RSC10 - REST request retried after token renewal
+
+**Spec requirement:** If a REST request responds with a token error (401 HTTP status code and an Ably error value 40140 <= code < 40150), then the Auth class is responsible for reissuing a token and the request should be reattempted.
+
+This test verifies the end-to-end flow at the HTTP client level: the original REST API call is transparently retried after the token is renewed, and the caller receives the successful result without knowing a renewal occurred.
+
+Note: The RSA4b4 tests above verify the auth renewal mechanism in isolation. This RSC10 test verifies the HTTP client's retry behaviour wrapping that mechanism.
+
+### Setup
+```pseudo
+callback_count = 0
+captured_requests = []
+
+auth_callback = FUNCTION(params):
+  callback_count = callback_count + 1
+  RETURN TokenDetails(
+    token: "token-" + str(callback_count),
+    expires: now() + 3600000
+  )
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    IF req.headers["Authorization"] == "Bearer token-1":
+      # First token is rejected
+      req.respond_with(401, {
+        "error": {
+          "code": 40142,
+          "statusCode": 401,
+          "message": "Token expired"
+        }
+      })
+    ELSE:
+      # Renewed token succeeds — return channel status
+      req.respond_with(200, {
+        "channelId": "test",
+        "status": {"isActive": true, "occupancy": {"metrics": {"connections": 0}}}
+      })
+  }
+)
+install_mock(mock_http)
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback)
+)
+```
+
+### Test Steps
+```pseudo
+# Call channel.status() — the caller should not see the 401/renewal
+result = AWAIT client.channels.get("test").status()
+```
+
+### Assertions
+```pseudo
+# The call succeeded transparently
+ASSERT result IS ChannelDetails
+
+# Two HTTP requests were made to /channels/test (original + retry)
+channel_requests = captured_requests.filter(r => r.path CONTAINS "/channels/test")
+ASSERT channel_requests.length == 2
+
+# Auth callback was called twice (initial token + renewal)
+ASSERT callback_count == 2
+
+# First request used first token, second used renewed token
+ASSERT channel_requests[0].headers["Authorization"] == "Bearer token-1"
+ASSERT channel_requests[1].headers["Authorization"] == "Bearer token-2"
+```
+
+---
+
+## RSC10b - Non-token 401 errors are not retried
+
+**Spec requirement:** Only errors with codes in the range 40140–40149 trigger token renewal. Other 401 errors should be propagated immediately.
+
+### Setup
+```pseudo
+callback_count = 0
+request_count = 0
+
+auth_callback = FUNCTION(params):
+  callback_count = callback_count + 1
+  RETURN TokenDetails(
+    token: "token-" + str(callback_count),
+    expires: now() + 3600000
+  )
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    request_count = request_count + 1
+    # Return a 401 with a non-token error code
+    req.respond_with(401, {
+      "error": {
+        "code": 40100,
+        "statusCode": 401,
+        "message": "Unauthorized"
+      }
+    })
+  }
+)
+install_mock(mock_http)
+
+client = Rest(
+  options: ClientOptions(authCallback: auth_callback)
+)
+```
+
+### Test Steps
+```pseudo
+AWAIT client.channels.get("test").status() FAILS WITH error
+ASSERT error.code == 40100
+```
+
+### Assertions
+```pseudo
+# Only one HTTP request — no retry
+ASSERT request_count == 1
+
+# Auth callback was called once (initial token only, no renewal)
+ASSERT callback_count == 1
 ```

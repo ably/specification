@@ -1,6 +1,6 @@
 # Auth Scheme Selection Tests
 
-Spec points: `RSA1`, `RSA2`, `RSA3`, `RSA4`, `RSA4b`
+Spec points: `RSA1`, `RSA2`, `RSA3`, `RSA4`, `RSA4b`, `RSA11`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -467,9 +467,9 @@ ASSERT request.headers["Authorization"] == "Bearer callback-token"
 
 ---
 
-## RSA2 - Basic auth header format
+## RSA2, RSA11 - Basic auth header format
 
-**Spec requirement:** Basic auth uses the format `Authorization: Basic {base64(key)}`.
+**Spec requirement:** Basic auth uses the format `Authorization: Basic {base64(key)}` (RSA2). The API key is Base64-encoded per RFC 7235, with the key name as username and key secret as password (RSA11).
 
 Tests the exact format of Basic auth header.
 
