@@ -1,6 +1,6 @@
 # Realtime Connection Lifecycle Integration Tests
 
-Spec points: `RTN4b`, `RTN4c`, `RTN11`, `RTN12`, `RTN21`
+Spec points: `RTN4b`, `RTN4c`, `RTN11`, `RTN12`, `RTN12a`, `RTN21`
 
 ## Test Type
 Integration test against Ably Sandbox endpoint
