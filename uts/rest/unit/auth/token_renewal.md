@@ -457,7 +457,7 @@ ASSERT channel_requests[1].headers["Authorization"] == "Bearer token-2"
 
 ---
 
-## RSC10 - Non-token 401 errors MUST NOT trigger token renewal
+## RSC10b - Non-token 401 errors MUST NOT trigger token renewal
 
 **Spec requirement:** Only errors with codes in the range 40140–40149 trigger token renewal. Other 401 errors (e.g. 40100 Unauthorized) MUST be propagated immediately without any renewal or retry attempt.
 
