@@ -528,9 +528,9 @@ ASSERT captured_attach_message.channel == channel_name
 
 ## RTL4c1 - ATTACH message includes channelSerial when available
 
-**Spec requirement:** The ATTACH ProtocolMessage channelSerial field must be set to the RTL15b channelSerial.
+**Spec requirement:** The ATTACH ProtocolMessage channelSerial field must be set to the RTL15b channelSerial. If the RTL15b channelSerial is not set, the field may be set to null or omitted.
 
-Tests that channelSerial is included in ATTACH message when available.
+Tests that channelSerial is included in ATTACH message when available. Uses setOptions (RTL16a) to trigger a reattach without going through DETACHED state, since RTL15b1 clears channelSerial on DETACHED.
 
 ### Setup
 ```pseudo
@@ -546,11 +546,6 @@ mock_ws = MockWebSocket(
         action: ATTACHED,
         channel: channel_name,
         channelSerial: "serial-from-server-1"
-      ))
-    ELSE IF msg.action == DETACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: DETACHED,
-        channel: channel_name
       ))
   }
 )
@@ -568,11 +563,9 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # First attach - no channelSerial yet
 AWAIT channel.attach()
 
-# Detach
-AWAIT channel.detach()
-
-# Second attach - should include channelSerial from previous ATTACHED
-AWAIT channel.attach()
+# Trigger reattach via setOptions (RTL16a) — does NOT go through DETACHED,
+# so channelSerial is preserved (RTL15b1 only clears on DETACHED/SUSPENDED/FAILED)
+AWAIT channel.setOptions(ChannelOptions(modes: [subscribe]))
 ```
 
 ### Assertions
@@ -580,7 +573,7 @@ AWAIT channel.attach()
 ASSERT length(captured_attach_messages) == 2
 # First attach has no channelSerial (or null)
 ASSERT captured_attach_messages[0].channelSerial IS null OR captured_attach_messages[0].channelSerial IS NOT SET
-# Second attach includes channelSerial from previous attachment
+# Second attach (reattach via setOptions) includes channelSerial
 ASSERT captured_attach_messages[1].channelSerial == "serial-from-server-1"
 ```
 
