@@ -61,6 +61,9 @@ ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "
 
 body = parse_json(request.body)
 ASSERT body IS List
+# NOTE: Some SDKs send a single message as a plain JSON object rather than
+# wrapping it in an array. The Ably API accepts both formats. SDKs MAY send
+# a single message as either an object or a single-element array.
 ASSERT body.length == 1
 ASSERT body[0]["name"] == "greeting"
 ASSERT body[0]["data"] == "hello"
