@@ -546,14 +546,33 @@ ASSERT value CONTAINS "substring"
 
 ## Error Testing Pattern
 
+Use the `FAILS WITH error` pattern to test operations that should fail. This pattern:
+- Explicitly ties the error to the specific operation that caused it
+- Is language-agnostic (works for exceptions, Result types, error returns, etc.)
+- Focuses on ErrorInfo fields rather than exception type names
+
 ```pseudo
+# Synchronous operation that fails
+client.channels.get("channel", invalidOptions) FAILS WITH error
+ASSERT error.code == 40000
+
+# Async operation that fails
+AWAIT client.auth.authorize(invalidParams) FAILS WITH error
+ASSERT error.code == 40160
+ASSERT error.statusCode == 401
+```
+
+**Do NOT use language-specific exception patterns:**
+```pseudo
+# BAD - assumes exceptions, names specific exception types
 TRY:
   AWAIT operation_that_fails()
   FAIL("Expected exception")
 CATCH AblyException as e:
   ASSERT e.code == 40160
-  ASSERT e.statusCode == 401
 ```
+
+The error object in `FAILS WITH error` represents the ErrorInfo associated with the failure. Implementations should verify the appropriate ErrorInfo fields (code, statusCode, message) regardless of how errors are propagated in that language.
 
 ## Key Spec Points to Remember
 
