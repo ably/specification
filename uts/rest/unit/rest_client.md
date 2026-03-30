@@ -366,7 +366,19 @@ ASSERT error.code == 50003 OR error.message CONTAINS "timeout"
 ```
 
 ### Note
-This test should use timer mocking where available (see Test Infrastructure Notes) to avoid 1+ second test delays.
+The timeout must be enforced at the SDK level (wrapping the HTTP execute call),
+not solely by the HTTP library's built-in timeout. HTTP library timeouts
+typically do not fire with mock clients since no real network I/O occurs.
+
+The recommended implementation pattern is:
+- The mock client's `execute()` sleeps for the configured delay before returning
+- The SDK wraps the `execute()` call with its own timeout (using the language's
+  async timeout mechanism)
+- The SDK timeout fires before the mock delay completes, producing the expected error
+
+This avoids requiring complex async connection-level mocking (`await_request` /
+`respond_with_delay`) and keeps the test fast — the test only waits for the
+short timeout duration (e.g. 100ms), not the full mock delay.
 
 ---
 
