@@ -33,27 +33,39 @@ interface MockWebSocket:
   send_to_client_and_close(message: ProtocolMessage)  # Send then close connection
   simulate_disconnect(error?: ErrorInfo)  # Close without sending a message
 
+  # WebSocket ping frame simulation (for RTN23b)
+  # Simulates the server sending a WebSocket ping frame.
+  # On platforms where the WebSocket client surfaces ping events,
+  # this allows testing heartbeat behavior via ping frames instead of
+  # HEARTBEAT protocol messages.
+  send_ping_frame()
+
   # Awaitable event triggers for test code
   await_next_message_from_client(timeout?: Duration): Future<ProtocolMessage>
   await_connection_attempt(timeout?: Duration): Future<PendingConnection>
-  await_close_request(timeout?: Duration): Future<void>
+  await_client_close(timeout?: Duration): Future<ClientCloseEvent>  # Wait for client to close WebSocket
 
   # Test management
   reset()  # Clear all state
 
 enum MockEventType:
-  CONNECTION_ATTEMPT
-  CONNECTION_SUCCESS
-  CONNECTION_FAILURE
-  MESSAGE_FROM_CLIENT
-  MESSAGE_TO_CLIENT
-  DISCONNECT
-  CLOSE_REQUEST
+  CONNECTION_ATTEMPT      # Client attempted to connect
+  CONNECTION_SUCCESS      # Connection established successfully
+  CONNECTION_FAILURE      # Connection failed (refused, timeout, DNS error, etc.)
+  MESSAGE_FROM_CLIENT     # Client sent a protocol message
+  MESSAGE_TO_CLIENT       # Server sent a protocol message (test injected)
+  PING_FRAME              # WebSocket ping frame sent to client (test injected)
+  SERVER_DISCONNECT       # Server closed the connection or transport failure
+  CLIENT_CLOSE            # Client initiated WebSocket close
 
 struct MockEvent:
   type: MockEventType
   timestamp: Time
   data: Any  # Event-specific data (PendingConnection, ProtocolMessage, ErrorInfo, etc.)
+
+struct ClientCloseEvent:
+  code: Int?              # WebSocket close code (e.g., 1000 for normal closure)
+  reason: String?         # Optional close reason
 
 interface PendingConnection:
   url: URL
@@ -109,17 +121,62 @@ second_conn = AWAIT second_future
 
 ## Connection Closing Semantics
 
+### Server-Initiated Close (Test Simulating Server)
+
 When simulating server behavior, use the correct method based on the scenario:
 
-| Scenario | Method | Description |
-|----------|--------|-------------|
-| Server sends DISCONNECTED | `send_to_client_and_close()` | Server sends message then closes connection |
-| Server sends ERROR (connection-level) | `send_to_client_and_close()` | ERROR without channel = fatal, closes connection |
-| Server sends ERROR (channel-level) | `send_to_client()` | ERROR with channel = attachment failure, connection stays open |
-| Server sends CONNECTED, HEARTBEAT, ACK, MESSAGE | `send_to_client()` | Normal messages, connection stays open |
-| Unexpected transport failure | `simulate_disconnect()` | Connection drops without server message |
+| Scenario | Method | Event Recorded |
+|----------|--------|----------------|
+| Server sends DISCONNECTED | `send_to_client_and_close()` | `SERVER_DISCONNECT` |
+| Server sends ERROR (connection-level) | `send_to_client_and_close()` | `SERVER_DISCONNECT` |
+| Server sends ERROR (channel-level) | `send_to_client()` | (none - connection stays open) |
+| Server sends CONNECTED, HEARTBEAT, ACK, MESSAGE | `send_to_client()` | (none - connection stays open) |
+| Unexpected transport failure | `simulate_disconnect()` | `SERVER_DISCONNECT` |
 
 **Key rule:** Whenever the server sends DISCONNECTED, or ERROR without a specified channel, it will be accompanied by the server closing the WebSocket connection. An ERROR with a specified channel is an attachment failure and doesn't end the connection.
+
+### Client-Initiated Close (Library Closing Connection)
+
+When the Ably library closes the WebSocket connection (e.g., due to heartbeat timeout, explicit close, or fatal error), a `CLIENT_CLOSE` event is recorded. Tests can:
+
+1. **Inspect events list:** Check `mock_ws.events` for `CLIENT_CLOSE` event
+2. **Await the close:** Use `await_client_close()` to wait for the library to close
+
+```pseudo
+# Example: Assert client closed the connection after heartbeat timeout
+AWAIT mock_ws.await_client_close(timeout: 1000)
+
+# Or inspect the events list
+client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
+ASSERT client_close_events.length == 1
+```
+
+The `ClientCloseEvent` contains:
+- `code`: WebSocket close code (e.g., 1000 for normal, 1001 for going away)
+- `reason`: Optional human-readable close reason
+
+## WebSocket Ping Frame Simulation (RTN23b)
+
+Some WebSocket client implementations surface ping frame events to the application layer. Per RTN23b, if the WebSocket client can observe ping frames, the Ably library can use them as heartbeat indicators instead of requiring HEARTBEAT protocol messages.
+
+Use `send_ping_frame()` to simulate the server sending a WebSocket ping frame:
+
+```pseudo
+# Simulate server sending a ping frame (transport-level heartbeat)
+mock_ws.active_connection.send_ping_frame()
+```
+
+**When to use ping frames vs HEARTBEAT messages:**
+
+| Scenario | Method | Use Case |
+|----------|--------|----------|
+| Platform surfaces ping events | `send_ping_frame()` | RTN23b - Test heartbeat via ping frames |
+| Platform doesn't surface pings | `send_to_client(HEARTBEAT_MESSAGE)` | RTN23a - Test heartbeat via protocol messages |
+
+**Connection URL query parameter:**
+- If the client sends `heartbeats=true`, it expects HEARTBEAT protocol messages
+- If the client sends `heartbeats=false` (or omits it), the server may use ping frames
+- The test should verify which parameter the client sends based on platform capabilities
 
 ## Protocol Message Templates
 
@@ -252,3 +309,125 @@ ASSERT client.connection.state == ConnectionState.disconnected
 - **Preferred**: Mock/fake the timer/clock mechanism (e.g., `jest.advanceTimersByTime()` in JavaScript)
 - **Alternative**: Use dependency injection of clock/timer abstractions
 - **Fallback**: Use actual time delays with short timeout values
+
+## Async Behavior and Event Loop Considerations
+
+### Mock close() Must Be Asynchronous
+
+The mock WebSocket's `close()` method must call `listener.onClose()` **asynchronously** (e.g., via `scheduleMicrotask` or `setTimeout(..., 0)`), not synchronously. This matches the behavior of real WebSocket implementations where `onClose` is triggered via the stream's `onDone` callback.
+
+```pseudo
+# CORRECT - matches real WebSocket behavior
+close(code, reason):
+  IF already_closed: RETURN
+  closed = true
+  record_event(CLIENT_CLOSE, {code, reason})
+  schedule_microtask(() => listener.onClose(code, reason))
+
+# WRONG - would cause issues with state machine timing
+close(code, reason):
+  IF already_closed: RETURN
+  closed = true
+  listener.onClose(code, reason)  # Synchronous - BAD
+```
+
+### respondWithSuccess() Ordering
+
+When a connection attempt succeeds, `respondWithSuccess()` must:
+1. **First** - Complete the connection future (so `connect()` returns)
+2. **Then** - Deliver the CONNECTED message asynchronously
+
+This ensures the library has stored the WebSocket connection reference before processing the CONNECTED message (which may start timers that reference the connection).
+
+```pseudo
+respond_with_success(connected_message):
+  connection = create_mock_connection(listener)
+  completer.complete(connection)  # 1. Connection established
+  schedule_microtask(() => {
+    listener.onMessage(connected_message)  # 2. Then deliver message
+  })
+```
+
+### Pumping the Event Queue
+
+After advancing fake timers or triggering async operations, tests may need to "pump" the event queue to allow scheduled callbacks to execute:
+
+```pseudo
+# Pump the event queue to process pending microtasks and timer events
+PUMP_EVENT_QUEUE()
+```
+
+**Implementation notes:**
+
+- **Microtasks** (e.g., `scheduleMicrotask`, `Future.value().then()`) run before timer events
+- **Timer events** (e.g., `Timer.run`, `Future.delayed(Duration.zero)`) run after all microtasks
+- Multiple chained async operations may require multiple pumps
+
+In Dart, `await Future.delayed(Duration.zero)` yields to the event loop and allows pending timer events to fire. For nested async chains, multiple pumps may be needed:
+
+```dart
+// Pump the event queue multiple times for nested async operations
+Future<void> pumpEventQueue([int times = 5]) async {
+  for (var i = 0; i < times; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+}
+```
+
+### Avoiding Arbitrary Real-Time Delays
+
+Tests should **never** use fixed real-time delays like `await Future.delayed(Duration(milliseconds: 100))`. These cause:
+- Slow tests
+- Flaky tests (timing varies by machine load)
+- Non-deterministic behavior
+
+Instead:
+- Use fake timers with `ADVANCE_TIME()`
+- Pump the event queue with `PUMP_EVENT_QUEUE()` or `await Future.delayed(Duration.zero)`
+- Wait for specific state changes with `AWAIT_STATE`
+
+```pseudo
+# BAD - arbitrary real-time delay
+ADVANCE_TIME(3000)
+WAIT 100ms  # Real-time delay - flaky!
+ASSERT state == disconnected
+
+# GOOD - pump event queue and wait for state
+ADVANCE_TIME(3000)
+PUMP_EVENT_QUEUE()
+AWAIT_STATE state == disconnected
+```
+
+## Verifying State Transitions with Event Sequences
+
+When testing behavior that involves transient states (e.g., DISCONNECTED during reconnection), **do not** try to catch the state at a specific moment. Instead, record the full sequence of state changes and verify it at the end:
+
+```pseudo
+state_changes = []
+client.connection.on().listen((change) => {
+  state_changes.append(change.current)
+})
+
+# Trigger the behavior
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Trigger disconnect and reconnect
+mock_ws.active_connection.simulate_disconnect()
+PUMP_EVENT_QUEUE()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Verify the sequence included the expected states
+ASSERT state_changes CONTAINS_IN_ORDER [
+  ConnectionState.connecting,
+  ConnectionState.connected,
+  ConnectionState.disconnected,
+  ConnectionState.connecting,
+  ConnectionState.connected
+]
+```
+
+This approach is more robust because:
+- It doesn't depend on catching a transient state at exactly the right moment
+- It works even when immediate reconnection (RTN15a) causes rapid state transitions
+- It verifies the complete behavior, not just the final state
