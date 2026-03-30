@@ -306,7 +306,7 @@ AWAIT channel.attach()
 mock_ws.send_to_client(ProtocolMessage(
   action: ATTACHED,
   channel: channel_name,
-  flags: HAS_RESUME  # Indicates resumed attachment
+  flags: RESUMED  # Indicates resumed attachment (TR3c, bit 2)
 ))
 
 # Wait for the event to be processed
