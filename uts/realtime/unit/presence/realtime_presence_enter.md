@@ -12,6 +12,13 @@ and `leaveClient` functions. These methods send PRESENCE ProtocolMessages to the
 and handle ACK/NACK responses. Tests cover protocol message format, implicit channel
 attach, connection state conditions, and error cases.
 
+**Note on wildcard clientId:** Several tests use `clientId: "*"` (wildcard) which is
+the Ably convention for clients permitted to act on behalf of any clientId via
+`enterClient`/`updateClient`/`leaveClient`. Some SDKs may reject `"*"` at the
+`ClientOptions` construction level. In such cases, adapt these tests to use a
+concrete clientId (e.g., `"admin"`) and skip the client-side `enterClient` clientId
+mismatch check (RTP15f), or configure the mock to accept any clientId.
+
 ---
 
 ## RTP8a, RTP8c - enter sends PRESENCE with ENTER action
@@ -250,6 +257,10 @@ ASSERT error IS NOT null
 ## RTP8j - enter with wildcard clientId errors
 
 ### Setup
+
+Note: Some SDKs may reject wildcard clientId `"*"` at the `ClientOptions`
+construction level rather than at `enter()` time. In that case, this test
+validates that the error occurs at `ClientOptions` creation instead.
 ```pseudo
 channel_name = "test-RTP8j-wild-${random_id()}"
 
@@ -826,7 +837,8 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Wildcard client to allow both enter() and enterClient()
+# Wildcard clientId to allow both enter() and enterClient() on the same connection.
+# See note in Purpose section about SDK-level wildcard validation.
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
