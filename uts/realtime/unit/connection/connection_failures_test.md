@@ -852,7 +852,6 @@ original_connection_key = client.connection.key
 # Force disconnect - triggers immediate reconnect per RTN15a
 ws_connection = mock_ws.events.find(e => e.type == CONNECTION_SUCCESS).connection
 ws_connection.simulate_disconnect()
-PUMP_EVENT_QUEUE()
 
 # Reconnection attempts keep failing (connection refused).
 # Advance time in increments to allow retries, TTL expiry,
@@ -861,7 +860,6 @@ PUMP_EVENT_QUEUE()
 # suspendedRetryTimeout is 2000ms.
 LOOP up to 15 times:
   ADVANCE_TIME(2500)
-  PUMP_EVENT_QUEUE()
   IF client.connection.state == ConnectionState.connected:
     BREAK
 
