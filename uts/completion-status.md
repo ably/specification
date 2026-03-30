@@ -105,9 +105,9 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| PC1–PC5 | Plugin architecture, VCDiff, Objects | |
+| PC1–PC5 | Plugin architecture, VCDiff, Objects | Partial — `realtime/unit/channels/channel_delta_decoding.md` covers PC3, PC3a; `realtime/integration/delta_decoding_test.md` covers PC3 |
 | PT1–PT2 | PluginType enum | |
-| VD1–VD2 | VCDiffDecoder | |
+| VD1–VD2 | VCDiffDecoder | Partial — `realtime/unit/helpers/mock_vcdiff.md` references VD2a |
 
 ### RestPresence
 
@@ -224,10 +224,10 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL15 | Channel#properties attribute (RTL15a–RTL15b1) | Yes — `realtime/unit/channels/channel_properties.md` |
 | RTL16 | SetOptions function (RTL16a) | Yes — `realtime/unit/channels/channel_options.md` |
 | RTL17 | No messages outside ATTACHED state | Yes — `realtime/unit/channels/channel_subscribe.md` |
-| RTL18 | Vcdiff decoding failure recovery (RTL18a–RTL18c) | |
-| RTL19 | Base payload storage for vcdiff (RTL19a–RTL19c) | |
-| RTL20 | Last message ID storage | |
-| RTL21 | Message ordering in arrays | |
+| RTL18 | Vcdiff decoding failure recovery (RTL18a–RTL18c) | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
+| RTL19 | Base payload storage for vcdiff (RTL19a–RTL19c) | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
+| RTL20 | Last message ID storage | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
+| RTL21 | Message ordering in arrays | Yes — `realtime/unit/channels/channel_delta_decoding.md` |
 | RTL22 | Message filtering (RTL22a–RTL22d) | |
 | RTL23 | Name attribute | |
 | RTL24 | ErrorReason attribute | |
@@ -313,7 +313,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| TM1–TM8 | Message (TM1–TM8a1) | Partial — `rest/unit/types/message_types.md` covers TM1–TM5 |
+| TM1–TM8 | Message (TM1–TM8a1) | Partial — `rest/unit/types/message_types.md` covers TM1–TM5; `realtime/unit/channels/message_field_population.md` covers TM2a, TM2c, TM2f (realtime field population) |
 | DE1–DE2 | DeltaExtras | |
 | TP1–TP5 | PresenceMessage | Yes — `rest/unit/types/presence_message_types.md` |
 | OM1–OM5 | ObjectMessage | |
@@ -401,14 +401,14 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Realtime client** (RTC) | 14 | 12 | Partial |
 | **Connection** (RTN) | 23 | 17 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
-| **Realtime channel** (RTL) | 24 | 16 | Partial |
+| **Realtime channel** (RTL) | 24 | 20 | Partial |
 | **Realtime presence** (RTP) | 15 | 15 | Full |
 | **Realtime annotations** (RTAN) | 5 | 0 | None |
 | **EventEmitter** (RTE) | 6 | 0 | None |
 | **Backoff/jitter** (RTB) | 1 | 0 | None |
 | **Wrapper SDK** (WP) | 7 | 0 | None |
 | **Push notifications** (RSH) | 8 | 0 | None |
-| **Plugins** (PC/PT/VD) | 3 | 0 | None |
+| **Plugins** (PC/PT/VD) | 3 | 2 | Partial |
 | **Data types** | 30 | 9 | Partial |
 | **Option types** | 8 | 5 | Partial |
 | **Push types** | 3 | 0 | None |
