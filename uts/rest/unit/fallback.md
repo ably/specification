@@ -511,7 +511,9 @@ ASSERT mock_http.captured_requests[2].url.host == "main.realtime.ably.net"
 
 **Spec requirement:** When no endpoint configuration is provided, the default primary domain is `rest.ably.io` for REST and `realtime.ably.io` for Realtime.
 
-Tests that the default primary domain is `main.realtime.ably.net` when no endpoint options are specified.
+Tests that the default primary domain is used when no endpoint options are specified.
+
+> **Note:** The spec defines the legacy default as `rest.ably.io` for REST and `realtime.ably.io` for Realtime. SDKs adopting the new `endpoint` routing policy (REC1b) should use `main.realtime.ably.net` as the new default. SDKs still using the legacy `restHost`/`realtimeHost` pattern should assert against `rest.ably.io` / `realtime.ably.io` respectively.
 
 ### Setup
 ```pseudo
@@ -913,6 +915,8 @@ ASSERT mock_http.captured_requests[0].url.host == "rest.example.com"
 **Spec requirement:** When using default configuration, fallback domains follow the pattern `[a-e].ably-realtime.com`.
 
 Tests that default configuration provides the standard fallback domains.
+
+> **Note:** The spec defines the legacy fallback pattern as `[a-e].ably-realtime.com`. SDKs adopting the new `endpoint` routing policy (REC1b) should use `main.[a-e].fallback.ably-realtime.com`. SDKs still using the legacy pattern should assert against `[a-e].ably-realtime.com`.
 
 ### Setup
 ```pseudo
