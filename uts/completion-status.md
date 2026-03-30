@@ -32,9 +32,9 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | RSC1 | Constructor options (RSC1a–RSC1c) | Yes — `realtime/unit/client/client_options.md`, `realtime/unit/client/realtime_client.md` |
-| RSC2 | Logger default | |
-| RSC3 | Log level configuration | |
-| RSC4 | Custom logger | |
+| RSC2 | Logger default | Yes — `rest/unit/logging.md` |
+| RSC3 | Log level configuration | Yes — `rest/unit/logging.md` |
+| RSC4 | Custom logger | Yes — `rest/unit/logging.md` |
 | RSC5 | Auth object attribute | |
 | RSC6 | Stats function (RSC6a–RSC6b4) | Yes — `rest/unit/stats.md`, `rest/integration/time_stats.md` |
 | RSC7 | HTTP request headers (RSC7a–RSC7d7) | Yes — `rest/unit/rest_client.md` |
@@ -391,7 +391,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Area | Spec groups | With UTS spec | Coverage |
 |------|-------------|---------------|----------|
 | **Endpoint config** (REC) | 3 | 3 | Full |
-| **REST client** (RSC) | 18 | 9 | Partial |
+| **REST client** (RSC) | 18 | 12 | Partial |
 | **REST auth** (RSA) | 15 | 10 | Partial |
 | **REST channels** (RSN) | 4 | 0 | None |
 | **REST channel** (RSL) | 13 | 6 | Partial |
