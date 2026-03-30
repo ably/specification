@@ -321,7 +321,7 @@ ASSERT message.encoding IS null
 
 ## RSL6a - Decoding chained encodings
 
-**Spec requirement:** Chained encodings (e.g., `json/base64`) must be decoded in reverse order (last applied encoding is removed first).
+**Spec requirement:** Chained encodings (e.g., `json/base64`) must be decoded in reverse order (last applied encoding is removed first). When processing chained encodings, decoders MUST handle intermediate data types — for example, after decoding `base64`, the data will be binary bytes; a subsequent `json` decoder MUST convert those bytes to a UTF-8 string before JSON parsing.
 
 ### Setup
 ```pseudo
