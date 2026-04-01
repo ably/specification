@@ -123,6 +123,12 @@ The client transport manages the client-side conversation lifecycle over an Ably
 - `(AIT-CT1)` The SDK must provide a `createClientTransport` factory that accepts a channel, codec, and transport options, and returns a `ClientTransport`.
 - `(AIT-CT2)` On construction, the transport must subscribe to the channel for incoming messages before the channel attaches (Ably RTL7g) to guarantee no messages are missed.
 
+### State
+
+- `(AIT-CT19)` The client transport must maintain an internal state, which is a `ClientTransportState`. The cases of `ClientTransportState` are:
+  - `(AIT-CT19a)` `READY` — the transport is operational. This is the initial state after construction.
+  - `(AIT-CT19b)` `CLOSED` — the transport has been torn down and will not accept further operations.
+
 ### Send
 
 - `(AIT-CT3)` `send()` must create a new turn, optimistically insert user messages into the conversation tree, and return an `ActiveTurn` handle containing a decoded event stream, the turn ID, and a cancel function.
@@ -131,7 +137,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
   - `(AIT-CT3c)` Each user message must be assigned a unique `x-ably-msg-id` and optimistically inserted into the conversation tree before the POST is sent.
   - `(AIT-CT3d)` If `parent` is not explicitly provided and `forkOf` is not set, the parent must be auto-computed from the last message in the current thread.
   - `(AIT-CT3e)` When multiple messages are sent in a single `send()` call, they must be chained — each subsequent message must parent off the previous message in the batch, not the original auto-computed parent.
-- `(AIT-CT4)` `send()` must throw if the transport is closed.
+- `(AIT-CT4)` `send()` must throw if the transport is not in the READY state.
 
 ### Regenerate
 
@@ -152,7 +158,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
   - `(AIT-CT8a)` `on('message')` must notify when the message list changes (messages added, updated, or removed).
   - `(AIT-CT8b)` `on('turn')` must notify on turn lifecycle events (start and end) with the turn ID, client ID, and end reason.
   - `(AIT-CT8c)` `on('error')` must surface non-fatal transport errors as `ErrorInfo`.
-  - `(AIT-CT8d)` If the transport is closed, `on()` must return a no-op unsubscribe function.
+  - `(AIT-CT8d)` If the transport is not in the READY state, `on()` must return a no-op unsubscribe function.
 
 ### Message Access
 
@@ -169,9 +175,9 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Close
 
-- `(AIT-CT12)` `close()` must unsubscribe from the channel, close all active turn streams, clear all event handlers, and prevent further operations.
+- `(AIT-CT12)` `close()` must transition the transport to the CLOSED state, unsubscribe from the channel, close all active turn streams, clear all event handlers, and prevent further operations.
   - `(AIT-CT12a)` An optional `cancel` filter must publish a cancel message before teardown. Cancel publish failure must be swallowed (best-effort).
-  - `(AIT-CT12b)` `close()` must be idempotent.
+  - `(AIT-CT12b)` `close()` must be idempotent — if the transport is already in the CLOSED state, it must return immediately.
 
 ### Conversation Tree
 
