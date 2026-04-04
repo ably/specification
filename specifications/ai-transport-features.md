@@ -87,7 +87,7 @@ The server transport manages the server-side turn lifecycle over an Ably channel
 - `(AIT-ST4)` `start()` must publish a turn-start event (`x-ably-turn-start`) with the turn's `x-ably-turn-id` and `x-ably-turn-client-id` headers. It must be idempotent.
   - `(AIT-ST4a)` If the turn was cancelled before `start()`, `start()` must raise an error.
   - `(AIT-ST4b)` If the turn-start publish fails, the per-turn `onError` callback must be invoked and the error re-thrown.
-- `(AIT-ST5)` `addMessages()` must accept `ConversationNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
+- `(AIT-ST5)` `addMessages()` must accept `TreeNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
   - `(AIT-ST5a)` Per-node `parentId` and `forkOf` fields take precedence; turn-level defaults apply when those fields are undefined.
   - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `msgId` of each published node, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
 - `(AIT-ST6)` `streamResponse()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-turn-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
@@ -116,7 +116,7 @@ The server transport manages the server-side turn lifecycle over an Ably channel
 
 ## Client Transport {#client-transport}
 
-The client transport manages the client-side conversation lifecycle over an Ably channel. It composes a ConversationTree for branching message history, a StreamRouter for per-turn event streams, and a codec decoder for processing incoming Ably messages.
+The client transport manages the client-side conversation lifecycle over an Ably channel. It composes a Tree for branching message history, a StreamRouter for per-turn event streams, and a codec decoder for processing incoming Ably messages.
 
 ### Factory
 
@@ -149,23 +149,26 @@ The client transport manages the client-side conversation lifecycle over an Ably
 ### Event Subscription
 
 - `(AIT-CT8)` The transport must support event subscriptions via `on(event, handler)` returning an unsubscribe function.
-  - `(AIT-CT8a)` `on('message')` must notify when the message list changes (messages added, updated, or removed).
-  - `(AIT-CT8b)` `on('turn')` must notify on turn lifecycle events (start and end) with the turn ID, client ID, and end reason.
+  - `(AIT-CT8a)` `view.on('update')` must notify when the view's message list changes (messages added, updated, or removed).
+  - `(AIT-CT8b)` `tree.on('turn')` or `view.on('turn')` must notify on turn lifecycle events (start and end) with the turn ID, client ID, and end reason.
   - `(AIT-CT8c)` `on('error')` must surface non-fatal transport errors as `ErrorInfo`.
   - `(AIT-CT8d)` If the transport is closed, `on()` must return a no-op unsubscribe function.
+  - `(AIT-CT8e)` `tree.on('ably-message')` must notify when a raw Ably message is received.
 
 ### Message Access
 
-- `(AIT-CT9)` `getMessages()` must return the flattened conversation tree along the currently selected branches.
-- `(AIT-CT9a)` `getNodes()` must return the flattened conversation tree as `ConversationNode[]` along the currently selected branches, including typed `msgId`, `parentId`, `forkOf`, `headers`, and `serial` fields.
-- `(AIT-CT10)` `getTree()` must expose the conversation tree for branch navigation (sibling listing, selection, node lookup).
+- `(AIT-CT9)` `view.flattenNodes()` must return the flattened conversation tree as `TreeNode[]` along the view's selected branches, including typed `msgId`, `parentId`, `forkOf`, `headers`, and `serial` fields.
+- `(AIT-CT10)` `transport.tree` must expose the conversation tree for structural queries (sibling listing, node lookup).
+- `(AIT-CT10a)` `transport.view` must expose a default view for message access with history pagination and branch navigation.
+- `(AIT-CT10b)` `transport.createView()` must return a new independent view over the same tree. Each view must have independent branch selections and pagination state.
+- `(AIT-CT10c)` `transport.close()` must close all views created via `createView()` in addition to the default view.
 
 ### History
 
-- `(AIT-CT11)` `history()` must load decoded messages from channel history using `untilAttach` for gapless continuity with the live subscription.
-  - `(AIT-CT11a)` History messages must be inserted into the conversation tree and trigger a message notification.
+- `(AIT-CT11)` `view.loadOlder(limit)` must load decoded messages from channel history using `untilAttach` for gapless continuity with the live subscription.
+  - `(AIT-CT11a)` History messages must be inserted into the conversation tree and trigger an `update` notification on the view.
   - `(AIT-CT11b)` The `limit` option must control the number of complete domain messages returned, not the number of Ably wire messages fetched. The implementation must page through Ably history until enough complete messages are assembled.
-  - `(AIT-CT11c)` The returned `PaginatedMessages` must support `next()` for loading older pages. Older messages are withheld from `getMessages()` until released by `next()`.
+  - `(AIT-CT11c)` Older messages are withheld from `view.flattenNodes()` until released by subsequent `loadOlder()` calls.
 
 ### Close
 
@@ -175,11 +178,13 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Conversation Tree
 
-- `(AIT-CT13)` The SDK must provide a `ConversationTree` that materializes a branching conversation from a flat oplog of messages.
+- `(AIT-CT13)` The SDK must provide a `Tree` that materializes a branching conversation from a flat oplog of messages. The tree owns structural data (nodes, sibling groups) but not branch selection state.
   - `(AIT-CT13a)` Messages must be ordered by Ably serial (lexicographic). Messages without a serial (optimistic inserts) must sort after all serial-bearing messages.
-  - `(AIT-CT13b)` Fork points must create sibling groups. Messages with the same `x-ably-parent` whose `x-ably-fork-of` chains trace to a common root form a sibling group. The default selection must be the latest sibling.
-  - `(AIT-CT13c)` `select()` must update the active branch at a fork point. `flatten()` must reflect the current selection.
+  - `(AIT-CT13b)` Fork points must create sibling groups. Messages with the same `x-ably-parent` whose `x-ably-fork-of` chains trace to a common root form a sibling group. The default selection (when no view-local selection exists) must be the latest sibling.
+  - `(AIT-CT13c)` `view.select()` must update the active branch at a fork point for that view. `view.flattenNodes()` must reflect the view's selections. Each view maintains independent selections; selecting in one view must not affect another.
   - `(AIT-CT13d)` `upsert()` must promote null serials to server-assigned serials on relay, re-sorting the message in the list.
+  - `(AIT-CT13e)` When a view initiates a fork via `send()`, `regenerate()`, or `edit()`, it must auto-select the new sibling. If the optimistic insert creates the sibling immediately (edit), selection must update synchronously. If no optimistic insert occurs (regenerate), selection must be deferred until the server response creates the new sibling in the tree.
+  - `(AIT-CT13f)` When a new fork appears from an external source (another view, another client), views that were already showing the original message must pin their selection to the currently-visible sibling. This prevents unintended branch shifts.
 
 ### Stream Router
 
@@ -198,7 +203,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Active Turn Tracking
 
-- `(AIT-CT17)` `getActiveTurnIds()` must return currently active turns grouped by client ID.
+- `(AIT-CT17)` `tree.getActiveTurnIds()` or `view.getActiveTurnIds()` must return currently active turns grouped by client ID.
 
 ### Wait for Turn
 
