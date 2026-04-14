@@ -127,7 +127,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 - `(AIT-CT3)` `send()` must create a new turn, optimistically insert user messages into the conversation tree, and return an `ActiveTurn` handle containing a decoded event stream, the turn ID, and a cancel function.
   - `(AIT-CT3a)` The HTTP POST to the server must be fire-and-forget — the returned stream must be available immediately, without waiting for the POST to complete.
-  - `(AIT-CT3b)` If the HTTP POST fails (network error or non-2xx response), the error must be emitted via `on('error')`, not thrown. The turn's stream must be closed.
+  - `(AIT-CT3b)` If the HTTP POST fails (network error or non-2xx response), the error must be emitted via `on('error')`, not thrown. The turn's stream must be errored via `errorStream()` (AIT-CT14c) with code `TransportSendFailed` (104005). For non-2xx responses, the HTTP status code must be used as the `statusCode`. For network errors, the original error must be wrapped as the `cause`.
   - `(AIT-CT3c)` Each user message must be assigned a unique `x-ably-msg-id` and optimistically inserted into the conversation tree before the POST is sent.
   - `(AIT-CT3d)` If `parent` is not explicitly provided and `forkOf` is not set, the parent must be auto-computed from the last message in the current thread.
   - `(AIT-CT3e)` When multiple messages are sent in a single `send()` call, they must be chained — each subsequent message must parent off the previous message in the batch, not the original auto-computed parent.
@@ -186,6 +186,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
 - `(AIT-CT14)` The client transport must route decoded events to per-turn `ReadableStream`s via a stream router.
   - `(AIT-CT14a)` Terminal events (as determined by the codec's `isTerminal` predicate) must close the stream after enqueue.
   - `(AIT-CT14b)` `closeStream()` must close the controller and remove the entry, allowing the consumer to read the stream to completion.
+  - `(AIT-CT14c)` `errorStream()` must error the controller with the given error and remove the entry. The consumer's reader will reject with the error.
 
 ### Optimistic Reconciliation
 
@@ -203,6 +204,15 @@ The client transport manages the client-side conversation lifecycle over an Ably
 ### Wait for Turn
 
 - `(AIT-CT18)` `waitForTurn()` must return a promise that resolves when all active turns matching the filter have completed. It must resolve immediately if no matching turns are active. If no filter is provided, it must default to `{ own: true }`.
+
+### Channel Continuity
+
+- `(AIT-CT19)` The client transport must monitor the channel for continuity loss. Continuity is lost when the channel enters FAILED, SUSPENDED, or DETACHED, or re-attaches with `resumed: false`.
+  - `(AIT-CT19a)` On continuity loss, all active own-turn streams must be errored via `errorStream()` (AIT-CT14c) with code `ChannelContinuityLost` (104006), and the error must be emitted via `on('error')`.
+
+### Channel Health
+
+- `(AIT-CT20)` `send()` must throw with code `ChannelNotReady` (104007) if the channel is not in the ATTACHED or ATTACHING state.
 
 ## Common Error Codes used by AI Transport {#common-error-codes}
 
@@ -255,3 +265,15 @@ The codes listed here shall be defined in any error enums that exist in the clie
         // To be accompanied by status code 500.
         // Spec: AIT-CT3b
         TransportSendFailed = 104005,
+
+        // The Ably channel lost message continuity — the channel entered
+        // FAILED, SUSPENDED, or DETACHED, or re-attached with resumed: false.
+        // To be accompanied by status code 500.
+        // Spec: AIT-CT19a
+        ChannelContinuityLost = 104006,
+
+        // An operation was attempted but the channel is not in a usable state
+        // (not ATTACHED or ATTACHING).
+        // To be accompanied by status code 400.
+        // Spec: AIT-CT20
+        ChannelNotReady = 104007,
