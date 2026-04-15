@@ -1147,9 +1147,8 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
       - `(RSH3j1b)` Makes `Push#activate` return or call its callback with no error.
       - `(RSH3j1c)` Transitions to `WaitingForNewPushDeviceDetails`.
     - `(RSH3j2)` On event `GotValidationRejection`:
-      - `(RSH3j2a)` All `LocalDevice` details must be discarded in memory and deleted from persistent storage where possible. <!-- TODO: investigate whether it's possible to regenerate the token using the deviceSecret (which we know is valid for this id) instead of discarding the entire registration -->
-      - `(RSH3j2b)` Makes `Push#activate` return or call its callback with the error.
-      - `(RSH3j2c)` Transitions to `NotActivated`.
+      - `(RSH3j2a)` All `LocalDevice` details must be discarded in memory and deleted from persistent storage where possible. The rejection should be logged as an error. <!-- TODO: investigate whether it's possible to regenerate the token using the deviceSecret (which we know is valid for this id) instead of discarding the entire registration -->
+      - `(RSH3j2b)` Does the same as [`RSH3a2b`](#RSH3a2b) onwards (i.e. proceeds with a fresh registration as part of the same `activate()` call).
     - `(RSH3j3)` On event `GotValidationFailure`:
       - `(RSH3j3a)` Makes `Push#activate` return or call its callback with the error.
       - `(RSH3j3b)` Transitions to `ValidatingDeviceIdentityToken`.
