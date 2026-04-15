@@ -1136,12 +1136,23 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(RSH3g3)` On event `DeregistrationFailed`:
       - `(RSH3g3a)` Makes `Push#deactivate` return or call its callback with the error.
       - `(RSH3g3b)` Transitions to the previous state, which is either `WaitingForNewPushDeviceDetails` or `AfterRegistrationSyncFailed` (so, in purity, `WaitingForDeregistration` are two separate states, one for each previous state).
-  - `(RSH3i)` State `ValidatingDeviceIdentityToken` (entered only when legacy ably-cocoa persisted data needs to be validated against the server; see [`RSH3h2`](#RSH3h2)). Implementations that have always had the atomicity mechanism of [`RSH8a2`](#RSH8a2) do not need this state.
+  - `(RSH3i)` State `ValidatingDeviceIdentityToken` (entered only when legacy ably-cocoa persisted data needs to be validated against the server; see [`RSH3h2`](#RSH3h2)). Implementations that have always had the atomicity mechanism of [`RSH8a2`](#RSH8a2) do not need this state:
     - `(RSH3i1)` On event `CalledActivate`:
       - `(RSH3i1a)` Makes an asynchronous HTTP GET request to `/push/deviceRegistrations/:deviceId`, authenticating with the `deviceIdentityToken` (via the `X-Ably-DeviceToken` header). This validates that the token is bound to the current device `id`.
-      - `(RSH3i1b)` If the request succeeds, the (`id`, `deviceSecret`, `deviceIdentityToken`) tuple is re-persisted with the atomicity mechanism of [`RSH8a2`](#RSH8a2). Makes `Push#activate` return or call its callback with no error. Transitions to `WaitingForNewPushDeviceDetails`.
-      - `(RSH3i1c)` If the server returns a 401 status code, the `deviceIdentityToken` is not valid for this device. All `LocalDevice` details must be discarded in memory and deleted from persistent storage where possible. Makes `Push#activate` return or call its callback with the error. Transitions to `NotActivated`. <!-- TODO: investigate whether it's possible to regenerate the token using the deviceSecret (which we know is valid for this id) instead of discarding the entire registration -->
-      - `(RSH3i1d)` If the request fails for any other reason, makes `Push#activate` return or call its callback with the error. The state machine remains in `ValidatingDeviceIdentityToken`.
+      - `(RSH3i1b)` When the request is complete, a `GotValidationResponse`, `GotValidationRejection`, or `GotValidationFailure` event should be fired: `GotValidationResponse` if the HTTP request returns a 2xx status code; `GotValidationRejection` if it returns a 401 status code; `GotValidationFailure` otherwise.
+      - `(RSH3i1c)` Transitions to `WaitingForDeviceIdentityTokenValidation`.
+  - `(RSH3j)` State `WaitingForDeviceIdentityTokenValidation` (only reachable from [`RSH3i`](#RSH3i) i.e. specific to ably-cocoa):
+    - `(RSH3j1)` On event `GotValidationResponse`:
+      - `(RSH3j1a)` The (`id`, `deviceSecret`, `deviceIdentityToken`) tuple is re-persisted with the atomicity mechanism of [`RSH8a2`](#RSH8a2).
+      - `(RSH3j1b)` Makes `Push#activate` return or call its callback with no error.
+      - `(RSH3j1c)` Transitions to `WaitingForNewPushDeviceDetails`.
+    - `(RSH3j2)` On event `GotValidationRejection`:
+      - `(RSH3j2a)` All `LocalDevice` details must be discarded in memory and deleted from persistent storage where possible. <!-- TODO: investigate whether it's possible to regenerate the token using the deviceSecret (which we know is valid for this id) instead of discarding the entire registration -->
+      - `(RSH3j2b)` Makes `Push#activate` return or call its callback with the error.
+      - `(RSH3j2c)` Transitions to `NotActivated`.
+    - `(RSH3j3)` On event `GotValidationFailure`:
+      - `(RSH3j3a)` Makes `Push#activate` return or call its callback with the error.
+      - `(RSH3j3b)` Transitions to `ValidatingDeviceIdentityToken`.
 - `(RSH4)` When an event is fired and a transition from the current state is not defined for such event, the event is put into a queue. Then, whenever a transition happens, an event is dequeued from the queue. If a transition from the new current state is defined for the dequeued event, such transition happens. If not, the event is put back in its place in the queue. E. g. we're `WaitingForDeregistration`, and an event `CalledActivate` happens. This event will be put in the queue, since there's no transition defined for it. Then, an event `Deregistered` arrives, causing a transition to `NotActivated`. Now we peek the next item on the queue: `CalledActivate`. Because `NotActivated` transitions on `CalledActivate`, the event is consumed and the machine transitions.
 - `(RSH5)` Event handling is atomic and sequential: while an event is being handled, the next one should be handled only after the current one has caused a state transition or has been put into the pending events queue.
 
