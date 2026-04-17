@@ -255,7 +255,7 @@ Creates and destroys [`RestChannel`]{@link RestChannel} and [`RealtimeChannel`]{
 ||| `ChannelType` || A [`RealtimeChannel`]{@link RealtimeChannel} object. |
 | iterate() -> `Iterator<ChannelType>` ||| RSN2, RTS2 | Iterates through the existing channels. |
 ||| `ChannelType` || Each iteration returns a [`RestChannel`]{@link RestChannel} or [`RealtimeChannel`]{@link RealtimeChannel} object. |
-| release(String) ||| RSN4, RTS4 | Releases a [`RestChannel`]{@link RestChannel} or [`RealtimeChannel`]{@link RealtimeChannel} object, deleting it, and enabling it to be garbage collected. It also removes any listeners associated with the channel. To release a channel, the [`ChannelState`]{@link ChannelState} must be `INITIALIZED`, `DETACHED`, or `FAILED`. |
+| release(String) ||| RSN4, RTS4 | Releases all SDK-held references to a [`RestChannel`]{@link RestChannel} or [`RealtimeChannel`]{@link RealtimeChannel} object, enabling it to be garbage collected. Warning: this method has no guardrails; using a channel reference after it has been `release()`d is undefined behaviour. It can be useful for applications that work with a continually changing set of channels on a single client and need to avoid unbounded memory growth; if this does not describe you, don't call it. Realtime channels not already in the `INITIALIZED`, `DETACHED`, or `FAILED` state are detached before release.  |
 || `String` ||| The channel name. |
 
 ## class RestChannel
