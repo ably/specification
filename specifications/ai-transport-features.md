@@ -112,7 +112,12 @@ The server transport manages the server-side turn lifecycle over an Ably channel
 
 ### Transport Close
 
-- `(AIT-ST11)` `close()` must unsubscribe from cancel messages, abort all registered turns, and clean up the turn manager.
+- `(AIT-ST11)` `close()` must unsubscribe from cancel messages, abort all registered turns, and clean up the turn manager. It must also stop listening for channel state changes (AIT-ST12). `close()` must be idempotent.
+
+### Channel Continuity
+
+- `(AIT-ST12)` The server transport must monitor the channel for continuity loss. Continuity is lost when the channel enters FAILED, SUSPENDED, or DETACHED, or re-attaches with `resumed: false`.
+  - `(AIT-ST12a)` On continuity loss, the error must be emitted via the transport-level `onError` callback with code `ChannelContinuityLost` (104006). Active turns must not be automatically aborted, and the per-turn `onError` callback must not be invoked, since continuity loss is not scoped to any turn. The SDK user is responsible for reacting (e.g. iterating active turns or aborting their own external signals) if they wish to terminate in-flight work.
 
 ## Client Transport {#client-transport}
 
