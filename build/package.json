@@ -9,7 +9,7 @@
     "build:anchors": "./scripts/add-spec-anchors",
     "build:tailwind": "tailwindcss -i ./layouts/main.css -o ./public/tailwind.css --minify",
     "lint": "npm-run-all format:*:check",
-    "format:textile:check": "./scripts/find-duplicate-spec-items"
+    "format:markdown:check": "./scripts/find-duplicate-spec-items"
   },
   "repository": "ably/specification",
   "license": "Apache-2.0",
