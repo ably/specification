@@ -14,7 +14,7 @@ Defined within the contents of this repository are multiple version numbers:
 
 | Version | Format | Location of Definition | Scope |
 | ------- | ------ | ---------------------- | ----- |
-| [**Specification**](#specification-version) | [SemVer](https://semver.org/) | The `versions.specification` field in [`meta.yaml`](meta.yaml) | Format and usage are specified in `CSV1`. The specification documents - files in [the `textile/` folder](textile/), the 'content'. |
+| [**Specification**](#specification-version) | [SemVer](https://semver.org/) | The `versions.specification` field in [`meta.yaml`](meta.yaml) | Format and usage are specified in `CSV1`. The specification documents - files in [the `specifications/` folder](specifications/), the 'content'. |
 | [**Protocol**](#protocol-version) | Integer from version `2` onwards (it was Decimal prior to that, for example `1.2`). | The `versions.protocol` field in [`meta.yaml`](meta.yaml) | Format and usage are specified in `CSV2`. The wire protocol used when communicating with the Ably service. Specified for REST requests under `RSC7a` and for Realtime connections under `RTN2f`. Sometimes referred to as 'API version' (when 'API' is referring to details of the protocols understood by the Ably service). |
 | [**Build**](#build-version) | [SemVer](https://semver.org/) | The `version` field in [`package.json`](package.json) | Other files hosted in this repository which render the specification for viewers or otherwise check it or build artifacts from it. |
 
@@ -37,10 +37,10 @@ Examples of changes that would result in a `minor` bump, being backwards compati
 Examples of changes that would result in a `patch` bump include:
 
 - Spelling mistake or typo corrections, where the meaning was previously clear and hasn't changed as a result of the fix
-- Formatting improvements in the textile markup, where those changes don't alter the way that the rendered output is interpreted
+- Formatting improvements in the markdown source, where those changes don't alter the way that the rendered output is interpreted
 - Improvements intended to make meaning clearer, where the intended meaning has not changed  - clearly these are changes that are likely to be subjective in nature, so it is suggested that these changes are rigorously reviewed by as many individuals as possible
 
-Where the 'SDK API' refers to the IDL and interface names documented in the [features spec](textile/features.textile),
+Where the 'SDK API' refers to the IDL and interface names documented in the [features spec](specifications/features.md),
 representing the surface area of the SDK that is directly visible to and used by app developers who are using that SDK to use the Ably service.
 
 It is expected that there may be specification changes which involve features spec point _Removal_, _Replacement_ or _Deprecation_ where that change only necessitates a `minor` bump to the specification version number - that is, the impact of the change is deemed backwards compatible according to the constraints outlined above. See [Contributing Guidance: Features Spec Points](CONTRIBUTING.md#features-spec-points).
