@@ -90,15 +90,18 @@ The server transport manages the server-side turn lifecycle over an Ably channel
 - `(AIT-ST5)` `addMessages()` must accept `TreeNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
   - `(AIT-ST5a)` Per-node `parentId` and `forkOf` fields take precedence; turn-level defaults apply when those fields are undefined.
   - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `msgId` of each published node, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
+  - `(AIT-ST5c)` If a publish fails in `addMessages()` or `addEvents()`, the method must reject with an `Ably.ErrorInfo` carrying code `TurnLifecycleError` and wrapping the underlying error as `cause`. The per-turn `onError` callback must NOT be invoked — the rejected promise is the sole delivery channel.
 - `(AIT-ST6)` `streamResponse()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-turn-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
   - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation `parent` override, then turn-level `parent`.
   - `(AIT-ST6b)` `streamResponse()` must return a `StreamResult` with a `reason` field indicating `"complete"`, `"cancelled"`, or `"error"`.
     - `(AIT-ST6b1)` Reason `"complete"`: the source stream was fully consumed and the encoder was closed.
     - `(AIT-ST6b2)` Reason `"cancelled"`: the turn's abort signal fired. If an `onAbort` callback was provided in the turn options, it must be invoked with a write function before the stream ends.
-    - `(AIT-ST6b3)` Reason `"error"`: the source stream threw. The encoder must be closed best-effort; failure to close must not propagate.
+    - `(AIT-ST6b3)` Reason `"error"`: the source stream threw. The encoder must be closed best-effort; failure to close must not propagate. `streamResponse()` must not throw; it must return a `StreamResult` whose `error` field holds the original caught error (preserving provider-specific type information). The per-turn `onError` callback must be invoked with an `Ably.ErrorInfo` wrapping the original error.
+    - `(AIT-ST6b4)` Error details from `"error"` streams must NOT automatically propagate to the client transport. The client receives only `reason: "error"` on the turn-end event. Server implementations that need to surface error details to the client must do so explicitly — for example, by mutating the turn-end message through the `onMessage` hook or by publishing application-defined events before `end()`. Rationale: automatic propagation could leak server internals and would impose a protocol contract on all codecs.
   - `(AIT-ST6c)` `streamResponse()` must NOT call `end()` — the caller is responsible for calling `end()` after the stream finishes.
 - `(AIT-ST7)` `end()` must require that `start()` has been called. It must publish a turn-end event (`x-ably-turn-end`) with the turn's ID, clientId, and reason header. It must be idempotent.
   - `(AIT-ST7a)` After `end()`, the turn must be deregistered from cancel routing regardless of whether the publish succeeds.
+  - `(AIT-ST7b)` If the turn-end publish fails, `end()` must reject with an `Ably.ErrorInfo` carrying code `TurnLifecycleError` and wrapping the underlying error as `cause`. The per-turn `onError` callback must NOT be invoked. The turn must still be deregistered from cancel routing (per `AIT-ST7a`).
 
 ### Cancel Routing
 
@@ -256,9 +259,9 @@ The codes listed here shall be defined in any error enums that exist in the clie
         // Spec: AIT-ST9a
         CancelListenerError = 104002,
 
-        // A turn lifecycle event (turn-start or turn-end) failed to publish.
+        // A publish within a turn failed (lifecycle event, message, or event).
         // To be accompanied by status code 500.
-        // Spec: AIT-ST4b
+        // Spec: AIT-ST4b, AIT-ST5c
         TurnLifecycleError = 104003,
 
         // An operation was attempted on a transport that has already been closed.
@@ -282,3 +285,9 @@ The codes listed here shall be defined in any error enums that exist in the clie
         // To be accompanied by status code 400.
         // Spec: AIT-CT20
         ChannelNotReady = 104007,
+
+        // The source event stream threw during piping (e.g. LLM provider rate
+        // limit, model error, network failure).
+        // To be accompanied by status code 500.
+        // Spec: AIT-ST6b3
+        StreamError = 104008,
