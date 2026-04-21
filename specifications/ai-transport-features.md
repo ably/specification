@@ -86,7 +86,7 @@ The server transport manages the server-side turn lifecycle over an Ably channel
   - `(AIT-ST3a)` The turn must be registered for cancel routing immediately on creation, so that cancel messages arriving before `start()` still fire the turn's abort signal.
 - `(AIT-ST4)` `start()` must publish a turn-start event (`x-ably-turn-start`) with the turn's `x-ably-turn-id` and `x-ably-turn-client-id` headers. It must be idempotent.
   - `(AIT-ST4a)` If the turn was cancelled before `start()`, `start()` must raise an error.
-  - `(AIT-ST4b)` If the turn-start publish fails, the per-turn `onError` callback must be invoked and the error re-thrown.
+  - `(AIT-ST4b)` If the turn-start publish fails, `start()` must reject with an `Ably.ErrorInfo` carrying code `TurnLifecycleError` and wrapping the underlying error as `cause`. The per-turn `onError` callback must NOT be invoked — the rejected promise is the sole delivery channel.
 - `(AIT-ST5)` `addMessages()` must accept `TreeNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
   - `(AIT-ST5a)` Per-node `parentId` and `forkOf` fields take precedence; turn-level defaults apply when those fields are undefined.
   - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `msgId` of each published node, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
