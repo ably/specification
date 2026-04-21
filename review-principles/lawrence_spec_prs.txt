@@ -1,0 +1,118 @@
+434|merged|2026-03-06|ttypic|feat!: textile to md migration
+433|open|2026-03-05|mattheworiordan|feat: add channel-level echo suppression spec points
+432|merged|2026-03-04|VeskeR|[AIT-466] Spec for MAP_CLEAR operation
+429|merged|2026-02-26|lawrence-forooghian|Delete redundant object type check when applying `SyncObjectsPool`
+428|merged|2026-02-24|VeskeR|Reorder RTO5f to check for unsupported object type before pool lookup
+426|merged|2026-02-20|VeskeR|[AIT-313] Add spec for new fields for ObjectOperation in protocol v6+
+425|merged|2026-02-18|VeskeR|TO3g: include ANNOTATION in list of queueable protocol messages
+422|merged|2026-02-02|AndyTWF|chat: fix indentation on CHA-CL1
+419|merged|2026-01-23|lawrence-forooghian|[AIT-280] Apply LiveObjects operations on ACK
+418|merged|2026-01-22|mschristensen|spec: add siteCode to connectionDetails
+417|merged|2026-01-22|lawrence-forooghian|Downcase `BufferedObjectOperations` and clarify its scope
+416|merged|2026-01-16|VeskeR|[AIT-286] Fix rules for buffering of incoming object operations during LiveObjects sync
+415|closed|2026-01-16|lawrence-forooghian|Add specification for apply operations on ACK (LODR-054)
+413|merged|2026-01-12|JoaoDiasAbly|[AIT-236] Add partial object sync specification for protocol version 6+
+411|merged|2026-01-07|SimonWoolf|RTL5: allow detach() to just detach immediately if the connection state is suspended/disconnected
+410|merged|2026-01-05|SimonWoolf|Add optional params arg to realtimeChannel publish-y methods
+408|merged|2026-01-05|SimonWoolf|Remove bundling and fix deprecated spec item version references
+406|merged|2025-12-15|SimonWoolf|Implement spec for protocol v5 (publish result, realtime update/delete, append)
+404|merged|2025-12-05|lawrence-forooghian|objects: Specify `SYNCING` and `SYNCED` events
+401|open|2025-11-02|maratal|CHA-M5b1 and CHA-M13a1 proposals.
+400|merged|2025-10-31|lawrence-forooghian|Clarify some points about encoding and decoding message data
+399|merged|2025-10-28|AndyTWF|chat: add missing Closing and Closed statuses
+396|merged|2025-10-22|AndyTWF|chat: bump to v1
+394|merged|2025-10-15|AndyTWF|chat: error code review
+393|merged|2025-10-14|lawrence-forooghian|chat: Specify `MessageReactions.clientReactions`
+388|merged|2025-10-09|AndyTWF|chat: add CHA-M3a1
+387|merged|2025-10-08|lawrence-forooghian|Clarify Chat URL-encoding requirements
+370|open|2025-09-04|VeskeR|[WIP] Rename `SyncObjectsPool` to `SyncObjectMessages` and clarify its type
+364|open|2025-09-03|VeskeR|Defer to `RTLM14` check in `RTLM5d2`
+361|open|2025-09-03|VeskeR|Clarify the default values for newly created LiveMap and LiveCounter in RTLM4 and RTLC4
+356|open|2025-08-12|lawrence-forooghian|Clarify the rules for deriving the delta base payload
+353|merged|2025-07-23|VeskeR|[PUB-1829] Add object-level write API spec for RealtimeObjects
+351|open|2025-07-17|ttypic|chore: update `msgSerial` spec point
+350|merged|2025-07-17|VeskeR|[PUB-1828] Add Objects spec for object and map entry tombstones, and OBJECT_DELETE message handling
+346|merged|2025-07-11|VeskeR|[PUB-1827] Add Objects spec for subscriptions
+345|merged|2025-07-11|VeskeR|Add IDL of Objects features
+343|merged|2025-07-07|VeskeR|[PUB-1825, PUB-1826] Add spec for applying incoming OBJECT messages
+341|merged|2025-07-04|VeskeR|Add Objects Access API spec
+340|merged|2025-07-03|SimonWoolf|Add spec item requiring idempotent rest batch publishing
+337|merged|2025-06-24|lawrence-forooghian|chat: Fix specification of channel modes
+335|merged|2025-06-13|VeskeR|Add spec for `ObjectMessage` encoding and decoding
+333|merged|2025-06-12|VeskeR|[PUB-1041] OBJECT_SYNC spec
+332|merged|2025-06-12|VeskeR|Add spec points to describe the `Objects` plugin
+329|merged|2025-06-09|VeskeR|Fix spec point reference in RTL6a
+328|merged|2025-06-09|VeskeR|Update internal Objects interface names to have Object*/Objects* prefix
+327|merged|2025-06-09|VeskeR|Update ObjectData value properties spec to match latest implementation
+326|merged|2025-06-09|VeskeR|Clarify message size calculation for string properties
+324|merged|2025-05-29|lawrence-forooghian|Add tombstones for some deleted spec points
+323|merged|2025-05-29|VeskeR|Fix MAP3b should be `entries`
+322|merged|2025-05-22|surminus|Add endpoint doc string
+318|open|2025-05-01|lawrence-forooghian|Add side effects of more connection states for `DETACHING` channels
+315|merged|2025-04-30|lawrence-forooghian|Fix documentation of `deviceIdentityToken`
+314|merged|2025-04-30|lawrence-forooghian|Make `deviceIdentityToken` nullable
+312|merged|2025-04-25|lawrence-forooghian|Remove RTL4e
+311|merged|2025-04-25|lawrence-forooghian|Clarify when connection state should fail `ACK`-pending messages
+308|merged|2025-04-25|lawrence-forooghian|Simplify language of `queueMessages` condition
+306|merged|2025-04-23|lawrence-forooghian|Add `connectivityCheckUrl` to IDL and docstrings
+305|merged|2025-04-23|lawrence-forooghian|A few tweaks to `channelSerial` spec points
+302|merged|2025-04-17|lawrence-forooghian|Make `endpoint` special-case `localhost` and IP addresses
+301|merged|2025-04-17|lawrence-forooghian|Readability tweaks for new domain logic
+300|merged|2025-04-17|VeskeR|Fix letter case in RTN7a
+299|merged|2025-04-17|lawrence-forooghian|Reword channel state publish conditions
+298|merged|2025-04-17|VeskeR|Add Objects flags, channel modes and message types
+296|merged|2025-04-16|lawrence-forooghian|Specify the behaviour of `#connect` when `CONNECTING`
+292|merged|2025-04-14|SimonWoolf|Support annotations
+284|merged|2025-03-20|VeskeR|Replace term "buffer" with "binary"
+282|merged|2025-03-14|AndyTWF|chat single channel
+279|merged|2025-03-13|VeskeR|[PUB-925] Add new protocol message flags, actions, channel modes and message types for Objects
+277|merged|2025-02-28|splindsay-92|Refactor: Spec updates for Typing presence to heartbeat-based changes
+276|merged|2025-02-27|lawrence-forooghian|Add docstring for `Message.connectionKey`
+274|merged|2025-02-12|lawrence-forooghian|Specify how to track usage of Chat SDK
+273|merged|2025-02-11|lawrence-forooghian|Add API for tracking usage of wrapper SDKs
+270|open|2025-01-21|sacOO7|Updated message spec and related endpoints
+267|closed|2025-01-14|sacOO7|[chat-spec] Make user triggered ops deterministic in disconnected state
+264|closed|2025-01-09|sacOO7| [chat-spec] Removed transient timeout references for delayed ATTACHING state
+255|closed|2024-12-04|AndyTWF|chat: clarify room lifecycle in progress assumption
+250|merged|2024-11-29|AndyTWF|chat: mention newestFirst in history spec
+249|closed|2024-11-28|AndyTWF|chat: room attachment requirements
+246|closed|2024-11-27|lawrence-forooghian|Don’t replace existing discontinuity event
+244|merged|2024-11-25|AndyTWF|chat: Additional CHA-PR9 clarification.
+243|merged|2024-11-25|AndyTWF|chat: reword CHA-PR9 points
+238|closed|2024-11-25|sacOO7|Update/Limit default typing timeout
+237|merged|2024-11-21|lawrence-forooghian|Add some spec points about disabled chat features
+234|merged|2024-11-20|AndyTWF|chat: add CHA-RC3 to clarify intended channels.get behaviour
+232|merged|2024-11-19|AndyTWF|chat: add CHA-RL9 to explain "attaching piggyback"
+226|merged|2024-11-14|AndyTWF|cha-rl5b: remove as duplicate descriptor of CHA-RL2f
+225|merged|2024-11-14|AndyTWF|CHA-RL5d: add instantaneous channel state check
+222|merged|2024-11-13|SimonWoolf|Features spec: only emit a leave if there was an existing matching member
+209|merged|2024-10-07|lawrence-forooghian|Tighten up `attachOnSubscribe == false` behaviour
+208|closed|2024-09-30|sacOO7|Fixed spec for channel subscribe with optional callback
+206|merged|2024-09-06|lawrence-forooghian|Add opt-out of implicit attach when subscribing
+205|open|2024-08-30|SimonWoolf|Spec: ban warning on unknown fields for spec v3
+200|merged|2024-08-05|AndyTWF|chat: room lifecycle specification
+198|merged|2024-07-17|lawrence-forooghian|Clarify how `echoMessages` should be implemented
+182|merged|2024-02-12|maratal|Added RTP17i spec point.
+181|open|2024-02-04|maratal|Updated the spec so that it reflects the behaviour implemented in ably-cocoa PR #1847
+179|merged|2024-01-09|maratal|Spec on what should happen when the recover option is malformed.
+173|merged|2023-12-01|lawrence-forooghian|Bump protocol version to 3
+170|closed|2023-10-09|lawrence-forooghian|Improve wording in RTN15a
+168|closed|2023-10-07|dependabot[bot]|Bump postcss from 8.4.17 to 8.4.31
+160|merged|2023-07-19|maratal|Added RSH3e2c spec point
+157|closed|2023-07-19|lawrence-forooghian|Merge `main` into `integration/3.0.0`
+156|closed|2023-07-18|lawrence-forooghian|RFC: Distinguish the different meanings of a "message"
+154|merged|2023-07-04|owenpearson|refactor(RSC19f1): mention that protocol version is specified by CSV2
+153|merged|2023-07-04|owenpearson|Merge `Integration/3.0.0` into `main`
+152|merged|2023-06-28|owenpearson|Add `ChannelStateChange.hasBacklog` and return `ChannelStateChange` from attach/subscribe
+149|merged|2023-05-17|owenpearson|Untyped stats
+147|merged|2023-05-02|SimonWoolf|Re-add RTN16d (accidentally removed)
+142|closed|2023-05-01|lawrence-forooghian|Bump specification version to 3.0.0
+141|closed|2023-05-01|lawrence-forooghian|Bump specification version to 3.0.0
+139|merged|2023-04-28|owenpearson|[SDK-3561] New batch specs
+133|merged|2023-03-09|amnonbc|add RSL6a3 msgpack fixture tests
+124|merged|2022-12-08|QuintinWillison|Resurface `RTP17c` sub clauses
+120|merged|2022-11-28|QuintinWillison|Versioning
+113|merged|2022-11-14|lawrence-forooghian|Define API for accessing Agent identifier and its components
+112|closed|2022-11-14|lawrence-forooghian|Require agents specified by `ClientOptions#agents` to have a version
+106|merged|2022-10-20|lawrence-forooghian|Clarify the circumstances under which RTP8f applies
+105|closed|2022-10-20|QuintinWillison|Versioning and Release Process
