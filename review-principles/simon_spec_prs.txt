@@ -1,0 +1,74 @@
+448|open|2026-04-17|SimonWoolf|Add some warnings on channels.release()
+434|merged|2026-03-06|ttypic|feat!: textile to md migration
+433|open|2026-03-05|mattheworiordan|feat: add channel-level echo suppression spec points
+412|merged|2026-01-08|lawrence-forooghian|Add docstrings for RealtimeChannel publish-y params arg
+411|merged|2026-01-07|SimonWoolf|RTL5: allow detach() to just detach immediately if the connection state is suspended/disconnected
+409|merged|2026-01-05|lawrence-forooghian|Add MESSAGE_APPEND docstring
+408|merged|2026-01-05|SimonWoolf|Remove bundling and fix deprecated spec item version references
+407|merged|2025-12-15|ttypic|fix: make specification align with the current SDKs state
+406|merged|2025-12-15|SimonWoolf|Implement spec for protocol v5 (publish result, realtime update/delete, append)
+405|closed|2025-12-15|ttypic|fix: add a missing `ANNOTATION` message type in `queueMessages`
+400|merged|2025-10-31|lawrence-forooghian|Clarify some points about encoding and decoding message data
+387|merged|2025-10-08|lawrence-forooghian|Clarify Chat URL-encoding requirements
+381|open|2025-09-17|lawrence-forooghian|Clarify how to handle msgSerial when RTN15 check fails
+378|merged|2025-09-10|AndyTWF|spec: clarify behaviour in TM8a
+375|merged|2025-09-05|AndyTWF|v4: add spec items for Protocol V4
+356|open|2025-08-12|lawrence-forooghian|Clarify the rules for deriving the delta base payload
+351|open|2025-07-17|ttypic|chore: update `msgSerial` spec point
+340|merged|2025-07-03|SimonWoolf|Add spec item requiring idempotent rest batch publishing
+331|open|2025-06-11|sacOO7|Message/PresenceMessage/Annotation size
+312|merged|2025-04-25|lawrence-forooghian|Remove RTL4e
+311|merged|2025-04-25|lawrence-forooghian|Clarify when connection state should fail `ACK`-pending messages
+309|merged|2025-04-25|lawrence-forooghian|Remove redundant condition in RTP16b
+308|merged|2025-04-25|lawrence-forooghian|Simplify language of `queueMessages` condition
+305|merged|2025-04-23|lawrence-forooghian|A few tweaks to `channelSerial` spec points
+294|merged|2025-04-16|lawrence-forooghian|Do not fail ACK-pending messages for a failed resume
+292|merged|2025-04-14|SimonWoolf|Support annotations
+281|merged|2025-03-14|ttypic|fix: updated `RTN11` spec point
+280|merged|2025-03-13|VeskeR|Add `ACTIVATE` ProtocolMessage Action
+279|merged|2025-03-13|VeskeR|[PUB-925] Add new protocol message flags, actions, channel modes and message types for Objects
+275|merged|2025-02-12|SimonWoolf|fix TM2p: remove sentence about populating version from channelSerial
+271|merged|2025-01-25|sacOO7|Fixed endpoint spec for REC1b1 and REC2c1
+268|closed|2025-01-15|surminus|features/spec: add sandbox backward compatibility to endpoint spec
+261|merged|2025-01-06|SimonWoolf|Port api reference to specification repo
+259|open|2024-12-18|sacOO7|Refactored RTN22, added missing details
+235|merged|2024-11-20|SimonWoolf|Update field names for mutable messages, and specify how message.serial is set from channelSerial
+222|merged|2024-11-13|SimonWoolf|Features spec: only emit a leave if there was an existing matching member
+219|merged|2024-11-12|splindsay-92|Clarify timestamp behavior in protocol documentation
+213|merged|2024-10-24|paddybyers|Updates for ADR-119: updated ClientOptions for new domains
+212|merged|2024-10-21|mschristensen|Spec: SUBSCRIBE mode renamed to MESSAGE_SUBSCRIBE
+210|merged|2024-10-10|splindsay-92|Messages: Add new message fields to message spec
+208|closed|2024-09-30|sacOO7|Fixed spec for channel subscribe with optional callback
+206|merged|2024-09-06|lawrence-forooghian|Add opt-out of implicit attach when subscribing
+205|open|2024-08-30|SimonWoolf|Spec: ban warning on unknown fields for spec v3
+197|merged|2024-07-06|maratal|Added missing states to RTP6c.
+196|merged|2024-07-06|maratal|Fixed broken TO3g
+195|merged|2024-07-05|SimonWoolf|RSA7f: clarify that send clientId regardless of basic/token auth
+194|merged|2024-06-22|maratal|TO3g editing in place for clarity.
+192|merged|2024-06-16|maratal|Update RTL7c
+191|merged|2024-05-19|maratal|Added forgotten test case for RTL2f
+183|merged|2024-02-22|lawrence-forooghian|Add connection and channel `whenState` methods
+182|merged|2024-02-12|maratal|Added RTP17i spec point.
+181|open|2024-02-04|maratal|Updated the spec so that it reflects the behaviour implemented in ably-cocoa PR #1847
+179|merged|2024-01-09|maratal|Spec on what should happen when the recover option is malformed.
+177|merged|2023-12-05|lawrence-forooghian|Preserve pre-untyped stats spec points
+173|merged|2023-12-01|lawrence-forooghian|Bump protocol version to 3
+170|closed|2023-10-09|lawrence-forooghian|Improve wording in RTN15a
+167|open|2023-09-10|sacOO7|connection resume/recover
+166|open|2023-09-07|sacOO7|Refactor realtime presence spec
+156|closed|2023-07-18|lawrence-forooghian|RFC: Distinguish the different meanings of a "message"
+152|merged|2023-06-28|owenpearson|Add `ChannelStateChange.hasBacklog` and return `ChannelStateChange` from attach/subscribe
+150|merged|2023-05-23|SimonWoolf|Add exception to resent-messages-on-new-transport if queueMessages=false
+149|merged|2023-05-17|owenpearson|Untyped stats
+146|merged|2023-05-02|owenpearson|fix(RTN20): DISCONNECTING -> DISCONNECTED
+145|merged|2023-05-01|lawrence-forooghian|Tweak spec for `Rest.request`’s `version` param
+139|merged|2023-04-28|owenpearson|[SDK-3561] New batch specs
+135|merged|2023-03-27|owenpearson|spec: add RTN20c - restart connection attempt if `online` whilst `CONNECTING`
+123|merged|2022-12-07|SimonWoolf|Fallback retry conditions: split up RSC15d into individual items, add a new one
+120|merged|2022-11-28|QuintinWillison|Versioning
+119|merged|2022-11-25|SimonWoolf|Spec 2.0: make api-compatible with 1.2
+105|closed|2022-10-20|QuintinWillison|Versioning and Release Process
+92|merged|2022-10-03|SimonWoolf|Bump ruby version to latest v3 patch
+91|merged|2022-10-03|QuintinWillison|Add contributing guidance
+89|merged|2022-10-03|SimonWoolf|Add mandatory version param for rest#request.
+88|merged|2022-10-03|SimonWoolf|Upgrade realtime protocol from version 1.2 to 2.0: 'no-connection-serial'
