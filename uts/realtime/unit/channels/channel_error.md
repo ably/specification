@@ -81,6 +81,7 @@ ASSERT channel_state_changes[0].reason.code == 40160
 
 # Connection stays open (channel-scoped ERROR does NOT close connection)
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -139,6 +140,7 @@ ASSERT error.code == 40160
 
 # Connection stays open
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -205,6 +207,7 @@ ASSERT error.code == 90198
 
 # Connection stays open
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -271,6 +274,7 @@ ASSERT channel_b.errorReason IS null
 
 # Connection stays open
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -349,4 +353,5 @@ ADVANCE_TIME(500)
 # Channel remains FAILED - no retry was attempted
 ASSERT channel.state == ChannelState.failed
 ASSERT attach_count == attach_count_after_error
+CLOSE_CLIENT(client)
 ```

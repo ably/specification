@@ -29,6 +29,7 @@ channels = client.channels
 ```pseudo
 ASSERT channels IS RealtimeChannels
 ASSERT channels IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -67,6 +68,7 @@ exists_other = client.channels.exists(other_channel_name)
 ASSERT exists_before == false
 ASSERT exists_after == true
 ASSERT exists_other == false
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -103,6 +105,7 @@ ASSERT channel_name_a IN names
 ASSERT channel_name_b IN names
 ASSERT channel_name_c IN names
 ASSERT length(names) == 3
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -131,6 +134,7 @@ channel = client.channels.get(channel_name)
 ASSERT channel IS RealtimeChannel
 ASSERT channel.name == channel_name
 ASSERT client.channels.exists(channel_name) == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -162,6 +166,7 @@ channel2 = client.channels.get(channel_name)
 ASSERT channel1 IS SAME AS channel2  # Same object reference
 ASSERT channel1.name == channel_name
 ASSERT channel2.name == channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -196,6 +201,7 @@ channel3 = client.channels[channel_name]
 ASSERT channel1 IS SAME AS channel2
 ASSERT channel2 IS SAME AS channel3
 ASSERT channel1.name == channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -226,6 +232,7 @@ AWAIT client.channels.release(channel_name)
 ### Assertions
 ```pseudo
 ASSERT client.channels.exists(channel_name) == false
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -253,6 +260,7 @@ AWAIT client.channels.release(channel_name)
 ```pseudo
 # Should complete without throwing
 ASSERT client.channels.exists(channel_name) == false
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -289,6 +297,7 @@ AWAIT client.channels.release(channel_name)
 ASSERT state_before_release == ChannelState.attached
 ASSERT client.channels.exists(channel_name) == false
 # Channel should have been detached before removal
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -323,4 +332,5 @@ channel2 = client.channels.get(channel_name)
 ASSERT channel1 IS NOT SAME AS channel2  # Different object instances
 ASSERT channel2.name == channel_name
 ASSERT client.channels.exists(channel_name) == true
+CLOSE_CLIENT(client)
 ```

@@ -103,6 +103,8 @@ ASSERT captured_presence.length >= 1
 
 reenter = captured_presence.find(m => m.presence[0].action == ENTER)
 ASSERT reenter IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -203,6 +205,8 @@ ASSERT alice_reentry.data == "alice-data"
 ASSERT bob_reentry IS NOT null
 ASSERT bob_reentry.action == ENTER
 ASSERT bob_reentry.data == "bob-data"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -289,6 +293,8 @@ reentry_presence = reentry.presence[0]
 ASSERT reentry_presence.action == ENTER
 ASSERT reentry_presence.id IS null  # RTP17g1: id not set when connectionId changed
 ASSERT reentry_presence.data == "hello"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -362,6 +368,8 @@ mock_ws.send_to_client(ProtocolMessage(
 ```pseudo
 # No re-entry — RESUMED flag means the server still has our presence state
 ASSERT captured_presence.length == 0
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -464,6 +472,8 @@ ASSERT update_event.reason.code == 91004
 ASSERT update_event.reason.message CONTAINS "my-client"
 ASSERT update_event.reason.cause IS NOT null
 ASSERT update_event.reason.cause.code == 40160
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -532,4 +542,6 @@ members = channel.presence.get(waitForSync: false)
 ```pseudo
 ASSERT members.length == 1
 ASSERT members[0].clientId == "my-client"
+
+CLOSE_CLIENT(client)
 ```

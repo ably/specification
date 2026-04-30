@@ -75,6 +75,7 @@ AWAIT channel.history(untilAttach: true)
 ```pseudo
 request = captured_requests[0]
 ASSERT request.url.query_params["fromSerial"] == attach_serial
+CLOSE_CLIENT(client)
 ```
 
 ### RTL10b - untilAttach errors when not attached
@@ -116,4 +117,5 @@ CATCH e:
 #### Assertions
 ```pseudo
 ASSERT error IS AblyException
+CLOSE_CLIENT(client)
 ```

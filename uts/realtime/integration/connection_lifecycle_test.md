@@ -82,6 +82,8 @@ ASSERT client.connection.key matches "[a-zA-Z0-9_!-]+"
 
 # No error reason
 ASSERT client.connection.errorReason IS null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -194,6 +196,8 @@ ASSERT first_connection_id != second_connection_id
 
 # No errors
 ASSERT client.connection.errorReason IS null
+
+CLOSE_CLIENT(client)
 ```
 
 ---

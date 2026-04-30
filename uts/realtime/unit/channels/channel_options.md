@@ -147,6 +147,7 @@ channel = client.channels.get(channel_name, channelOptions)
 ```pseudo
 ASSERT channel.options.params["rewind"] == "1"
 ASSERT channel.options.modes CONTAINS ChannelMode.subscribe
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -183,6 +184,7 @@ sameChannel = client.channels.get(channel_name, newOptions)
 ASSERT sameChannel IS SAME AS channel
 ASSERT channel.options.cipherParams IS NOT null
 ASSERT channel.options.attachOnSubscribe == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -217,6 +219,7 @@ ASSERT error.code == 40000
 
 # Channel options should not have changed
 ASSERT channel.options.params IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -245,6 +248,7 @@ newOptions = RealtimeChannelOptions(
 
 client.channels.get(channel_name, newOptions) FAILS WITH error
 ASSERT error.code == 40000
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -276,6 +280,7 @@ AWAIT channel.setOptions(newOptions)
 ```pseudo
 ASSERT channel.options.params["delta"] == "vcdiff"
 ASSERT channel.options.attachOnSubscribe == false
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -313,6 +318,7 @@ AWAIT channel.setOptions(newOptions)
 ASSERT stateChanges CONTAINS change WHERE change.current == ChannelState.attaching
 ASSERT channel.state == ChannelState.attached
 ASSERT channel.options.params["rewind"] == "1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -342,6 +348,7 @@ channel = client.channels.getDerived(base_channel_name, deriveOptions)
 # Channel name should be encoded with filter
 ASSERT channel.name STARTS WITH "[filter="
 ASSERT channel.name ENDS WITH "]" + base_channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -371,6 +378,7 @@ expectedEncoded = base64_encode(filter)  # "bmFtZSA9PSAndGVzdCc="
 ### Assertions
 ```pseudo
 ASSERT channel.name == "[filter=" + expectedEncoded + "]" + base_channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -419,6 +427,7 @@ IF qualifier CONTAINS "?":
   ASSERT length(parsedParams) == 2
 ELSE:
   FAIL("Expected params in qualifier")
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -451,6 +460,7 @@ channel = client.channels.getDerived(base_channel_name, deriveOptions, channelOp
 ```pseudo
 ASSERT channel.options.modes CONTAINS ChannelMode.subscribe
 ASSERT channel.options.attachOnSubscribe == false
+CLOSE_CLIENT(client)
 ```
 
 ---

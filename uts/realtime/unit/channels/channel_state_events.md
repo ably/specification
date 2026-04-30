@@ -29,6 +29,7 @@ channel = client.channels.get(channel_name)
 ```pseudo
 ASSERT channel.state IS ChannelState
 ASSERT channel.state == ChannelState.initialized
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -54,6 +55,7 @@ channel = client.channels.get(channel_name)
 ### Assertions
 ```pseudo
 ASSERT channel.state == ChannelState.initialized
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -105,6 +107,7 @@ ASSERT state_changes[0].current == ChannelState.attaching
 ASSERT state_changes[0].previous == ChannelState.initialized
 ASSERT state_changes[1].current == ChannelState.attached
 ASSERT state_changes[1].previous == ChannelState.attaching
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -160,6 +163,7 @@ ASSERT captured_change IS ChannelStateChange
 ASSERT captured_change.current == ChannelState.attaching
 ASSERT captured_change.previous == ChannelState.initialized
 ASSERT captured_change.event == ChannelEvent.attaching
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -216,6 +220,7 @@ ASSERT captured_change.current == ChannelState.failed
 ASSERT captured_change.reason IS NOT null
 ASSERT captured_change.reason.code == 40160
 ASSERT captured_change.reason.message == "Channel denied"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -262,6 +267,7 @@ AWAIT channel.attach()
 ASSERT length(attached_events) == 1
 ASSERT attached_events[0].current == ChannelState.attached
 ASSERT attached_events[0].event == ChannelEvent.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -326,6 +332,7 @@ ASSERT update_events[0].event == ChannelEvent.update
 ASSERT update_events[0].current == ChannelState.attached
 ASSERT update_events[0].previous == ChannelState.attached
 ASSERT update_events[0].resumed == false
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -385,6 +392,7 @@ attached_state_events = filter(all_events, (e) =>
   e.current == ChannelState.attached AND e.event == ChannelEvent.attached
 )
 ASSERT length(attached_state_events) == 1  # Only the original attach
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -435,6 +443,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT captured_change IS NOT null
 ASSERT captured_change.hasBacklog == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -482,6 +491,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT captured_change IS NOT null
 ASSERT captured_change.hasBacklog == false OR captured_change.hasBacklog IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -529,6 +539,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT captured_change IS NOT null
 ASSERT captured_change.resumed == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -578,6 +589,7 @@ ASSERT channel.state == ChannelState.failed
 ASSERT channel.errorReason IS NOT null
 ASSERT channel.errorReason.code == 40160
 ASSERT channel.errorReason.message == "Not authorized"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -637,4 +649,5 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT channel.errorReason IS null
+CLOSE_CLIENT(client)
 ```

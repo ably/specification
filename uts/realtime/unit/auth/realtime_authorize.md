@@ -112,6 +112,7 @@ ASSERT token_details.token == "token-2"
 # No state changes occurred — connection stayed CONNECTED throughout
 ASSERT state_changes.length == 0
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -211,6 +212,7 @@ ASSERT state_changes.length == 0
 # Connection details were updated (RTN21)
 ASSERT client.connection.id == "connection-id-2"
 ASSERT client.connection.key == "connection-key-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -327,6 +329,7 @@ ASSERT failed_changes[0].reason.statusCode == 401
 
 # Connection remains CONNECTED (channel-level ERROR doesn't close connection)
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -413,6 +416,7 @@ ASSERT client.connection.errorReason.code == 40012
 ASSERT state_changes CONTAINS_IN_ORDER [
   ConnectionState.failed
 ]
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -496,6 +500,7 @@ token_details = AWAIT authorize_future
 # authorize() completed after server response
 ASSERT authorize_completed == true
 ASSERT token_details.token == "token-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -580,6 +585,7 @@ ASSERT connection_attempt_count == 2
 
 # Second attempt used the new token
 ASSERT captured_ws_urls[1].queryParameters["accessToken"] == "token-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -646,6 +652,7 @@ ASSERT error.code == 40101
 ```pseudo
 # Connection is in FAILED state
 ASSERT client.connection.state == ConnectionState.failed
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -728,6 +735,7 @@ ASSERT state_changes CONTAINS_IN_ORDER [
 
 # Connection used the token from authorize
 ASSERT captured_ws_urls[0].queryParameters["accessToken"] == "token-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -823,6 +831,7 @@ ASSERT state_changes CONTAINS_IN_ORDER [
 
 # Second connection used the new token
 ASSERT captured_ws_urls[1].queryParameters["accessToken"] == "token-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -890,6 +899,7 @@ ASSERT token_details.token == "token-2"
 
 # Connection is now CONNECTED again
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---

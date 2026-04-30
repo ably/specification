@@ -57,6 +57,7 @@ ASSERT captured_messages[0].channel == channel_name
 ASSERT length(captured_messages[0].messages) == 1
 ASSERT captured_messages[0].messages[0].name == "greeting"
 ASSERT captured_messages[0].messages[0].data == "hello"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -110,6 +111,7 @@ ASSERT length(captured_messages[0].messages) == 3
 ASSERT captured_messages[0].messages[0].name == "event1"
 ASSERT captured_messages[0].messages[1].name == "event2"
 ASSERT captured_messages[0].messages[2].name == "event3"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -184,6 +186,7 @@ ASSERT msg1["data"] == "payload"
 msg2 = captured_frames[2]["messages"][0]
 ASSERT "name" NOT IN msg2
 ASSERT "data" NOT IN msg2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -258,6 +261,7 @@ ASSERT msg1["data"] == "payload"
 msg2 = captured_frames[2]["messages"][0]
 ASSERT "name" NOT IN msg2
 ASSERT "data" NOT IN msg2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -311,6 +315,7 @@ channel.publish(name: "test", data: "immediate")
 ASSERT length(captured_messages) == 1
 ASSERT captured_messages[0].messages[0].name == "test"
 ASSERT captured_messages[0].messages[0].data == "immediate"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -358,6 +363,7 @@ channel.publish(name: "while-attaching", data: "data")
 # Message should have been sent immediately (ATTACHING is neither SUSPENDED nor FAILED)
 ASSERT length(captured_messages) == 1
 ASSERT captured_messages[0].messages[0].name == "while-attaching"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -406,6 +412,7 @@ channel.publish(name: "before-attach", data: "data")
 # Message should have been sent immediately
 ASSERT length(captured_messages) == 1
 ASSERT captured_messages[0].messages[0].name == "before-attach"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -461,6 +468,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ASSERT length(captured_messages) == 1
 ASSERT captured_messages[0].messages[0].name == "queued"
 ASSERT captured_messages[0].messages[0].data == "waiting"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -521,6 +529,7 @@ ASSERT length(captured_messages) > message_count_before
 # Find the queued message in captured messages
 queued = filter(captured_messages, (m) => m.messages[0].name == "during-disconnect")
 ASSERT length(queued) == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -569,6 +578,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Queued message should now have been sent
 ASSERT length(captured_messages) == 1
 ASSERT captured_messages[0].messages[0].name == "pre-connect"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -619,6 +629,7 @@ channel.publish(name: "fail", data: "should-error") FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -657,6 +668,7 @@ channel.publish(name: "fail", data: "should-error") FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -700,6 +712,7 @@ channel.publish(name: "fail", data: "should-error") FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -756,6 +769,7 @@ channel.publish(name: "fail", data: "should-error") FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT length(captured_messages) == 0  # No MESSAGE sent to server
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -807,6 +821,7 @@ channel.publish(name: "fail", data: "should-error") FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT length(captured_messages) == 0  # No MESSAGE sent to server
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -848,6 +863,7 @@ channel.publish(name: "fail", data: "should-error") FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -901,6 +917,7 @@ ASSERT length(captured_messages) == 1
 # Channel should remain INITIALIZED — no implicit attach
 ASSERT channel.state == ChannelState.initialized
 ASSERT attach_message_count == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -956,6 +973,7 @@ ASSERT length(captured_messages) == 3
 ASSERT captured_messages[0].messages[0].name == "first"
 ASSERT captured_messages[1].messages[0].name == "second"
 ASSERT captured_messages[2].messages[0].name == "third"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1004,6 +1022,7 @@ ASSERT length(captured_messages) == 1
 ASSERT length(captured_messages[0].messages) == 1
 ASSERT captured_messages[0].messages[0].name == "custom"
 ASSERT captured_messages[0].messages[0].data == {"key": "value"}
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1070,6 +1089,7 @@ ASSERT captured_messages[0].msgSerial == 0
 ASSERT result IS PublishResult
 ASSERT length(result.serials) == 1
 ASSERT result.serials[0] == "abc123"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1135,6 +1155,7 @@ ASSERT length(result.serials) == 3
 ASSERT result.serials[0] == "serial-1"
 ASSERT result.serials[1] == null  # Conflated message
 ASSERT result.serials[2] == "serial-3"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1198,6 +1219,7 @@ ASSERT captured_messages[2].msgSerial == 2
 ASSERT result1.serials[0] == "serial-0"
 ASSERT result2.serials[0] == "serial-1"
 ASSERT result3.serials[0] == "serial-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1252,6 +1274,7 @@ AWAIT channel.publish(name: "rejected", data: "data") FAILS WITH error
 ASSERT error IS NOT null
 ASSERT error.code == 40160
 ASSERT error.message == "Publish rejected"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1326,6 +1349,7 @@ AWAIT publish_future FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1379,6 +1403,7 @@ AWAIT publish_future FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1443,6 +1468,7 @@ AWAIT publish_future FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1500,6 +1526,7 @@ AWAIT future3 FAILS WITH error3
 ASSERT error1 IS NOT null
 ASSERT error2 IS NOT null
 ASSERT error3 IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1566,6 +1593,7 @@ AWAIT publish_future FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1642,6 +1670,7 @@ result = AWAIT publish_future
 ```pseudo
 ASSERT result IS PublishResult
 ASSERT result.serials[0] == "serial-ack"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1735,6 +1764,7 @@ ASSERT second_transport_messages[0].msg.messages[0].name == "resend-me"
 # Publish should have resolved successfully
 ASSERT result IS PublishResult
 ASSERT result.serials[0] == "serial-resent"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1828,6 +1858,7 @@ second_transport_msgs = filter(captured_messages, (m) => m.connection == 2 AND m
 ASSERT length(second_transport_msgs) == 2
 ASSERT second_transport_msgs[0].msg.msgSerial == original_serial_1
 ASSERT second_transport_msgs[1].msg.msgSerial == original_serial_2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1929,6 +1960,7 @@ second_transport_msgs = filter(captured_messages, (m) => m.connection == 2 AND m
 ASSERT length(second_transport_msgs) == 2
 ASSERT second_transport_msgs[0].msg.msgSerial == 0
 ASSERT second_transport_msgs[1].msg.msgSerial == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -2010,6 +2042,7 @@ ASSERT channel.state == ChannelState.attached
 second_transport_attaches = filter(captured_attach_messages, (m) => m.connection == 2)
 ASSERT length(second_transport_attaches) >= 1
 ASSERT second_transport_attaches[0].msg.channel == channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -2094,4 +2127,5 @@ ASSERT channel.state == ChannelState.detached
 second_transport_detaches = filter(captured_detach_messages, (m) => m.connection == 2)
 ASSERT length(second_transport_detaches) >= 1
 ASSERT second_transport_detaches[0].msg.channel == channel_name
+CLOSE_CLIENT(client)
 ```

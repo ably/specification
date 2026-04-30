@@ -83,6 +83,7 @@ ASSERT received_messages[1].name == "event2"
 ASSERT received_messages[1].data == "data2"
 ASSERT received_messages[2].name IS null
 ASSERT received_messages[2].data == "data3"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -142,6 +143,7 @@ ASSERT length(received_messages) == 3
 ASSERT received_messages[0].name == "batch1"
 ASSERT received_messages[1].name == "batch2"
 ASSERT received_messages[2].name == "batch3"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -214,6 +216,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ASSERT length(received_messages) == 1
 ASSERT received_messages[0].name == "target"
 ASSERT received_messages[0].data == "should-receive"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -281,6 +284,7 @@ ASSERT alpha_messages[1].data == "a2"
 
 ASSERT length(beta_messages) == 1
 ASSERT beta_messages[0].data == "b1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -344,6 +348,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
   ]
 ))
 ASSERT length(received_messages) == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -401,6 +406,7 @@ AWAIT_STATE channel.state == ChannelState.attached
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT attach_message_count == 2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -471,6 +477,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ```pseudo
 ASSERT length(received_messages) == 1
 ASSERT received_messages[0].data == "after-reattach"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -518,6 +525,7 @@ channel.subscribe((message) => {})
 # Channel should remain INITIALIZED — no attach triggered
 ASSERT channel.state == ChannelState.initialized
 ASSERT attach_message_count == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -566,6 +574,7 @@ channel.subscribe((message) => {})
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT attach_message_count == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -613,6 +622,7 @@ channel.subscribe((message) => {})
 ```pseudo
 ASSERT channel.state == ChannelState.attaching
 ASSERT attach_message_count == 1  # No additional ATTACH message sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -668,6 +678,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ```pseudo
 # Message should not have been delivered
 ASSERT length(received_messages) == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -745,6 +756,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ASSERT length(received_messages) == 1
 ASSERT received_messages[0].name == "remote"
 ASSERT received_messages[0].data == "from-other"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -820,6 +832,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ASSERT length(messages_a) == 1  # Did not receive second message
 ASSERT length(messages_b) == 2  # Received both messages
 ASSERT messages_b[1].name == "msg2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -893,6 +906,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ASSERT length(received_messages) == 3
 ASSERT received_messages[2].name == "beta"
 ASSERT received_messages[2].data == "b2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -964,6 +978,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ```pseudo
 ASSERT length(messages_all) == 1   # No new messages
 ASSERT length(messages_named) == 1  # No new messages
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1023,4 +1038,5 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 # Existing subscription should be unaffected
 ASSERT length(received_messages) == 1
 ASSERT received_messages[0].data == "still-works"
+CLOSE_CLIENT(client)
 ```

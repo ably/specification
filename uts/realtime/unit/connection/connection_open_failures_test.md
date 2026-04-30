@@ -72,6 +72,7 @@ ASSERT client.connection.errorReason.statusCode == 400
 # Connection ID/key not set
 ASSERT client.connection.id IS null
 ASSERT client.connection.key IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -165,15 +166,16 @@ ASSERT token_request_count == 2  # Initial + renewal
 
 # Connection was attempted twice
 ASSERT connection_attempt_count == 2
+CLOSE_CLIENT(client)
 ```
 
 ---
 
-## RTN14b - Token error during connection without renewal (RSA4a)
+## RSA4a - Token error during connection without renewal
 
-**Spec requirement:** If a token error occurs and the token cannot be renewed, transition to DISCONNECTED state.
+**Spec requirement (RSA4a2):** If the server responds with a token error and there is no means to renew the token, the connection transitions to FAILED with error code 40171.
 
-Tests that non-renewable token errors cause disconnection.
+Tests that non-renewable token errors cause FAILED state.
 
 ### Setup
 
@@ -206,20 +208,21 @@ client = Realtime(options: ClientOptions(
 # Start connection
 client.connect()
 
-# Wait for DISCONNECTED state
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Wait for FAILED state (RSA4a2: no means to renew → FAILED)
+AWAIT_STATE client.connection.state == ConnectionState.failed
   WITH timeout: 5 seconds
 ```
 
 ### Assertions
 
 ```pseudo
-# Connection transitioned to DISCONNECTED (not FAILED, will retry)
-ASSERT client.connection.state == ConnectionState.disconnected
+# Connection transitioned to FAILED (RSA4a2: not DISCONNECTED)
+ASSERT client.connection.state == ConnectionState.failed
 
-# Error reason is set
+# Error reason is set with 40171 (RSA4a2)
 ASSERT client.connection.errorReason IS NOT null
-ASSERT client.connection.errorReason.code == 40142
+ASSERT client.connection.errorReason.code == 40171
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -278,6 +281,7 @@ ASSERT client.connection.state == ConnectionState.disconnected
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.message CONTAINS "timeout"
   OR client.connection.errorReason.code IN [50003, 80003]
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -352,6 +356,7 @@ ASSERT client.connection.state == ConnectionState.connected
 
 # Two connection attempts were made
 ASSERT connection_attempt_count == 2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -412,6 +417,7 @@ ASSERT client.connection.state == ConnectionState.suspended
 
 # Error reason is set (indicates why suspended)
 ASSERT client.connection.errorReason IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -495,6 +501,7 @@ ASSERT client.connection.state == ConnectionState.connected
 
 # Multiple connection attempts were made from SUSPENDED state
 ASSERT connection_attempt_count >= 3
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -552,6 +559,7 @@ ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 50000
 ASSERT client.connection.errorReason.statusCode == 500
 ASSERT client.connection.errorReason.message == "Internal server error"
+CLOSE_CLIENT(client)
 ```
 
 ---

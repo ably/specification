@@ -79,6 +79,7 @@ ASSERT client.connection.state == ConnectionState.failed
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 40142
 ASSERT client.connection.errorReason.statusCode == 401
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -199,6 +200,7 @@ ASSERT client.connection.id == first_connection_id
 # Connection key was updated
 ASSERT client.connection.key != first_connection_key
 ASSERT client.connection.key == "key-1-renewed"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -288,6 +290,7 @@ ASSERT client.connection.state == ConnectionState.disconnected
 
 # Error reason is set (from token renewal failure)
 ASSERT client.connection.errorReason IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -387,6 +390,7 @@ ASSERT connection_attempt_count == 2
 
 # Second connection attempt included resume parameter
 ASSERT mock_ws.events[1].url.query_params["resume"] == "key-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -459,6 +463,7 @@ ASSERT client.connection.state == ConnectionState.failed
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 50000
 ASSERT client.connection.errorReason.statusCode == 500
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -552,6 +557,7 @@ ASSERT client.connection.id == original_connection_id
 
 # Two connection attempts made
 ASSERT connection_attempt_count == 2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -645,6 +651,7 @@ ASSERT captured_connection_attempts[1].url.query_params["resume"] == "key-1"
 
 # Two connection attempts total
 ASSERT connection_attempt_count == 2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -739,6 +746,7 @@ ASSERT client.connection.errorReason.code == 80008
 
 # Connection is still CONNECTED (despite error)
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -893,6 +901,7 @@ ASSERT client.connection.key != original_connection_key
 # Final reconnection URL did NOT include resume parameter
 # (because TTL expired and connection state was cleared)
 ASSERT "resume" NOT IN captured_connection_attempts.last.url.query_params
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1004,6 +1013,7 @@ ASSERT token_request_count == 2  # Initial + renewal
 
 # Three connection attempts (initial, failed resume, retry with new token)
 ASSERT connection_attempt_count == 3
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1085,4 +1095,5 @@ ASSERT client.connection.errorReason.code == 50000
 
 # Only two connection attempts (no retry after fatal error)
 ASSERT connection_attempt_count == 2
+CLOSE_CLIENT(client)
 ```

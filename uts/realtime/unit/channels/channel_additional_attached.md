@@ -74,6 +74,7 @@ ASSERT update_events[0].current == ChannelState.attached
 ASSERT update_events[0].previous == ChannelState.attached
 ASSERT update_events[0].resumed == false
 ASSERT update_events[0].reason.code == 50000
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -132,6 +133,7 @@ AWAIT Future.delayed(Duration.zero)
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT length(update_events) == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -188,4 +190,5 @@ ASSERT channel.state == ChannelState.attached
 ASSERT length(update_events) == 1
 ASSERT update_events[0].resumed == false
 ASSERT update_events[0].reason IS null
+CLOSE_CLIENT(client)
 ```

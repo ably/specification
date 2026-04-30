@@ -109,6 +109,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ASSERT connection_attempts.length >= 1
 ASSERT connection_attempts[0].host == "realtime.ably.io"
   OR connection_attempts[0].host CONTAINS "realtime.ably"  # Primary domain
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -176,6 +177,7 @@ ASSERT connection_attempts[0] CONTAINS "realtime.ably"
 
 # Second attempt was to a fallback domain
 ASSERT connection_attempts[1] CONTAINS "fallback"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -249,6 +251,7 @@ ASSERT connection_attempts.length >= 2
 # First was primary, second was fallback
 ASSERT connection_attempts[0] CONTAINS "realtime.ably"
 ASSERT connection_attempts[1] CONTAINS "fallback"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -343,6 +346,7 @@ ASSERT connectivity_checks[0].method == "GET"
 
 # Connection attempts proceeded to fallback after check
 ASSERT connection_attempts.length >= 2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -395,6 +399,7 @@ WAIT(2000)
 # Should have only tried the custom host once, no fallbacks
 ASSERT connection_attempts.length == 1
 ASSERT connection_attempts[0] == "custom.example.com"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -463,6 +468,7 @@ ASSERT connection_attempts.length >= 2
 fallback_host = connection_attempts[1]
 ASSERT fallback_host CONTAINS "fallback.ably-realtime.com"
 ASSERT fallback_host MATCHES /\.[abcde]\.fallback\.ably-realtime\.com$/
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -648,6 +654,7 @@ ASSERT history_host == connected_fallback_host
 # Or:
 # B) Same fallback datacenter (e.g., *.b.fallback.* matches)
 ASSERT EXTRACT_FALLBACK_ID(history_host) == EXTRACT_FALLBACK_ID(connected_fallback_host)
+CLOSE_CLIENT(client)
 ```
 
 ---
