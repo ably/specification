@@ -97,6 +97,7 @@ client = Realtime(options: ClientOptions(
 ASSERT client.connection IS NOT null
 ASSERT client.connection IS Connection
 ASSERT client.connection.state == ConnectionState.initialized
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -129,6 +130,7 @@ ASSERT client.channels IS Channels
 channel = client.channels.get(channel_name)
 ASSERT channel IS RealtimeChannel
 ASSERT channel.name == channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -154,6 +156,7 @@ client = Realtime(options: ClientOptions(
 ```pseudo
 ASSERT client.auth IS NOT null
 ASSERT client.auth IS Auth
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -180,6 +183,7 @@ client = Realtime(options: ClientOptions(
 ASSERT client.push IS NOT null
 ASSERT client.push IS Push
 ASSERT client.push.admin IS PushAdmin
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -204,6 +208,7 @@ client = Realtime(options: ClientOptions(
 
 ASSERT client.clientId == "explicit-client-id"
 ASSERT client.clientId == client.auth.clientId
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -229,6 +234,7 @@ pending = AWAIT mock_ws.await_connection_attempt()
 
 # Check the connection URL query parameters
 ASSERT pending.url.query_params["echo"] == "true"
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1a_2 - echoMessages set to false
@@ -247,6 +253,7 @@ pending = AWAIT mock_ws.await_connection_attempt()
 
 # Check the connection URL query parameters
 ASSERT pending.url.query_params["echo"] == "false"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -276,6 +283,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connecting OR
 AWAIT client.connection.once(ConnectionEvent.connected)
 
 ASSERT mock_ws.connect_attempts.length >= 1
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1b_2 - autoConnect set to false
@@ -297,6 +305,7 @@ ASSERT mock_ws.connect_attempts.length == 0
 WAIT 100ms
 ASSERT client.connection.state == ConnectionState.initialized
 ASSERT mock_ws.connect_attempts.length == 0
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1b_3 - Explicit connect after autoConnect false
@@ -323,6 +332,7 @@ AWAIT client.connection.once(ConnectionEvent.connected)
 
 ASSERT mock_ws.events.filter(type: CONNECTION_ATTEMPT).length == 1
 AWAIT_STATE client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -355,6 +365,7 @@ pending = AWAIT mock_ws.await_connection_attempt()
 
 # Check the connection URL query parameters
 ASSERT pending.url.query_params["recover"] == "previous-connection-key"
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1c_2 - recover option cleared after connection attempt (RTN16k)
@@ -389,6 +400,7 @@ AWAIT client.connection.once(ConnectionEvent.connected)
 # (RTN16k - recover is used only for initial connection)
 second_connect_url = mock_ws.connect_attempts[1].url
 ASSERT "recover" NOT IN second_connect_url.query_params
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1c_3 - Invalid recovery key handled gracefully
@@ -407,6 +419,7 @@ pending = AWAIT mock_ws.await_connection_attempt()
 
 # Connection should proceed without recover parameter
 ASSERT "recover" NOT IN pending.url.query_params
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -440,6 +453,7 @@ pending = AWAIT mock_ws.await_connection_attempt()
 # Check the connection URL query parameters
 ASSERT pending.url.query_params["customParam"] == "customValue"
 ASSERT pending.url.query_params["anotherParam"] == "123"
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1f_2 - transportParams with different value types (Stringifiable)
@@ -466,6 +480,7 @@ ASSERT pending.url.query_params["stringParam"] == "hello"
 ASSERT pending.url.query_params["numberParam"] == "42"
 ASSERT pending.url.query_params["boolTrueParam"] == "true"
 ASSERT pending.url.query_params["boolFalseParam"] == "false"
+CLOSE_CLIENT(client)
 ```
 
 ### RTC1f1 - transportParams override library defaults
@@ -488,6 +503,7 @@ pending = AWAIT mock_ws.await_connection_attempt()
 # User-specified values should override defaults
 ASSERT pending.url.query_params["v"] == "3"
 ASSERT pending.url.query_params["heartbeats"] == "false"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -519,6 +535,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connecting
 
 AWAIT client.connection.once(ConnectionEvent.connected)
 AWAIT_STATE client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -555,6 +572,7 @@ AWAIT_STATE client.connection.state == ConnectionState.closing OR
 
 AWAIT client.connection.once(ConnectionEvent.closed)
 AWAIT_STATE client.connection.state == ConnectionState.closed
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -664,6 +682,7 @@ ASSERT "echo" IN pending.url.query_params
 # Auth parameters (one of these depending on auth method)
 ASSERT ("key" IN pending.url.query_params) OR
        ("accessToken" IN pending.url.query_params)
+CLOSE_CLIENT(client)
 ```
 
 ---

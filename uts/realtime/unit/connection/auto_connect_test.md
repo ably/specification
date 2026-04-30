@@ -64,6 +64,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Connection was established automatically
 ASSERT client.connection.state == ConnectionState.connected
 ASSERT client.connection.id == "connection-id"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -118,6 +119,7 @@ ASSERT connection_attempted == false
 
 # State remains INITIALIZED
 ASSERT client.connection.state == ConnectionState.initialized
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -178,4 +180,5 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Connection was established after explicit connect()
 ASSERT connection_attempted == true
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```

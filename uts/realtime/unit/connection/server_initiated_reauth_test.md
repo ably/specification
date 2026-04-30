@@ -116,6 +116,7 @@ ASSERT connected_to_other.length == 0
 # UPDATE event was emitted (RTN24)
 update_events = state_changes.filter(c => c.event == ConnectionEvent.update)
 ASSERT update_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -204,6 +205,7 @@ ASSERT state_changes.length == 1
 ASSERT state_changes[0].event == ConnectionEvent.update
 ASSERT state_changes[0].current == ConnectionState.connected
 ASSERT state_changes[0].previous == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -281,6 +283,7 @@ ASSERT disconnected_change.reason.code == 40142
 
 # The client should attempt to reconnect (RTN15h token-error recovery
 # will obtain a new token and reconnect)
+CLOSE_CLIENT(client)
 ```
 
 ### Note

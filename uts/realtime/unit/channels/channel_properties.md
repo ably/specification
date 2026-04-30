@@ -74,6 +74,7 @@ AWAIT channel.attach()
 
 # attachSerial updated from second ATTACHED response
 ASSERT channel.properties.attachSerial == "attach-serial-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -128,6 +129,7 @@ AWAIT_STATE channel.properties.attachSerial == "updated-serial"
 ### Assertions
 ```pseudo
 ASSERT channel.properties.attachSerial == "updated-serial"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -178,6 +180,7 @@ AWAIT channel.attach()
 ### Assertions
 ```pseudo
 ASSERT channel.properties.channelSerial == "serial-001"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -243,6 +246,7 @@ AWAIT_STATE channel.properties.channelSerial == "serial-003"
 ### Assertions
 ```pseudo
 ASSERT channel.properties.channelSerial == "serial-003"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -299,6 +303,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ```pseudo
 # channelSerial should remain unchanged
 ASSERT channel.properties.channelSerial == "serial-001"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -366,6 +371,7 @@ AWAIT_STATE channel.state == ChannelState.attached
 # (RTL15b1 clears it on DETACHED/SUSPENDED/FAILED, then ATTACHED sets it fresh)
 ASSERT attach_count == 2
 ASSERT channel.properties.channelSerial == "serial-001"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -422,6 +428,7 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT channel.properties.channelSerial IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -488,6 +495,7 @@ AWAIT_STATE channel.state == ChannelState.suspended
 ```pseudo
 ASSERT channel.state == ChannelState.suspended
 ASSERT channel.properties.channelSerial IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -543,4 +551,5 @@ AWAIT_STATE channel.state == ChannelState.failed
 ```pseudo
 ASSERT channel.state == ChannelState.failed
 ASSERT channel.properties.channelSerial IS null
+CLOSE_CLIENT(client)
 ```

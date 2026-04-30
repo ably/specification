@@ -106,6 +106,7 @@ ASSERT captured_ws_url.queryParameters["key"] IS null
 
 # Connection succeeded
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -164,6 +165,7 @@ ASSERT connection_attempted == false
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.statusCode == 401
   OR client.connection.errorReason.code == 40170
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -223,6 +225,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # authCallback received TokenParams with clientId
 ASSERT received_params IS NOT null
 ASSERT received_params.clientId == "my-client-id"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -284,6 +287,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ```pseudo
 # authCallback was only invoked once (token was reused)
 ASSERT callback_count == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -348,6 +352,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ```pseudo
 # authCallback was invoked twice (once per connection due to expiry)
 ASSERT callback_count == 2
+CLOSE_CLIENT(client)
 ```
 
 ---

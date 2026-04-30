@@ -104,6 +104,7 @@ AWAIT length(received_messages) == 3
 ASSERT received_messages[0].data == "first message"
 ASSERT received_messages[1].data == "second message"
 ASSERT received_messages[2].data == "third message"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -190,6 +191,7 @@ AWAIT length(received_messages) == 2
 ```pseudo
 ASSERT received_messages[0].data == "base payload"
 ASSERT received_messages[1].data == "updated payload"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -297,6 +299,7 @@ ASSERT received_messages[0].data == { "foo": "bar", "count": 1 }
 # to produce the new JSON string, which is delivered as-is (no json encoding
 # step in the delta message's encoding)
 ASSERT received_messages[1].data == new_json_string
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -392,6 +395,7 @@ ASSERT received_messages[0].data == base_binary
 
 # Second message delta-decoded using the binary base, then delivered as binary
 ASSERT received_messages[1].data == new_binary
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -499,6 +503,7 @@ AWAIT length(received_messages) == 3
 ASSERT received_messages[0].data == "value-A"
 ASSERT received_messages[1].data == "value-B"
 ASSERT received_messages[2].data == "value-C"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -605,6 +610,7 @@ ASSERT state_changes CONTAINS_IN_ORDER [
 ]
 attaching_change = FIND state_changes WHERE current == ChannelState.attaching
 ASSERT attaching_change.reason.code == 40018
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -701,6 +707,7 @@ AWAIT length(received_messages) == 3
 ASSERT received_messages[0].data == "first"
 ASSERT received_messages[1].data == "second"
 ASSERT received_messages[2].data == "third"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -809,6 +816,7 @@ ASSERT decode_calls[0].delta == delta
 
 # The decoded message was delivered to the subscriber
 ASSERT received_messages[1].data == "goodbye world"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -879,6 +887,7 @@ AWAIT_STATE channel.state == ChannelState.failed
 # Channel is FAILED with error code 40019 (no vcdiff plugin)
 ASSERT channel.state == ChannelState.failed
 ASSERT channel.errorReason.code == 40019
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -995,6 +1004,7 @@ ASSERT state_changes CONTAINS_IN_ORDER [
 ]
 attaching_change = FIND state_changes WHERE current == ChannelState.attaching
 ASSERT attaching_change.reason.code == 40018
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1121,6 +1131,7 @@ ASSERT channel.state == ChannelState.attached
 # (the failed delta msg-2 was discarded per RTL18b)
 ASSERT received_messages[0].data == "original base"
 ASSERT received_messages[1].data == "fresh after recovery"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1229,4 +1240,5 @@ AWAIT Future.delayed(Duration.zero)
 # Only one recovery ATTACH was sent (not two)
 recovery_attaches = length(attach_messages) - initial_attach_count
 ASSERT recovery_attaches == 1
+CLOSE_CLIENT(client)
 ```

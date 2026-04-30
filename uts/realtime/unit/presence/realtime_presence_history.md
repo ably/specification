@@ -67,6 +67,8 @@ ASSERT captured_history_requests[0].params.start == 1000
 ASSERT captured_history_requests[0].params.end == 2000
 ASSERT captured_history_requests[0].params.direction == "backwards"
 ASSERT captured_history_requests[0].params.limit == 50
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -122,4 +124,6 @@ ASSERT result.items.length == 3
 ASSERT result.items[0].clientId == "alice"
 ASSERT result.items[0].action == ENTER
 ASSERT result.items[2].action == LEAVE
+
+CLOSE_CLIENT(client)
 ```

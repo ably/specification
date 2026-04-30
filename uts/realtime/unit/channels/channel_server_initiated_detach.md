@@ -81,6 +81,7 @@ ASSERT channel_state_changes[0].previous == ChannelState.attached
 ASSERT channel_state_changes[0].reason IS NOT null
 ASSERT channel_state_changes[0].reason.code == 90198
 ASSERT channel_state_changes[1].current == ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -167,6 +168,7 @@ AWAIT_STATE channel.state == ChannelState.attached
 ASSERT channel.state == ChannelState.attached
 # 3 total ATTACH messages: initial + RTL13a reattach + RTL13a reattach from SUSPENDED
 ASSERT attach_count == 3
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -263,6 +265,7 @@ ASSERT channel_state_changes CONTAINS_IN_ORDER [
   ChannelState.attaching,
   ChannelState.attached
 ]
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -345,6 +348,7 @@ ASSERT channel_state_changes[0].current == ChannelState.suspended
 ASSERT channel_state_changes[0].previous == ChannelState.attaching
 ASSERT channel_state_changes[0].reason IS NOT null
 ASSERT channel_state_changes[0].reason.code == 90198
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -445,6 +449,7 @@ ASSERT channel_state_changes CONTAINS_IN_ORDER [
   ChannelState.attaching,
   ChannelState.attached
 ]
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -530,6 +535,7 @@ ASSERT attach_count == attach_count_after_disconnect
 # (connection DISCONNECTED does not affect channel state per RTL3e,
 # so channel should still be SUSPENDED)
 ASSERT channel.state == ChannelState.suspended
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -588,4 +594,5 @@ ASSERT channel.state == ChannelState.detached
 
 # Only one ATTACH message (the initial attach, no reattach)
 ASSERT attach_count == 1
+CLOSE_CLIENT(client)
 ```

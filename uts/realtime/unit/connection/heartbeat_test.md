@@ -86,6 +86,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ```pseudo
 # Client should request heartbeats if it cannot observe ping frames
 ASSERT captured_url.query_params["heartbeats"] == "true"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -171,6 +172,7 @@ ASSERT client.connection.id == "connection-id-2"
 # Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -247,6 +249,7 @@ ASSERT connection_attempt_count == 2
 # Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -350,6 +353,7 @@ ASSERT connection_attempt_count == 2
 # Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -434,6 +438,7 @@ ASSERT client.connection.id == "connection-id-2"
 # Verify the first connection was closed by the client
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -517,6 +522,7 @@ ASSERT "resume" NOT IN first_url.query_params
 # Second connection should include resume parameter with first connectionKey
 second_url = connection_attempts[1].url
 ASSERT second_url.query_params["resume"] == "connection-key-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -574,6 +580,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Client should NOT request heartbeats if it can observe ping frames
 ASSERT captured_url.query_params["heartbeats"] == "false"
   OR "heartbeats" NOT IN captured_url.query_params
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -659,6 +666,7 @@ ASSERT client.connection.id == "connection-id-2"
 # Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -733,6 +741,7 @@ ASSERT connection_attempt_count == 2
 # Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -840,6 +849,7 @@ ASSERT connection_attempt_count == 2
 # Verify the client closed the first WebSocket connection
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -924,6 +934,7 @@ ASSERT client.connection.id == "connection-id-2"
 # Verify the first connection was closed by the client
 client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
 ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1007,6 +1018,7 @@ ASSERT "resume" NOT IN first_url.query_params
 # Second connection should include resume parameter with first connectionKey
 second_url = connection_attempts[1].url
 ASSERT second_url.query_params["resume"] == "connection-key-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1063,6 +1075,7 @@ FOR i IN 1..7:
 ```pseudo
 # Connection stayed alive through all ping frames
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---

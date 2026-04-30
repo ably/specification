@@ -90,6 +90,7 @@ AWAIT attach_future FAILS WITH error
 ASSERT error IS NOT null
 # Channel should be in SUSPENDED state (RTL4f: attach timeout → SUSPENDED)
 ASSERT channel.state == ChannelState.suspended
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -170,6 +171,7 @@ AWAIT detach_future FAILS WITH error
 ASSERT error IS NOT null
 # Channel should still be in ATTACHED state (RTL5f: detach timeout → back to ATTACHED)
 ASSERT channel.state == ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -258,6 +260,7 @@ ADVANCE_TIME(1500)
 ```pseudo
 # A new reconnection attempt was made after the custom delay
 ASSERT connection_attempt_count > count_after_immediate
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -285,4 +288,5 @@ ASSERT client.options.disconnectedRetryTimeout == 15000
 ASSERT client.options.suspendedRetryTimeout == 30000
 ASSERT client.options.httpOpenTimeout == 4000
 ASSERT client.options.httpRequestTimeout == 10000
+CLOSE_CLIENT(client)
 ```

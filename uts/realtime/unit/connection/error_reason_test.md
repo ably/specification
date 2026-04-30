@@ -63,6 +63,7 @@ ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 40005
 ASSERT client.connection.errorReason.statusCode == 400
 ASSERT client.connection.errorReason.message == "Invalid API key"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -110,6 +111,7 @@ ASSERT client.connection.errorReason.message IS NOT null
 
 # Error indicates connection failure
 # (Exact error code/message depends on implementation)
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -168,6 +170,7 @@ ASSERT client.connection.errorReason.message IS NOT null
 
 # Error should indicate timeout or suspension reason
 # (Exact error code/message depends on implementation)
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -222,6 +225,7 @@ ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 40142
 ASSERT client.connection.errorReason.statusCode == 401
 ASSERT client.connection.errorReason.message CONTAINS "Token"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -307,6 +311,7 @@ ASSERT client.connection.errorReason IS null
 # Or:
 # B) errorReason is kept but clearly not relevant to current state
 # (Implementation-specific behavior)
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -361,6 +366,7 @@ ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 50000
 ASSERT client.connection.errorReason.statusCode == 500
 ASSERT client.connection.errorReason.message == "Internal server error"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -431,6 +437,7 @@ ASSERT change.reason.message == "Access token invalid"
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == change.reason.code
 ASSERT client.connection.errorReason.message == change.reason.message
+CLOSE_CLIENT(client)
 ```
 
 ---

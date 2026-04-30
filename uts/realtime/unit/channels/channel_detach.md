@@ -42,6 +42,7 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.initialized OR channel.state == ChannelState.detached
 # No state change events should have been emitted (or only to detached)
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -98,6 +99,7 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT detach_message_count == 1  # No additional DETACH message sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -163,6 +165,7 @@ AWAIT detach_future_2
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT detach_message_count == 1  # Only one DETACH message sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -227,6 +230,7 @@ ASSERT channel.state == ChannelState.detached
 ASSERT length(messages_from_client) == 2
 ASSERT messages_from_client[0].action == ATTACH
 ASSERT messages_from_client[1].action == DETACH
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -276,6 +280,7 @@ AWAIT channel.detach() FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT channel.state == ChannelState.failed  # State unchanged
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -333,6 +338,7 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT detach_message_count == 0  # No DETACH message sent - immediate transition
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -381,6 +387,7 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT detach_message_count == 0  # No DETACH message sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -440,6 +447,7 @@ ASSERT channel.state == ChannelState.detached
 ASSERT captured_detach_message IS NOT null
 ASSERT captured_detach_message.action == DETACH
 ASSERT captured_detach_message.channel == channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -498,6 +506,7 @@ AWAIT detach_future FAILS WITH error
 ```pseudo
 ASSERT channel.state == ChannelState.attached  # Returns to previous state
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -558,6 +567,7 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT detach_message_count == 2  # Two DETACH messages sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -619,6 +629,7 @@ AWAIT Future.delayed(Duration(milliseconds: 100))
 ```pseudo
 ASSERT detach_message_count == 2  # Client sent another DETACH
 ASSERT channel.state == ChannelState.detached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -681,6 +692,7 @@ ASSERT state_changes[0].event == ChannelEvent.detaching
 ASSERT state_changes[1].current == ChannelState.detached
 ASSERT state_changes[1].previous == ChannelState.detaching
 ASSERT state_changes[1].event == ChannelEvent.detached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -748,4 +760,5 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT channel.errorReason IS null
+CLOSE_CLIENT(client)
 ```
