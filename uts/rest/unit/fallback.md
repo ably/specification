@@ -505,6 +505,64 @@ ASSERT mock_http.captured_requests[2].url.host == "main.realtime.ably.net"
 
 ---
 
+## RSC15f - Expired preferred fallback host not resurrected by late in-flight success
+
+**Spec requirement:** After `fallbackRetryTimeout` has elapsed the preference must be un-stored and future requests must restart the fallback sequence from the primary host. A late-arriving
+successful response against the previously-preferred fallback must not re-establish it as the preference.
+
+Tests that a request that completes successfully against a fallback *after* `fallbackRetryTimeout` has expired does not re-pin that fallback as the preferred host.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+mock_http.queue_response_for_host("main.realtime.ably.net", 500, { "error": {} })
+mock_http.queue_response_for_host("main.a.fallback.ably-realtime.com", 200, { "time": 1000 })
+mock_http.queue_delayed_response(200, 200, { "time": 2000 })
+# After timeout, primary should be tried again
+mock_http.queue_response_for_host("main.realtime.ably.net", 200, { "time": 3000 })
+# The late success from the fallback host must NOT have re-pinned it.
+mock_http.queue_response_for_host("main.realtime.ably.net", 200, { "time": 4000 })
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  fallbackRetryTimeout: 100  # 100ms for testing
+))
+```
+
+### Test Steps
+```pseudo
+# First request triggers fallback
+AWAIT client.time()
+
+# Second request should go directly to the cached fallback and hangs
+request_future = client.time()
+
+# Wait for timeout to expire
+WAIT 150 milliseconds
+
+# Next request should try primary again
+AWAIT client.time()
+
+# Wait for request to complete
+AWAIT request_future
+
+# Next request should try primary again
+AWAIT client.time()
+
+```
+
+### Assertions
+```pseudo
+ASSERT mock_http.captured_requests.length == 3
+
+# After timeout, primary is tried again
+ASSERT mock_http.captured_requests[2].url.host == "main.a.fallback.ably-realtime.com"
+ASSERT mock_http.captured_requests[3].url.host == "main.realtime.ably.net"
+ASSERT mock_http.captured_requests[4].url.host == "main.realtime.ably.net"
+```
+
+---
+
 # REC1 - Primary Domain Configuration
 
 ## REC1a - Default primary domain
