@@ -57,6 +57,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT attach_message_count == 1  # No additional ATTACH message sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -116,6 +117,7 @@ AWAIT attach_future_2
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT attach_message_count == 1  # Only one ATTACH message sent
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -185,6 +187,7 @@ ASSERT channel.state == ChannelState.attached
 # Should have: ATTACH, DETACH, ATTACH
 attach_messages = filter(messages_from_client, (m) => m.action == ATTACH)
 ASSERT length(attach_messages) == 2
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -244,6 +247,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT channel.errorReason IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -284,6 +288,7 @@ AWAIT channel.attach() FAILS WITH error
 ```pseudo
 ASSERT error.code IS NOT null
 ASSERT channel.state != ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -327,6 +332,7 @@ AWAIT channel.attach() FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT channel.state != ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -371,6 +377,7 @@ AWAIT channel.attach() FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT channel.state != ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -413,6 +420,7 @@ AWAIT_STATE channel.state == ChannelState.attaching
 ```pseudo
 ASSERT channel.state == ChannelState.attaching
 # Attach message not yet sent (connection not ready)
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -470,6 +478,7 @@ AWAIT attach_future
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT attach_message_received == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -522,6 +531,7 @@ ASSERT channel.state == ChannelState.attached
 ASSERT captured_attach_message IS NOT null
 ASSERT captured_attach_message.action == ATTACH
 ASSERT captured_attach_message.channel == channel_name
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -575,6 +585,7 @@ ASSERT length(captured_attach_messages) == 2
 ASSERT captured_attach_messages[0].channelSerial IS null OR captured_attach_messages[0].channelSerial IS NOT SET
 # Second attach (reattach via setOptions) includes channelSerial
 ASSERT captured_attach_messages[1].channelSerial == "serial-from-server-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -626,6 +637,7 @@ AWAIT attach_future FAILS WITH error
 ```pseudo
 ASSERT channel.state == ChannelState.suspended
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -676,6 +688,7 @@ ASSERT captured_attach_message IS NOT null
 ASSERT captured_attach_message.params IS NOT null
 ASSERT captured_attach_message.params["rewind"] == "1"
 ASSERT captured_attach_message.params["delta"] == "vcdiff"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -727,6 +740,7 @@ ASSERT captured_attach_message.flags IS NOT null
 # Flags should include PUBLISH (131072, TR3r bit 17) and SUBSCRIBE (262144, TR3s bit 18) bits
 ASSERT (captured_attach_message.flags AND 131072) != 0   # PUBLISH bit set
 ASSERT (captured_attach_message.flags AND 262144) != 0  # SUBSCRIBE bit set
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -771,6 +785,7 @@ AWAIT channel.attach()
 ASSERT channel.modes IS NOT null
 ASSERT ChannelMode.publish IN channel.modes
 ASSERT ChannelMode.subscribe IN channel.modes
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -830,4 +845,5 @@ ASSERT length(captured_attach_messages) == 2
 ASSERT (captured_attach_messages[0].flags AND 32) == 0  # ATTACH_RESUME = 32
 # Second attach SHOULD have ATTACH_RESUME flag
 ASSERT (captured_attach_messages[1].flags AND 32) != 0  # ATTACH_RESUME = 32
+CLOSE_CLIENT(client)
 ```

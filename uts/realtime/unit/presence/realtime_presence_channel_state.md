@@ -65,6 +65,8 @@ members = AWAIT channel.presence.get()
 ASSERT members.length == 1
 ASSERT members[0].clientId == "alice"
 ASSERT channel.presence.syncComplete == true
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -108,6 +110,8 @@ members = AWAIT channel.presence.get()
 ```pseudo
 ASSERT members.length == 0
 ASSERT channel.presence.syncComplete == true  # Immediately in sync
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -202,6 +206,8 @@ ASSERT leave_events.any(e => e.clientId == "bob")
 
 # LEAVE events have id=null per RTP19a
 ASSERT leave_events.every(e => e.id IS null)
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -272,6 +278,8 @@ ASSERT leave_events.length == 0
 # Presence map is cleared
 members_after = channel.presence.get(waitForSync: false)
 ASSERT members_after.length == 0
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -337,6 +345,8 @@ AWAIT_STATE channel.state == ChannelState.failed
 ```pseudo
 # RTP5a: No LEAVE events emitted
 ASSERT leave_events.length == 0
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -394,6 +404,8 @@ AWAIT enter_future
 ASSERT captured_presence.length == 1
 ASSERT captured_presence[0].presence[0].action == ENTER
 ASSERT captured_presence[0].presence[0].data == "queued"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -456,6 +468,8 @@ members_during_suspended = channel.presence.get(waitForSync: false)
 ```pseudo
 # Members still exist in the map
 ASSERT members_during_suspended.length == 2
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -518,6 +532,8 @@ mock_ws.send_to_client(ProtocolMessage(
 ### Assertions
 ```pseudo
 ASSERT channel.presence.syncComplete == true
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -556,6 +572,8 @@ ASSERT presence IS NOT null
 
 ```pseudo
 ASSERT channel.presence === channel.presence  # identity check — same instance
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -618,6 +636,8 @@ ASSERT captured_presence.length == 0
 # The enter completed with an error
 ASSERT error IS ErrorInfo
 ASSERT error.code IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -674,6 +694,8 @@ ASSERT enter_error IS ErrorInfo
 
 AWAIT update_future FAILS WITH update_error
 ASSERT update_error IS ErrorInfo
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -731,6 +753,8 @@ ASSERT captured_presence.length == 0
 # Queued future completed with an error
 AWAIT enter_future FAILS WITH error
 ASSERT error IS ErrorInfo
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -791,4 +815,6 @@ mock_ws.send_to_client(ProtocolMessage(
 ```pseudo
 # The enter future resolves successfully — ACK was processed despite channel being DETACHED
 AWAIT enter_future  # should complete without error
+
+CLOSE_CLIENT(client)
 ```

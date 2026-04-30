@@ -34,6 +34,7 @@ ASSERT channel.name == "my-channel"
 # Also works with special characters
 channel2 = client.channels.get("namespace:channel-name")
 ASSERT channel2.name == "namespace:channel-name"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -112,6 +113,7 @@ ASSERT channel.errorReason IS NOT null
 ASSERT channel.errorReason.code == 90001
 ASSERT channel.errorReason.statusCode == 500
 ASSERT channel.errorReason.message == "Channel error occurred"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -180,6 +182,7 @@ AWAIT channel.attach() FAILS WITH error
 ASSERT channel.errorReason IS NOT null
 ASSERT channel.errorReason.code == 40160
 ASSERT channel.errorReason.statusCode == 401
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -262,6 +265,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT channel.errorReason IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -359,4 +363,5 @@ AWAIT channel.detach()
 ```pseudo
 ASSERT channel.state == ChannelState.detached
 ASSERT channel.errorReason IS null
+CLOSE_CLIENT(client)
 ```

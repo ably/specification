@@ -108,6 +108,7 @@ ASSERT update_change.reason IS null  # No error in this case
 # Connection details were updated
 ASSERT client.connection.id == "connection-id-2"
 ASSERT client.connection.key == "connection-key-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -196,6 +197,7 @@ ASSERT update_change.reason IS NOT null
 ASSERT update_change.reason.code == 40142
 ASSERT update_change.reason.statusCode == 401
 ASSERT update_change.reason.message CONTAINS "Token expired"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -283,6 +285,7 @@ ASSERT client.connection.key == "connection-key-2"
 
 # State remains CONNECTED
 ASSERT client.connection.state == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -381,4 +384,5 @@ FOR EACH event IN new_events:
 connected_state_events = FILTER all_events WHERE event.type == "state" 
                                               AND event.state == ConnectionState.connected
 ASSERT connected_state_events.length == 1  # Only the initial one
+CLOSE_CLIENT(client)
 ```

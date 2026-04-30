@@ -74,6 +74,7 @@ ASSERT callback_invoked == true
 
 # Callback was invoked with null argument (not a StateChange object)
 ASSERT callback_arg IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -149,6 +150,7 @@ ASSERT callback_invoked == true
 ASSERT callback_arg IS NOT null
 ASSERT callback_arg.previous IN [ConnectionState.initialized, ConnectionState.connecting]
 ASSERT callback_arg.current == ConnectionState.connected
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -251,6 +253,7 @@ WAIT(50)
 ```pseudo
 # Callback was still only invoked once (not again on reconnection)
 ASSERT callback_count == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -324,6 +327,7 @@ WAIT(50)
 ASSERT callback1_invoked == true
 ASSERT callback2_invoked == true
 ASSERT callback3_invoked == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -388,6 +392,7 @@ WAIT(200)
 ASSERT callback_invoked == false
 
 # This demonstrates whenState checks current state, not historical states
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -460,6 +465,7 @@ WAIT(50)
 ASSERT initialized_fired == true
 ASSERT connecting_fired == true
 ASSERT disconnected_fired == true
+CLOSE_CLIENT(client)
 ```
 
 ---

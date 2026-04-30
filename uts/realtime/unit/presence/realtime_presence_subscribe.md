@@ -86,6 +86,8 @@ ASSERT received_events[0].clientId == "alice"
 ASSERT received_events[1].action == UPDATE
 ASSERT received_events[1].data == "updated"
 ASSERT received_events[2].action == LEAVE
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -152,6 +154,8 @@ ASSERT leave_events.length == 1
 ASSERT leave_events[0].action == LEAVE
 
 # Neither listener receives UPDATE
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -205,6 +209,8 @@ mock_ws.send_to_client(ProtocolMessage(
 ASSERT enter_leave_events.length == 2
 ASSERT enter_leave_events[0].action == ENTER
 ASSERT enter_leave_events[1].action == LEAVE
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -251,6 +257,8 @@ AWAIT_STATE channel.state == ChannelState.attached
 ```pseudo
 ASSERT attach_count == 1
 ASSERT channel.state == ChannelState.attached
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -293,6 +301,8 @@ channel.presence.subscribe((event) => {})
 # Channel stays in INITIALIZED — no implicit attach
 ASSERT channel.state == ChannelState.initialized
 ASSERT attach_count == 0
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -359,6 +369,8 @@ mock_ws.send_to_client(ProtocolMessage(
 ```pseudo
 ASSERT events_a.length == 1  # No new events after unsubscribe
 ASSERT events_b.length == 1
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -416,6 +428,8 @@ mock_ws.send_to_client(ProtocolMessage(
 ```pseudo
 ASSERT events_a.length == 0  # Unsubscribed — no events
 ASSERT events_b.length == 1  # Still subscribed — receives event
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -473,6 +487,8 @@ mock_ws.send_to_client(ProtocolMessage(
 # Only LEAVE received — ENTER subscription was removed
 ASSERT received.length == 1
 ASSERT received[0].action == LEAVE
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -525,6 +541,8 @@ ASSERT members.length == 1
 ASSERT members[0].clientId == "alice"
 ASSERT members[0].data == "hello"
 ASSERT members[0].action == PRESENT  # Stored as PRESENT per RTP2d2
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -577,4 +595,6 @@ ASSERT received.length == 3
 ASSERT received[0].clientId == "alice"
 ASSERT received[1].clientId == "bob"
 ASSERT received[2].clientId == "carol"
+
+CLOSE_CLIENT(client)
 ```

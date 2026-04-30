@@ -98,6 +98,7 @@ AWAIT length(received_messages) == 3
 ASSERT received_messages[0].id == "abc123:5:0"
 ASSERT received_messages[1].id == "abc123:5:1"
 ASSERT received_messages[2].id == "abc123:5:2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -157,6 +158,7 @@ AWAIT length(received_messages) == 1
 ### Assertions
 ```pseudo
 ASSERT received_messages[0].id == "my-custom-id"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -218,6 +220,7 @@ AWAIT length(received_messages) == 1
 ### Assertions
 ```pseudo
 ASSERT received_messages[0].id IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -280,6 +283,7 @@ AWAIT length(received_messages) == 1
 ### Assertions
 ```pseudo
 ASSERT received_messages[0].connectionId == "server-conn-xyz"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -340,6 +344,7 @@ AWAIT length(received_messages) == 1
 ### Assertions
 ```pseudo
 ASSERT received_messages[0].connectionId == "msg-conn"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -402,6 +407,7 @@ AWAIT length(received_messages) == 1
 ### Assertions
 ```pseudo
 ASSERT received_messages[0].timestamp == 1700000000000
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -462,6 +468,7 @@ AWAIT length(received_messages) == 1
 ### Assertions
 ```pseudo
 ASSERT received_messages[0].timestamp == 1600000000000
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -537,4 +544,5 @@ ASSERT received_messages[1].connectionId == "connId"
 ASSERT received_messages[1].timestamp == 1700000000000
 ASSERT received_messages[1].name == "second"
 ASSERT received_messages[1].data == "b"
+CLOSE_CLIENT(client)
 ```

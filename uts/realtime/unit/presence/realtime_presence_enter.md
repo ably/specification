@@ -73,6 +73,8 @@ ASSERT captured_presence[0].presence.length == 1
 ASSERT captured_presence[0].presence[0].action == ENTER
 # RTP8c: clientId must NOT be present in the PresenceMessage
 ASSERT captured_presence[0].presence[0].clientId IS null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -119,6 +121,8 @@ AWAIT channel.presence.enter(data: "hello world")
 ASSERT captured_presence.length == 1
 ASSERT captured_presence[0].presence[0].action == ENTER
 ASSERT captured_presence[0].presence[0].data == "hello world"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -163,6 +167,8 @@ AWAIT channel.presence.enter()
 ### Assertions
 ```pseudo
 ASSERT channel.state == ChannelState.attached
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -210,6 +216,8 @@ AWAIT channel.presence.enter() FAILS WITH error
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -250,6 +258,8 @@ AWAIT channel.presence.enter() FAILS WITH error
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -290,6 +300,8 @@ AWAIT channel.presence.enter() FAILS WITH error
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -336,6 +348,8 @@ AWAIT channel.presence.enter() FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code == 40160
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -383,6 +397,8 @@ ASSERT captured_presence.length == 1
 ASSERT captured_presence[0].presence[0].action == UPDATE
 ASSERT captured_presence[0].presence[0].data == "new-status"
 ASSERT captured_presence[0].presence[0].clientId IS null  # RTP9d
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -429,6 +445,8 @@ AWAIT channel.presence.leave()
 ASSERT captured_presence.length == 1
 ASSERT captured_presence[0].presence[0].action == LEAVE
 ASSERT captured_presence[0].presence[0].clientId IS null  # RTP10c
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -471,6 +489,8 @@ AWAIT channel.presence.leave(data: "goodbye")
 ```pseudo
 ASSERT captured_presence[0].presence[0].action == LEAVE
 ASSERT captured_presence[0].presence[0].data == "goodbye"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -525,6 +545,8 @@ ASSERT captured_presence[0].presence[0].data == "alice-data"
 ASSERT captured_presence[1].presence[0].action == ENTER
 ASSERT captured_presence[1].presence[0].clientId == "user-bob"
 ASSERT captured_presence[1].presence[0].data == "bob-data"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -581,6 +603,8 @@ ASSERT captured_presence[1].presence[0].data == "updated"
 ASSERT captured_presence[2].presence[0].action == LEAVE
 ASSERT captured_presence[2].presence[0].clientId == "user-1"
 ASSERT captured_presence[2].presence[0].data == "leaving"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -622,6 +646,8 @@ AWAIT channel.presence.enterClient("user-1")
 ### Assertions
 ```pseudo
 ASSERT channel.state == ChannelState.attached
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -665,6 +691,8 @@ ASSERT error IS NOT null
 # Connection and channel remain available
 ASSERT client.connection.state == ConnectionState.connected
 ASSERT channel.state == ChannelState.attached
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -708,6 +736,8 @@ AWAIT channel.presence.enter()
 ```pseudo
 # Message was sent immediately
 ASSERT captured_presence.length == 1
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -764,6 +794,8 @@ AWAIT enter_future
 # Queued presence message was sent after attach completed
 ASSERT captured_presence.length == 1
 ASSERT captured_presence[0].presence[0].action == ENTER
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -809,6 +841,8 @@ AWAIT channel.presence.enter() FAILS WITH error
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -874,6 +908,8 @@ ASSERT captured_presence[1].presence[0].clientId == "other-user"
 
 ASSERT captured_presence[2].presence[0].action == LEAVE
 ASSERT captured_presence[2].presence[0].clientId == "other-user"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -992,6 +1028,8 @@ FOR i IN 0..member_count-1:
   member = members.find(m => m.clientId == "user-${i}")
   ASSERT member IS NOT null
   ASSERT member.data == "data-${i}"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -1130,4 +1168,7 @@ FOR i IN 0..member_count-1:
   ASSERT member IS NOT null
   ASSERT member.data == "data-${i}"
   ASSERT member.connectionId == "conn-A"
+
+CLOSE_CLIENT(client_a)
+CLOSE_CLIENT(client_b)
 ```

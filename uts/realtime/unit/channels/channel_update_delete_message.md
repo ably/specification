@@ -80,6 +80,7 @@ ASSERT msg.action == MessageAction.MESSAGE_UPDATE  # numeric: 1
 ASSERT msg.serial == "msg-serial-1"
 ASSERT msg.name == "updated"
 ASSERT msg.data == "new-data"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -147,6 +148,7 @@ ASSERT message_pm IS NOT null
 msg = message_pm.messages[0]
 ASSERT msg.action == MessageAction.MESSAGE_DELETE  # numeric: 2
 ASSERT msg.serial == "msg-serial-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -216,6 +218,7 @@ msg = message_pm.messages[0]
 ASSERT msg.action == MessageAction.MESSAGE_APPEND  # numeric: 5
 ASSERT msg.serial == "msg-serial-1"
 ASSERT msg.data == "appended-data"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -296,6 +299,7 @@ ASSERT msg_with_op.version.metadata["reason"] == "typo"
 # Without operation: version field absent
 msg_without_op = message_pms[1].messages[0]
 ASSERT msg_without_op.version IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -353,6 +357,7 @@ ASSERT original_message.name == "original"
 ASSERT original_message.data == "original-data"
 ASSERT original_message.serial == "msg-serial-1"
 ASSERT original_message.action IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -408,6 +413,7 @@ result = AWAIT channel.updateMessage(
 ```pseudo
 ASSERT result IS UpdateDeleteResult
 ASSERT result.versionSerial == "01770000000000-000@abcdef:000"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -462,6 +468,7 @@ AWAIT channel.updateMessage(
 ### Assertions
 ```pseudo
 ASSERT error.code == 40160
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -526,6 +533,7 @@ ASSERT message_pm IS NOT null
 
 ASSERT message_pm.params["key1"] == "value1"
 ASSERT message_pm.params["key2"] == "value2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -577,4 +585,5 @@ AWAIT channel.deleteMessage(
   Message(data: "v2")
 ) FAILS WITH error
 ASSERT error.code == 40003
+CLOSE_CLIENT(client)
 ```

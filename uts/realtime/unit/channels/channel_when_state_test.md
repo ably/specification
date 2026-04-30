@@ -14,21 +14,21 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 ## Purpose
 
 `RealtimeChannel#whenState` is a convenience function for waiting on channel state:
-- If the channel is already in the given state, the listener is called immediately
-  with a `null` argument (RTL25a).
-- Otherwise, the listener is registered with `#once` for the given state, and
-  called with the `ChannelStateChange` when the state is reached (RTL25b).
+- If the channel is already in the given state, it resolves immediately
+  with a `null` value (RTL25a).
+- Otherwise, it waits for the given state to be reached, and resolves
+  with the `ChannelStateChange` when the state is reached (RTL25b).
 
 This mirrors the `Connection#whenState` function (RTN26).
 
 ---
 
-## RTL25a - whenState calls listener immediately if already in state
+## RTL25a - whenState resolves immediately if already in state
 
-**Spec requirement:** If the channel is already in the given state, calls the
-listener with a `null` argument.
+**Spec requirement:** If the channel is already in the given state, resolves
+immediately with a `null` value.
 
-Tests that whenState invokes the callback immediately when the channel is already
+Tests that whenState resolves immediately when the channel is already
 in the target state.
 
 ### Setup
@@ -75,32 +75,22 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 
 # Channel is now ATTACHED — call whenState for current state
-callback_invoked = false
-callback_arg = undefined
-
-channel.whenState(ChannelState.attached, (change) => {
-  callback_invoked = true
-  callback_arg = change
-})
-
-# Callback should be invoked synchronously or very quickly
-WAIT(50)
+result = AWAIT channel.whenState(ChannelState.attached)
 ```
 
 ### Assertions
 ```pseudo
-# Callback was invoked immediately
-ASSERT callback_invoked == true
-
-# Callback was invoked with null argument (not a ChannelStateChange object)
-ASSERT callback_arg IS null
+# whenState resolved immediately with null (already in target state)
+ASSERT result IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
 
 ## RTL25b - whenState waits for state if not already in it
 
-**Spec requirement:** Else, calls `#once` with the given state and listener.
+**Spec requirement:** If the channel is not in the given state, waits for the
+state to be reached and resolves with the `ChannelStateChange`.
 
 Tests that whenState waits for a state transition when the channel is not currently
 in the target state.
@@ -147,44 +137,34 @@ channel = client.channels.get(channel_name)
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Channel is in INITIALIZED state — register whenState for ATTACHED
-callback_invoked = false
-callback_arg = undefined
+# Channel is in INITIALIZED state — start waiting for ATTACHED
+when_state_promise = channel.whenState(ChannelState.attached)
 
-channel.whenState(ChannelState.attached, (change) => {
-  callback_invoked = true
-  callback_arg = change
-})
-
-# Callback should not be invoked yet
-ASSERT callback_invoked == false
-
-# Attach the channel
+# Attach the channel (this triggers the state transition)
 AWAIT channel.attach()
 
-# Give callback a moment to execute
-WAIT(50)
+# Now await the whenState result
+result = AWAIT when_state_promise
 ```
 
 ### Assertions
 ```pseudo
-# Callback was invoked after state transition
-ASSERT callback_invoked == true
-
-# Callback was invoked with a ChannelStateChange object (not null)
-ASSERT callback_arg IS NOT null
-ASSERT callback_arg.current == ChannelState.attached
-ASSERT callback_arg.previous IN [ChannelState.initialized, ChannelState.attaching]
+# whenState resolved with a ChannelStateChange object (not null)
+ASSERT result IS NOT null
+ASSERT result.current == ChannelState.attached
+ASSERT result.previous IN [ChannelState.initialized, ChannelState.attaching]
+CLOSE_CLIENT(client)
 ```
 
 ---
 
 ## RTL25b - whenState only fires once
 
-**Spec requirement:** whenState uses `#once`, meaning it should only fire once,
-not on every subsequent occurrence of the state.
+**Spec requirement:** whenState resolves only once, even if the state is entered
+multiple times. Subsequent entries into the same state do not trigger additional
+resolutions.
 
-Tests that the whenState callback is invoked only once even if the state is entered
+Tests that the whenState resolution is one-shot even if the state is entered
 multiple times.
 
 ### Setup
@@ -234,32 +214,32 @@ channel = client.channels.get(channel_name)
 client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Register whenState for ATTACHED
-callback_count = 0
+# Register a side-effect counter via a listener wrapping whenState
+attach_count = 0
+channel.once(ChannelState.attached, () => { attach_count++ })
 
-channel.whenState(ChannelState.attached, (change) => {
-  callback_count++
-})
+# Also start a whenState that we'll use to verify one-shot behavior
+when_state_promise = channel.whenState(ChannelState.attached)
 
 # First attach
 AWAIT channel.attach()
-WAIT(50)
-
-# Verify callback was invoked once
-ASSERT callback_count == 1
+result = AWAIT when_state_promise
+ASSERT result IS NOT null
+ASSERT attach_count == 1
 
 # Detach
 AWAIT channel.detach()
 
-# Second attach
+# Second attach — a new whenState should be needed; the old one is consumed
 AWAIT channel.attach()
 WAIT(50)
 ```
 
 ### Assertions
 ```pseudo
-# Callback was still only invoked once (not again on second attach)
-ASSERT callback_count == 1
+# The once listener only fired once (confirming one-shot semantics)
+ASSERT attach_count == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -268,10 +248,10 @@ ASSERT callback_count == 1
 
 **Spec requirement:** whenState checks the current state. If the channel has
 already passed through a state but is no longer in it, whenState should NOT
-invoke the callback immediately.
+resolve immediately.
 
 Tests that whenState for a state that was previously visited but is no longer
-current does not fire.
+current does not resolve.
 
 ### Setup
 ```pseudo
@@ -320,18 +300,19 @@ AWAIT channel.attach()
 ASSERT channel.state == ChannelState.attached
 
 # Now call whenState for ATTACHING — a past state, not the current one
-callback_invoked = false
+resolved = false
 
-channel.whenState(ChannelState.attaching, (change) => {
-  callback_invoked = true
-})
+# Start whenState but do NOT await — check that it does not resolve
+when_state_promise = channel.whenState(ChannelState.attaching)
+when_state_promise.then(() => { resolved = true })
 
-# Wait to see if callback is invoked
+# Wait to see if it resolves
 WAIT(200)
 ```
 
 ### Assertions
 ```pseudo
-# Callback should NOT be invoked (we're not in ATTACHING state anymore)
-ASSERT callback_invoked == false
+# whenState should NOT have resolved (we're not in ATTACHING state anymore)
+ASSERT resolved == false
+CLOSE_CLIENT(client)
 ```

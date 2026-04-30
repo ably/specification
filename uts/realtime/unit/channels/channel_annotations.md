@@ -35,6 +35,7 @@ channel = client.channels.get("test-RTL26")
 ### Assertions
 ```pseudo
 ASSERT channel.annotations IS RealtimeAnnotations
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -107,6 +108,7 @@ ASSERT ann.action == AnnotationAction.ANNOTATION_CREATE  # numeric: 0
 ASSERT ann.messageSerial == "msg-serial-1"
 ASSERT ann.type == "com.example.reaction"
 ASSERT ann.name == "like"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -151,6 +153,7 @@ AWAIT channel.annotations.publish("msg-serial-1", Annotation(
   name: "like"
 )) FAILS WITH error
 ASSERT error.code == 40003
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -216,6 +219,7 @@ ann = annotation_pm.annotations[0]
 ASSERT ann.data IS String
 ASSERT ann.encoding == "json"
 ASSERT parse_json(ann.data) == { "key": "value", "nested": { "a": 1 } }
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -270,6 +274,7 @@ AWAIT channel.annotations.publish("msg-serial-1", Annotation(
   name: "like"
 )) FAILS WITH error
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -321,6 +326,7 @@ AWAIT channel.annotations.publish("msg-serial-1", Annotation(
   name: "like"
 ))
 # If we get here, publish succeeded (no assertion needed beyond no throw)
+CLOSE_CLIENT(client)
 ```
 
 ### Setup (NACK case)
@@ -364,6 +370,7 @@ AWAIT channel.annotations.publish("msg-serial-1", Annotation(
   name: "like"
 )) FAILS WITH error
 ASSERT error.code == 40160
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -430,6 +437,7 @@ ASSERT ann.action == AnnotationAction.ANNOTATION_DELETE  # numeric: 1
 ASSERT ann.messageSerial == "msg-serial-1"
 ASSERT ann.type == "com.example.reaction"
 ASSERT ann.name == "like"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -535,6 +543,7 @@ ASSERT ann1.timestamp == 1700000000000
 ann2 = received_annotations[1]
 ASSERT ann2.name == "heart"
 ASSERT ann2.clientId == "user-2"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -624,6 +633,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ASSERT reaction_annotations.length == 2
 ASSERT reaction_annotations[0].name == "like"
 ASSERT reaction_annotations[1].name == "heart"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -675,6 +685,7 @@ AWAIT_STATE channel.state == ATTACHED
 ### Assertions
 ```pseudo
 ASSERT channel.state == ATTACHED
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -738,6 +749,7 @@ FOR msg IN log_messages:
   IF msg CONTAINS "ANNOTATION_SUBSCRIBE":
     found_warning = true
 ASSERT found_warning == true
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -794,6 +806,7 @@ FOR msg IN log_messages:
   IF msg CONTAINS "ANNOTATION_SUBSCRIBE":
     found_warning = true
 ASSERT found_warning == false
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -885,6 +898,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 # Only the first annotation was received
 ASSERT received_annotations.length == 1
 ASSERT received_annotations[0].name == "like"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -968,4 +982,5 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ASSERT reaction_received.length == 0
 ASSERT comment_received.length == 1
 ASSERT comment_received[0].type == "com.example.comment"
+CLOSE_CLIENT(client)
 ```

@@ -47,6 +47,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ### Assertions
 ```pseudo
 ASSERT client.connection.id == "unique-conn-id-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -87,6 +88,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ### Assertions
 ```pseudo
 ASSERT client.connection.key == "conn-key-1"
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -141,6 +143,8 @@ AWAIT_STATE client2.connection.state == ConnectionState.connected
 ASSERT client1.connection.id != client2.connection.id
 ASSERT client1.connection.id == "conn-id-1"
 ASSERT client2.connection.id == "conn-id-2"
+CLOSE_CLIENT(client1)
+CLOSE_CLIENT(client2)
 ```
 
 ---
@@ -195,6 +199,8 @@ AWAIT_STATE client2.connection.state == ConnectionState.connected
 ASSERT client1.connection.key != client2.connection.key
 ASSERT client1.connection.key == "conn-key-1"
 ASSERT client2.connection.key == "conn-key-2"
+CLOSE_CLIENT(client1)
+CLOSE_CLIENT(client2)
 ```
 
 ---
@@ -236,6 +242,7 @@ AWAIT_STATE client.connection.state == ConnectionState.closed
 ### Assertions
 ```pseudo
 ASSERT client.connection.id IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -277,6 +284,7 @@ AWAIT_STATE client.connection.state == ConnectionState.closed
 ### Assertions
 ```pseudo
 ASSERT client.connection.key IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -315,6 +323,7 @@ AWAIT_STATE client.connection.state == ConnectionState.failed
 ```pseudo
 ASSERT client.connection.id IS null
 ASSERT client.connection.key IS null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -357,4 +366,5 @@ AWAIT_STATE client.connection.state == ConnectionState.suspended
 ```pseudo
 ASSERT client.connection.id IS null
 ASSERT client.connection.key IS null
+CLOSE_CLIENT(client)
 ```

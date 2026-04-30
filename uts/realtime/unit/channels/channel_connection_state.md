@@ -61,6 +61,7 @@ ASSERT channel.state == ChannelState.attached
 
 # No channel state change events should have been emitted
 ASSERT length(channel_state_changes) == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -114,6 +115,7 @@ ASSERT channel.state == ChannelState.attaching
 
 # No channel state change events should have been emitted
 ASSERT length(channel_state_changes) == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -181,6 +183,7 @@ ASSERT failed_change IS NOT null
 ASSERT failed_change.previous == ChannelState.attached
 ASSERT failed_change.reason IS NOT null
 ASSERT failed_change.reason.code == 40198
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -245,6 +248,7 @@ ASSERT channel.errorReason IS NOT null
 failed_change = channel_state_changes.find(c => c.current == ChannelState.failed)
 ASSERT failed_change IS NOT null
 ASSERT failed_change.previous == ChannelState.attaching
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -320,6 +324,7 @@ ASSERT initialized_channel.state == ChannelState.initialized
 ASSERT detached_channel.state == ChannelState.detached
 ASSERT length(init_changes) == 0
 ASSERT length(detached_changes) == 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -374,6 +379,7 @@ ASSERT channel.state == ChannelState.detached
 detached_change = channel_state_changes.find(c => c.current == ChannelState.detached)
 ASSERT detached_change IS NOT null
 ASSERT detached_change.previous == ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -430,6 +436,7 @@ ASSERT channel.state == ChannelState.detached
 detached_change = channel_state_changes.find(c => c.current == ChannelState.detached)
 ASSERT detached_change IS NOT null
 ASSERT detached_change.previous == ChannelState.attaching
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -498,6 +505,7 @@ ASSERT channel.state == ChannelState.suspended
 suspended_change = channel_state_changes.find(c => c.current == ChannelState.suspended)
 ASSERT suspended_change IS NOT null
 ASSERT suspended_change.previous == ChannelState.attached
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -565,6 +573,7 @@ ASSERT channel.state == ChannelState.suspended
 suspended_change = channel_state_changes.find(c => c.current == ChannelState.suspended)
 ASSERT suspended_change IS NOT null
 ASSERT suspended_change.previous == ChannelState.attaching
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -643,6 +652,7 @@ ASSERT channel_state_changes CONTAINS_IN_ORDER [
   ChannelState.attaching,
   ChannelState.attached
 ]
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -734,6 +744,7 @@ ASSERT channel_state_changes CONTAINS_IN_ORDER [
   ChannelState.attaching,
   ChannelState.attached
 ]
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -817,6 +828,7 @@ attach_count_after = length(attach_messages)
 new_attach_channels = [m.channel FOR m IN attach_messages[attach_count_before:]]
 ASSERT initialized_channel_name NOT IN new_attach_channels
 ASSERT detached_channel_name NOT IN new_attach_channels
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -885,4 +897,5 @@ ASSERT channel2.state == ChannelState.attached
 new_attach_channels = [m.channel FOR m IN attach_messages[attach_count_before:]]
 ASSERT channel1_name IN new_attach_channels
 ASSERT channel2_name IN new_attach_channels
+CLOSE_CLIENT(client)
 ```

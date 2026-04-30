@@ -78,6 +78,8 @@ members = AWAIT get_future
 ASSERT members.length == 2
 client_ids = members.map(m => m.clientId).sort()
 ASSERT client_ids == ["alice", "bob"]
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -156,6 +158,8 @@ members = AWAIT get_future
 ASSERT members.length == 2
 client_ids = members.map(m => m.clientId).sort()
 ASSERT client_ids == ["alice", "bob"]
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -212,6 +216,8 @@ members = AWAIT channel.presence.get(waitForSync: false)
 # Returns what's available so far (may be incomplete)
 ASSERT members.length == 1
 ASSERT members[0].clientId == "alice"
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -265,6 +271,8 @@ members = AWAIT channel.presence.get(clientId: "alice")
 # Only alice entries returned (from two different connections)
 ASSERT members.length == 2
 ASSERT members.every(m => m.clientId == "alice")
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -318,6 +326,8 @@ members = AWAIT channel.presence.get(connectionId: "c1")
 # Only members from connection c1 (alice and carol)
 ASSERT members.length == 2
 ASSERT members.every(m => m.connectionId == "c1")
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -362,6 +372,8 @@ members = AWAIT channel.presence.get(waitForSync: false)
 ```pseudo
 ASSERT channel.state == ChannelState.attached
 ASSERT members IS NOT null
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -420,6 +432,8 @@ AWAIT channel.presence.get() FAILS WITH error
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.code == 91005
+
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -476,4 +490,6 @@ members = AWAIT channel.presence.get(waitForSync: false)
 ```pseudo
 ASSERT members.length == 1
 ASSERT members[0].clientId == "alice"
+
+CLOSE_CLIENT(client)
 ```

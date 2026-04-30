@@ -71,6 +71,7 @@ heartbeats_sent = mock_ws.events.filter(
   e => e.type == MESSAGE_FROM_CLIENT AND e.message.action == HEARTBEAT
 )
 ASSERT heartbeats_sent.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -131,6 +132,7 @@ ASSERT duration >= Duration.zero
 # The sent HEARTBEAT should have had a non-empty id
 ASSERT captured_heartbeat_id IS NOT null
 ASSERT captured_heartbeat_id.length > 0
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -183,6 +185,7 @@ duration = AWAIT client.connection.ping()
 # Ping should resolve (ignored the no-id heartbeat, matched the correct one)
 ASSERT duration IS NOT null
 ASSERT duration >= Duration.zero
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -245,6 +248,7 @@ ASSERT heartbeats_sent.length == 2
 
 # The two HEARTBEATs should have different ids
 ASSERT heartbeats_sent[0].message.id != heartbeats_sent[1].message.id
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -294,6 +298,7 @@ error = AWAIT_ERROR ping_future
 ASSERT error IS NOT null
 # The error should indicate a timeout
 ASSERT error.message CONTAINS "timeout" (case insensitive)
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -324,6 +329,7 @@ error = AWAIT_ERROR client.connection.ping()
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -369,6 +375,7 @@ error = AWAIT_ERROR client.connection.ping()
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -410,6 +417,7 @@ error = AWAIT_ERROR client.connection.ping()
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -451,6 +459,7 @@ error = AWAIT_ERROR client.connection.ping()
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -517,6 +526,7 @@ heartbeats_sent = mock_ws.events.filter(
   e => e.type == MESSAGE_FROM_CLIENT AND e.message.action == HEARTBEAT
 )
 ASSERT heartbeats_sent.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -596,6 +606,7 @@ heartbeats_sent = mock_ws.events.filter(
   e => e.type == MESSAGE_FROM_CLIENT AND e.message.action == HEARTBEAT
 )
 ASSERT heartbeats_sent.length == 1
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -651,6 +662,7 @@ error = AWAIT_ERROR ping_future
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -700,6 +712,7 @@ error = AWAIT_ERROR ping_future
 ### Assertions
 ```pseudo
 ASSERT error IS NOT null
+CLOSE_CLIENT(client)
 ```
 
 ---
@@ -757,4 +770,5 @@ error = AWAIT_ERROR ping_future
 ```pseudo
 ASSERT error IS NOT null
 ASSERT error.message CONTAINS "timeout" (case insensitive)
+CLOSE_CLIENT(client)
 ```
