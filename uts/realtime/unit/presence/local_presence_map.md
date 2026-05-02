@@ -17,7 +17,7 @@ Key differences from the main PresenceMap:
 - Applies ENTER, PRESENT, UPDATE, and non-synthesized LEAVE events (RTP17b)
 - Ignores synthesized LEAVE events — where connectionId is not a prefix of id (RTP17b, per RTP2b1)
 - No sync protocol (startSync/endSync) — that is only on the main PresenceMap
-- No newness comparison — entries are simply overwritten
+- Messages are applied "in the same way as for the normal PresenceMap" (RTP17), including newness comparison (RTP2a, RTP2b)
 
 ## Interface Under Test
 
@@ -102,7 +102,7 @@ map.put(PresenceMessage(
 ### Assertions
 ```pseudo
 ASSERT map.get("client-1") IS NOT null
-ASSERT map.get("client-1").action == ENTER
+ASSERT map.get("client-1").action == PRESENT  # RTP2d2: stored action is always PRESENT
 ASSERT map.get("client-1").data == "hello"
 ASSERT map.values().length == 1
 ```
@@ -134,7 +134,7 @@ map.put(PresenceMessage(
 ### Assertions
 ```pseudo
 ASSERT map.get("client-1") IS NOT null
-ASSERT map.get("client-1").action == UPDATE
+ASSERT map.get("client-1").action == PRESENT  # RTP2d2: stored action is always PRESENT
 ASSERT map.get("client-1").data == "from-update"
 ASSERT map.values().length == 1
 ```
@@ -175,7 +175,7 @@ map.put(PresenceMessage(
 ### Assertions
 ```pseudo
 ASSERT map.values().length == 1
-ASSERT map.get("client-1").action == ENTER
+ASSERT map.get("client-1").action == PRESENT  # RTP2d2: stored action is always PRESENT
 ASSERT map.get("client-1").data == "second"
 ```
 
@@ -214,7 +214,7 @@ map.put(PresenceMessage(
 ### Assertions
 ```pseudo
 ASSERT map.values().length == 1
-ASSERT map.get("client-1").action == UPDATE
+ASSERT map.get("client-1").action == PRESENT  # RTP2d2: stored action is always PRESENT
 ASSERT map.get("client-1").data == "updated"
 ```
 
@@ -301,6 +301,12 @@ ASSERT map.values().length == 0
 substring of its id, per RTP2b1) should NOT be applied to the RTP17 presence map.
 The remove method checks whether the connectionId is a prefix of the message id.
 If it is not, the leave is synthesized and the member must NOT be removed.
+
+> **Implementation note:** Synthesized-LEAVE filtering (checking whether the LEAVE's
+> connectionId matches the local connection) may be implemented either inside the
+> presence map's `remove()` method, or at the calling level (e.g., in RealtimePresence).
+> The key requirement is that synthesized LEAVEs are not applied to the local presence
+> map — the level at which this is enforced is implementation-dependent.
 
 ### Setup
 ```pseudo

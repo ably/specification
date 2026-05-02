@@ -187,10 +187,9 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL24 - errorReason cleared on successful attach
+## RTL4c/RTL24 - errorReason cleared on successful attach
 
-**Spec requirement:** The errorReason should be cleared when the channel
-successfully attaches or reattaches.
+**Spec requirement (RTL4c):** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 
 Tests that errorReason is reset to null after a successful attach following a
 previous error.
@@ -270,21 +269,18 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL24 - errorReason cleared on successful detach
+## RTL4c/RTL24 - errorReason cleared on successful attach, preserved through detach
 
-**Spec requirement:** The errorReason should be cleared when the channel
-successfully detaches.
+**Spec requirement (RTL4c):** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 
-Tests that errorReason is reset to null after a successful detach, even if
-the channel previously had an error.
+Tests that after an error puts the channel in FAILED, a successful re-attach
+clears errorReason (RTL4c), and a subsequent detach preserves the null value
+(detach does not set errorReason).
 
 Note: To reliably set errorReason, we use an ERROR ProtocolMessage (which
-transitions the channel to FAILED via RTL14). An ATTACHED-while-already-ATTACHED
-message (UPDATE) emits a ChannelStateChange event with the error, but
-implementations may not persist it to the errorReason attribute — only state
-transitions via RTL14 or RTL4g reliably set errorReason. After the ERROR puts
-the channel in FAILED, we reattach (which clears errorReason), then verify
-detach also leaves errorReason null.
+transitions the channel to FAILED via RTL14). After the ERROR puts
+the channel in FAILED, we reattach (which clears errorReason via RTL4c),
+then verify detach leaves errorReason null.
 
 ### Setup
 ```pseudo

@@ -1,6 +1,6 @@
 # Realtime Connection Authentication Tests
 
-Spec points: `RTN2e`, `RTN27b`, `RSA4`, `RSA8d`, `RSA12a`
+Spec points: `RTN2e`, `RTN27b`, `RSA4`, `RSA4c`, `RSA4c1`, `RSA4c2`, `RSA4c3`, `RSA4d`, `RSA8d`, `RSA12a`
 
 ## Test Type
 Unit test with mocked WebSocket client and authCallback
@@ -292,23 +292,27 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTN2e - Expired token triggers new authCallback invocation
+## RSA4c2 - authCallback error during CONNECTING causes DISCONNECTED
 
-**Spec requirement:** If the cached token has expired, `authCallback` must be invoked again to obtain a fresh token before connecting.
+**Spec requirement (RSA4c):** If an attempt to authenticate using authCallback results in an error, then:
+- **(RSA4c1)** An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted and set as the connection errorReason.
+- **(RSA4c2)** If the connection is CONNECTING, the connection attempt should be treated as unsuccessful, transitioning to DISCONNECTED.
 
-Tests that expired tokens trigger re-authentication.
+Tests that when authCallback fails during initial connection, the client transitions to DISCONNECTED with error code 80019, and the underlying cause is preserved.
 
 ### Setup
-
 ```pseudo
-callback_count = 0
+auth_callback_count = 0
 
 auth_callback = FUNCTION(params):
-  callback_count++
-  RETURN TokenDetails(
-    token: "token-" + callback_count,
-    expires: now() + 100  # Expires in 100ms
-  )
+  auth_callback_count = auth_callback_count + 1
+  IF auth_callback_count == 1:
+    THROW ErrorInfo(code: 50000, statusCode: 500, message: "Auth server unavailable")
+  ELSE:
+    RETURN TokenDetails(
+      token: "valid-token-" + str(auth_callback_count),
+      expires: now() + 3600000
+    )
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => {
@@ -316,7 +320,12 @@ mock_ws = MockWebSocket(
     conn.send_to_client(ProtocolMessage(
       action: CONNECTED,
       connectionId: "connection-id",
-      connectionKey: "connection-key"
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
     ))
   }
 )
@@ -329,29 +338,242 @@ client = Realtime(options: ClientOptions(
 ```
 
 ### Test Steps
-
 ```pseudo
-# First connection
 client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
 
-# Disconnect
-client.close()
-AWAIT_STATE client.connection.state == ConnectionState.closed
-
-# Wait for token to expire
-WAIT 200ms
-
-# Second connection (token expired, should get new one)
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
+# authCallback fails on first attempt — connection should go to DISCONNECTED
+AWAIT_STATE client.connection.state == ConnectionState.disconnected
+  WITH timeout: 5 seconds
 ```
 
 ### Assertions
-
 ```pseudo
-# authCallback was invoked twice (once per connection due to expiry)
-ASSERT callback_count == 2
+# RSA4c1: errorReason has code 80019 wrapping the underlying cause
+ASSERT client.connection.errorReason IS NOT null
+ASSERT client.connection.errorReason.code == 80019
+ASSERT client.connection.errorReason.statusCode == 401
+ASSERT client.connection.errorReason.cause IS NOT null
+ASSERT client.connection.errorReason.cause.code == 50000
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RSA4c3 - authCallback error while CONNECTED leaves connection CONNECTED
+
+**Spec requirement (RSA4c3):** If the connection is CONNECTED when an auth attempt fails, then the connection should remain CONNECTED.
+
+Tests that when authCallback fails during an RTN22 server-initiated reauth, the connection stays CONNECTED and errorReason is set with code 80019.
+
+### Setup
+```pseudo
+auth_callback_count = 0
+
+auth_callback = FUNCTION(params):
+  auth_callback_count = auth_callback_count + 1
+  IF auth_callback_count == 1:
+    # First call succeeds (initial connection)
+    RETURN TokenDetails(
+      token: "initial-token",
+      expires: now() + 3600000
+    )
+  ELSE:
+    # Subsequent calls fail (reauth)
+    THROW ErrorInfo(code: 50000, statusCode: 500, message: "Auth server unavailable")
+
+captured_auth_messages = []
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    conn.respond_with_success()
+    conn.send_to_client(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id",
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  authCallback: auth_callback,
+  autoConnect: false
+))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Record state changes
+state_changes = []
+client.connection.on((change) => state_changes.append(change))
+
+# Server requests re-authentication (RTN22)
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: AUTH
+))
+
+# Wait for errorReason to be set (auth failure propagates asynchronously)
+AWAIT UNTIL client.connection.errorReason IS NOT null
+  WITH timeout: 5 seconds
+```
+
+### Assertions
+```pseudo
+# RSA4c3: Connection remains CONNECTED
+ASSERT client.connection.state == ConnectionState.connected
+
+# No state transitions away from connected occurred
+non_connected_changes = state_changes.filter(
+  c => c.current != ConnectionState.connected
+)
+ASSERT non_connected_changes.length == 0
+
+# RSA4c1: errorReason has code 80019 wrapping the underlying cause
+ASSERT client.connection.errorReason IS NOT null
+ASSERT client.connection.errorReason.code == 80019
+ASSERT client.connection.errorReason.statusCode == 401
+ASSERT client.connection.errorReason.cause IS NOT null
+ASSERT client.connection.errorReason.cause.code == 50000
+
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RSA4d - authCallback 403 error causes FAILED
+
+**Spec requirement (RSA4d):** If an authCallback results in an ErrorInfo with statusCode 403, the client library should transition to the FAILED state, with an ErrorInfo (code 80019, statusCode 403, cause set to the underlying cause).
+
+Tests that a 403 from authCallback is treated as fatal and causes FAILED state.
+
+### Setup
+```pseudo
+auth_callback = FUNCTION(params):
+  THROW ErrorInfo(code: 40300, statusCode: 403, message: "Account disabled")
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    conn.respond_with_success()
+    conn.send_to_client(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id",
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  authCallback: auth_callback,
+  autoConnect: false
+))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+
+# authCallback returns 403 — connection should go to FAILED
+AWAIT_STATE client.connection.state == ConnectionState.failed
+  WITH timeout: 5 seconds
+```
+
+### Assertions
+```pseudo
+# RSA4d: FAILED with code 80019 and statusCode 403
+ASSERT client.connection.errorReason IS NOT null
+ASSERT client.connection.errorReason.code == 80019
+ASSERT client.connection.errorReason.statusCode == 403
+ASSERT client.connection.errorReason.cause IS NOT null
+ASSERT client.connection.errorReason.cause.code == 40300
+
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RSA4d - authCallback 403 during RTN22 reauth causes FAILED
+
+**Spec requirement (RSA4d):** If an authCallback results in an ErrorInfo with statusCode 403 during an attempt to re-authenticate, the connection transitions to FAILED.
+
+Tests that a 403 from authCallback during server-initiated reauth (RTN22) causes FAILED, even though the connection was previously CONNECTED.
+
+### Setup
+```pseudo
+auth_callback_count = 0
+
+auth_callback = FUNCTION(params):
+  auth_callback_count = auth_callback_count + 1
+  IF auth_callback_count == 1:
+    # First call succeeds (initial connection)
+    RETURN TokenDetails(
+      token: "initial-token",
+      expires: now() + 3600000
+    )
+  ELSE:
+    # Reauth fails with 403
+    THROW ErrorInfo(code: 40300, statusCode: 403, message: "Account suspended")
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    conn.respond_with_success()
+    conn.send_to_client(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id",
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  authCallback: auth_callback,
+  autoConnect: false
+))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Server requests re-authentication (RTN22)
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: AUTH
+))
+
+# authCallback returns 403 — connection should go to FAILED
+AWAIT_STATE client.connection.state == ConnectionState.failed
+  WITH timeout: 5 seconds
+```
+
+### Assertions
+```pseudo
+# RSA4d: FAILED with code 80019 and statusCode 403
+ASSERT client.connection.errorReason IS NOT null
+ASSERT client.connection.errorReason.code == 80019
+ASSERT client.connection.errorReason.statusCode == 403
+ASSERT client.connection.errorReason.cause IS NOT null
+ASSERT client.connection.errorReason.cause.code == 40300
+
 CLOSE_CLIENT(client)
 ```
 
@@ -359,6 +581,6 @@ CLOSE_CLIENT(client)
 
 ## Notes
 
-These tests verify the **pre-connection** token acquisition flow. For token **renewal** after connection failures (e.g., 401 errors from server), see:
+These tests verify the **pre-connection** token acquisition flow and **auth failure handling** during the connection lifecycle. For token **renewal** after connection failures (e.g., 401 errors from server), see:
 - `../connection/connection_open_failures_test.md` (RTN14b)
 - `../connection/connection_failures_test.md` (RTN15h2)

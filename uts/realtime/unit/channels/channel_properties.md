@@ -191,6 +191,10 @@ CLOSE_CLIENT(client)
 
 Tests that receiving MESSAGE and PRESENCE protocol messages with a `channelSerial` field updates the channel's `channelSerial` property.
 
+# Implementation note: Some SDKs auto-attach on subscribe. If using explicit
+# attach() in tests, set attachOnSubscribe: false in channel options to prevent
+# implicit attach from interfering with the test flow.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL15b-messages-${random_id()}"

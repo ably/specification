@@ -284,6 +284,8 @@ mock_ws = MockWebSocket(
 install_mock(mock_ws)
 
 # Wildcard clientId
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
@@ -518,6 +520,8 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
@@ -573,6 +577,8 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
@@ -629,6 +635,8 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
@@ -694,6 +702,22 @@ ASSERT channel.state == ChannelState.attached
 
 CLOSE_CLIENT(client)
 ```
+
+> **Implementation note:** Some SDKs do not perform client-side clientId validation
+> for `enterClient`. In such cases, the PRESENCE message is sent to the server which
+> responds with a NACK (error). The test mock should include a handler that returns a
+> NACK for the mismatched clientId:
+> ```pseudo
+> mock_ws.onMessageFromClient = (msg) =>
+>   IF msg.action == PRESENCE:
+>     conn.send_to_client(ProtocolMessage(
+>       action: NACK,
+>       msgSerial: msg.msgSerial,
+>       error: ErrorInfo(code: 40012, statusCode: 400, message: "Invalid clientId")
+>     ))
+> ```
+> The key requirement is that the operation results in an error — whether client-side
+> or via server NACK is implementation-dependent.
 
 ---
 
@@ -873,6 +897,8 @@ install_mock(mock_ws)
 
 # Wildcard clientId to allow both enter() and enterClient() on the same connection.
 # See note in Purpose section about SDK-level wildcard validation.
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
@@ -969,6 +995,8 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
@@ -1083,6 +1111,8 @@ mock_ws_b = MockWebSocket(
 install_mock(mock_ws_a, client: "A")
 install_mock(mock_ws_b, client: "B")
 
+# Note: clientId "*" may not be accepted by all SDKs at construction time.
+# See top-level note for alternative auth patterns (e.g., key auth without clientId).
 client_a = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
 client_b = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel_a = client_a.channels.get(channel_name)

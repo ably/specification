@@ -91,6 +91,10 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
+# Note: The REST API returns presence actions as numeric values on the wire
+# (ABSENT=0, PRESENT=1, ENTER=2, LEAVE=3, UPDATE=4). Mock responses should use
+# the format appropriate for the SDK's REST layer. Assertions use symbolic names
+# which correspond to the SDK's public API representation.
 mock_rest = MockRest(
   onRequest: (method, path, params) => {
     RETURN {

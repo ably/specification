@@ -124,6 +124,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 2000,  # 2 seconds
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -146,6 +147,10 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 5000 + 2000 = 7000ms
 ADVANCE_TIME(7100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
 
 # Wait for the reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
@@ -208,6 +213,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 ```
@@ -236,6 +242,11 @@ ASSERT connection_attempt_count == 1
 
 # Advance time past the timeout window (4100ms since last HEARTBEAT)
 ADVANCE_TIME(2100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -287,6 +298,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -331,6 +343,11 @@ ASSERT connection_attempt_count == 1
 
 # Advance time past timeout without any message (3100ms since last activity)
 ADVANCE_TIME(3100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -390,6 +407,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -412,6 +430,11 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 2000 + 1000 = 3000ms
 ADVANCE_TIME(3100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete (immediate per RTN15a)
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -478,6 +501,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -497,6 +521,11 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Advance time past timeout to trigger disconnection and reconnection
 ADVANCE_TIME(3100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -618,6 +647,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 2000,  # 2 seconds
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -640,6 +670,10 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 5000 + 2000 = 7000ms
 ADVANCE_TIME(7100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
 
 # Wait for the reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
@@ -702,6 +736,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 ```
@@ -728,6 +763,11 @@ ASSERT connection_attempt_count == 1
 
 # Advance time past the timeout window (4100ms since last ping)
 ADVANCE_TIME(2100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -779,6 +819,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -827,6 +868,11 @@ ASSERT connection_attempt_count == 1
 
 # Advance time past timeout without any activity
 ADVANCE_TIME(1600)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -886,6 +932,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -908,6 +955,11 @@ ASSERT connection_attempt_count == 1
 # Advance time past maxIdleInterval + realtimeRequestTimeout
 # = 2000 + 1000 = 3000ms
 ADVANCE_TIME(3100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete (immediate per RTN15a)
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -974,6 +1026,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
 
@@ -993,6 +1046,11 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Advance time past timeout to trigger disconnection and reconnection
 ADVANCE_TIME(3100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
 # Wait for reconnection to complete
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
@@ -1081,6 +1139,10 @@ CLOSE_CLIENT(client)
 ---
 
 # Implementation Notes
+
+> **Implementation note:** Some SDKs perform an internet connectivity check (RTN17j)
+> before reconnection. Implementations may need to mock the HTTP layer to respond
+> successfully to connectivity check requests, to allow reconnection to proceed.
 
 ## Choosing Between RTN23a and RTN23b
 

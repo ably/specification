@@ -192,11 +192,11 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL4g - Attach from failed state clears errorReason
+## RTL4g - Attach from failed state proceeds with attach
 
-**Spec requirement:** If the channel is in the FAILED state, the attach request sets its errorReason to null, and proceeds with a channel attach.
+**Spec requirement:** If the channel is in the FAILED state, the attach request proceeds with a channel attach described in RTL4b, RTL4i and RTL4c.
 
-Tests that attaching from failed state clears the error and attempts attach.
+Tests that a channel in the FAILED state can be re-attached. errorReason clearing is verified as part of the RTL4c behavior (successful attach clears errorReason).
 
 ### Setup
 ```pseudo
@@ -245,6 +245,86 @@ AWAIT channel.attach()
 
 ### Assertions
 ```pseudo
+ASSERT channel.state == ChannelState.attached
+# RTL4c: successful attach clears errorReason
+ASSERT channel.errorReason IS null
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL4c - Successful attach clears errorReason
+
+**Spec requirement:** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
+
+Tests that errorReason is cleared on any successful attach, not just from the FAILED state. This test uses a SUSPENDED channel (which has errorReason set from a previous error) to verify the clearing applies to all successful attaches.
+
+### Setup
+```pseudo
+channel_name = "test-RTL4c-error-clear-${random_id()}"
+
+enable_fake_timers()
+
+late mock_ws
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false,
+  fallbackHosts: [],
+  suspendedRetryTimeout: 2000
+))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+AWAIT channel.attach()
+ASSERT channel.state == ChannelState.attached
+
+# Simulate disconnect — push connection through to SUSPENDED
+mock_ws.onConnectionAttempt = (conn) => conn.respond_with_refused()
+mock_ws.active_connection.simulate_disconnect()
+
+LOOP up to 30 times:
+  ADVANCE_TIME(5000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.suspended
+ASSERT channel.state == ChannelState.suspended
+
+# Channel should have errorReason set from the connection failure
+ASSERT channel.errorReason IS NOT null
+
+# Allow reconnection to succeed
+mock_ws.onConnectionAttempt = (conn) => conn.respond_with_success(CONNECTED_MESSAGE)
+
+LOOP up to 10 times:
+  ADVANCE_TIME(2500)
+  IF client.connection.state == ConnectionState.connected:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT_STATE channel.state == ChannelState.attached
+```
+
+### Assertions
+```pseudo
+# errorReason cleared by the successful attach (RTL4c)
 ASSERT channel.state == ChannelState.attached
 ASSERT channel.errorReason IS null
 CLOSE_CLIENT(client)
@@ -351,7 +431,7 @@ channel_name = "test-RTL4b-suspended-${random_id()}"
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
-  suspendedRetryTimeout: 100  # Short timeout for testing
+  channelRetryTimeout: 100  # Short timeout for testing
 ))
 channel = client.channels.get(channel_name)
 
@@ -792,9 +872,9 @@ CLOSE_CLIENT(client)
 
 ## RTL4j - ATTACH_RESUME flag set for reattach
 
-**Spec requirement:** If the attach is not a clean attach, the library should set the ATTACH_RESUME flag in the ATTACH message.
+**Spec requirement:** If the attach is not a clean attach, the library should set the ATTACH_RESUME flag in the ATTACH message. Per RTL4j1, `attachResume` is cleared when the channel enters DETACHING or FAILED, so a detach+reattach IS a clean attach and should NOT have ATTACH_RESUME. A reattach while still attached (e.g. via setOptions) is NOT a clean attach and SHOULD have ATTACH_RESUME.
 
-Tests that ATTACH_RESUME flag is set on reattachment.
+Tests that ATTACH_RESUME flag is set on reattach while attached, but not on a clean attach.
 
 ### Setup
 ```pseudo
@@ -808,11 +888,6 @@ mock_ws = MockWebSocket(
       captured_attach_messages.append(msg)
       mock_ws.send_to_client(ProtocolMessage(
         action: ATTACHED,
-        channel: channel_name
-      ))
-    ELSE IF msg.action == DETACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: DETACHED,
         channel: channel_name
       ))
   }
@@ -831,11 +906,8 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # First attach - clean attach
 AWAIT channel.attach()
 
-# Detach
-AWAIT channel.detach()
-
-# Reattach - should have ATTACH_RESUME flag
-AWAIT channel.attach()
+# Reattach while still attached (via setOptions) — not a clean attach
+AWAIT channel.setOptions(params: {rewind: "1"})
 ```
 
 ### Assertions
@@ -843,7 +915,7 @@ AWAIT channel.attach()
 ASSERT length(captured_attach_messages) == 2
 # First attach should NOT have ATTACH_RESUME flag
 ASSERT (captured_attach_messages[0].flags AND 32) == 0  # ATTACH_RESUME = 32
-# Second attach SHOULD have ATTACH_RESUME flag
+# Second attach (reattach while attached) SHOULD have ATTACH_RESUME flag
 ASSERT (captured_attach_messages[1].flags AND 32) != 0  # ATTACH_RESUME = 32
 CLOSE_CLIENT(client)
 ```

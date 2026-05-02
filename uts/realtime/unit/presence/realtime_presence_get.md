@@ -380,6 +380,16 @@ CLOSE_CLIENT(client)
 
 ## RTP11d - get on SUSPENDED channel errors by default
 
+> **Reaching SUSPENDED state:** To transition a channel to SUSPENDED, the connection
+> must first reach SUSPENDED state (by exhausting all reconnection attempts within
+> `connectionStateTtl`). RTL3c then transitions ATTACHED channels to SUSPENDED.
+> This requires:
+> 1. The mock connectionDetails must include explicit `connectionStateTtl` (e.g., 5000ms)
+> 2. ClientOptions should set `disconnectedRetryTimeout` to a small value (e.g., 500ms)
+> 3. After disconnecting, refuse all reconnection attempts
+> 4. Advance fake timers past `connectionStateTtl` to trigger SUSPENDED
+> 5. Some SDKs perform a connectivity check (RTN17j) that may need an HTTP mock
+
 **Spec requirement:** If the RealtimeChannel is SUSPENDED, get will by default (or if
 waitForSync is true) result in an error with code 91005. If waitForSync is false,
 it returns the members currently stored in the PresenceMap.
@@ -389,7 +399,10 @@ it returns the members currently stored in the PresenceMap.
 channel_name = "test-RTP11d-${random_id()}"
 
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionId: "conn-1",
+      connectionDetails: ConnectionDetails(connectionStateTtl: 5000))
+  ),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
@@ -448,7 +461,10 @@ members currently in the PresenceMap.
 channel_name = "test-RTP11d-nowait-${random_id()}"
 
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionId: "conn-1",
+      connectionDetails: ConnectionDetails(connectionStateTtl: 5000))
+  ),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(

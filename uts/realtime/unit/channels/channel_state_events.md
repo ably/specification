@@ -594,9 +594,9 @@ CLOSE_CLIENT(client)
 
 ---
 
-## Channel errorReason cleared on successful attach
+## RTL4c - errorReason cleared on successful attach
 
-**Spec requirement:** Error reason should be cleared when channel successfully attaches.
+**Spec requirement (RTL4c):** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 
 Tests that errorReason is cleared after successful attach following a failure.
 

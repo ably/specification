@@ -124,7 +124,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   realtimeRequestTimeout: 100,
-  suspendedRetryTimeout: 60000
+  channelRetryTimeout: 60000
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -177,7 +177,7 @@ CLOSE_CLIENT(client)
 
 | Spec | Requirement |
 |------|-------------|
-| RTL13b | If the reattach fails, or if the channel was already ATTACHING, channel transitions to SUSPENDED. An automatic re-attach attempt is made after suspendedRetryTimeout. If that also fails (timeout or DETACHED), the cycle repeats indefinitely. |
+| RTL13b | If the reattach fails, or if the channel was already ATTACHING, channel transitions to SUSPENDED. An automatic re-attach attempt is made after channelRetryTimeout. If that also fails (timeout or DETACHED), the cycle repeats indefinitely. |
 
 Tests that when a server-initiated DETACHED triggers a reattach that times out, the channel transitions to SUSPENDED and then automatically retries after the suspended retry timeout.
 
@@ -200,7 +200,7 @@ mock_ws = MockWebSocket(
       ELSE IF attach_count == 2:
         # Reattach after server DETACHED - don't respond (timeout)
       ELSE IF attach_count == 3:
-        # Automatic retry after suspendedRetryTimeout - succeed
+        # Automatic retry after channelRetryTimeout - succeed
         mock_ws.send_to_client(ProtocolMessage(
           action: ATTACHED,
           channel: msg.channel
@@ -213,7 +213,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   realtimeRequestTimeout: 100,
-  suspendedRetryTimeout: 200
+  channelRetryTimeout: 200
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -247,7 +247,7 @@ ASSERT attach_count == 2
 ADVANCE_TIME(150)
 AWAIT_STATE channel.state == ChannelState.suspended
 
-# Wait for suspendedRetryTimeout to trigger automatic retry and succeed
+# Wait for channelRetryTimeout to trigger automatic retry and succeed
 ADVANCE_TIME(250)
 AWAIT_STATE channel.state == ChannelState.attached
 ASSERT attach_count == 3
@@ -302,7 +302,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   realtimeRequestTimeout: 500,
-  suspendedRetryTimeout: 200
+  channelRetryTimeout: 200
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -333,7 +333,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 AWAIT_STATE channel.state == ChannelState.suspended
 ASSERT attach_count == 1  # Only the original attach, no second attempt
 
-# Wait for suspendedRetryTimeout — automatic retry should succeed
+# Wait for channelRetryTimeout — automatic retry should succeed
 ADVANCE_TIME(250)
 AWAIT_STATE channel.state == ChannelState.attached
 ASSERT attach_count == 2
@@ -391,7 +391,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   realtimeRequestTimeout: 100,
-  suspendedRetryTimeout: 200
+  channelRetryTimeout: 200
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -488,7 +488,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   realtimeRequestTimeout: 100,
-  suspendedRetryTimeout: 200
+  channelRetryTimeout: 200
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -515,14 +515,14 @@ AWAIT_STATE channel.state == ChannelState.attaching
 ADVANCE_TIME(150)
 AWAIT_STATE channel.state == ChannelState.suspended
 
-# Now disconnect the connection BEFORE the suspendedRetryTimeout fires
+# Now disconnect the connection BEFORE the channelRetryTimeout fires
 mock_ws.active_connection.simulate_disconnect()
 AWAIT_STATE client.connection.state != ConnectionState.connected
 
 # Record attach_count at this point
 attach_count_after_disconnect = attach_count
 
-# Advance time well past the suspendedRetryTimeout
+# Advance time well past the channelRetryTimeout
 ADVANCE_TIME(500)
 ```
 

@@ -653,6 +653,10 @@ ASSERT history_host == connected_fallback_host
 
 # Or:
 # B) Same fallback datacenter (e.g., *.b.fallback.* matches)
+# EXTRACT_FALLBACK_ID extracts the datacenter identifier from a fallback hostname.
+# Realtime hosts: main.<letter>.fallback.ably-realtime.com
+# REST hosts:     rest.<letter>.fallback.ably-realtime.com  
+# The function returns the <letter> portion (e.g., "a", "b", "c", "d", "e").
 ASSERT EXTRACT_FALLBACK_ID(history_host) == EXTRACT_FALLBACK_ID(connected_fallback_host)
 CLOSE_CLIENT(client)
 ```

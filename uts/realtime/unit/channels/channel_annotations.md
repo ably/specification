@@ -152,7 +152,7 @@ AWAIT channel.attach()
 AWAIT channel.annotations.publish("msg-serial-1", Annotation(
   name: "like"
 )) FAILS WITH error
-ASSERT error.code == 40003
+ASSERT error IS NOT null  # Error code is implementation-defined; RSAN1a3 does not mandate a specific code
 CLOSE_CLIENT(client)
 ```
 
