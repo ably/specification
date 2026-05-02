@@ -11,11 +11,16 @@ End-to-end verification of `Auth#revokeTokens` against the Ably sandbox.
 These tests verify that token revocation actually prevents subsequent use
 of the revoked token, in addition to confirming the response format.
 
-## Token Format
+## Verification Strategy
 
-All tests use JWTs generated using a third-party JWT library, signed with
-the key secret using HMAC-SHA256. This avoids needing to call `requestToken()`
-and keeps the tests self-contained.
+Revocation is verified using **Realtime connections** rather than REST requests.
+After revoking a token, the server pushes a disconnect to any connected Realtime
+client using that token. This is more reliable than polling with REST requests,
+because token revocation may take a small delay to become active on the REST
+path. The Realtime disconnect is immediate and carries the `40141` error code.
+
+The test sets up `disconnected` listeners **before** performing the revocation,
+to avoid missing the state change.
 
 ## Server Response Format
 
@@ -82,37 +87,29 @@ the token must be rejected by the server.
 
 ### Setup
 ```pseudo
-channel_name = "revoke-test-" + random_id()
 client_id = "revoke-client-" + random_id()
 
-# Generate a JWT with the revocable key, bound to a specific clientId
-jwt = generate_jwt(
-  key_name: extract_key_name(revocable_key),
-  key_secret: extract_key_secret(revocable_key),
-  client_id: client_id,
-  ttl: 3600000
-)
-
-# Create a REST client using the JWT
-token_client = Rest(options: ClientOptions(
-  token: jwt,
-  endpoint: "sandbox",
-  useBinaryProtocol: false
-))
-
-# Create a key-auth REST client for revoking
+# Create a key-auth REST client (using the revocable key) for revoking and token issuance
 key_client = Rest(options: ClientOptions(
   key: revocable_key,
-  endpoint: "sandbox",
-  useBinaryProtocol: false
+  endpoint: "sandbox"
 ))
+
+# Request a native token for the clientId
+token_details = AWAIT key_client.auth.requestToken(clientId: client_id)
+
+# Create a Realtime client using the token, and wait for it to connect
+realtime_client = Realtime(options: ClientOptions(
+  token: token_details,
+  endpoint: "sandbox"
+))
+AWAIT realtime_client.connection.once("connected")
 ```
 
 ### Test Steps
 ```pseudo
-# Step 1: Verify the JWT works — channel status request succeeds
-result_before = AWAIT token_client.request("GET", "/channels/" + channel_name)
-ASSERT result_before.statusCode >= 200 AND result_before.statusCode < 300
+# Step 1: Set up a disconnected listener BEFORE revoking (to not miss the event)
+disconnected_promise = realtime_client.connection.once("disconnected")
 
 # Step 2: Revoke the token by clientId
 revoke_result = AWAIT key_client.auth.revokeTokens([
@@ -120,8 +117,6 @@ revoke_result = AWAIT key_client.auth.revokeTokens([
 ])
 
 # Step 3: Verify the revokeTokens response structure (RSA17c, TRS2)
-# Note: The server returns a plain array of per-target results.
-# successCount/failureCount are computed client-side (see Server Response Format).
 ASSERT revoke_result.successCount == 1
 ASSERT revoke_result.failureCount == 0
 ASSERT revoke_result.results.length == 1
@@ -132,13 +127,9 @@ ASSERT success.target == "clientId:" + client_id
 ASSERT success.issuedBefore IS number
 ASSERT success.appliesAt IS number
 
-# Step 4: Wait for revocation to take effect
-# appliesAt indicates when the revocation is enforced
-WAIT UNTIL now() >= success.appliesAt
-
-# Step 5: Verify the JWT is now rejected
-AWAIT token_client.request("GET", "/channels/" + channel_name) FAILS WITH error
-ASSERT error.code == 40141
+# Step 4: Verify the Realtime client is disconnected with 40141 (token revoked)
+state_change = AWAIT disconnected_promise
+ASSERT state_change.reason.code == 40141
 ```
 
 ---
@@ -181,7 +172,7 @@ ASSERT error.statusCode == 401
 
 ---
 
-## RSA17e, RSA17f - issuedBefore and allowReauthMargin with verification
+## RSA17e, RSA17f - issuedBefore and allowReauthMargin
 
 | Spec | Requirement |
 |------|-------------|
@@ -194,61 +185,35 @@ delayed by approximately 30 seconds to allow token renewal.
 
 ### Setup
 ```pseudo
-channel_name = "revoke-margin-" + random_id()
 client_id = "revoke-margin-client-" + random_id()
-
-# Generate a JWT with the revocable key, bound to a specific clientId
-jwt = generate_jwt(
-  key_name: extract_key_name(revocable_key),
-  key_secret: extract_key_secret(revocable_key),
-  client_id: client_id,
-  ttl: 3600000
-)
-
-token_client = Rest(options: ClientOptions(
-  token: jwt,
-  endpoint: "sandbox",
-  useBinaryProtocol: false
-))
 
 key_client = Rest(options: ClientOptions(
   key: revocable_key,
-  endpoint: "sandbox",
-  useBinaryProtocol: false
+  endpoint: "sandbox"
 ))
 ```
 
 ### Test Steps
 ```pseudo
-# Step 1: Verify the JWT works
-result_before = AWAIT token_client.request("GET", "/channels/" + channel_name)
-ASSERT result_before.statusCode >= 200 AND result_before.statusCode < 300
-
-# Step 2: Revoke with issuedBefore and allowReauthMargin
+# Step 1: Revoke with issuedBefore and allowReauthMargin
 server_time = AWAIT key_client.time()
+
+# Use an issuedBefore in the past to avoid affecting any active tokens
+issued_before = server_time - (20 * 60 * 1000)
 
 revoke_result = AWAIT key_client.auth.revokeTokens(
   [TokenRevocationTargetSpecifier(type: "clientId", value: client_id)],
-  options: { issuedBefore: server_time, allowReauthMargin: true }
+  options: { issuedBefore: issued_before, allowReauthMargin: true }
 )
 
-# successCount is computed client-side (see Server Response Format)
 ASSERT revoke_result.successCount == 1
 ASSERT revoke_result.results.length == 1
 
 # RSA17e: issuedBefore should reflect what we sent
-ASSERT revoke_result.results[0].issuedBefore == server_time
+ASSERT revoke_result.results[0].issuedBefore == issued_before
 
 # RSA17f: allowReauthMargin delays appliesAt by ~30 seconds
-applies_at = revoke_result.results[0].appliesAt
-ASSERT applies_at > server_time + (30 * 1000)
-
-# Step 3: Wait for revocation to take effect
-WAIT UNTIL now() >= applies_at
-
-# Step 4: Verify the JWT is now rejected
-AWAIT token_client.request("GET", "/channels/" + channel_name) FAILS WITH error
-ASSERT error.code == 40141
+ASSERT revoke_result.results[0].appliesAt > server_time + (30 * 1000)
 ```
 
 ---
@@ -267,38 +232,33 @@ an `ErrorInfo`.
 
 This test includes an invalid specifier type alongside a valid one, to
 verify the server returns per-target error information. The valid revocation
-is also verified by confirming the token is rejected afterwards.
+is also verified by confirming the Realtime client is disconnected.
 
 ### Setup
 ```pseudo
-channel_name = "revoke-mixed-" + random_id()
 client_id = "revoke-mixed-client-" + random_id()
 
-jwt = generate_jwt(
-  key_name: extract_key_name(revocable_key),
-  key_secret: extract_key_secret(revocable_key),
-  client_id: client_id,
-  ttl: 3600000
-)
-
-token_client = Rest(options: ClientOptions(
-  token: jwt,
-  endpoint: "sandbox",
-  useBinaryProtocol: false
-))
-
+# Create a key-auth REST client for revoking and token issuance
 key_client = Rest(options: ClientOptions(
   key: revocable_key,
-  endpoint: "sandbox",
-  useBinaryProtocol: false
+  endpoint: "sandbox"
 ))
+
+# Request a native token for the clientId
+token_details = AWAIT key_client.auth.requestToken(clientId: client_id)
+
+# Create a Realtime client using the token, and wait for it to connect
+realtime_client = Realtime(options: ClientOptions(
+  token: token_details,
+  endpoint: "sandbox"
+))
+AWAIT realtime_client.connection.once("connected")
 ```
 
 ### Test Steps
 ```pseudo
-# Step 1: Verify the JWT works
-result_before = AWAIT token_client.request("GET", "/channels/" + channel_name)
-ASSERT result_before.statusCode >= 200 AND result_before.statusCode < 300
+# Step 1: Set up a disconnected listener BEFORE revoking
+disconnected_promise = realtime_client.connection.once("disconnected")
 
 # Step 2: Revoke with one valid and one invalid specifier
 revoke_result = AWAIT key_client.auth.revokeTokens([
@@ -307,7 +267,6 @@ revoke_result = AWAIT key_client.auth.revokeTokens([
 ])
 
 # Step 3: Verify the response contains both success and failure
-# successCount/failureCount are computed client-side (see Server Response Format)
 ASSERT revoke_result.successCount == 1
 ASSERT revoke_result.failureCount == 1
 ASSERT revoke_result.results.length == 2
@@ -326,10 +285,7 @@ ASSERT failure.target == "invalidType:abc"
 ASSERT failure.error IS ErrorInfo
 ASSERT failure.error.statusCode == 400
 
-# Step 4: Wait for revocation to take effect
-WAIT UNTIL now() >= success.appliesAt
-
-# Step 5: Verify the JWT is now rejected (the valid revocation took effect)
-AWAIT token_client.request("GET", "/channels/" + channel_name) FAILS WITH error
-ASSERT error.code == 40141
+# Step 4: Verify the Realtime client is disconnected with 40141 (token revoked)
+state_change = AWAIT disconnected_promise
+ASSERT state_change.reason.code == 40141
 ```

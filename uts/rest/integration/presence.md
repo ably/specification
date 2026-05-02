@@ -40,7 +40,7 @@ The `ably-common/test-resources/test-app-setup.json` includes pre-populated pres
 | `client_bool` | `"true"` | none |
 | `client_int` | `"24"` | none |
 | `client_string` | `"This is a string clientData payload"` | none |
-| `client_json` | `{"test": "This is a JSONObject clientData payload"}` | none |
+| `client_json` | `"{ \"test\": \"This is a JSONObject clientData payload\"}"` (string) | none |
 | `client_decoded` | `{"example":{"json":"Object"}}` | `json` |
 | `client_encoded` | (encrypted) | `json/utf-8/cipher+aes-128-cbc/base64` |
 
@@ -161,8 +161,9 @@ result = AWAIT channel.presence.get(clientId: "client_json")
 
 ASSERT result.items.length == 1
 ASSERT result.items[0].clientId == "client_json"
-ASSERT result.items[0].data IS Object/Map
-ASSERT result.items[0].data["test"] == "This is a JSONObject clientData payload"
+# The fixture has no encoding field, so data is returned as a raw string
+ASSERT result.items[0].data IS String
+ASSERT result.items[0].data == "{ \"test\": \"This is a JSONObject clientData payload\"}"
 ```
 
 ### RSP3_Integration_Empty - Get on channel with no presence
