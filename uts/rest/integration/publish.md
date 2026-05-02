@@ -1,0 +1,222 @@
+# REST Channel Publish Integration Tests
+
+Spec points: `RSL1d`, `RSL1l1`, `RSL1m4`, `RSL1n`
+
+## Test Type
+Integration test against Ably sandbox
+
+## Sandbox Setup
+
+Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
+
+### App Provisioning
+
+Uses `ably-common/test-resources/test-app-setup.json` which provides:
+- `keys[0]` — full access (default capability `{"*":["*"]}`)
+- `keys[2]` — per-channel capabilities including `"channel2":["publish","subscribe"]`
+
+```pseudo
+BEFORE ALL TESTS:
+  response = POST https://sandbox-rest.ably.io/apps
+    WITH body from ably-common/test-resources/test-app-setup.json
+
+  app_config = parse_json(response.body)
+  full_access_key = app_config.keys[0].key_str
+  restricted_key = app_config.keys[2].key_str  # per-channel capabilities
+  app_id = app_config.app_id
+
+AFTER ALL TESTS:
+  DELETE https://sandbox-rest.ably.io/apps/{app_id}
+    WITH Authorization: Basic {full_access_key}
+```
+
+---
+
+## RSL1d - Error indication on publish failure
+
+**Spec requirement:** RSL1d - Failed publish operations must indicate the error to the caller.
+
+Tests that errors are properly indicated when a publish fails due to insufficient permissions.
+
+### Setup
+```pseudo
+channel_name = "forbidden-channel-" + random_id()  # Not in restricted key's capability
+
+restricted_client = Rest(options: ClientOptions(
+  key: restricted_key,  # Key without publish capability for this channel
+  endpoint: "sandbox"
+))
+restricted_channel = restricted_client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+AWAIT restricted_channel.publish(name: "event", data: "data") FAILS WITH error
+ASSERT error.code == 40160  # Not permitted
+ASSERT error.statusCode == 401
+```
+
+---
+
+## RSL1n - PublishResult contains serials
+
+**Spec requirement:** RSL1n - Successful publish returns a `PublishResult` containing message serials.
+
+Tests that successful publish returns a result with message serials.
+
+### Setup
+```pseudo
+client = Rest(options: ClientOptions(
+  key: full_access_key,
+  endpoint: "sandbox"
+))
+channel_name = "test-serials-" + random_id()
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+# Single message
+result1 = AWAIT channel.publish(name: "event1", data: "data1")
+
+ASSERT result1.serials IS List
+ASSERT result1.serials.length == 1
+ASSERT result1.serials[0] IS String
+ASSERT result1.serials[0].length > 0
+
+
+# Multiple messages
+result2 = AWAIT channel.publish(messages: [
+  Message(name: "event2", data: "data2"),
+  Message(name: "event3", data: "data3"),
+  Message(name: "event4", data: "data4")
+])
+
+ASSERT result2.serials.length == 3
+ASSERT ALL serial IN result2.serials: serial IS String AND serial.length > 0
+ASSERT result2.serials ARE all unique
+```
+
+---
+
+## RSL1k5 - Idempotent publish with client-supplied IDs
+
+**Spec requirement:** RSL1k5 - Messages with client-supplied IDs are idempotent (duplicate IDs don't create duplicate messages).
+
+Tests that multiple publishes with the same client-supplied ID result in single message.
+
+### Setup
+```pseudo
+client = Rest(options: ClientOptions(
+  key: full_access_key,
+  endpoint: "sandbox"
+))
+channel_name = "idempotent-explicit-" + random_id()
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+fixed_id = "client-supplied-id-" + random_id()
+
+# Publish same message ID multiple times
+FOR i IN 1..3:
+  AWAIT channel.publish(
+    message: Message(id: fixed_id, name: "event", data: "data-" + str(i))
+  )
+
+# Poll history until message appears (avoid fixed wait)
+history = poll_until(
+  condition: FUNCTION() =>
+    result = AWAIT channel.history()
+    RETURN result.items.length > 0,
+  interval: 500ms,
+  timeout: 10s
+)
+
+# Verify only one message in history
+ASSERT history.items.length == 1
+ASSERT history.items[0].id == fixed_id
+# The data should be from the first publish (subsequent ones are no-ops)
+ASSERT history.items[0].data == "data-1"
+```
+
+---
+
+## RSL1l1 - Publish params with _forceNack
+
+**Spec requirement:** RSL1l1 - Additional publish params can be supplied and are transmitted to the server.
+
+Tests that publish params are correctly transmitted by using the `_forceNack` test param.
+
+### Setup
+```pseudo
+client = Rest(options: ClientOptions(
+  key: full_access_key,
+  endpoint: "sandbox"
+))
+channel_name = "force-nack-test-" + random_id()
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+AWAIT channel.publish(
+  message: Message(name: "event", data: "data"),
+  params: { "_forceNack": "true" }
+) FAILS WITH error
+ASSERT error.code == 40099  # Specific code for forced nack
+```
+
+---
+
+## RSL1m4 - ClientId mismatch rejection
+
+**Spec requirement:** RSL1m4 - Server rejects messages where clientId doesn't match the authenticated client.
+
+Tests that server rejects message with clientId different from authenticated client.
+
+### Setup
+```pseudo
+# Create a token with a specific clientId
+key_client = Rest(options: ClientOptions(
+  key: full_access_key,
+  endpoint: "sandbox"
+))
+
+token_details = AWAIT key_client.auth.requestToken(
+  tokenParams: TokenParams(clientId: "authenticated-client-id")
+)
+
+# Client using token with clientId
+token_client = Rest(options: ClientOptions(
+  token: token_details.token,
+  endpoint: "sandbox"
+))
+
+channel_name = "clientid-mismatch-" + random_id()
+channel = token_client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+AWAIT channel.publish(
+  message: Message(
+    name: "event",
+    data: "data",
+    clientId: "different-client-id"  # Doesn't match authenticated clientId
+  )
+) FAILS WITH error
+ASSERT error.code == 40012  # Incompatible clientId
+ASSERT error.statusCode == 400
+```
+
+---
+
+## Notes
+
+### Tests moved to unit tests
+
+The following functionality is better tested via unit tests with a mocked HTTP client:
+
+- **RSL1k4 - Idempotent retry verification**: Testing that automatic retry after failure doesn't duplicate messages requires HTTP-level interception. This is better done with a mock that can fail the first request and allow the retry. See `unit/channel/idempotency.md`.
