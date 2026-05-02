@@ -687,6 +687,12 @@ CLOSE_CLIENT(client)
 
 **Spec requirement:** A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor.
 
+> **Implementation note:** Echo suppression may be implemented either by client-side
+> filtering (comparing incoming message connectionId against the local connectionId,
+> as shown below) or by server-side delegation (passing `echo=false` in the connection
+> parameters). SDKs using server-side delegation should adapt this test to verify the
+> echo parameter is set on the connection URL, rather than testing client-side filtering.
+
 Tests that when `echoMessages` is false, messages originating from this connection (identified by matching `connectionId`) are not delivered to subscribers.
 
 ### Setup

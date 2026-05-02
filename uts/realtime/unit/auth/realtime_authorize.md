@@ -109,8 +109,9 @@ ASSERT captured_auth_messages[0].auth.accessToken == "token-2"
 # authorize() resolved with the new token
 ASSERT token_details.token == "token-2"
 
-# No state changes occurred — connection stayed CONNECTED throughout
-ASSERT state_changes.length == 0
+# UPDATE events are emitted but are not state transitions (current == previous == connected)
+state_transitions = state_changes.filter(c => c.current != c.previous)
+ASSERT state_transitions.length == 0
 ASSERT client.connection.state == ConnectionState.connected
 CLOSE_CLIENT(client)
 ```
@@ -206,10 +207,15 @@ ASSERT update_events[0].current == ConnectionState.connected
 # No additional CONNECTED state event was emitted
 ASSERT connected_events.length == 0
 
-# No state changes occurred (stayed CONNECTED throughout)
-ASSERT state_changes.length == 0
+# UPDATE events are emitted but are not state transitions (current == previous == connected)
+state_transitions = state_changes.filter(c => c.current != c.previous)
+ASSERT state_transitions.length == 0
 
 # Connection details were updated (RTN21)
+# Note: Whether connection.id is updated from the reauth CONNECTED message
+# is implementation-dependent. Some SDKs only set connection.id during initial
+# transport activation. connection.key (via connectionDetails) MUST be updated
+# per RTN21.
 ASSERT client.connection.id == "connection-id-2"
 ASSERT client.connection.key == "connection-key-2"
 CLOSE_CLIENT(client)
@@ -299,6 +305,9 @@ mock_ws.on_client_message((msg) => {
       )
     ))
     # Then server sends channel-level ERROR (capability downgrade)
+    # Implementation note: The channel-level ERROR must be delivered AFTER the
+    # CONNECTED message has been fully processed. Implementations may need to
+    # defer the ERROR delivery (e.g., via microtask/nextTick) to ensure ordering.
     mock_ws.active_connection.send_to_client(ProtocolMessage(
       action: ERROR,
       channel: "private-channel",

@@ -309,7 +309,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   realtimeRequestTimeout: 100,
-  suspendedRetryTimeout: 200
+  channelRetryTimeout: 200
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -333,7 +333,7 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 ADVANCE_TIME(150)
 AWAIT_STATE channel.state == ChannelState.suspended
 
-# Channel retry timer is now pending (suspendedRetryTimeout = 200ms)
+# Channel retry timer is now pending (channelRetryTimeout = 200ms)
 # Send ERROR before the retry fires
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: ERROR,
@@ -344,7 +344,7 @@ AWAIT_STATE channel.state == ChannelState.failed
 
 attach_count_after_error = attach_count
 
-# Advance time well past the suspendedRetryTimeout
+# Advance time well past the channelRetryTimeout
 ADVANCE_TIME(500)
 ```
 

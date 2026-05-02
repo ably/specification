@@ -293,6 +293,31 @@ ASSERT client.connection.errorReason IS NOT null
 CLOSE_CLIENT(client)
 ```
 
+> **Implementation note:** The `key` + mock HTTP approach shown above is one way to
+> test token renewal failure. A more portable alternative is to use `authCallback`:
+> ```pseudo
+> call_count = 0
+> auth_callback = (params) =>
+>   call_count += 1
+>   IF call_count == 1:
+>     RETURN TokenDetails(token: "valid-token-1", expires: now + 3600000)
+>   ELSE:
+>     THROW ErrorInfo(code: 40171, statusCode: 401, message: "Token renewal failed")
+>
+> client = create_realtime_client(ClientOptions(
+>   authCallback: auth_callback,
+>   autoConnect: false
+> ))
+> ```
+> This pattern is clearer about the number of token requests and doesn't require a
+> mock HTTP client for internal token request endpoints.
+>
+> **State transition note:** RTN15h2i specifies a transient DISCONNECTED state between
+> CONNECTED and CONNECTING. When tracking state changes, implementations should
+> distinguish between the transient DISCONNECTED (before CONNECTING retry) and the
+> final DISCONNECTED (after failed renewal). A naive `AWAIT_STATE disconnected` may
+> match the wrong transition.
+
 ---
 
 ## RTN15h3 - DISCONNECTED with non-token error

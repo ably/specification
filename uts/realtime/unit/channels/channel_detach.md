@@ -176,6 +176,13 @@ CLOSE_CLIENT(client)
 
 Tests that calling detach while attaching waits for attach to complete, then detaches.
 
+> **Implementation note:** When detach is called while the channel is ATTACHING,
+> the attach future/promise may be rejected in some implementations (since the
+> intent has changed to detach). Other implementations may resolve the attach
+> future when ATTACHED arrives, before proceeding to detach. Both behaviors are
+> acceptable — implementations should handle both outcomes and suppress unhandled
+> rejection errors from the superseded attach operation.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL5i-attaching-${random_id()}"
@@ -388,6 +395,71 @@ AWAIT channel.detach()
 ASSERT channel.state == ChannelState.detached
 ASSERT detach_message_count == 0  # No DETACH message sent
 CLOSE_CLIENT(client)
+```
+
+---
+
+### RTL5l - Detach ATTACHED channel when connection disconnected
+
+When an ATTACHED channel is detached while the connection is DISCONNECTED,
+the channel transitions directly to DETACHED without sending a DETACH message
+(since the transport is unavailable).
+
+#### Setup
+
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) =>
+    mock_ws.active_connection = conn
+    conn.respond_with_connected()
+)
+install_mock(mock_ws)
+
+client = create_realtime_client(ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+
+channel = client.channels.get("test-channel")
+```
+
+#### Test Steps
+
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Attach the channel
+mock_ws.onMessageFromClient = (msg) =>
+  IF msg.action == ATTACH:
+    mock_ws.active_connection.send_to_client(ProtocolMessage(
+      action: ATTACHED,
+      channel: msg.channel
+    ))
+channel.attach()
+AWAIT_STATE channel.state == ChannelState.attached
+
+# Disconnect the transport
+mock_ws.active_connection.simulate_disconnect()
+AWAIT_STATE client.connection.state == ConnectionState.disconnected
+
+# Now detach while disconnected
+messages_sent = []
+mock_ws.onMessageFromClient = (msg) => messages_sent.push(msg)
+
+channel.detach()
+AWAIT_STATE channel.state == ChannelState.detached
+```
+
+#### Assertions
+
+```pseudo
+# Channel transitions directly to DETACHED
+ASSERT channel.state == ChannelState.detached
+
+# No DETACH message was sent (transport is unavailable)
+detach_messages = messages_sent.filter(m => m.action == DETACH)
+ASSERT detach_messages.length == 0
 ```
 
 ---
@@ -622,7 +694,7 @@ mock_ws.send_to_client(ProtocolMessage(
 ))
 
 # Wait for client to respond
-AWAIT Future.delayed(Duration(milliseconds: 100))
+WAIT 100ms
 ```
 
 ### Assertions
@@ -697,68 +769,6 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL5 - Detach clears errorReason
+## [REMOVED] RTL5 - Detach clears errorReason
 
-**Spec requirement:** Successful detach should clear any previous error.
-
-Tests that errorReason is cleared after successful detach.
-
-### Setup
-```pseudo
-channel_name = "test-RTL5-error-${random_id()}"
-attach_count = 0
-
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
-  onMessageFromClient: (msg) => {
-    IF msg.action == ATTACH:
-      attach_count++
-      IF attach_count == 1:
-        # First attach fails
-        mock_ws.send_to_client(ProtocolMessage(
-          action: ERROR,
-          channel: channel_name,
-          error: ErrorInfo(code: 40160, message: "Denied")
-        ))
-      ELSE:
-        mock_ws.send_to_client(ProtocolMessage(
-          action: ATTACHED,
-          channel: channel_name
-        ))
-    ELSE IF msg.action == DETACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: DETACHED,
-        channel: channel_name
-      ))
-  }
-)
-install_mock(mock_ws)
-
-client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
-channel = client.channels.get(channel_name)
-```
-
-### Test Steps
-```pseudo
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-
-# First attach fails
-AWAIT channel.attach() FAILS WITH error
-ASSERT channel.state == ChannelState.failed
-ASSERT channel.errorReason IS NOT null
-
-# Attach again succeeds
-AWAIT channel.attach()
-ASSERT channel.state == ChannelState.attached
-
-# Detach
-AWAIT channel.detach()
-```
-
-### Assertions
-```pseudo
-ASSERT channel.state == ChannelState.detached
-ASSERT channel.errorReason IS null
-CLOSE_CLIENT(client)
-```
+**This test has been removed.** The features spec (RTL5a through RTL5l) does not specify that detach clears errorReason. Channel errorReason is cleared by a successful attach (RTL4c) and by connection reconnect (RTN11d). Detach is not among them. The original test scenario (FAILED → re-attach → detach → assert null) was accidentally correct because the re-attach cleared errorReason via RTL4c, not because detach did anything.
