@@ -454,7 +454,16 @@ channel_name = "test-RTL3c-${random_id()}"
 enable_fake_timers()
 
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => conn.respond_with_success(ProtocolMessage(
+    action: CONNECTED,
+    connectionId: "connection-id",
+    connectionKey: "connection-key",
+    connectionDetails: ConnectionDetails(
+      connectionKey: "connection-key",
+      maxIdleInterval: 15000,
+      connectionStateTtl: 120000
+    )
+  )),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
@@ -468,7 +477,8 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
-  fallbackHosts: []
+  fallbackHosts: [],
+  disconnectedRetryTimeout: 1000
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -489,7 +499,9 @@ channel.on().listen((change) => channel_state_changes.append(change))
 mock_ws.onConnectionAttempt = (conn) => conn.respond_with_refused()
 mock_ws.active_connection.simulate_disconnect()
 
-# Advance time past connectionStateTtl (default 120s) to reach SUSPENDED
+# Connection must exhaust disconnectedRetryTimeout retries within connectionStateTtl
+# to transition from DISCONNECTED to SUSPENDED. The total time advance must exceed
+# connectionStateTtl (from connectionDetails, per RTN21).
 LOOP up to 30 times:
   ADVANCE_TIME(5000)
   IF client.connection.state == ConnectionState.suspended:
@@ -523,7 +535,16 @@ channel_name = "test-RTL3c-attaching-${random_id()}"
 enable_fake_timers()
 
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => conn.respond_with_success(ProtocolMessage(
+    action: CONNECTED,
+    connectionId: "connection-id",
+    connectionKey: "connection-key",
+    connectionDetails: ConnectionDetails(
+      connectionKey: "connection-key",
+      maxIdleInterval: 15000,
+      connectionStateTtl: 120000
+    )
+  )),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       # Do NOT respond - leave channel in ATTACHING state
@@ -535,7 +556,8 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
-  fallbackHosts: []
+  fallbackHosts: [],
+  disconnectedRetryTimeout: 1000
 ))
 channel = client.channels.get(channel_name)
 ```
@@ -557,7 +579,9 @@ channel.on().listen((change) => channel_state_changes.append(change))
 mock_ws.onConnectionAttempt = (conn) => conn.respond_with_refused()
 mock_ws.active_connection.simulate_disconnect()
 
-# Advance time past connectionStateTtl (default 120s) to reach SUSPENDED
+# Connection must exhaust disconnectedRetryTimeout retries within connectionStateTtl
+# to transition from DISCONNECTED to SUSPENDED. The total time advance must exceed
+# connectionStateTtl (from connectionDetails, per RTN21).
 LOOP up to 30 times:
   ADVANCE_TIME(5000)
   IF client.connection.state == ConnectionState.suspended:
@@ -672,7 +696,16 @@ enable_fake_timers()
 
 late mock_ws
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => conn.respond_with_success(ProtocolMessage(
+    action: CONNECTED,
+    connectionId: "connection-id",
+    connectionKey: "connection-key",
+    connectionDetails: ConnectionDetails(
+      connectionKey: "connection-key",
+      maxIdleInterval: 15000,
+      connectionStateTtl: 120000
+    )
+  )),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       attach_message_count++
@@ -688,6 +721,7 @@ client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
   fallbackHosts: [],
+  disconnectedRetryTimeout: 1000,
   suspendedRetryTimeout: 2000
 ))
 channel = client.channels.get(channel_name)
@@ -706,7 +740,9 @@ ASSERT attach_message_count == 1
 mock_ws.onConnectionAttempt = (conn) => conn.respond_with_refused()
 mock_ws.active_connection.simulate_disconnect()
 
-# Advance time past connectionStateTtl to reach SUSPENDED
+# Connection must exhaust disconnectedRetryTimeout retries within connectionStateTtl
+# to transition from DISCONNECTED to SUSPENDED. The total time advance must exceed
+# connectionStateTtl (from connectionDetails, per RTN21).
 LOOP up to 30 times:
   ADVANCE_TIME(5000)
   IF client.connection.state == ConnectionState.suspended:

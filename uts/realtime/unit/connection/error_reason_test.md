@@ -175,11 +175,11 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTN25 - errorReason on token errors (RTN14b, RTN15h)
+## RTN25 - errorReason on token errors (RTN14b, RSA4a)
 
-**Spec requirement:** errorReason is set when token errors occur during connection or while connected.
+**Spec requirement:** When an ERROR ProtocolMessage with a token error is received during connection and there is no means to renew the token, RSA4a applies: the connection transitions to FAILED with error code 40171.
 
-Tests that errorReason captures token-related errors.
+Tests that errorReason is set with the 40171 wrapper error when a non-renewable token fails.
 
 ### Setup
 
@@ -199,7 +199,7 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Use token directly (no way to renew)
+# Use token directly (no way to renew) — RSA4a applies
 client = Realtime(options: ClientOptions(
   token: "expired_token",
   autoConnect: false
@@ -212,19 +212,17 @@ client = Realtime(options: ClientOptions(
 # Start connection
 client.connect()
 
-# Wait for DISCONNECTED state (can't renew token)
-AWAIT_STATE client.connection.state == ConnectionState.disconnected
+# Per RSA4a2: no means to renew → FAILED state
+AWAIT_STATE client.connection.state == ConnectionState.failed
   WITH timeout: 5 seconds
 ```
 
 ### Assertions
 
 ```pseudo
-# errorReason contains token error details
+# errorReason should indicate no means to renew (RSA4a2: error code 40171)
 ASSERT client.connection.errorReason IS NOT null
-ASSERT client.connection.errorReason.code == 40142
-ASSERT client.connection.errorReason.statusCode == 401
-ASSERT client.connection.errorReason.message CONTAINS "Token"
+ASSERT client.connection.errorReason.code == 40171
 CLOSE_CLIENT(client)
 ```
 

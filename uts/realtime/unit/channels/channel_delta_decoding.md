@@ -13,6 +13,15 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 See `uts/test/realtime/unit/helpers/mock_vcdiff.md` for the full Mock VCDiff Infrastructure specification.
 
+> **Transport encoding note:** On JSON transport (the default for unit tests),
+> binary vcdiff delta payloads cannot be transmitted as raw bytes — they must be
+> base64-encoded. Mock message constructions in these tests use raw data with
+> `encoding: "vcdiff"` for clarity. Implementations using JSON transport should
+> adapt mock messages to use `base64_encode(delta)` as the data, with `/base64`
+> appended to the encoding field (e.g., `"vcdiff/base64"` or `"utf-8/vcdiff/base64"`).
+> The SDK's decoding pipeline processes encoding steps right-to-left: base64-decode
+> first, then apply vcdiff, then decode utf-8 if present.
+
 ---
 
 ## RTL21 - Messages in array decoded in ascending index order

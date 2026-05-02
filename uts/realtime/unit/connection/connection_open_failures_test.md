@@ -171,6 +171,66 @@ CLOSE_CLIENT(client)
 
 ---
 
+## RTN14b - Token error during initial connection, renewal fails
+
+**Spec requirement:** When a token error occurs during the initial connection attempt and the subsequent
+token renewal also fails, the connection should transition to DISCONNECTED (per RTN14b:
+"If the attempt to create a new token fails... the connection will transition to the
+DISCONNECTED state").
+
+### Setup
+
+```pseudo
+call_count = 0
+auth_callback = (params) =>
+  call_count += 1
+  IF call_count == 1:
+    RETURN TokenDetails(token: "initial-token", expires: now + 3600000)
+  ELSE:
+    THROW ErrorInfo(code: 40171, statusCode: 401, message: "Unable to renew token")
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) =>
+    # Always reject with token error
+    conn.send_to_client(ProtocolMessage(
+      action: ERROR,
+      error: ErrorInfo(code: 40142, statusCode: 401, message: "Token expired")
+    ))
+)
+install_mock(mock_ws)
+
+client = create_realtime_client(ClientOptions(
+  authCallback: auth_callback,
+  autoConnect: false
+))
+```
+
+### Test Steps
+
+```pseudo
+state_changes = []
+client.connection.on((change) => state_changes.push(change))
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.disconnected
+```
+
+### Assertions
+
+```pseudo
+# Connection should be DISCONNECTED (not FAILED) per RTN14b
+ASSERT client.connection.state == ConnectionState.disconnected
+
+# authCallback was called twice: once for initial token, once for renewal
+ASSERT call_count == 2
+
+# errorReason should reflect the renewal failure
+ASSERT client.connection.errorReason IS NOT null
+CLOSE_CLIENT(client)
+```
+
+---
+
 ## RSA4a - Token error during connection without renewal
 
 **Spec requirement (RSA4a2):** If the server responds with a token error and there is no means to renew the token, the connection transitions to FAILED with error code 40171.
