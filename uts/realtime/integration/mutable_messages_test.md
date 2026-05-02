@@ -579,10 +579,10 @@ AWAIT_STATE client_b.connection.state == ConnectionState.connected
   WITH timeout: 10 seconds
 
 channel_a = client_a.channels.get(channel_name,
-  options: ChannelOptions(modes: [ANNOTATION_PUBLISH, ANNOTATION_SUBSCRIBE])
+  options: ChannelOptions(modes: [PUBLISH, SUBSCRIBE, ANNOTATION_PUBLISH, ANNOTATION_SUBSCRIBE])
 )
 channel_b = client_b.channels.get(channel_name,
-  options: ChannelOptions(modes: [ANNOTATION_SUBSCRIBE])
+  options: ChannelOptions(modes: [SUBSCRIBE, ANNOTATION_SUBSCRIBE])
 )
 
 AWAIT channel_b.attach()
@@ -702,10 +702,10 @@ AWAIT_STATE client_b.connection.state == ConnectionState.connected
   WITH timeout: 10 seconds
 
 channel_a = client_a.channels.get(channel_name,
-  options: ChannelOptions(modes: [ANNOTATION_PUBLISH, ANNOTATION_SUBSCRIBE])
+  options: ChannelOptions(modes: [PUBLISH, SUBSCRIBE, ANNOTATION_PUBLISH, ANNOTATION_SUBSCRIBE])
 )
 channel_b = client_b.channels.get(channel_name,
-  options: ChannelOptions(modes: [ANNOTATION_SUBSCRIBE])
+  options: ChannelOptions(modes: [SUBSCRIBE, ANNOTATION_SUBSCRIBE])
 )
 
 AWAIT channel_b.attach()

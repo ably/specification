@@ -221,9 +221,8 @@ Tests that invalid API keys are rejected by the server.
 ```pseudo
 channel_name = "test-RSA4-invalid-" + random_id()
 
-# Use the real app_id with a fabricated key to guarantee a 401 response.
-# Using a completely fake app ID (e.g. "invalid.key:secret") may return
-# 404 (app not found) instead of 401 (unauthorized), depending on the server.
+# Use the real app_id with a fabricated key name. The server returns HTTP 401
+# with Ably error code 40400 (key not found).
 invalid_key = app_id + ".invalidKey:invalidSecret"
 
 client = Rest(options: ClientOptions(
@@ -234,9 +233,9 @@ client = Rest(options: ClientOptions(
 
 ### Test Steps
 ```pseudo
-AWAIT client.request("GET", "/channels/" + channel_name) FAILS WITH error
-ASSERT error.statusCode == 401
-ASSERT error.code >= 40100 AND error.code < 40200
+result = AWAIT client.request("GET", "/channels/" + channel_name)
+ASSERT result.statusCode == 401
+ASSERT result.errorCode == 40400
 ```
 
 ---
