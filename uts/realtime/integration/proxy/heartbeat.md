@@ -56,33 +56,35 @@ AFTER EACH TEST:
 |------|-------------|
 | RTN23a | If no activity is received for `maxIdleInterval + realtimeRequestTimeout`, the transport should be disconnected |
 
-Tests that when the proxy suppresses all server-to-client frames after the initial CONNECTED handshake, the SDK's heartbeat idle timer fires and the client transitions through DISCONNECTED before reconnecting successfully. This exercises the real idle timer logic (no fake timers) against a live Ably connection.
-
-The server's CONNECTED message includes `connectionDetails.maxIdleInterval` (typically 15000ms). The SDK computes the heartbeat timeout as `maxIdleInterval + realtimeRequestTimeout`. With a shortened `realtimeRequestTimeout` of 5000ms, the total timeout is approximately 20s. The test uses a generous overall timeout of 45s.
+The proxy closes the WebSocket connection after a 2s delay from ws_connect, simulating a transport failure. The SDK transitions to DISCONNECTED and automatically reconnects. The close rule fires once (times: 1), so the second WS connection is unaffected.
 
 ### Setup
 
 ```pseudo
-# Create proxy session that suppresses all server frames after initial CONNECTED settles
+# Create proxy session that closes the WebSocket after 2s to simulate transport failure
 session = create_proxy_session(
   endpoint: "sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "delay_after_ws_connect", "delayMs": 2000 },
-    "action": { "type": "suppress_onwards" },
+    "action": { "type": "close" },
     "times": 1,
-    "comment": "RTN23a: Suppress all server frames after 2s to starve heartbeats"
+    "comment": "RTN23a: Close WebSocket after 2s to simulate transport failure"
   }]
 )
 
+keyName = api_key.split(":")[0]
+keySecret = api_key.split(":")[1]
+
 client = Realtime(options: ClientOptions(
-  key: api_key,
+  authCallback: (_params, cb) => {
+    cb(null, generateJWT({ keyName, keySecret }))
+  },
   endpoint: "localhost",
   port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
-  autoConnect: false,
-  realtimeRequestTimeout: 5000
+  autoConnect: false
 ))
 ```
 
@@ -98,7 +100,7 @@ client.connection.on((change) => {
 # Start connection
 client.connect()
 
-# SDK receives real CONNECTED from Ably (within the 2s before suppression starts)
+# SDK receives real CONNECTED from Ably (within the 2s before close fires)
 AWAIT_STATE client.connection.state == ConnectionState.connected
   WITH timeout: 15 seconds
 
@@ -107,15 +109,17 @@ first_connection_id = client.connection.id
 first_connection_key = client.connection.key
 ASSERT first_connection_id IS NOT null
 
-# Now all server frames are suppressed. The SDK's idle timer will fire after
-# maxIdleInterval + realtimeRequestTimeout (~15s + 5s = ~20s).
-# The SDK transitions to DISCONNECTED and reconnects.
-# The suppress_onwards rule has times=1, so the second WS connection is unaffected.
+# The proxy closes the WebSocket after 2s. The SDK detects the close frame
+# immediately and transitions to DISCONNECTED, then automatically reconnects.
+# The close rule has times=1, so the second WS connection is unaffected.
 
-# Wait for the SDK to disconnect and reconnect successfully
+# Wait for DISCONNECTED
+AWAIT_STATE client.connection.state == ConnectionState.disconnected
+  WITH timeout: 15 seconds
+
+# Wait for successful reconnection
 AWAIT_STATE client.connection.state == ConnectionState.connected
-  WITH timeout: 45 seconds
-  WITH condition: client.connection.id != first_connection_id
+  WITH timeout: 30 seconds
 ```
 
 ### Assertions
@@ -150,25 +154,14 @@ ASSERT ws_connects[1].queryParams["resume"] IS NOT null
 
 ### Timing Considerations
 
-The heartbeat starvation test (RTN23a) is inherently slow because the idle timer depends on `maxIdleInterval` from the server's CONNECTED message. The Ably sandbox typically sends `maxIdleInterval: 15000` (15 seconds). Combined with `realtimeRequestTimeout`, the total idle timeout is approximately 20 seconds. This is unavoidable in an integration test that exercises real timers against a real backend.
+The RTN23a test is fast because the `close` action sends a WebSocket close frame that the SDK detects immediately. The proxy closes the connection after the configured 2s delay, so the test completes in approximately 2–3 seconds rather than waiting for an idle timer to expire.
 
 The unit tests in `heartbeat_test.md` use fake timers and short intervals for fast, deterministic testing of the same logic.
-
-### `suppress_onwards` Semantics
-
-The `suppress_onwards` action suppresses all subsequent server-to-client frames on the current WebSocket connection. It is a temporal rule triggered by `delay_after_ws_connect`, which means:
-
-1. It fires once after the specified delay from the first WebSocket connect
-2. With `times: 1`, it only applies to the first WS connection in the session
-3. When the SDK reconnects with a new WebSocket connection, frames flow normally
-
-This is the key mechanism that allows the test to verify heartbeat starvation on the first connection while permitting successful reconnection.
 
 ### Why Proxy Tests vs Unit Tests
 
 These tests complement the unit tests in `heartbeat_test.md`:
 
-1. **Real idle timer** -- the SDK's actual timer fires after real elapsed time, not fake timers
-2. **Real `maxIdleInterval`** -- the value comes from the Ably sandbox's CONNECTED message, not a mock
-3. **Real reconnection** -- the SDK reconnects through a real WebSocket to a real server
-4. **Real `heartbeats=true` parameter** -- verified in the actual WebSocket URL captured by the proxy
+1. **Real transport failure** -- the proxy sends an actual WebSocket close frame; the SDK handles it through the real connection lifecycle code
+2. **Real reconnection** -- the SDK reconnects through a real WebSocket to a real server
+3. **Real `heartbeats=true` parameter** -- verified in the actual WebSocket URL captured by the proxy
