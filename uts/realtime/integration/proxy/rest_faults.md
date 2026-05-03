@@ -55,18 +55,18 @@ AFTER EACH TEST:
 ### Token Auth Helper
 
 ```pseudo
-function request_token_from_sandbox(api_key, token_params):
-  # Split API key into key name and secret
-  key_name = api_key.split(":")[0]
-  key_secret = api_key.split(":")[1]
-
-  # Request a token from the sandbox REST API
-  response = POST https://sandbox-rest.ably.io/keys/{key_name}/requestToken
-    WITH Authorization: Basic base64(api_key)
-    WITH body: token_params OR {}
-
-  RETURN parse_json(response.body)  # TokenDetails
+function request_token_from_sandbox(api_key):
+  # Create a temporary Rest client pointed directly at the sandbox (bypassing the proxy)
+  # and use it to obtain a TokenDetails object
+  inner_rest = Rest(options: ClientOptions(
+    key: api_key,
+    endpoint: SANDBOX_ENDPOINT
+  ))
+  token_details = AWAIT inner_rest.auth.requestToken()
+  RETURN token_details  # TokenDetails
 ```
+
+Note: The sandbox endpoint is used directly (not through the proxy) so that token requests are never intercepted by proxy fault-injection rules.
 
 ---
 
@@ -100,13 +100,20 @@ session = create_proxy_session(
   }]
 )
 
-# Use token auth with authCallback so the SDK can renew
+# Use token auth with authCallback so the SDK can renew.
+# The authCallback creates its own inner Rest client pointed directly at the sandbox
+# to obtain a token, bypassing the proxy entirely.
 client = Rest(options: ClientOptions(
-  authCallback: (params) => {
+  authCallback: (params, cb) => {
     auth_callback_count++
-    # Request a token from the sandbox using the API key
-    token_details = request_token_from_sandbox(api_key, params)
-    RETURN token_details
+    inner_rest = Rest(options: ClientOptions(
+      key: api_key,
+      endpoint: SANDBOX_ENDPOINT
+    ))
+    inner_rest.auth.requestToken().then(
+      (token) => cb(null, token),
+      (err) => cb(err, null)
+    )
   },
   endpoint: "localhost",
   port: session.proxy_port,
@@ -177,11 +184,19 @@ session = create_proxy_session(
   }]
 )
 
-# Use key auth (Basic auth not possible over non-TLS, so use token auth)
+# Use token auth with authCallback (Basic auth is prohibited over non-TLS per RSC18).
+# The authCallback creates its own inner Rest client pointed directly at the sandbox
+# to obtain a token, bypassing the proxy entirely.
 client = Rest(options: ClientOptions(
-  authCallback: (params) => {
-    token_details = request_token_from_sandbox(api_key, params)
-    RETURN token_details
+  authCallback: (params, cb) => {
+    inner_rest = Rest(options: ClientOptions(
+      key: api_key,
+      endpoint: SANDBOX_ENDPOINT
+    ))
+    inner_rest.auth.requestToken().then(
+      (token) => cb(null, token),
+      (err) => cb(err, null)
+    )
   },
   endpoint: "localhost",
   port: session.proxy_port,
@@ -234,11 +249,15 @@ session = create_proxy_session(
   rules: []
 )
 
-# Create Realtime client through proxy for publishing
+# Derive key parts for JWT signing
+key_name = api_key.split(":")[0]
+key_secret = api_key.split(":")[1]
+
+# Create Realtime client through proxy for publishing.
+# Uses a JWT authCallback: the callback signs a JWT locally (no outbound request needed).
 realtime_client = Realtime(options: ClientOptions(
-  authCallback: (params) => {
-    token_details = request_token_from_sandbox(api_key, params)
-    RETURN token_details
+  authCallback: (params, cb) => {
+    cb(null, generateJWT({ keyName: key_name, keySecret: key_secret }))
   },
   endpoint: "localhost",
   port: session.proxy_port,
@@ -247,11 +266,11 @@ realtime_client = Realtime(options: ClientOptions(
   autoConnect: false
 ))
 
-# Create REST client through proxy for history retrieval
+# Create REST client through proxy for history retrieval.
+# Also uses JWT authCallback for the same reason.
 rest_client = Rest(options: ClientOptions(
-  authCallback: (params) => {
-    token_details = request_token_from_sandbox(api_key, params)
-    RETURN token_details
+  authCallback: (params, cb) => {
+    cb(null, generateJWT({ keyName: key_name, keySecret: key_secret }))
   },
   endpoint: "localhost",
   port: session.proxy_port,
@@ -267,10 +286,11 @@ rest_channel = rest_client.channels.get(channel_name)
 ### Test Steps
 
 ```pseudo
-# Connect Realtime client through proxy
-realtime_client.connect()
-AWAIT_STATE realtime_client.connection.state == ConnectionState.connected
+# Connect Realtime client through proxy and wait until connected
+AWAIT connectAndWait(realtime_client)
   WITH timeout: 15 seconds
+# connectAndWait() calls realtime_client.connect() and resolves once the connection
+# reaches the CONNECTED state (or rejects on FAILED/SUSPENDED).
 
 # Attach to the channel
 AWAIT realtime_channel.attach()
@@ -280,19 +300,16 @@ AWAIT_STATE realtime_channel.state == ChannelState.attached
 # Publish a message via Realtime
 AWAIT realtime_channel.publish("test-msg", "hello world")
 
-# Brief pause to allow the message to be persisted on the server
-# (history is eventually consistent)
-poll_until(
+# Poll history via REST until the published message appears.
+# History is eventually consistent so a single immediate read may return nothing.
+history = AWAIT pollUntil(
   condition: () => {
-    history = AWAIT rest_channel.history()
-    RETURN history.items.length > 0
+    result = AWAIT rest_channel.history()
+    RETURN result.items.length > 0 ? result : null
   },
   interval: 500ms,
   timeout: 10 seconds
 )
-
-# Retrieve channel history via REST
-history = AWAIT rest_channel.history()
 ```
 
 ### Assertions
@@ -341,12 +358,14 @@ All `AWAIT_STATE` calls use generous timeouts because real network traffic is in
 
 ### Authentication Through Proxy
 
-All tests use `authCallback` with token auth rather than API key auth. This is required because:
+All tests use `authCallback` rather than API key auth. This is required because:
 1. `tls: false` is needed for proxy tests (proxy serves plain HTTP/WS with TLS only upstream)
 2. RSC18 prohibits Basic auth over non-TLS connections
 3. `authCallback` makes tokens renewable, which is needed for RSC10 (token renewal test)
 
-The `authCallback` requests tokens directly from the sandbox REST API (bypassing the proxy) using the API key. Only the SDK's own HTTP/WebSocket traffic goes through the proxy.
+**RSC10 and RSC15m** use a token-based `authCallback`: each invocation creates a temporary inner `Rest` client pointed directly at the sandbox (using `endpoint: SANDBOX_ENDPOINT` with the full API key) and calls `auth.requestToken()`. The resulting `TokenDetails` is returned to the SDK. Only the SDK's own HTTP/WebSocket traffic goes through the proxy — inner token requests bypass it entirely.
+
+**RTL6** uses a JWT `authCallback` for both the Realtime and REST clients: each invocation calls a local `generateJWT({ keyName, keySecret })` helper and returns the signed JWT directly, with no outbound network call from the callback itself.
 
 ### Fallback Host Behaviour
 

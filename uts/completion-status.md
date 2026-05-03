@@ -403,12 +403,12 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN23a | Heartbeat starvation causes disconnect | Yes — `realtime/integration/proxy/heartbeat.md` |
 | RTN23a | heartbeats=true in connection URL | Yes — `realtime/integration/proxy/heartbeat.md` |
 | RTL4f | Attach timeout (server doesn't respond) | Yes — `realtime/integration/proxy/channel_faults.md` |
-| RTL4h | Server responds with ERROR to ATTACH | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL14 | Server responds with ERROR to ATTACH → FAILED | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL5f | Detach timeout (server doesn't respond) | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL13a | Server sends unsolicited DETACHED → reattach | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL14 | Server sends channel ERROR → FAILED | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RSC10 | Token renewal on HTTP 401 | Yes — `realtime/integration/proxy/rest_faults.md` |
-| RSC15a | HTTP 503 error (no fallback) | Yes — `realtime/integration/proxy/rest_faults.md` |
+| RSC15m/REC2c2 | HTTP 503 error (no fallback, hosts disabled) | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RTL6 | End-to-end publish and history | Yes — `realtime/integration/proxy/rest_faults.md` |
 
 ## Summary
