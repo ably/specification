@@ -209,12 +209,76 @@ Each test section references the spec points it covers, just like unit tests:
 | RTN4b | Connection transitions INITIALIZED → CONNECTING → CONNECTED |
 ```
 
+### Timeout Strategy
+
+Integration tests interact with real services over real networks, so timeouts need more thought than unit tests. Apply two levels of timeout:
+
+**Suite timeout** — the mocha `this.timeout()` on the `describe` block. This must accommodate the sum of all tests in the suite plus setup and teardown. For suites with many tests or slow sandbox operations, 120 seconds is a reasonable default. Suites with only 1–3 fast tests can use 30–60 seconds.
+
+**Operation timeout** — individual operations that may hang (HTTP requests, WebSocket state waits, sandbox provisioning/teardown) should each have their own timeout, shorter than the suite timeout. This ensures a single stuck operation produces a clear error message rather than silently consuming the suite budget until mocha kills the entire suite with a generic "timeout exceeded."
+
+Guidelines:
+
+- Sandbox provisioning and teardown HTTP requests: 30 seconds (via `AbortSignal.timeout()` or equivalent). Sandbox teardown (app deletion) should be best-effort — catch and ignore timeout errors, since sandbox apps auto-expire.
+- `connectAndWait`, `closeAndWait`, channel attach waits: 10–15 seconds.
+- Proxy tests with `realtimeRequestTimeout` set low (e.g. 3 seconds for timeout tests): give the suite timeout at least `realtimeRequestTimeout + 12 seconds` headroom per such test.
+- `pollUntil` calls: explicit timeout parameter, typically 10–30 seconds.
+
+The goal is: every await in the test is bounded, and the suite timeout is generous enough that it only fires if something truly unexpected happens. When a test fails, the error should say *what* timed out, not just "suite timeout exceeded."
+
 ### Avoiding Flaky Tests
 
 - Use polling with timeouts instead of fixed waits (see `README.md` polling conventions)
 - For token expiry tests, use short TTLs and poll for rejection
 - For state transition assertions, wait for the target state event rather than asserting after a delay
 - Proxy tests should use proxy event logs for verification rather than timing-dependent assertions
+- When tests pass in isolation but fail in the full suite, suspect sandbox rate limiting or connection exhaustion — increase the suite timeout rather than adding retries
+
+## Writing Proxy Tests
+
+The proxy mediates between the SDK and the real Ably server. It is not a mock server. Tests should be written to rely on actual server responses as much as possible, with the proxy intervening only where necessary to create the specific fault or error condition under test.
+
+The more a proxy constructs or replaces server responses, the more likely it is that the test exercises a scenario that diverges from real server behaviour. This undermines the value of integration testing over unit testing.
+
+### Prefer Late Fault Injection
+
+Wherever possible, structure tests so that the fault injected by the proxy occurs as the **final interaction** between client and server, with the test verifying the client's behaviour in response. All preceding interactions should pass through to the real server unmodified, establishing genuine client and server state.
+
+For example, to test that the SDK handles a connection-level ERROR correctly:
+1. Let the real connection handshake complete through the proxy (real CONNECTED from server).
+2. After the SDK is connected, use the proxy to inject or trigger the error condition.
+3. Assert that the SDK transitions to the correct state.
+
+This maximises the proportion of the test that exercises real client-server interaction.
+
+### When Earlier Fault Injection Is Needed
+
+Sometimes the fault must occur at an earlier point — for example, replacing the server's response to the first CONNECTED, or suppressing an ATTACH before it reaches the server. When this is unavoidable, there are two approaches, each with a trade-off:
+
+**Approach A: Modify the server's response.** The proxy forwards the request to the server, receives the real response, but modifies it before forwarding to the client. The server believes the operation succeeded; the client sees an error.
+
+**Approach B: Handle the request without forwarding.** The proxy intercepts the request, generates a response itself, and never forwards to the server. Client and server state remain consistent (both believe the operation did not happen), but the response is entirely synthetic.
+
+**Prefer Approach A** (modify real server responses) when the resulting client-server state drift does not affect the validity of subsequent actions or assertions in the test. This preserves the integration testing value: the response structure, timing, and ancillary fields come from the real server, with only the specific fault injected.
+
+Use Approach B only when the state drift from Approach A would invalidate later parts of the test — for example, if the server's belief that a channel is attached would cause it to send unsolicited messages that interfere with subsequent assertions.
+
+### Example: Simulating a Rejected Attach
+
+To test that the SDK handles a channel attach rejection correctly, after a successful real connection:
+
+**Approach A (preferred):** The proxy forwards the ATTACH to the server, receives the real ATTACHED response, but replaces it with an ERROR before forwarding to the client. The server now believes the channel is attached, but the client sees FAILED. This is acceptable when the test ends here — the state drift doesn't matter because there are no subsequent server interactions that depend on consistent channel state.
+
+**Approach B:** The proxy intercepts the ATTACH, does not forward it, and generates an ERROR response. Client and server agree the channel is not attached. But the error response is entirely synthetic — we might as well have written a unit test.
+
+### Implications for Test Design
+
+This principle influences test structure:
+
+- **Keep proxy tests focused.** Each test should verify one fault condition. Avoid multi-phase tests where an early proxy intervention creates state drift that compounds through later phases.
+- **Use imperative actions for late injection.** The proxy's imperative action API (`trigger_action`) is ideal for injecting faults after the SDK has reached a stable state through real server interaction.
+- **Use rules for response modification.** When a rule must fire during the protocol handshake (e.g., replacing the CONNECTED response), use `times: 1` so the proxy returns to passthrough for subsequent interactions.
+- **Verify via proxy event logs.** Assert against the proxy's event log to confirm that the expected real server interactions occurred, rather than relying solely on SDK state.
 
 ## Coverage Tracking
 
