@@ -1,6 +1,6 @@
 # UTS Test Spec Completion Status
 
-This matrix lists all spec items from the [Ably features spec](../../specification/md/features.md) and indicates which have a UTS test specification.
+This matrix lists all spec items from the [Ably features spec](../../specifications/features.md) and indicates which have a UTS test specification.
 
 **Legend:**
 - **Yes** — UTS test spec exists covering this item

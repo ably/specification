@@ -1,12 +1,6 @@
----
-skill: write-test-spec
-description: Guidelines for writing Ably SDK test specifications with modern mock infrastructure patterns
-tags: [testing, specifications, ably]
----
-
 # Writing Ably SDK Test Specifications
 
-This skill provides comprehensive guidance for writing portable test specifications for Ably SDK implementations.
+This guide provides comprehensive guidance for writing portable test specifications for Ably SDK implementations.
 
 ## Test Types
 
@@ -23,10 +17,10 @@ This skill provides comprehensive guidance for writing portable test specificati
 - Use `endpoint: "sandbox"` in ClientOptions
 
 ### Proxy Integration Tests (Ably Sandbox via Proxy)
-- Run against Ably Sandbox through a programmable proxy (`uts/test/proxy/`)
+- Run against Ably Sandbox through a programmable proxy (`uts/proxy/`)
 - Proxy transparently forwards traffic but can inject faults via rules
 - Use for testing fault behaviour: connection failures, token renewal under errors, heartbeat starvation, channel error injection
-- See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec
+- See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec
 
 ## Mock Infrastructure Patterns
 
@@ -36,7 +30,7 @@ This skill provides comprehensive guidance for writing portable test specificati
 ```markdown
 ## Mock HTTP Infrastructure
 
-See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
+See `rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
 ```
 
 **Key interfaces:**
@@ -166,7 +160,7 @@ For Realtime tests, reference the WebSocket mock:
 ```markdown
 ## Mock WebSocket Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 ```
 
 **Key interfaces:**
@@ -237,7 +231,7 @@ mock_ws.active_connection.simulate_disconnect()
 
 ## Proxy Integration Tests
 
-For detailed proxy infrastructure documentation, see `uts/test/realtime/integration/helpers/proxy.md`.
+For detailed proxy infrastructure documentation, see `realtime/integration/helpers/proxy.md`.
 
 ### When to Use Proxy Tests
 
@@ -258,10 +252,10 @@ Spec points: `RTN14a`, `RTN14b`, ...
 Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
-See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure specification.
+See `realtime/integration/helpers/proxy.md` for proxy infrastructure specification.
 
 ## Corresponding Unit Tests
-- `uts/test/realtime/unit/connection/connection_failures_test.md` — RTN15a, RTN15b
+- `realtime/unit/connection/connection_failures_test.md` — RTN15a, RTN15b
 
 ## Sandbox Setup
 [standard app provisioning — same as direct sandbox tests]
@@ -450,7 +444,7 @@ Tests that all REST requests include the `Ably-Agent` header with correct format
 
 ### URI Path Component Encoding
 
-Use `encode_uri_component()` for any variable path segment or query parameter in URL assertions. This is defined in `uts/test/README.md`. Always use exact equality (`==`) for path assertions, not `CONTAINS`.
+Use `encode_uri_component()` for any variable path segment or query parameter in URL assertions. This is defined in the UTS README. Always use exact equality (`==`) for path assertions, not `CONTAINS`.
 
 ```pseudo
 # Correct — exact path with encoded variable
@@ -523,7 +517,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connecting
 ```
 
 This means implementations should:
-- Check if condition is already true → proceed
+- Check if condition is already true -> proceed
 - Otherwise wait for state change events with timeout
 - Fail if timeout expires
 
@@ -695,7 +689,7 @@ AWAIT_STATE state == disconnected
 **The pattern:**
 
 1. Start recording state changes before triggering the behavior
-2. Let the full cycle play out (disconnect → reconnect)
+2. Let the full cycle play out (disconnect -> reconnect)
 3. Assert the recorded sequence at the end with `CONTAINS_IN_ORDER`
 
 ```pseudo
@@ -916,73 +910,70 @@ The error object in `FAILS WITH error` represents the ErrorInfo associated with 
 ## File Organization
 
 ```
-uts/test/
-├── rest/
-│   ├── unit/
-│   │   ├── helpers/
-│   │   │   └── mock_http.md        # Mock HTTP infrastructure spec
-│   │   ├── auth/
-│   │   │   ├── auth_callback.md    # RSA8c, RSA8d
-│   │   │   ├── auth_scheme.md      # RSA1-4, RSA4b
-│   │   │   ├── authorize.md        # RSA10
-│   │   │   ├── token_renewal.md    # RSA4b4, RSA14
-│   │   │   └── client_id.md        # RSA7, RSC17
-│   │   ├── channel/
-│   │   │   ├── publish.md          # RSL1
-│   │   │   ├── history.md          # RSL2
-│   │   │   └── idempotency.md      # RSL1k
-│   │   ├── rest_client.md          # RSC7, RSC8, RSC13, RSC18
-│   │   ├── fallback.md             # RSC15, REC1, REC2
-│   │   ├── time.md                 # RSC16
-│   │   ├── stats.md                # RSC6
-│   │   ├── request.md              # RSC19
-│   │   ├── batch_publish.md        # RSC22, BSP, BPR, BPF
-│   │   ├── presence/
-│   │   │   └── rest_presence.md    # RSP1, RSP3, RSP4
-│   │   ├── encoding/
-│   │   │   └── message_encoding.md # RSL4, RSL5, RSL6
-│   │   └── types/
-│   │       ├── message_types.md    # TM2, TM3, TM4
-│   │       ├── error_types.md      # TI1-5
-│   │       ├── token_types.md      # TD1-5, TK1-6, TE1-6
-│   │       ├── options_types.md    # TO3, AO2
-│   │       └── paginated_result.md # TG1-5
-│   └── integration/
-│       ├── auth.md
-│       ├── publish.md
-│       ├── history.md
-│       ├── presence.md
-│       ├── pagination.md
-│       └── time_stats.md
-├── realtime/
-│   ├── unit/
-│   │   ├── helpers/
-│   │   │   └── mock_websocket.md   # Mock WebSocket infrastructure spec
-│   │   ├── client/
-│   │   │   ├── realtime_client.md  # RTC1, RTC2, RTC15, RTC16
-│   │   │   └── client_options.md   # TO3 (Realtime-specific)
-│   │   └── connection/
-│   │       ├── connection_failures_test.md
-│   │       ├── connection_open_failures_test.md
-│   │       └── ...
-│   └── integration/
-│       ├── helpers/
-│       │   └── proxy.md              # Proxy infrastructure spec
-│       ├── proxy/
-│       │   ├── connection_open_failures.md  # RTN14 tests via proxy
-│       │   ├── connection_resume.md         # RTN15 tests via proxy
-│       │   ├── heartbeat.md                 # RTN23 tests via proxy
-│       │   ├── channel_faults.md            # RTL4, RTL5, RTL13, RTL14 via proxy
-│       │   ├── rest_faults.md               # RSC10, RSC15 via proxy
-│       │   └── end_to_end.md                # RTL6 publish + history via proxy
-│       ├── connection_lifecycle_test.md      # Direct sandbox tests
-│       └── ...
-└── README.md
+rest/
+  unit/
+    helpers/
+      mock_http.md            # Mock HTTP infrastructure spec
+    auth/
+      auth_callback.md        # RSA8c, RSA8d
+      auth_scheme.md          # RSA1-4, RSA4b
+      authorize.md            # RSA10
+      token_renewal.md        # RSA4b4, RSA14
+      client_id.md            # RSA7, RSC17
+    channel/
+      publish.md              # RSL1
+      history.md              # RSL2
+      idempotency.md          # RSL1k
+    rest_client.md            # RSC7, RSC8, RSC13, RSC18
+    fallback.md               # RSC15, REC1, REC2
+    time.md                   # RSC16
+    stats.md                  # RSC6
+    request.md                # RSC19
+    batch_publish.md          # RSC22, BSP, BPR, BPF
+    presence/
+      rest_presence.md        # RSP1, RSP3, RSP4
+    encoding/
+      message_encoding.md     # RSL4, RSL5, RSL6
+    types/
+      message_types.md        # TM2, TM3, TM4
+      error_types.md          # TI1-5
+      token_types.md          # TD1-5, TK1-6, TE1-6
+      options_types.md        # TO3, AO2
+      paginated_result.md     # TG1-5
+  integration/
+    auth.md
+    publish.md
+    history.md
+    presence.md
+    pagination.md
+    time_stats.md
+realtime/
+  unit/
+    helpers/
+      mock_websocket.md       # Mock WebSocket infrastructure spec
+    client/
+      realtime_client.md      # RTC1, RTC2, RTC15, RTC16
+      client_options.md       # TO3 (Realtime-specific)
+    connection/
+      connection_failures_test.md
+      connection_open_failures_test.md
+      ...
+  integration/
+    helpers/
+      proxy.md                # Proxy infrastructure spec
+    proxy/
+      connection_open_failures.md   # RTN14 tests via proxy
+      connection_resume.md          # RTN15 tests via proxy
+      heartbeat.md                  # RTN23 tests via proxy
+      channel_faults.md             # RTL4, RTL5, RTL13, RTL14 via proxy
+      rest_faults.md                # RSC10, RSC15 via proxy
+    connection_lifecycle_test.md    # Direct sandbox tests
+    ...
 ```
 
 ## Completion Status Matrix
 
-When adding a new test spec, update the completion status matrix at `uts/test/completion-status.md` to reflect the newly covered spec items. This matrix tracks which spec items have UTS test specs and which do not.
+When adding a new test spec, update the completion status matrix at `docs/completion-status.md` to reflect the newly covered spec items. This matrix tracks which spec items have UTS test specs and which do not.
 
 ## Writing Tips
 
@@ -998,7 +989,7 @@ When adding a new test spec, update the completion status matrix at `uts/test/co
 10. **Use handler pattern for simple tests**, await pattern for complex coordination
 11. **Distinguish connection-level vs request-level failures**
 12. **Use unique channel names** to avoid test interference
-13. **Update `uts/test/completion-status.md`** when adding new test specs
+13. **Update `docs/completion-status.md`** when adding new test specs
 
 ## Example Test Spec (Modern Pattern)
 
@@ -1012,7 +1003,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
+See `rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
 
 ---
 
@@ -1066,66 +1057,29 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
 
 ## Common Mistakes to Avoid
 
-1. ❌ Using `mock_http.queue_response()` (old pattern)
-   ✅ Use `onRequest: (req) => req.respond_with(...)`
+1. Using `mock_http.queue_response()` (old pattern) -- Use `onRequest: (req) => req.respond_with(...)` instead
+2. Referencing `mock_http.captured_requests` -- Use local `captured_requests` array
+3. Referencing `mock_http.request_count` -- Use local `request_count` variable
+4. Not installing mock: Missing `install_mock(mock_http)` -- Always call `install_mock(mock_http)` after creating mock
+5. Passing mock to client: `Rest(..., httpClient: mock_http)` -- Mock is installed globally via `install_mock()`
+6. Missing spec requirement summary -- Every test must have `**Spec requirement:**` or table
+7. Using fixed WAITs for async operations -- Use polling with timeout or `AWAIT_STATE`
+8. Not using unique channel names -- Generate unique names with random component
+9. Synchronous state assertions: `ASSERT state == connecting` -- Use `AWAIT_STATE state == connecting`
+10. Missing connection handler: Only defining `onRequest` -- Always include `onConnectionAttempt: (conn) => conn.respond_with_success()`
+11. Using `send_to_client()` for DISCONNECTED or connection-level ERROR -- Use `send_to_client_and_close()` - server closes connection after these messages
+12. Using `send_to_client_and_close()` for channel-level ERROR -- Use `send_to_client()` - ERROR with channel doesn't close connection
+13. Using `time()` to test authentication behavior -- Use `channel.status()` - time() doesn't require or send auth
+14. Creating client without credentials for time() tests: `ClientOptions(tls: false)` -- Constructor requires credentials
+15. Using intermediate `AWAIT_STATE disconnected` to observe transient states mid-test -- Record all state changes and use `CONTAINS_IN_ORDER` to verify the sequence at the end
+16. Using exact `ADVANCE_TIME` calculations for multi-retry scenarios -- Use a time-advancement loop
+17. Loose path assertions: `ASSERT request.url.path CONTAINS "/channels/"` -- Use exact path with encoding
+18. Mock echo missing fields that the test later asserts on -- Include all fields in the mock echo that the test assertions depend on
+19. Using language-specific serialization names: `toMap()`, `fromMap()`, `to_dict()` -- Use portable `toJson()` / `fromJson()`
 
-2. ❌ Referencing `mock_http.captured_requests`
-   ✅ Use local `captured_requests` array
+### Keeping UTS and Derived Tests in Sync
 
-3. ❌ Referencing `mock_http.request_count`
-   ✅ Use local `request_count` variable
-
-4. ❌ Not installing mock: Missing `install_mock(mock_http)`
-   ✅ Always call `install_mock(mock_http)` after creating mock
-
-5. ❌ Passing mock to client: `Rest(..., httpClient: mock_http)`
-   ✅ Mock is installed globally via `install_mock()`
-
-6. ❌ Missing spec requirement summary
-   ✅ Every test must have `**Spec requirement:**` or table
-
-7. ❌ Using fixed WAITs for async operations
-   ✅ Use polling with timeout or `AWAIT_STATE`
-
-8. ❌ Not using unique channel names
-   ✅ Generate unique names with random component
-
-9. ❌ Synchronous state assertions: `ASSERT state == connecting`
-   ✅ Use `AWAIT_STATE state == connecting`
-
-10. ❌ Missing connection handler: Only defining `onRequest`
-    ✅ Always include `onConnectionAttempt: (conn) => conn.respond_with_success()`
-
-11. ❌ Using `send_to_client()` for DISCONNECTED or connection-level ERROR
-    ✅ Use `send_to_client_and_close()` - server closes connection after these messages
-
-12. ❌ Using `send_to_client_and_close()` for channel-level ERROR
-    ✅ Use `send_to_client()` - ERROR with channel doesn't close connection
-
-13. ❌ Using `time()` to test authentication behavior
-    ✅ Use `channel.status()` - time() doesn't require or send auth
-
-14. ❌ Creating client without credentials for time() tests: `ClientOptions(tls: false)`
-    ✅ Constructor requires credentials - use `ClientOptions(key: "...", tls: false, useTokenAuth: true)`
-
-15. ❌ Using intermediate `AWAIT_STATE disconnected` to observe transient states mid-test
-    ✅ Record all state changes and use `CONTAINS_IN_ORDER` to verify the sequence at the end
-
-16. ❌ Using exact `ADVANCE_TIME` calculations for multi-retry scenarios: `ADVANCE_TIME(6000); ADVANCE_TIME(1000)`
-    ✅ Use a time-advancement loop: `LOOP up to N times: ADVANCE_TIME(increment)`
-
-17. ❌ Loose path assertions: `ASSERT request.url.path CONTAINS "/channels/"`
-    ✅ Exact path with encoding: `ASSERT request.url.path == "/channels/" + encode_uri_component(name) + "/messages"`
-
-18. ❌ Mock echo missing fields that the test later asserts on (e.g. omitting `data` from a PRESENCE echo, then asserting `member.data`)
-    ✅ Include all fields in the mock echo that the test assertions depend on
-
-19. ❌ Using language-specific serialization names: `toMap()`, `fromMap()`, `to_dict()`
-    ✅ Use portable `toJson()` / `fromJson()` for wire format serialization
-
-### Keeping UTS and Dart Tests in Sync
-
-When a Dart test reveals a bug or gap in a UTS spec (or vice versa), **always update both**. Common cases:
-- Mock missing a field (e.g. `data: p.data` in a PRESENCE echo) — fix in both
-- Loop index bugs (e.g. hardcoded `:0` instead of `:${idx}`) — fix in both
-- Dart-specific patterns (e.g. `authCallback` to avoid real HTTP for clientId) don't need UTS changes, but note the reason if the approaches differ significantly
+When a derived test reveals a bug or gap in a UTS spec (or vice versa), **always update both**. Common cases:
+- Mock missing a field (e.g. `data: p.data` in a PRESENCE echo) -- fix in both
+- Loop index bugs (e.g. hardcoded `:0` instead of `:${idx}`) -- fix in both
+- Language-specific patterns (e.g. `authCallback` to avoid real HTTP for clientId) don't need UTS changes, but note the reason if the approaches differ significantly

@@ -85,8 +85,8 @@ realtime/
     presence/
       realtime_presence_enter_test.md
       ...
-  integration/                             # Direct sandbox tests (no proxy)
-    auth/
+  integration/                             # Integration tests
+    auth/                                  # Direct sandbox tests
       connection_auth_test.md
       realtime_authorize_test.md
     channels/
@@ -99,19 +99,21 @@ realtime/
     presence/
       presence_lifecycle_test.md
       ...
-  integration-proxy/                       # Proxy-based tests (sandbox + proxy)
-    connection/
-      connection_resume_test.md
-      connection_failures_test.md
-      heartbeat_test.md
-    channels/
-      channel_faults_test.md
-      ...
+    helpers/
+      proxy.md                             # Proxy infrastructure spec
+    proxy/                                 # Proxy-based tests (sandbox + proxy)
+      connection_open_failures.md
+      connection_resume.md
+      heartbeat.md
+      channel_faults.md
+      rest_faults.md
+      auth_reauth.md
+      presence_reentry.md
 ```
 
 ### Segregation Rationale
 
-Tests that require the proxy are segregated into `integration-proxy/` because:
+Tests that require the proxy are segregated into `integration/proxy/` because:
 
 1. **Different infrastructure requirements** — proxy tests need the proxy binary running, port allocation, and proxy session lifecycle management. Direct sandbox tests need only network access to the sandbox.
 2. **Different CI configuration** — proxy tests can run on a different schedule or be gated on proxy availability, without affecting direct integration tests.
@@ -123,7 +125,7 @@ Tests that require the proxy are segregated into `integration-proxy/` because:
 A single spec point may have tests in multiple tiers. For example, RTN15 (connection resume):
 
 - `unit/connection/connection_failures_test.md` — mock transport verifies client-side state transitions and retry logic
-- `integration-proxy/connection/connection_resume_test.md` — proxy verifies the resume protocol works against the real server
+- `integration/proxy/connection_resume.md` — proxy verifies the resume protocol works against the real server
 
 This is expected and correct. The unit test verifies client logic; the integration test verifies client-server agreement.
 
@@ -286,14 +288,14 @@ Integration test coverage is tracked in `completion-status.md` alongside unit te
 
 ```
 RTN4b  unit:✓  integration:✓
-RTN15a unit:✓  integration-proxy:✓
+RTN15a unit:✓  proxy:✓
 RTL4   unit:✓  integration:✓
 ```
 
 ## Adding New Integration Tests
 
 1. **Check whether an integration test adds value** — apply the selection criteria above. If the unit test already provides high confidence, skip the integration test.
-2. **Choose the right tier** — if the test needs fault injection (dropped connections, delayed frames, modified responses), it goes in `integration-proxy/`. Otherwise, `integration/`.
+2. **Choose the right tier** — if the test needs fault injection (dropped connections, delayed frames, modified responses), it goes in `integration/proxy/`. Otherwise, `integration/`.
 3. **Mirror the unit test structure** — use the same category directory and a similar file name.
 4. **Write the UTS spec first** — just like unit tests, the portable test spec comes before the language-specific implementation.
 5. **Reference spec points** — every test section must cite the spec points it covers.
