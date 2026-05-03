@@ -1,6 +1,6 @@
 # Channel Fault Proxy Integration Tests
 
-Spec points: `RTL4f`, `RTL4h`, `RTL5f`, `RTL13a`, `RTL14`
+Spec points: `RTL4f`, `RTL5f`, `RTL13a`, `RTL14`
 
 ## Test Type
 
@@ -12,7 +12,7 @@ See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastr
 
 ## Corresponding Unit Tests
 
-- `uts/test/realtime/unit/channels/channel_attach.md` -- RTL4f (attach timeout), RTL4h (server error on attach)
+- `uts/test/realtime/unit/channels/channel_attach.md` -- RTL4f (attach timeout)
 - `uts/test/realtime/unit/channels/channel_detach.md` -- RTL5f (detach timeout)
 - `uts/test/realtime/unit/channels/channel_server_initiated_detach.md` -- RTL13a (unsolicited DETACHED triggers reattach)
 - `uts/test/realtime/unit/channels/channel_error.md` -- RTL14 (channel ERROR transitions to FAILED)
@@ -150,19 +150,18 @@ ASSERT attach_frames_to_server.length == 0
 
 ---
 
-## Test 14: RTL4h / RTL14 -- Server responds with ERROR to ATTACH
+## Test 14: RTL14 -- Server responds with ERROR to ATTACH
 
 | Spec | Requirement |
 |------|-------------|
-| RTL4h | If an ERROR ProtocolMessage is received for the channel during ATTACHING, the channel transitions to FAILED |
-| RTL14 | If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to the FAILED state |
+| RTL14 | If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to the FAILED state and the RealtimeChannel.errorReason should be set |
 
 Tests that when the proxy replaces the server's ATTACHED response with a channel-scoped ERROR, the SDK transitions the channel to FAILED with the injected error. The connection should remain CONNECTED.
 
 ### Setup
 
 ```pseudo
-channel_name = "test-RTL4h-${random_id()}"
+channel_name = "test-RTL14-error-on-attach-${random_id()}"
 
 # Create proxy session that replaces ATTACHED with channel ERROR
 session = create_proxy_session(
@@ -179,7 +178,7 @@ session = create_proxy_session(
       }
     },
     "times": 1,
-    "comment": "RTL4h: Replace ATTACHED with channel ERROR"
+    "comment": "RTL14: Replace ATTACHED with channel ERROR"
   }]
 )
 

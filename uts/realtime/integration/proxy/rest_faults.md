@@ -1,6 +1,6 @@
 # REST Fault Proxy Integration Tests
 
-Spec points: `RSC10`, `RSC15a`, `RTL6`
+Spec points: `RSC10`, `RSC15m`, `REC2c2`, `RTL6`
 
 ## Test Type
 
@@ -13,7 +13,7 @@ See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastr
 ## Corresponding Unit Tests
 
 - `uts/test/rest/unit/auth/token_renewal.md` -- RSC10 (unit test verifies token renewal logic with mocked HTTP)
-- `uts/test/rest/unit/fallback.md` -- RSC15a (unit test verifies fallback/error handling with mocked HTTP)
+- `uts/test/rest/unit/fallback.md` -- RSC15m/REC2c2 (unit test verifies fallback/error handling with mocked HTTP)
 - `uts/test/realtime/unit/channels/channel_publish.md` -- RTL6 (unit test verifies publish request formation)
 
 ## Sandbox Setup
@@ -149,11 +149,11 @@ ASSERT http_responses[1].status IN [200, 201]
 
 ---
 
-## Test 19: RSC15a -- HTTP 503 error (no fallback through proxy)
+## Test 19: RSC15m / REC2c2 -- HTTP 503 error with fallback hosts disabled
 
 | Spec | Requirement |
 |------|-------------|
-| RSC15a | When the SDK receives an HTTP 5xx error and fallback hosts are disabled, it should return the error to the caller |
+| RSC15m | When the set of fallback domains is empty, failing HTTP requests that would have qualified for a retry against a fallback host will instead result in an error immediately |
 | REC2c2 | Fallback hosts are automatically disabled when `endpoint` is set to an explicit hostname |
 
 Tests that when a REST request receives an HTTP 503 (Service Unavailable) and the client is configured with `endpoint: "localhost"` (which disables fallback hosts per REC2c2), the SDK returns the error to the caller without attempting fallback hosts.
@@ -173,7 +173,7 @@ session = create_proxy_session(
       "body": { "error": { "code": 50300, "statusCode": 503, "message": "Service temporarily unavailable" } }
     },
     "times": 1,
-    "comment": "RSC15a: Return 503 on first channel request"
+    "comment": "RSC15m: Return 503 on first channel request"
   }]
 )
 
@@ -189,7 +189,7 @@ client = Rest(options: ClientOptions(
   useBinaryProtocol: false
 ))
 
-channel_name = "test-RSC15a-503-error-" + random_string()
+channel_name = "test-RSC15m-503-error-" + random_string()
 channel = client.channels.get(channel_name)
 ```
 
@@ -351,7 +351,7 @@ The `authCallback` requests tokens directly from the sandbox REST API (bypassing
 ### Fallback Host Behaviour
 
 With `endpoint: "localhost"`, fallback hosts are automatically disabled (REC2c2). This means:
-- RSC15a: The SDK will NOT attempt fallback hosts after a 5xx error
+- RSC15m/REC2c2: The SDK will NOT attempt fallback hosts after a 5xx error when fallback hosts are disabled
 - The error propagates directly to the caller
 - The proxy log will show only a single HTTP request (no fallback attempts)
 
