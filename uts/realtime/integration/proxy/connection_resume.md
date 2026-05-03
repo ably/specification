@@ -1,6 +1,6 @@
-# Connection Resume Proxy Integration Tests (RTN15)
+# Connection Resume and Recovery Proxy Integration Tests (RTN15, RTN16)
 
-Spec points: `RTN15a`, `RTN15b`, `RTN15c6`, `RTN15c7`, `RTN15g`, `RTN15g2`, `RTN15h1`, `RTN15h3`, `RTN15j`, `RTN19a`, `RTN19a2`
+Spec points: `RTN15a`, `RTN15b`, `RTN15c6`, `RTN15c7`, `RTN15g`, `RTN15g2`, `RTN15h1`, `RTN15h3`, `RTN15j`, `RTN16d`, `RTN16l`, `RTN19a`, `RTN19a2`
 
 ## Test Type
 
@@ -8,7 +8,7 @@ Proxy integration test against Ably Sandbox endpoint.
 
 Uses the programmable proxy (`uts/test/proxy/`) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure details.
 
-Corresponding unit tests: `uts/test/realtime/unit/connection/connection_failures_test.md`
+Corresponding unit tests: `uts/test/realtime/unit/connection/connection_failures_test.md`, `uts/test/realtime/unit/connection/connection_recovery_test.md`
 
 ## Sandbox Setup
 
@@ -34,8 +34,8 @@ Each test allocates a unique proxy port to avoid conflicts:
 
 ```pseudo
 BEFORE ALL TESTS:
-  port_base = allocate_port_range(count: 8)
-  # Tests use port_base + 0 through port_base + 7
+  port_base = allocate_port_range(count: 11)
+  # Tests use port_base + 0 through port_base + 10
 ```
 
 ---
@@ -967,6 +967,263 @@ ASSERT message_frames[0].message.msgSerial == message_frames[1].message.msgSeria
 
 # Successful resume: connectionId preserved
 ASSERT ws_connects[1].queryParams["resume"] IS NOT null
+```
+
+### Cleanup
+
+```pseudo
+client.connection.close()
+AWAIT_STATE client.connection.state == ConnectionState.closed
+  WITH timeout: 10s
+session.close()
+```
+
+---
+
+## Test 24: RTN16d - Successful recovery preserves connectionId and updates connectionKey
+
+| Spec | Requirement |
+|------|-------------|
+| RTN16d | After a connection has been successfully recovered, Connection#id should be identical to the id of the connection that was recovered, and Connection#key should have been updated to the ConnectionDetails#connectionKey provided in the CONNECTED ProtocolMessage |
+| RTN16k | The first connection with a `recover` option should add a `recover` querystring param set from the connectionKey component of the recoveryKey |
+
+Tests that when a client is instantiated with a `recover` option containing a valid recovery key obtained from a previous connection, the SDK sends the `recover` query parameter, and after successful recovery the connectionId is preserved and the connectionKey is updated.
+
+**Unit test counterpart:** `connection_recovery_test.md` > RTN16k, RTN16g
+
+### Setup
+
+**Step 1: Establish an initial connection and obtain a recovery key.**
+
+Use a direct proxy session (passthrough, no rules) to connect to the sandbox, attach a channel, and capture the recovery key.
+
+```pseudo
+session_1 = create_proxy_session(
+  endpoint: "sandbox",
+  port: port_base + 8,
+  rules: []
+)
+
+client_1 = Realtime(options: ClientOptions(
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
+  endpoint: "localhost",
+  port: port_base + 8,
+  tls: false,
+  useBinaryProtocol: false,
+  autoConnect: false
+))
+```
+
+**Step 2: Create a second client using the recovery key.**
+
+A second proxy session is used so we can inspect the `recover` query parameter in the log.
+
+```pseudo
+session_2 = create_proxy_session(
+  endpoint: "sandbox",
+  port: port_base + 9,
+  rules: []
+)
+```
+
+### Test Steps
+
+```pseudo
+# --- Phase 1: Obtain recovery key from first client ---
+
+client_1.connect()
+AWAIT_STATE client_1.connection.state == ConnectionState.connected
+  WITH timeout: 15s
+
+original_connection_id = client_1.connection.id
+original_connection_key = client_1.connection.key
+ASSERT original_connection_id IS NOT null
+
+# Attach a channel so it appears in the recovery key
+channel_1 = client_1.channels.get(uniqueChannelName("recovery-test"))
+channel_1.attach()
+AWAIT_STATE channel_1.state == ChannelState.attached
+  WITH timeout: 15s
+
+# Get the recovery key
+recovery_key = client_1.connection.createRecoveryKey()
+ASSERT recovery_key IS NOT null
+
+# Close the first client's transport WITHOUT closing the Ably connection gracefully.
+# We want the server to keep the connection state alive for recovery.
+# Use session_1.trigger_action to forcibly close the WebSocket.
+session_1.trigger_action({ type: "close" })
+
+# Wait for the client to detect the disconnect
+AWAIT_STATE client_1.connection.state == ConnectionState.disconnected
+  WITH timeout: 10s
+
+# Close client_1 without allowing it to reconnect
+client_1.connection.close()
+AWAIT_STATE client_1.connection.state == ConnectionState.closed
+  WITH timeout: 10s
+session_1.close()
+
+# --- Phase 2: Recover using the recovery key ---
+
+client_2 = Realtime(options: ClientOptions(
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
+  endpoint: "localhost",
+  port: port_base + 9,
+  tls: false,
+  useBinaryProtocol: false,
+  autoConnect: false,
+  recover: recovery_key
+))
+
+client_2.connect()
+AWAIT_STATE client_2.connection.state == ConnectionState.connected
+  WITH timeout: 15s
+```
+
+### Assertions
+
+```pseudo
+# RTN16d: Connection ID is preserved (same as original connection)
+ASSERT client_2.connection.id == original_connection_id
+
+# RTN16d: Connection key is updated (new key from server)
+ASSERT client_2.connection.key IS NOT null
+ASSERT client_2.connection.key != original_connection_key
+
+# RTN16k: Verify the recover query parameter was sent via proxy log
+log = session_2.get_log()
+ws_connects = log.filter(e => e.type == "ws_connect")
+ASSERT ws_connects.length >= 1
+ASSERT ws_connects[0].queryParams["recover"] == original_connection_key
+
+# No resume param (this is recovery, not resume)
+ASSERT ws_connects[0].queryParams["resume"] IS null
+
+# No error on successful recovery
+ASSERT client_2.connection.errorReason IS null
+```
+
+### Cleanup
+
+```pseudo
+client_2.connection.close()
+AWAIT_STATE client_2.connection.state == ConnectionState.closed
+  WITH timeout: 10s
+session_2.close()
+```
+
+---
+
+## Test 25: RTN16l - Recovery failure treated as fresh connection (per RTN15c7)
+
+| Spec | Requirement |
+|------|-------------|
+| RTN16l | Recovery failures should be handled identically to resume failures, per RTN15c7, RTN15c5, and RTN15c4 |
+| RTN15c7 | If recovery/resume fails, server sends CONNECTED with a new connectionId and an error; client resets msgSerial to 0 |
+
+Tests that when a recovery attempt fails (the server responds with a new connectionId and an error because it cannot recover the connection), the SDK handles it as a fresh connection: it gets a new connectionId, sets the error on the connection, and the client remains in CONNECTED state.
+
+**Unit test counterpart:** `connection_recovery_test.md` > RTN16f
+
+### Setup
+
+**Proxy rules:** Replace the first CONNECTED response with one that has a different connectionId and an error, simulating the server rejecting the recovery attempt.
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: port_base + 10,
+  rules: [
+    {
+      "match": { "type": "ws_frame_to_client", "action": "CONNECTED", "count": 1 },
+      "action": {
+        "type": "replace",
+        "message": {
+          "action": 4,
+          "connectionId": "recovery-failed-new-id",
+          "connectionKey": "recovery-failed-new-key",
+          "connectionDetails": {
+            "connectionKey": "recovery-failed-new-key",
+            "clientId": null,
+            "maxMessageSize": 65536,
+            "maxInboundRate": 250,
+            "maxOutboundRate": 100,
+            "maxFrameSize": 524288,
+            "serverId": "test-server",
+            "connectionStateTtl": 120000,
+            "maxIdleInterval": 15000
+          },
+          "error": {
+            "code": 80008,
+            "statusCode": 400,
+            "message": "Unable to recover connection"
+          }
+        }
+      },
+      "times": 1,
+      "comment": "RTN16l: Replace CONNECTED with recovery failure (new connectionId + error 80008)"
+    }
+  ]
+)
+```
+
+**SDK config:** Use a fabricated recovery key. The connectionKey doesn't need to be valid since the proxy will replace the server response anyway.
+
+```pseudo
+fabricated_recovery_key = toJson({
+  "connectionKey": "stale-old-key",
+  "msgSerial": 99,
+  "channelSerials": {
+    "old-channel": "old-serial"
+  }
+})
+
+client = Realtime(options: ClientOptions(
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
+  endpoint: "localhost",
+  port: port_base + 10,
+  tls: false,
+  useBinaryProtocol: false,
+  autoConnect: false,
+  recover: fabricated_recovery_key
+))
+```
+
+### Test Steps
+
+```pseudo
+# Connect with the fabricated recovery key
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+  WITH timeout: 15s
+```
+
+### Assertions
+
+```pseudo
+# RTN16l + RTN15c7: Connection got a new ID (recovery failed)
+ASSERT client.connection.id == "recovery-failed-new-id"
+ASSERT client.connection.key == "recovery-failed-new-key"
+
+# RTN15c7: Error is set on the connection indicating recovery failure
+ASSERT client.connection.errorReason IS NOT null
+ASSERT client.connection.errorReason.code == 80008
+
+# Connection is still CONNECTED (not FAILED — the server gave a new connection)
+ASSERT client.connection.state == ConnectionState.connected
+
+# Verify the recover param was sent via proxy log
+log = session.get_log()
+ws_connects = log.filter(e => e.type == "ws_connect")
+ASSERT ws_connects.length >= 1
+ASSERT ws_connects[0].queryParams["recover"] == "stale-old-key"
 ```
 
 ### Cleanup

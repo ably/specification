@@ -62,7 +62,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSA1 | Basic Auth requires HTTPS | Yes — `rest/unit/auth/auth_scheme.md` |
 | RSA2 | Basic Auth default | Yes — `rest/unit/auth/auth_scheme.md` |
 | RSA3 | Token Auth support (RSA3a–RSA3d) | Yes — `rest/unit/auth/auth_scheme.md` |
-| RSA4 | Token Auth selection logic (RSA4a–RSA4g) | Partial — `rest/unit/auth/auth_scheme.md` covers RSA4, RSA4b; `rest/unit/auth/token_renewal.md` covers RSA4b4; `realtime/unit/auth/connection_auth_test.md` covers RSA4; `realtime/unit/connection/error_reason_test.md` covers RSA4c1, RSA4d |
+| RSA4 | Token Auth selection logic (RSA4a–RSA4g) | Yes — `rest/unit/auth/auth_scheme.md` covers RSA4, RSA4b; `rest/unit/auth/token_renewal.md` covers RSA4b4; `realtime/unit/auth/connection_auth_test.md` covers RSA4; `realtime/unit/connection/error_reason_test.md` covers RSA4c1, RSA4d; `realtime/unit/auth/token_expiry_non_renewable_test.md` covers RSA4a, RSA4a1, RSA4a2; `realtime/unit/auth/auth_callback_errors_test.md` covers RSA4c, RSA4c1–RSA4c3, RSA4d, RSA4e, RSA4f |
 | RSA5 | TTL for tokens | Yes — `rest/unit/auth/token_request_params.md`, `rest/integration/auth.md` |
 | RSA6 | Capability JSON | Yes — `rest/unit/auth/token_request_params.md`, `rest/integration/auth.md` |
 | RSA7 | ClientId and authenticated clients (RSA7a–RSA7e2) | Partial — `rest/unit/auth/client_id.md` covers RSA7, RSA7a–RSA7c; `realtime/integration/auth.md` covers RSA7 |
@@ -136,7 +136,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RSF1 | Robustness principle | |
+| RSF1 | Robustness principle | Yes — `realtime/unit/connection/forwards_compatibility_test.md` |
 
 ---
 
@@ -181,10 +181,10 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN13 | Ping function (RTN13a–RTN13e) | Yes — `realtime/unit/connection/connection_ping_test.md` |
 | RTN14 | Connection opening failures (RTN14a–RTN14g) | Yes — `realtime/unit/connection/connection_open_failures_test.md` |
 | RTN15 | Connection failures when CONNECTED (RTN15a–RTN15j) | Yes — `realtime/unit/connection/connection_failures_test.md` |
-| RTN16 | Connection recovery (RTN16a–RTN16m1) | Partial — `realtime/unit/connection/error_reason_test.md` covers RTN16e |
+| RTN16 | Connection recovery (RTN16a–RTN16m1) | Yes — `realtime/unit/connection/connection_recovery_test.md` covers RTN16d, RTN16f, RTN16f1, RTN16g, RTN16g1, RTN16g2, RTN16i, RTN16j, RTN16k, RTN16l; `realtime/integration/proxy/connection_resume.md` covers RTN16d, RTN16l; `realtime/unit/connection/error_reason_test.md` covers RTN16e |
 | RTN17 | Domain selection and fallback (RTN17a–RTN17j) | Yes — `realtime/unit/connection/fallback_hosts_test.md` |
 | RTN19 | Transport state side effects (RTN19a–RTN19b) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN19a, RTN19a2, RTN19b |
-| RTN20 | OS network change handling (RTN20a–RTN20c) | |
+| RTN20 | OS network change handling (RTN20a–RTN20c) | Yes — `realtime/unit/connection/network_change_test.md` |
 | RTN21 | ConnectionDetails override defaults | Partial — `realtime/unit/connection/update_events_test.md` covers RTN21; `realtime/integration/connection_lifecycle_test.md` covers RTN21 |
 | RTN22 | Re-authentication request handling (RTN22a) | Yes — `realtime/unit/connection/server_initiated_reauth_test.md` |
 | RTN23 | Heartbeats (RTN23a–RTN23b) | Yes — `realtime/unit/connection/heartbeat_test.md` |
@@ -228,7 +228,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL19 | Base payload storage for vcdiff (RTL19a–RTL19c) | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
 | RTL20 | Last message ID storage | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
 | RTL21 | Message ordering in arrays | Yes — `realtime/unit/channels/channel_delta_decoding.md` |
-| RTL22 | Message filtering (RTL22a–RTL22d) | |
+| RTL22 | Message filtering (RTL22a–RTL22d) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL23 | Name attribute | Yes — `realtime/unit/channels/channel_attributes.md` |
 | RTL24 | ErrorReason attribute | Yes — `realtime/unit/channels/channel_attributes.md` |
 | RTL25 | WhenState function (RTL25a–RTL25b) | Yes — `realtime/unit/channels/channel_when_state_test.md` |
@@ -277,13 +277,13 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RTB1 | Retry timeout calculation (RTB1a–RTB1b) | |
+| RTB1 | Retry timeout calculation (RTB1a–RTB1b) | Yes — `realtime/unit/connection/backoff_jitter_test.md` |
 
 ### Forwards Compatibility (Realtime)
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RTF1 | Robustness principle | |
+| RTF1 | Robustness principle | Yes — `realtime/unit/connection/forwards_compatibility_test.md` |
 
 ### Wrapper SDK Proxy Client
 
@@ -302,7 +302,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSH3 | Activation state machine (RSH3a–RSH3g3) | |
 | RSH4–RSH5 | Event queueing and sequential handling | |
 | RSH6 | Push device authentication (RSH6a–RSH6b) | |
-| RSH7 | Push channels (RSH7a–RSH7e) | |
+| RSH7 | Push channels (RSH7a–RSH7e) | Yes — `rest/unit/push/push_channels.md`, `rest/integration/push_channels.md` |
 | RSH8 | LocalDevice (RSH8a–RSH8k2) | |
 
 ---
@@ -340,7 +340,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | TC1–TC2 | Capability | |
 | CD1–CD2 | ConnectionDetails | |
 | CP1–CP2 | ChannelProperties | |
-| CHD1–CHD2, CHS1–CHS2, CHO1–CHO2, CHM1–CHM2 | Channel status types | |
+| CHD1–CHD2, CHS1–CHS2, CHO1–CHO2, CHM1–CHM2 | Channel status types | Yes — `rest/unit/channel/rest_channel_attributes.md` |
 | BAR1–BAR2 | BatchResult | Partial — `rest/unit/batch_presence.md` covers BAR2 |
 | BSP1–BSP2 | BatchPublishSpec | |
 | BPR1–BPR2, BPF1–BPF2 | BatchPublish result types | |
@@ -348,7 +348,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | PBR1–PBR2 | PublishResult | Yes — `realtime/unit/channels/channel_publish.md` |
 | UDR1–UDR2 | UpdateDeleteResult | Yes — `rest/unit/types/mutable_message_types.md` |
 | TRT1–TRT2, TRS1–TRS2, TRF1–TRF2 | TokenRevocation types | Yes — `rest/unit/auth/revoke_tokens.md` |
-| MFI1–MFI2 | MessageFilter | |
+| MFI1–MFI2 | MessageFilter | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | REX1–REX2 | ReferenceExtras | |
 
 ### Option Types
@@ -424,13 +424,13 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **REST encryption** (RSE) | 2 | 0 | None |
 | **REST annotations** (RSAN) | 3 | 3 | Full |
 | **Realtime client** (RTC) | 14 | 14 | Full |
-| **Connection** (RTN) | 23 | 18 | Partial |
+| **Connection** (RTN) | 23 | 19 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
 | **Realtime channel** (RTL) | 28 | 26 | Partial |
 | **Realtime presence** (RTP) | 15 | 15 | Full |
 | **Realtime annotations** (RTAN) | 5 | 5 | Full |
 | **EventEmitter** (RTE) | 6 | 0 | None |
-| **Backoff/jitter** (RTB) | 1 | 0 | None |
+| **Backoff/jitter** (RTB) | 1 | 1 | Full |
 | **Wrapper SDK** (WP) | 7 | 0 | None |
 | **Push notifications** (RSH) | 8 | 1 | Partial |
 | **Plugins** (PC/PT/VD) | 3 | 2 | Partial |
@@ -439,4 +439,4 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Push types** | 3 | 0 | None |
 | **Introspection** (CR) | 1 | 0 | None |
 | **Defaults** (DF) | 1 | 0 | None |
-| **Compatibility** (RSF/RTF) | 2 | 0 | None |
+| **Compatibility** (RSF/RTF) | 2 | 2 | Full |
