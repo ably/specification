@@ -1531,6 +1531,70 @@ CLOSE_CLIENT(client)
 
 ---
 
+## RTN7e - Error passed to publish callback represents the reason for the state change
+
+**Spec requirement:** The client should consider the delivery of those messages as failed, meaning their callback should be called with an error representing the reason for the state change.
+
+Tests that the error passed to the publish callback contains the same reason that caused the connection state change (e.g. the ErrorInfo from a fatal ERROR ProtocolMessage).
+
+### Setup
+```pseudo
+channel_name = "test-RTN7e-error-reason-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+    ELSE IF msg.action == MESSAGE:
+      # Do NOT send ACK — leave message pending
+      # Send a fatal error to force FAILED state with a specific reason
+      mock_ws.active_connection.send_to_client_and_close(ProtocolMessage(
+        action: ERROR,
+        error: ErrorInfo(code: 80019, statusCode: 400, message: "Connection closed due to admin action")
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+# Publish — server responds with fatal ERROR instead of ACK
+publish_future = channel.publish(name: "pending", data: "data")
+
+AWAIT_STATE client.connection.state == ConnectionState.failed
+
+# The pending publish should fail with the same error that caused the state change
+AWAIT publish_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+# The error should represent the reason for the state change
+ASSERT error IS NOT null
+ASSERT error.code == 80019
+ASSERT error.statusCode == 400
+ASSERT error.message == "Connection closed due to admin action"
+
+# Verify the connection's errorReason matches
+ASSERT client.connection.errorReason IS NOT null
+ASSERT client.connection.errorReason.code == 80019
+CLOSE_CLIENT(client)
+```
+
+---
+
 ## RTN7d - Pending publishes fail on DISCONNECTED when queueMessages is false
 
 | Spec | Requirement |

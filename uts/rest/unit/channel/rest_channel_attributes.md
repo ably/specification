@@ -1,6 +1,6 @@
 # REST Channel Attributes and Methods
 
-Spec points: `RSL7`, `RSL8`, `RSL8a`, `RSL9`
+Spec points: `RSL7`, `RSL8`, `RSL8a`, `RSL9`, `CHD2`, `CHD2a`, `CHD2b`, `CHS2`, `CHS2a`, `CHS2b`, `CHO2`, `CHO2a`, `CHM2`, `CHM2a`, `CHM2b`, `CHM2c`, `CHM2d`, `CHM2e`, `CHM2f`, `CHM2g`, `CHM2h`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -277,4 +277,167 @@ ASSERT result.status.occupancy IS NOT null
 ASSERT result.status.occupancy.metrics.connections == 5
 ASSERT result.status.occupancy.metrics.publishers == 2
 ASSERT result.status.occupancy.metrics.subscribers == 3
+```
+
+---
+
+## CHD2, CHS2, CHO2, CHM2 - status() response parses all ChannelMetrics fields
+
+| Spec | Requirement |
+|------|-------------|
+| CHD2 | ChannelDetails attributes: channelId (CHD2a), status (CHD2b) |
+| CHS2 | ChannelStatus attributes: isActive (CHS2a), occupancy (CHS2b) |
+| CHO2 | ChannelOccupancy attributes: metrics (CHO2a) |
+| CHM2 | ChannelMetrics attributes: connections (CHM2a), presenceConnections (CHM2b), presenceMembers (CHM2c), presenceSubscribers (CHM2d), publishers (CHM2e), subscribers (CHM2f), objectPublishers (CHM2g), objectSubscribers (CHM2h) |
+
+Tests that status() parses the complete set of ChannelMetrics fields from the response, including the newer objectPublishers and objectSubscribers fields.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200, {
+      "channelId": "test-CHM2-all-fields",
+      "status": {
+        "isActive": true,
+        "occupancy": {
+          "metrics": {
+            "connections": 10,
+            "presenceConnections": 7,
+            "presenceMembers": 4,
+            "presenceSubscribers": 3,
+            "publishers": 6,
+            "subscribers": 8,
+            "objectPublishers": 2,
+            "objectSubscribers": 5
+          }
+        }
+      }
+    })
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret"
+))
+
+channel = client.channels.get("test-CHM2-all-fields")
+```
+
+### Test Steps
+```pseudo
+result = AWAIT channel.status()
+```
+
+### Assertions
+```pseudo
+# CHD2a: channelId
+ASSERT result.channelId == "test-CHM2-all-fields"
+
+# CHD2b + CHS2a: status.isActive
+ASSERT result.status IS NOT null
+ASSERT result.status.isActive == true
+
+# CHS2b + CHO2a: occupancy.metrics
+ASSERT result.status.occupancy IS NOT null
+ASSERT result.status.occupancy.metrics IS NOT null
+
+metrics = result.status.occupancy.metrics
+
+# CHM2a: connections
+ASSERT metrics.connections == 10
+
+# CHM2b: presenceConnections
+ASSERT metrics.presenceConnections == 7
+
+# CHM2c: presenceMembers
+ASSERT metrics.presenceMembers == 4
+
+# CHM2d: presenceSubscribers
+ASSERT metrics.presenceSubscribers == 3
+
+# CHM2e: publishers
+ASSERT metrics.publishers == 6
+
+# CHM2f: subscribers
+ASSERT metrics.subscribers == 8
+
+# CHM2g: objectPublishers
+ASSERT metrics.objectPublishers == 2
+
+# CHM2h: objectSubscribers
+ASSERT metrics.objectSubscribers == 5
+```
+
+---
+
+## CHM2 - status() response with zero and missing metric fields
+
+**Spec requirement:** ChannelMetrics fields (CHM2a-h) are integers. When the server response contains zero values or omits newer fields, the parsed result should default missing fields to 0.
+
+Tests that status() handles zero-valued and absent metric fields gracefully, defaulting missing fields to 0.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    # Response omits objectPublishers and objectSubscribers (CHM2g, CHM2h)
+    # to simulate an older server that does not include these fields.
+    # All other metrics are explicitly zero.
+    req.respond_with(200, {
+      "channelId": "test-CHM2-defaults",
+      "status": {
+        "isActive": false,
+        "occupancy": {
+          "metrics": {
+            "connections": 0,
+            "presenceConnections": 0,
+            "presenceMembers": 0,
+            "presenceSubscribers": 0,
+            "publishers": 0,
+            "subscribers": 0
+          }
+        }
+      }
+    })
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret"
+))
+
+channel = client.channels.get("test-CHM2-defaults")
+```
+
+### Test Steps
+```pseudo
+result = AWAIT channel.status()
+```
+
+### Assertions
+```pseudo
+# CHD2a: channelId
+ASSERT result.channelId == "test-CHM2-defaults"
+
+# CHS2a: isActive can be false
+ASSERT result.status.isActive == false
+
+metrics = result.status.occupancy.metrics
+
+# CHM2a-f: explicit zero values are parsed correctly
+ASSERT metrics.connections == 0
+ASSERT metrics.presenceConnections == 0
+ASSERT metrics.presenceMembers == 0
+ASSERT metrics.presenceSubscribers == 0
+ASSERT metrics.publishers == 0
+ASSERT metrics.subscribers == 0
+
+# CHM2g-h: missing fields default to 0
+ASSERT metrics.objectPublishers == 0
+ASSERT metrics.objectSubscribers == 0
 ```
