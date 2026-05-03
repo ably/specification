@@ -188,48 +188,51 @@ channel = client.channels.get(channel_name)
 
 ### Test Steps
 ```pseudo
-# Record start time
-time_before = now()
-
-# Publish some messages
+# Publish early messages
 AWAIT channel.publish(name: "early1", data: "e1")
 AWAIT channel.publish(name: "early2", data: "e2")
 
-# Record middle time
-time_middle = now()
+# Small delay to help ensure server assigns distinct timestamps between batches
+WAIT 2ms
 
+# Publish late messages
 AWAIT channel.publish(name: "late1", data: "l1")
 AWAIT channel.publish(name: "late2", data: "l2")
 
-# Record end time
-time_after = now()
-
-# Poll until all messages appear
-poll_until(
+# Poll until all messages appear and retrieve with server timestamps
+all_messages = poll_until(
   condition: FUNCTION() =>
     result = AWAIT channel.history()
-    RETURN result.items.length == 4,
+    RETURN result.items IF result.items.length == 4 ELSE null,
   interval: 500ms,
   timeout: 10s
 )
 
-# Query only early messages
+# Use server-assigned timestamps to define the time boundary.
+# Client-side now() must not be used here — client and server clocks may
+# differ, and publishes may complete within the same client-clock millisecond.
+early_timestamps = all_messages.filter(m => m.name STARTS WITH "early").map(m => m.timestamp)
+late_timestamps  = all_messages.filter(m => m.name STARTS WITH "late").map(m => m.timestamp)
+
+max_early_ts = max(early_timestamps)
+min_late_ts  = min(late_timestamps)
+time_boundary = floor((max_early_ts + min_late_ts) / 2)
+
+# Query only early messages (up to the boundary)
 early_history = AWAIT channel.history(
-  start: time_before,
-  end: time_middle
+  start: max_early_ts - 1000,
+  end: time_boundary
 )
 
-# Query only late messages
+# Query only late messages (from the boundary onwards)
 late_history = AWAIT channel.history(
-  start: time_middle,
-  end: time_after
+  start: time_boundary + 1,
+  end: min_late_ts + 1000
 )
 ```
 
 ### Assertions
 ```pseudo
-# Note: Due to timing precision, exact counts may vary
-# The key test is that filtering by time range works
 ASSERT early_history.items.length >= 1
 ASSERT late_history.items.length >= 1
 
