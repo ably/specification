@@ -140,6 +140,53 @@ session.close()
 
 ---
 
+## Test 6b: RTN15a - Unexpected disconnect triggers resume (TCP close without close frame)
+
+| Spec | Requirement |
+|------|-------------|
+| RTN15a | If transport is disconnected unexpectedly, attempt resume |
+
+Same as Test 6, but the proxy closes the underlying TCP connection without
+sending a WebSocket close frame. The SDK should detect the TCP FIN and
+transition to disconnected with minimal delay — identical to the close-frame
+case.
+
+### Setup
+
+**Proxy rules:** Close the underlying TCP connection (no WebSocket close
+frame) after a 1-second delay.
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: port_base + 0,
+  rules: [
+    {
+      match: { type: "delay_after_ws_connect", delayMs: 1000 },
+      action: { type: "disconnect" },
+      times: 1,
+      comment: "RTN15a: Close TCP (no close frame) after 1s to trigger unexpected disconnect"
+    }
+  ]
+)
+```
+
+**SDK config:** Same as Test 6.
+
+### Test Steps
+
+Same as Test 6.
+
+### Assertions
+
+Same as Test 6.
+
+### Cleanup
+
+Same as Test 6.
+
+---
+
 ## Test 7: RTN15b, RTN15c6 - Resume preserves connectionId
 
 | Spec | Requirement |
