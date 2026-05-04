@@ -505,6 +505,88 @@ ASSERT mock_http.captured_requests[2].url.host == "main.realtime.ably.net"
 
 ---
 
+## RSC15f - Expired preferred fallback host not resurrected by late in-flight success
+
+**Spec requirement:** After `fallbackRetryTimeout` has elapsed the preference must be un-stored and future requests must restart the fallback sequence from the primary host. A late-arriving successful response against the previously-preferred fallback must not re-establish it as the preference.
+
+Tests that a request that completes successfully against a fallback *after* `fallbackRetryTimeout` has expired does not re-pin that fallback as the preferred host.
+
+### Setup
+```pseudo
+mock_http = MockHttpClient()
+
+# Request handler: primary fails on first attempt, all others succeed.
+# Second request (to cached fallback) is NOT responded to immediately —
+# we hold the PendingRequest and respond later, after the timeout expires.
+held_request = null
+request_index = 0
+
+mock_http.onRequest = (req) =>
+  request_index += 1
+  if request_index == 1
+    # First request to primary — fail to trigger fallback
+    req.respond_with(500, { "error": { "message": "fail", "code": 50000, "statusCode": 500 } })
+  else if request_index == 2
+    # First fallback — succeed, caches this host
+    req.respond_with(200, [1000])
+  else if request_index == 3
+    # Second request goes to cached fallback — hold it (don't respond yet)
+    held_request = req
+  else
+    # All subsequent requests — succeed
+    req.respond_with(200, [1000])
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  fallbackRetryTimeout: 100  # 100ms for testing
+))
+```
+
+### Test Steps
+```pseudo
+# Request 1+2: primary fails → fallback succeeds → fallback cached
+AWAIT client.time()
+
+# Request 3: goes to cached fallback, but we hold the response
+request_future = client.time()   # starts but does not complete
+
+# Advance time past fallbackRetryTimeout so the cache expires
+WAIT 150 milliseconds
+
+# Request 4: cache expired → should try primary again
+AWAIT client.time()
+
+# Now let the held request (3) complete successfully
+held_request.respond_with(200, [1000])
+AWAIT request_future
+
+# Request 5: the late success from request 3 must NOT have re-pinned
+# the fallback — this request should go to primary again
+AWAIT client.time()
+```
+
+### Assertions
+```pseudo
+ASSERT mock_http.captured_requests.length == 5
+
+# Requests 1+2: primary fail → fallback success
+ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT mock_http.captured_requests[1].url.host != "main.realtime.ably.net"
+
+fallback_host = mock_http.captured_requests[1].url.host
+
+# Request 3: went to cached fallback (held, not yet responded)
+ASSERT mock_http.captured_requests[2].url.host == fallback_host
+
+# Request 4: after timeout expiry, primary is tried again
+ASSERT mock_http.captured_requests[3].url.host == "main.realtime.ably.net"
+
+# Request 5: late success from request 3 did NOT re-pin fallback
+ASSERT mock_http.captured_requests[4].url.host == "main.realtime.ably.net"
+```
+
+---
+
 # REC1 - Primary Domain Configuration
 
 ## REC1a - Default primary domain

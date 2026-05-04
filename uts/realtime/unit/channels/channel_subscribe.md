@@ -1,6 +1,6 @@
 # RealtimeChannel Subscribe and Unsubscribe Tests
 
-Spec points: `RTL7`, `RTL7a`, `RTL7b`, `RTL7g`, `RTL7h`, `RTL7f`, `RTL8`, `RTL8a`, `RTL8b`, `RTL8c`, `RTL17`
+Spec points: `RTL7`, `RTL7a`, `RTL7b`, `RTL7g`, `RTL7h`, `RTL7f`, `RTL8`, `RTL8a`, `RTL8b`, `RTL8c`, `RTL17`, `RTL22`, `RTL22a`, `RTL22b`, `RTL22c`, `RTL22d`, `MFI1`, `MFI2`, `MFI2a`, `MFI2b`, `MFI2c`, `MFI2d`, `MFI2e`
 
 ## Test Type
 Unit test with mocked WebSocket
@@ -1044,5 +1044,483 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 # Existing subscription should be unaffected
 ASSERT length(received_messages) == 1
 ASSERT received_messages[0].data == "still-works"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL22a - Subscribe with MessageFilter matching name
+
+| Spec | Requirement |
+|------|-------------|
+| RTL22 | Methods must be provided for attaching and removing a listener which only executes when the message matches a set of criteria. |
+| RTL22a | The method must allow for filters matching one or more of: extras.ref.timeserial, extras.ref.type or name. See MFI1 for an object implementation. |
+| RTL22d | The method should use the MessageFilter object if possible and idiomatic for the language. |
+| MFI1 | Supplies filter options to subscribe as defined in RTL22. |
+| MFI2d | name - A string for checking if a message's name matches the supplied value. |
+
+Tests that subscribing with a MessageFilter specifying `name` delivers only messages whose name matches the filter.
+
+### Setup
+```pseudo
+channel_name = "test-RTL22a-name-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+filtered_messages = []
+filter = MessageFilter(name: "target-event")
+channel.subscribe(filter, (message) => {
+  filtered_messages.append(message)
+})
+
+# Server sends messages with different names
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "target-event", data: "match-1")
+  ]
+))
+
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "other-event", data: "no-match")
+  ]
+))
+
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "target-event", data: "match-2")
+  ]
+))
+
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: null, data: "no-name")
+  ]
+))
+```
+
+### Assertions
+```pseudo
+ASSERT length(filtered_messages) == 2
+ASSERT filtered_messages[0].name == "target-event"
+ASSERT filtered_messages[0].data == "match-1"
+ASSERT filtered_messages[1].name == "target-event"
+ASSERT filtered_messages[1].data == "match-2"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL22a - Subscribe with MessageFilter matching extras.ref.timeserial
+
+| Spec | Requirement |
+|------|-------------|
+| RTL22a | The method must allow for filters matching one or more of: extras.ref.timeserial, extras.ref.type or name. |
+| MFI2b | refTimeserial - A string for checking if a message's extras.ref.timeserial matches the supplied value. |
+
+Tests that subscribing with a MessageFilter specifying `refTimeserial` delivers only messages whose `extras.ref.timeserial` matches the filter value.
+
+### Setup
+```pseudo
+channel_name = "test-RTL22a-ref-timeserial-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+filtered_messages = []
+filter = MessageFilter(refTimeserial: "abc123@1700000000000-0")
+channel.subscribe(filter, (message) => {
+  filtered_messages.append(message)
+})
+
+# Message with matching extras.ref.timeserial
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "reply", data: "match", extras: {
+      "ref": {"timeserial": "abc123@1700000000000-0", "type": "com.ably.reply"}
+    })
+  ]
+))
+
+# Message with different extras.ref.timeserial
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "reply", data: "no-match", extras: {
+      "ref": {"timeserial": "xyz789@1700000000000-0", "type": "com.ably.reply"}
+    })
+  ]
+))
+
+# Message with no extras.ref at all
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "plain", data: "no-ref")
+  ]
+))
+
+# Another message with matching extras.ref.timeserial
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "reaction", data: "match-2", extras: {
+      "ref": {"timeserial": "abc123@1700000000000-0", "type": "com.ably.reaction"}
+    })
+  ]
+))
+```
+
+### Assertions
+```pseudo
+ASSERT length(filtered_messages) == 2
+ASSERT filtered_messages[0].data == "match"
+ASSERT filtered_messages[1].data == "match-2"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL22b - Subscribe with MessageFilter isRef false delivers only messages without extras.ref
+
+| Spec | Requirement |
+|------|-------------|
+| RTL22b | The method must allow for matching only messages which do not have extras.ref. |
+| MFI2a | isRef - A boolean for checking if a message contains an extras.ref field. |
+
+Tests that subscribing with a MessageFilter specifying `isRef: false` delivers only messages that do NOT have an `extras.ref` field.
+
+### Setup
+```pseudo
+channel_name = "test-RTL22b-isref-false-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+filtered_messages = []
+filter = MessageFilter(isRef: false)
+channel.subscribe(filter, (message) => {
+  filtered_messages.append(message)
+})
+
+# Message WITHOUT extras.ref (no extras at all)
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "plain", data: "no-extras")
+  ]
+))
+
+# Message WITH extras.ref — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "reply", data: "has-ref", extras: {
+      "ref": {"timeserial": "abc123@1700000000000-0", "type": "com.ably.reply"}
+    })
+  ]
+))
+
+# Message with extras but no ref field — should be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "annotated", data: "extras-no-ref", extras: {
+      "headers": {"custom-key": "custom-value"}
+    })
+  ]
+))
+
+# Another message WITH extras.ref — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "reaction", data: "also-has-ref", extras: {
+      "ref": {"timeserial": "xyz789@1700000000000-0", "type": "com.ably.reaction"}
+    })
+  ]
+))
+```
+
+### Assertions
+```pseudo
+# Only messages without extras.ref should be delivered
+ASSERT length(filtered_messages) == 2
+ASSERT filtered_messages[0].name == "plain"
+ASSERT filtered_messages[0].data == "no-extras"
+ASSERT filtered_messages[1].name == "annotated"
+ASSERT filtered_messages[1].data == "extras-no-ref"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL22c - Subscribe with MessageFilter matching multiple criteria (name + refType)
+
+| Spec | Requirement |
+|------|-------------|
+| RTL22c | The listener must only execute if all provided criteria are met. |
+| MFI2c | refType - A string for checking if a message's extras.ref.type matches the supplied value. |
+| MFI2d | name - A string for checking if a message's name matches the supplied value. |
+
+Tests that when a MessageFilter specifies multiple criteria (name AND refType), only messages matching ALL criteria are delivered.
+
+### Setup
+```pseudo
+channel_name = "test-RTL22c-multi-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+filtered_messages = []
+filter = MessageFilter(name: "comment", refType: "com.ably.reply")
+channel.subscribe(filter, (message) => {
+  filtered_messages.append(message)
+})
+
+# Message matching BOTH name AND refType — should be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "comment", data: "both-match", extras: {
+      "ref": {"timeserial": "abc@1700000000000-0", "type": "com.ably.reply"}
+    })
+  ]
+))
+
+# Message matching name but NOT refType — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "comment", data: "name-only", extras: {
+      "ref": {"timeserial": "def@1700000000000-0", "type": "com.ably.reaction"}
+    })
+  ]
+))
+
+# Message matching refType but NOT name — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "update", data: "type-only", extras: {
+      "ref": {"timeserial": "ghi@1700000000000-0", "type": "com.ably.reply"}
+    })
+  ]
+))
+
+# Message matching NEITHER — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "update", data: "neither")
+  ]
+))
+
+# Another message matching BOTH — should be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "comment", data: "both-match-2", extras: {
+      "ref": {"timeserial": "jkl@1700000000000-0", "type": "com.ably.reply"}
+    })
+  ]
+))
+```
+
+### Assertions
+```pseudo
+# Only messages matching ALL criteria (name == "comment" AND refType == "com.ably.reply")
+ASSERT length(filtered_messages) == 2
+ASSERT filtered_messages[0].data == "both-match"
+ASSERT filtered_messages[1].data == "both-match-2"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL22a, MFI2e - Subscribe with MessageFilter matching clientId
+
+| Spec | Requirement |
+|------|-------------|
+| RTL22a | The method must allow for filters matching one or more of: extras.ref.timeserial, extras.ref.type or name. |
+| MFI2e | clientId - A string for checking if a message's clientId matches the supplied value. |
+
+Tests that subscribing with a MessageFilter specifying `clientId` delivers only messages whose clientId matches the filter value.
+
+### Setup
+```pseudo
+channel_name = "test-RTL22a-clientid-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: channel_name
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+AWAIT channel.attach()
+
+filtered_messages = []
+filter = MessageFilter(clientId: "user-42")
+channel.subscribe(filter, (message) => {
+  filtered_messages.append(message)
+})
+
+# Message with matching clientId
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "chat", data: "hello", clientId: "user-42")
+  ]
+))
+
+# Message with different clientId — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "chat", data: "hi", clientId: "user-99")
+  ]
+))
+
+# Message with no clientId — should NOT be delivered
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "system", data: "broadcast")
+  ]
+))
+
+# Another message with matching clientId
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: MESSAGE,
+  channel: channel_name,
+  messages: [
+    Message(name: "chat", data: "world", clientId: "user-42")
+  ]
+))
+```
+
+### Assertions
+```pseudo
+ASSERT length(filtered_messages) == 2
+ASSERT filtered_messages[0].data == "hello"
+ASSERT filtered_messages[0].clientId == "user-42"
+ASSERT filtered_messages[1].data == "world"
+ASSERT filtered_messages[1].clientId == "user-42"
 CLOSE_CLIENT(client)
 ```

@@ -1,6 +1,6 @@
 # Channel Fault Proxy Integration Tests
 
-Spec points: `RTL4f`, `RTL4h`, `RTL5f`, `RTL13a`, `RTL14`
+Spec points: `RTL4f`, `RTL5f`, `RTL13a`, `RTL14`, `RTL12`, `RTL3d`
 
 ## Test Type
 
@@ -12,7 +12,7 @@ See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastr
 
 ## Corresponding Unit Tests
 
-- `uts/test/realtime/unit/channels/channel_attach.md` -- RTL4f (attach timeout), RTL4h (server error on attach)
+- `uts/test/realtime/unit/channels/channel_attach.md` -- RTL4f (attach timeout)
 - `uts/test/realtime/unit/channels/channel_detach.md` -- RTL5f (detach timeout)
 - `uts/test/realtime/unit/channels/channel_server_initiated_detach.md` -- RTL13a (unsolicited DETACHED triggers reattach)
 - `uts/test/realtime/unit/channels/channel_error.md` -- RTL14 (channel ERROR transitions to FAILED)
@@ -78,7 +78,9 @@ session = create_proxy_session(
 )
 
 client = Realtime(options: ClientOptions(
-  key: api_key,
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
   endpoint: "localhost",
   port: session.proxy_port,
   tls: false,
@@ -137,32 +139,36 @@ ASSERT channel_state_changes CONTAINS_IN_ORDER [
 # Connection remains CONNECTED (attach timeout is channel-scoped)
 ASSERT client.connection.state == ConnectionState.connected
 
-# Proxy log confirms the ATTACH was suppressed (never forwarded to server)
+# Proxy log confirms the ATTACH frames were received but suppressed
+# Note: The proxy logs frames before applying rules, so suppressed frames still
+# appear in the log with `ruleMatched` set.
 log = session.get_log()
-attach_frames_to_server = log.filter(e =>
+attach_frames = log.filter(e =>
   e.type == "ws_frame" AND
   e.direction == "client_to_server" AND
   e.message.action == 10 AND
   e.message.channel == channel_name
 )
-ASSERT attach_frames_to_server.length == 0
+ASSERT attach_frames.length >= 1
+# All ATTACH frames were caught by the suppress rule
+FOR frame IN attach_frames:
+  ASSERT frame.ruleMatched IS NOT null
 ```
 
 ---
 
-## Test 14: RTL4h / RTL14 -- Server responds with ERROR to ATTACH
+## Test 14: RTL14 -- Server responds with ERROR to ATTACH
 
 | Spec | Requirement |
 |------|-------------|
-| RTL4h | If an ERROR ProtocolMessage is received for the channel during ATTACHING, the channel transitions to FAILED |
-| RTL14 | If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to the FAILED state |
+| RTL14 | If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to the FAILED state and the RealtimeChannel.errorReason should be set |
 
 Tests that when the proxy replaces the server's ATTACHED response with a channel-scoped ERROR, the SDK transitions the channel to FAILED with the injected error. The connection should remain CONNECTED.
 
 ### Setup
 
 ```pseudo
-channel_name = "test-RTL4h-${random_id()}"
+channel_name = "test-RTL14-error-on-attach-${random_id()}"
 
 # Create proxy session that replaces ATTACHED with channel ERROR
 session = create_proxy_session(
@@ -179,12 +185,14 @@ session = create_proxy_session(
       }
     },
     "times": 1,
-    "comment": "RTL4h: Replace ATTACHED with channel ERROR"
+    "comment": "RTL14: Replace ATTACHED with channel ERROR"
   }]
 )
 
 client = Realtime(options: ClientOptions(
-  key: api_key,
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
   endpoint: "localhost",
   port: session.proxy_port,
   tls: false,
@@ -265,7 +273,9 @@ session = create_proxy_session(
 )
 
 client = Realtime(options: ClientOptions(
-  key: api_key,
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
   endpoint: "localhost",
   port: session.proxy_port,
   tls: false,
@@ -361,7 +371,9 @@ session = create_proxy_session(
 )
 
 client = Realtime(options: ClientOptions(
-  key: api_key,
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
   endpoint: "localhost",
   port: session.proxy_port,
   tls: false,
@@ -454,7 +466,9 @@ session = create_proxy_session(
 )
 
 client = Realtime(options: ClientOptions(
-  key: api_key,
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
   endpoint: "localhost",
   port: session.proxy_port,
   tls: false,
@@ -517,6 +531,226 @@ ASSERT length(channel_state_changes) == 1
 
 # Connection remains CONNECTED (channel-scoped ERROR does not close connection)
 ASSERT client.connection.state == ConnectionState.connected
+```
+
+---
+
+## Test 24: RTL12 -- ATTACHED with resumed=false on already-attached channel
+
+| Spec | Requirement |
+|------|-------------|
+| RTL12 | An attached channel may receive an additional ATTACHED ProtocolMessage from Ably at any point. If and only if the resumed flag is false, this should result in the channel emitting an UPDATE event with a ChannelStateChange object. The ChannelStateChange should have both previous and current set to "attached", the reason set to the error from the ATTACHED message (if any), and the resumed attribute set per the RESUMED bitflag. The library must NOT emit an ATTACHED event (RTL2g) |
+
+Tests that when the proxy injects an ATTACHED message with resumed=false (RESUMED bit not set) for an already-attached channel, the SDK emits an UPDATE event (not ATTACHED) with a ChannelStateChange reflecting current=attached, previous=attached, resumed=false, and the injected error reason. The channel remains attached throughout.
+
+### Setup
+
+```pseudo
+channel_name = "test-RTL12-${random_id()}"
+
+# Create proxy session with clean passthrough
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: []
+)
+
+client = Realtime(options: ClientOptions(
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
+  endpoint: "localhost",
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false,
+  autoConnect: false
+))
+
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+
+```pseudo
+# Connect and attach normally through proxy
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+  WITH timeout: 15 seconds
+
+AWAIT channel.attach()
+ASSERT channel.state == ChannelState.attached
+
+# Listen for both 'update' and 'attached' events
+update_events = []
+attached_events = []
+channel.on("update", (change) => {
+  update_events.append(change)
+})
+channel.on("attached", (change) => {
+  attached_events.append(change)
+})
+
+# Inject an ATTACHED message with resumed=false and an error via imperative action
+session.trigger_action({
+  type: "inject_to_client",
+  message: {
+    "action": 11,
+    "channel": channel_name,
+    "flags": 0,
+    "error": { "code": 91001, "statusCode": 500, "message": "Continuity lost" }
+  }
+})
+
+# Wait for the update event to be emitted
+poll_until(
+  condition: () => update_events.length >= 1,
+  timeout: 10 seconds
+)
+```
+
+### Assertions
+
+```pseudo
+# Channel emitted an UPDATE event
+ASSERT update_events.length == 1
+
+# The ChannelStateChange has correct fields
+ASSERT update_events[0].current == ChannelState.attached
+ASSERT update_events[0].previous == ChannelState.attached
+ASSERT update_events[0].resumed == false
+ASSERT update_events[0].reason IS NOT null
+ASSERT update_events[0].reason.code == 91001
+ASSERT update_events[0].reason.statusCode == 500
+ASSERT update_events[0].reason.message CONTAINS "Continuity lost"
+
+# No 'attached' event was emitted (RTL2g)
+ASSERT attached_events.length == 0
+
+# Channel state remains ATTACHED
+ASSERT channel.state == ChannelState.attached
+
+# Connection remains CONNECTED
+ASSERT client.connection.state == ConnectionState.connected
+```
+
+---
+
+## Test 25: RTL3d -- Channels reattach after connection recovery
+
+| Spec | Requirement |
+|------|-------------|
+| RTL3d | If the connection state enters the CONNECTED state, any channels in the ATTACHING, ATTACHED, or SUSPENDED states should be transitioned to ATTACHING and initiate an attach sequence. The connection should also process any queued messages immediately |
+
+Tests that when two attached channels experience a connection disconnect and subsequent reconnection, both channels automatically transition through ATTACHING and back to ATTACHED. The proxy logs confirm re-attach ATTACH messages are sent on the second WebSocket connection.
+
+### Setup
+
+```pseudo
+channel_a_name = "test-RTL3d-a-${random_id()}"
+channel_b_name = "test-RTL3d-b-${random_id()}"
+
+# Create proxy session with clean passthrough
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: []
+)
+
+client = Realtime(options: ClientOptions(
+  authCallback: (params) => {
+    RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
+  },
+  endpoint: "localhost",
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false,
+  autoConnect: false
+))
+
+channel_a = client.channels.get(channel_a_name)
+channel_b = client.channels.get(channel_b_name)
+```
+
+### Test Steps
+
+```pseudo
+# Connect and attach both channels normally through proxy
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+  WITH timeout: 15 seconds
+
+AWAIT channel_a.attach()
+AWAIT channel_b.attach()
+ASSERT channel_a.state == ChannelState.attached
+ASSERT channel_b.state == ChannelState.attached
+
+# Record channel state changes from this point
+channel_a_state_changes = []
+channel_b_state_changes = []
+channel_a.on((change) => {
+  channel_a_state_changes.append(change.current)
+})
+channel_b.on((change) => {
+  channel_b_state_changes.append(change.current)
+})
+
+# Trigger disconnect via imperative action (close the WebSocket)
+session.trigger_action({
+  type: "close"
+})
+
+# Wait for connection to reach DISCONNECTED
+AWAIT_STATE client.connection.state == ConnectionState.disconnected
+  WITH timeout: 10 seconds
+
+# Wait for connection to recover to CONNECTED
+AWAIT_STATE client.connection.state == ConnectionState.connected
+  WITH timeout: 30 seconds
+
+# Wait for both channels to re-attach
+AWAIT_STATE channel_a.state == ChannelState.attached
+  WITH timeout: 15 seconds
+AWAIT_STATE channel_b.state == ChannelState.attached
+  WITH timeout: 15 seconds
+```
+
+### Assertions
+
+```pseudo
+# Both channels end in ATTACHED state
+ASSERT channel_a.state == ChannelState.attached
+ASSERT channel_b.state == ChannelState.attached
+
+# Both channels transitioned through ATTACHING -> ATTACHED after reconnection
+ASSERT channel_a_state_changes CONTAINS_IN_ORDER [
+  ChannelState.attaching,
+  ChannelState.attached
+]
+ASSERT channel_b_state_changes CONTAINS_IN_ORDER [
+  ChannelState.attaching,
+  ChannelState.attached
+]
+
+# Connection is CONNECTED
+ASSERT client.connection.state == ConnectionState.connected
+
+# Proxy log shows ATTACH messages for both channels on the second WS connection
+log = session.get_log()
+attach_frames_a = log.filter(e =>
+  e.type == "ws_frame" AND
+  e.direction == "client_to_server" AND
+  e.message.action == 10 AND
+  e.message.channel == channel_a_name
+)
+attach_frames_b = log.filter(e =>
+  e.type == "ws_frame" AND
+  e.direction == "client_to_server" AND
+  e.message.action == 10 AND
+  e.message.channel == channel_b_name
+)
+# At least 2 ATTACH frames each: initial attach + reattach after reconnection
+ASSERT attach_frames_a.length >= 2
+ASSERT attach_frames_b.length >= 2
 ```
 
 ---
