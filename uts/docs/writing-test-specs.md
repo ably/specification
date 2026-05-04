@@ -17,7 +17,7 @@ This guide provides comprehensive guidance for writing portable test specificati
 - Use `endpoint: "sandbox"` in ClientOptions
 
 ### Proxy Integration Tests (Ably Sandbox via Proxy)
-- Run against Ably Sandbox through a programmable proxy (`uts/proxy/`)
+- Run against Ably Sandbox through a programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy))
 - Proxy transparently forwards traffic but can inject faults via rules
 - Use for testing fault behaviour: connection failures, token renewal under errors, heartbeat starvation, channel error injection
 - See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec

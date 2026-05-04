@@ -32,7 +32,6 @@ uts/
 │       │   └── proxy.md               # Proxy infrastructure spec
 │       ├── proxy/                     # Proxy-based fault injection tests
 │       └── *.md                       # Direct sandbox tests
-├── proxy/                             # Go test proxy source code
 ├── docs/                              # Guides and reference
 │   ├── writing-test-specs.md          # How to write UTS specs
 │   ├── writing-derived-tests.md       # How to translate specs into SDK tests
@@ -100,8 +99,6 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 ## Go Test Proxy
 
-The `proxy/` directory contains a Go-based programmable proxy for integration testing. It sits between the SDK and the Ably sandbox, transparently forwarding traffic while allowing rule-based fault injection.
+The programmable proxy for integration testing lives in a separate repository: [ably/uts-proxy](https://github.com/ably/uts-proxy). It sits between the SDK and the Ably sandbox, transparently forwarding traffic while allowing rule-based fault injection.
 
-The proxy is controlled via a REST API on port 9100. Tests create sessions with rules, connect the SDK through the proxy, and verify behaviour via SDK state and proxy event logs.
-
-See `realtime/integration/helpers/proxy.md` for the proxy infrastructure specification.
+See `realtime/integration/helpers/proxy.md` for the proxy infrastructure specification used by test specs in this repository.

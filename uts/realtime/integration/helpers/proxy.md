@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Ably test proxy is a programmable HTTP/WebSocket proxy (Go, at `uts/test/proxy/`) that sits between the SDK under test and the Ably sandbox. It transparently forwards traffic by default, but can be configured with rules to inject faults — dropped connections, modified responses, injected protocol messages, delayed frames, etc.
+The Ably test proxy is a programmable HTTP/WebSocket proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy)) that sits between the SDK under test and the Ably sandbox. It transparently forwards traffic by default, but can be configured with rules to inject faults — dropped connections, modified responses, injected protocol messages, delayed frames, etc.
 
 Proxy integration tests use this to verify fault-handling behaviour against the real Ably backend, providing higher confidence than unit tests with mocked transports.
 
