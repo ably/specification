@@ -31,7 +31,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RSC1 | Constructor options (RSC1a–RSC1c) | Yes — `realtime/unit/client/client_options.md`, `realtime/unit/client/realtime_client.md` |
+| RSC1 | Constructor options (RSC1a–RSC1c) | Yes — `realtime/unit/client/realtime_client.md` |
 | RSC2 | Logger default | Yes — `rest/unit/logging.md` |
 | RSC3 | Log level configuration | Yes — `rest/unit/logging.md` |
 | RSC4 | Custom logger | Yes — `rest/unit/logging.md` |
@@ -62,12 +62,12 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSA1 | Basic Auth requires HTTPS | Yes — `rest/unit/auth/auth_scheme.md` |
 | RSA2 | Basic Auth default | Yes — `rest/unit/auth/auth_scheme.md` |
 | RSA3 | Token Auth support (RSA3a–RSA3d) | Yes — `rest/unit/auth/auth_scheme.md` |
-| RSA4 | Token Auth selection logic (RSA4a–RSA4g) | Yes — `rest/unit/auth/auth_scheme.md` covers RSA4, RSA4b; `rest/unit/auth/token_renewal.md` covers RSA4b4; `realtime/unit/auth/connection_auth_test.md` covers RSA4; `realtime/unit/connection/error_reason_test.md` covers RSA4c1, RSA4d; `realtime/unit/auth/token_expiry_non_renewable_test.md` covers RSA4a, RSA4a1, RSA4a2; `realtime/unit/auth/auth_callback_errors_test.md` covers RSA4c, RSA4c1–RSA4c3, RSA4d, RSA4e, RSA4f |
+| RSA4 | Token Auth selection logic (RSA4a–RSA4g) | Yes — `rest/unit/auth/auth_scheme.md` covers RSA4, RSA4b; `rest/unit/auth/token_renewal.md` covers RSA4b4; `realtime/unit/auth/connection_auth_test.md` covers RSA4; `realtime/unit/connection/error_reason_test.md` covers RSA4c1, RSA4d; `realtime/unit/auth/token_expiry_non_renewable_test.md` covers RSA4a, RSA4a1, RSA4a2; `realtime/unit/auth/auth_callback_errors_test.md` covers RSA4c, RSA4c1–RSA4c3, RSA4d, RSA4e, RSA4f; `realtime/integration/auth/token_renewal_test.md` covers RSA4b |
 | RSA5 | TTL for tokens | Yes — `rest/unit/auth/token_request_params.md`, `rest/integration/auth.md` |
 | RSA6 | Capability JSON | Yes — `rest/unit/auth/token_request_params.md`, `rest/integration/auth.md` |
 | RSA7 | ClientId and authenticated clients (RSA7a–RSA7e2) | Partial — `rest/unit/auth/client_id.md` covers RSA7, RSA7a–RSA7c; `realtime/integration/auth.md` covers RSA7 |
 | RSA8 | RequestToken function (RSA8a–RSA8g) | Partial — `rest/unit/auth/auth_callback.md` covers RSA8c, RSA8d; `realtime/unit/auth/connection_auth_test.md` covers RSA8d; `rest/integration/auth.md` covers RSA8; `realtime/integration/auth.md` covers RSA8 |
-| RSA9 | CreateTokenRequest (RSA9a–RSA9i) | Partial — `rest/integration/auth.md` covers RSA9 |
+| RSA9 | CreateTokenRequest (RSA9a–RSA9i) | Partial — `rest/integration/auth.md` covers RSA9; `realtime/integration/auth/token_request_test.md` covers RSA9a, RSA9g |
 | RSA10 | Authorize function (RSA10a–RSA10l) | Yes — `rest/unit/auth/authorize.md` |
 | RSA11 | Base64 encoded API key | Yes — `rest/unit/auth/auth_scheme.md` (with RSA2) |
 | RSA12 | Auth#clientId attribute (RSA12a–RSA12b) | Yes — `rest/unit/auth/client_id.md` |
@@ -90,9 +90,9 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSL1k | Idempotent publishing (RSL1k1–RSL1k5) | Yes — `rest/unit/channel/idempotency.md` |
 | RSL2 | History function (RSL2a–RSL2b3) | Yes — `rest/unit/channel/history.md`, `rest/integration/history.md` |
 | RSL3 | Presence attribute | Yes — `rest/unit/presence/rest_presence.md` (with RSP1a) |
-| RSL4 | Message encoding (RSL4a–RSL4d4) | Yes — `rest/unit/encoding/message_encoding.md` |
+| RSL4 | Message encoding (RSL4a–RSL4d4) | Yes — `rest/unit/encoding/message_encoding.md`, `realtime/integration/channels/channel_publish_test.md` |
 | RSL5 | Message encryption (RSL5a–RSL5c) | |
-| RSL6 | Message decoding (RSL6a–RSL6b) | Yes — `rest/unit/encoding/message_encoding.md` |
+| RSL6 | Message decoding (RSL6a–RSL6b) | Yes — `rest/unit/encoding/message_encoding.md`, `realtime/integration/channels/channel_publish_test.md` covers RSL6, RSL6a2 |
 | RSL7 | SetOptions function | Yes — `rest/unit/channel/rest_channel_attributes.md` |
 | RSL8 | Status function (RSL8a) | Yes — `rest/unit/channel/rest_channel_attributes.md` |
 | RSL9 | Name attribute | Yes — `rest/unit/channel/rest_channel_attributes.md` |
@@ -153,7 +153,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTC5 | Stats function (RTC5a–RTC5b) | Yes — `realtime/unit/client/realtime_stats.md` (proxies to RSC6 tests) |
 | RTC6 | Time function (RTC6a) | Yes — `realtime/unit/client/realtime_time.md` (proxies to RSC16 tests) |
 | RTC7 | Uses configured timeouts | Yes — `realtime/unit/client/realtime_timeouts.md` |
-| RTC8 | Authorize function for realtime (RTC8a–RTC8c) | Yes — `realtime/unit/auth/realtime_authorize.md`, `realtime/integration/auth.md` |
+| RTC8 | Authorize function for realtime (RTC8a–RTC8c) | Yes — `realtime/unit/auth/realtime_authorize.md`, `realtime/integration/auth.md`; `realtime/integration/proxy/auth_reauth.md` covers RTC8a |
 | RTC9 | Request function | Yes — `realtime/unit/client/realtime_request.md` (proxies to RSC19 tests) |
 | RTC10–RTC11 | Deleted | N/A |
 | RTC12 | Same constructors as RestClient | Yes — `realtime/unit/client/realtime_client.md` |
@@ -179,14 +179,14 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN11 | Connect function (RTN11a–RTN11f) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN11; `realtime/unit/connection/error_reason_test.md` covers RTN11d |
 | RTN12 | Close function (RTN12a–RTN12f) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN12, RTN12a |
 | RTN13 | Ping function (RTN13a–RTN13e) | Yes — `realtime/unit/connection/connection_ping_test.md` |
-| RTN14 | Connection opening failures (RTN14a–RTN14g) | Yes — `realtime/unit/connection/connection_open_failures_test.md` |
-| RTN15 | Connection failures when CONNECTED (RTN15a–RTN15j) | Yes — `realtime/unit/connection/connection_failures_test.md` |
+| RTN14 | Connection opening failures (RTN14a–RTN14g) | Yes — `realtime/unit/connection/connection_open_failures_test.md`; `realtime/integration/connection/connection_failures_test.md` covers RTN14a, RTN14g; `realtime/integration/auth/token_renewal_test.md` covers RTN14b; `realtime/integration/proxy/connection_open_failures.md` covers RTN14a–RTN14d, RTN14g |
+| RTN15 | Connection failures when CONNECTED (RTN15a–RTN15j) | Yes — `realtime/unit/connection/connection_failures_test.md`; `realtime/integration/proxy/connection_resume.md` covers RTN15a, RTN15b, RTN15c6, RTN15c7, RTN15g, RTN15g2, RTN15h1, RTN15h3, RTN15j |
 | RTN16 | Connection recovery (RTN16a–RTN16m1) | Yes — `realtime/unit/connection/connection_recovery_test.md` covers RTN16d, RTN16f, RTN16f1, RTN16g, RTN16g1, RTN16g2, RTN16i, RTN16j, RTN16k, RTN16l; `realtime/integration/proxy/connection_resume.md` covers RTN16d, RTN16l; `realtime/unit/connection/error_reason_test.md` covers RTN16e |
 | RTN17 | Domain selection and fallback (RTN17a–RTN17j) | Yes — `realtime/unit/connection/fallback_hosts_test.md` |
-| RTN19 | Transport state side effects (RTN19a–RTN19b) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN19a, RTN19a2, RTN19b |
+| RTN19 | Transport state side effects (RTN19a–RTN19b) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN19a, RTN19a2, RTN19b; `realtime/integration/proxy/connection_resume.md` covers RTN19a, RTN19a2 |
 | RTN20 | OS network change handling (RTN20a–RTN20c) | Yes — `realtime/unit/connection/network_change_test.md` |
 | RTN21 | ConnectionDetails override defaults | Partial — `realtime/unit/connection/update_events_test.md` covers RTN21; `realtime/integration/connection_lifecycle_test.md` covers RTN21 |
-| RTN22 | Re-authentication request handling (RTN22a) | Yes — `realtime/unit/connection/server_initiated_reauth_test.md` |
+| RTN22 | Re-authentication request handling (RTN22a) | Yes — `realtime/unit/connection/server_initiated_reauth_test.md`; `realtime/integration/proxy/auth_reauth.md` covers RTN22 |
 | RTN23 | Heartbeats (RTN23a–RTN23b) | Yes — `realtime/unit/connection/heartbeat_test.md` |
 | RTN24 | UPDATE event on CONNECTED while connected | Yes — `realtime/unit/connection/update_events_test.md` |
 | RTN25 | Connection#errorReason attribute | Yes — `realtime/unit/connection/error_reason_test.md` |
@@ -209,18 +209,18 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 |-----------|-------------|---------------|
 | RTL1 | Message and presence processing | Information only |
 | RTL2 | Channel event emission (RTL2a–RTL2i) | Yes — `realtime/unit/channels/channel_state_events.md` |
-| RTL3 | Connection state side effects (RTL3a–RTL3e) | Yes — `realtime/unit/channels/channel_connection_state.md` |
-| RTL4 | Attach function (RTL4a–RTL4m) | Yes — `realtime/unit/channels/channel_attach.md` |
-| RTL5 | Detach function (RTL5a–RTL5l) | Yes — `realtime/unit/channels/channel_detach.md` |
-| RTL6 | Publish function (RTL6a–RTL6k) | Yes — `realtime/unit/channels/channel_publish.md` |
-| RTL7 | Subscribe function (RTL7a–RTL7h) | Yes — `realtime/unit/channels/channel_subscribe.md` |
+| RTL3 | Connection state side effects (RTL3a–RTL3e) | Yes — `realtime/unit/channels/channel_connection_state.md`; `realtime/integration/proxy/channel_faults.md` covers RTL3d |
+| RTL4 | Attach function (RTL4a–RTL4m) | Yes — `realtime/unit/channels/channel_attach.md`; `realtime/integration/channels/channel_attach_test.md` covers RTL4, RTL4c; `realtime/integration/proxy/channel_faults.md` covers RTL4f |
+| RTL5 | Detach function (RTL5a–RTL5l) | Yes — `realtime/unit/channels/channel_detach.md`; `realtime/integration/channels/channel_attach_test.md` covers RTL5, RTL5d; `realtime/integration/proxy/channel_faults.md` covers RTL5f |
+| RTL6 | Publish function (RTL6a–RTL6k) | Yes — `realtime/unit/channels/channel_publish.md`; `realtime/integration/channels/channel_publish_test.md` covers RTL6, RTL6f |
+| RTL7 | Subscribe function (RTL7a–RTL7h) | Yes — `realtime/unit/channels/channel_subscribe.md`; `realtime/integration/channels/channel_subscribe_test.md` covers RTL7, RTL7a, RTL7b, RTL7d |
 | RTL8 | Unsubscribe function (RTL8a–RTL8c) | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL9 | Presence attribute (RTL9a) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTL10 | History function (RTL10a–RTL10d) | Yes — `realtime/unit/channels/channel_history.md` covers RTL10a, RTL10b, RTL10c (proxies to RSL2 tests); `realtime/integration/channel_history_test.md` covers RTL10d |
 | RTL11 | Channel state effect on presence (RTL11a) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
-| RTL12 | Additional ATTACHED message handling | Yes — `realtime/unit/channels/channel_additional_attached.md` |
+| RTL12 | Additional ATTACHED message handling | Yes — `realtime/unit/channels/channel_additional_attached.md`; `realtime/integration/proxy/channel_faults.md` covers RTL12 |
 | RTL13 | Server-initiated DETACHED handling (RTL13a–RTL13c) | Yes — `realtime/unit/channels/channel_server_initiated_detach.md` |
-| RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md` |
+| RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md`; `realtime/integration/channels/channel_attach_test.md` covers RTL14; `realtime/integration/proxy/channel_faults.md` covers RTL14 |
 | RTL15 | Channel#properties attribute (RTL15a–RTL15b1) | Yes — `realtime/unit/channels/channel_properties.md` |
 | RTL16 | SetOptions function (RTL16a) | Yes — `realtime/unit/channels/channel_options.md` |
 | RTL17 | No messages outside ATTACHED state | Yes — `realtime/unit/channels/channel_subscribe.md` |
@@ -243,7 +243,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | RTP1 | HAS_PRESENCE flag and SYNC | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
-| RTP2 | PresenceMap maintenance (RTP2a–RTP2h2) | Yes — `realtime/unit/presence/presence_map.md` |
+| RTP2 | PresenceMap maintenance (RTP2a–RTP2h2) | Yes — `realtime/unit/presence/presence_map.md`; `realtime/integration/presence/presence_sync_test.md` covers RTP2 |
 | RTP4 | Large member count test | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
 | RTP5 | Channel state side effects (RTP5a–RTP5f) | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTP6 | Subscribe function (RTP6a–RTP6e) | Yes — `realtime/unit/presence/realtime_presence_subscribe.md`, `realtime/integration/presence_lifecycle_test.md` |
@@ -251,13 +251,13 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTP8 | Enter function (RTP8a–RTP8j) | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
 | RTP9 | Update function (RTP9a–RTP9e) | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
 | RTP10 | Leave function (RTP10a–RTP10e) | Yes — `realtime/unit/presence/realtime_presence_enter.md`, `realtime/integration/presence_lifecycle_test.md` |
-| RTP11 | Get function (RTP11a–RTP11d) | Yes — `realtime/unit/presence/realtime_presence_get.md`, `realtime/integration/presence_lifecycle_test.md` |
+| RTP11 | Get function (RTP11a–RTP11d) | Yes — `realtime/unit/presence/realtime_presence_get.md`, `realtime/integration/presence_lifecycle_test.md`; `realtime/integration/presence/presence_sync_test.md` covers RTP11a |
 | RTP12 | History function (RTP12a–RTP12d) | Yes — `realtime/unit/presence/realtime_presence_history.md` |
 | RTP13 | SyncComplete attribute | Yes — `realtime/unit/presence/realtime_presence_channel_state.md` |
 | RTP14 | EnterClient function (RTP14a–RTP14d) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
 | RTP15 | EnterClient/UpdateClient/LeaveClient (RTP15a–RTP15f) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
 | RTP16 | Connection state conditions (RTP16a–RTP16c) | Yes — `realtime/unit/presence/realtime_presence_enter.md` |
-| RTP17 | Internal PresenceMap (RTP17a–RTP17j) | Partial — `realtime/unit/presence/local_presence_map.md` covers RTP17, RTP17b, RTP17h; `realtime/unit/presence/realtime_presence_reentry.md` covers RTP17a, RTP17e, RTP17g, RTP17g1, RTP17i |
+| RTP17 | Internal PresenceMap (RTP17a–RTP17j) | Partial — `realtime/unit/presence/local_presence_map.md` covers RTP17, RTP17b, RTP17h; `realtime/unit/presence/realtime_presence_reentry.md` covers RTP17a, RTP17e, RTP17g, RTP17g1, RTP17i; `realtime/integration/proxy/presence_reentry.md` covers RTP17i, RTP17g |
 | RTP18 | Server-initiated sync (RTP18a–RTP18c) | Yes — `realtime/unit/presence/presence_sync.md` |
 | RTP19 | PresenceMap cleanup on sync (RTP19a) | Yes — `realtime/unit/presence/presence_sync.md`, `realtime/unit/presence/realtime_presence_channel_state.md` |
 
@@ -398,18 +398,26 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN15a | Unexpected disconnect triggers resume | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15b/c6 | Resume preserves connectionId | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15c7 | Failed resume gets new connectionId | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN15g/g2 | connectionStateTtl expiry clears resume state | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15h1 | DISCONNECTED with token error, non-renewable → FAILED | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15h3 | DISCONNECTED with non-token error → reconnect | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN15j | Fatal ERROR on established connection | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN16d/l | Connection recovery via proxy | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN19a/a2 | Unacked messages resent after resume | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN23a | Heartbeat starvation causes disconnect | Yes — `realtime/integration/proxy/heartbeat.md` |
 | RTN23a | heartbeats=true in connection URL | Yes — `realtime/integration/proxy/heartbeat.md` |
 | RTL4f | Attach timeout (server doesn't respond) | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL14 | Server responds with ERROR to ATTACH → FAILED | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL5f | Detach timeout (server doesn't respond) | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL12 | ATTACHED with resumed=false triggers reattach | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL13a | Server sends unsolicited DETACHED → reattach | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL14 | Server sends channel ERROR → FAILED | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RTL3d | Channels reattach after connection recovery | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RSC10 | Token renewal on HTTP 401 | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RSC15m/REC2c2 | HTTP 503 error (no fallback, hosts disabled) | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RTL6 | End-to-end publish and history | Yes — `realtime/integration/proxy/rest_faults.md` |
+| RTN22/RTC8a | Server-initiated re-authentication | Yes — `realtime/integration/proxy/auth_reauth.md` |
+| RTP17i/RTP17g | Automatic presence re-entry on non-resumed reattach | Yes — `realtime/integration/proxy/presence_reentry.md` |
 
 ## Summary
 
@@ -418,7 +426,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Endpoint config** (REC) | 3 | 3 | Full |
 | **REST client** (RSC) | 18 | 16 | Partial |
 | **REST auth** (RSA) | 15 | 15 | Full |
-| **REST channels** (RSN) | 4 | 0 | None |
+| **REST channels** (RSN) | 4 | 4 | Full |
 | **REST channel** (RSL) | 13 | 13 | Full |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
 | **REST encryption** (RSE) | 2 | 0 | None |
