@@ -16,14 +16,29 @@ See `rest_client.md` for detailed mock interface documentation.
 
 ## Server Response Format
 
-The server returns different formats depending on the outcome:
-- **All success (HTTP 200):** Plain array of per-channel results: `[{channel, presence}, ...]`
-- **Mixed/all failure (HTTP 400):** Wrapper with error and batch results:
-  `{error: {code: 40020, ...}, batchResponse: [{channel, presence/error}, ...]}`
-- **Server error (HTTP 500, 401, etc.):** Error object only: `{error: {code, ...}}`
+With `X-Ably-Version >= 3` (sent by all current SDKs), the server returns a
+`BatchResult` envelope for all batch responses:
 
-The SDK normalises both success and mixed/failure formats into a
-`BatchPresenceResponse` with computed `successCount`, `failureCount`, and `results`.
+```json
+{
+  "successCount": 2,
+  "failureCount": 1,
+  "results": [
+    {"channel": "ch-a", "presence": [...]},
+    {"channel": "ch-b", "error": {"code": 40160, "statusCode": 401, ...}}
+  ]
+}
+```
+
+- **All success, mixed, and all failure** return HTTP 200 with this format.
+- **Server-level errors** (HTTP 500, 401, etc.) return an error object: `{"error": {...}}`.
+
+The SDK passes through this response directly — no client-side normalisation
+is needed because the server provides `successCount`, `failureCount`, and `results`.
+
+**Legacy format (no version header):** Without `X-Ably-Version`, the server
+returns a plain array for all-success (HTTP 200) and `{error, batchResponse}`
+for mixed results (HTTP 400). This format is not used by current SDKs.
 
 ---
 
@@ -43,10 +58,14 @@ captured_requests = []
 mock_http = MockHTTP(
   onRequest: (request) => {
     captured_requests.append(request)
-    RETURN HttpResponse(status: 200, body: [
-      { "channel": "channel-a", "presence": [] },
-      { "channel": "channel-b", "presence": [] }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 2,
+      "failureCount": 0,
+      "results": [
+        { "channel": "channel-a", "presence": [] },
+        { "channel": "channel-b", "presence": [] }
+      ]
+    })
   }
 )
 
@@ -70,9 +89,13 @@ captured_requests = []
 mock_http = MockHTTP(
   onRequest: (request) => {
     captured_requests.append(request)
-    RETURN HttpResponse(status: 200, body: [
-      { "channel": "my-channel", "presence": [] }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "channel": "my-channel", "presence": [] }
+      ]
+    })
   }
 )
 
@@ -93,10 +116,14 @@ captured_requests = []
 mock_http = MockHTTP(
   onRequest: (request) => {
     captured_requests.append(request)
-    RETURN HttpResponse(status: 200, body: [
-      { "channel": "foo:bar", "presence": [] },
-      { "channel": "baz/qux", "presence": [] }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 2,
+      "failureCount": 0,
+      "results": [
+        { "channel": "foo:bar", "presence": [] },
+        { "channel": "baz/qux", "presence": [] }
+      ]
+    })
   }
 )
 
@@ -114,17 +141,18 @@ ASSERT captured_requests[0].url.queryParameters["channels"] == "foo:bar,baz/qux"
 **Spec requirement:** The response is normalised into a `BatchPresenceResponse` with
 computed `successCount`, `failureCount`, and `results` attributes (BAR2).
 
-### BAR2_1 - successCount and failureCount computed from mixed response
+### BAR2_1 - successCount and failureCount from mixed response
 
-The server returns HTTP 400 with `batchResponse` for mixed results. The SDK
-computes `successCount` and `failureCount` from the per-channel results.
+The server returns HTTP 200 with a `BatchResult` envelope containing per-channel
+results, including both successes and failures.
 
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 400, body: {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 3,
+      "failureCount": 1,
+      "results": [
         { "channel": "ch-1", "presence": [] },
         { "channel": "ch-2", "presence": [] },
         { "channel": "ch-3", "presence": [] },
@@ -145,15 +173,17 @@ ASSERT result.results.length == 4
 
 ### BAR2_2 - All success
 
-The server returns HTTP 200 with a plain array when all channels succeed.
-
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 200, body: [
-      { "channel": "ch-a", "presence": [] },
-      { "channel": "ch-b", "presence": [] }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 2,
+      "failureCount": 0,
+      "results": [
+        { "channel": "ch-a", "presence": [] },
+        { "channel": "ch-b", "presence": [] }
+      ]
+    })
   }
 )
 
@@ -168,14 +198,13 @@ ASSERT result.results.length == 2
 
 ### BAR2_3 - All failure
 
-The server returns HTTP 400 with `batchResponse` when all channels fail.
-
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 400, body: {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 0,
+      "failureCount": 2,
+      "results": [
         { "channel": "ch-a", "error": { "code": 40160, "statusCode": 401, "message": "Not permitted" } },
         { "channel": "ch-b", "error": { "code": 40160, "statusCode": 401, "message": "Not permitted" } }
       ]
@@ -204,29 +233,33 @@ ASSERT result.results.length == 2
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 200, body: [
-      {
-        "channel": "my-channel",
-        "presence": [
-          {
-            "clientId": "client-1",
-            "action": 1,
-            "connectionId": "conn-abc",
-            "id": "conn-abc:0:0",
-            "timestamp": 1700000000000,
-            "data": "hello"
-          },
-          {
-            "clientId": "client-2",
-            "action": 1,
-            "connectionId": "conn-def",
-            "id": "conn-def:0:0",
-            "timestamp": 1700000000000,
-            "data": { "key": "value" }
-          }
-        ]
-      }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        {
+          "channel": "my-channel",
+          "presence": [
+            {
+              "clientId": "client-1",
+              "action": 1,
+              "connectionId": "conn-abc",
+              "id": "conn-abc:0:0",
+              "timestamp": 1700000000000,
+              "data": "hello"
+            },
+            {
+              "clientId": "client-2",
+              "action": 1,
+              "connectionId": "conn-def",
+              "id": "conn-def:0:0",
+              "timestamp": 1700000000000,
+              "data": { "key": "value" }
+            }
+          ]
+        }
+      ]
+    })
   }
 )
 
@@ -256,9 +289,13 @@ ASSERT success.presence[1].data["key"] == "value"
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 200, body: [
-      { "channel": "empty-channel", "presence": [] }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "channel": "empty-channel", "presence": [] }
+      ]
+    })
   }
 )
 
@@ -284,9 +321,10 @@ ASSERT success.presence.length == 0
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 400, body: {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 0,
+      "failureCount": 1,
+      "results": [
         {
           "channel": "restricted-channel",
           "error": {
@@ -322,15 +360,16 @@ ASSERT failure.error.message CONTAINS "not permitted"
 ### RSC24_Mixed_1 - Mixed success and failure results
 
 **Spec requirement:** A batch presence request can succeed for some channels and fail
-for others. The server returns HTTP 400 with a `batchResponse` containing both
+for others. The server returns HTTP 200 with a `BatchResult` containing both
 success and failure per-channel results.
 
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
-    RETURN HttpResponse(status: 400, body: {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 1,
+      "failureCount": 1,
+      "results": [
         {
           "channel": "allowed-channel",
           "presence": [
@@ -435,9 +474,13 @@ captured_requests = []
 mock_http = MockHTTP(
   onRequest: (request) => {
     captured_requests.append(request)
-    RETURN HttpResponse(status: 200, body: [
-      { "channel": "ch", "presence": [] }
-    ])
+    RETURN HttpResponse(status: 200, body: {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "channel": "ch", "presence": [] }
+      ]
+    })
   }
 )
 

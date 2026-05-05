@@ -11,32 +11,30 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ## Server Response Format
 
-The server returns per-target results as an array. Each element is either a success
-(with `target`, `issuedBefore`, `appliesAt`) or a failure (with `target`, `error`).
+With `X-Ably-Version >= 3` (sent by all current SDKs), the server returns a
+`BatchResult` envelope for all batch responses:
 
-On success (HTTP 2xx), the response body is a plain array:
-```json
-[
-  { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
-  { "target": "clientId:bob", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-]
-```
-
-On mixed success/failure (HTTP 400), the response wraps the array:
 ```json
 {
-  "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-  "batchResponse": [
+  "successCount": 1,
+  "failureCount": 1,
+  "results": [
     { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
     { "target": "invalidType:abc", "error": { "code": 40000, "statusCode": 400, "message": "..." } }
   ]
 }
 ```
 
-The client computes `successCount` and `failureCount` from the per-target results.
+- **All success** returns HTTP 201 with this format.
+- **Mixed success/failure** returns HTTP 201 with this format (not HTTP 400).
+- **Server-level errors** (HTTP 500, 401, etc.) return an error object: `{"error": {...}}`.
 
-These unit tests mock responses as plain arrays (the success format). The client
-must handle both formats, but unit tests focus on parsing and request formation.
+The SDK passes through this response directly — no client-side normalisation
+is needed because the server provides `successCount`, `failureCount`, and `results`.
+
+**Legacy format (no version header):** Without `X-Ably-Version`, the server
+returns a plain array for all-success and `{error, batchResponse}` for mixed
+results (HTTP 400). This format is not used by current SDKs.
 
 ---
 
@@ -208,16 +206,17 @@ ASSERT result.results.length == 2
 ### RSA17c_2 - Mixed success and failure result
 
 **Spec requirement:** When the server returns a mix of successes and failures,
-the response is HTTP 400 with a `batchResponse` array.
+the response is HTTP 200 with a `BatchResult` envelope.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(400, {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    req.respond_with(200, {
+      "successCount": 1,
+      "failureCount": 1,
+      "results": [
         { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
         { "target": "invalidType:abc", "error": { "code": 40000, "statusCode": 400, "message": "Invalid target type" } }
       ]
@@ -251,9 +250,10 @@ ASSERT result.results.length == 2
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(400, {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    req.respond_with(200, {
+      "successCount": 0,
+      "failureCount": 2,
+      "results": [
         { "target": "invalidType:foo", "error": { "code": 40000, "statusCode": 400, "message": "Invalid target type" } },
         { "target": "invalidType:bar", "error": { "code": 40000, "statusCode": 400, "message": "Invalid target type" } }
       ]
@@ -339,9 +339,10 @@ ASSERT success.appliesAt == 1700000001000
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(400, {
-      "error": { "code": 40020, "statusCode": 400, "message": "Batched response includes errors" },
-      "batchResponse": [
+    req.respond_with(200, {
+      "successCount": 0,
+      "failureCount": 1,
+      "results": [
         { "target": "invalidType:abc", "error": { "code": 40000, "statusCode": 400, "message": "Invalid target type" } }
       ]
     })
