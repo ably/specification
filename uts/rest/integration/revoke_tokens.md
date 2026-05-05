@@ -24,23 +24,27 @@ to avoid missing the state change.
 
 ## Server Response Format
 
-The Ably server returns token revocation results as a **plain JSON array** of
-per-target results:
+With `X-Ably-Version >= 3` (sent by all current SDKs), the Ably server returns a
+`BatchResult` envelope for all token revocation responses:
 
 ```json
-[{"target": "clientId:xxx", "appliesAt": 1234567890, "issuedBefore": 1234567890}]
+{
+  "successCount": 1,
+  "failureCount": 1,
+  "results": [
+    {"target": "clientId:xxx", "appliesAt": 1234567890, "issuedBefore": 1234567890},
+    {"target": "invalidType:abc", "error": {"code": 40000, "statusCode": 400, "message": "..."}}
+  ]
+}
 ```
 
-On failure for a specific target, the element contains an `error` field instead:
+Both all-success and mixed success/failure responses return HTTP 201 with this
+format. The `successCount`, `failureCount`, and `results` fields are provided by
+the server — no client-side computation is needed.
 
-```json
-[{"target": "invalidType:abc", "error": {"code": 40000, "statusCode": 400, "message": "..."}}]
-```
-
-There is no `BatchResult` envelope — the `successCount` and `failureCount` fields
-(RSA17c) must be computed **client-side** by counting elements with and without an
-`error` field. This is consistent with how batch presence responses work (see
-`batch_presence.md`).
+**Legacy format (no version header):** Without `X-Ably-Version`, the server
+returns a plain array for all-success and `{error, batchResponse}` for mixed
+results (HTTP 400). This format is not used by current SDKs.
 
 ## Sandbox Setup
 

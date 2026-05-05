@@ -17,17 +17,27 @@ and failure results.
 
 ## Server Response Format
 
-The Ably server returns batch presence in two formats depending on success:
+With `X-Ably-Version >= 3` (sent by all current SDKs), the Ably server returns a
+`BatchResult` envelope for all batch presence responses:
 
-- **All success (HTTP 200):** Body is a **plain array** of per-channel results:
-  `[{"channel": "ch1", "presence": [...]}, {"channel": "ch2", "presence": [...]}]`
+```json
+{
+  "successCount": 2,
+  "failureCount": 0,
+  "results": [
+    {"channel": "ch1", "presence": [...]},
+    {"channel": "ch2", "presence": [...]}
+  ]
+}
+```
 
-- **Mixed success/failure (HTTP 400):** Body is an object with an `error` field
-  and a `batchResponse` array:
-  `{"error": {"code": 40020, ...}, "batchResponse": [{"channel": "ch1", "presence": [...]}, {"channel": "ch2", "error": {...}}]}`
+Both all-success and mixed success/failure responses return HTTP 200 with this
+format. The `successCount`, `failureCount`, and `results` fields are provided by
+the server — no client-side computation is needed.
 
-The `successCount` and `failureCount` fields (BAR2a, BAR2b) are computed
-client-side from the per-channel results, not returned by the server.
+**Legacy format (no version header):** Without `X-Ably-Version`, the server
+returns a plain array for all-success (HTTP 200) and `{error, batchResponse}`
+for mixed results (HTTP 400). This format is not used by current SDKs.
 
 ## Sandbox Setup
 
@@ -145,9 +155,8 @@ AWAIT realtime.close()
 result is a `BatchPresenceFailureResult` containing an `ErrorInfo`. Channels the key
 does have access to return success results in the same batch response.
 
-The server returns HTTP 400 with `{"error": {"code": 40020, ...}, "batchResponse": [...]}`
-when the batch contains any per-channel errors. The client extracts the `batchResponse`
-array and builds results from it.
+The server returns HTTP 200 with `{"successCount": N, "failureCount": M, "results": [...]}`
+for all batch responses, including those with per-channel errors.
 
 ### Setup
 ```pseudo
