@@ -1,6 +1,6 @@
 # Auth Callback Error Handling Tests
 
-Spec points: `RSA4c`, `RSA4c1`, `RSA4c2`, `RSA4c3`, `RSA4d`, `RSA4e`, `RSA4f`
+Spec points: `RSA4c`, `RSA4c2`, `RSA4c3`, `RSA4d`, `RSA4e`, `RSA4f`
 
 ## Test Type
 Unit test with mocked WebSocket client and authCallback (realtime tests); unit test with mocked HTTP client (REST test for RSA4e)
@@ -18,21 +18,20 @@ These tests verify error handling when authentication via authCallback fails in 
 - Whether the context is realtime (connection state machine) or REST (request error)
 
 Key behaviours:
-- Generic auth errors while CONNECTING -> DISCONNECTED with code 80019 (RSA4c1, RSA4c2)
-- Generic auth errors while CONNECTED -> stay CONNECTED, errorReason set (RSA4c1, RSA4c3)
+- Generic auth errors while CONNECTING -> DISCONNECTED with code 80019 (RSA4c2)
+- Generic auth errors while CONNECTED -> stay CONNECTED, no side effects (RSA4c3)
 - 403 errors -> FAILED with code 80019/statusCode 403 (RSA4d)
 - Invalid token format -> treated as auth error per RSA4c (RSA4f)
 - REST auth errors -> error with code 40170 (RSA4e)
 
 ---
 
-## RSA4c1, RSA4c2 - authCallback error during CONNECTING transitions to DISCONNECTED
+## RSA4c2 - authCallback error during CONNECTING transitions to DISCONNECTED
 
 | Spec | Requirement |
 |------|-------------|
-| RSA4c | If an attempt to authenticate using authCallback results in an error, then RSA4c1-3 apply |
-| RSA4c1 | An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted with the state change and set as the connection errorReason |
-| RSA4c2 | If the connection is CONNECTING, then the connection attempt should be treated as unsuccessful, and the connection should transition to DISCONNECTED or SUSPENDED |
+| RSA4c | If an attempt to authenticate using authCallback results in an error, then RSA4c2/3 apply |
+| RSA4c2 | If the connection is CONNECTING, then the connection attempt should be treated as unsuccessful, and the connection should transition to DISCONNECTED or SUSPENDED. An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted with the state change and set as the connection errorReason |
 
 Tests that when authCallback throws an error during the initial connection (CONNECTING state), the connection transitions to DISCONNECTED with an ErrorInfo having code 80019, statusCode 401, and cause set to the underlying error.
 
@@ -96,12 +95,12 @@ AWAIT_STATE client.connection.state == ConnectionState.disconnected
 # RSA4c2: Connection transitioned to DISCONNECTED (not FAILED — it's retriable)
 ASSERT client.connection.state == ConnectionState.disconnected
 
-# RSA4c1: errorReason has code 80019 wrapping the underlying cause
+# RSA4c2: errorReason has code 80019 wrapping the underlying cause
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 80019
 ASSERT client.connection.errorReason.statusCode == 401
 
-# RSA4c1: cause is set to the underlying error from authCallback
+# RSA4c2: cause is set to the underlying error from authCallback
 ASSERT client.connection.errorReason.cause IS NOT null
 ASSERT client.connection.errorReason.cause.code == 50000
 
@@ -116,13 +115,12 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RSA4c1, RSA4c2 - authCallback timeout during CONNECTING transitions to DISCONNECTED
+## RSA4c2 - authCallback timeout during CONNECTING transitions to DISCONNECTED
 
 | Spec | Requirement |
 |------|-------------|
-| RSA4c | If the attempt times out after realtimeRequestTimeout, then RSA4c1-3 apply |
-| RSA4c1 | An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted and set as the connection errorReason |
-| RSA4c2 | If the connection is CONNECTING, then the connection attempt should be treated as unsuccessful |
+| RSA4c | If the attempt times out after realtimeRequestTimeout, then RSA4c2/3 apply |
+| RSA4c2 | If the connection is CONNECTING, then the connection attempt should be treated as unsuccessful. An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted with the state change and set as the connection errorReason |
 
 Tests that when authCallback times out (exceeds realtimeRequestTimeout), the connection transitions to DISCONNECTED with error code 80019.
 
@@ -183,7 +181,7 @@ AWAIT_STATE client.connection.state == ConnectionState.disconnected
 # RSA4c2: Connection transitioned to DISCONNECTED
 ASSERT client.connection.state == ConnectionState.disconnected
 
-# RSA4c1: errorReason has code 80019
+# RSA4c2: errorReason has code 80019
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 80019
 ASSERT client.connection.errorReason.statusCode == 401
@@ -198,10 +196,11 @@ CLOSE_CLIENT(client)
 | Spec | Requirement |
 |------|-------------|
 | RSA4c | If an attempt to authenticate using authCallback results in an error |
-| RSA4c1 | An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be set as the connection errorReason |
 | RSA4c3 | If the connection is CONNECTED, then the connection should remain CONNECTED |
 
-Tests that when authCallback fails during an RTN22 server-initiated reauth while the connection is CONNECTED, the connection stays CONNECTED and errorReason is set with code 80019.
+Tests that when authCallback fails during an RTN22 server-initiated reauth while the connection is CONNECTED, the connection stays CONNECTED with no side effects — no state change, no event, and errorReason is not set. The failed renewal is silently swallowed; when the token eventually expires, the next renewal attempt will surface the failure via the normal connection state machine.
+
+See https://github.com/ably/specification/issues/466
 
 ### Setup
 
@@ -259,8 +258,8 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: AUTH
 ))
 
-# Wait for errorReason to be set (auth failure propagates asynchronously)
-AWAIT UNTIL client.connection.errorReason IS NOT null
+# Allow time for auth callback failure to propagate
+AWAIT UNTIL auth_callback_count >= 2
   WITH timeout: 5 seconds
 ```
 
@@ -270,18 +269,12 @@ AWAIT UNTIL client.connection.errorReason IS NOT null
 # RSA4c3: Connection remains CONNECTED
 ASSERT client.connection.state == ConnectionState.connected
 
-# No state transitions away from connected occurred
-non_connected_changes = state_changes.filter(
-  c => c.current != ConnectionState.connected
-)
-ASSERT non_connected_changes.length == 0
+# No state changes at all — the auth failure is silently swallowed
+ASSERT state_changes.length == 0
 
-# RSA4c1: errorReason has code 80019 wrapping the underlying cause
-ASSERT client.connection.errorReason IS NOT null
-ASSERT client.connection.errorReason.code == 80019
-ASSERT client.connection.errorReason.statusCode == 401
-ASSERT client.connection.errorReason.cause IS NOT null
-ASSERT client.connection.errorReason.cause.code == 50000
+# errorReason is NOT set — the connection is healthy, the existing token is
+# still valid, and there is no state change to associate the error with
+ASSERT client.connection.errorReason IS null
 
 CLOSE_CLIENT(client)
 ```
@@ -465,9 +458,8 @@ CLOSE_CLIENT(client)
 | Spec | Requirement |
 |------|-------------|
 | RSA4f | The following conditions imply that the token is in an invalid format: the object passed by authCallback is neither a String, JsonObject, TokenRequest object, nor TokenDetails object |
-| RSA4c | If the provided token is in an invalid format (as defined in RSA4f), then RSA4c1-3 apply |
-| RSA4c1 | An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be set as the connection errorReason |
-| RSA4c2 | If the connection is CONNECTING, the connection should transition to DISCONNECTED or SUSPENDED |
+| RSA4c | If the provided token is in an invalid format (as defined in RSA4f), then RSA4c2/3 apply |
+| RSA4c2 | If the connection is CONNECTING, the connection should transition to DISCONNECTED or SUSPENDED. An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted with the state change and set as the connection errorReason |
 
 Tests that when authCallback returns an object that is not a String, JsonObject, TokenRequest, or TokenDetails (e.g. an integer or a list), it is treated as an invalid format error per RSA4f, and the connection transitions to DISCONNECTED with error code 80019 per RSA4c.
 
@@ -518,7 +510,7 @@ AWAIT_STATE client.connection.state == ConnectionState.disconnected
 # RSA4c2: Connection transitioned to DISCONNECTED
 ASSERT client.connection.state == ConnectionState.disconnected
 
-# RSA4c1: errorReason has code 80019
+# RSA4c2: errorReason has code 80019
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 80019
 ASSERT client.connection.errorReason.statusCode == 401
@@ -533,7 +525,7 @@ CLOSE_CLIENT(client)
 | Spec | Requirement |
 |------|-------------|
 | RSA4f | The token string or the JSON stringified JsonObject, TokenRequest or TokenDetails is greater than 128KiB implies the token is in an invalid format |
-| RSA4c | If the provided token is in an invalid format (as defined in RSA4f), then RSA4c1-3 apply |
+| RSA4c | If the provided token is in an invalid format (as defined in RSA4f), then RSA4c2/3 apply |
 
 Tests that when authCallback returns a token string larger than 128KiB, it is treated as an invalid format error per RSA4f and the connection transitions to DISCONNECTED with error code 80019.
 
@@ -586,7 +578,7 @@ AWAIT_STATE client.connection.state == ConnectionState.disconnected
 # RSA4c2: Connection transitioned to DISCONNECTED
 ASSERT client.connection.state == ConnectionState.disconnected
 
-# RSA4c1: errorReason has code 80019
+# RSA4c2: errorReason has code 80019
 ASSERT client.connection.errorReason IS NOT null
 ASSERT client.connection.errorReason.code == 80019
 ASSERT client.connection.errorReason.statusCode == 401
@@ -652,4 +644,5 @@ ASSERT error.message.length > 0
 - **RSA4c vs RSA4d precedence:** RSA4d (403 -> FAILED) takes precedence over RSA4c (generic error -> DISCONNECTED). The spec says RSA4c applies "unless RSA4d applies."
 - **RSA4d1 scope:** The 403 -> FAILED behaviour applies to connect sequence auth, RTN22 reauth, and explicit `authorize()` calls, but NOT to explicit `requestToken` calls.
 - **RSA4e context:** RSA4e applies specifically to REST requests and explicit `requestToken` calls. For realtime, RSA4c applies instead.
+- **RSA4c1 removal (specification#466):** RSA4c1 (ErrorInfo with code 80019) has been absorbed into RSA4c2. In the RSA4c3 case (auth failure while CONNECTED), errorReason is NOT set — the connection is healthy and the failure is silently swallowed until the token expires.
 - **Overlap with connection_auth_test.md:** The existing `connection_auth_test.md` already covers RSA4c2 (authCallback error -> DISCONNECTED), RSA4c3 (authCallback error while CONNECTED), and RSA4d (403 -> FAILED). The tests in this file provide additional coverage for timeout scenarios, invalid format handling (RSA4f), and REST-specific behaviour (RSA4e).
