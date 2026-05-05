@@ -32,34 +32,36 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 
 ## Client library endpoint configuration {#endpoint-configuration}
 
+Support for the deprecated client options `environment`, `restHost`, `realtimeHost`, and `fallbackHostsUseDefault` is optional. Client libraries that have no requirement for backwards compatibility with these options (for example, new SDKs) may omit support for them entirely. Spec points that relate exclusively to the behavior of these deprecated options are marked as **(optional, deprecated)** below.
+
 - `(REC1)` Various client options collectively determine a `primary domain`.
-  - `(REC1a)` The `primary domain` is `main.realtime.ably.net` unless overridden by specifying an `endpoint` option or any of the deprecated options `environment`, `restHost`, `realtimeHost`.
+  - `(REC1a)` The `primary domain` is `main.realtime.ably.net` unless overridden by specifying an `endpoint` option or, optionally, any of the deprecated options `environment`, `restHost`, `realtimeHost`.
   - `(REC1b)` If the `endpoint` option is specified then:
-    - `(REC1b1)` If any one of the deprecated options `environment`, `restHost`, `realtimeHost` or `fallbackHostsUseDefault` are also specified then the options as a set are invalid.
+    - `(REC1b1)` **(optional, deprecated)** If any one of the deprecated options `environment`, `restHost`, `realtimeHost` or `fallbackHostsUseDefault` are also specified then the options as a set are invalid. This check only applies to client libraries that support these deprecated options.
     - `(REC1b2)` If the `endpoint` option is a hostname, determined by it containing at least one period (`.`), or containing at least one instance of the string `::`, or being equal to the string `localhost`, then the `primary domain` is the value of the `endpoint` option.
     - `(REC1b3)` Otherwise, if the `endpoint` option specifies a non-production routing policy ID, determined by it having the form `nonprod:[id]`, then the `primary domain` is `[id].realtime.ably-nonprod.net`.
     - `(REC1b4)` Otherwise, the `endpoint` option is a production routing policy ID of the form `[id]`, and the `primary domain` is `[id].realtime.ably.net`.
-  - `(REC1c)` If the deprecated `environment` option is specified then it defines a production routing policy ID `[id]`:
-    - `(REC1c1)` If any one of the deprecated options `restHost`, `realtimeHost` are also specified then the options as a set are invalid.
-    - `(REC1c2)` Otherwise, the primary domain is `[id].realtime.ably.net`.
-  - `(REC1d)` If either the `restHost` or `realtimeHost` option is specified then:
-    - `(REC1d1)` If the `restHost` option is specified the `primary domain` is the value of the `restHost` option.
-    - `(REC1d2)` Otherwise, if the `realtimeHost` option is specified the `primary domain` is the value of the `realtimeHost` option.
+  - `(REC1c)` **(optional, deprecated)** If the deprecated `environment` option is specified then it defines a production routing policy ID `[id]`:
+    - `(REC1c1)` **(optional, deprecated)** If any one of the deprecated options `restHost`, `realtimeHost` are also specified then the options as a set are invalid.
+    - `(REC1c2)` **(optional, deprecated)** Otherwise, the primary domain is `[id].realtime.ably.net`.
+  - `(REC1d)` **(optional, deprecated)** If either the `restHost` or `realtimeHost` option is specified then:
+    - `(REC1d1)` **(optional, deprecated)** If the `restHost` option is specified the `primary domain` is the value of the `restHost` option.
+    - `(REC1d2)` **(optional, deprecated)** Otherwise, if the `realtimeHost` option is specified the `primary domain` is the value of the `realtimeHost` option.
 
 <!-- -->
 
 - `(REC2)` Various client options collectively determine a set of `fallback domains`.
   - `(REC2a)` If the `fallbackHosts` client option is specified then:
-    - `(REC2a1)` If the deprecated `fallbackHostsUseDefault` option is specified then the options as a set are invalid.
+    - `(REC2a1)` **(optional, deprecated)** If the deprecated `fallbackHostsUseDefault` option is specified then the options as a set are invalid. This check only applies to client libraries that support the deprecated `fallbackHostsUseDefault` option.
     - `(REC2a2)` Otherwise, the set of `fallback domains` is given by the value of the `fallbackHosts` option.
-  - `(REC2b)` Otherwise, if the deprecated `fallbackHostsUseDefault` option is specified then the set of `fallback domains` is the default set defined in [`REC2c1`](#REC2c1).
+  - `(REC2b)` **(optional, deprecated)** Otherwise, if the deprecated `fallbackHostsUseDefault` option is specified then the set of `fallback domains` is the default set defined in [`REC2c1`](#REC2c1).
   - `(REC2c)` Otherwise, the set of `fallback domains` is defined implicitly by the options used to define the `primary domain` as specified in [`REC1`](#REC1):
     - `(REC2c1)` If the `primary domain` is determined to be the default via [`REC1a`](#REC1a) then the set of `fallback domains` is the default `main.a.fallback.ably-realtime.com`, `main.b.fallback.ably-realtime.com`, `main.c.fallback.ably-realtime.com`, `main.d.fallback.ably-realtime.com`, and `main.e.fallback.ably-realtime.com`.
     - `(REC2c2)` Otherwise, if the `primary domain` is determined to be an explicit hostname via [`REC1b2`](#REC1b2) then the set of `fallback domains` is empty.
     - `(REC2c3)` Otherwise, if the `primary domain` is determined by a non-production routing policy ID via [`REC1b3`](#REC1b3) then the set of `fallback domains` is `[id].a.fallback.ably-realtime-nonprod.com`, `[id].b.fallback.ably-realtime-nonprod.com`, `[id].c.fallback.ably-realtime-nonprod.com`, `[id].d.fallback.ably-realtime-nonprod.com`, `[id].e.fallback.ably-realtime-nonprod.com`.
     - `(REC2c4)` Otherwise, if the `primary domain` is determined by a production routing policy ID via [`REC1b4`](#REC1b4) then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
-    - `(REC2c5)` Otherwise, if the `primary domain` is determined by a production routing policy ID via [`REC1c2`](#REC1c2) then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
-    - `(REC2c6)` Otherwise, if the `primary domain` is determined by the deprecated `restHost` or `realtimeHost` option via [`REC1d`](#REC1d) then the set of fallback domains is empty.
+    - `(REC2c5)` **(optional, deprecated)** Otherwise, if the `primary domain` is determined by a production routing policy ID via [`REC1c2`](#REC1c2) then the set of `fallback domains` is `[id].a.fallback.ably-realtime.com`, `[id].b.fallback.ably-realtime.com`, `[id].c.fallback.ably-realtime.com`, `[id].d.fallback.ably-realtime.com`, `[id].e.fallback.ably-realtime.com`.
+    - `(REC2c6)` **(optional, deprecated)** Otherwise, if the `primary domain` is determined by the deprecated `restHost` or `realtimeHost` option via [`REC1d`](#REC1d) then the set of fallback domains is empty.
 
 <!-- -->
 
@@ -1900,11 +1902,11 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(TO3j11)` `defaultTokenParams` - When a [TokenParams](#token-params) object is provided, it will override the client library defaults described in [TokenParams](#token-params)
   - `(TO3k)` Endpoint and connectivity-related attributes:
     - `(TO3k8)` `endpoint` string - allows a non-default Ably endpoint to be used
-    - `(TO3k1)` `environment` string (deprecated) - allows a non-default Ably endpoint to be used
-    - `(TO3k2)` `restHost` string (deprecated) - for development environments only; allows a non-default Ably REST host to be specified. It is never valid to provide both a `restHost` and `environment` value
-    - `(TO3k3)` `realtimeHost` string (deprecated) - for development environments only; allows a non-default Ably Realtime host to be specified. It is never valid to provide both a `realtimeHost` and `environment` value
+    - `(TO3k1)` **(optional, deprecated)** `environment` string - allows a non-default Ably endpoint to be used. Superseded by `endpoint` ([`TO3k8`](#TO3k8)). Client libraries with no backwards-compatibility requirement may omit this option
+    - `(TO3k2)` **(optional, deprecated)** `restHost` string - for development environments only; allows a non-default Ably REST host to be specified. It is never valid to provide both a `restHost` and `environment` value. Client libraries with no backwards-compatibility requirement may omit this option
+    - `(TO3k3)` **(optional, deprecated)** `realtimeHost` string - for development environments only; allows a non-default Ably Realtime host to be specified. It is never valid to provide both a `realtimeHost` and `environment` value. Client libraries with no backwards-compatibility requirement may omit this option
     - `(TO3k6)` `fallbackHosts` string array - optionally allows one or more fallback hosts to be used instead of the default fallback hosts. If an empty array is specified, then fallback host functionality is disabled
-    - `(TO3k7)` `fallbackHostsUseDefault` boolean (deprecated) - optionally allows the default fallback hosts `[a-e].ably-realtime.com` to be used when `environment` is not production or a custom realtime or REST host endpoint is being used. It is never valid to configure `fallbackHost` and set `fallbackHostsUseDefault` to `true`. The `fallbackHostsUseDefault` option is deprecated and future library releases will ignore any supplied value
+    - `(TO3k7)` **(optional, deprecated)** `fallbackHostsUseDefault` boolean - optionally allows the default fallback hosts `[a-e].ably-realtime.com` to be used when `environment` is not production or a custom realtime or REST host endpoint is being used. It is never valid to configure `fallbackHost` and set `fallbackHostsUseDefault` to `true`. The `fallbackHostsUseDefault` option is deprecated and future library releases will ignore any supplied value. Client libraries with no backwards-compatibility requirement may omit this option
     - `(TO3k4)` `port` integer - for development environments only; allows a non-default Ably non-TLS port to be specified
     - `(TO3k5)` `tlsPort` integer - for development environments only; allows a non-default Ably TLS port to be specified
   - `(TO3l)` The follow attributes, if set, are used to change the default behavior of the library:
@@ -2139,17 +2141,17 @@ Each type, method, and attribute is labelled with the name of one or more clause
       clientId: String? // RSC17, RSA15, TO3a
       defaultTokenParams: TokenParams? // TO3j11
       echoMessages: Bool default true // RTC1a, TO3h
-      environment: String? // RSC15e, TO3k1
+      environment: String? // RSC15e, TO3k1 (optional, deprecated)
       endpoint: String? // RSC15e, TO3k8
       logHandler: // platform specific - TO3c
       logLevel: // platform specific - TO3b
       logExceptionReportingUrl: String default "[library specific]" // TO3m (deprecated)
       port: Int default 80 // TO3k4
       queueMessages: Bool default true // RTP16b, TO3g
-      restHost: String default "main.realtime.ably.net" // RSC12, TO3k2
-      realtimeHost: String default "main.realtime.ably.net" // RTC1d, TO3k3
+      restHost: String default "main.realtime.ably.net" // RSC12, TO3k2 (optional, deprecated)
+      realtimeHost: String default "main.realtime.ably.net" // RTC1d, TO3k3 (optional, deprecated)
       fallbackHosts: String[] default nil // RSC15b, RSC15a, TO3k6
-      fallbackHostsUseDefault: Bool default false // TO3k7 (deprecated)
+      fallbackHostsUseDefault: Bool default false // TO3k7 (optional, deprecated)
       recover: String? // RTC1c, TO3i
       tls: Bool default true // RSC18, TO3d
       tlsPort: Int default 443 // TO3k5
