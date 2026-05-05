@@ -71,12 +71,13 @@ ASSERT connected_events.length == 1
 ASSERT update_events.length == 0
 
 # Server sends another CONNECTED message (e.g., after reauth)
+# Note: connectionId is a top-level ProtocolMessage field, NOT inside
+# connectionDetails, so it never changes for an in-progress connection.
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: CONNECTED,
-  connectionId: "connection-id-2",
-  connectionKey: "connection-key-2",
+  connectionId: "connection-id-1",
   connectionDetails: ConnectionDetails(
-    connectionKey: "connection-key-2",
+    connectionKey: "connection-key-1",
     maxIdleInterval: 20000,  # Different value
     connectionStateTtl: 120000,
     clientId: "client-123"
@@ -105,9 +106,11 @@ ASSERT update_change.previous == ConnectionState.connected
 ASSERT update_change.current == ConnectionState.connected
 ASSERT update_change.reason IS null  # No error in this case
 
-# Connection details were updated
-ASSERT client.connection.id == "connection-id-2"
-ASSERT client.connection.key == "connection-key-2"
+# connection.id and connection.key are unchanged — connectionId is a
+# top-level ProtocolMessage field not inside connectionDetails, so RTN24's
+# "connectionDetails must override stored details" does not apply to it.
+ASSERT client.connection.id == "connection-id-1"
+ASSERT client.connection.key == "connection-key-1"
 CLOSE_CLIENT(client)
 ```
 
@@ -165,10 +168,9 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Server sends CONNECTED with error (e.g., token was renewed due to expiry)
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: CONNECTED,
-  connectionId: "connection-id-2",
-  connectionKey: "connection-key-2",
+  connectionId: "connection-id-1",
   connectionDetails: ConnectionDetails(
-    connectionKey: "connection-key-2",
+    connectionKey: "connection-key-1",
     maxIdleInterval: 15000,
     connectionStateTtl: 120000
   ),
@@ -204,9 +206,9 @@ CLOSE_CLIENT(client)
 
 ## RTN24 - ConnectionDetails override
 
-**Spec requirement:** The connectionDetails in the ProtocolMessage must override any stored details (see RTN21).
+**Spec requirement:** The connectionDetails in the ProtocolMessage must override any stored details (see RTN21). Note: `connectionId` is a top-level ProtocolMessage field, NOT inside `connectionDetails`, so it is never updated by RTN24. The connectionDetails fields that are overridden include operational parameters like `maxIdleInterval`, `connectionStateTtl`, `maxMessageSize`, and `serverId`.
 
-Tests that receiving a new CONNECTED message updates connection details.
+Tests that receiving a new CONNECTED message overrides stored connectionDetails.
 
 ### Setup
 
@@ -217,7 +219,6 @@ mock_ws = MockWebSocket(
     conn.send_to_client(ProtocolMessage(
       action: CONNECTED,
       connectionId: "connection-id-1",
-      connectionKey: "connection-key-1",
       connectionDetails: ConnectionDetails(
         connectionKey: "connection-key-1",
         maxIdleInterval: 10000,
@@ -247,19 +248,18 @@ client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
   WITH timeout: 5 seconds
 
-# Verify initial connection details
-initial_id = client.connection.id
-initial_key = client.connection.key
-ASSERT initial_id == "connection-id-1"
-ASSERT initial_key == "connection-key-1"
+# Verify initial connection
+ASSERT client.connection.id == "connection-id-1"
+ASSERT client.connection.key == "connection-key-1"
 
-# Server sends new CONNECTED with different details
+# Server sends new CONNECTED with different connectionDetails (RTN24)
+# connectionId stays the same — the server never changes it for an
+# in-progress connection.
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: CONNECTED,
-  connectionId: "connection-id-2",
-  connectionKey: "connection-key-2",
+  connectionId: "connection-id-1",
   connectionDetails: ConnectionDetails(
-    connectionKey: "connection-key-2",
+    connectionKey: "connection-key-1",
     maxIdleInterval: 20000,  # Changed
     connectionStateTtl: 120000,  # Changed
     maxMessageSize: 32768,  # Changed
@@ -275,13 +275,14 @@ WAIT(100)
 ### Assertions
 
 ```pseudo
-# Connection details were updated
-ASSERT client.connection.id == "connection-id-2"
-ASSERT client.connection.key == "connection-key-2"
+# connection.id is unchanged (not inside connectionDetails)
+ASSERT client.connection.id == "connection-id-1"
+ASSERT client.connection.key == "connection-key-1"
 
-# All connection details should be overridden
-# (The exact accessors for these details may vary by implementation)
-# Verify that the implementation stores and uses the new values
+# connectionDetails fields were overridden (RTN21)
+# The exact accessors for these details may vary by implementation.
+# The effect can be observed indirectly — e.g., the heartbeat timeout
+# changes when maxIdleInterval is overridden.
 
 # State remains CONNECTED
 ASSERT client.connection.state == ConnectionState.connected
@@ -352,14 +353,13 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 # Record event count after initial connection
 initial_event_count = all_events.length
 
-# Send multiple CONNECTED messages
+# Send multiple CONNECTED messages (same connectionId — it never changes)
 FOR i IN [1, 2, 3]:
   mock_ws.active_connection.send_to_client(ProtocolMessage(
     action: CONNECTED,
-    connectionId: "connection-id-" + (i + 1),
-    connectionKey: "connection-key-" + (i + 1),
+    connectionId: "connection-id-1",
     connectionDetails: ConnectionDetails(
-      connectionKey: "connection-key-" + (i + 1),
+      connectionKey: "connection-key-1",
       maxIdleInterval: 15000,
       connectionStateTtl: 120000
     )
