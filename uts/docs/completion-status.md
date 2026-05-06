@@ -42,7 +42,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSC9 | Auth usage for authentication | Information only |
 | RSC10 | Token error retry handling | Yes — `rest/unit/auth/token_renewal.md`, `rest/integration/auth.md` |
 | RSC13 | Connection and request timeouts | Yes — `rest/unit/rest_client.md` |
-| RSC15 | Host fallback behaviour (RSC15a–RSC15n) | Yes — `rest/unit/fallback.md` |
+| RSC15 | Host fallback behaviour (RSC15a–RSC15n) | Yes — `rest/unit/fallback.md`, `rest/integration/proxy/rest_fallback.md` |
 | RSC16 | Time function | Yes — `rest/unit/time.md`, `rest/integration/time_stats.md` |
 | RSC17 | ClientId attribute | Yes — `rest/unit/rest_client.md` |
 | RSC18 | TLS configuration | Yes — `rest/unit/rest_client.md`, `rest/unit/time.md` |
@@ -87,7 +87,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | RSL1 | Publish function (RSL1a–RSL1n1) | Yes — `rest/unit/channel/publish.md`, `rest/unit/channel/publish_result.md`, `rest/integration/publish.md`, `rest/integration/mutable_messages.md` |
-| RSL1k | Idempotent publishing (RSL1k1–RSL1k5) | Yes — `rest/unit/channel/idempotency.md` |
+| RSL1k | Idempotent publishing (RSL1k1–RSL1k5) | Yes — `rest/unit/channel/idempotency.md`, `rest/integration/proxy/rest_fallback.md` (RSL1k4 pending proxy enhancement) |
 | RSL2 | History function (RSL2a–RSL2b3) | Yes — `rest/unit/channel/history.md`, `rest/integration/history.md` |
 | RSL3 | Presence attribute | Yes — `rest/unit/presence/rest_presence.md` (with RSP1a) |
 | RSL4 | Message encoding (RSL4a–RSL4d4) | Yes — `rest/unit/encoding/message_encoding.md`, `realtime/integration/channels/channel_publish_test.md` |
@@ -413,6 +413,13 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL13a | Server sends unsolicited DETACHED → reattach | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL14 | Server sends channel ERROR → FAILED | Yes — `realtime/integration/proxy/channel_faults.md` |
 | RTL3d | Channels reattach after connection recovery | Yes — `realtime/integration/proxy/channel_faults.md` |
+| RSC15l | Connection drop triggers fallback retry | Yes — `rest/integration/proxy/rest_fallback.md` |
+| RSC15l2 | Request timeout triggers fallback retry | Yes — `rest/integration/proxy/rest_fallback.md` |
+| RSC15l4 | CloudFront Server header triggers fallback | Yes — `rest/integration/proxy/rest_fallback.md` |
+| RSC15l | Unreachable endpoint surfaces correct error | Yes — `rest/integration/proxy/rest_fallback.md` |
+| RSC15l | HTTP 5xx with/without error body parsed correctly | Yes — `rest/integration/proxy/rest_fallback.md` |
+| RSC15l | HTTP 4xx not retried, error parsed | Yes — `rest/integration/proxy/rest_fallback.md` |
+| RSL1k4 | Idempotent publish retry deduplication | Pending — `rest/integration/proxy/rest_fallback.md` (needs proxy enhancement) |
 | RSC10 | Token renewal on HTTP 401 | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RSC15m/REC2c2 | HTTP 503 error (no fallback, hosts disabled) | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RTL6 | End-to-end publish and history | Yes — `realtime/integration/proxy/rest_faults.md` |

@@ -1,6 +1,6 @@
 # REST Fallback Proxy Integration Tests
 
-Spec points: `RSC15l`, `RSC15l2`, `RSC15l4`
+Spec points: `RSC15l`, `RSC15l2`, `RSC15l4`, `RSL1k4`
 
 ## Test Type
 
@@ -13,13 +13,15 @@ See `uts/realtime/integration/helpers/proxy.md` for the full proxy infrastructur
 ## Corresponding Unit Tests
 
 - `uts/rest/unit/fallback.md` -- RSC15l/RSC15l4 (unit test verifies fallback logic with mocked HTTP)
+- `uts/rest/unit/publish.md` -- RSL1k (unit test verifies idempotent publish logic with mocked HTTP)
 
 ## Purpose
 
-These tests verify fallback host retry behaviour that cannot be fully tested
-with mocked HTTP because the `shouldFallback` classification varies by
-platform. By exercising the SDK's real HTTP client through the proxy, we
-confirm the actual retry behaviour end-to-end.
+These tests verify fallback host retry behaviour and HTTP error handling that
+cannot be fully tested with mocked HTTP because the `shouldFallback`
+classification and error surfacing vary by platform. By exercising the SDK's
+real HTTP client through the proxy (or directly against an unreachable
+endpoint), we confirm the actual retry and error-parsing behaviour end-to-end.
 
 ## Sandbox Setup
 
@@ -48,6 +50,26 @@ AFTER EACH TEST:
   IF session IS NOT null:
     session.close()
 ```
+
+### Token Auth Helper
+
+```pseudo
+function token_auth_callback(api_key):
+  RETURN (params, cb) => {
+    # Create a temporary Rest client pointed directly at the sandbox (bypassing the proxy)
+    # and use it to obtain a TokenDetails object
+    inner_rest = Rest(options: ClientOptions(
+      key: api_key,
+      endpoint: SANDBOX_ENDPOINT
+    ))
+    inner_rest.auth.requestToken().then(
+      (token) => cb(null, token),
+      (err) => cb(err, null)
+    )
+  }
+```
+
+Note: The sandbox endpoint is used directly (not through the proxy) so that token requests are never intercepted by proxy fault-injection rules.
 
 ### Fallback Host Configuration
 
@@ -178,4 +200,365 @@ ASSERT http_requests.length >= 2
 # First response was the injected 403 with CloudFront header
 http_responses = log.filter(e => e.type == "http_response")
 ASSERT http_responses[0].status == 403
+```
+
+---
+
+## Unreachable endpoint surfaces correct error (no proxy)
+
+Tests that when the SDK's HTTP client cannot connect to the target host at all
+(ECONNREFUSED), the error is surfaced as a usable ErrorInfo-like object with
+status/code information. This test does NOT use the proxy -- it points the SDK
+at a port where nothing is listening.
+
+### Setup
+
+```pseudo
+# No proxy session needed for this test.
+
+# Pick a port that is not listening (e.g. 19999).
+non_listening_port = 19999
+
+# Use token auth via authCallback so the SDK can authenticate without
+# contacting the dead endpoint. The inner Rest client talks directly to the
+# sandbox to obtain a token.
+client = Rest(options: ClientOptions(
+  authCallback: token_auth_callback(api_key),
+  endpoint: "localhost",
+  port: non_listening_port,
+  tls: false,
+  useBinaryProtocol: false
+))
+```
+
+### Test Steps
+
+```pseudo
+AWAIT client.time() FAILS WITH error
+```
+
+### Assertions
+
+```pseudo
+# The error is an ErrorInfo-like object with a statusCode or code
+# (the exact code/statusCode depends on the SDK's HTTP layer, but it must
+# be present and non-null so callers can programmatically handle it)
+ASSERT error IS NOT null
+ASSERT error.statusCode IS NOT null OR error.code IS NOT null
+```
+
+---
+
+## Connection drop mid-response retried on fallback (http_drop)
+
+| Spec | Requirement |
+|------|-------------|
+| RSC15l | Errors that necessitate use of an alternative host |
+
+Tests that when the proxy drops the TCP connection mid-request (simulating
+ECONNRESET), the SDK classifies this as a retryable error and retries on a
+fallback host. The proxy drops the first `/time` request, then passes through
+on the retry.
+
+### Setup
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: [{
+    "match": { "type": "http_request", "pathContains": "/time" },
+    "action": {
+      "type": "http_drop"
+    },
+    "times": 1,
+    "comment": "Drop TCP connection on first /time request (ECONNRESET)"
+  }]
+)
+
+client = Rest(options: ClientOptions(
+  authCallback: token_auth_callback(api_key),
+  endpoint: "localhost",
+  fallbackHosts: ["localhost"],
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false
+))
+```
+
+### Test Steps
+
+```pseudo
+result = AWAIT client.time()
+```
+
+### Assertions
+
+```pseudo
+# The request should succeed (retried on fallback after connection drop)
+ASSERT result IS number
+
+# Proxy event log shows at least two HTTP requests to /time
+log = session.get_log()
+http_requests = log.filter(e => e.type == "http_request" AND e.path CONTAINS "/time")
+ASSERT http_requests.length >= 2
+```
+
+---
+
+## HTTP 5xx with JSON error body -- error parsed correctly (http_respond 503)
+
+Tests that when the proxy returns an HTTP 503 with a well-formed JSON error
+body (containing an `error` object with `code`, `statusCode`, and `message`),
+the SDK parses the ErrorInfo fields from the response body. No fallback hosts
+are configured, so the error propagates directly to the caller.
+
+### Setup
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: [{
+    "match": { "type": "http_request", "pathContains": "/time" },
+    "action": {
+      "type": "http_respond",
+      "status": 503,
+      "body": { "error": { "code": 50300, "statusCode": 503, "message": "Service temporarily unavailable" } }
+    },
+    "times": 1,
+    "comment": "Return 503 with JSON error body on first /time request"
+  }]
+)
+
+# No fallbackHosts -- endpoint="localhost" disables fallback (REC2c2)
+client = Rest(options: ClientOptions(
+  authCallback: token_auth_callback(api_key),
+  endpoint: "localhost",
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false
+))
+```
+
+### Test Steps
+
+```pseudo
+AWAIT client.time() FAILS WITH error
+```
+
+### Assertions
+
+```pseudo
+# The SDK parsed the error fields from the JSON response body
+ASSERT error.code == 50300
+ASSERT error.statusCode == 503
+ASSERT error.message CONTAINS "Service temporarily unavailable"
+```
+
+---
+
+## HTTP 5xx without JSON error body -- error synthesized (http_respond 503)
+
+Tests that when the proxy returns an HTTP 503 with a JSON body that does NOT
+contain an `error` field (e.g. `{}`), the SDK still produces a usable error
+from the HTTP status code alone. This is the closest the proxy can get to a
+non-parseable body while still returning valid JSON.
+
+### Setup
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: [{
+    "match": { "type": "http_request", "pathContains": "/time" },
+    "action": {
+      "type": "http_respond",
+      "status": 503,
+      "body": {}
+    },
+    "times": 1,
+    "comment": "Return 503 with empty JSON body (no error field) on first /time request"
+  }]
+)
+
+# No fallbackHosts -- endpoint="localhost" disables fallback (REC2c2)
+client = Rest(options: ClientOptions(
+  authCallback: token_auth_callback(api_key),
+  endpoint: "localhost",
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false
+))
+```
+
+### Test Steps
+
+```pseudo
+AWAIT client.time() FAILS WITH error
+```
+
+### Assertions
+
+```pseudo
+# The SDK synthesized an error from the HTTP status code
+ASSERT error.statusCode == 503
+```
+
+---
+
+## HTTP 4xx with JSON error body -- not retried, error parsed (http_respond 403)
+
+Tests that when the proxy returns an HTTP 403 (a 4xx client error) with a
+well-formed JSON error body, the SDK does NOT retry on fallback hosts -- even
+when fallback hosts are configured -- and instead propagates the parsed error
+directly to the caller. Only 5xx and certain special cases (RSC15l4 CloudFront)
+should trigger fallback; 4xx errors indicate a client-side problem.
+
+### Setup
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: [{
+    "match": { "type": "http_request", "pathContains": "/time" },
+    "action": {
+      "type": "http_respond",
+      "status": 403,
+      "body": { "error": { "code": 40300, "statusCode": 403, "message": "Forbidden" } }
+    },
+    "times": 1,
+    "comment": "Return 403 with JSON error body on first /time request"
+  }]
+)
+
+# Fallback hosts ARE configured -- but 403 should NOT trigger fallback
+client = Rest(options: ClientOptions(
+  authCallback: token_auth_callback(api_key),
+  endpoint: "localhost",
+  fallbackHosts: ["localhost"],
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false
+))
+```
+
+### Test Steps
+
+```pseudo
+AWAIT client.time() FAILS WITH error
+```
+
+### Assertions
+
+```pseudo
+# The SDK parsed the error fields from the JSON response body
+ASSERT error.code == 40300
+ASSERT error.statusCode == 403
+
+# Proxy event log shows exactly 1 HTTP request to /time (no fallback retry)
+log = session.get_log()
+http_requests = log.filter(e => e.type == "http_request" AND e.path CONTAINS "/time")
+ASSERT http_requests.length == 1
+```
+
+---
+
+## RSL1k4 - Idempotent publish retry deduplication
+
+| Spec | Requirement |
+|------|-------------|
+| RSL1k4 | An explicit test for idempotency of publishes with library-generated ids shall exist that simulates an error response to a successful publish, expects an automatic retry by the library, and verifies that the batch is published only once |
+
+### Proxy Limitation
+
+RSL1k4 requires the proxy to **forward** the publish request to the server
+(so the publish actually succeeds), and then **replace** the real success
+response with a fake 5xx error response back to the client. This causes the
+SDK to believe the publish failed and retry it, while the server already
+persisted the message. The server then deduplicates the retry based on the
+library-generated message `id`.
+
+The current proxy infrastructure does NOT support a "modify response" or
+"forward then replace response" action. The available `http_respond` action
+intercepts the request BEFORE forwarding it to the server, which means the
+publish never reaches the server at all. This makes it impossible to test
+real client-server idempotency agreement, because:
+
+1. With `http_respond`: the first publish never reaches the server, so the
+   retry is the first actual publish. No deduplication occurs -- the test
+   would pass trivially without verifying idempotency.
+
+2. What is needed: an action like `http_forward_then_respond` that forwards
+   the request upstream, waits for the real response, discards it, and
+   returns a fake error response to the client instead. This would let the
+   publish succeed server-side while the client sees a failure and retries.
+
+### Test Specification (requires proxy enhancement)
+
+The following test is specified for completeness but **cannot be implemented
+until the proxy supports a forward-then-replace-response action**.
+
+#### Setup
+
+```pseudo
+session = create_proxy_session(
+  endpoint: "sandbox",
+  port: allocated_port,
+  rules: [{
+    "match": { "type": "http_request", "method": "POST", "pathContains": "/channels/" },
+    "action": {
+      # NOTE: This action type does not exist yet in the proxy.
+      # It would need to: (1) forward the request to the upstream server,
+      # (2) wait for the real response, (3) discard it, and (4) return the
+      # fake error response below to the client.
+      "type": "http_forward_then_respond",
+      "status": 503,
+      "body": { "error": { "code": 50300, "statusCode": 503, "message": "Service temporarily unavailable" } }
+    },
+    "times": 1,
+    "comment": "RSL1k4: Forward first publish to server, then return fake 503 to client"
+  }]
+)
+
+client = Rest(options: ClientOptions(
+  authCallback: token_auth_callback(api_key),
+  endpoint: "localhost",
+  fallbackHosts: ["localhost"],
+  port: session.proxy_port,
+  tls: false,
+  useBinaryProtocol: false,
+  idempotentRestPublishing: true
+))
+
+channel_name = "test-RSL1k4-idempotent-" + random_string()
+channel = client.channels.get(channel_name)
+```
+
+#### Test Steps
+
+```pseudo
+# Publish a message -- first attempt succeeds server-side but client sees 503,
+# SDK retries, server deduplicates the retry
+AWAIT channel.publish("test", "data")
+```
+
+#### Assertions
+
+```pseudo
+# The publish completed successfully (SDK retried after the fake 503)
+# No error thrown
+
+# Verify via history that only one copy of the message exists
+# (server deduplicated the retry based on the library-generated message id)
+history = AWAIT channel.history()
+matching = history.items.filter(m => m.name == "test" AND m.data == "data")
+ASSERT matching.length == 1
+
+# Proxy event log shows at least two POST requests to /channels/
+log = session.get_log()
+http_requests = log.filter(e => e.type == "http_request" AND e.method == "POST" AND e.path CONTAINS "/channels/")
+ASSERT http_requests.length >= 2
 ```
