@@ -51,9 +51,9 @@ AFTER EACH TEST:
 
 ### Fallback Host Configuration
 
-These tests need fallback hosts enabled. Since `endpoint: "localhost"` disables
-fallback hosts (REC2c2), we instead use `restHost: "localhost"` with explicit
-`fallbackHosts: ["localhost"]` and the proxy port. Both the primary and fallback
+These tests need fallback hosts enabled. `endpoint: "localhost"` would normally
+disable automatic fallback host selection (REC2c2), but explicitly providing
+`fallbackHosts: ["localhost"]` overrides this. Both the primary and fallback
 requests route through the same proxy, with `times: 1` rules ensuring only the
 first request is faulted.
 
@@ -90,7 +90,7 @@ session = create_proxy_session(
 
 client = Rest(options: ClientOptions(
   authCallback: token_auth_callback(api_key),
-  restHost: "localhost",
+  endpoint: "localhost",
   fallbackHosts: ["localhost"],
   port: session.proxy_port,
   tls: false,
@@ -150,7 +150,7 @@ session = create_proxy_session(
 
 client = Rest(options: ClientOptions(
   authCallback: token_auth_callback(api_key),
-  restHost: "localhost",
+  endpoint: "localhost",
   fallbackHosts: ["localhost"],
   port: session.proxy_port,
   tls: false,
