@@ -29,6 +29,8 @@ AFTER ALL TESTS:
 
 ## RTL10d - History contains messages published by another client
 
+**Test ID**: `realtime/integration/RTL10d/history-cross-client-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL10d | A test should exist that publishes messages from one client, and upon confirmation of message delivery, a history request should be made on another client to ensure all messages are available |

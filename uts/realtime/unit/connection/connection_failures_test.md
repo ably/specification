@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN15h1 - DISCONNECTED with token error, no means to renew
 
+**Test ID**: `realtime/unit/RTN15h1/token-error-no-renew-0`
+
 **Spec requirement:** If a DISCONNECTED message contains a token error and the library cannot renew the token, transition to FAILED state.
 
 Tests that non-renewable token errors cause permanent failure.
@@ -85,6 +87,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN15h2 - DISCONNECTED with token error, renewable token
+
+**Test ID**: `realtime/unit/RTN15h2/token-error-renew-success-0`
 
 **Spec requirement:** If a DISCONNECTED message contains a token error and the library can renew the token, transition to CONNECTING, obtain new token, and attempt resume.
 
@@ -207,6 +211,8 @@ CLOSE_CLIENT(client)
 
 ## RTN15h2 - DISCONNECTED with token error, renewal fails
 
+**Test ID**: `realtime/unit/RTN15h2/token-error-renew-fails-1`
+
 **Spec requirement:** If token renewal or reconnection fails after DISCONNECTED with token error, transition to DISCONNECTED with errorReason set.
 
 Tests that failed token renewal leads to DISCONNECTED state.
@@ -322,6 +328,8 @@ CLOSE_CLIENT(client)
 
 ## RTN15h3 - DISCONNECTED with non-token error
 
+**Test ID**: `realtime/unit/RTN15h3/non-token-error-resume-0`
+
 **Spec requirement:** If a DISCONNECTED message contains an error other than a token error, initiate immediate reconnect with resume attempt.
 
 Tests that non-token disconnection triggers immediate resume.
@@ -422,6 +430,8 @@ CLOSE_CLIENT(client)
 
 ## RTN15j - ERROR protocol message with empty channel
 
+**Test ID**: `realtime/unit/RTN15j/error-empty-channel-failed-0`
+
 **Spec requirement:** If an ERROR ProtocolMessage with empty channel is received when CONNECTED, transition to FAILED state and set errorReason.
 
 Tests that fatal connection errors cause FAILED state.
@@ -494,6 +504,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN15a - Unexpected transport disconnect
+
+**Test ID**: `realtime/unit/RTN15a/unexpected-transport-disconnect-0`
 
 **Spec requirement:** If transport is disconnected unexpectedly (without DISCONNECTED or ERROR), respond as if receiving non-token DISCONNECTED message.
 
@@ -589,6 +601,8 @@ CLOSE_CLIENT(client)
 
 ## RTN15b, RTN15c6 - Successful resume
 
+**Test ID**: `realtime/unit/RTN15b/successful-resume-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN15b | Resume is attempted with connectionKey in query parameter |
@@ -682,6 +696,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN15c7 - Failed resume (new connectionId)
+
+**Test ID**: `realtime/unit/RTN15c7/failed-resume-new-id-0`
 
 **Spec requirement:** If resume fails, server sends CONNECTED with new connectionId and error. Client should reset msgSerial to 0.
 
@@ -778,6 +794,8 @@ CLOSE_CLIENT(client)
 
 ## RTN15e - Connection key updated on resume
 
+**Test ID**: `realtime/unit/RTN15e/connection-key-updated-0`
+
 **Spec requirement:** When connection is resumed, Connection.key may change and is provided in CONNECTED message connectionDetails.
 
 Tests that connection key is updated after resume.
@@ -791,6 +809,8 @@ ASSERT client.connection.key == "key-1-updated"
 ---
 
 ## RTN15g - Connection state cleared after connectionStateTtl
+
+**Test ID**: `realtime/unit/RTN15g/state-cleared-after-ttl-0`
 
 **Spec requirement:** If disconnected longer than connectionStateTtl, don't attempt resume. Clear local state and make fresh connection.
 
@@ -933,6 +953,8 @@ CLOSE_CLIENT(client)
 
 ## RTN15c5 - ERROR with token error during resume
 
+**Test ID**: `realtime/unit/RTN15c5/token-error-during-resume-0`
+
 **Spec requirement:** If resume attempt receives ERROR with token error, follow RTN15h spec for token error handling.
 
 Tests that token errors during resume trigger renewal.
@@ -1044,6 +1066,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN15c4 - ERROR with fatal error during resume
+
+**Test ID**: `realtime/unit/RTN15c4/fatal-error-during-resume-0`
 
 **Spec requirement:** If resume attempt receives ERROR with fatal error, transition to FAILED state.
 

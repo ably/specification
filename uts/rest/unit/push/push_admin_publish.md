@@ -13,6 +13,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ## RSH1 — client.push.admin exposes PushAdmin object
 
+**Test ID**: `rest/unit/RSH1/push-admin-accessible-0`
+
 **Spec requirement:** RSH1 — `Push#admin` object provides the PushAdmin interface.
 
 Tests that the REST client exposes a `push.admin` object of the correct type.
@@ -39,6 +41,8 @@ ASSERT client.push.admin.channelSubscriptions IS PushChannelSubscriptions
 ---
 
 ## RSH1a — publish sends POST to /push/publish
+
+**Test ID**: `rest/unit/RSH1a/publish-post-push-publish-0`
 
 **Spec requirement:** RSH1a — `publish(recipient, data)` performs an HTTP request to `/push/publish`.
 
@@ -95,6 +99,8 @@ ASSERT body["notification"]["body"] == "Hello"
 
 ## RSH1a — publish with clientId recipient
 
+**Test ID**: `rest/unit/RSH1a/publish-clientid-recipient-1`
+
 **Spec requirement:** RSH1a — Tests should exist with valid recipient details.
 
 Tests that publish works with a `clientId` recipient.
@@ -141,6 +147,8 @@ ASSERT body["data"]["key"] == "value"
 ---
 
 ## RSH1a — publish with deviceId recipient
+
+**Test ID**: `rest/unit/RSH1a/publish-deviceid-recipient-2`
 
 **Spec requirement:** RSH1a — Tests should exist with valid recipient details.
 
@@ -189,6 +197,8 @@ ASSERT body["notification"]["title"] == "Device Push"
 
 ## RSH1a — publish rejects empty recipient
 
+**Test ID**: `rest/unit/RSH1a/rejects-empty-recipient-3`
+
 **Spec requirement:** RSH1a — Empty values for `recipient` should be immediately rejected.
 
 Tests that calling publish with an empty recipient throws an error without making an HTTP request.
@@ -224,6 +234,8 @@ ASSERT captured_requests.length == 0
 ---
 
 ## RSH1a — publish rejects empty data
+
+**Test ID**: `rest/unit/RSH1a/rejects-empty-data-4`
 
 **Spec requirement:** RSH1a — Empty values for `data` should be immediately rejected.
 
@@ -261,6 +273,8 @@ ASSERT captured_requests.length == 0
 
 ## RSH1a — publish rejects null recipient
 
+**Test ID**: `rest/unit/RSH1a/rejects-null-recipient-5`
+
 **Spec requirement:** RSH1a — Empty values for `recipient` should be immediately rejected.
 
 Tests that calling publish with a null recipient throws an error.
@@ -295,6 +309,8 @@ ASSERT captured_requests.length == 0
 ---
 
 ## RSH1a — publish propagates server error
+
+**Test ID**: `rest/unit/RSH1a/server-error-propagated-6`
 
 **Spec requirement:** RSH1a — Tests should exist with invalid recipient details.
 

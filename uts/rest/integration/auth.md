@@ -37,6 +37,8 @@ AFTER ALL TESTS:
 
 ## RSA4 - Basic auth with API key
 
+**Test ID**: `rest/integration/RSA4/basic-auth-key-0`
+
 **Spec requirement:** RSA4 - Client can authenticate using an API key via HTTP Basic Auth.
 
 Tests that API key authentication works against real server.
@@ -65,6 +67,8 @@ ASSERT result.statusCode >= 200 AND result.statusCode < 300
 ---
 
 ## RSA8 - Token auth with JWT
+
+**Test ID**: `rest/integration/RSA8/token-auth-jwt-0`
 
 **Spec requirement:** RSA8 - Client can authenticate using a JWT token.
 
@@ -99,6 +103,8 @@ ASSERT result.statusCode >= 200 AND result.statusCode < 300
 ---
 
 ## RSA8 - Token auth with native token
+
+**Test ID**: `rest/integration/RSA8/token-auth-native-1`
 
 **Spec requirement:** RSA8 - Client can authenticate using an Ably native token obtained via `requestToken()`.
 
@@ -141,6 +147,8 @@ ASSERT result.statusCode >= 200 AND result.statusCode < 300
 
 ## RSA8 - authCallback with TokenRequest
 
+**Test ID**: `rest/integration/RSA8/auth-callback-token-request-2`
+
 **Spec requirement:** RSA8 - Client can use `authCallback` to obtain authentication via `TokenRequest`.
 
 Tests using an `authCallback` that returns a `TokenRequest`, which is then exchanged for a token.
@@ -178,6 +186,8 @@ ASSERT result.statusCode >= 200 AND result.statusCode < 300
 
 ## RSA8 - authCallback with JWT
 
+**Test ID**: `rest/integration/RSA8/auth-callback-jwt-3`
+
 **Spec requirement:** RSA8 - Client can use `authCallback` to obtain JWT tokens dynamically.
 
 Tests using an `authCallback` that returns a JWT.
@@ -213,6 +223,8 @@ ASSERT result.statusCode >= 200 AND result.statusCode < 300
 
 ## RSA4 - Invalid credentials rejected
 
+**Test ID**: `rest/integration/RSA4/invalid-credentials-rejected-1`
+
 **Spec requirement:** RSA4 - Server rejects requests with invalid API key credentials.
 
 Tests that invalid API keys are rejected by the server.
@@ -241,6 +253,8 @@ ASSERT result.errorCode == 40400
 ---
 
 ## RSC10 - Token renewal with expired JWT
+
+**Test ID**: `rest/integration/RSC10/token-renewal-expired-jwt-0`
 
 **Spec requirement:** RSC10 - When a REST request fails with a token error (40140-40149), the client should automatically renew the token and retry the request.
 
@@ -293,6 +307,8 @@ ASSERT callback_count == 2
 ---
 
 ## RSA8 - Capability restriction
+
+**Test ID**: `rest/integration/RSA8/capability-restriction-4`
 
 **Spec requirement:** RSA8 - Tokens with restricted capabilities should only allow the permitted operations.
 

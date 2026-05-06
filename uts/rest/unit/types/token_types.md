@@ -12,6 +12,8 @@ No mocks required for most tests - these verify type structure and serialization
 
 ## TD1-TD5 - TokenDetails structure
 
+**Test ID**: `rest/unit/TD1/token-details-attributes-0`
+
 **Spec requirement:** TokenDetails type must provide all required attributes according to TD1-TD5 specifications.
 
 | Spec | Attribute | Description |
@@ -65,6 +67,8 @@ ASSERT token_with_client.clientId == "my-client"
 
 ## TD - TokenDetails from JSON
 
+**Test ID**: `rest/unit/TD/token-details-from-json-0`
+
 **Spec requirement:** TokenDetails must support deserialization from JSON responses containing token information.
 
 Tests that `TokenDetails` can be deserialized from JSON response.
@@ -92,6 +96,8 @@ ASSERT token_details.clientId == "json-client"
 ---
 
 ## TK1-TK6 - TokenParams structure
+
+**Test ID**: `rest/unit/TK1/token-params-attributes-0`
 
 **Spec requirement:** TokenParams type must provide all required attributes according to TK1-TK6 specifications.
 
@@ -155,6 +161,8 @@ ASSERT params.nonce == "full-nonce"
 
 ## TK - TokenParams to query string
 
+**Test ID**: `rest/unit/TK/token-params-to-query-string-0`
+
 **Spec requirement:** TokenParams must support conversion to query parameters for token request URLs.
 
 Tests that `TokenParams` are correctly converted to query parameters.
@@ -177,6 +185,8 @@ ASSERT query_map["capability"] == "{\"ch\":[\"pub\"]}"
 ---
 
 ## TE1-TE6 - TokenRequest structure
+
+**Test ID**: `rest/unit/TE1/token-request-attributes-0`
 
 **Spec requirement:** TokenRequest type must provide all required attributes according to TE1-TE6 specifications.
 
@@ -265,6 +275,8 @@ ASSERT request.nonce == "unique-nonce"
 
 ## TE - TokenRequest with mac (signature)
 
+**Test ID**: `rest/unit/TE/token-request-mac-signature-0`
+
 **Spec requirement:** TokenRequest must include a mac (signature) field for authentication.
 
 Tests that `TokenRequest` includes the mac signature.
@@ -284,6 +296,8 @@ ASSERT request.mac == "signature-base64"
 ---
 
 ## TE - TokenRequest to JSON
+
+**Test ID**: `rest/unit/TE/token-request-to-json-1`
 
 **Spec requirement:** TokenRequest must support serialization to JSON for transmission to the token endpoint.
 
@@ -315,6 +329,8 @@ ASSERT json_data["mac"] == "json-mac"
 ---
 
 ## TE - TokenRequest from JSON
+
+**Test ID**: `rest/unit/TE/token-request-from-json-2`
 
 **Spec requirement:** TokenRequest must support deserialization from JSON.
 

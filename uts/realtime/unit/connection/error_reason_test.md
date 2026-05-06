@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN25 - errorReason set on connection errors
 
+**Test ID**: `realtime/unit/RTN25/error-reason-on-failed-0`
+
 **Spec requirement:** Connection#errorReason attribute is an optional ErrorInfo object which is set by the library when an error occurs on the connection, as described by RSA4c1, RSA4d, RTN11d, RTN14a, RTN14b, RTN14e, RTN14g, RTN15c7, RTN15c4, RTN15d, RTN15h, RTN15i, RTN16e.
 
 Tests that errorReason is populated correctly across various error scenarios.
@@ -70,6 +72,8 @@ CLOSE_CLIENT(client)
 
 ## RTN25 - errorReason on DISCONNECTED state (RTN14e)
 
+**Test ID**: `realtime/unit/RTN25/error-reason-disconnected-1`
+
 **Spec requirement:** errorReason is set when connection enters DISCONNECTED state due to connection failure.
 
 Tests that errorReason is populated when transitioning to DISCONNECTED.
@@ -117,6 +121,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN25 - errorReason on SUSPENDED state (RTN14e)
+
+**Test ID**: `realtime/unit/RTN25/error-reason-suspended-2`
 
 **Spec requirement:** errorReason is updated when connection enters SUSPENDED state after connectionStateTtl expires.
 
@@ -177,6 +183,8 @@ CLOSE_CLIENT(client)
 
 ## RTN25 - errorReason on token errors (RTN14b, RSA4a)
 
+**Test ID**: `realtime/unit/RTN25/error-reason-token-error-3`
+
 **Spec requirement:** When an ERROR ProtocolMessage with a token error is received during connection and there is no means to renew the token, RSA4a applies: the connection transitions to FAILED with error code 40171.
 
 Tests that errorReason is set with the 40171 wrapper error when a non-renewable token fails.
@@ -229,6 +237,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN25 - errorReason cleared on successful connection
+
+**Test ID**: `realtime/unit/RTN25/error-reason-cleared-on-connect-4`
 
 **Spec requirement:** errorReason should be cleared when connection successfully recovers.
 
@@ -316,6 +326,8 @@ CLOSE_CLIENT(client)
 
 ## RTN25 - errorReason on protocol-level ERROR message (RTN14g)
 
+**Test ID**: `realtime/unit/RTN25/error-reason-protocol-error-5`
+
 **Spec requirement:** errorReason is set when ERROR ProtocolMessage with empty channel is received.
 
 Tests that connection-level protocol errors populate errorReason.
@@ -370,6 +382,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN25 - errorReason propagated to ConnectionStateChange events
+
+**Test ID**: `realtime/unit/RTN25/error-reason-in-state-change-6`
 
 **Spec requirement:** errorReason should be accessible through ConnectionStateChange events emitted during state transitions.
 

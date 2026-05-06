@@ -13,6 +13,8 @@ These tests use the mock HTTP infrastructure defined in `uts/test/rest/unit/help
 
 ## RSL15b, RSL15b1 — updateMessage sends PATCH with action MESSAGE_UPDATE
 
+**Test ID**: `rest/unit/RSL15b/update-sends-patch-update-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSL15b | The SDK must send a PATCH to `/channels/{channelName}/messages/{serial}` |
@@ -63,6 +65,8 @@ ASSERT body["data"] == "new-data"
 
 ## RSL15b, RSL15b1 — deleteMessage sends PATCH with action MESSAGE_DELETE
 
+**Test ID**: `rest/unit/RSL15b/delete-sends-patch-delete-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RSL15b | The SDK must send a PATCH to `/channels/{channelName}/messages/{serial}` |
@@ -108,6 +112,8 @@ ASSERT body["action"] == 2  # MESSAGE_DELETE numeric value
 ---
 
 ## RSL15b, RSL15b1 — appendMessage sends PATCH with action MESSAGE_APPEND
+
+**Test ID**: `rest/unit/RSL15b/append-sends-patch-append-2`
 
 | Spec | Requirement |
 |------|-------------|
@@ -156,6 +162,8 @@ ASSERT body["data"] == "appended-data"
 
 ## RSL15b7 — version set to MessageOperation when provided
 
+**Test ID**: `rest/unit/RSL15b7/version-set-with-operation-0`
+
 **Spec requirement:** RSL15b7 — `version` is set to the `MessageOperation` object if provided.
 
 Tests that the `version` field in the request body contains the MessageOperation fields.
@@ -203,6 +211,8 @@ ASSERT body["version"]["metadata"]["reason"] == "typo"
 
 ## RSL15b7 — version absent when no MessageOperation provided
 
+**Test ID**: `rest/unit/RSL15b7/version-absent-no-operation-1`
+
 **Spec requirement:** RSL15b7 — `version` is only set when a `MessageOperation` is provided.
 
 Tests that `version` is omitted from the request body when no operation is given.
@@ -241,6 +251,8 @@ ASSERT "version" NOT IN body
 ---
 
 ## RSL15c — does not mutate user-supplied Message
+
+**Test ID**: `rest/unit/RSL15c/no-mutate-user-message-0`
 
 **Spec requirement:** RSL15c — The SDK must not mutate the user-supplied `Message` object.
 
@@ -287,6 +299,8 @@ ASSERT body["action"] == 1  # MESSAGE_UPDATE
 
 ## RSL15e — returns UpdateDeleteResult on success
 
+**Test ID**: `rest/unit/RSL15e/returns-update-delete-result-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSL15e | On success, returns an `UpdateDeleteResult` object |
@@ -327,6 +341,8 @@ ASSERT result.versionSerial == "version-serial-abc"
 
 ## RSL15e — UpdateDeleteResult with null versionSerial
 
+**Test ID**: `rest/unit/RSL15e/null-version-serial-1`
+
 **Spec requirement:** UDR2a — `versionSerial` will be null if the message was superseded by a subsequent update before it could be published.
 
 Tests that a null `versionSerial` in the response is preserved.
@@ -363,6 +379,8 @@ ASSERT result.versionSerial IS null
 ---
 
 ## RSL15f — params sent as querystring
+
+**Test ID**: `rest/unit/RSL15f/params-sent-as-querystring-0`
 
 **Spec requirement:** RSL15f — Any params provided in the third argument must be sent in the querystring, with values stringified.
 
@@ -405,6 +423,8 @@ ASSERT request.url.query_params["num"] == "42"
 
 ## RSL15a — serial required, throws error if missing
 
+**Test ID**: `rest/unit/RSL15a/serial-required-throws-error-0`
+
 **Spec requirement:** RSL15a — Takes a first argument of a `Message` object which must contain a populated `serial` field.
 
 Tests that calling update/delete/append without a serial in the message throws an error.
@@ -443,6 +463,8 @@ ASSERT error.code == 40003
 ---
 
 ## RSL15d — request body encoded per RSL4 (message data encoding)
+
+**Test ID**: `rest/unit/RSL15d/body-encoded-per-rsl4-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -490,6 +512,8 @@ ASSERT parse_json(body["data"]) == { "key": "value" }
 ---
 
 ## RSL15b — serial URL-encoded in path
+
+**Test ID**: `rest/unit/RSL15b/serial-url-encoded-path-3`
 
 **Spec requirement:** RSL15b — The serial in the PATCH URL must be properly URL-encoded.
 

@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL6i1 - Publish single message by name and data
 
+**Test ID**: `realtime/unit/RTL6i1/publish-name-and-data-0`
+
 **Spec requirement:** When `name` and `data` (or a `Message`) is provided, a single `ProtocolMessage` containing one `Message` is published to Ably.
 
 Tests that publishing with name and data sends a single MESSAGE ProtocolMessage with one message entry.
@@ -63,6 +65,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6i2 - Publish array of Message objects
+
+**Test ID**: `realtime/unit/RTL6i2/publish-message-array-0`
 
 **Spec requirement:** When an array of `Message` objects is provided, a single `ProtocolMessage` is used to publish all `Message` objects in the array.
 
@@ -117,6 +121,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6i3 - Null fields omitted from JSON wire encoding
+
+**Test ID**: `realtime/unit/RTL6i3/null-fields-json-0`
 
 **Spec requirement:** Allows `name` and or `data` to be `null`. If any of the values are `null`, then key is not sent to Ably i.e. a payload with a `null` value for `data` would be sent as follows `{ "name": "click" }`.
 
@@ -193,6 +199,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6i3 - Null fields omitted from msgpack wire encoding
 
+**Test ID**: `realtime/unit/RTL6i3/null-fields-msgpack-1`
+
 **Spec requirement:** Allows `name` and or `data` to be `null`. If any of the values are `null`, then key is not sent to Ably.
 
 Tests that when using the msgpack protocol, null `name` or `data` fields are omitted from the encoded msgpack representation on the wire.
@@ -268,6 +276,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6c1 - Publish immediately when CONNECTED and channel ATTACHED
 
+**Test ID**: `realtime/unit/RTL6c1/publish-when-attached-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL6c1 | If the connection is `CONNECTED` and the channel is neither `SUSPENDED` nor `FAILED` then the messages are published immediately |
@@ -322,6 +332,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6c1 - Publish immediately when CONNECTED and channel ATTACHING
 
+**Test ID**: `realtime/unit/RTL6c1/publish-when-attaching-1`
+
 **Spec requirement:** If the connection is `CONNECTED` and the channel is neither `SUSPENDED` nor `FAILED` then the messages are published immediately.
 
 Tests that messages are sent immediately even when the channel is in the ATTACHING state (which is neither SUSPENDED nor FAILED).
@@ -369,6 +381,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c1 - Publish immediately when CONNECTED and channel INITIALIZED
+
+**Test ID**: `realtime/unit/RTL6c1/publish-when-initialized-2`
 
 **Spec requirement:** If the connection is `CONNECTED` and the channel is neither `SUSPENDED` nor `FAILED` then the messages are published immediately.
 
@@ -418,6 +432,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c2 - Publish queued when connection is CONNECTING
+
+**Test ID**: `realtime/unit/RTL6c2/queued-when-connecting-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -474,6 +490,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c2 - Publish queued when connection is DISCONNECTED
+
+**Test ID**: `realtime/unit/RTL6c2/queued-when-disconnected-1`
 
 **Spec requirement:** Messages are queued when connection is `DISCONNECTED` and `queueMessages` is true.
 
@@ -536,6 +554,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6c2 - Publish queued when connection is INITIALIZED
 
+**Test ID**: `realtime/unit/RTL6c2/queued-when-initialized-2`
+
 **Spec requirement:** Messages are queued when connection is `INITIALIZED` and `queueMessages` is true.
 
 Tests that messages published before `connect()` is called are queued and sent once the connection becomes CONNECTED.
@@ -584,6 +604,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c4 - Publish fails when connection is SUSPENDED
+
+**Test ID**: `realtime/unit/RTL6c4/fails-conn-suspended-0`
 
 **Spec requirement:** In any other case the operation should result in an error.
 
@@ -636,6 +658,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6c4 - Publish fails when connection is CLOSED
 
+**Test ID**: `realtime/unit/RTL6c4/fails-conn-closed-1`
+
 **Spec requirement:** In any other case the operation should result in an error.
 
 Tests that publishing fails when the connection is CLOSED.
@@ -674,6 +698,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c4 - Publish fails when connection is FAILED
+
+**Test ID**: `realtime/unit/RTL6c4/fails-conn-failed-2`
 
 **Spec requirement:** In any other case the operation should result in an error.
 
@@ -718,6 +744,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c4 - Publish fails when channel is SUSPENDED
+
+**Test ID**: `realtime/unit/RTL6c4/fails-channel-suspended-3`
 
 **Spec requirement:** If the channel is SUSPENDED, publish results in an error regardless of connection state.
 
@@ -776,6 +804,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6c4 - Publish fails when channel is FAILED
 
+**Test ID**: `realtime/unit/RTL6c4/fails-channel-failed-4`
+
 **Spec requirement:** Publishing to a FAILED channel results in an error (RTL6c3/RTL6c4).
 
 Tests that publishing fails when the channel is in FAILED state.
@@ -828,6 +858,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6c2 - Publish fails when queueMessages is false and connection not CONNECTED
 
+**Test ID**: `realtime/unit/RTL6c2/fails-no-queue-messages-3`
+
 **Spec requirement:** Messages are queued only when `queueMessages` is true. When false and connection is not CONNECTED, publish should fail.
 
 Tests that publishing fails immediately when queueMessages is false and the connection is not CONNECTED.
@@ -869,6 +901,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c5 - Publish does not trigger implicit attach
+
+**Test ID**: `realtime/unit/RTL6c5/no-implicit-attach-0`
 
 **Spec requirement:** A publish should not trigger an implicit attach (in contrast to earlier version of this spec).
 
@@ -923,6 +957,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6c2 - Multiple queued messages sent in order after connection
+
+**Test ID**: `realtime/unit/RTL6c2/queued-messages-order-4`
 
 **Spec requirement:** Messages queued while not connected are delivered once the connection becomes CONNECTED.
 
@@ -980,6 +1016,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6i1 - Publish Message object
 
+**Test ID**: `realtime/unit/RTL6i1/publish-message-object-1`
+
 **Spec requirement:** When a `Message` is provided, a single `ProtocolMessage` containing one `Message` is published to Ably.
 
 Tests that publishing a Message object directly sends it correctly.
@@ -1028,6 +1066,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL6j - Publish returns PublishResult with serials from ACK
+
+**Test ID**: `realtime/unit/RTL6j/publish-result-serials-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1096,6 +1136,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6j - Publish returns PublishResult with multiple serials for batch publish
 
+**Test ID**: `realtime/unit/RTL6j/batch-publish-serials-1`
+
 **Spec requirement:** When an array of messages is published, the `PublishResult` `serials` array contains one serial per message, corresponding 1:1 to the published messages (PBR2a). A serial may be null if the message was discarded due to a configured conflation rule.
 
 Tests that a batch publish of multiple messages returns a `PublishResult` with a serial for each message.
@@ -1162,6 +1204,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6j - Sequential publishes get incrementing msgSerial
 
+**Test ID**: `realtime/unit/RTL6j/incrementing-msg-serial-2`
+
 **Spec requirement:** Every ProtocolMessage that expects an ACK must contain a unique serially incrementing `msgSerial` integer value starting at zero (RTN7b).
 
 Tests that successive publish calls assign incrementing `msgSerial` values to the outgoing ProtocolMessages, and that each publish resolves with the correct `PublishResult` from its corresponding ACK.
@@ -1226,6 +1270,8 @@ CLOSE_CLIENT(client)
 
 ## RTL6j - Publish NACK results in error
 
+**Test ID**: `realtime/unit/RTL6j/nack-results-error-3`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN7a | All MESSAGE ProtocolMessages sent to Ably expect either an ACK or NACK to confirm success or failure |
@@ -1280,6 +1326,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN7e - Pending publishes fail when connection enters SUSPENDED
+
+**Test ID**: `realtime/unit/RTN7e/pending-fail-suspended-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1356,6 +1404,8 @@ CLOSE_CLIENT(client)
 
 ## RTN7e - Pending publishes fail when connection enters CLOSED
 
+**Test ID**: `realtime/unit/RTN7e/pending-fail-closed-1`
+
 **Spec requirement:** If a connection enters the CLOSED state, pending messages are failed with an error representing the reason for the state change.
 
 Tests that messages awaiting ACK/NACK are failed when the connection is explicitly closed.
@@ -1409,6 +1459,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN7e - Pending publishes fail when connection enters FAILED
+
+**Test ID**: `realtime/unit/RTN7e/pending-fail-failed-2`
 
 **Spec requirement:** If a connection enters the FAILED state, pending messages are failed with an error representing the reason for the state change.
 
@@ -1475,6 +1527,8 @@ CLOSE_CLIENT(client)
 
 ## RTN7e - Multiple pending publishes all fail on state change
 
+**Test ID**: `realtime/unit/RTN7e/multiple-pending-fail-3`
+
 **Spec requirement:** All messages awaiting ACK/NACK are failed when the connection enters a terminal state.
 
 Tests that when multiple publishes are pending and the connection enters CLOSED, all of them fail.
@@ -1532,6 +1586,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN7e - Error passed to publish callback represents the reason for the state change
+
+**Test ID**: `realtime/unit/RTN7e/error-represents-reason-4`
 
 **Spec requirement:** The client should consider the delivery of those messages as failed, meaning their callback should be called with an error representing the reason for the state change.
 
@@ -1596,6 +1652,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN7d - Pending publishes fail on DISCONNECTED when queueMessages is false
+
+**Test ID**: `realtime/unit/RTN7d/fail-disconnected-no-queue-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1663,6 +1721,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN7d - Pending publishes survive DISCONNECTED when queueMessages is true (default)
+
+**Test ID**: `realtime/unit/RTN7d/survive-disconnected-queue-1`
 
 **Spec requirement:** The RTN7d behavior (failing on DISCONNECTED) only applies when `queueMessages` is false. With the default `queueMessages: true`, pending messages should NOT be failed on DISCONNECTED — they are retained for resending per RTN19a.
 
@@ -1740,6 +1800,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN19a - Pending messages resent on new transport after disconnect
+
+**Test ID**: `realtime/unit/RTN19a/resent-on-new-transport-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1835,6 +1897,8 @@ CLOSE_CLIENT(client)
 
 ## RTN19a2 - Resent messages keep same msgSerial on successful resume
 
+**Test ID**: `realtime/unit/RTN19a2/same-serial-on-resume-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN19a2 | In the case of an RTN15c6 successful resume, the msgSerial of the reattempted ProtocolMessages should remain the same as for the original attempt. |
@@ -1928,6 +1992,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN19a2 - Resent messages get new msgSerial on failed resume
+
+**Test ID**: `realtime/unit/RTN19a2/new-serial-failed-resume-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -2031,6 +2097,8 @@ CLOSE_CLIENT(client)
 
 ## RTN19b - Pending ATTACH resent on new transport after disconnect
 
+**Test ID**: `realtime/unit/RTN19b/attach-resent-on-reconnect-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN19b | If there are any pending channels i.e. in the ATTACHING or DETACHING state, the respective ATTACH or DETACH message should be resent to Ably. |
@@ -2112,6 +2180,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN19b - Pending DETACH resent on new transport after disconnect
+
+**Test ID**: `realtime/unit/RTN19b/detach-resent-on-reconnect-1`
 
 **Spec requirement:** If there are any pending channels in the DETACHING state, the respective DETACH message should be resent to Ably.
 

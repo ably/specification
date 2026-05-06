@@ -9,6 +9,8 @@ Unit test — pure type/model validation, no mocks required.
 
 ## TP2 - PresenceAction enum values
 
+**Test ID**: `rest/unit/TP2/presence-action-enum-values-0`
+
 **Spec requirement:** PresenceMessage Action enum has the following values in order
 from zero: ABSENT, PRESENT, ENTER, LEAVE, UPDATE.
 
@@ -24,6 +26,8 @@ ASSERT PresenceAction.update.index == 4
 ---
 
 ## TP3a-TP3i - PresenceMessage attributes
+
+**Test ID**: `rest/unit/TP3a/presence-message-attributes-0`
 
 **Spec requirement:** PresenceMessage type must provide all required attributes.
 
@@ -82,6 +86,8 @@ ASSERT msg.extras["headers"]["x-custom"] == "value"
 
 ## TP3h - memberKey combines connectionId and clientId
 
+**Test ID**: `rest/unit/TP3h/member-key-combines-ids-0`
+
 **Spec requirement:** memberKey is a string function that combines the connectionId
 and clientId to ensure multiple connected clients with the same clientId are uniquely
 identifiable.
@@ -101,6 +107,8 @@ ASSERT msg.memberKey != msg2.memberKey
 ---
 
 ## TP3d - connectionId defaults from ProtocolMessage
+
+**Test ID**: `rest/unit/TP3d/connectionid-from-protocol-message-0`
 
 **Spec requirement:** If connectionId is not present in a received presence message,
 it should be set to the connectionId of the encapsulating ProtocolMessage.
@@ -123,6 +131,8 @@ ASSERT presence_msg.connectionId == "proto-conn-1"
 ---
 
 ## TP3a - id defaults from ProtocolMessage
+
+**Test ID**: `rest/unit/TP3a/id-from-protocol-message-1`
 
 **Spec requirement:** For Realtime messages without an id, the id should be set to
 protocolMsgId:index where index is the 0-based position in the presence array.
@@ -147,6 +157,8 @@ ASSERT protocol_msg.presence[1].id == "proto-msg-42:1"
 
 ## TP3g - timestamp defaults from ProtocolMessage
 
+**Test ID**: `rest/unit/TP3g/timestamp-from-protocol-message-0`
+
 **Spec requirement:** If timestamp is not present in a received presence message,
 it should be set to the timestamp of the encapsulating ProtocolMessage.
 
@@ -167,6 +179,8 @@ ASSERT presence_msg.timestamp == 9999999
 ---
 
 ## TP3 - PresenceMessage from JSON (wire format)
+
+**Test ID**: `rest/unit/TP3/presence-from-json-0`
 
 **Spec requirement:** PresenceMessage must support deserialization from JSON wire format.
 
@@ -198,6 +212,8 @@ ASSERT msg.extras["headers"]["x-key"] == "x-value"
 
 ## TP3 - PresenceMessage with encoded data from JSON
 
+**Test ID**: `rest/unit/TP3/presence-encoded-data-from-json-1`
+
 **Spec requirement:** Deserialization must decode data based on the encoding field.
 
 ### Test Cases
@@ -228,6 +244,8 @@ FOR EACH test_case IN test_cases:
 
 ## TP3 - PresenceMessage to JSON (wire format)
 
+**Test ID**: `rest/unit/TP3/presence-to-json-2`
+
 **Spec requirement:** PresenceMessage must support serialization to JSON wire format.
 
 ### Test Steps
@@ -251,6 +269,8 @@ ASSERT json_data["extras"]["headers"]["x-key"] == "x-value"
 
 ## TP3 - Null/missing attributes omitted from serialization
 
+**Test ID**: `rest/unit/TP3/null-attributes-omitted-3`
+
 **Spec requirement:** Null or missing optional attributes should be omitted from
 serialized output.
 
@@ -271,6 +291,8 @@ ASSERT "id" NOT IN json_data OR json_data["id"] IS null
 ---
 
 ## TP4 - fromEncoded and fromEncodedArray
+
+**Test ID**: `rest/unit/TP4/from-encoded-presence-0`
 
 **Spec requirement:** fromEncoded and fromEncodedArray are alternative constructors
 that take an already-deserialized PresenceMessage-like object (or array) and return
@@ -311,6 +333,8 @@ ASSERT messages[1].data == "world"
 ---
 
 ## TP5 - PresenceMessage size calculation
+
+**Test ID**: `rest/unit/TP5/presence-message-size-0`
 
 **Spec requirement:** The size of the PresenceMessage is calculated in the same way
 as for Message (see TM6). This is used for TO3l8 (maxMessageSize) enforcement.

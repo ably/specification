@@ -23,6 +23,8 @@ Tests should use the encoding fixtures from `ably-common` where available for cr
 
 ## RSL4a - String data encoding
 
+**Test ID**: `rest/unit/RSL4a/string-data-no-encoding-0`
+
 **Spec requirement:** String data must be transmitted without transformation and without an encoding field.
 
 ### Setup
@@ -63,6 +65,8 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 ---
 
 ## RSL4b - JSON object encoding
+
+**Test ID**: `rest/unit/RSL4b/json-object-encoding-0`
 
 **Spec requirement:** JSON objects must be serialized to a JSON string with `encoding: "json"`.
 
@@ -107,6 +111,8 @@ ASSERT body["encoding"] == "json"
 
 ## RSL4c - Binary data encoding with JSON protocol
 
+**Test ID**: `rest/unit/RSL4c/binary-base64-json-protocol-0`
+
 **Spec requirement:** Binary data must be base64-encoded when using JSON protocol.
 
 ### Setup
@@ -148,6 +154,8 @@ ASSERT base64_decode(body["data"]) == bytes([0x00, 0x01, 0x02, 0xFF, 0xFE])
 ---
 
 ## RSL4c - Binary data with MessagePack protocol
+
+**Test ID**: `rest/unit/RSL4c/binary-direct-msgpack-protocol-1`
 
 **Spec requirement:** Binary data must be transmitted directly (without base64 encoding) when using MessagePack protocol.
 
@@ -192,6 +200,8 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ## RSL4d - Array data encoding
 
+**Test ID**: `rest/unit/RSL4d/array-json-encoding-0`
+
 **Spec requirement:** Arrays must be JSON-encoded with `encoding: "json"`.
 
 ### Setup
@@ -232,6 +242,8 @@ ASSERT parse_json(body["data"]) == [1, 2, "three", { "four": 4 }]
 ---
 
 ## RSL6a - Decoding base64 data
+
+**Test ID**: `rest/unit/RSL6a/decode-base64-to-binary-0`
 
 **Spec requirement:** Data with `encoding: "base64"` must be decoded to binary, and the encoding field consumed.
 
@@ -277,6 +289,8 @@ ASSERT message.encoding IS null  # Encoding consumed after decode
 
 ## RSL6a - Decoding JSON data
 
+**Test ID**: `rest/unit/RSL6a/decode-json-to-object-1`
+
 **Spec requirement:** Data with `encoding: "json"` must be decoded from JSON string to native object, and the encoding field consumed.
 
 ### Setup
@@ -320,6 +334,8 @@ ASSERT message.encoding IS null
 ---
 
 ## RSL6a - Decoding chained encodings
+
+**Test ID**: `rest/unit/RSL6a/decode-chained-encodings-2`
 
 **Spec requirement:** Chained encodings (e.g., `json/base64`) must be decoded in reverse order (last applied encoding is removed first). When processing chained encodings, decoders MUST handle intermediate data types — for example, after decoding `base64`, the data will be binary bytes; a subsequent `json` decoder MUST convert those bytes to a UTF-8 string before JSON parsing.
 
@@ -369,6 +385,8 @@ ASSERT message.encoding IS null
 
 ## RSL6b - Unrecognized encoding preserved
 
+**Test ID**: `rest/unit/RSL6b/unrecognized-encoding-preserved-0`
+
 **Spec requirement:** Unrecognized encoding values must be preserved in the encoding field, with only recognized encodings being decoded.
 
 ### Setup
@@ -414,6 +432,8 @@ ASSERT message.data IS bytes  # Result of base64 decode
 ---
 
 ## RSL6 - Decoding binary data from MessagePack response
+
+**Test ID**: `rest/unit/RSL6/msgpack-binary-stays-binary-0`
 
 **Spec requirement:** When the server returns a MessagePack response containing binary data (msgpack `bin` type), it must be decoded as binary, not as a string — even if the bytes are valid UTF-8. The msgpack wire format distinguishes `str` and `bin` types, and the SDK must preserve this distinction.
 
@@ -471,6 +491,8 @@ string.
 
 ## RSL6 - Decoding string data from MessagePack response
 
+**Test ID**: `rest/unit/RSL6/msgpack-string-stays-string-1`
+
 **Spec requirement:** When the server returns a MessagePack response containing string data (msgpack `str` type), it must be decoded as a string — not as binary.
 
 ### Setup
@@ -513,6 +535,8 @@ ASSERT message.encoding IS null
 ---
 
 ## RSL4 - Encoding fixtures from ably-common
+
+**Test ID**: `rest/unit/RSL4/encoding-fixtures-ably-common-0`
 
 **Spec requirement:** Implementations must correctly encode data according to standardized test fixtures from `ably-common`.
 
@@ -564,6 +588,8 @@ FOR EACH fixture IN encoding_fixtures:
 
 ### RSL4 - Null data encoding
 
+**Test ID**: `rest/unit/RSL4/null-data-no-encoding-1`
+
 **Spec requirement:** Null values must be transmitted without transformation.
 
 ### Setup
@@ -605,6 +631,8 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 
 ### RSL4a - Number data type rejected
 
+**Test ID**: `rest/unit/RSL4a/number-type-rejected-1`
+
 **Spec requirement (RSL4a):** Payloads must be binary, strings, or objects capable of JSON representation. Any other data type should not be permitted and result in an error.
 
 ### Setup
@@ -634,6 +662,8 @@ ASSERT error IS NOT null
 
 ### RSL4a - Boolean data type rejected
 
+**Test ID**: `rest/unit/RSL4a/boolean-type-rejected-2`
+
 **Spec requirement (RSL4a):** Payloads must be binary, strings, or objects capable of JSON representation. Any other data type should not be permitted and result in an error.
 
 ### Setup
@@ -662,6 +692,8 @@ ASSERT error IS NOT null
 ---
 
 ### RSL6 - Decoding UTF-8 encoded data
+
+**Test ID**: `rest/unit/RSL6/decode-utf8-base64-data-2`
 
 **Spec requirement:** Data with `encoding: "utf-8/base64"` must decode base64 first, then interpret as UTF-8 string.
 
@@ -707,6 +739,8 @@ ASSERT message.encoding IS null
 ---
 
 ### RSL6 - Complex chained encoding
+
+**Test ID**: `rest/unit/RSL6/complex-chained-encoding-3`
 
 **Spec requirement:** Multiple encoding layers must be decoded in correct order.
 
@@ -761,6 +795,8 @@ ASSERT message.encoding IS null
 
 ### RSL4 - JSON protocol uses correct Content-Type
 
+**Test ID**: `rest/unit/RSL4/json-protocol-content-type-2`
+
 **Spec requirement:** When `useBinaryProtocol: false`, requests must use `Content-Type: application/json`.
 
 ### Setup
@@ -799,6 +835,8 @@ ASSERT request.headers["Accept"] == "application/json"
 ---
 
 ### RSL4 - MessagePack protocol uses correct Content-Type
+
+**Test ID**: `rest/unit/RSL4/msgpack-protocol-content-type-3`
 
 **Spec requirement:** When `useBinaryProtocol: true`, requests must use `Content-Type: application/x-msgpack`.
 
@@ -841,6 +879,8 @@ ASSERT request.headers["Accept"] == "application/x-msgpack"
 
 ### RSL4 - Empty string encoding
 
+**Test ID**: `rest/unit/RSL4/empty-string-no-encoding-4`
+
 **Spec requirement:** Empty strings must be transmitted as empty strings without encoding.
 
 ### Setup
@@ -881,6 +921,8 @@ ASSERT "encoding" NOT IN body OR body["encoding"] IS null
 ---
 
 ### RSL4 - Empty array encoding
+
+**Test ID**: `rest/unit/RSL4/empty-array-json-encoding-5`
 
 **Spec requirement:** Empty arrays must be JSON-encoded.
 

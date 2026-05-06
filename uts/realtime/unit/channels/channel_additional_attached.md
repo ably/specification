@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL12 - Additional ATTACHED with resumed=false emits UPDATE with error
 
+**Test ID**: `realtime/unit/RTL12/update-emits-with-error-0`
+
 **Spec requirement:** An attached channel may receive an additional `ATTACHED`
 `ProtocolMessage` from Ably at any point. If and only if the `resumed` flag is
 false, this should result in the channel emitting an `UPDATE` event with a
@@ -81,6 +83,8 @@ CLOSE_CLIENT(client)
 
 ## RTL12 - Additional ATTACHED with resumed=true does NOT emit UPDATE
 
+**Test ID**: `realtime/unit/RTL12/resumed-no-update-1`
+
 **Spec requirement:** The UPDATE event should only be emitted if and only if the
 `resumed` flag is false. When `resumed` is true, the additional ATTACHED message
 indicates a successful resume with no loss of continuity, and no event should be
@@ -139,6 +143,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL12 - Additional ATTACHED without error has null reason
+
+**Test ID**: `realtime/unit/RTL12/no-error-null-reason-2`
 
 **Spec requirement:** The `reason` attribute is set to the `error` member of the
 `ATTACHED` `ProtocolMessage` (if any).

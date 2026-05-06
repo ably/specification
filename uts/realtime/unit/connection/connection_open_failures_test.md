@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN14a - Invalid API key causes FAILED state
 
+**Test ID**: `realtime/unit/RTN14a/invalid-key-failed-0`
+
 **Spec requirement:** If an API key is invalid, the connection transitions to FAILED state and Connection.errorReason is set.
 
 Tests that connecting with an invalid API key results in immediate failure.
@@ -78,6 +80,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN14b - Token error during connection with renewal
+
+**Test ID**: `realtime/unit/RTN14b/token-error-with-renewal-0`
 
 **Spec requirement:** If a token error occurs during connection and the token is renewable, attempt to obtain a new token and retry the connection.
 
@@ -173,6 +177,8 @@ CLOSE_CLIENT(client)
 
 ## RTN14b - Token error during initial connection, renewal fails
 
+**Test ID**: `realtime/unit/RTN14b/token-renewal-fails-1`
+
 **Spec requirement:** When a token error occurs during the initial connection attempt and the subsequent
 token renewal also fails, the connection should transition to DISCONNECTED (per RTN14b:
 "If the attempt to create a new token fails... the connection will transition to the
@@ -233,6 +239,8 @@ CLOSE_CLIENT(client)
 
 ## RSA4a - Token error during connection without renewal
 
+**Test ID**: `realtime/unit/RSA4a/token-error-no-renewal-0`
+
 **Spec requirement (RSA4a2):** If the server responds with a token error and there is no means to renew the token, the connection transitions to FAILED with error code 40171.
 
 Tests that non-renewable token errors cause FAILED state.
@@ -288,6 +296,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN14c - Connection timeout
+
+**Test ID**: `realtime/unit/RTN14c/connection-timeout-0`
 
 **Spec requirement:** A connection attempt fails if not connected within realtimeRequestTimeout.
 
@@ -347,6 +357,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN14d - Retry after recoverable failure
+
+**Test ID**: `realtime/unit/RTN14d/retry-recoverable-failure-0`
 
 **Spec requirement:** After a recoverable connection failure, the client transitions to DISCONNECTED and automatically retries after disconnectedRetryTimeout.
 
@@ -423,6 +435,8 @@ CLOSE_CLIENT(client)
 
 ## RTN14e - DISCONNECTED to SUSPENDED after connectionStateTtl
 
+**Test ID**: `realtime/unit/RTN14e/disconnected-to-suspended-0`
+
 **Spec requirement:** Once the connection has been DISCONNECTED for longer than connectionStateTtl, transition to SUSPENDED state.
 
 Tests that prolonged disconnection leads to suspension.
@@ -483,6 +497,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN14f - SUSPENDED state retries indefinitely
+
+**Test ID**: `realtime/unit/RTN14f/suspended-retries-indefinitely-0`
 
 **Spec requirement:** The connection remains in SUSPENDED state indefinitely, periodically attempting to reestablish connection.
 
@@ -567,6 +583,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN14g - ERROR protocol message with empty channel
+
+**Test ID**: `realtime/unit/RTN14g/error-empty-channel-failed-0`
 
 **Spec requirement:** If an ERROR ProtocolMessage with empty channel attribute is received, transition to FAILED state and set errorReason.
 

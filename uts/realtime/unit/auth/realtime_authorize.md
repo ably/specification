@@ -21,6 +21,8 @@ on the current connection state when `authorize()` is called.
 
 ## RTC8a - authorize() on CONNECTED sends AUTH protocol message
 
+**Test ID**: `realtime/unit/RTC8a/authorize-connected-sends-auth-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTC8 | `auth.authorize` instructs the library to obtain a token and alter the current connection to use it |
@@ -119,6 +121,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC8a1 - Successful reauth emits UPDATE event
+
+**Test ID**: `realtime/unit/RTC8a1/successful-reauth-update-event-0`
 
 **Spec requirement:** If the authentication token change is successful, Ably sends a new CONNECTED ProtocolMessage. The connectionDetails must override existing defaults (RTN21). The Connection should emit an UPDATE event per RTN24.
 
@@ -224,6 +228,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC8a1 - Capability downgrade causes channel FAILED
+
+**Test ID**: `realtime/unit/RTC8a1/capability-downgrade-channel-failed-1`
 
 **Spec requirement:** A test should exist where the capabilities are downgraded resulting in Ably sending an ERROR ProtocolMessage with a channel property, causing the channel to enter the FAILED state. The reason must be included in the channel state change event.
 
@@ -345,6 +351,8 @@ CLOSE_CLIENT(client)
 
 ## RTC8a2 - Failed reauth transitions connection to FAILED
 
+**Test ID**: `realtime/unit/RTC8a2/failed-reauth-connection-failed-0`
+
 **Spec requirement:** If the authentication token change fails, Ably will send an ERROR ProtocolMessage triggering the connection to transition to the FAILED state. A test should exist for a token change that fails (such as sending a new token with an incompatible clientId).
 
 Tests that a failed in-band reauthorization (e.g. incompatible clientId) causes
@@ -432,6 +440,8 @@ CLOSE_CLIENT(client)
 
 ## RTC8a3 - authorize() completes only after server response
 
+**Test ID**: `realtime/unit/RTC8a3/authorize-completes-after-response-0`
+
 **Spec requirement:** The authorize call should be indicated as completed with the new token or error only once realtime has responded to the AUTH with either a CONNECTED or ERROR respectively.
 
 Tests that the Future/Promise returned by `authorize()` does not resolve until
@@ -515,6 +525,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC8b - authorize() while CONNECTING halts current attempt
+
+**Test ID**: `realtime/unit/RTC8b/authorize-connecting-halts-attempt-0`
 
 **Spec requirement:** If the connection is in the CONNECTING state when auth.authorize is called, all current connection attempts should be halted, and after obtaining a new token the library should immediately initiate a connection attempt using the new token.
 
@@ -601,6 +613,8 @@ CLOSE_CLIENT(client)
 
 ## RTC8b1 - authorize() while CONNECTING fails on FAILED state
 
+**Test ID**: `realtime/unit/RTC8b1/authorize-connecting-fails-on-failed-0`
+
 **Spec requirement:** The authorize call should be indicated as completed with the new token once the connection has moved to the CONNECTED state, or with an error if the connection instead moves to the FAILED, SUSPENDED, or CLOSED states.
 
 Tests that if the connection transitions to FAILED after `authorize()` is called
@@ -667,6 +681,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC8c - authorize() from DISCONNECTED initiates connection
+
+**Test ID**: `realtime/unit/RTC8c/authorize-disconnected-initiates-connection-0`
 
 **Spec requirement:** If the connection is in the DISCONNECTED, SUSPENDED, FAILED, or CLOSED state when auth.authorize is called, after obtaining a token the library should move to the CONNECTING state and initiate a connection attempt using the new token, and RTC8b1 applies.
 
@@ -750,6 +766,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC8c - authorize() from FAILED initiates connection
+
+**Test ID**: `realtime/unit/RTC8c/authorize-failed-initiates-connection-1`
 
 **Spec requirement:** If the connection is in the FAILED state when auth.authorize is called, after obtaining a token the library should move to the CONNECTING state and initiate a connection attempt using the new token.
 
@@ -846,6 +864,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC8c - authorize() from CLOSED initiates connection
+
+**Test ID**: `realtime/unit/RTC8c/authorize-closed-initiates-connection-2`
 
 **Spec requirement:** If the connection is in the CLOSED state when auth.authorize is called, after obtaining a token the library should move to the CONNECTING state and initiate a connection attempt using the new token.
 

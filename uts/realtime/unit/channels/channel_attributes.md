@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL23 - RealtimeChannel name attribute
 
+**Test ID**: `realtime/unit/RTL23/name-attribute-0`
+
 **Spec requirement:** `RealtimeChannel#name` attribute is a string containing the
 channel's name.
 
@@ -40,6 +42,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL24 - errorReason set on channel error
+
+**Test ID**: `realtime/unit/RTL24/error-reason-channel-error-0`
 
 **Spec requirement:** `RealtimeChannel#errorReason` attribute is an optional
 `ErrorInfo` object which is set by the library when an error occurs on the channel.
@@ -120,6 +124,8 @@ CLOSE_CLIENT(client)
 
 ## RTL24 - errorReason set on attach failure
 
+**Test ID**: `realtime/unit/RTL24/error-reason-attach-failure-1`
+
 **Spec requirement:** `RealtimeChannel#errorReason` is set by the library when an
 error occurs on the channel, as described by RTL4g.
 
@@ -188,6 +194,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4c/RTL24 - errorReason cleared on successful attach
+
+**Test ID**: `realtime/unit/RTL4c/error-cleared-on-attach-0`
 
 **Spec requirement (RTL4c):** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 
@@ -270,6 +278,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4c/RTL24 - errorReason cleared on successful attach, preserved through detach
+
+**Test ID**: `realtime/unit/RTL4c/error-cleared-preserved-detach-1`
 
 **Spec requirement (RTL4c):** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 

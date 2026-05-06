@@ -13,6 +13,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ## RSL9 - RestChannel name attribute
 
+**Test ID**: `rest/unit/RSL9/channel-name-attribute-0`
+
 **Spec requirement:** `RestChannel#name` attribute is a string containing the channel's name.
 
 Tests that the channel name attribute returns the name used when getting the channel.
@@ -37,6 +39,8 @@ ASSERT channel2.name == "namespace:channel-name"
 ---
 
 ## RSL7 - setOptions updates channel options
+
+**Test ID**: `rest/unit/RSL7/setoptions-updates-options-0`
 
 **Spec requirement:** `RestChannel#setOptions` takes a `ChannelOptions` object and sets or updates the stored channel options, then indicates success.
 
@@ -65,6 +69,8 @@ AWAIT channel.setOptions(RestChannelOptions())
 ---
 
 ## RSL7 - setOptions stores new options
+
+**Test ID**: `rest/unit/RSL7/setoptions-stores-options-1`
 
 **Spec requirement:** `RestChannel#setOptions` sets or updates the stored channel options.
 
@@ -106,6 +112,8 @@ AWAIT channel.setOptions(RestChannelOptions())
 ---
 
 ## RSL8 - status makes GET request to correct endpoint
+
+**Test ID**: `rest/unit/RSL8/status-get-correct-endpoint-0`
 
 **Spec requirement:** `RestChannel#status` function makes an HTTP GET request to `<restHost>/channels/<channelId>`.
 
@@ -163,6 +171,8 @@ ASSERT captured_request.url.path ENDS_WITH "/channels/test-RSL8"
 
 ## RSL8 - status with special characters in channel name
 
+**Test ID**: `rest/unit/RSL8/status-special-chars-encoded-1`
+
 **Spec requirement:** The channel ID in the URL must be properly encoded.
 
 Tests that channel names with special characters are URL-encoded in the status request.
@@ -218,6 +228,8 @@ ASSERT captured_request.url.path ENDS_WITH "/channels/" + encode_uri_component("
 ---
 
 ## RSL8a - status returns ChannelDetails object
+
+**Test ID**: `rest/unit/RSL8a/status-returns-channel-details-0`
 
 **Spec requirement:** `RestChannel#status` returns a `ChannelDetails` object.
 
@@ -282,6 +294,8 @@ ASSERT result.status.occupancy.metrics.subscribers == 3
 ---
 
 ## CHD2, CHS2, CHO2, CHM2 - status() response parses all ChannelMetrics fields
+
+**Test ID**: `rest/unit/CHM2/parses-all-metrics-fields-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -374,6 +388,8 @@ ASSERT metrics.objectSubscribers == 5
 ---
 
 ## CHM2 - status() response with zero and missing metric fields
+
+**Test ID**: `rest/unit/CHM2/zero-and-missing-metrics-1`
 
 **Spec requirement:** ChannelMetrics fields (CHM2a-h) are integers. When the server response contains zero values or omits newer fields, the parsed result should default missing fields to 0.
 

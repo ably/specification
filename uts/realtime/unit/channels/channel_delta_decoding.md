@@ -26,6 +26,8 @@ See `uts/test/realtime/unit/helpers/mock_vcdiff.md` for the full Mock VCDiff Inf
 
 ## RTL21 - Messages in array decoded in ascending index order
 
+**Test ID**: `realtime/unit/RTL21/ascending-index-order-0`
+
 **Spec requirement:** The messages in the `messages` array of a `ProtocolMessage` should each be decoded in ascending order of their index in the array.
 
 Tests that when a ProtocolMessage contains multiple messages where later messages
@@ -120,6 +122,8 @@ CLOSE_CLIENT(client)
 
 ## RTL19b - Non-delta message stores base payload
 
+**Test ID**: `realtime/unit/RTL19b/stores-base-payload-0`
+
 **Spec requirement:** In the case of a non-delta message, the resulting `data` value is stored as the base payload.
 
 Tests that after receiving a non-delta message, its data is stored as the base
@@ -206,6 +210,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL19b - JSON-encoded non-delta message stores wire-form base payload
+
+**Test ID**: `realtime/unit/RTL19b/json-wire-form-base-1`
 
 **Spec requirement:** In the case of a non-delta message, the resulting `data` value
 is stored as the base payload.
@@ -315,6 +321,8 @@ CLOSE_CLIENT(client)
 
 ## RTL19a - Base64 encoding step decoded before storing base payload
 
+**Test ID**: `realtime/unit/RTL19a/base64-decoded-before-store-0`
+
 **Spec requirement:** When processing any message (whether a delta or a full message), if the message `encoding` string ends in `base64`, the message `data` should be base64-decoded (and the `encoding` string modified accordingly per RSL6).
 
 Tests that a base64-encoded non-delta message is decoded before its data is
@@ -410,6 +418,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL19c - Delta application result stored as new base payload
+
+**Test ID**: `realtime/unit/RTL19c/delta-result-becomes-base-0`
 
 **Spec requirement:** In the case of a delta message with a `vcdiff` encoding step, the `vcdiff` decoder must be used to decode the base payload of the delta message, applying that delta to the stored base payload. The direct result of that vcdiff delta application, before performing any further decoding steps, is stored as the updated base payload.
 
@@ -519,6 +529,8 @@ CLOSE_CLIENT(client)
 
 ## RTL20 - Delta with mismatched base message ID triggers recovery
 
+**Test ID**: `realtime/unit/RTL20/mismatched-id-triggers-recovery-0`
+
 **Spec requirement:** The `id` of the last received message on each channel must be stored along with the base payload. When processing a delta message, the stored last message `id` must be compared against the delta reference `id` in `Message.extras.delta.from`. If the delta reference `id` does not equal the stored `id`, the message decoding must fail and the recovery procedure from RTL18 must be executed.
 
 Tests that when a delta message references a message ID that doesn't match the
@@ -626,6 +638,8 @@ CLOSE_CLIENT(client)
 
 ## RTL20 - Last message ID updated after successful decode
 
+**Test ID**: `realtime/unit/RTL20/last-id-updated-on-decode-1`
+
 **Spec requirement:** The `id` of the last received message on each channel must be stored along with the base payload.
 
 Tests that the stored last message ID is updated to the ID of the last message
@@ -722,6 +736,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## PC3, PC3a - VCDiff plugin decodes delta messages
+
+**Test ID**: `realtime/unit/PC3/vcdiff-plugin-decodes-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -832,6 +848,8 @@ CLOSE_CLIENT(client)
 
 ## PC3 - No vcdiff plugin causes FAILED state
 
+**Test ID**: `realtime/unit/PC3/no-plugin-fails-1`
+
 **Spec requirement:** A plugin provided with the PluginType key `vcdiff` should be capable of decoding vcdiff-encoded messages. Without it, vcdiff-encoded messages cannot be decoded.
 
 Tests that when a vcdiff-encoded message is received but no vcdiff plugin is
@@ -902,6 +920,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL18 - Decode failure triggers recovery (RTL18a, RTL18b, RTL18c)
+
+**Test ID**: `realtime/unit/RTL18/decode-failure-recovery-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1019,6 +1039,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL18c - Recovery completes when server sends ATTACHED
+
+**Test ID**: `realtime/unit/RTL18c/recovery-completes-on-attached-0`
 
 **Spec requirement:** Send an ATTACH ProtocolMessage and wait for a confirmation ATTACHED, as per RTL4c and RTL4f.
 
@@ -1146,6 +1168,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL18 - Only one recovery in progress at a time
+
+**Test ID**: `realtime/unit/RTL18/single-recovery-at-time-1`
 
 **Spec requirement:** The client must automatically execute the recovery procedure. (Implied: concurrent decode failures should not trigger multiple simultaneous recovery attempts.)
 

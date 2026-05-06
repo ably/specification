@@ -22,6 +22,8 @@ for the LocalPresenceMap to contain any members for re-entry.
 
 ## RTP17i - Automatic re-entry on ATTACHED (non-RESUMED)
 
+**Test ID**: `realtime/unit/RTP17i/auto-reentry-on-attached-0`
+
 **Spec requirement:** The RealtimePresence object should perform automatic re-entry
 whenever the channel receives an ATTACHED ProtocolMessage, except in the case where
 the channel is already attached and the ProtocolMessage has the RESUMED bit flag set.
@@ -110,6 +112,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP17g - Re-entry publishes ENTER with stored clientId and data
+
+**Test ID**: `realtime/unit/RTP17g/reentry-publishes-enter-with-data-0`
 
 **Spec requirement:** For each member of the RTP17 internal PresenceMap, publish a
 PresenceMessage with an ENTER action using the clientId, data, and id attributes
@@ -213,6 +217,8 @@ CLOSE_CLIENT(client)
 
 ## RTP17g1 - Re-entry omits id when connectionId changed
 
+**Test ID**: `realtime/unit/RTP17g1/reentry-omits-id-new-connid-0`
+
 **Spec requirement:** If the current connection id is different from the connectionId
 attribute of the stored member, the published PresenceMessage must not have its id set.
 
@@ -301,6 +307,8 @@ CLOSE_CLIENT(client)
 
 ## RTP17i - No re-entry when ATTACHED with RESUMED flag
 
+**Test ID**: `realtime/unit/RTP17i/no-reentry-with-resumed-flag-1`
+
 **Spec requirement:** Automatic re-entry is NOT performed when the channel is already
 attached and the ProtocolMessage has the RESUMED bit flag set.
 
@@ -375,6 +383,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP17e - Failed re-entry emits UPDATE with error
+
+**Test ID**: `realtime/unit/RTP17e/failed-reentry-emits-update-error-0`
 
 **Spec requirement:** If an automatic presence ENTER fails (e.g., NACK), emit an UPDATE
 event on the channel with resumed=true and reason set to ErrorInfo with code 91004,
@@ -479,6 +489,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP17a - Server publishes member regardless of subscribe capability
+
+**Test ID**: `realtime/unit/RTP17a/server-publishes-without-subscribe-0`
 
 **Spec requirement:** All members belonging to the current connection are published as a
 PresenceMessage on the channel by the server irrespective of whether the client has

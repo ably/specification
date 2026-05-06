@@ -83,6 +83,8 @@ first request is faulted.
 
 ## RSC15l2 - Request timeout triggers fallback via proxy
 
+**Test ID**: `rest/proxy/RSC15l2/timeout-triggers-fallback-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSC15l | Errors that necessitate use of an alternative host |
@@ -142,6 +144,8 @@ ASSERT http_requests.length >= 2
 ---
 
 ## RSC15l4 - CloudFront Server header triggers fallback via proxy
+
+**Test ID**: `rest/proxy/RSC15l4/cloudfront-header-fallback-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -206,6 +210,8 @@ ASSERT http_responses[0].status == 403
 
 ## Unreachable endpoint surfaces correct error (no proxy)
 
+**Test ID**: `rest/proxy/RSC15l/unreachable-endpoint-error-0`
+
 Tests that when the SDK's HTTP client cannot connect to the target host at all
 (ECONNREFUSED), the error is surfaced as a usable ErrorInfo-like object with
 status/code information. This test does NOT use the proxy -- it points the SDK
@@ -250,6 +256,8 @@ ASSERT error.statusCode IS NOT null OR error.code IS NOT null
 ---
 
 ## Connection drop mid-response retried on fallback (http_drop)
+
+**Test ID**: `rest/proxy/RSC15l/connection-drop-fallback-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -308,6 +316,8 @@ ASSERT http_requests.length >= 2
 
 ## HTTP 5xx with JSON error body -- error parsed correctly (http_respond 503)
 
+**Test ID**: `rest/proxy/RSC15l/http-5xx-json-error-parsed-0`
+
 Tests that when the proxy returns an HTTP 503 with a well-formed JSON error
 body (containing an `error` object with `code`, `statusCode`, and `message`),
 the SDK parses the ErrorInfo fields from the response body. No fallback hosts
@@ -360,6 +370,8 @@ ASSERT error.message CONTAINS "Service temporarily unavailable"
 
 ## HTTP 5xx without JSON error body -- error synthesized (http_respond 503)
 
+**Test ID**: `rest/proxy/RSC15l/http-5xx-no-json-synthesized-1`
+
 Tests that when the proxy returns an HTTP 503 with a JSON body that does NOT
 contain an `error` field (e.g. `{}`), the SDK still produces a usable error
 from the HTTP status code alone. This is the closest the proxy can get to a
@@ -409,6 +421,8 @@ ASSERT error.statusCode == 503
 ---
 
 ## HTTP 4xx with JSON error body -- not retried, error parsed (http_respond 403)
+
+**Test ID**: `rest/proxy/RSC15l/http-4xx-not-retried-0`
 
 Tests that when the proxy returns an HTTP 403 (a 4xx client error) with a
 well-formed JSON error body, the SDK does NOT retry on fallback hosts -- even
@@ -467,6 +481,8 @@ ASSERT http_requests.length == 1
 ---
 
 ## RSL1k4 - Idempotent publish retry deduplication
+
+**Test ID**: `rest/proxy/RSL1k4/idempotent-retry-dedup-0`
 
 | Spec | Requirement |
 |------|-------------|

@@ -25,6 +25,8 @@ See `uts/test/rest/unit/rest_client.md` for the full Mock HTTP Infrastructure sp
 
 ### Test: tokenDetails reflects token from authCallback
 
+**Test ID**: `rest/unit/RSA16a/token-from-callback-0`
+
 #### Setup
 ```pseudo
 mock_http = MockHttpClient(
@@ -61,6 +63,8 @@ ASSERT client.auth.tokenDetails.issued IS NOT null
 ---
 
 ### Test: tokenDetails reflects token from requestToken
+
+**Test ID**: `rest/unit/RSA16a/token-from-request-token-1`
 
 #### Setup
 ```pseudo
@@ -105,6 +109,8 @@ ASSERT client.auth.tokenDetails.clientId == "token-client"
 
 ### Test: tokenDetails created from token string in ClientOptions
 
+**Test ID**: `rest/unit/RSA16b/token-string-in-options-0`
+
 #### Setup
 ```pseudo
 mock_http = MockHttpClient(
@@ -137,6 +143,8 @@ ASSERT token_details.capability IS null
 ---
 
 ### Test: tokenDetails created from token string in authCallback
+
+**Test ID**: `rest/unit/RSA16b/token-string-from-callback-1`
 
 #### Setup
 ```pseudo
@@ -175,6 +183,8 @@ ASSERT client.auth.tokenDetails.issued IS null
 
 ### Test: tokenDetails set on instantiation with tokenDetails option
 
+**Test ID**: `rest/unit/RSA16c/set-on-instantiation-0`
+
 #### Setup
 ```pseudo
 initial_token = TokenDetails(
@@ -203,6 +213,8 @@ ASSERT token_details.clientId == "initial-client"
 ---
 
 ### Test: tokenDetails updated after explicit authorize()
+
+**Test ID**: `rest/unit/RSA16c/updated-after-authorize-1`
 
 #### Setup
 ```pseudo
@@ -253,6 +265,8 @@ ASSERT first_token.token != second_token.token
 
 ### Test: tokenDetails updated after library-initiated renewal on expiry
 
+**Test ID**: `rest/unit/RSA16c/updated-after-expiry-renewal-2`
+
 #### Setup
 ```pseudo
 test_clock = TestClock()
@@ -301,6 +315,8 @@ ASSERT second_token.token == "token-v2"
 ---
 
 ### Test: tokenDetails updated after library-initiated renewal on 40142 error
+
+**Test ID**: `rest/unit/RSA16c/updated-after-40142-renewal-3`
 
 #### Setup
 ```pseudo
@@ -365,6 +381,8 @@ ASSERT second_token.token == "token-v2"
 
 ### Test: tokenDetails is null when using basic auth
 
+**Test ID**: `rest/unit/RSA16d/null-with-basic-auth-0`
+
 #### Setup
 ```pseudo
 mock_http = MockHttpClient(
@@ -393,6 +411,8 @@ ASSERT client.auth.tokenDetails IS null
 
 ### Test: tokenDetails is null before any token is obtained
 
+**Test ID**: `rest/unit/RSA16d/null-before-token-obtained-1`
+
 #### Setup
 ```pseudo
 # Client configured for token auth but no request made yet
@@ -419,6 +439,8 @@ ASSERT token_details IS null
 ---
 
 ### Test: tokenDetails is null after token invalidation
+
+**Test ID**: `rest/unit/RSA16d/null-after-invalidation-2`
 
 **Note:** This test verifies behavior when a token error occurs and cannot be renewed (e.g., authCallback fails).
 
@@ -477,6 +499,8 @@ ASSERT client.auth.tokenDetails IS null
 
 ### Test: tokenDetails is null after switching from token to basic auth
 
+**Test ID**: `rest/unit/RSA16d/null-after-switch-to-basic-3`
+
 **Note:** This tests the case where a client is reconfigured to use basic auth after having used token auth.
 
 #### Setup
@@ -522,6 +546,8 @@ ASSERT client.auth.tokenDetails IS null
 
 ### Test: tokenDetails preserved across multiple successful requests
 
+**Test ID**: `rest/unit/RSA16a/preserved-across-requests-0`
+
 #### Setup
 ```pseudo
 mock_http = MockHttpClient(
@@ -563,6 +589,8 @@ ASSERT third_check.token == "stable-token"
 ---
 
 ### Test: tokenDetails reflects capability from token
+
+**Test ID**: `rest/unit/RSA16a/reflects-capability-1`
 
 #### Setup
 ```pseudo

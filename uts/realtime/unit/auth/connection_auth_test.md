@@ -23,6 +23,8 @@ Key behaviors tested:
 
 ## RTN2e/RTN27b - Token obtained before WebSocket connection
 
+**Test ID**: `realtime/unit/RTN2e/token-before-websocket-0`
+
 **Spec requirement:** When `authCallback` is configured but no token is provided, the library must obtain a token via the callback **before** opening the WebSocket connection. The token is then included in the WebSocket URL as the `accessToken` query parameter.
 
 This is implied by:
@@ -113,6 +115,8 @@ CLOSE_CLIENT(client)
 
 ## RTN2e/RTN27b - authCallback error prevents connection attempt
 
+**Test ID**: `realtime/unit/RTN2e/callback-error-prevents-connect-1`
+
 **Spec requirement:** If `authCallback` fails during the initial token acquisition, the library should NOT attempt to open a WebSocket connection.
 
 Tests that authCallback errors are handled before any connection attempt is made.
@@ -171,6 +175,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN2e - authCallback TokenParams include clientId
+
+**Test ID**: `realtime/unit/RTN2e/callback-params-include-clientid-2`
 
 **Spec requirement:** When invoking `authCallback`, the library passes `TokenParams` that include any configured `clientId`.
 
@@ -231,6 +237,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN2e - Multiple connections reuse valid token
+
+**Test ID**: `realtime/unit/RTN2e/reuse-valid-token-3`
 
 **Spec requirement:** If a valid (non-expired) token exists from a previous authCallback invocation, it should be reused for subsequent connection attempts without invoking authCallback again.
 
@@ -293,6 +301,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4c2 - authCallback error during CONNECTING causes DISCONNECTED
+
+**Test ID**: `realtime/unit/RSA4c2/callback-error-causes-disconnected-0`
 
 **Spec requirement (RSA4c):** If an attempt to authenticate using authCallback results in an error, then:
 - **(RSA4c1)** An ErrorInfo with code 80019, statusCode 401, and cause set to the underlying cause should be emitted and set as the connection errorReason.
@@ -360,6 +370,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4c3 - authCallback error while CONNECTED leaves connection CONNECTED
+
+**Test ID**: `realtime/unit/RSA4c3/callback-error-stays-connected-0`
 
 **Spec requirement (RSA4c3):** If the connection is CONNECTED when an auth attempt fails, then the connection should remain CONNECTED.
 
@@ -450,6 +462,8 @@ CLOSE_CLIENT(client)
 
 ## RSA4d - authCallback 403 error causes FAILED
 
+**Test ID**: `realtime/unit/RSA4d/callback-403-causes-failed-0`
+
 **Spec requirement (RSA4d):** If an authCallback results in an ErrorInfo with statusCode 403, the client library should transition to the FAILED state, with an ErrorInfo (code 80019, statusCode 403, cause set to the underlying cause).
 
 Tests that a 403 from authCallback is treated as fatal and causes FAILED state.
@@ -506,6 +520,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4d - authCallback 403 during RTN22 reauth causes FAILED
+
+**Test ID**: `realtime/unit/RSA4d/callback-403-reauth-causes-failed-1`
 
 **Spec requirement (RSA4d):** If an authCallback results in an ErrorInfo with statusCode 403 during an attempt to re-authenticate, the connection transitions to FAILED.
 

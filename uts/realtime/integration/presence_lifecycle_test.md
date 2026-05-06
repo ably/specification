@@ -40,6 +40,8 @@ AFTER ALL TESTS:
 
 ## RTP4, RTP6, RTP11a - Bulk enterClient observed on different connection
 
+**Test ID**: `realtime/integration/RTP4/bulk-enter-observed-0`
+
 **Spec requirement:** Enter multiple members on connection A, verify they are observed
 on connection B via subscribe (RTP6) and get() after sync (RTP11a). This is the
 integration equivalent of the RTP4 unit test.
@@ -129,6 +131,8 @@ AWAIT client_b.close()
 ---
 
 ## RTP8, RTP9, RTP10 - Enter, update, leave lifecycle
+
+**Test ID**: `realtime/integration/RTP8/enter-update-leave-lifecycle-0`
 
 **Spec requirement:** Verify the complete presence lifecycle: enter populates the
 presence set (RTP8), update modifies the data (RTP9), and leave removes the member

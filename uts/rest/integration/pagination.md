@@ -29,6 +29,8 @@ AFTER ALL TESTS:
 
 ## TG1, TG2 - PaginatedResult items and navigation
 
+**Test ID**: `rest/integration/TG1/items-and-navigation-0`
+
 | Spec ID | Requirement |
 |---------|-------------|
 | TG1 | `items` property contains array of results for current page |
@@ -79,6 +81,8 @@ ASSERT page1.isLast() == false
 ---
 
 ## TG3 - next() retrieves subsequent page
+
+**Test ID**: `rest/integration/TG3/next-retrieves-page-0`
 
 **Spec requirement:** TG3 - `next()` returns a new `PaginatedResult` for the next page of results.
 
@@ -134,6 +138,8 @@ ASSERT all_ids.length == 12
 
 ## TG4 - first() retrieves first page
 
+**Test ID**: `rest/integration/TG4/first-retrieves-page-0`
+
 **Spec requirement:** TG4 - `first()` returns a new `PaginatedResult` for the first page of results.
 
 Tests that `first()` returns to the first page of results.
@@ -179,6 +185,8 @@ FOR i IN 0..first_page.items.length:
 ---
 
 ## TG5 - Iterate through all pages
+
+**Test ID**: `rest/integration/TG5/iterate-all-pages-0`
 
 **Spec requirement:** TG5 - Pagination methods enable iteration through complete result set.
 
@@ -235,6 +243,8 @@ FOR i IN 1..message_count:
 ---
 
 ## TG - next() on last page returns null
+
+**Test ID**: `rest/integration/TG3/next-last-page-null-1`
 
 **Spec requirement:** TG3 - `next()` returns null when called on the last page.
 

@@ -49,6 +49,8 @@ AFTER EACH TEST:
 
 ## Test 27: RTP17i/RTP17g -- Automatic presence re-enter on non-resumed reattach
 
+**Test ID**: `realtime/proxy/RTP17i/reenter-on-non-resumed-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTP17i | The RealtimePresence object should perform automatic re-entry whenever the channel receives an ATTACHED ProtocolMessage, except in the case where the channel is already attached and the ProtocolMessage has the RESUMED bit flag set |
@@ -166,6 +168,8 @@ ASSERT client.connection.state == ConnectionState.connected
 ---
 
 ## Test 28: RTP17i -- Presence re-enter after real disconnect
+
+**Test ID**: `realtime/proxy/RTP17i/reenter-after-disconnect-1`
 
 | Spec | Requirement |
 |------|-------------|

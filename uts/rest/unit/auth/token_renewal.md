@@ -19,6 +19,8 @@ These tests verify that the library correctly handles token expiry and triggers 
 
 ## RSA4b - Token renewal on expiry rejection
 
+**Test ID**: `rest/unit/RSA4b/renewal-on-40142-0`
+
 **Spec requirement:** When a request is rejected with error code 40142 (token expired), the library must obtain a new token via the auth callback and retry the request automatically.
 
 Tests that when a request is rejected with a token expiry error, the library obtains a new token and retries.
@@ -91,6 +93,8 @@ ASSERT result.items IS List
 
 ## RSA4b - Token renewal on 40140 error
 
+**Test ID**: `rest/unit/RSA4b/renewal-on-40140-1`
+
 **Spec requirement:** Token renewal must also be triggered for error code 40140 (token error), not just 40142 (token expired).
 
 Tests renewal is triggered for error code 40140 (token error).
@@ -146,6 +150,8 @@ ASSERT request_count == 2
 ---
 
 ## RSA4b1 - Pre-emptive token renewal
+
+**Test ID**: `rest/unit/RSA4b1/preemptive-renewal-0`
 
 **Spec requirement:** If a token is known to be expired before making a request, renewal must happen pre-emptively without first making a failing request.
 
@@ -212,6 +218,8 @@ ASSERT requests_to_history[0].headers["Authorization"] == "Bearer fresh-token"
 
 ## RSA4a2 - No renewal without authCallback
 
+**Test ID**: `rest/unit/RSA4a2/no-renewal-without-callback-0`
+
 **Spec requirement:** Token renewal is not attempted if no renewal mechanism (authCallback/authUrl/key) is available.
 
 Tests that token renewal is not attempted if no renewal mechanism is available.
@@ -256,6 +264,8 @@ ASSERT request_count == 1
 ---
 
 ## RSA4b - Renewal with authUrl
+
+**Test ID**: `rest/unit/RSA4b/renewal-via-authurl-2`
 
 **Spec requirement:** Token renewal must work via authUrl when a request is rejected with error code 40142.
 
@@ -333,6 +343,8 @@ ASSERT api_requests[1].headers["Authorization"] == "Bearer second-token"
 
 ## RSA4b - Renewal limit
 
+**Test ID**: `rest/unit/RSA4b/renewal-limit-no-loop-3`
+
 **Spec requirement:** Token renewal must not loop infinitely if server keeps rejecting tokens.
 
 Tests that token renewal doesn't loop infinitely if server keeps rejecting.
@@ -385,6 +397,8 @@ ASSERT request_count == 2   # Original request + one retry
 ---
 
 ## RSC10 - REST request retried after token renewal
+
+**Test ID**: `rest/unit/RSC10/request-retried-after-renewal-0`
 
 **Spec requirement:** If a REST request responds with a token error (401 HTTP status code and an Ably error value 40140 <= code < 40150), then the Auth class is responsible for reissuing a token and the request should be reattempted.
 
@@ -459,6 +473,8 @@ ASSERT channel_requests[1].headers["Authorization"] == "Bearer token-2"
 
 ## RSC10b - Non-token 401 errors MUST NOT trigger token renewal
 
+**Test ID**: `rest/unit/RSC10b/non-token-401-no-renewal-0`
+
 **Spec requirement:** Only errors with codes in the range 40140–40149 trigger token renewal. Other 401 errors (e.g. 40100 Unauthorized) MUST be propagated immediately without any renewal or retry attempt.
 
 ### Setup
@@ -512,6 +528,8 @@ ASSERT callback_count == 1
 ---
 
 ## RSA4b - Token renewal with MessagePack error response
+
+**Test ID**: `rest/unit/RSA4b/renewal-msgpack-response-4`
 
 **Spec requirement:** Token renewal must work correctly when the server returns the 401 token-error response in MessagePack format (which is the default when `useBinaryProtocol: true`). The SDK must decode the msgpack error body to extract the token-error code (40140–40149) and trigger renewal.
 

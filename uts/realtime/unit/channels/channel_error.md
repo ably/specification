@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL14 - Channel ERROR transitions ATTACHED channel to FAILED
 
+**Test ID**: `realtime/unit/RTL14/attached-to-failed-0`
+
 **Spec requirement:** If an ERROR ProtocolMessage is received for this channel (the channel attribute matches this channel's name), then the channel should immediately transition to the FAILED state, and the RealtimeChannel.errorReason should be set.
 
 Tests that receiving a channel-scoped ERROR while ATTACHED causes the channel to transition to FAILED with the error.
@@ -88,6 +90,8 @@ CLOSE_CLIENT(client)
 
 ## RTL14 - Channel ERROR transitions ATTACHING channel to FAILED
 
+**Test ID**: `realtime/unit/RTL14/attaching-to-failed-1`
+
 **Spec requirement:** If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to FAILED.
 
 Tests that receiving a channel-scoped ERROR while ATTACHING causes the channel to transition to FAILED and the pending attach operation to fail.
@@ -146,6 +150,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL14 - Channel ERROR completes pending detach with error
+
+**Test ID**: `realtime/unit/RTL14/pending-detach-error-2`
 
 **Spec requirement:** If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to FAILED.
 
@@ -214,6 +220,8 @@ CLOSE_CLIENT(client)
 
 ## RTL14 - Channel ERROR does not affect other channels
 
+**Test ID**: `realtime/unit/RTL14/other-channels-unaffected-3`
+
 **Spec requirement:** The ERROR ProtocolMessage with a channel attribute only affects that specific channel.
 
 Tests that a channel-scoped ERROR only transitions the target channel to FAILED, leaving other channels unaffected.
@@ -280,6 +288,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL14 - Channel ERROR cancels pending timers
+
+**Test ID**: `realtime/unit/RTL14/cancels-pending-timers-4`
 
 **Spec requirement:** When the channel transitions to FAILED, any pending timers (attach timeout, channel retry) should be cancelled.
 

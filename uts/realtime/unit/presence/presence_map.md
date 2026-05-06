@@ -33,6 +33,8 @@ PresenceMap:
 
 ## RTP2 - Basic put and get
 
+**Test ID**: `realtime/unit/RTP2/basic-put-and-get-0`
+
 **Spec requirement:** Use a PresenceMap to maintain a list of members present on a channel,
 a map of memberKeys to presence messages.
 
@@ -64,6 +66,8 @@ ASSERT map.get("conn-1:client-1").connectionId == "conn-1"
 ---
 
 ## RTP2d2 - ENTER stored as PRESENT
+
+**Test ID**: `realtime/unit/RTP2d2/enter-stored-as-present-0`
 
 **Spec requirement:** When an ENTER, UPDATE, or PRESENT message is received, add to the
 presence map with action set to PRESENT.
@@ -97,6 +101,8 @@ ASSERT stored.data == "entered"
 ---
 
 ## RTP2d2 - UPDATE stored as PRESENT
+
+**Test ID**: `realtime/unit/RTP2d2/update-stored-as-present-1`
 
 **Spec requirement:** UPDATE messages are also stored with action PRESENT.
 
@@ -139,6 +145,8 @@ ASSERT stored.data == "updated"
 
 ## RTP2d2 - PRESENT stored as PRESENT
 
+**Test ID**: `realtime/unit/RTP2d2/present-stored-as-present-2`
+
 **Spec requirement:** PRESENT messages (from SYNC) are stored with action PRESENT.
 
 ### Setup
@@ -167,6 +175,8 @@ ASSERT stored.action == PRESENT
 ---
 
 ## RTP2d1 - put returns message with original action
+
+**Test ID**: `realtime/unit/RTP2d1/put-returns-original-action-0`
 
 **Spec requirement:** Emit to subscribers with the original action (ENTER, UPDATE, or PRESENT),
 not the stored PRESENT action.
@@ -208,6 +218,8 @@ ASSERT emitted_update.action == UPDATE   # Original action preserved for emissio
 ---
 
 ## RTP2h1 - LEAVE outside sync removes member
+
+**Test ID**: `realtime/unit/RTP2h1/leave-outside-sync-removes-0`
 
 **Spec requirement:** When a LEAVE message is received and SYNC is NOT in progress,
 emit LEAVE and delete from presence map.
@@ -253,6 +265,8 @@ ASSERT map.values().length == 0
 
 ## RTP2h1 - LEAVE for non-existent member returns null
 
+**Test ID**: `realtime/unit/RTP2h1/leave-nonexistent-returns-null-1`
+
 **Spec requirement:** If there is no matching memberKey in the map, there is nothing to remove.
 
 ### Setup
@@ -279,6 +293,8 @@ ASSERT emitted IS null
 ---
 
 ## RTP2h2a - LEAVE during sync stores as ABSENT
+
+**Test ID**: `realtime/unit/RTP2h2a/leave-during-sync-stores-absent-0`
 
 **Spec requirement:** If a SYNC is in progress and a LEAVE message is received,
 store the member in the presence map with action set to ABSENT.
@@ -327,6 +343,8 @@ ASSERT stored.action == ABSENT
 
 ## RTP2h2b - ABSENT members deleted on endSync
 
+**Test ID**: `realtime/unit/RTP2h2b/absent-deleted-on-endsync-0`
+
 **Spec requirement:** When SYNC completes, delete all members with action ABSENT.
 
 ### Setup
@@ -368,6 +386,8 @@ ASSERT map.values().length == 1
 ---
 
 ## RTP2b2 - Newness comparison by id (msgSerial:index)
+
+**Test ID**: `realtime/unit/RTP2b2/newness-by-msgserial-index-0`
 
 **Spec requirement:** When the connectionId IS an initial substring of the message id,
 split the id into `connectionId:msgSerial:index` and compare msgSerial then index numerically.
@@ -426,6 +446,8 @@ ASSERT map.get("conn-1:client-1").data == "newer"
 
 ## RTP2b2 - Newness comparison by index when msgSerial equal
 
+**Test ID**: `realtime/unit/RTP2b2/newness-by-index-same-serial-1`
+
 **Spec requirement:** When msgSerial values are equal, compare by index.
 
 ### Setup
@@ -476,6 +498,8 @@ ASSERT map.get("conn-1:client-1").data == "index-5"
 
 ## RTP2b1 - Newness comparison by timestamp (synthesized leave)
 
+**Test ID**: `realtime/unit/RTP2b1/newness-by-timestamp-0`
+
 **Spec requirement:** If either message has a connectionId which is NOT an initial substring
 of its id, compare by timestamp. This handles "synthesized leave" events where the server
 generates a LEAVE on behalf of a disconnected client.
@@ -520,6 +544,8 @@ ASSERT map.get("conn-1:client-1") IS null
 
 ## RTP2b1 - Synthesized leave rejected when older by timestamp
 
+**Test ID**: `realtime/unit/RTP2b1/older-synth-leave-rejected-1`
+
 **Spec requirement:** When comparing by timestamp, an older synthesized leave is rejected.
 
 ### Setup
@@ -560,6 +586,8 @@ ASSERT map.get("conn-1:client-1").data == "entered"
 
 ## RTP2b1a - Equal timestamps: incoming message is newer
 
+**Test ID**: `realtime/unit/RTP2b1a/equal-timestamps-incoming-wins-0`
+
 **Spec requirement:** If timestamps are equal, the newly-incoming message is considered newer.
 
 ### Setup
@@ -598,6 +626,8 @@ ASSERT map.get("conn-1:client-1").data == "second"
 ---
 
 ## RTP2c - SYNC messages use same newness comparison
+
+**Test ID**: `realtime/unit/RTP2c/sync-uses-same-newness-0`
 
 **Spec requirement:** Presence events from a SYNC must be compared for newness
 the same way as PRESENCE messages.
@@ -653,6 +683,8 @@ ASSERT map.get("conn-1:client-1").data == "sync-newer"
 
 ## RTP2 - Multiple members coexist
 
+**Test ID**: `realtime/unit/RTP2/multiple-members-coexist-1`
+
 **Spec requirement:** The presence map maintains multiple members with different memberKeys.
 
 ### Setup
@@ -679,6 +711,8 @@ ASSERT map.get("c3:alice") IS NOT null
 ---
 
 ## RTP2 - values() excludes ABSENT members
+
+**Test ID**: `realtime/unit/RTP2/values-excludes-absent-2`
 
 **Spec requirement:** The values() method returns only PRESENT members.
 
@@ -711,6 +745,8 @@ ASSERT members[0].clientId == "alice"
 ---
 
 ## clear() resets all state
+
+**Test ID**: `realtime/unit/RTP2/clear-resets-state-3`
 
 ### Setup
 ```pseudo

@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL5a - Detach when initialized is no-op
 
+**Test ID**: `realtime/unit/RTL5a/detach-initialized-noop-0`
+
 **Spec requirement:** If the channel state is INITIALIZED or DETACHED nothing is done.
 
 Tests that detach on an initialized channel returns immediately.
@@ -48,6 +50,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL5a - Detach when already detached is no-op
+
+**Test ID**: `realtime/unit/RTL5a/detach-already-detached-noop-1`
 
 **Spec requirement:** If the channel state is INITIALIZED or DETACHED nothing is done.
 
@@ -105,6 +109,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL5i - Detach while detaching waits for completion
+
+**Test ID**: `realtime/unit/RTL5i/detach-while-detaching-0`
 
 **Spec requirement:** If the channel is in a pending state DETACHING, do the detach operation after the completion of the pending request.
 
@@ -171,6 +177,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL5i - Detach while attaching waits then detaches
+
+**Test ID**: `realtime/unit/RTL5i/detach-while-attaching-1`
 
 **Spec requirement:** If the channel is in a pending state ATTACHING, do the detach operation after the completion of the pending request.
 
@@ -244,6 +252,8 @@ CLOSE_CLIENT(client)
 
 ## RTL5b - Detach from failed state results in error
 
+**Test ID**: `realtime/unit/RTL5b/detach-failed-errors-0`
+
 **Spec requirement:** If the channel state is FAILED, the detach request results in an error.
 
 Tests that detach fails when channel is in failed state.
@@ -293,6 +303,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL5j - Detach from suspended transitions to detached
+
+**Test ID**: `realtime/unit/RTL5j/detach-suspended-to-detached-0`
 
 **Spec requirement:** If the channel state is SUSPENDED, the detach request transitions the channel immediately to the DETACHED state.
 
@@ -352,6 +364,8 @@ CLOSE_CLIENT(client)
 
 ## RTL5l - Detach when connection not connected transitions immediately
 
+**Test ID**: `realtime/unit/RTL5l/detach-not-connected-immediate-0`
+
 **Spec requirement:** If the connection state is anything other than CONNECTED and none of the preceding channel state conditions apply, the channel transitions immediately to the DETACHED state.
 
 Tests that detach transitions immediately to detached when connection is not connected.
@@ -400,6 +414,8 @@ CLOSE_CLIENT(client)
 ---
 
 ### RTL5l - Detach ATTACHED channel when connection disconnected
+
+**Test ID**: `realtime/unit/RTL5l/detach-attached-when-disconnected-1`
 
 When an ATTACHED channel is detached while the connection is DISCONNECTED,
 the channel transitions directly to DETACHED without sending a DETACH message
@@ -466,6 +482,8 @@ ASSERT detach_messages.length == 0
 
 ## RTL5d - Normal detach flow
 
+**Test ID**: `realtime/unit/RTL5d/normal-detach-flow-0`
+
 **Spec requirement:** A DETACH ProtocolMessage is sent to the server, the state transitions to DETACHING and the channel becomes DETACHED when the confirmation DETACHED ProtocolMessage is received.
 
 Tests the normal detach flow when connection is connected.
@@ -526,6 +544,8 @@ CLOSE_CLIENT(client)
 
 ## RTL5f - Detach timeout returns to previous state
 
+**Test ID**: `realtime/unit/RTL5f/timeout-returns-previous-state-0`
+
 **Spec requirement:** If a DETACHED ProtocolMessage is not received within realtimeRequestTimeout, the detach request should be treated as though it has failed and the channel will return to its previous state.
 
 Tests detach timeout behavior.
@@ -584,6 +604,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL5k - ATTACHED received while detaching sends new DETACH
+
+**Test ID**: `realtime/unit/RTL5k/attached-while-detaching-0`
 
 **Spec requirement:** If the channel receives an ATTACHED message while in the DETACHING or DETACHED state, it should send a new DETACH message and remain in (or transition to) the DETACHING state.
 
@@ -646,6 +668,8 @@ CLOSE_CLIENT(client)
 
 ## RTL5k - ATTACHED received while detached sends DETACH
 
+**Test ID**: `realtime/unit/RTL5k/attached-while-detached-1`
+
 **Spec requirement:** If the channel receives an ATTACHED message while in the DETACHED state, it should send a new DETACH message.
 
 Tests that unexpected ATTACHED message while detached triggers DETACH.
@@ -707,6 +731,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL5 - Detach emits state change events
+
+**Test ID**: `realtime/unit/RTL5/detach-state-change-events-0`
 
 **Spec requirement:** Channel emits state change events during detach.
 

@@ -11,6 +11,8 @@ These tests verify channel options and derived channel functionality.
 
 ## TB2 - ChannelOptions attributes
 
+**Test ID**: `realtime/unit/TB2/channel-options-attributes-0`
+
 | Spec | Requirement |
 |------|-------------|
 | TB2b | `cipher` - CipherParams for encryption |
@@ -37,6 +39,8 @@ ASSERT options.attachOnSubscribe == true
 
 ## TB2c - ChannelOptions with params
 
+**Test ID**: `realtime/unit/TB2c/options-with-params-0`
+
 **Spec requirement:** `params` is a Dict<string,string> of key/value pairs for channel parameters.
 
 Tests that channel options can be created with params.
@@ -57,6 +61,8 @@ ASSERT options.params["delta"] == "vcdiff"
 ---
 
 ## TB2d - ChannelOptions with modes
+
+**Test ID**: `realtime/unit/TB2d/options-with-modes-0`
 
 **Spec requirement:** `modes` is an array of ChannelMode.
 
@@ -80,6 +86,8 @@ ASSERT length(options.modes) == 2
 
 ## TB3 - withCipherKey constructor
 
+**Test ID**: `realtime/unit/TB3/with-cipher-key-0`
+
 **Spec requirement:** Optional constructor that takes a key only.
 
 Tests the withCipherKey factory constructor.
@@ -102,6 +110,8 @@ ASSERT options.cipherParams.keyLength == 256
 
 ## TB4 - attachOnSubscribe default
 
+**Test ID**: `realtime/unit/TB4/attach-on-subscribe-default-0`
+
 **Spec requirement:** `attachOnSubscribe` defaults to true.
 
 Tests the default value of attachOnSubscribe.
@@ -121,6 +131,8 @@ ASSERT options2.attachOnSubscribe == false
 ---
 
 ## RTS3b - Options set on new channel
+
+**Test ID**: `realtime/unit/RTS3b/options-set-on-new-0`
 
 **Spec requirement:** If options are provided, the options are set on the RealtimeChannel when creating a new RealtimeChannel.
 
@@ -153,6 +165,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS3c - Options updated on existing channel (soft-deprecated)
+
+**Test ID**: `realtime/unit/RTS3c/options-updated-existing-0`
 
 **Spec requirement:** Accessing an existing channel with options will update the options.
 
@@ -191,6 +205,8 @@ CLOSE_CLIENT(client)
 
 ## RTS3c1 - Error if options would trigger reattachment
 
+**Test ID**: `realtime/unit/RTS3c1/error-reattach-params-0`
+
 **Spec requirement:** If a new set of ChannelOptions is supplied that would trigger a reattachment, it must raise an error.
 
 Tests that get() throws error when params/modes change on attached channel.
@@ -226,6 +242,8 @@ CLOSE_CLIENT(client)
 
 ## RTS3c1 - Error if modes change on attaching channel
 
+**Test ID**: `realtime/unit/RTS3c1/error-reattach-modes-1`
+
 **Spec requirement:** Must raise error if options would trigger reattachment on attaching channel.
 
 Tests error when modes change on attaching channel.
@@ -254,6 +272,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL16 - setOptions updates channel options
+
+**Test ID**: `realtime/unit/RTL16/set-options-updates-0`
 
 **Spec requirement:** setOptions takes a ChannelOptions object and sets or updates the stored channel options.
 
@@ -286,6 +306,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL16a - setOptions triggers reattachment when needed
+
+**Test ID**: `realtime/unit/RTL16a/triggers-reattach-0`
 
 **Spec requirement:** If params or modes are provided and channel is attached, setOptions triggers reattachment.
 
@@ -325,6 +347,8 @@ CLOSE_CLIENT(client)
 
 ## RTS5a - getDerived creates derived channel
 
+**Test ID**: `realtime/unit/RTS5a/creates-derived-channel-0`
+
 **Spec requirement:** Takes RealtimeChannel name and DeriveOptions to create a derived channel.
 
 Tests that getDerived creates a channel with the correct derived name.
@@ -355,6 +379,8 @@ CLOSE_CLIENT(client)
 
 ## RTS5a1 - Derived channel filter is base64 encoded
 
+**Test ID**: `realtime/unit/RTS5a1/filter-base64-encoded-0`
+
 **Spec requirement:** The filter should be synthesized as [filter=<base64 encoded JMESPath string>]channelName.
 
 Tests that the filter expression is base64 encoded in the channel name.
@@ -384,6 +410,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS5a2 - Derived channel with params
+
+**Test ID**: `realtime/unit/RTS5a2/derived-with-params-0`
 
 **Spec requirement:** If channel options are provided with params, they are included in the derived channel name.
 
@@ -434,6 +462,8 @@ CLOSE_CLIENT(client)
 
 ## RTS5 - getDerived with options sets them on channel
 
+**Test ID**: `realtime/unit/RTS5/get-derived-with-options-0`
+
 **Spec requirement:** ChannelOptions can be provided as an optional third argument.
 
 Tests that getDerived passes options to the created channel.
@@ -466,6 +496,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## DO2a - DeriveOptions filter attribute
+
+**Test ID**: `realtime/unit/DO2a/filter-attribute-0`
 
 **Spec requirement:** DeriveOptions has a filter attribute containing a JMESPath string expression.
 

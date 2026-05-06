@@ -13,6 +13,8 @@ See `uts/test/rest/unit/rest_client.md` for the full Mock HTTP Infrastructure sp
 
 ## RSA7a - clientId from ClientOptions
 
+**Test ID**: `rest/unit/RSA7a/clientid-from-options-0`
+
 **Spec requirement:** `clientId` from `ClientOptions` is accessible via `auth.clientId`.
 
 Tests that `clientId` from `ClientOptions` is accessible via `auth.clientId`.
@@ -33,6 +35,8 @@ ASSERT client.auth.clientId == "my-client-id"
 ---
 
 ## RSA7b - clientId from TokenDetails
+
+**Test ID**: `rest/unit/RSA7b/clientid-from-token-details-0`
 
 **Spec requirement:** `clientId` is derived from `TokenDetails` when token auth is used.
 
@@ -65,6 +69,8 @@ ASSERT client.auth.clientId == "token-client-id"
 ---
 
 ## RSA7b - clientId from authCallback TokenDetails
+
+**Test ID**: `rest/unit/RSA7b/clientid-from-callback-token-1`
 
 **Spec requirement:** `clientId` is extracted from `TokenDetails` returned by `authCallback`.
 
@@ -104,6 +110,8 @@ ASSERT client.auth.clientId == "callback-client-id"
 
 ## RSA7c - clientId null when unidentified
 
+**Test ID**: `rest/unit/RSA7c/clientid-null-unidentified-0`
+
 **Spec requirement:** `auth.clientId` is null when no client identity is established.
 
 Tests that `auth.clientId` is null when no client identity is established.
@@ -122,6 +130,8 @@ ASSERT client.auth.clientId IS null
 ---
 
 ## RSA7c - clientId null with unidentified token
+
+**Test ID**: `rest/unit/RSA7c/clientid-null-unidentified-token-1`
 
 **Spec requirement:** `auth.clientId` is null when token has no `clientId`.
 
@@ -154,6 +164,8 @@ ASSERT client.auth.clientId IS null
 ---
 
 ## RSA12a - clientId passed to authCallback in TokenParams
+
+**Test ID**: `rest/unit/RSA12a/clientid-passed-to-callback-0`
 
 **Spec requirement:** `clientId` is passed to `authCallback` via `TokenParams`.
 
@@ -197,6 +209,8 @@ ASSERT received_params[0].clientId == "library-client-id"
 ---
 
 ## RSA12b - clientId sent to authUrl
+
+**Test ID**: `rest/unit/RSA12b/clientid-sent-to-authurl-0`
 
 **Spec requirement:** `clientId` is sent as a parameter when using `authUrl`.
 
@@ -249,6 +263,8 @@ ELSE:
 
 ## RSA7 - clientId updated after authorize()
 
+**Test ID**: `rest/unit/RSA7/clientid-updated-after-authorize-0`
+
 **Spec requirement:** `auth.clientId` is updated when `authorize()` returns a new token with different `clientId`.
 
 Tests that `auth.clientId` is updated when `authorize()` returns a new token with different `clientId`.
@@ -294,6 +310,8 @@ ASSERT client.auth.clientId == "client-2"
 
 ## RSA12 - Wildcard clientId
 
+**Test ID**: `rest/unit/RSA12/wildcard-clientid-0`
+
 **Spec requirement:** Wildcard `*` clientId allows the token to be used with any client identity.
 
 Tests handling of wildcard `*` clientId.
@@ -329,6 +347,8 @@ The wildcard `*` clientId allows the token to be used with any client identity. 
 ---
 
 ## RSA7 - clientId consistency between ClientOptions and token
+
+**Test ID**: `rest/unit/RSA7/clientid-mismatch-error-1`
 
 **Spec requirement:** `clientId` in `ClientOptions` must be consistent with token's `clientId` (mismatch is an error).
 
@@ -377,6 +397,8 @@ The exact timing of mismatch detection (constructor vs first use) may vary by im
 
 ## RSA15a - Token clientId must match ClientOptions clientId
 
+**Test ID**: `rest/unit/RSA15a/token-clientid-must-match-0`
+
 **Spec requirement:** Any `clientId` provided in `ClientOptions` must match any non-wildcard `clientId` value in `TokenDetails`.
 
 This is tested by the RSA7 consistency test above (cases 1 and 2). When Token Auth is used and both `ClientOptions.clientId` and `TokenDetails.clientId` are set to non-wildcard values, they must match.
@@ -422,6 +444,8 @@ ASSERT error.code == 40102
 
 ## RSA15b - Wildcard token clientId permits any ClientOptions clientId
 
+**Test ID**: `rest/unit/RSA15b/wildcard-token-permits-any-0`
+
 **Spec requirement:** If the `clientId` from `TokenDetails` is a wildcard string `'*'`, then the client is permitted to be either unidentified or identified by providing a `clientId`.
 
 ### Setup
@@ -454,6 +478,8 @@ ASSERT client.auth.clientId == "any-client"
 ---
 
 ## RSA15c - Incompatible clientId results in error (REST) or FAILED (Realtime)
+
+**Test ID**: `rest/unit/RSA15c/incompatible-clientid-error-0`
 
 **Spec requirement:** Following an auth request which uses a `TokenDetails` that contains an incompatible `clientId`, the library should in the case of REST result in an appropriate error response, and in the case of Realtime transition the connection state to `FAILED`.
 

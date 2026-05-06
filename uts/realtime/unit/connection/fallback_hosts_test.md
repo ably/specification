@@ -14,6 +14,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for Mock HTTP Client specification
 
 ## RTN17i - Always prefer primary domain first
 
+**Test ID**: `realtime/unit/RTN17i/prefer-primary-domain-0`
+
 **Spec requirement:** By default, every connection attempt is first attempted to the primary domain. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed.
 
 Tests that the client always tries the primary domain first, even after failures.
@@ -116,6 +118,8 @@ CLOSE_CLIENT(client)
 
 ## RTN17f - Errors that necessitate fallback host usage
 
+**Test ID**: `realtime/unit/RTN17f/fallback-on-error-0`
+
 **Spec requirement:** Errors that necessitate use of an alternative host include conditions specified in RSC15l and also DISCONNECTED responses with error.statusCode in range 500-504.
 
 Tests that specific error conditions trigger fallback host usage.
@@ -183,6 +187,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN17f1 - DISCONNECTED with 5xx status triggers fallback
+
+**Test ID**: `realtime/unit/RTN17f1/disconnected-5xx-fallback-0`
 
 **Spec requirement:** A DISCONNECTED response with an error.statusCode in the range 500 <= code <= 504 necessitates use of an alternative host.
 
@@ -257,6 +263,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN17j - Connectivity check before fallback
+
+**Test ID**: `realtime/unit/RTN17j/connectivity-check-before-fallback-0`
 
 **Spec requirement:** In case of an error necessitating fallback, check connectivity by issuing GET to connectivityCheckUrl. If response includes "yes", proceed with fallback hosts in random order.
 
@@ -353,6 +361,8 @@ CLOSE_CLIENT(client)
 
 ## RTN17g - Empty fallback set results in immediate error
 
+**Test ID**: `realtime/unit/RTN17g/empty-fallback-set-error-0`
+
 **Spec requirement:** When the set of fallback domains is empty, failing requests that would have qualified for retry should result in an error immediately.
 
 Tests that no fallback is attempted when fallback set is empty.
@@ -405,6 +415,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN17h - Fallback domains determined by REC2
+
+**Test ID**: `realtime/unit/RTN17h/fallback-domains-from-rec2-0`
 
 **Spec requirement:** When fallbacks apply, the set of fallback domains is determined by REC2.
 
@@ -474,6 +486,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN17j - Fallback hosts tried in random order
+
+**Test ID**: `realtime/unit/RTN17j/fallback-random-order-1`
 
 **Spec requirement:** Retry connection against fallback domains in random order to find an alternative healthy datacenter.
 
@@ -552,6 +566,8 @@ ASSERT unique_orders >= 2
 ---
 
 ## RTN17e - HTTP requests use same fallback host as realtime connection
+
+**Test ID**: `realtime/unit/RTN17e/http-uses-same-fallback-0`
 
 **Spec requirement:** If the realtime client is connected to a fallback host, HTTP requests should first be attempted to the same datacenter. If the HTTP request fails, follow normal fallback behavior.
 

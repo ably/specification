@@ -72,6 +72,8 @@ Note: The sandbox endpoint is used directly (not through the proxy) so that toke
 
 ## Test 18: RSC10 -- Token renewal on HTTP 401 (40142)
 
+**Test ID**: `realtime/proxy/RSC10/token-renewal-on-401-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSC10 | When a REST request receives a 401 with a token error (40140-40149), the SDK should renew the token and retry the request |
@@ -158,6 +160,8 @@ ASSERT http_responses[1].status IN [200, 201]
 
 ## Test 19: RSC15m / REC2c2 -- HTTP 503 error with fallback hosts disabled
 
+**Test ID**: `realtime/proxy/RSC15m/http-503-no-fallback-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSC15m | When the set of fallback domains is empty, failing HTTP requests that would have qualified for a retry against a fallback host will instead result in an error immediately |
@@ -232,6 +236,8 @@ ASSERT http_requests.length == 1
 ---
 
 ## Test 20: RTL6 -- End-to-end publish and history through proxy
+
+**Test ID**: `realtime/proxy/RTL6/publish-history-through-proxy-0`
 
 | Spec | Requirement |
 |------|-------------|

@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN24 - CONNECTED message while already CONNECTED emits UPDATE event
 
+**Test ID**: `realtime/unit/RTN24/connected-emits-update-0`
+
 **Spec requirement:** A connected client may receive a CONNECTED ProtocolMessage from Ably at any point (typically triggered by reauth). The connectionDetails must override stored details. The Connection should emit an UPDATE event with ConnectionStateChange having both previous and current attributes set to CONNECTED, and reason set to the error member of the CONNECTED ProtocolMessage (if any). The library must NOT emit a CONNECTED event if already connected.
 
 Tests that receiving CONNECTED while CONNECTED emits UPDATE, not CONNECTED.
@@ -118,6 +120,8 @@ CLOSE_CLIENT(client)
 
 ## RTN24 - UPDATE event with error reason
 
+**Test ID**: `realtime/unit/RTN24/update-event-with-error-1`
+
 **Spec requirement:** The UPDATE event's reason attribute should be set to the error member of the CONNECTED ProtocolMessage (if any).
 
 Tests that UPDATE events include error information when present.
@@ -206,6 +210,8 @@ CLOSE_CLIENT(client)
 
 ## RTN24 - ConnectionDetails override
 
+**Test ID**: `realtime/unit/RTN24/connection-details-override-2`
+
 **Spec requirement:** The connectionDetails in the ProtocolMessage must override any stored details (see RTN21). Note: `connectionId` is a top-level ProtocolMessage field, NOT inside `connectionDetails`, so it is never updated by RTN24. The connectionDetails fields that are overridden include operational parameters like `maxIdleInterval`, `connectionStateTtl`, `maxMessageSize`, and `serverId`.
 
 Tests that receiving a new CONNECTED message overrides stored connectionDetails.
@@ -292,6 +298,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN24 - No duplicate CONNECTED event
+
+**Test ID**: `realtime/unit/RTN24/no-duplicate-connected-event-3`
 
 **Spec requirement:** The library must not emit a CONNECTED event if the client was already connected (see RTN4h).
 

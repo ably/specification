@@ -46,6 +46,8 @@ These tests use the record-and-verify pattern for state transitions. Network cha
 
 ## RTN20a - Network loss while CONNECTED triggers immediate DISCONNECTED transition
 
+**Test ID**: `realtime/unit/RTN20a/network-loss-connected-disconnects-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN20 | When the client library can subscribe to OS events for network/internet connectivity changes |
@@ -140,6 +142,8 @@ CLOSE_CLIENT(client)
 
 ## RTN20a - Network loss while CONNECTING triggers DISCONNECTED transition
 
+**Test ID**: `realtime/unit/RTN20a/network-loss-connecting-disconnects-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN20 | When the client library can subscribe to OS events for network/internet connectivity changes |
@@ -226,6 +230,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN20b - Network available while DISCONNECTED triggers immediate connect attempt
+
+**Test ID**: `realtime/unit/RTN20b/network-available-disconnected-connects-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -351,6 +357,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN20c - Network available while CONNECTING restarts the connection attempt
+
+**Test ID**: `realtime/unit/RTN20c/network-available-connecting-restarts-0`
 
 | Spec | Requirement |
 |------|-------------|

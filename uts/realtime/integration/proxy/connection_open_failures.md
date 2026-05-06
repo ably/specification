@@ -52,6 +52,8 @@ AFTER EACH TEST:
 
 ## RTN14a — Fatal error during connection open causes FAILED
 
+**Test ID**: `realtime/proxy/RTN14a/fatal-connect-error-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN14a | If the connection attempt encounters a fatal error (non-token error), the connection transitions to FAILED |
@@ -131,6 +133,8 @@ ASSERT client.connection.key IS null
 ---
 
 ## RTN14b — Token error during connection, SDK renews and reconnects
+
+**Test ID**: `realtime/proxy/RTN14b/token-error-renew-reconnect-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -228,6 +232,8 @@ ASSERT client.connection.errorReason IS null
 
 ## RTN14d — Retry after connection refused
 
+**Test ID**: `realtime/proxy/RTN14d/retry-after-refused-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN14d | After a recoverable connection failure, the client transitions to DISCONNECTED and automatically retries after disconnectedRetryTimeout |
@@ -304,6 +310,8 @@ ASSERT ws_connects.length >= 2
 ---
 
 ## RTN14g — Connection-level ERROR during open causes FAILED
+
+**Test ID**: `realtime/proxy/RTN14g/server-error-causes-failed-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -385,6 +393,8 @@ ASSERT client.connection.key IS null
 ---
 
 ## RTN14c — Connection timeout (no CONNECTED received)
+
+**Test ID**: `realtime/proxy/RTN14c/connection-timeout-0`
 
 | Spec | Requirement |
 |------|-------------|

@@ -26,6 +26,8 @@ Default timeout values (from spec):
 
 ## RTC7 - realtimeRequestTimeout applied to channel attach
 
+**Test ID**: `realtime/unit/RTC7/attach-request-timeout-0`
+
 **Spec requirement:** The client library must use the configured timeouts specified
 in the ClientOptions.
 
@@ -96,6 +98,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC7 - realtimeRequestTimeout applied to channel detach
+
+**Test ID**: `realtime/unit/RTC7/detach-request-timeout-1`
 
 **Spec requirement:** The client library must use the configured timeouts specified
 in the ClientOptions.
@@ -177,6 +181,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC7 - disconnectedRetryTimeout controls reconnection delay
+
+**Test ID**: `realtime/unit/RTC7/disconnected-retry-timeout-2`
 
 **Spec requirement:** The client library must use the configured timeouts specified
 in the ClientOptions.
@@ -266,6 +272,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC7 - default timeouts applied when not configured
+
+**Test ID**: `realtime/unit/RTC7/default-timeouts-applied-3`
 
 **Spec requirement:** The client library must use the configured timeouts specified
 in the ClientOptions, falling back to the client library defaults.

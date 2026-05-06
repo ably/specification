@@ -34,6 +34,8 @@ AFTER ALL TESTS:
 
 ## RSL1d - Error indication on publish failure
 
+**Test ID**: `rest/integration/RSL1d/publish-failure-error-0`
+
 **Spec requirement:** RSL1d - Failed publish operations must indicate the error to the caller.
 
 Tests that errors are properly indicated when a publish fails due to insufficient permissions.
@@ -59,6 +61,8 @@ ASSERT error.statusCode == 401
 ---
 
 ## RSL1n - PublishResult contains serials
+
+**Test ID**: `rest/integration/RSL1n/publish-result-serials-0`
 
 **Spec requirement:** RSL1n - Successful publish returns a `PublishResult` containing message serials.
 
@@ -100,6 +104,8 @@ ASSERT result2.serials ARE all unique
 ---
 
 ## RSL1k5 - Idempotent publish with client-supplied IDs
+
+**Test ID**: `rest/integration/RSL1k5/idempotent-client-ids-0`
 
 **Spec requirement:** RSL1k5 - Messages with client-supplied IDs are idempotent (duplicate IDs don't create duplicate messages).
 
@@ -145,6 +151,8 @@ ASSERT history.items[0].data == "data-1"
 
 ## RSL1l1 - Publish params with _forceNack
 
+**Test ID**: `rest/integration/RSL1l1/publish-params-force-nack-0`
+
 **Spec requirement:** RSL1l1 - Additional publish params can be supplied and are transmitted to the server.
 
 Tests that publish params are correctly transmitted by using the `_forceNack` test param.
@@ -171,6 +179,8 @@ ASSERT error.code == 40099  # Specific code for forced nack
 ---
 
 ## RSL1m4 - ClientId mismatch rejection
+
+**Test ID**: `rest/integration/RSL1m4/clientid-mismatch-rejected-0`
 
 **Spec requirement:** RSL1m4 - Server rejects messages where clientId doesn't match the authenticated client.
 

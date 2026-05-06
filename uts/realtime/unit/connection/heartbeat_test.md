@@ -42,6 +42,8 @@ These tests apply to platforms where the WebSocket client does NOT surface ping 
 
 ## RTN23a - Client sends heartbeats=true when ping frames not observable
 
+**Test ID**: `realtime/unit/RTN23a/heartbeats-true-query-param-0`
+
 **Spec requirement:** If the client cannot observe WebSocket ping frames, it should send `heartbeats=true` in the connection query parameters.
 
 Tests that the client requests HEARTBEAT protocol messages.
@@ -92,6 +94,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN23a - Disconnect and reconnect after maxIdleInterval + realtimeRequestTimeout
+
+**Test ID**: `realtime/unit/RTN23a/idle-timeout-reconnect-1`
 
 **Spec requirement:** If no message is received from the server for `maxIdleInterval + realtimeRequestTimeout` milliseconds, the connection is considered lost and the client transitions to DISCONNECTED state, then immediately reconnects (RTN15a).
 
@@ -184,6 +188,8 @@ CLOSE_CLIENT(client)
 
 ## RTN23a - HEARTBEAT message resets idle timer
 
+**Test ID**: `realtime/unit/RTN23a/heartbeat-resets-timer-2`
+
 **Spec requirement:** Any message from the server, including HEARTBEAT messages, resets the idle timer.
 
 Tests that receiving HEARTBEAT messages keeps the connection alive, and that when the timer eventually expires the client disconnects and reconnects.
@@ -266,6 +272,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN23a - Any protocol message resets idle timer
+
+**Test ID**: `realtime/unit/RTN23a/any-message-resets-timer-3`
 
 **Spec requirement:** Any message from the server resets the idle timer, not just HEARTBEAT messages.
 
@@ -377,6 +385,8 @@ CLOSE_CLIENT(client)
 
 ## RTN23a - Heartbeat timeout triggers immediate reconnection
 
+**Test ID**: `realtime/unit/RTN23a/timeout-triggers-reconnect-4`
+
 **Spec requirement:** When a heartbeat timeout causes disconnection, the client should immediately attempt to reconnect (per RTN15a - DISCONNECTED state triggers reconnection).
 
 Tests that the client attempts to reconnect after a heartbeat timeout, verifying the complete state change sequence.
@@ -467,6 +477,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN23a - Reconnection after heartbeat timeout uses resume
+
+**Test ID**: `realtime/unit/RTN23a/reconnect-uses-resume-5`
 
 **Spec requirement:** When reconnecting after a heartbeat timeout, the client should attempt to resume the connection using the previous connectionKey (per RTN15c).
 
@@ -564,6 +576,8 @@ These tests apply to platforms where the WebSocket client CAN surface ping frame
 
 ## RTN23b - Client sends heartbeats=false when ping frames observable
 
+**Test ID**: `realtime/unit/RTN23b/heartbeats-false-query-param-0`
+
 **Spec requirement:** If the client can observe WebSocket ping frames, it should send `heartbeats=false` (or omit the parameter) in the connection query parameters.
 
 Tests that the client does not request HEARTBEAT protocol messages when it can observe ping frames.
@@ -615,6 +629,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN23b - Disconnect and reconnect after maxIdleInterval + realtimeRequestTimeout (no ping frames)
+
+**Test ID**: `realtime/unit/RTN23b/idle-timeout-reconnect-1`
 
 **Spec requirement:** If no activity (including ping frames) is received for `maxIdleInterval + realtimeRequestTimeout`, disconnect and reconnect.
 
@@ -707,6 +723,8 @@ CLOSE_CLIENT(client)
 
 ## RTN23b - Ping frame resets idle timer
 
+**Test ID**: `realtime/unit/RTN23b/ping-frame-resets-timer-2`
+
 **Spec requirement:** WebSocket ping frames count as activity indication and reset the idle timer.
 
 Tests that receiving ping frames keeps the connection alive, and that when the timer eventually expires the client disconnects and reconnects.
@@ -787,6 +805,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN23b - Any protocol message also resets idle timer
+
+**Test ID**: `realtime/unit/RTN23b/any-message-resets-timer-3`
 
 **Spec requirement:** Any message from the server resets the idle timer, not just ping frames.
 
@@ -902,6 +922,8 @@ CLOSE_CLIENT(client)
 
 ## RTN23b - Ping frame timeout triggers immediate reconnection
 
+**Test ID**: `realtime/unit/RTN23b/timeout-triggers-reconnect-4`
+
 **Spec requirement:** When a ping frame timeout causes disconnection, the client should immediately attempt to reconnect (per RTN15a - DISCONNECTED state triggers reconnection).
 
 Tests that the client attempts to reconnect after a ping frame timeout, verifying the complete state change sequence.
@@ -993,6 +1015,8 @@ CLOSE_CLIENT(client)
 
 ## RTN23b - Reconnection after ping frame timeout uses resume
 
+**Test ID**: `realtime/unit/RTN23b/reconnect-uses-resume-5`
+
 **Spec requirement:** When reconnecting after a ping frame timeout, the client should attempt to resume the connection using the previous connectionKey (per RTN15c).
 
 Tests that the reconnection attempt includes the resume parameters.
@@ -1082,6 +1106,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN23b - Multiple ping frames keep connection alive
+
+**Test ID**: `realtime/unit/RTN23b/multiple-pings-keep-alive-6`
 
 **Spec requirement:** Continuous ping frame activity keeps the connection alive indefinitely.
 

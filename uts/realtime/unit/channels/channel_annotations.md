@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL26 — channel.annotations returns RealtimeAnnotations
 
+**Test ID**: `realtime/unit/RTL26/annotations-attribute-type-0`
+
 **Spec requirement:** RTL26 — `RealtimeChannel#annotations` attribute contains the `RealtimeAnnotations` object for this channel.
 
 Tests that the channel exposes an `annotations` attribute of type `RealtimeAnnotations`.
@@ -41,6 +43,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN1a, RTAN1c — publish sends ANNOTATION ProtocolMessage with ANNOTATION_CREATE
+
+**Test ID**: `realtime/unit/RTAN1a/publish-sends-annotation-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -115,6 +119,8 @@ CLOSE_CLIENT(client)
 
 ## RTAN1a — publish validates type is required
 
+**Test ID**: `realtime/unit/RTAN1a/validates-type-required-1`
+
 **Spec requirement:** RTAN1a — Performs the same validation as RSAN1. Per RSAN1a3, the `type` field is required.
 
 Tests that publishing an annotation without a `type` field throws an error.
@@ -159,6 +165,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN1a — publish encodes data per RSL4
+
+**Test ID**: `realtime/unit/RTAN1a/encodes-data-json-2`
 
 **Spec requirement:** RTAN1a — Performs the same data encoding as RSAN1. Per RSAN1c3, data must be encoded per RSL4.
 
@@ -226,6 +234,8 @@ CLOSE_CLIENT(client)
 
 ## RTAN1b — publish has same connection and channel state conditions as message publishing
 
+**Test ID**: `realtime/unit/RTAN1b/publish-channel-state-0`
+
 **Spec requirement:** RTAN1b — Has the same connection and channel state conditions as message publishing, see RTL6c.
 
 Tests that annotation publish fails in FAILED and SUSPENDED channel states, matching the behaviour tested in `uts/test/realtime/unit/channels/channel_publish.md` (RTL6c4). The same connection and channel state preconditions apply.
@@ -280,6 +290,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN1d — publish indicates success/failure via ACK/NACK
+
+**Test ID**: `realtime/unit/RTAN1d/publish-ack-nack-0`
 
 **Spec requirement:** RTAN1d — Must indicate success or failure of the publish (once ACKed or NACKed) in the same way as `RealtimeChannel#publish`.
 
@@ -377,6 +389,8 @@ CLOSE_CLIENT(client)
 
 ## RTAN2a — delete sends ANNOTATION ProtocolMessage with ANNOTATION_DELETE
 
+**Test ID**: `realtime/unit/RTAN2a/delete-sends-annotation-0`
+
 **Spec requirement:** RTAN2a — Must be identical to RTAN1 `publish()` except that the `Annotation.action` is set to `ANNOTATION_DELETE`, not `ANNOTATION_CREATE`.
 
 Tests that `annotations.delete()` sends ANNOTATION_DELETE.
@@ -451,6 +465,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN4a, RTAN4b — subscribe delivers annotations from ANNOTATION ProtocolMessage
+
+**Test ID**: `realtime/unit/RTAN4a/subscribe-delivers-annotations-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -550,6 +566,8 @@ CLOSE_CLIENT(client)
 
 ## RTAN4c — subscribe with type filter delivers only matching annotations
 
+**Test ID**: `realtime/unit/RTAN4c/subscribe-type-filter-0`
+
 **Spec requirement:** RTAN4c — If the user subscribes with a `type` (or array of types), the SDK must deliver only annotations whose `type` field exactly equals the requested type.
 
 Tests that type-filtered subscription only delivers matching annotations.
@@ -640,6 +658,8 @@ CLOSE_CLIENT(client)
 
 ## RTAN4d — subscribe implicitly attaches channel
 
+**Test ID**: `realtime/unit/RTAN4d/subscribe-implicit-attach-0`
+
 **Spec requirement:** RTAN4d — Has the same connection and channel state preconditions and return value as `RealtimeChannel#subscribe`, including implicitly attaching unless the user requests otherwise per RTL7g/RTL7h.
 
 Tests that subscribing to annotations triggers an implicit attach from INITIALIZED state when `attachOnSubscribe` is true (the default).
@@ -691,6 +711,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN4e — subscribe warns when ANNOTATION_SUBSCRIBE mode not granted
+
+**Test ID**: `realtime/unit/RTAN4e/subscribe-warns-no-mode-0`
 
 **Spec requirement:** RTAN4e — Once the channel is in the attached state, the channel modes are checked for the presence of the `ANNOTATION_SUBSCRIBE` mode. If missing, the library should log a warning.
 
@@ -756,6 +778,8 @@ CLOSE_CLIENT(client)
 
 ## RTAN4e1 — subscribe does not warn when not attached and attachOnSubscribe is false
 
+**Test ID**: `realtime/unit/RTAN4e1/no-warn-unattached-0`
+
 **Spec requirement:** RTAN4e1 — This check does not apply if `attachOnSubscribe` has been set to `false` and the channel is not attached.
 
 Tests that no ANNOTATION_SUBSCRIBE warning is emitted when the channel is not attached and attachOnSubscribe is false.
@@ -812,6 +836,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN5a — unsubscribe removes listeners
+
+**Test ID**: `realtime/unit/RTAN5a/unsubscribe-removes-listeners-0`
 
 **Spec requirement:** RTAN5a — Should support the same set of type signatures as `RealtimeChannel#unsubscribe` (RTL8), except that the `name` argument is called `type`.
 
@@ -904,6 +930,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTAN5a — unsubscribe with type removes only type-filtered listener
+
+**Test ID**: `realtime/unit/RTAN5a/unsubscribe-type-filter-1`
 
 Tests that unsubscribing with a type filter only removes that specific type's listener.
 

@@ -9,6 +9,8 @@ Unit test with mocked HTTP client
 
 ## RTC5 - RealtimeClient#stats proxies to RestClient#stats
 
+**Test ID**: `realtime/unit/RTC5/stats-proxies-rest-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTC5a | Proxy to `RestClient#stats` presented with an async or threaded interface as appropriate |

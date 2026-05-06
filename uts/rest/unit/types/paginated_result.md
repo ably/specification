@@ -20,6 +20,8 @@ The mock supports:
 
 ## TG1 - PaginatedResult items attribute
 
+**Test ID**: `rest/unit/TG1/paginated-result-items-0`
+
 **Spec requirement:** `PaginatedResult` must contain an `items` array with the result data.
 
 ### Setup
@@ -58,6 +60,8 @@ ASSERT result.items[1].id == "item2"
 ---
 
 ## TG2 - hasNext() and isLast() methods
+
+**Test ID**: `rest/unit/TG2/has-next-is-last-0`
 
 **Spec requirement:** `PaginatedResult` must provide `hasNext()` and `isLast()` methods to indicate pagination state.
 
@@ -135,6 +139,8 @@ ASSERT result.isLast() == true
 
 ## TG3 - next() method
 
+**Test ID**: `rest/unit/TG3/next-fetches-next-page-0`
+
 **Spec requirement:** The `next()` method must fetch the next page using the URL from the Link header.
 
 ### Setup
@@ -198,6 +204,8 @@ ASSERT next_request.url.query_params["cursor"] == "abc123"
 
 ## TG4 - first() method
 
+**Test ID**: `rest/unit/TG4/first-returns-first-page-0`
+
 **Spec requirement:** The `first()` method must return to the first page using the URL from the Link header's `rel="first"` link.
 
 ### Setup
@@ -259,6 +267,8 @@ ASSERT first_page.items[0].id == "item1"
 
 ## TG - Empty result
 
+**Test ID**: `rest/unit/TG/empty-result-handling-0`
+
 **Spec requirement:** Empty results must be handled correctly with an empty `items` array.
 
 ### Setup
@@ -297,6 +307,8 @@ ASSERT result.isLast() == true
 ---
 
 ## TG - Link header parsing
+
+**Test ID**: `rest/unit/TG/link-header-parsing-1`
 
 **Spec requirement:** Various Link header formats must be correctly parsed to determine pagination state and next page URLs.
 
@@ -343,6 +355,8 @@ FOR EACH test_case IN test_cases:
 
 ## TG - PaginatedResult type parameter
 
+**Test ID**: `rest/unit/TG/type-parameter-items-2`
+
 **Spec requirement:** `PaginatedResult<T>` must correctly type its items to the expected type `T`.
 
 ### Note
@@ -380,6 +394,8 @@ ASSERT history_result.items[0] IS Message
 ---
 
 ## TG - next() on last page
+
+**Test ID**: `rest/unit/TG/next-on-last-page-3`
 
 **Spec requirement:** Calling `next()` on the last page must handle gracefully (return null, empty result, or throw).
 
@@ -424,6 +440,8 @@ ASSERT next_result IS null OR next_result.items.length == 0
 ---
 
 ## TG - Pagination preserves authentication
+
+**Test ID**: `rest/unit/TG/pagination-preserves-auth-4`
 
 **Spec requirement:** Pagination requests must include the same authentication credentials as the initial request.
 
@@ -472,6 +490,8 @@ ASSERT captured_requests[0].headers["Authorization"] == captured_requests[1].hea
 ---
 
 ## TG - Pagination with relative URLs
+
+**Test ID**: `rest/unit/TG/pagination-relative-urls-5`
 
 **Spec requirement:** Link headers with relative URLs must be resolved relative to the base REST host.
 
@@ -524,6 +544,8 @@ ASSERT "page" IN captured_requests[1].url.query_params
 
 ## TG - Multiple Link relations
 
+**Test ID**: `rest/unit/TG/multiple-link-relations-6`
+
 **Spec requirement:** Link headers may contain multiple relations (next, first, last) which must all be parsed correctly.
 
 ### Setup
@@ -562,6 +584,8 @@ ASSERT result.hasNext() == true
 ---
 
 ## TG - Pagination with presence results
+
+**Test ID**: `rest/unit/TG/pagination-presence-results-7`
 
 **Spec requirement:** Pagination must work identically for presence results as it does for message results.
 
@@ -609,6 +633,8 @@ ASSERT page2.items[0].clientId == "client2"
 ---
 
 ## TG - Pagination includes request headers
+
+**Test ID**: `rest/unit/TG/pagination-includes-headers-8`
 
 **Spec requirement:** Pagination requests must include all standard Ably headers (X-Ably-Version, Ably-Agent, etc.).
 
@@ -658,6 +684,8 @@ ASSERT next_request.headers["Ably-Agent"] contains "ably-"
 ---
 
 ## TG - Error handling on next()
+
+**Test ID**: `rest/unit/TG/error-handling-on-next-9`
 
 **Spec requirement:** Errors during pagination (e.g., 404, 500) must be raised as `AblyException`.
 

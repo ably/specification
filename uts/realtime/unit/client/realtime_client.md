@@ -49,6 +49,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTC12 - Constructor String Argument Detection
 
+**Test ID**: `realtime/unit/RTC12/constructor-string-detection-0`
+
 **Spec requirement:** The Realtime constructor must accept a string argument and detect whether it's an API key (contains `:`) or token (no `:`), matching REST client behavior.
 
 The Realtime client has the same constructors as the REST client.
@@ -64,6 +66,8 @@ The same test cases apply:
 
 ## RTC12 - Invalid Arguments Error
 
+**Test ID**: `realtime/unit/RTC12/invalid-arguments-error-1`
+
 **Spec requirement:** Error code 40106 must be raised when no valid credentials are provided, matching REST client behavior.
 
 The Realtime client has the same error handling as the REST client for invalid credentials.
@@ -75,6 +79,8 @@ Error code 40106 should be raised when no valid credentials are provided.
 ---
 
 ## RTC2 - Connection Attribute
+
+**Test ID**: `realtime/unit/RTC2/connection-attribute-0`
 
 **Spec requirement:** The Realtime client must expose a `connection` property that provides access to the Connection object.
 
@@ -103,6 +109,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC3 - Channels Attribute
+
+**Test ID**: `realtime/unit/RTC3/channels-attribute-0`
 
 **Spec requirement:** The Realtime client must expose a `channels` property that provides access to the Channels collection.
 
@@ -137,6 +145,8 @@ CLOSE_CLIENT(client)
 
 ## RTC4 - Auth Attribute
 
+**Test ID**: `realtime/unit/RTC4/auth-attribute-0`
+
 **Spec requirement:** The Realtime client must expose an `auth` property that provides access to the Auth object.
 
 Tests that `RealtimeClient#auth` provides access to the Auth object.
@@ -162,6 +172,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC13 - Push Attribute
+
+**Test ID**: `realtime/unit/RTC13/push-attribute-0`
 
 **Spec requirement:** RTC13 — `RealtimeClient#push` attribute provides access to the `Push` object.
 
@@ -190,6 +202,8 @@ CLOSE_CLIENT(client)
 
 ## RTC17 - ClientId Attribute
 
+**Test ID**: `realtime/unit/RTC17/client-id-attribute-0`
+
 **Spec requirement:** The Realtime client must expose a `clientId` property that returns the clientId from the auth object.
 
 Tests that `RealtimeClient#clientId` returns the clientId from the auth object.
@@ -214,6 +228,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC1a - echoMessages Option
+
+**Test ID**: `realtime/unit/RTC1a/echo-messages-option-0`
 
 **Spec requirement:** The `echoMessages` option (default true) controls whether messages published by this client are echoed back on subscriptions. Sent as `echo` query parameter.
 
@@ -259,6 +275,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC1b - autoConnect Option
+
+**Test ID**: `realtime/unit/RTC1b/auto-connect-option-0`
 
 **Spec requirement:** The `autoConnect` option (default true) controls whether the client automatically connects on instantiation or waits for explicit `connect()` call.
 
@@ -338,6 +356,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC1c - recover Option
+
+**Test ID**: `realtime/unit/RTC1c/recover-option-0`
 
 **Spec requirement:** The `recover` option accepts a recovery key to resume a previous connection's state. The connection key is sent as the `recover` query parameter and is used only for the initial connection attempt.
 
@@ -426,6 +446,8 @@ CLOSE_CLIENT(client)
 
 ## RTC1f - transportParams Option
 
+**Test ID**: `realtime/unit/RTC1f/transport-params-option-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTC1f | Custom query parameters can be added via `transportParams` |
@@ -510,6 +532,8 @@ CLOSE_CLIENT(client)
 
 ## RTC15 - connect() Method
 
+**Test ID**: `realtime/unit/RTC15/connect-method-0`
+
 **Spec requirement:** The Realtime client must provide a `connect()` method that calls `Connection#connect()`.
 
 Tests the `RealtimeClient#connect` method.
@@ -541,6 +565,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTC16 - close() Method
+
+**Test ID**: `realtime/unit/RTC16/close-method-0`
 
 **Spec requirement:** The Realtime client must provide a `close()` method that calls `Connection#close()`.
 

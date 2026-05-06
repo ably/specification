@@ -21,6 +21,8 @@ See rest_client.md for the complete `MockHttpClient` interface specification.
 
 ## RSL1a, RSL1b - Publish with name and data
 
+**Test ID**: `rest/unit/RSL1a/publish-name-and-data-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSL1a | Channel publish method must support publishing a single message with name and data |
@@ -72,6 +74,8 @@ ASSERT body[0]["data"] == "hello"
 ---
 
 ## RSL1a, RSL1c - Publish with Message array
+
+**Test ID**: `rest/unit/RSL1a/publish-message-array-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -130,6 +134,8 @@ ASSERT body[1]["data"] == { "key": "value" }
 
 ## RSL1e - Null name and data
 
+**Test ID**: `rest/unit/RSL1e/null-name-and-data-0`
+
 **Spec requirement:** Null values for name and data must be omitted from the transmitted message JSON, not sent as JSON null.
 
 Tests that null values are omitted from the transmitted message.
@@ -177,6 +183,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSL1h - publish(name, data) signature
 
+**Test ID**: `rest/unit/RSL1h/publish-signature-0`
+
 **Spec requirement:** The publish method must support a two-argument signature `publish(name, data)` for publishing a single message.
 
 Tests that the two-argument form takes no additional arguments and works correctly.
@@ -220,6 +228,8 @@ ASSERT body[0]["data"] == "payload"
 ---
 
 ## RSL1i - Message size limit
+
+**Test ID**: `rest/unit/RSL1i/message-size-limit-0`
 
 **Spec requirement:** Messages exceeding the `maxMessageSize` client option must be rejected before transmission with error code 40009.
 
@@ -278,6 +288,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSL1j - All Message attributes transmitted
 
+**Test ID**: `rest/unit/RSL1j/all-attributes-transmitted-0`
+
 **Spec requirement:** All valid Message attributes (name, data, id, clientId, extras) must be included in the transmitted message payload.
 
 Tests that all valid Message attributes are included in the encoded message.
@@ -328,6 +340,8 @@ ASSERT body["extras"]["push"]["notification"]["title"] == "Test"
 
 ## RSL1l - Publish params as querystring
 
+**Test ID**: `rest/unit/RSL1l/params-as-querystring-0`
+
 **Spec requirement:** Additional params passed to the publish method must be sent as query string parameters in the HTTP request.
 
 Tests that additional params are sent as querystring parameters.
@@ -374,6 +388,8 @@ ASSERT request.url.query_params["anotherParam"] == "123"
 ---
 
 ## RSL1m - ClientId not set from library clientId
+
+**Test ID**: `rest/unit/RSL1m/clientid-not-injected-0`
 
 | Spec | Requirement |
 |------|-------------|
