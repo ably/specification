@@ -77,7 +77,8 @@ The agent (server-side) session manages the run lifecycle over an Ably channel. 
 
 ### Factory
 
-- `(AIT-ST1)` The SDK must provide a `createAgentSession` factory that accepts a channel, codec, optional logger, and optional `onError` callback, and returns an `AgentSession`.
+- `(AIT-ST1)` The SDK must provide a `createAgentSession` factory that accepts an `Ably.Realtime` client, a channel name, a codec, an optional logger, and an optional `onError` callback, and returns an `AgentSession`.
+  - `(AIT-ST1a)` On construction the agent session must call `client.channels.get(channelName)` to resolve the channel, and must register the `ai-transport-js` agent identifier with the SDK version on the Realtime client's `options.agents` map for usage tracking. Registration must be idempotent — repeated calls with the same client must produce the same key/value, so multiple sessions sharing one client are safe. The session must not close the client or release the channel on `close()`; the caller owns the client's lifecycle.
 - `(AIT-ST2)` `connect()` must subscribe to the cancel message name (`x-ably-cancel`) on the channel — subscribe implicitly attaches the channel — so that cancel messages from clients are routed to active runs. It must be idempotent: subsequent calls return the same promise. All run-lifecycle methods (`start`, `addMessages`, `addEvents`, `pipe`, `end`) must throw `InvalidArgument` until `connect()` resolves.
 
 ### Run Lifecycle
@@ -132,7 +133,8 @@ The client session manages the client-side conversation lifecycle over an Ably c
 
 ### Factory
 
-- `(AIT-CT1)` The SDK must provide a `createClientSession` factory that accepts a channel, codec, and session options, and returns a `ClientSession`.
+- `(AIT-CT1)` The SDK must provide a `createClientSession` factory that accepts an `Ably.Realtime` client, a channel name, a codec, and session options, and returns a `ClientSession`.
+  - `(AIT-CT1a)` On construction the client session must call `client.channels.get(channelName)` to resolve the channel, and must register the `ai-transport-js` agent identifier with the SDK version on the Realtime client's `options.agents` map for usage tracking. Registration must be idempotent — repeated calls with the same client must produce the same key/value, so multiple sessions sharing one client are safe. The session must not close the client or release the channel on `close()`; the caller owns the client's lifecycle.
 - `(AIT-CT2)` `connect()` must subscribe to the channel for incoming messages — subscribe implicitly attaches the channel (Ably RTL7g) to guarantee no messages are missed. It must be idempotent: subsequent calls return the same promise. All write methods (`send`, `regenerate`, `edit`, `update`, `cancel`, `waitForRun`) must throw `InvalidArgument` until `connect()` resolves.
 
 ### Send
