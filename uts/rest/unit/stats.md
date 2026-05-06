@@ -17,6 +17,8 @@ Tests the `stats()` method which retrieves application statistics from Ably. The
 
 ## RSC6a - stats() returns PaginatedResult with Stats objects
 
+**Test ID**: `rest/unit/RSC6a/returns-paginated-stats-0`
+
 **Spec requirement:** Returns a `PaginatedResult` page containing `Stats` objects in the `PaginatedResult#items` attribute returned from the stats request.
 
 Tests that `stats()` makes a GET request to `/stats` and returns a PaginatedResult containing Stats objects.
@@ -82,6 +84,8 @@ ASSERT request.path == "/stats"
 
 ## RSC6a - stats() sends authenticated request with standard headers
 
+**Test ID**: `rest/unit/RSC6a/authenticated-with-headers-1`
+
 **Spec requirement:** The `/stats` endpoint requires authentication. Requests must include valid credentials and standard Ably headers.
 
 Tests that stats() sends an authenticated request with standard Ably headers.
@@ -124,6 +128,8 @@ ASSERT "Ably-Agent" IN request.headers
 
 ## RSC6b1 - stats() with start parameter
 
+**Test ID**: `rest/unit/RSC6b1/start-param-millis-0`
+
 **Spec requirement:** `start` is an optional timestamp field represented as milliseconds since epoch. If provided, must be equal to or less than `end` if provided or to the current time otherwise.
 
 Tests that the `start` parameter is sent as milliseconds since epoch.
@@ -161,6 +167,8 @@ ASSERT request.query_params["start"] == str(start_time.millisecondsSinceEpoch)
 
 ## RSC6b1 - stats() with end parameter
 
+**Test ID**: `rest/unit/RSC6b1/end-param-millis-1`
+
 **Spec requirement:** `end` is an optional timestamp field represented as milliseconds since epoch.
 
 Tests that the `end` parameter is sent as milliseconds since epoch.
@@ -197,6 +205,8 @@ ASSERT request.query_params["end"] == str(end_time.millisecondsSinceEpoch)
 ---
 
 ## RSC6b1 - stats() with start and end parameters
+
+**Test ID**: `rest/unit/RSC6b1/start-and-end-params-2`
 
 **Spec requirement:** `start` and `end` are optional timestamp fields. `start`, if provided, must be equal to or less than `end` if provided.
 
@@ -237,6 +247,8 @@ ASSERT request.query_params["end"] == str(end_time.millisecondsSinceEpoch)
 
 ## RSC6b2 - stats() with direction parameter
 
+**Test ID**: `rest/unit/RSC6b2/direction-param-forwards-0`
+
 **Spec requirement:** `direction` backwards or forwards; if omitted the direction defaults to the REST API default (backwards).
 
 Tests that the `direction` parameter is sent as a query parameter.
@@ -272,6 +284,8 @@ ASSERT request.query_params["direction"] == "forwards"
 ---
 
 ## RSC6b2 - stats() direction defaults to backwards
+
+**Test ID**: `rest/unit/RSC6b2/direction-defaults-backwards-1`
 
 **Spec requirement:** If omitted the direction defaults to the REST API default (backwards).
 
@@ -312,6 +326,8 @@ ASSERT "direction" NOT IN request.query_params
 
 ## RSC6b3 - stats() with limit parameter
 
+**Test ID**: `rest/unit/RSC6b3/limit-param-value-0`
+
 **Spec requirement:** `limit` supports up to 1,000 items; if omitted the limit defaults to the REST API default (100).
 
 Tests that the `limit` parameter is sent as a query parameter.
@@ -347,6 +363,8 @@ ASSERT request.query_params["limit"] == "10"
 ---
 
 ## RSC6b3 - stats() limit defaults to 100
+
+**Test ID**: `rest/unit/RSC6b3/limit-defaults-to-100-1`
 
 **Spec requirement:** If omitted the limit defaults to the REST API default (100).
 
@@ -386,6 +404,8 @@ ASSERT "limit" NOT IN request.query_params
 ---
 
 ## RSC6b4 - stats() with unit parameter
+
+**Test ID**: `rest/unit/RSC6b4/unit-param-values-0`
 
 **Spec requirement:** `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`).
 
@@ -432,6 +452,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSC6b4 - stats() unit defaults to minute
 
+**Test ID**: `rest/unit/RSC6b4/unit-defaults-to-minute-1`
+
 **Spec requirement:** If omitted the unit defaults to the REST API default (`minute`).
 
 Tests that when unit is not specified, it is either omitted from the query (letting the server apply the default) or sent as "minute".
@@ -470,6 +492,8 @@ ASSERT "unit" NOT IN request.query_params
 ---
 
 ## RSC6b - stats() with all parameters combined
+
+**Test ID**: `rest/unit/RSC6b/all-params-combined-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -524,6 +548,8 @@ ASSERT request.query_params["unit"] == "hour"
 
 ## RSC6a - stats() with no parameters sends no query params
 
+**Test ID**: `rest/unit/RSC6a/no-params-clean-request-2`
+
 **Spec requirement:** All parameters are optional. When no parameters are provided, the request should omit query parameters (letting the server apply defaults).
 
 Tests that calling stats() with no arguments sends a clean GET to `/stats`.
@@ -563,6 +589,8 @@ ASSERT request.query_params IS empty
 ---
 
 ## RSC6a - stats() pagination with Link headers
+
+**Test ID**: `rest/unit/RSC6a/pagination-link-headers-3`
 
 **Spec requirement:** Returns a `PaginatedResult` page. PaginatedResult supports navigation via Link headers (TG4, TG6).
 
@@ -617,6 +645,8 @@ ASSERT page2.isLast() == true
 
 ## RSC6a - stats() empty results
 
+**Test ID**: `rest/unit/RSC6a/empty-results-handled-4`
+
 **Spec requirement:** Returns a `PaginatedResult` page containing `Stats` objects. Must handle empty result sets correctly.
 
 Tests that stats() handles empty results correctly.
@@ -650,6 +680,8 @@ ASSERT result.isLast() == true
 ---
 
 ## RSC6a - stats() error handling
+
+**Test ID**: `rest/unit/RSC6a/error-propagated-5`
 
 **Spec requirement:** Errors from the stats endpoint must be properly propagated to the caller.
 

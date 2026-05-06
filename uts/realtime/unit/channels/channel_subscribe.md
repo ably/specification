@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL7a - Subscribe with no name receives all messages
 
+**Test ID**: `realtime/unit/RTL7a/subscribe-all-messages-0`
+
 **Spec requirement:** Subscribe with a single listener argument subscribes a listener to all messages.
 
 Tests that subscribing without a name filter delivers all incoming messages regardless of name.
@@ -90,6 +92,8 @@ CLOSE_CLIENT(client)
 
 ## RTL7a - Subscribe receives multiple messages from a single ProtocolMessage
 
+**Test ID**: `realtime/unit/RTL7a/multiple-messages-per-protocol-1`
+
 **Spec requirement:** Subscribe with a single listener argument subscribes a listener to all messages.
 
 Tests that when a ProtocolMessage contains multiple messages in its `messages` array, each is delivered individually to the subscriber.
@@ -149,6 +153,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL7b - Subscribe with name only receives matching messages
+
+**Test ID**: `realtime/unit/RTL7b/name-filtered-subscribe-0`
 
 **Spec requirement:** Subscribe with a name argument and a listener argument subscribes a listener to only messages whose `name` member matches the string name.
 
@@ -223,6 +229,8 @@ CLOSE_CLIENT(client)
 
 ## RTL7b - Multiple name-specific subscriptions are independent
 
+**Test ID**: `realtime/unit/RTL7b/multiple-name-subscriptions-1`
+
 **Spec requirement:** Subscribe with a name argument and a listener argument subscribes a listener to only messages whose `name` member matches the string name.
 
 Tests that multiple name-specific subscriptions each receive only their matching messages.
@@ -291,6 +299,8 @@ CLOSE_CLIENT(client)
 
 ## RTL7g - Subscribe triggers implicit attach when attachOnSubscribe is true
 
+**Test ID**: `realtime/unit/RTL7g/implicit-attach-initialized-0`
+
 **Spec requirement:** If the `attachOnSubscribe` channel option is `true`, implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED`, `DETACHING`, or `DETACHED` states. The listener will always be registered regardless of the implicit attach result.
 
 Tests that subscribing on a channel with `attachOnSubscribe: true` (the default) triggers an implicit attach from INITIALIZED state.
@@ -355,6 +365,8 @@ CLOSE_CLIENT(client)
 
 ## RTL7g - Subscribe triggers implicit attach from DETACHED state
 
+**Test ID**: `realtime/unit/RTL7g/implicit-attach-detached-1`
+
 **Spec requirement:** If the `attachOnSubscribe` channel option is `true`, implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED`, `DETACHING`, or `DETACHED` states.
 
 Tests that subscribing on a DETACHED channel triggers an implicit attach.
@@ -412,6 +424,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL7g - Listener registered even if implicit attach fails
+
+**Test ID**: `realtime/unit/RTL7g/listener-registered-attach-fails-2`
 
 **Spec requirement:** The listener will always be registered regardless of the implicit attach result.
 
@@ -484,6 +498,8 @@ CLOSE_CLIENT(client)
 
 ## RTL7h - Subscribe does not attach when attachOnSubscribe is false
 
+**Test ID**: `realtime/unit/RTL7h/no-attach-on-subscribe-0`
+
 **Spec requirement:** If the `attachOnSubscribe` channel option is `false`, then subscribe should not trigger an implicit attach.
 
 Tests that subscribing with `attachOnSubscribe: false` does not trigger an attach.
@@ -531,6 +547,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL7g - Subscribe does not attach when already attached
+
+**Test ID**: `realtime/unit/RTL7g/no-attach-when-attached-3`
 
 **Spec requirement:** Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED`, `DETACHING`, or `DETACHED` states.
 
@@ -581,6 +599,8 @@ CLOSE_CLIENT(client)
 
 ## RTL7g - Subscribe does not attach when already attaching
 
+**Test ID**: `realtime/unit/RTL7g/no-attach-when-attaching-4`
+
 **Spec requirement:** Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED`, `DETACHING`, or `DETACHED` states.
 
 Tests that subscribing on a channel that is already ATTACHING does not trigger a second attach.
@@ -628,6 +648,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL17 - Messages not delivered when channel is not ATTACHED
+
+**Test ID**: `realtime/unit/RTL17/no-delivery-when-not-attached-0`
 
 **Spec requirement:** No messages should be passed to subscribers if the channel is in any state other than `ATTACHED`.
 
@@ -684,6 +706,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL7f - Messages not echoed when echoMessages is false
+
+**Test ID**: `realtime/unit/RTL7f/no-echo-messages-0`
 
 **Spec requirement:** A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor.
 
@@ -769,6 +793,8 @@ CLOSE_CLIENT(client)
 
 ## RTL8a - Unsubscribe specific listener from all messages
 
+**Test ID**: `realtime/unit/RTL8a/unsubscribe-specific-listener-0`
+
 **Spec requirement:** Unsubscribe with a single listener argument unsubscribes the provided listener to all messages if subscribed.
 
 Tests that unsubscribing a specific listener stops it from receiving messages, while other listeners continue.
@@ -845,6 +871,8 @@ CLOSE_CLIENT(client)
 
 ## RTL8b - Unsubscribe listener from specific name
 
+**Test ID**: `realtime/unit/RTL8b/unsubscribe-named-listener-0`
+
 **Spec requirement:** Unsubscribe with a name argument and a listener argument unsubscribes the provided listener if previously subscribed with a name-specific subscription.
 
 Tests that unsubscribing with a name removes only that name-specific subscription for the listener.
@@ -919,6 +947,8 @@ CLOSE_CLIENT(client)
 
 ## RTL8c - Unsubscribe with no arguments removes all listeners
 
+**Test ID**: `realtime/unit/RTL8c/unsubscribe-all-listeners-0`
+
 **Spec requirement:** Unsubscribe with no arguments unsubscribes all listeners.
 
 Tests that calling unsubscribe with no arguments removes all subscriptions from the channel.
@@ -991,6 +1021,8 @@ CLOSE_CLIENT(client)
 
 ## RTL8a - Unsubscribe listener not currently subscribed is no-op
 
+**Test ID**: `realtime/unit/RTL8a/unsubscribe-noop-not-subscribed-1`
+
 **Spec requirement:** Unsubscribe with a single listener argument unsubscribes the provided listener to all messages if subscribed.
 
 Tests that unsubscribing a listener that was never subscribed does not cause an error or affect existing subscriptions.
@@ -1050,6 +1082,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL22a - Subscribe with MessageFilter matching name
+
+**Test ID**: `realtime/unit/RTL22a/filter-matching-name-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1140,6 +1174,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL22a - Subscribe with MessageFilter matching extras.ref.timeserial
+
+**Test ID**: `realtime/unit/RTL22a/filter-matching-ref-timeserial-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1234,6 +1270,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL22b - Subscribe with MessageFilter isRef false delivers only messages without extras.ref
+
+**Test ID**: `realtime/unit/RTL22b/filter-isref-false-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1331,6 +1369,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL22c - Subscribe with MessageFilter matching multiple criteria (name + refType)
+
+**Test ID**: `realtime/unit/RTL22c/filter-multiple-criteria-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1438,6 +1478,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL22a, MFI2e - Subscribe with MessageFilter matching clientId
+
+**Test ID**: `realtime/unit/RTL22a/filter-matching-clientid-2`
 
 | Spec | Requirement |
 |------|-------------|

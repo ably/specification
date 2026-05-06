@@ -31,6 +31,8 @@ AFTER ALL TESTS:
 
 ## RSA9a, RSA9g - createTokenRequest produces server-accepted token
 
+**Test ID**: `realtime/integration/RSA9a/token-request-server-accepted-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA9a | Returns a signed TokenRequest that can be used to obtain a token |
@@ -79,6 +81,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA9 - createTokenRequest with clientId
+
+**Test ID**: `realtime/integration/RSA9/token-request-with-clientid-0`
 
 | Spec | Requirement |
 |------|-------------|

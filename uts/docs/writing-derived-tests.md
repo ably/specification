@@ -23,6 +23,7 @@ Write the test as closely as possible to the UTS spec. The UTS spec defines what
 
 - **Match the spec's structure**: one test per spec point, same assertions, same setup
 - **Use the spec's naming**: test names must include the spec point (e.g. `RSL1a - publish sends POST to correct path`)
+- **Include the test ID**: add a `// UTS: <id>` comment immediately above each test function, using the test ID from the UTS spec (see `docs/writing-test-specs.md` § Test IDs for the format)
 - **Preserve the spec's intent**: if the spec says "assert X", assert X, even if it seems redundant
 
 ### 2. Map pseudocode to language idioms

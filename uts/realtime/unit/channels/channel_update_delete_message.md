@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL32b, RTL32b1 — updateMessage sends MESSAGE ProtocolMessage with action MESSAGE_UPDATE
 
+**Test ID**: `realtime/unit/RTL32b/update-message-action-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL32b | Send a `MESSAGE` `ProtocolMessage` containing a single `Message` |
@@ -87,6 +89,8 @@ CLOSE_CLIENT(client)
 
 ## RTL32b, RTL32b1 — deleteMessage sends MESSAGE ProtocolMessage with action MESSAGE_DELETE
 
+**Test ID**: `realtime/unit/RTL32b/delete-message-action-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL32b | Send a `MESSAGE` `ProtocolMessage` containing a single `Message` |
@@ -154,6 +158,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL32b, RTL32b1 — appendMessage sends MESSAGE ProtocolMessage with action MESSAGE_APPEND
+
+**Test ID**: `realtime/unit/RTL32b/append-message-action-2`
 
 | Spec | Requirement |
 |------|-------------|
@@ -224,6 +230,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL32b2 — version field set from MessageOperation
+
+**Test ID**: `realtime/unit/RTL32b2/version-from-operation-0`
 
 **Spec requirement:** RTL32b2 — `version` set to the `MessageOperation` object if provided.
 
@@ -306,6 +314,8 @@ CLOSE_CLIENT(client)
 
 ## RTL32c — does not mutate user-supplied Message
 
+**Test ID**: `realtime/unit/RTL32c/no-message-mutation-0`
+
 **Spec requirement:** RTL32c — The SDK must not mutate the user-supplied `Message` object.
 
 Tests that the original Message object is unchanged after calling updateMessage.
@@ -364,6 +374,8 @@ CLOSE_CLIENT(client)
 
 ## RTL32d — returns UpdateDeleteResult from ACK
 
+**Test ID**: `realtime/unit/RTL32d/ack-returns-result-0`
+
 **Spec requirement:** RTL32d — On success, returns an `UpdateDeleteResult` object containing the version serial of the published update, obtained from the first element of the `serials` array of the `res` field of the `ACK`.
 
 Tests that the result is parsed from the ACK ProtocolMessage.
@@ -420,6 +432,8 @@ CLOSE_CLIENT(client)
 
 ## RTL32d — NACK returns error
 
+**Test ID**: `realtime/unit/RTL32d/nack-returns-error-1`
+
 **Spec requirement:** RTL32d — Indicates an error if the operation was not successful.
 
 Tests that a NACK results in an error.
@@ -474,6 +488,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL32e — params sent in ProtocolMessage.params
+
+**Test ID**: `realtime/unit/RTL32e/params-in-protocol-message-0`
 
 **Spec requirement:** RTL32e — Any params provided in the third argument must be sent in the `TR4q` `ProtocolMessage.params` field.
 
@@ -539,6 +555,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL32a — serial validation
+
+**Test ID**: `realtime/unit/RTL32a/serial-validation-required-0`
 
 **Spec requirement:** RTL32a — Takes a first argument of a `Message` object (which must contain a populated `serial` field).
 

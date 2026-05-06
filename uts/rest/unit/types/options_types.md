@@ -12,6 +12,8 @@ No mocks required - these verify type structure and defaults.
 
 ## TO3 - ClientOptions attributes
 
+**Test ID**: `rest/unit/TO3/client-options-attributes-0`
+
 **Spec requirement:** ClientOptions type must provide all configuration attributes with correct defaults according to TO3 specification.
 
 Tests that `ClientOptions` has all REST-relevant attributes with correct defaults.
@@ -86,6 +88,8 @@ ASSERT options.addRequestIds == true
 
 ## TO3 - ClientOptions with custom hosts
 
+**Test ID**: `rest/unit/TO3/client-options-custom-hosts-1`
+
 **Spec requirement:** ClientOptions must support custom host configuration including restHost and fallbackHosts.
 
 Tests custom host configuration.
@@ -105,6 +109,8 @@ ASSERT options.fallbackHosts == ["fallback1.example.com", "fallback2.example.com
 ---
 
 ## TO3 - ClientOptions with auth URL
+
+**Test ID**: `rest/unit/TO3/client-options-auth-url-2`
 
 **Spec requirement:** ClientOptions must support authUrl configuration with customizable HTTP method, headers, and parameters.
 
@@ -129,6 +135,8 @@ ASSERT options.authParams["scope"] == "full"
 
 ## TO3 - ClientOptions with defaultTokenParams
 
+**Test ID**: `rest/unit/TO3/client-options-default-token-params-3`
+
 **Spec requirement:** ClientOptions must support defaultTokenParams for specifying default token request parameters.
 
 Tests default token parameters configuration.
@@ -152,6 +160,8 @@ ASSERT options.defaultTokenParams.capability == "{\"*\":[\"subscribe\"]}"
 ---
 
 ## AO2 - AuthOptions attributes
+
+**Test ID**: `rest/unit/AO2/auth-options-attributes-0`
 
 **Spec requirement:** AuthOptions type must provide all authentication-related attributes according to AO2 specification.
 
@@ -204,6 +214,8 @@ ASSERT auth_options.queryTime == true
 
 ## AO - AuthOptions with authCallback
 
+**Test ID**: `rest/unit/AO/auth-options-with-callback-0`
+
 **Spec requirement:** AuthOptions must support authCallback function for custom token generation logic.
 
 Tests that `AuthOptions` can hold an authCallback function.
@@ -228,6 +240,8 @@ ASSERT result.token == "callback-token"
 ---
 
 ## TO - Endpoint affects host selection
+
+**Test ID**: `rest/unit/TO/endpoint-affects-host-0`
 
 **Spec requirement:** The endpoint option must affect host selection for REST and Realtime connections.
 
@@ -261,6 +275,8 @@ FOR EACH test_case IN test_cases:
 ---
 
 ## TO - Conflicting options validation
+
+**Test ID**: `rest/unit/TO/conflicting-options-validation-1`
 
 **Spec requirement:** ClientOptions must validate and detect conflicting configuration options.
 

@@ -21,6 +21,8 @@ connection should be made until `connect()` is explicitly called.
 
 ## RTN3 - autoConnect true initiates connection immediately
 
+**Test ID**: `realtime/unit/RTN3/auto-connect-true-0`
+
 **Spec requirement:** If connection option `autoConnect` is true, a connection is
 initiated immediately.
 
@@ -70,6 +72,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN3 - autoConnect false does not initiate connection
+
+**Test ID**: `realtime/unit/RTN3/auto-connect-false-1`
 
 **Spec requirement:** Otherwise a connection is only initiated following an explicit
 call to `connect()`.
@@ -125,6 +129,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN3 - explicit connect after autoConnect false
+
+**Test ID**: `realtime/unit/RTN3/explicit-connect-after-false-2`
 
 **Spec requirement:** A connection is only initiated following an explicit call to
 `connect()`.

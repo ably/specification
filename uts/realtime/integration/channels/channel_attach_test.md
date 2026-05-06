@@ -35,6 +35,8 @@ AFTER ALL TESTS:
 
 ## RTL4c - Attach succeeds
 
+**Test ID**: `realtime/integration/RTL4c/attach-succeeds-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL4c | An ATTACH ProtocolMessage is sent, state transitions to ATTACHING, then ATTACHED on confirmation |
@@ -78,6 +80,8 @@ CLOSE_CLIENT(client)
 
 ## RTL5d - Detach succeeds
 
+**Test ID**: `realtime/integration/RTL5d/detach-succeeds-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL5d | A DETACH ProtocolMessage is sent, state transitions to DETACHING, then DETACHED on confirmation |
@@ -120,6 +124,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL14 - Insufficient capability causes channel FAILED
+
+**Test ID**: `realtime/integration/RTL14/insufficient-capability-failed-0`
 
 | Spec | Requirement |
 |------|-------------|

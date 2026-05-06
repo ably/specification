@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN8a - Connection ID is unset until connected
 
+**Test ID**: `realtime/unit/RTN8a/id-unset-until-connected-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN8 | `Connection#id` attribute |
@@ -54,6 +56,8 @@ CLOSE_CLIENT(client)
 
 ## RTN9a - Connection key is unset until connected
 
+**Test ID**: `realtime/unit/RTN9a/key-unset-until-connected-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN9 | `Connection#key` attribute |
@@ -94,6 +98,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN8b - Connection ID is unique per connection
+
+**Test ID**: `realtime/unit/RTN8b/id-unique-per-connection-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -151,6 +157,8 @@ CLOSE_CLIENT(client2)
 
 ## RTN9b - Connection key is unique per connection
 
+**Test ID**: `realtime/unit/RTN9b/key-unique-per-connection-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN9b | Is a unique private connection key. Multiple connected clients have unique connection keys |
@@ -207,6 +215,8 @@ CLOSE_CLIENT(client2)
 
 ## RTN8c - Connection ID is null in terminal/non-connected states
 
+**Test ID**: `realtime/unit/RTN8c/id-null-after-closed-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN8c | Is null when the SDK is in CLOSED, CLOSING, FAILED, or SUSPENDED states |
@@ -248,6 +258,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN9c - Connection key is null in terminal/non-connected states
+
+**Test ID**: `realtime/unit/RTN9c/key-null-after-closed-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -291,6 +303,8 @@ CLOSE_CLIENT(client)
 
 ## RTN8c, RTN9c - ID and key null after FAILED
 
+**Test ID**: `realtime/unit/RTN8c/id-key-null-after-failed-1`
+
 **Spec requirement:** Connection ID and key are null in FAILED state.
 
 Tests that both `connection.id` and `connection.key` are cleared when the connection transitions to FAILED (e.g. due to a fatal error).
@@ -329,6 +343,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN8c, RTN9c - ID and key null after SUSPENDED
+
+**Test ID**: `realtime/unit/RTN8c/id-key-null-after-suspended-2`
 
 **Spec requirement:** Connection ID and key are null in SUSPENDED state.
 

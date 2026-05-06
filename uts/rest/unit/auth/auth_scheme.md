@@ -22,6 +22,8 @@ These tests verify that the library correctly selects between Basic authenticati
 
 ## RSA4 - Basic auth with API key only
 
+**Test ID**: `rest/unit/RSA4/basic-auth-key-only-0`
+
 **Spec requirement:** When only an API key is provided (no clientId), Basic auth is used.
 
 Tests that when only an API key is provided (no clientId), Basic auth is used.
@@ -62,6 +64,8 @@ ASSERT request.headers["Authorization"] == expected_auth
 
 ## RSA3 - Token auth with explicit token
 
+**Test ID**: `rest/unit/RSA3/token-auth-explicit-token-0`
+
 **Spec requirement:** When an explicit token is provided, it is used for Bearer auth.
 
 Tests that when an explicit token is provided, it is used for Bearer auth.
@@ -98,6 +102,8 @@ ASSERT request.headers["Authorization"] == "Bearer explicit-token-string"
 ---
 
 ## RSA3 - Token auth with TokenDetails
+
+**Test ID**: `rest/unit/RSA3/token-auth-token-details-1`
 
 **Spec requirement:** When TokenDetails is provided, the token string is extracted and used for Bearer auth.
 
@@ -140,6 +146,8 @@ ASSERT request.headers["Authorization"] == "Bearer token-from-details"
 ---
 
 ## RSA4 - useTokenAuth forces token auth
+
+**Test ID**: `rest/unit/RSA4/use-token-auth-forced-1`
 
 **Spec requirement:** `useTokenAuth: true` forces token auth even with just an API key.
 
@@ -190,6 +198,8 @@ ASSERT api_request.headers["Authorization"] == "Bearer obtained-token"
 
 ## RSA4 - authCallback triggers token auth
 
+**Test ID**: `rest/unit/RSA4/auth-callback-triggers-token-2`
+
 **Spec requirement:** Presence of authCallback triggers token auth.
 
 Tests that presence of authCallback triggers token auth.
@@ -232,6 +242,8 @@ ASSERT request.headers["Authorization"] == "Bearer callback-token"
 ---
 
 ## RSA4 - authUrl triggers token auth
+
+**Test ID**: `rest/unit/RSA4/authurl-triggers-token-3`
 
 **Spec requirement:** Presence of authUrl triggers token auth.
 
@@ -280,6 +292,8 @@ ASSERT api_request.headers["Authorization"] == "Bearer authurl-token"
 
 ## RSC1b - Error when no auth method available
 
+**Test ID**: `rest/unit/RSC1b/no-auth-method-error-0`
+
 **Spec requirement:** An error is raised when no authentication method is configured (code 40106).
 
 Tests that an error is raised when no authentication method is configured.
@@ -317,6 +331,8 @@ ASSERT captured_requests.length == 0
 ---
 
 ## RSA4a2 - Error when token expired and no renewal method
+
+**Test ID**: `rest/unit/RSA4a2/expired-token-no-renewal-0`
 
 **Spec requirement:** An error is raised when a static token has expired and there's no way to renew it (code 40171).
 
@@ -361,6 +377,8 @@ ASSERT captured_requests.length == 0
 ---
 
 ## RSA1 - Auth method priority
+
+**Test ID**: `rest/unit/RSA1/token-auth-takes-precedence-0`
 
 **Spec requirement:** When multiple auth options are provided, token-based auth takes precedence over basic auth.
 
@@ -410,6 +428,8 @@ ASSERT request.headers["Authorization"] == "Bearer callback-token"
 
 ## RSA2, RSA11 - Basic auth header format
 
+**Test ID**: `rest/unit/RSA2/basic-auth-header-format-0`
+
 **Spec requirement:** Basic auth uses the format `Authorization: Basic {base64(key)}` (RSA2). The API key is Base64-encoded per RFC 7235, with the key name as username and key secret as password (RSA11).
 
 Tests the exact format of Basic auth header.
@@ -453,6 +473,8 @@ ASSERT request.headers["Authorization"] CONTAINS "Basic "
 ---
 
 ## RSC18 - Token auth allowed over non-TLS
+
+**Test ID**: `rest/unit/RSC18/token-auth-over-non-tls-0`
 
 **Spec requirement:** Token auth is allowed over non-TLS connections.
 

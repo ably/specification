@@ -20,6 +20,8 @@ These tests verify that the library correctly invokes `authCallback` and `authUr
 
 ## RSA8d - authCallback invoked for authentication
 
+**Test ID**: `rest/unit/RSA8d/callback-invoked-for-auth-0`
+
 **Spec requirement:** When `authCallback` is configured, it is invoked to obtain a token for authentication.
 
 Tests that when `authCallback` is configured, it is invoked to obtain a token.
@@ -72,6 +74,8 @@ ASSERT captured_requests[0].headers["Authorization"] == "Bearer callback-token"
 
 ## RSA8d - authCallback returning JWT string
 
+**Test ID**: `rest/unit/RSA8d/callback-returns-jwt-1`
+
 **Spec requirement:** authCallback can return a raw JWT string (not wrapped in TokenDetails).
 
 Tests that authCallback can return a raw JWT string (not wrapped in TokenDetails).
@@ -112,6 +116,8 @@ ASSERT captured_requests[0].headers["Authorization"] == "Bearer eyJhbGciOiJIUzI1
 ---
 
 ## RSA8d - authCallback returning TokenRequest
+
+**Test ID**: `rest/unit/RSA8d/callback-returns-token-request-2`
 
 **Spec requirement:** When authCallback returns a TokenRequest, the library must exchange it for a token via the requestToken endpoint.
 
@@ -177,6 +183,8 @@ ASSERT second_request.headers["Authorization"] == "Bearer exchanged-token"
 
 ## RSA8d - authCallback receives TokenParams
 
+**Test ID**: `rest/unit/RSA8d/callback-receives-token-params-3`
+
 **Spec requirement:** authCallback receives TokenParams when provided to authorize().
 
 Tests that authCallback receives TokenParams when provided to authorize().
@@ -227,6 +235,8 @@ ASSERT received_params.capability == {"channel1": ["publish"]}
 ---
 
 ## RSA8c - authUrl invoked for authentication
+
+**Test ID**: `rest/unit/RSA8c/authurl-invoked-for-auth-0`
 
 **Spec requirement:** When `authUrl` is configured, the library must fetch a token from it before making API requests.
 
@@ -282,6 +292,8 @@ ASSERT api_request.headers["Authorization"] == "Bearer authurl-token"
 
 ## RSA8c - authUrl with POST method
 
+**Test ID**: `rest/unit/RSA8c/authurl-post-method-1`
+
 **Spec requirement:** authMethod can be set to POST for authUrl requests.
 
 Tests that authMethod can be set to POST for authUrl.
@@ -328,6 +340,8 @@ ASSERT auth_request.method == "POST"
 ---
 
 ## RSA8c - authUrl with custom headers
+
+**Test ID**: `rest/unit/RSA8c/authurl-custom-headers-2`
 
 **Spec requirement:** authHeaders are sent with authUrl requests.
 
@@ -379,6 +393,8 @@ ASSERT auth_request.headers["X-API-Key"] == "my-api-key"
 
 ## RSA8c - authUrl with query params
 
+**Test ID**: `rest/unit/RSA8c/authurl-query-params-3`
+
 **Spec requirement:** authParams are sent as query parameters with authUrl GET requests.
 
 Tests that authParams are sent as query parameters with authUrl GET requests.
@@ -429,6 +445,8 @@ ASSERT auth_request.url.query_params["scope"] == "publish:*"
 
 ## RSA8c - authUrl returning JWT string
 
+**Test ID**: `rest/unit/RSA8c/authurl-returns-jwt-4`
+
 **Spec requirement:** authUrl can return a raw JWT string (not JSON).
 
 Tests that authUrl can return a raw JWT string.
@@ -475,6 +493,8 @@ ASSERT api_request.headers["Authorization"] == "Bearer eyJhbGciOiJIUzI1NiJ9.jwt-
 
 ## RSA8d - authCallback error propagated
 
+**Test ID**: `rest/unit/RSA8d/callback-error-propagated-4`
+
 **Spec requirement:** Errors from authCallback are properly propagated to the caller.
 
 Tests that errors from authCallback are properly propagated.
@@ -516,6 +536,8 @@ ASSERT captured_requests.length == 0
 ---
 
 ## RSA8c - authUrl error propagated
+
+**Test ID**: `rest/unit/RSA8c/authurl-error-propagated-5`
 
 **Spec requirement:** HTTP errors from authUrl are properly propagated to the caller.
 

@@ -23,6 +23,8 @@ mismatch check (RTP15f), or configure the mock to accept any clientId.
 
 ## RTP8a, RTP8c - enter sends PRESENCE with ENTER action
 
+**Test ID**: `realtime/unit/RTP8a/enter-sends-presence-enter-0`
+
 **Spec requirement:** Enters the current client into this channel. A PRESENCE
 ProtocolMessage with a PresenceMessage with action ENTER is sent. The clientId
 attribute of the PresenceMessage must not be present (implicitly uses the connection's
@@ -81,6 +83,8 @@ CLOSE_CLIENT(client)
 
 ## RTP8e - enter with data
 
+**Test ID**: `realtime/unit/RTP8e/enter-with-data-0`
+
 **Spec requirement:** Optional data can be included when entering. Data will be encoded
 and decoded as with normal messages.
 
@@ -129,6 +133,8 @@ CLOSE_CLIENT(client)
 
 ## RTP8d - enter implicitly attaches channel
 
+**Test ID**: `realtime/unit/RTP8d/enter-implicitly-attaches-0`
+
 **Spec requirement:** Implicitly attaches the RealtimeChannel if the channel is in the
 INITIALIZED state.
 
@@ -174,6 +180,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP8g - enter on DETACHED or FAILED channel errors
+
+**Test ID**: `realtime/unit/RTP8g/enter-detached-failed-errors-0`
 
 **Spec requirement:** If the channel is DETACHED or FAILED, the enter request results
 in an error immediately.
@@ -224,6 +232,8 @@ CLOSE_CLIENT(client)
 
 ## RTP8j - enter with wildcard or null clientId errors
 
+**Test ID**: `realtime/unit/RTP8j/enter-null-clientid-errors-0`
+
 **Spec requirement:** If the connection is CONNECTED and the clientId is '*' (wildcard)
 or null (anonymous), the enter request results in an error immediately.
 
@@ -265,6 +275,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP8j - enter with wildcard clientId errors
+
+**Test ID**: `realtime/unit/RTP8j/enter-wildcard-clientid-errors-1`
 
 ### Setup
 
@@ -309,6 +321,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP8h - NACK for missing presence permission
+
+**Test ID**: `realtime/unit/RTP8h/nack-presence-permission-denied-0`
 
 **Spec requirement:** If the Ably service determines that the client does not have
 required presence permission, a NACK is sent resulting in an error.
@@ -357,6 +371,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP9a, RTP9d - update sends PRESENCE with UPDATE action
+
+**Test ID**: `realtime/unit/RTP9a/update-sends-presence-update-0`
 
 **Spec requirement:** Updates the data for the present member. A PRESENCE ProtocolMessage
 with action UPDATE is sent. The clientId must not be present.
@@ -407,6 +423,8 @@ CLOSE_CLIENT(client)
 
 ## RTP10a, RTP10c - leave sends PRESENCE with LEAVE action
 
+**Test ID**: `realtime/unit/RTP10a/leave-sends-presence-leave-0`
+
 **Spec requirement:** Leaves this client from the channel. A PRESENCE ProtocolMessage
 with action LEAVE is sent. The clientId must not be present.
 
@@ -455,6 +473,8 @@ CLOSE_CLIENT(client)
 
 ## RTP10a - leave with data updates the member data
 
+**Test ID**: `realtime/unit/RTP10a/leave-with-data-1`
+
 **Spec requirement:** The data will be updated with the values provided when leaving.
 
 ### Setup
@@ -498,6 +518,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP14a - enterClient enters on behalf of another clientId
+
+**Test ID**: `realtime/unit/RTP14a/enterclient-on-behalf-0`
 
 **Spec requirement:** Enters into presence on a channel on behalf of another clientId.
 This allows a single client with suitable permissions to register presence on behalf
@@ -556,6 +578,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP15a - updateClient and leaveClient
+
+**Test ID**: `realtime/unit/RTP15a/updateclient-leaveclient-0`
 
 **Spec requirement:** Performs update or leave for a given clientId. Functionally
 equivalent to the corresponding enter, update, and leave methods.
@@ -617,6 +641,8 @@ CLOSE_CLIENT(client)
 
 ## RTP15e - enterClient implicitly attaches channel
 
+**Test ID**: `realtime/unit/RTP15e/enterclient-implicitly-attaches-0`
+
 **Spec requirement:** Implicitly attaches the RealtimeChannel if the channel is in the
 INITIALIZED state. If the channel is in or enters the DETACHED or FAILED state, error.
 
@@ -661,6 +687,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP15f - enterClient with mismatched clientId errors
+
+**Test ID**: `realtime/unit/RTP15f/enterclient-mismatched-clientid-0`
 
 **Spec requirement:** If the client is identified and has a valid clientId, and the
 clientId argument does not match the client's clientId, then it should indicate an error.
@@ -723,6 +751,8 @@ CLOSE_CLIENT(client)
 
 ## RTP16a - Presence message sent when channel is ATTACHED
 
+**Test ID**: `realtime/unit/RTP16a/presence-sent-when-attached-0`
+
 **Spec requirement:** If the channel is ATTACHED then presence messages are sent
 immediately to the connection.
 
@@ -767,6 +797,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP16b - Presence message queued when channel is ATTACHING
+
+**Test ID**: `realtime/unit/RTP16b/presence-queued-when-attaching-0`
 
 **Spec requirement:** If the channel is ATTACHING or INITIALIZED and queueMessages is
 true, presence messages are queued at channel level, sent once channel becomes ATTACHED.
@@ -826,6 +858,8 @@ CLOSE_CLIENT(client)
 
 ## RTP16c - Presence message errors in other channel states
 
+**Test ID**: `realtime/unit/RTP16c/presence-errors-other-states-0`
+
 **Spec requirement:** In any other case (channel not ATTACHED, ATTACHING, or INITIALIZED
 with queueMessages) the operation should result in an error.
 
@@ -872,6 +906,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP15c - enterClient has no side effects on normal enter
+
+**Test ID**: `realtime/unit/RTP15c/enterclient-no-side-effects-0`
 
 **Spec requirement:** Using enterClient, updateClient, and leaveClient methods should
 have no side effects on a client that has entered normally using enter.
@@ -941,6 +977,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP4 - 50 members via enterClient (same connection)
+
+**Test ID**: `realtime/unit/RTP4/bulk-enterclient-same-connection-0`
 
 **Spec requirement:** Ensure a test exists that enters 250 members using
 RealtimePresence#enterClient on a single connection, and checks for PRESENT events
@@ -1063,6 +1101,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP4 - 50 members via enterClient (different connections)
+
+**Test ID**: `realtime/unit/RTP4/bulk-enterclient-diff-connections-1`
 
 **Spec requirement:** Same as above, but the original intent: one connection enters
 members, a different connection observes the ENTER events and verifies all members

@@ -25,6 +25,8 @@ nullable types (e.g. `int?` / `String?` in Dart, `Integer` / `String` in Java,
 
 ## RSA5 - TTL is null when not specified
 
+**Test ID**: `rest/unit/RSA5/ttl-null-when-unspecified-0`
+
 **Spec requirement:** TTL for new tokens is specified in milliseconds. If the user-provided `tokenParams` does not specify a TTL, the TTL field MUST be null (or the equivalent absent/unset value) in the `tokenRequest`, and Ably will supply a token with a TTL of 60 minutes. Implementations MUST NOT default this to 3600000 client-side.
 
 Tests that `createTokenRequest()` without explicit TTL produces a token request
@@ -50,6 +52,8 @@ ASSERT token_request.ttl IS null
 
 ## RSA5b - Explicit TTL is preserved
 
+**Test ID**: `rest/unit/RSA5b/explicit-ttl-preserved-0`
+
 **Spec requirement:** When `tokenParams` specifies a TTL, it must be included in the token request.
 
 ### Setup
@@ -72,6 +76,8 @@ ASSERT token_request.ttl == 7200000
 ---
 
 ## RSA5c - TTL from defaultTokenParams is used
+
+**Test ID**: `rest/unit/RSA5c/ttl-from-default-params-0`
 
 **Spec requirement:** TTL from `ClientOptions.defaultTokenParams` should be used when no explicit TTL is provided to `createTokenRequest()`.
 
@@ -96,6 +102,8 @@ ASSERT token_request.ttl == 1800000
 ---
 
 ## RSA5d - Explicit TTL overrides defaultTokenParams
+
+**Test ID**: `rest/unit/RSA5d/explicit-ttl-overrides-default-0`
 
 **Spec requirement:** An explicit TTL in `tokenParams` takes precedence over `defaultTokenParams`.
 
@@ -123,6 +131,8 @@ ASSERT token_request.ttl == 600000
 
 ## RSA6 - Capability is null when not specified
 
+**Test ID**: `rest/unit/RSA6/capability-null-when-unspecified-0`
+
 **Spec requirement:** The `capability` for new tokens is JSON stringified. If the user-provided `tokenParams` does not specify capabilities, the `capability` field MUST be null (or the equivalent absent/unset value) in the `tokenRequest`, and Ably will supply a token with the capabilities of the underlying key. Implementations MUST NOT default this to '{"*":["*"]}' client-side.
 
 Tests that `createTokenRequest()` without explicit capability produces a token
@@ -148,6 +158,8 @@ ASSERT token_request.capability IS null
 
 ## RSA6b - Explicit capability is preserved
 
+**Test ID**: `rest/unit/RSA6b/explicit-capability-preserved-0`
+
 **Spec requirement:** When `tokenParams` specifies a capability, it must be included in the token request as a JSON string.
 
 ### Setup
@@ -170,6 +182,8 @@ ASSERT token_request.capability == '{"channel-a":["publish","subscribe"]}'
 ---
 
 ## RSA6c - Capability from defaultTokenParams is used
+
+**Test ID**: `rest/unit/RSA6c/capability-from-default-params-0`
 
 **Spec requirement:** Capability from `ClientOptions.defaultTokenParams` should be used when no explicit capability is provided to `createTokenRequest()`.
 
@@ -194,6 +208,8 @@ ASSERT token_request.capability == '{"*":["subscribe"]}'
 ---
 
 ## RSA6d - Explicit capability overrides defaultTokenParams
+
+**Test ID**: `rest/unit/RSA6d/explicit-capability-overrides-default-0`
 
 **Spec requirement:** An explicit capability in `tokenParams` takes precedence over `defaultTokenParams`.
 

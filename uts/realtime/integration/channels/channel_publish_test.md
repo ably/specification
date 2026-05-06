@@ -32,6 +32,8 @@ AFTER ALL TESTS:
 
 ## RTL6, RSL4d2 - String data round-trip
 
+**Test ID**: `realtime/integration/RTL6/string-data-roundtrip-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL6 | RealtimeChannel#publish sends messages to Ably |
@@ -97,6 +99,8 @@ CLOSE_CLIENT(subscriber)
 ---
 
 ## RTL6, RSL4d3 - JSON object data round-trip
+
+**Test ID**: `realtime/integration/RTL6/json-data-roundtrip-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -165,6 +169,8 @@ CLOSE_CLIENT(subscriber)
 ---
 
 ## RTL6, RSL4d1 - Binary data round-trip
+
+**Test ID**: `realtime/integration/RTL6/binary-data-roundtrip-2`
 
 | Spec | Requirement |
 |------|-------------|
@@ -236,6 +242,8 @@ CLOSE_CLIENT(subscriber)
 
 ## RTL6f - connectionId matches publisher
 
+**Test ID**: `realtime/integration/RTL6f/connectionid-matches-publisher-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL6f | Message#connectionId should match the current Connection#id for all published messages |
@@ -299,6 +307,8 @@ CLOSE_CLIENT(subscriber)
 ---
 
 ## RSL6a2 - Message extras round-trip
+
+**Test ID**: `realtime/integration/RSL6a2/message-extras-roundtrip-0`
 
 | Spec | Requirement |
 |------|-------------|

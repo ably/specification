@@ -55,6 +55,8 @@ The SDK's `annotations.publish()` and `annotations.delete()` methods must set th
 
 ## RSL1n — publish returns serials from sandbox
 
+**Test ID**: `rest/integration/RSL1n/publish-returns-serials-0`
+
 **Spec requirement:** RSL1n — On success, returns a `PublishResult` containing message serials.
 
 Tests that publish returns real serials from the Ably sandbox.
@@ -98,6 +100,8 @@ ASSERT result2.serials[1] != result2.serials[2]
 
 ## RSL11 — getMessage retrieves published message
 
+**Test ID**: `rest/integration/RSL11/get-message-by-serial-0`
+
 **Spec requirement:** RSL11 — `getMessage()` retrieves a message by serial.
 
 Tests that a published message can be retrieved by its serial.
@@ -136,6 +140,8 @@ ASSERT msg.timestamp IS NOT null
 ---
 
 ## RSL15 — updateMessage updates a published message
+
+**Test ID**: `rest/integration/RSL15/update-message-0`
 
 **Spec requirement:** RSL15 — `updateMessage()` sends a PATCH that updates a message.
 
@@ -190,6 +196,8 @@ ASSERT updated_msg.version.description == "edited content"
 
 ## RSL15 — deleteMessage deletes a published message
 
+**Test ID**: `rest/integration/RSL15/delete-message-1`
+
 **Spec requirement:** RSL15 — `deleteMessage()` sends a PATCH that marks a message as deleted.
 
 Tests that a published message can be deleted.
@@ -237,6 +245,8 @@ ASSERT deleted_msg.action == MessageAction.MESSAGE_DELETE
 ---
 
 ## RSL14 — getMessageVersions returns version history
+
+**Test ID**: `rest/integration/RSL14/get-message-versions-0`
 
 **Spec requirement:** RSL14 — `getMessageVersions()` retrieves all versions of a message.
 
@@ -294,6 +304,8 @@ FOR item IN versions.items:
 
 ## RSL15 — appendMessage appends to a published message
 
+**Test ID**: `rest/integration/RSL15/append-message-2`
+
 **Spec requirement:** RSL15 — `appendMessage()` sends a PATCH with `MESSAGE_APPEND` action.
 
 Tests that a message can be appended to.
@@ -332,6 +344,8 @@ ASSERT append_result.versionSerial.length > 0
 ---
 
 ## RSAN1, RSAN2 — publish and delete annotations on a message
+
+**Test ID**: `rest/integration/RSAN1/annotation-lifecycle-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -392,6 +406,8 @@ AWAIT channel.annotations.delete(serial, Annotation(
 ---
 
 ## RSAN3 — get annotations returns PaginatedResult
+
+**Test ID**: `rest/integration/RSAN3/get-annotations-paginated-0`
 
 **Spec requirement:** RSAN3c — Returns a `PaginatedResult<Annotation>` containing decoded annotations.
 

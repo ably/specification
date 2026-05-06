@@ -23,6 +23,8 @@ RTN13 defines the `Connection#ping()` function:
 
 ## RTN13a - Ping sends HEARTBEAT and returns round-trip duration
 
+**Test ID**: `realtime/unit/RTN13a/ping-heartbeat-roundtrip-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13a | Sends HEARTBEAT when connected and expects HEARTBEAT response with round-trip time |
@@ -77,6 +79,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN13e - HEARTBEAT includes random id for disambiguation
+
+**Test ID**: `realtime/unit/RTN13e/heartbeat-random-id-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -139,6 +143,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13e - HEARTBEAT with no id is ignored as ping response
 
+**Test ID**: `realtime/unit/RTN13e/no-id-heartbeat-ignored-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13e | Only a HEARTBEAT with matching id counts as a ping response |
@@ -191,6 +197,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN13e - Multiple concurrent pings each get their own response
+
+**Test ID**: `realtime/unit/RTN13e/concurrent-pings-unique-ids-2`
 
 | Spec | Requirement |
 |------|-------------|
@@ -255,6 +263,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13c - Ping times out if no HEARTBEAT response
 
+**Test ID**: `realtime/unit/RTN13c/ping-timeout-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13c | Fails if HEARTBEAT not received within realtimeRequestTimeout |
@@ -305,6 +315,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13b - Ping errors in INITIALIZED state
 
+**Test ID**: `realtime/unit/RTN13b/ping-error-initialized-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13b | Error if in INITIALIZED, SUSPENDED, CLOSING, CLOSED, or FAILED state |
@@ -335,6 +347,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN13b - Ping errors in SUSPENDED state
+
+**Test ID**: `realtime/unit/RTN13b/ping-error-suspended-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -382,6 +396,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13b - Ping errors in CLOSED state
 
+**Test ID**: `realtime/unit/RTN13b/ping-error-closed-2`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13b | Error if in INITIALIZED, SUSPENDED, CLOSING, CLOSED, or FAILED state |
@@ -424,6 +440,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13b - Ping errors in FAILED state
 
+**Test ID**: `realtime/unit/RTN13b/ping-error-failed-3`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13b | Error if in INITIALIZED, SUSPENDED, CLOSING, CLOSED, or FAILED state |
@@ -465,6 +483,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN13d - Ping deferred from CONNECTING state until CONNECTED
+
+**Test ID**: `realtime/unit/RTN13d/ping-deferred-connecting-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -532,6 +552,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN13d - Ping deferred from DISCONNECTED state until CONNECTED
+
+**Test ID**: `realtime/unit/RTN13d/ping-deferred-disconnected-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -613,6 +635,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13b - Deferred ping errors if connection transitions to FAILED
 
+**Test ID**: `realtime/unit/RTN13b/deferred-ping-error-failed-4`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13b | Error if has transitioned to INITIALIZED, SUSPENDED, CLOSING, CLOSED, or FAILED |
@@ -669,6 +693,8 @@ CLOSE_CLIENT(client)
 
 ## RTN13b - Deferred ping errors if connection transitions to SUSPENDED
 
+**Test ID**: `realtime/unit/RTN13b/deferred-ping-error-suspended-5`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN13b | Error if has transitioned to INITIALIZED, SUSPENDED, CLOSING, CLOSED, or FAILED |
@@ -718,6 +744,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN13c - Deferred ping times out after realtimeRequestTimeout from CONNECTED
+
+**Test ID**: `realtime/unit/RTN13c/deferred-ping-timeout-1`
 
 | Spec | Requirement |
 |------|-------------|

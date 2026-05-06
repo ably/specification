@@ -34,6 +34,8 @@ PresenceMap:
 
 ## RTP18a - startSync sets isSyncInProgress
 
+**Test ID**: `realtime/unit/RTP18a/startsync-sets-flag-0`
+
 **Spec requirement:** A new sync has started. The client library must track that a sync
 is in progress.
 
@@ -58,6 +60,8 @@ ASSERT map.isSyncInProgress == true
 
 ## RTP18b - endSync clears isSyncInProgress
 
+**Test ID**: `realtime/unit/RTP18b/endsync-clears-flag-0`
+
 **Spec requirement:** The sync operation has completed once the cursor is empty.
 
 ### Setup
@@ -81,6 +85,8 @@ ASSERT map.isSyncInProgress == false
 ---
 
 ## RTP19 - Stale members get LEAVE events after sync
+
+**Test ID**: `realtime/unit/RTP19/stale-members-leave-after-sync-0`
 
 **Spec requirement:** If the PresenceMap has existing members when a SYNC is started,
 members no longer present on the channel are removed from the local PresenceMap once
@@ -123,6 +129,8 @@ ASSERT map.get("c2:bob") IS null
 ---
 
 ## RTP19 - Synthesized LEAVE has id=null and current timestamp
+
+**Test ID**: `realtime/unit/RTP19/synth-leave-null-id-timestamp-1`
 
 **Spec requirement:** The PresenceMessage emitted should contain the original attributes
 of the presence member with the action set to LEAVE, PresenceMessage#id set to null,
@@ -171,6 +179,8 @@ ASSERT leave.timestamp <= after_time
 
 ## RTP19 - Members updated during sync survive
 
+**Test ID**: `realtime/unit/RTP19/updated-members-survive-sync-2`
+
 **Spec requirement:** A member can be added or updated when received in a SYNC message
 or when received in a PRESENCE message during the sync process. Members that have been
 added or updated should NOT be removed.
@@ -217,6 +227,8 @@ ASSERT map.get("c2:bob").data == "new-data"
 
 ## RTP18a - New sync discards previous in-flight sync
 
+**Test ID**: `realtime/unit/RTP18a/new-sync-discards-previous-1`
+
 **Spec requirement:** If a new sequence identifier is sent from Ably, then the client
 library must consider that to be the start of a new sync sequence and any previous
 in-flight sync should be discarded.
@@ -261,6 +273,8 @@ ASSERT map.get("c2:bob") IS NOT null
 
 ## RTP18c - Single-message sync (no channelSerial)
 
+**Test ID**: `realtime/unit/RTP18c/single-message-sync-0`
+
 **Spec requirement:** A SYNC may also be sent with no channelSerial attribute. In this
 case, the sync data is entirely contained within that ProtocolMessage. This is modeled
 as a startSync + put + endSync in one step.
@@ -297,6 +311,8 @@ ASSERT map.isSyncInProgress == false
 ---
 
 ## RTP19a - ATTACHED without HAS_PRESENCE clears all members
+
+**Test ID**: `realtime/unit/RTP19a/no-has-presence-clears-members-0`
 
 **Spec requirement:** If the PresenceMap has existing members when an ATTACHED message
 is received without a HAS_PRESENCE flag, emit a LEAVE event for each existing member
@@ -357,6 +373,8 @@ ASSERT map.values().length == 0
 
 ## RTP2h2a - LEAVE during sync stored as ABSENT (in sync context)
 
+**Test ID**: `realtime/unit/RTP2h2a/leave-during-sync-absent-cleanup-0`
+
 **Spec requirement:** If a SYNC is in progress and a LEAVE message is received, store
 the member with action set to ABSENT. On endSync, ABSENT members are deleted (RTP2h2b).
 
@@ -410,6 +428,8 @@ ASSERT map.get("c1:alice") IS NOT null
 
 ## RTP19 - Empty map sync produces no leave events
 
+**Test ID**: `realtime/unit/RTP19/empty-map-sync-no-leaves-3`
+
 **Spec requirement:** If there are no existing members when sync starts, endSync
 produces no leave events.
 
@@ -435,6 +455,8 @@ ASSERT map.get("c1:alice") IS NOT null
 ---
 
 ## RTP18 - endSync without startSync is a no-op
+
+**Test ID**: `realtime/unit/RTP18/endsync-without-startsync-noop-0`
 
 **Spec requirement:** Calling endSync when no sync is in progress should not
 corrupt the map state.
@@ -463,6 +485,8 @@ ASSERT map.isSyncInProgress == false
 ---
 
 ## RTP19 - Stale SYNC message still removes member from residuals
+
+**Test ID**: `realtime/unit/RTP19/stale-sync-removes-from-residuals-4`
 
 **Spec requirement:** When a member exists from a PRESENCE event and a SYNC starts,
 a SYNC message arriving with the same or older id for that member is stale (rejected
@@ -506,6 +530,8 @@ ASSERT map.get("c1:alice").data == "original"
 ---
 
 ## RTP19 - PRESENCE echoes followed by SYNC preserves all members
+
+**Test ID**: `realtime/unit/RTP19/presence-echoes-then-sync-preserves-5`
 
 **Spec requirement:** When a client enters multiple members, the server echoes each
 as a PRESENCE event. When the server subsequently sends a SYNC containing the same
@@ -554,6 +580,8 @@ FOR i IN 0..2:
 ---
 
 ## RTP19 - New member added during sync is not stale
+
+**Test ID**: `realtime/unit/RTP19/new-member-during-sync-survives-6`
 
 **Spec requirement:** A member can be added during the sync process. New members
 that did not exist before the sync should survive endSync.

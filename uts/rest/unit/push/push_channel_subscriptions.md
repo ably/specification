@@ -13,6 +13,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ## RSH1c1 — list returns paginated PushChannelSubscription filtered by channel
 
+**Test ID**: `rest/unit/RSH1c1/list-filtered-by-channel-0`
+
 **Spec requirement:** RSH1c1 — `#list(params)` performs a request to `/push/channelSubscriptions` and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params.
 
 Tests that `list()` sends a GET with `channel` filter and returns a `PaginatedResult<PushChannelSubscription>`.
@@ -68,6 +70,8 @@ ASSERT result.items[1].clientId == "client-abc"
 
 ## RSH1c1 — list filters by deviceId and clientId
 
+**Test ID**: `rest/unit/RSH1c1/list-filtered-by-device-client-1`
+
 **Spec requirement:** RSH1c1 — A test should exist filtering by `deviceId` and/or `clientId`.
 
 Tests that `list()` forwards `deviceId` and `clientId` as query parameters.
@@ -112,6 +116,8 @@ ASSERT result.items.length == 1
 
 ## RSH1c1 — list supports limit for pagination
 
+**Test ID**: `rest/unit/RSH1c1/list-with-limit-param-2`
+
 **Spec requirement:** RSH1c1 — A test should exist controlling the pagination with the `limit` attribute.
 
 Tests that `list()` forwards the `limit` parameter.
@@ -150,6 +156,8 @@ ASSERT captured_requests[0].url.queryParams["limit"] == "5"
 ---
 
 ## RSH1c2 — listChannels returns paginated channel names
+
+**Test ID**: `rest/unit/RSH1c2/list-channels-paginated-0`
 
 **Spec requirement:** RSH1c2 — `#listChannels(params)` performs a request to `/push/channels` and returns a paginated result with `String` objects.
 
@@ -195,6 +203,8 @@ ASSERT result.items[2] == "channel-3"
 
 ## RSH1c2 — listChannels supports limit and pagination
 
+**Test ID**: `rest/unit/RSH1c2/list-channels-with-limit-1`
+
 **Spec requirement:** RSH1c2 — A test should exist using the `limit` attribute and pagination.
 
 Tests that `listChannels()` forwards the `limit` parameter.
@@ -229,6 +239,8 @@ ASSERT result.items.length == 1
 ---
 
 ## RSH1c3 — save issues POST with PushChannelSubscription
+
+**Test ID**: `rest/unit/RSH1c3/save-post-subscription-0`
 
 **Spec requirement:** RSH1c3 — `#save(pushChannelSubscription)` issues a `POST` request to `/push/channelSubscriptions` using the `PushChannelSubscription` object argument.
 
@@ -284,6 +296,8 @@ ASSERT result.deviceId == "device-001"
 
 ## RSH1c3 — save updates existing subscription
 
+**Test ID**: `rest/unit/RSH1c3/save-updates-existing-1`
+
 **Spec requirement:** RSH1c3 — A test should exist for a successful subsequent save with an update.
 
 Tests that saving an existing subscription performs an update.
@@ -335,6 +349,8 @@ ASSERT result2.channel == "my-channel"
 
 ## RSH1c3 — save propagates server error
 
+**Test ID**: `rest/unit/RSH1c3/save-error-propagated-2`
+
 **Spec requirement:** RSH1c3 — A test should exist for a failed save operation.
 
 Tests that a server error during save is propagated to the caller.
@@ -373,6 +389,8 @@ ASSERT error.statusCode == 400
 ---
 
 ## RSH1c4 — remove issues DELETE with clientId subscription attributes
+
+**Test ID**: `rest/unit/RSH1c4/remove-delete-clientid-0`
 
 **Spec requirement:** RSH1c4 — `#remove(push_channel_subscription)` issues a `DELETE` request to `/push/channelSubscriptions` and deletes the channel subscription using the attributes as params to the `DELETE` request.
 
@@ -419,6 +437,8 @@ ASSERT request.url.queryParams["clientId"] == "client-abc"
 
 ## RSH1c4 — remove issues DELETE with deviceId subscription attributes
 
+**Test ID**: `rest/unit/RSH1c4/remove-delete-deviceid-1`
+
 **Spec requirement:** RSH1c4 — A test should exist that deletes a `deviceId` channel subscription.
 
 Tests that `remove()` sends a DELETE with the subscription's attributes as query parameters for a `deviceId`-based subscription.
@@ -461,6 +481,8 @@ ASSERT captured_requests[0].url.queryParams["deviceId"] == "device-001"
 
 ## RSH1c4 — remove succeeds for nonexistent subscription
 
+**Test ID**: `rest/unit/RSH1c4/remove-nonexistent-succeeds-2`
+
 **Spec requirement:** RSH1c4 — A test should exist that deletes a subscription that does not exist but still succeeds.
 
 Tests that removing a nonexistent subscription does not throw an error.
@@ -492,6 +514,8 @@ AWAIT client.push.admin.channelSubscriptions.remove(subscription)
 ---
 
 ## RSH1c5 — removeWhere issues DELETE with clientId param
+
+**Test ID**: `rest/unit/RSH1c5/remove-where-clientid-0`
 
 **Spec requirement:** RSH1c5 — `#removeWhere(params)` issues a `DELETE` request to `/push/channelSubscriptions` and deletes the matching channel subscriptions provided in `params`.
 
@@ -532,6 +556,8 @@ ASSERT request.url.queryParams["clientId"] == "client-abc"
 
 ## RSH1c5 — removeWhere issues DELETE with deviceId param
 
+**Test ID**: `rest/unit/RSH1c5/remove-where-deviceid-1`
+
 **Spec requirement:** RSH1c5 — A test should exist that deletes channel subscriptions by `deviceId`.
 
 Tests that `removeWhere()` sends a DELETE with `deviceId` as a query parameter.
@@ -567,6 +593,8 @@ ASSERT captured_requests[0].url.queryParams["deviceId"] == "device-001"
 ---
 
 ## RSH1c5 — removeWhere succeeds with no matching subscriptions
+
+**Test ID**: `rest/unit/RSH1c5/remove-where-no-match-succeeds-2`
 
 **Spec requirement:** RSH1c5 — A test should exist that issues a delete for subscriptions with no matching params and checks the operation still succeeds.
 

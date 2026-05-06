@@ -45,6 +45,8 @@ BEFORE ALL TESTS:
 
 ## Test 26: RTN22/RTC8a -- Server-initiated re-authentication
 
+**Test ID**: `realtime/proxy/RTN22/server-initiated-reauth-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN22 | Ably can request that a connected client re-authenticates by sending an AUTH ProtocolMessage. The client must then immediately start a new authentication process. |

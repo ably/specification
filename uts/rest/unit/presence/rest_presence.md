@@ -22,6 +22,8 @@ The mock supports:
 
 ### RSP1a, RSL3 - Presence accessible via RestChannel#presence
 
+**Test ID**: `rest/unit/RSP1a/presence-channel-attribute-0`
+
 **Spec requirement:** Each `RestChannel` provides access to a `RestPresence` object via the `presence` property (RSP1a). The `RestChannel#presence` attribute contains a `RestPresence` object for this channel (RSL3).
 
 ```pseudo
@@ -35,6 +37,8 @@ And the presence object is associated with channel_name
 ```
 
 ### RSP1b - Same presence object returned for same channel
+
+**Test ID**: `rest/unit/RSP1b/same-instance-returned-0`
 
 **Spec requirement:** The same `RestPresence` instance must be returned for multiple accesses to the same channel's presence property.
 
@@ -52,6 +56,8 @@ Then the same RestPresence instance is returned each time
 ## RSP3 - RestPresence#get
 
 ### RSP3a - Get sends GET request to presence endpoint
+
+**Test ID**: `rest/unit/RSP3a/get-request-endpoint-0`
 
 **Spec requirement:** The `get` method sends a GET request to `/channels/<channel_id>/presence` and returns a `PaginatedResult<PresenceMessage>`.
 
@@ -94,6 +100,8 @@ ASSERT result.items.length == 2
 ---
 
 ### RSP3b - Get returns PresenceMessage objects
+
+**Test ID**: `rest/unit/RSP3b/get-returns-presence-messages-0`
 
 **Spec requirement:** The response items must be decoded into `PresenceMessage` objects with all fields correctly populated.
 
@@ -143,6 +151,8 @@ ASSERT result.items[0].timestamp == 1234567890000
 
 ### RSP3c - Get with no members returns empty list
 
+**Test ID**: `rest/unit/RSP3c/get-empty-members-0`
+
 **Spec requirement:** When no presence members exist, `get` returns an empty list in the `PaginatedResult`.
 
 ### Setup
@@ -177,6 +187,8 @@ ASSERT result.hasNext() == false
 ---
 
 ### RSP3a1a - Get with limit parameter
+
+**Test ID**: `rest/unit/RSP3a1/get-limit-parameter-0`
 
 **Spec requirement:** The `limit` parameter must be included in the query string when specified.
 
@@ -214,6 +226,8 @@ ASSERT captured_requests[0].url.query_params["limit"] == "50"
 
 ### RSP3a1b - Get limit defaults to 100
 
+**Test ID**: `rest/unit/RSP3a1/get-limit-default-100-1`
+
 **Spec requirement:** When no limit is specified, the default limit of 100 is used (or not explicitly sent).
 
 ### Setup
@@ -248,6 +262,8 @@ ASSERT "limit" NOT IN captured_requests[0].url.query_params
 
 ### RSP3a1c - Get limit maximum is 1000
 
+**Test ID**: `rest/unit/RSP3a1/get-limit-max-1000-2`
+
 **Spec requirement:** The maximum allowed limit value is 1000.
 
 ### Setup
@@ -280,6 +296,8 @@ ASSERT captured_requests[0].url.query_params["limit"] == "1000"
 ---
 
 ### RSP3a2 - Get with clientId filter
+
+**Test ID**: `rest/unit/RSP3a2/get-clientid-filter-0`
 
 **Spec requirement:** The `clientId` parameter filters presence members by client identifier.
 
@@ -316,6 +334,8 @@ ASSERT captured_requests[0].url.query_params["clientId"] == "specific-client"
 
 ### RSP3a3 - Get with connectionId filter
 
+**Test ID**: `rest/unit/RSP3a3/get-connectionid-filter-0`
+
 **Spec requirement:** The `connectionId` parameter filters presence members by connection identifier.
 
 ### Setup
@@ -350,6 +370,8 @@ ASSERT captured_requests[0].url.query_params["connectionId"] == "conn123"
 ---
 
 ### RSP3 - Get with multiple filters
+
+**Test ID**: `rest/unit/RSP3/get-multiple-filters-0`
 
 **Spec requirement:** Multiple query parameters can be combined in a single request.
 
@@ -392,6 +414,8 @@ ASSERT captured_requests[0].url.query_params["connectionId"] == "conn1"
 
 ### RSP4a - History sends GET request to presence history endpoint
 
+**Test ID**: `rest/unit/RSP4a/history-request-endpoint-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSP4 | History method fetches presence event history |
@@ -432,6 +456,8 @@ ASSERT result IS PaginatedResult<PresenceMessage>
 ---
 
 ### RSP4a - History returns PaginatedResult of PresenceMessage
+
+**Test ID**: `rest/unit/RSP4a/history-returns-paginated-1`
 
 **Spec requirement:** History responses contain `PresenceMessage` objects with various action types.
 
@@ -474,6 +500,8 @@ ASSERT result.items[2].action == PresenceAction.update  # action 4
 
 ### RSP4b1a - History with start parameter
 
+**Test ID**: `rest/unit/RSP4b1/history-start-parameter-0`
+
 **Spec requirement:** The `start` parameter filters events from a given timestamp (inclusive).
 
 ### Setup
@@ -508,6 +536,8 @@ ASSERT captured_requests[0].url.query_params["start"] == "1609459200000"
 
 ### RSP4b1b - History with end parameter
 
+**Test ID**: `rest/unit/RSP4b1/history-end-parameter-1`
+
 **Spec requirement:** The `end` parameter filters events up to a given timestamp (inclusive).
 
 ### Setup
@@ -541,6 +571,8 @@ ASSERT captured_requests[0].url.query_params["end"] == "1609545600000"
 ---
 
 ### RSP4b1c - History with start and end parameters
+
+**Test ID**: `rest/unit/RSP4b1/history-start-end-params-2`
 
 **Spec requirement:** Start and end parameters can be combined to define a time range.
 
@@ -581,6 +613,8 @@ ASSERT captured_requests[0].url.query_params["end"] == "1609545600000"
 
 ### RSP4b1d - History accepts DateTime objects for start/end
 
+**Test ID**: `rest/unit/RSP4b1/history-datetime-objects-3`
+
 **Spec requirement:** Language-specific DateTime objects should be accepted and converted to milliseconds since epoch.
 
 ### Setup
@@ -616,6 +650,8 @@ ASSERT captured_requests[0].url.query_params["start"] == "1609459200000"
 
 ### RSP4b2a - History with direction backwards (default)
 
+**Test ID**: `rest/unit/RSP4b2/history-direction-backwards-default-0`
+
 **Spec requirement:** The default direction is `backwards` (newest first).
 
 ### Setup
@@ -650,6 +686,8 @@ ASSERT "direction" NOT IN captured_requests[0].url.query_params
 
 ### RSP4b2b - History with direction forwards
 
+**Test ID**: `rest/unit/RSP4b2/history-direction-forwards-1`
+
 **Spec requirement:** The `direction` parameter can be set to `forwards` (oldest first).
 
 ### Setup
@@ -682,6 +720,8 @@ ASSERT captured_requests[0].url.query_params["direction"] == "forwards"
 ---
 
 ### RSP4b2c - History with direction backwards explicit
+
+**Test ID**: `rest/unit/RSP4b2/history-direction-backwards-explicit-2`
 
 **Spec requirement:** The `direction` parameter can be explicitly set to `backwards`.
 
@@ -716,6 +756,8 @@ ASSERT captured_requests[0].url.query_params["direction"] == "backwards"
 
 ### RSP4b3a - History with limit parameter
 
+**Test ID**: `rest/unit/RSP4b3/history-limit-parameter-0`
+
 **Spec requirement:** The `limit` parameter controls the maximum number of results per page.
 
 ### Setup
@@ -748,6 +790,8 @@ ASSERT captured_requests[0].url.query_params["limit"] == "50"
 ---
 
 ### RSP4b3b - History limit defaults to 100
+
+**Test ID**: `rest/unit/RSP4b3/history-limit-default-100-1`
 
 **Spec requirement:** When no limit is specified, the default is 100.
 
@@ -783,6 +827,8 @@ ASSERT "limit" NOT IN captured_requests[0].url.query_params
 
 ### RSP4b3c - History limit maximum is 1000
 
+**Test ID**: `rest/unit/RSP4b3/history-limit-max-1000-2`
+
 **Spec requirement:** The maximum allowed limit is 1000.
 
 ### Setup
@@ -815,6 +861,8 @@ ASSERT captured_requests[0].url.query_params["limit"] == "1000"
 ---
 
 ### RSP4 - History with all parameters
+
+**Test ID**: `rest/unit/RSP4/history-all-parameters-0`
 
 **Spec requirement:** All query parameters can be combined in a single request.
 
@@ -859,6 +907,8 @@ ASSERT captured_requests[0].url.query_params["limit"] == "50"
 
 ### RSP5a - String data decoded as string
 
+**Test ID**: `rest/unit/RSP5/decode-string-data-0`
+
 **Spec requirement:** Plain string data must be decoded without modification.
 
 ### Setup
@@ -894,6 +944,8 @@ ASSERT result.items[0].data IS String
 ---
 
 ### RSP5b - JSON encoded data decoded to object
+
+**Test ID**: `rest/unit/RSP5/decode-json-data-1`
 
 **Spec requirement:** Data with `encoding: "json"` must be decoded from JSON string to native object.
 
@@ -938,6 +990,8 @@ ASSERT result.items[0].encoding == null  # encoding consumed
 
 ### RSP5c - Base64 encoded data decoded to binary
 
+**Test ID**: `rest/unit/RSP5/decode-base64-binary-2`
+
 **Spec requirement:** Data with `encoding: "base64"` must be decoded from base64 to binary.
 
 ### Setup
@@ -979,6 +1033,8 @@ ASSERT result.items[0].encoding == null  # encoding consumed
 ---
 
 ### RSP5 - Binary presence data decoded from MessagePack response
+
+**Test ID**: `rest/unit/RSP5/decode-msgpack-binary-3`
 
 **Spec requirement:** When a presence response is returned in MessagePack format with binary data (msgpack `bin` type), the data must be decoded as binary, not as a string — even if the bytes are valid UTF-8. This parallels the RSL6 msgpack binary decoding test for channel messages.
 
@@ -1025,6 +1081,8 @@ ASSERT result.items[0].encoding IS null
 
 ### RSP5d - UTF-8 encoded data decoded correctly
 
+**Test ID**: `rest/unit/RSP5/decode-utf8-data-4`
+
 **Spec requirement:** Data with `encoding: "utf-8/base64"` must be decoded through both layers.
 
 ### Setup
@@ -1065,6 +1123,8 @@ ASSERT result.items[0].data IS String
 ---
 
 ### RSP5e - Chained encoding decoded in order
+
+**Test ID**: `rest/unit/RSP5/decode-chained-encoding-5`
 
 **Spec requirement:** Chained encodings (e.g., `json/base64`) must be decoded in reverse order (last applied, first removed).
 
@@ -1108,6 +1168,8 @@ ASSERT result.items[0].data["key"] == "value"
 
 ### RSP5f - History messages also decoded
 
+**Test ID**: `rest/unit/RSP5/decode-history-messages-6`
+
 **Spec requirement:** Encoding decoding applies to both `get` and `history` methods.
 
 ### Setup
@@ -1148,6 +1210,8 @@ ASSERT result.items[0].data["event"] == "entered"
 ---
 
 ### RSP5g - Cipher decoding with channel options
+
+**Test ID**: `rest/unit/RSP5/decode-cipher-channel-7`
 
 **Spec requirement:** Encrypted data with cipher encoding must be decrypted using channel cipher options.
 
@@ -1199,6 +1263,8 @@ ASSERT result.items[0].data IS Object/Map
 
 ### RSP_Pagination_1 - Get returns paginated result with Link header
 
+**Test ID**: `rest/unit/RSP3/get-pagination-link-header-1`
+
 **Spec requirement:** Responses with Link headers must support pagination via `hasNext()` and `next()`.
 
 ### Setup
@@ -1240,6 +1306,8 @@ ASSERT result.hasNext() == true
 ---
 
 ### RSP_Pagination_2 - Get next page fetches from Link URL
+
+**Test ID**: `rest/unit/RSP3/get-pagination-next-page-2`
 
 **Spec requirement:** Calling `next()` must use the URL from the Link header to fetch the next page.
 
@@ -1285,6 +1353,8 @@ ASSERT page2.hasNext() == false
 ---
 
 ### RSP_Pagination_3 - History pagination works the same
+
+**Test ID**: `rest/unit/RSP4/history-pagination-1`
 
 **Spec requirement:** History results must support the same pagination behavior as get.
 
@@ -1332,6 +1402,8 @@ ASSERT page2.items[0].action == PresenceAction.leave
 
 ### RSP_Error_1 - Get with server error throws AblyException
 
+**Test ID**: `rest/unit/RSP3/get-server-error-3`
+
 **Spec requirement:** Server errors must be raised as `AblyException` with appropriate error code and status.
 
 ### Setup
@@ -1368,6 +1440,8 @@ ASSERT error.statusCode == 500
 
 ### RSP_Error_2 - History with invalid auth throws AblyException
 
+**Test ID**: `rest/unit/RSP4/history-auth-error-2`
+
 **Spec requirement:** Authentication errors must raise `AblyException` with code 40101.
 
 ### Setup
@@ -1403,6 +1477,8 @@ ASSERT error.statusCode == 401
 ---
 
 ### RSP_Error_3 - Get with channel not found
+
+**Test ID**: `rest/unit/RSP3/get-channel-not-found-4`
 
 **Spec requirement:** 404 responses must raise `AblyException` with code 40400.
 
@@ -1442,6 +1518,8 @@ ASSERT error.statusCode == 404
 
 ### RSP_Headers_1 - Get includes standard headers
 
+**Test ID**: `rest/unit/RSP3/get-standard-headers-5`
+
 **Spec requirement:** All REST requests must include standard Ably headers (X-Ably-Version, Ably-Agent, Accept).
 
 ### Setup
@@ -1477,6 +1555,8 @@ ASSERT "Accept" IN captured_requests[0].headers
 
 ### RSP_Headers_2 - History includes authorization header
 
+**Test ID**: `rest/unit/RSP4/history-auth-header-3`
+
 **Spec requirement:** Authenticated requests must include the Authorization header.
 
 ### Setup
@@ -1510,6 +1590,8 @@ ASSERT captured_requests[0].headers["Authorization"] starts with "Basic "
 ---
 
 ### RSP_Headers_3 - Request ID included when enabled
+
+**Test ID**: `rest/unit/RSP3/get-request-id-enabled-6`
 
 **Spec requirement:** When `addRequestIds` is enabled, a unique `request_id` query parameter must be included.
 
@@ -1549,6 +1631,8 @@ ASSERT captured_requests[0].url.query_params["request_id"] IS NOT empty
 ## PresenceAction Values
 
 ### RSP_Action_1 - All presence actions correctly mapped
+
+**Test ID**: `rest/unit/RSP5/presence-action-mapping-8`
 
 **Spec requirement:** All presence action values must be correctly mapped between wire protocol and SDK types.
 

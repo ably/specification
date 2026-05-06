@@ -50,6 +50,8 @@ request to `/presence`, returning a `BatchPresenceResponse` containing per-chann
 
 ### RSC24_1 - Sends GET request to /presence with channels query param
 
+**Test ID**: `rest/unit/RSC24/get-presence-channels-param-0`
+
 **Spec requirement:** batchPresence sends a GET request to `/presence` with channel
 names joined as a comma-separated `channels` query parameter.
 
@@ -81,6 +83,8 @@ ASSERT captured_requests[0].url.queryParameters["channels"] == "channel-a,channe
 
 ### RSC24_2 - Single channel sends GET with single channel name
 
+**Test ID**: `rest/unit/RSC24/single-channel-param-0`
+
 **Spec requirement:** batchPresence with a single channel sends the channel name in
 the `channels` query parameter (no trailing comma).
 
@@ -107,6 +111,8 @@ ASSERT captured_requests[0].url.queryParameters["channels"] == "my-channel"
 ```
 
 ### RSC24_3 - Channel names with special characters are comma-joined
+
+**Test ID**: `rest/unit/RSC24/special-chars-comma-joined-0`
 
 **Spec requirement:** Channel names containing special characters are joined with
 commas as-is (the server handles parsing).
@@ -143,6 +149,8 @@ computed `successCount`, `failureCount`, and `results` attributes (BAR2).
 
 ### BAR2_1 - successCount and failureCount from mixed response
 
+**Test ID**: `rest/unit/BAR2/mixed-success-failure-counts-0`
+
 The server returns HTTP 200 with a `BatchResult` envelope containing per-channel
 results, including both successes and failures.
 
@@ -173,6 +181,8 @@ ASSERT result.results.length == 4
 
 ### BAR2_2 - All success
 
+**Test ID**: `rest/unit/BAR2/all-success-counts-0`
+
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
@@ -197,6 +207,8 @@ ASSERT result.results.length == 2
 ```
 
 ### BAR2_3 - All failure
+
+**Test ID**: `rest/unit/BAR2/all-failure-counts-0`
 
 ```pseudo
 mock_http = MockHTTP(
@@ -229,6 +241,8 @@ ASSERT result.results.length == 2
 `presence` (array of PresenceMessage).
 
 ### BGR2_1 - Success result with members present
+
+**Test ID**: `rest/unit/BGR2/success-with-members-0`
 
 ```pseudo
 mock_http = MockHTTP(
@@ -286,6 +300,8 @@ ASSERT success.presence[1].data["key"] == "value"
 
 ### BGR2_2 - Success result with empty presence (no members)
 
+**Test ID**: `rest/unit/BGR2/success-empty-presence-0`
+
 ```pseudo
 mock_http = MockHTTP(
   onRequest: (request) => {
@@ -317,6 +333,8 @@ ASSERT success.presence.length == 0
 `error` (ErrorInfo).
 
 ### BGF2_1 - Failure result with error details
+
+**Test ID**: `rest/unit/BGF2/failure-error-details-0`
 
 ```pseudo
 mock_http = MockHTTP(
@@ -358,6 +376,8 @@ ASSERT failure.error.message CONTAINS "not permitted"
 ## Mixed results
 
 ### RSC24_Mixed_1 - Mixed success and failure results
+
+**Test ID**: `rest/unit/RSC24/mixed-success-failure-results-0`
 
 **Spec requirement:** A batch presence request can succeed for some channels and fail
 for others. The server returns HTTP 200 with a `BatchResult` containing both
@@ -419,6 +439,8 @@ ASSERT result.results[1].error.code == 40160
 
 ### RSC24_Error_1 - Server error is propagated as an error
 
+**Test ID**: `rest/unit/RSC24/server-error-propagated-0`
+
 **Spec requirement:** A server-level error (e.g. 500) for the entire batch request
 is propagated as an error, not a per-channel failure. The response contains only an
 `error` field with no `batchResponse`.
@@ -440,6 +462,8 @@ ASSERT error.statusCode == 500
 ```
 
 ### RSC24_Error_2 - Authentication error is propagated as an error
+
+**Test ID**: `rest/unit/RSC24/auth-error-propagated-0`
 
 **Spec requirement:** An authentication error (401) for the entire request is
 propagated as an error.
@@ -465,6 +489,8 @@ ASSERT error.statusCode == 401
 ## Request authentication
 
 ### RSC24_Auth_1 - Request uses configured authentication
+
+**Test ID**: `rest/unit/RSC24/uses-configured-auth-0`
 
 **Spec requirement:** batchPresence requests use the client's configured authentication
 mechanism (Basic or Token auth).

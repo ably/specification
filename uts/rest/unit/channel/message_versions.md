@@ -13,6 +13,8 @@ These tests use the mock HTTP infrastructure defined in `uts/test/rest/unit/help
 
 ## RSL14b — getMessageVersions sends GET to correct endpoint
 
+**Test ID**: `rest/unit/RSL14b/get-correct-endpoint-0`
+
 **Spec requirement:** RSL14b — The SDK must send a GET request to the endpoint `/channels/{channelName}/messages/{serial}/versions`.
 
 Tests that `getMessageVersions()` sends a GET to the correct URL.
@@ -67,6 +69,8 @@ ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "
 ---
 
 ## RSL14c — getMessageVersions returns PaginatedResult of Messages
+
+**Test ID**: `rest/unit/RSL14c/returns-paginated-result-0`
 
 **Spec requirement:** RSL14c — Returns a `PaginatedResult<Message>`.
 
@@ -134,6 +138,8 @@ ASSERT result.items[1].action == MessageAction.MESSAGE_CREATE
 ---
 
 ## RSL14a — getMessageVersions passes params as querystring
+
+**Test ID**: `rest/unit/RSL14a/params-as-querystring-0`
 
 **Spec requirement:** RSL14a — Takes an optional second argument of `Dict<string, stringifiable>` params.
 

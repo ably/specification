@@ -52,6 +52,8 @@ AFTER EACH TEST:
 
 ## RTN23a — Heartbeat starvation causes disconnect and reconnect
 
+**Test ID**: `realtime/proxy/RTN23a/heartbeat-starvation-reconnect-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN23a | If no activity is received for `maxIdleInterval + realtimeRequestTimeout`, the transport should be disconnected |

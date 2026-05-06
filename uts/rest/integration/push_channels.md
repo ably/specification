@@ -39,6 +39,8 @@ AFTER ALL TESTS:
 
 ## RSH7a, RSH7c — subscribeDevice and unsubscribeDevice round-trip
 
+**Test ID**: `rest/integration/RSH7a/subscribe-unsubscribe-device-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSH7a | subscribeDevice() subscribes the local device to push on a channel |
@@ -120,6 +122,8 @@ AWAIT client.push.admin.deviceRegistrations.remove(device_id)
 ---
 
 ## RSH7b, RSH7d — subscribeClient and unsubscribeClient round-trip
+
+**Test ID**: `rest/integration/RSH7b/subscribe-unsubscribe-client-0`
 
 | Spec | Requirement |
 |------|-------------|

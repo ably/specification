@@ -22,6 +22,8 @@ These tests verify that the library does not throw errors or crash when encounte
 
 ## RTF1 - ProtocolMessage with unrecognised attributes is deserialized without error
 
+**Test ID**: `realtime/unit/RTF1/unrecognised-attributes-ignored-0`
+
 **Spec requirement:** Deserialization of ProtocolMessages and related types must be tolerant to unrecognised attributes, which must be ignored.
 
 Tests that the client correctly processes a ProtocolMessage containing extra unknown fields that are not part of the current spec, without throwing errors.
@@ -130,6 +132,8 @@ CLOSE_CLIENT(client)
 
 ## RTF1 - ProtocolMessage with unknown action enum value is handled gracefully
 
+**Test ID**: `realtime/unit/RTF1/unknown-action-handled-1`
+
 **Spec requirement:** Deserialization of ProtocolMessages and associated enums must be tolerant to unknown enum values, which must be handled in some sensible, language-idiomatic way.
 
 Tests that the client does not crash or disconnect when receiving a ProtocolMessage with an action value that is not defined in the current spec.
@@ -216,6 +220,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSF1 - Message with unrecognised attributes is deserialized without error
+
+**Test ID**: `realtime/unit/RSF1/message-unrecognised-attrs-0`
 
 **Spec requirement:** Deserialization of Messages and related types, and associated enums, must be tolerant to unrecognised attributes or enum values. Such unrecognised values must be ignored.
 

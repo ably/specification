@@ -75,6 +75,8 @@ AFTER ALL TESTS:
 
 ## RSA17g, RSA17b, RSA17c, TRS2 - Token revocation prevents subsequent use
 
+**Test ID**: `rest/integration/RSA17g/revoke-token-prevents-use-0`
+
 **Spec requirement:** `Auth#revokeTokens` sends a POST to
 `/keys/{keyName}/revokeTokens` with `targets` as `type:value` strings, and
 returns a result containing per-target success information. After revocation,
@@ -140,6 +142,8 @@ ASSERT state_change.reason.code == 40141
 
 ## RSA17d - Token auth client rejected
 
+**Test ID**: `rest/integration/RSA17d/token-auth-revoke-rejected-0`
+
 **Spec requirement:** If called from a client using token authentication,
 should raise an error with code `40162` and status code `401`. This is a
 client-side check — no HTTP request is made to the server.
@@ -177,6 +181,8 @@ ASSERT error.statusCode == 401
 ---
 
 ## RSA17e, RSA17f - issuedBefore and allowReauthMargin
+
+**Test ID**: `rest/integration/RSA17e/issued-before-reauth-margin-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -223,6 +229,8 @@ ASSERT revoke_result.results[0].appliesAt > server_time + (30 * 1000)
 ---
 
 ## RSA17c, TRF2 - Mixed success and failure (invalid specifier type)
+
+**Test ID**: `rest/integration/RSA17c/mixed-success-failure-0`
 
 **Spec requirement:** The response can contain both successful and failed
 per-target results. An invalid target type produces a failure result with

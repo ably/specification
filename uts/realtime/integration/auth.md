@@ -33,6 +33,8 @@ AFTER ALL TESTS:
 
 ## RTC8a - In-band reauthorization on CONNECTED client
 
+**Test ID**: `realtime/integration/RTC8a/in-band-reauth-connected-0`
+
 **Spec requirement:** RTC8a - When `auth.authorize()` is called on a CONNECTED realtime client, it sends an AUTH protocol message with the new token rather than disconnecting/reconnecting.
 
 Tests that calling authorize() on a connected client succeeds and the connection remains connected (UPDATE event, not disconnect/reconnect).
@@ -94,6 +96,8 @@ AWAIT client.close()
 
 ## RTC8c - authorize() from INITIALIZED initiates connection
 
+**Test ID**: `realtime/integration/RTC8c/authorize-initiates-connection-0`
+
 **Spec requirement:** RTC8c - When `auth.authorize()` is called on a client in INITIALIZED state, it should initiate the connection.
 
 Tests that calling authorize() on an unconnected client triggers a connection.
@@ -138,6 +142,8 @@ AWAIT client.close()
 ---
 
 ## RSA8 - Token auth on realtime connection
+
+**Test ID**: `realtime/integration/RSA8/token-auth-connect-0`
 
 **Spec requirement:** RSA8 - Realtime client can connect using token authentication via an authCallback that returns JWTs.
 
@@ -186,6 +192,8 @@ Tests that:
 
 ### Test 1: Matching clientId succeeds
 
+**Test ID**: `realtime/integration/RSA7/matching-clientid-succeeds-0`
+
 #### Setup
 ```pseudo
 test_client_id = "test-client-" + random_id()
@@ -221,6 +229,8 @@ AWAIT client.close()
 ```
 
 ### Test 2: Mismatched clientId fails
+
+**Test ID**: `realtime/integration/RSA7/mismatched-clientid-fails-1`
 
 #### Setup
 ```pseudo

@@ -42,6 +42,8 @@ BEFORE ALL TESTS:
 
 ## Test 6: RTN15a - Unexpected disconnect triggers resume
 
+**Test ID**: `realtime/proxy/RTN15a/disconnect-triggers-resume-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN15a | If transport is disconnected unexpectedly, attempt resume |
@@ -142,6 +144,8 @@ session.close()
 
 ## Test 6b: RTN15a - Unexpected disconnect triggers resume (TCP close without close frame)
 
+**Test ID**: `realtime/proxy/RTN15a/tcp-close-triggers-resume-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN15a | If transport is disconnected unexpectedly, attempt resume |
@@ -188,6 +192,8 @@ Same as Test 6.
 ---
 
 ## Test 7: RTN15b, RTN15c6 - Resume preserves connectionId
+
+**Test ID**: `realtime/proxy/RTN15b/resume-preserves-connid-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -283,6 +289,8 @@ session.close()
 ---
 
 ## Test 8: RTN15c7 - Failed resume gets new connectionId
+
+**Test ID**: `realtime/proxy/RTN15c7/failed-resume-new-connid-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -417,6 +425,8 @@ session.close()
 
 ## Test 9: RTN15h1 - DISCONNECTED with token error, non-renewable token -> FAILED
 
+**Test ID**: `realtime/proxy/RTN15h1/token-error-nonrenewable-failed-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN15h1 | If DISCONNECTED contains a token error and the token is not renewable, transition to FAILED |
@@ -525,6 +535,8 @@ session.close()
 ---
 
 ## Test 10: RTN15h3 - DISCONNECTED with non-token error triggers reconnect
+
+**Test ID**: `realtime/proxy/RTN15h3/non-token-error-reconnects-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -639,6 +651,8 @@ session.close()
 ---
 
 ## Test 21: RTN15j - Fatal ERROR on established connection
+
+**Test ID**: `realtime/proxy/RTN15j/fatal-error-established-conn-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -763,6 +777,8 @@ session.close()
 ---
 
 ## Test 22: RTN15g/g2 - connectionStateTtl expiry clears resume state
+
+**Test ID**: `realtime/proxy/RTN15g/ttl-expiry-clears-resume-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -898,6 +914,8 @@ session.close()
 
 ## Test 23: RTN19a/a2 - Unacked messages resent on new transport after resume
 
+**Test ID**: `realtime/proxy/RTN19a/unacked-resent-on-resume-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN19a | Any ProtocolMessage awaiting ACK/NACK on the old transport must be resent on the new transport |
@@ -1028,6 +1046,8 @@ session.close()
 ---
 
 ## Test 24: RTN16d - Successful recovery preserves connectionId and updates connectionKey
+
+**Test ID**: `realtime/proxy/RTN16d/recovery-preserves-connid-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1167,6 +1187,8 @@ session_2.close()
 ---
 
 ## Test 25: RTN16l - Recovery failure treated as fresh connection (per RTN15c7)
+
+**Test ID**: `realtime/proxy/RTN16l/recovery-failure-fresh-conn-0`
 
 | Spec | Requirement |
 |------|-------------|

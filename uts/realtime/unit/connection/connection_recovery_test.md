@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN16g, RTN16g1 - createRecoveryKey returns string with connectionKey, msgSerial, and channel/channelSerial pairs
 
+**Test ID**: `realtime/unit/RTN16g/recovery-key-structure-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN16g | `Connection#createRecoveryKey` returns a string incorporating the connectionKey, current msgSerial, and channel name/channelSerial pairs for every attached channel |
@@ -118,6 +120,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN16g2 - createRecoveryKey returns null in inactive states and before first connect
+
+**Test ID**: `realtime/unit/RTN16g2/recovery-key-null-inactive-0`
 
 **Spec requirement:** `createRecoveryKey()` should return null when the SDK is in the CLOSED, CLOSING, FAILED, or SUSPENDED states, or when it does not have a connectionKey (e.g. before first connect).
 
@@ -265,6 +269,8 @@ CLOSE_CLIENT(client_suspended)
 
 ## RTN16k - recover option adds recover query param to WebSocket URL
 
+**Test ID**: `realtime/unit/RTN16k/recover-query-param-0`
+
 **Spec requirement:** When instantiated with the `recover` client option, the library should add a `recover` querystring param (set from the connectionKey component of the recoveryKey) to the first WebSocket request. After successful connection, it should never again supply a `recover` param.
 
 Tests that the `recover` query parameter is sent on the first connection and not on subsequent reconnections.
@@ -358,6 +364,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN16f - recover option initializes msgSerial from recoveryKey
+
+**Test ID**: `realtime/unit/RTN16f/recover-initializes-msgserial-0`
 
 **Spec requirement:** When instantiated with the `recover` client option, the library should initialize its internal msgSerial counter to the msgSerial component of the recoveryKey. If recover fails, the counter should be reset to 0 per RTN15c7.
 
@@ -455,6 +463,8 @@ CLOSE_CLIENT(client)
 
 ## RTN16f1 - Malformed recoveryKey logs error and connects normally
 
+**Test ID**: `realtime/unit/RTN16f1/malformed-recovery-key-0`
+
 **Spec requirement:** If the recovery key provided in the `recover` client option cannot be deserialized due to malformed data, then an error should be logged and the connection should be made like no `recover` option was provided.
 
 Tests that a malformed recoveryKey is handled gracefully: the connection proceeds normally without the `recover` query parameter.
@@ -528,6 +538,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN16j - recover option instantiates channels from recoveryKey with correct channelSerials
+
+**Test ID**: `realtime/unit/RTN16j/recover-channel-serials-0`
 
 | Spec | Requirement |
 |------|-------------|

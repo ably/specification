@@ -16,6 +16,8 @@ error behaviour for SUSPENDED channels.
 
 ## RTP11a - get returns current members (single-message sync)
 
+**Test ID**: `realtime/unit/RTP11a/get-returns-members-single-sync-0`
+
 **Spec requirement:** Returns the list of current members on the channel. By default,
 will wait for the SYNC to be completed.
 
@@ -85,6 +87,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP11a, RTP11c1 - get waits for multi-message sync
+
+**Test ID**: `realtime/unit/RTP11a/get-waits-for-multi-sync-1`
 
 **Spec requirement:** When waitForSync is true (default), the method will wait until
 SYNC is complete before returning a list of members. A multi-message sync has a
@@ -166,6 +170,8 @@ CLOSE_CLIENT(client)
 
 ## RTP11c1 - get with waitForSync=false returns immediately
 
+**Test ID**: `realtime/unit/RTP11c1/get-no-wait-returns-immediately-0`
+
 **Spec requirement:** When waitForSync is false, the known set of presence members is
 returned immediately, which may be incomplete if the SYNC is not finished.
 
@@ -224,6 +230,8 @@ CLOSE_CLIENT(client)
 
 ## RTP11c2 - get filtered by clientId
 
+**Test ID**: `realtime/unit/RTP11c2/get-filtered-by-clientid-0`
+
 **Spec requirement:** clientId param filters members by the provided clientId.
 
 ### Setup
@@ -278,6 +286,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP11c3 - get filtered by connectionId
+
+**Test ID**: `realtime/unit/RTP11c3/get-filtered-by-connectionid-0`
 
 **Spec requirement:** connectionId param filters members by the provided connectionId.
 
@@ -334,6 +344,8 @@ CLOSE_CLIENT(client)
 
 ## RTP11b - get implicitly attaches channel
 
+**Test ID**: `realtime/unit/RTP11b/get-implicitly-attaches-0`
+
 **Spec requirement:** Implicitly attaches the RealtimeChannel if the channel is in the
 INITIALIZED state. If the channel enters DETACHED or FAILED before the operation
 succeeds, error.
@@ -379,6 +391,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP11d - get on SUSPENDED channel errors by default
+
+**Test ID**: `realtime/unit/RTP11d/get-suspended-errors-default-0`
 
 > **Reaching SUSPENDED state:** To transition a channel to SUSPENDED, the connection
 > must first reach SUSPENDED state (by exhausting all reconnection attempts within
@@ -452,6 +466,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP11d - get on SUSPENDED channel with waitForSync=false returns members
+
+**Test ID**: `realtime/unit/RTP11d/get-suspended-no-wait-returns-1`
 
 **Spec requirement:** If waitForSync is false on a SUSPENDED channel, return the
 members currently in the PresenceMap.

@@ -72,6 +72,8 @@ AFTER ALL TESTS:
 
 ## RSC24, BGR2 - batchPresence returns members across multiple channels
 
+**Test ID**: `rest/integration/RSC24/batch-presence-multiple-channels-0`
+
 **Spec requirement:** `batchPresence` sends a GET to `/presence` with a `channels`
 query parameter and returns a `BatchResult` containing per-channel presence data.
 Each successful result contains the channel name and an array of `PresenceMessage`.
@@ -151,6 +153,8 @@ AWAIT realtime.close()
 
 ## RSC24, BGF2 - Restricted key returns per-channel failure for unauthorized channels
 
+**Test ID**: `rest/integration/RSC24/restricted-key-channel-failure-1`
+
 **Spec requirement:** When a key lacks capability for a channel, the per-channel
 result is a `BatchPresenceFailureResult` containing an `ErrorInfo`. Channels the key
 does have access to return success results in the same batch response.
@@ -227,6 +231,8 @@ and the REST client has no persistent connection to close.
 ---
 
 ## RSC24 - batchPresence with empty channel returns empty presence array
+
+**Test ID**: `rest/integration/RSC24/empty-channel-presence-2`
 
 **Spec requirement:** A channel with no presence members returns a success result
 with an empty `presence` array.

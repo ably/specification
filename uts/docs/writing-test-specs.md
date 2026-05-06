@@ -22,6 +22,70 @@ This guide provides comprehensive guidance for writing portable test specificati
 - Use for testing fault behaviour: connection failures, token renewal under errors, heartbeat starvation, channel error injection
 - See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec
 
+## Test IDs
+
+Every test in the UTS suite has a unique identifier. The ID appears explicitly in the spec markdown and must be included as a comment in every derived (language-specific) implementation.
+
+### Format
+
+```
+<category>/<spec-point>/<descriptive-name>-<n>
+```
+
+| Field | Description |
+|-------|-------------|
+| `category` | One of: `rest/unit`, `rest/integration`, `rest/proxy`, `realtime/unit`, `realtime/integration`, `realtime/proxy` |
+| `spec-point` | The primary spec point being tested (e.g. `RSC15l2`, `RTN14a`) |
+| `descriptive-name` | 2–4 hyphenated words describing the specific behaviour (e.g. `timeout-fallback`, `cloudfront-header`) |
+| `n` | 0-based index disambiguating multiple tests for the same spec point within the same file |
+
+### Examples
+
+| Test ID | Meaning |
+|---------|---------|
+| `rest/unit/RSC15l/timeout-fallback-0` | REST unit test: first test for RSC15l covering timeout-triggered fallback |
+| `rest/proxy/RSC15l4/cloudfront-fallback-0` | REST proxy test: CloudFront header triggers fallback |
+| `realtime/unit/RTN14a/fatal-connect-error-0` | Realtime unit test: fatal error during connection |
+| `realtime/proxy/RTN15a/disconnect-resume-0` | Realtime proxy test: unexpected disconnect triggers resume |
+| `rest/integration/RSA8/request-token-0` | REST integration test: first requestToken test |
+
+### Placement in spec markdown
+
+Add a `**Test ID**` line immediately after the test heading:
+
+```markdown
+## RSC15l2 - Request timeout triggers fallback via proxy
+
+**Test ID**: `rest/proxy/RSC15l2/timeout-fallback-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RSC15l2 | Request timeout triggers fallback |
+```
+
+### Placement in derived tests
+
+Add a `// UTS: <id>` comment immediately above the test function:
+
+```typescript
+// UTS: rest/proxy/RSC15l2/timeout-fallback-0
+it('RSC15l2 - request timeout triggers fallback', async function () {
+```
+
+```dart
+// UTS: rest/proxy/RSC15l2/timeout-fallback-0
+test('RSC15l2 - request timeout triggers fallback', () async {
+```
+
+### Naming guidelines
+
+- The descriptive name should make the test's purpose clear without needing to look up the spec point
+- Use the most specific spec point when a test covers multiple (e.g. `RSC15l2` not `RSC15l`)
+- For tests not tied to a specific spec point, use the closest applicable one
+- Keep names consistent within a file — similar tests should have parallel names
+
+---
+
 ## Mock Infrastructure Patterns
 
 ### HTTP Mock Infrastructure
@@ -263,6 +327,8 @@ See `realtime/integration/helpers/proxy.md` for proxy infrastructure specificati
 ---
 
 ## RTN14a - Test name
+
+**Test ID**: `realtime/proxy/RTN14a/fatal-connect-error-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -1008,6 +1074,8 @@ See `rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure speci
 ---
 
 ## RSA4 - Descriptive test name
+
+**Test ID**: `rest/unit/RSA4/auth-selection-0`
 
 **Spec requirement:** Brief description of what the spec requires.
 

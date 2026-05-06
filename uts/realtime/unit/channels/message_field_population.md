@@ -34,6 +34,8 @@ subscribers via `channel.subscribe()`.
 
 ## TM2a - Message id populated from ProtocolMessage id and index
 
+**Test ID**: `realtime/unit/TM2a/id-from-protocol-message-0`
+
 **Spec requirement:** For messages received over Realtime, if the message does not
 contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId`
 is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of
@@ -105,6 +107,8 @@ CLOSE_CLIENT(client)
 
 ## TM2a - Message with existing id is not overwritten
 
+**Test ID**: `realtime/unit/TM2a/existing-id-not-overwritten-1`
+
 **Spec requirement:** The id should only be set if the message does not already
 contain one.
 
@@ -164,6 +168,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## TM2a - No id when ProtocolMessage has no id
+
+**Test ID**: `realtime/unit/TM2a/no-id-without-protocol-id-2`
 
 **Spec requirement:** The id derivation only applies when the ProtocolMessage has
 an `id` field. If the ProtocolMessage has no `id`, messages without their own `id`
@@ -226,6 +232,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## TM2c - Message connectionId populated from ProtocolMessage
+
+**Test ID**: `realtime/unit/TM2c/connectionid-from-protocol-0`
 
 **Spec requirement:** If a message received from Ably does not contain a
 `connectionId`, it should be set to the `connectionId` of the encapsulating
@@ -290,6 +298,8 @@ CLOSE_CLIENT(client)
 
 ## TM2c - Message with existing connectionId is not overwritten
 
+**Test ID**: `realtime/unit/TM2c/existing-connectionid-kept-1`
+
 **Spec requirement:** The connectionId should only be set if the message does not
 already contain one.
 
@@ -350,6 +360,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## TM2f - Message timestamp populated from ProtocolMessage
+
+**Test ID**: `realtime/unit/TM2f/timestamp-from-protocol-0`
 
 **Spec requirement:** If a message received from Ably over a realtime transport does
 not contain a `timestamp`, the SDK must set it to the `timestamp` of the
@@ -414,6 +426,8 @@ CLOSE_CLIENT(client)
 
 ## TM2f - Message with existing timestamp is not overwritten
 
+**Test ID**: `realtime/unit/TM2f/existing-timestamp-kept-1`
+
 **Spec requirement:** The timestamp should only be set if the message does not
 already contain one.
 
@@ -474,6 +488,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## TM2a, TM2c, TM2f - All fields populated together
+
+**Test ID**: `realtime/unit/TM2a/all-fields-populated-together-3`
 
 **Spec requirement:** All three fields (id, connectionId, timestamp) should be
 populated from the ProtocolMessage when absent from the message.

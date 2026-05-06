@@ -47,6 +47,8 @@ obtained by reading `AuthOptions#key` up until the first `:` character.
 
 ### RSA17g_1 - Sends POST request to correct path
 
+**Test ID**: `rest/unit/RSA17g/sends-post-correct-path-0`
+
 **Spec requirement:** revokeTokens sends a POST request to `/keys/{keyName}/revokeTokens`.
 
 ### Setup
@@ -91,6 +93,8 @@ strings by joining the `type` and `value` with a `:` character and sent in the
 
 ### RSA17b_1 - Single specifier sent as targets array
 
+**Test ID**: `rest/unit/RSA17b/single-specifier-targets-0`
+
 ### Setup
 ```pseudo
 captured_requests = []
@@ -123,6 +127,8 @@ ASSERT request_body["targets"] == ["clientId:alice"]
 ```
 
 ### RSA17b_2 - Multiple specifiers with different types
+
+**Test ID**: `rest/unit/RSA17b/multiple-specifier-types-1`
 
 ### Setup
 ```pseudo
@@ -172,6 +178,8 @@ ASSERT request_body["targets"] == ["clientId:alice", "revocationKey:group-1", "c
 
 ### RSA17c_1 - All success result
 
+**Test ID**: `rest/unit/RSA17c/all-success-result-0`
+
 ### Setup
 ```pseudo
 mock_http = MockHttpClient(
@@ -204,6 +212,8 @@ ASSERT result.results.length == 2
 ```
 
 ### RSA17c_2 - Mixed success and failure result
+
+**Test ID**: `rest/unit/RSA17c/mixed-success-failure-1`
 
 **Spec requirement:** When the server returns a mix of successes and failures,
 the response is HTTP 200 with a `BatchResult` envelope.
@@ -244,6 +254,8 @@ ASSERT result.results.length == 2
 ```
 
 ### RSA17c_3 - All failure result
+
+**Test ID**: `rest/unit/RSA17c/all-failure-result-2`
 
 ### Setup
 ```pseudo
@@ -292,6 +304,8 @@ ASSERT result.results.length == 2
 
 ### TRS2_1 - Success result contains target, appliesAt, and issuedBefore
 
+**Test ID**: `rest/unit/TRS2/success-result-attributes-0`
+
 ### Setup
 ```pseudo
 mock_http = MockHttpClient(
@@ -333,6 +347,8 @@ ASSERT success.appliesAt == 1700000001000
 | TRF2b | `error` ErrorInfo - reason the revocation failed |
 
 ### TRF2_1 - Failure result contains target and error
+
+**Test ID**: `rest/unit/TRF2/failure-result-attributes-0`
 
 ### Setup
 ```pseudo
@@ -381,6 +397,8 @@ client-side check — no HTTP request is made.
 
 ### RSA17d_1 - Token auth client fails with 40162
 
+**Test ID**: `rest/unit/RSA17d/token-auth-revoke-rejected-0`
+
 ### Setup
 ```pseudo
 captured_requests = []
@@ -414,6 +432,8 @@ ASSERT captured_requests.length == 0
 ```
 
 ### RSA17d_2 - Token auth via useTokenAuth flag fails with 40162
+
+**Test ID**: `rest/unit/RSA17d/use-token-auth-revoke-rejected-1`
 
 ### Setup
 ```pseudo
@@ -454,6 +474,8 @@ milliseconds since the epoch, which is included in the request body.
 
 ### RSA17e_1 - issuedBefore included in request body
 
+**Test ID**: `rest/unit/RSA17e/issued-before-included-0`
+
 ### Setup
 ```pseudo
 captured_requests = []
@@ -487,6 +509,8 @@ ASSERT request_body["issuedBefore"] == 1699999000000
 ```
 
 ### RSA17e_2 - issuedBefore omitted when not provided
+
+**Test ID**: `rest/unit/RSA17e/issued-before-omitted-1`
 
 ### Setup
 ```pseudo
@@ -528,6 +552,8 @@ included in the `allowReauthMargin` field of the request body.
 
 ### RSA17f_1 - allowReauthMargin included when true
 
+**Test ID**: `rest/unit/RSA17f/reauth-margin-included-0`
+
 ### Setup
 ```pseudo
 captured_requests = []
@@ -562,6 +588,8 @@ ASSERT request_body["allowReauthMargin"] == true
 
 ### RSA17f_2 - allowReauthMargin omitted when not provided
 
+**Test ID**: `rest/unit/RSA17f/reauth-margin-omitted-1`
+
 ### Setup
 ```pseudo
 captured_requests = []
@@ -594,6 +622,8 @@ ASSERT "allowReauthMargin" NOT IN request_body
 ```
 
 ### RSA17f_3 - Both issuedBefore and allowReauthMargin together
+
+**Test ID**: `rest/unit/RSA17f/both-options-together-2`
 
 ### Setup
 ```pseudo
@@ -635,6 +665,8 @@ ASSERT request_body["allowReauthMargin"] == true
 
 ### RSA17_Error_1 - Server error is propagated as an error
 
+**Test ID**: `rest/unit/RSA17/server-error-propagated-0`
+
 **Spec requirement:** A server-level error (e.g. 500) for the entire request
 is propagated as an error, not a per-target failure.
 
@@ -671,6 +703,8 @@ ASSERT error.statusCode == 500
 ## Request authentication
 
 ### RSA17_Auth_1 - Request uses Basic authentication
+
+**Test ID**: `rest/unit/RSA17/request-uses-basic-auth-0`
 
 **Spec requirement:** revokeTokens requires key-based auth (RSA17d rejects token
 auth). The POST request uses the client's configured Basic authentication.

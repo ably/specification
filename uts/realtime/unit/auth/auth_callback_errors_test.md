@@ -28,6 +28,8 @@ Key behaviours:
 
 ## RSA4c2 - authCallback error during CONNECTING transitions to DISCONNECTED
 
+**Test ID**: `realtime/unit/RSA4c2/callback-error-connecting-disconnected-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA4c | If an attempt to authenticate using authCallback results in an error, then RSA4c2/3 apply |
@@ -117,6 +119,8 @@ CLOSE_CLIENT(client)
 
 ## RSA4c2 - authCallback timeout during CONNECTING transitions to DISCONNECTED
 
+**Test ID**: `realtime/unit/RSA4c2/callback-timeout-connecting-disconnected-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA4c | If the attempt times out after realtimeRequestTimeout, then RSA4c2/3 apply |
@@ -192,6 +196,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4c3 - authCallback error while CONNECTED leaves connection CONNECTED
+
+**Test ID**: `realtime/unit/RSA4c3/callback-error-connected-stays-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -282,6 +288,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4d - authCallback returns 403 error during CONNECTING transitions to FAILED
+
+**Test ID**: `realtime/unit/RSA4d/callback-403-connecting-failed-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -374,6 +382,8 @@ CLOSE_CLIENT(client)
 
 ## RSA4d - authCallback 403 during RTN22 reauth transitions CONNECTED to FAILED
 
+**Test ID**: `realtime/unit/RSA4d/callback-403-reauth-failed-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA4d | If an authCallback results in an ErrorInfo with statusCode 403 as part of an attempt to authenticate, the client library should transition to the FAILED state |
@@ -455,6 +465,8 @@ CLOSE_CLIENT(client)
 
 ## RSA4f - authCallback returns invalid type treated as invalid format error
 
+**Test ID**: `realtime/unit/RSA4f/callback-invalid-type-format-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA4f | The following conditions imply that the token is in an invalid format: the object passed by authCallback is neither a String, JsonObject, TokenRequest object, nor TokenDetails object |
@@ -521,6 +533,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4f - authCallback returns token string exceeding 128KiB treated as invalid format
+
+**Test ID**: `realtime/unit/RSA4f/callback-oversized-token-format-1`
 
 | Spec | Requirement |
 |------|-------------|
@@ -589,6 +603,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4e - REST authCallback error produces error with code 40170
+
+**Test ID**: `realtime/unit/RSA4e/rest-callback-error-40170-0`
 
 | Spec | Requirement |
 |------|-------------|

@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL15a - attachSerial is updated from ATTACHED message
 
+**Test ID**: `realtime/unit/RTL15a/attach-serial-from-attached-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL15 | `RealtimeChannel#properties` is a `ChannelProperties` object with `attachSerial` and `channelSerial` |
@@ -81,6 +83,8 @@ CLOSE_CLIENT(client)
 
 ## RTL15a - attachSerial updated on server-initiated reattach
 
+**Test ID**: `realtime/unit/RTL15a/attach-serial-server-reattach-1`
+
 **Spec requirement:** `attachSerial` is updated with the `channelSerial` from each ATTACHED ProtocolMessage received.
 
 Tests that when the server sends an unsolicited ATTACHED message (e.g. RTL2g update), the `attachSerial` is updated.
@@ -136,6 +140,8 @@ CLOSE_CLIENT(client)
 
 ## RTL15b - channelSerial updated from ATTACHED message
 
+**Test ID**: `realtime/unit/RTL15b/channel-serial-from-attached-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL15b | `channelSerial` is updated whenever a ProtocolMessage with MESSAGE, PRESENCE, ANNOTATION, OBJECT, or ATTACHED action is received, set to the `channelSerial` of that message, if and only if that field is populated |
@@ -186,6 +192,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL15b - channelSerial updated from MESSAGE and PRESENCE actions
+
+**Test ID**: `realtime/unit/RTL15b/channel-serial-from-messages-1`
 
 **Spec requirement:** `channelSerial` is updated whenever a ProtocolMessage with MESSAGE, PRESENCE, ANNOTATION, OBJECT, or ATTACHED action is received.
 
@@ -257,6 +265,8 @@ CLOSE_CLIENT(client)
 
 ## RTL15b - channelSerial not updated when field is not populated
 
+**Test ID**: `realtime/unit/RTL15b/serial-not-updated-empty-2`
+
 **Spec requirement:** `channelSerial` is set to the channelSerial of the ProtocolMessage, if and only if that field is populated.
 
 Tests that receiving a protocol message without a `channelSerial` field does not clear or change the channel's existing `channelSerial`.
@@ -313,6 +323,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL15b - channelSerial not updated from irrelevant actions
+
+**Test ID**: `realtime/unit/RTL15b/serial-not-updated-irrelevant-3`
 
 **Spec requirement:** `channelSerial` is updated only for MESSAGE, PRESENCE, ANNOTATION, OBJECT, or ATTACHED actions.
 
@@ -382,6 +394,8 @@ CLOSE_CLIENT(client)
 
 ## RTL15b1 - channelSerial cleared on DETACHED state
 
+**Test ID**: `realtime/unit/RTL15b1/serial-cleared-detached-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL15b1 | If the channel enters the DETACHED, SUSPENDED, or FAILED state, it must clear its channelSerial |
@@ -438,6 +452,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL15b1 - channelSerial cleared on SUSPENDED state
+
+**Test ID**: `realtime/unit/RTL15b1/serial-cleared-suspended-1`
 
 **Spec requirement:** If the channel enters the SUSPENDED state, it must clear its `channelSerial`.
 
@@ -505,6 +521,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL15b1 - channelSerial cleared on FAILED state
+
+**Test ID**: `realtime/unit/RTL15b1/serial-cleared-failed-2`
 
 **Spec requirement:** If the channel enters the FAILED state, it must clear its `channelSerial`.
 

@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL13a - Server DETACHED on ATTACHED channel triggers immediate reattach
 
+**Test ID**: `realtime/unit/RTL13a/attached-reattach-triggered-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL13 | If the channel receives a server-initiated DETACHED when ATTACHING, ATTACHED, or SUSPENDED, specific handling applies |
@@ -87,6 +89,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL13a - Server DETACHED on SUSPENDED channel triggers immediate reattach
+
+**Test ID**: `realtime/unit/RTL13a/suspended-reattach-triggered-1`
 
 **Spec requirement:** If the channel is in the SUSPENDED state and receives a server-initiated DETACHED, an immediate reattach attempt should be made.
 
@@ -174,6 +178,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL13b - Failed reattach transitions to SUSPENDED with automatic retry
+
+**Test ID**: `realtime/unit/RTL13b/failed-reattach-suspended-retry-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -272,6 +278,8 @@ CLOSE_CLIENT(client)
 
 ## RTL13b - Server DETACHED while already ATTACHING transitions directly to SUSPENDED
 
+**Test ID**: `realtime/unit/RTL13b/attaching-detached-to-suspended-1`
+
 **Spec requirement:** If the channel was already in the ATTACHING state when the server-initiated DETACHED is received, the channel transitions directly to SUSPENDED (with automatic retry).
 
 Tests that a server-initiated DETACHED received while ATTACHING goes directly to SUSPENDED without another reattach attempt first.
@@ -354,6 +362,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL13b - Repeated failures cycle SUSPENDED -> ATTACHING indefinitely
+
+**Test ID**: `realtime/unit/RTL13b/repeated-failure-cycle-2`
 
 **Spec requirement:** If the re-attach also fails (timeout or DETACHED), the SUSPENDED -> retry cycle repeats indefinitely.
 
@@ -456,6 +466,8 @@ CLOSE_CLIENT(client)
 
 ## RTL13c - Retry cancelled when connection is no longer CONNECTED
 
+**Test ID**: `realtime/unit/RTL13c/retry-cancelled-disconnected-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL13c | If the connection is no longer CONNECTED, the automatic re-attach attempts described in RTL13b must be cancelled, as any implicit channel state changes will be covered by RTL3 |
@@ -541,6 +553,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL13a - DETACHED while DETACHING is not server-initiated
+
+**Test ID**: `realtime/unit/RTL13a/detaching-not-server-initiated-2`
 
 **Spec requirement:** RTL13 applies when the channel receives a server-initiated DETACHED when it is in ATTACHING, ATTACHED, or SUSPENDED. A channel in the DETACHING state has explicitly requested a detach, so a DETACHED response in that state is handled by the normal detach flow (RTL5), not RTL13.
 

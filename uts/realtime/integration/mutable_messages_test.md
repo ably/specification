@@ -49,6 +49,8 @@ AFTER ALL TESTS:
 
 ## RTL32 — Update a message via realtime and observe on subscriber
 
+**Test ID**: `realtime/integration/RTL32/update-message-observed-0`
+
 **Spec requirement:** RTL32b1 — `updateMessage()` sends a MESSAGE ProtocolMessage
 with `MESSAGE_UPDATE` action. RTL32d — returns `UpdateDeleteResult` from ACK.
 
@@ -154,6 +156,8 @@ AWAIT client_b.close()
 
 ## RTL32 — Delete a message via realtime and observe on subscriber
 
+**Test ID**: `realtime/integration/RTL32/delete-message-observed-1`
+
 **Spec requirement:** RTL32b1 — `deleteMessage()` sends a MESSAGE ProtocolMessage
 with `MESSAGE_DELETE` action.
 
@@ -242,6 +246,8 @@ AWAIT client_b.close()
 ---
 
 ## RTL32 — Append to a message via realtime and observe on subscriber
+
+**Test ID**: `realtime/integration/RTL32/append-message-observed-2`
 
 **Spec requirement:** RTL32b1 — `appendMessage()` sends a MESSAGE ProtocolMessage
 with `MESSAGE_APPEND` action.
@@ -332,6 +338,8 @@ AWAIT client_b.close()
 ---
 
 ## RTL32 — Full mutation lifecycle: update, append, delete observed in sequence
+
+**Test ID**: `realtime/integration/RTL32/full-mutation-lifecycle-3`
 
 **Spec requirement:** RTL32b1, RTL32d — all three mutation types delivered in order.
 
@@ -458,6 +466,8 @@ AWAIT client_b.close()
 
 ## RTL28, RTL31 — getMessage and getMessageVersions from realtime channel
 
+**Test ID**: `realtime/integration/RTL28/get-message-and-versions-0`
+
 **Spec requirement:** RTL28 — `RealtimeChannel#getMessage` same as `RestChannel#getMessage`.
 RTL31 — `RealtimeChannel#getMessageVersions` same as `RestChannel#getMessageVersions`.
 
@@ -546,6 +556,8 @@ AWAIT client.close()
 ---
 
 ## RTAN1, RTAN2, RTAN4 — Annotation publish, subscribe, and delete via realtime
+
+**Test ID**: `realtime/integration/RTAN1/annotation-publish-delete-0`
 
 **Spec requirement:** RTAN1c — publish sends ANNOTATION ProtocolMessage.
 RTAN2a — delete sends ANNOTATION_DELETE. RTAN4b — annotations delivered to subscribers.
@@ -671,6 +683,8 @@ AWAIT client_b.close()
 
 ## RTAN4c — Annotation subscribe with type filtering
 
+**Test ID**: `realtime/integration/RTAN4c/annotation-type-filtering-0`
+
 **Spec requirement:** RTAN4c — subscribe with a `type` filter delivers only
 annotations whose type matches.
 
@@ -787,6 +801,8 @@ AWAIT client_b.close()
 ---
 
 ## RTAN4d — Annotation subscribe implicitly attaches channel
+
+**Test ID**: `realtime/integration/RTAN4d/annotation-implicit-attach-0`
 
 **Spec requirement:** RTAN4d — subscribe has the same connection and channel state
 preconditions as `RealtimeChannel#subscribe`, including implicit attach.
