@@ -21,6 +21,8 @@ Push device authentication (`RSH6`) means adding either an `X-Ably-DeviceToken` 
 
 ## RSH7a1, RSH7a2, RSH7a3 — subscribeDevice sends POST with deviceId, channel name, and device auth
 
+**Test ID**: `rest/unit/RSH7a2/subscribe-device-post-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSH7a1 | Fails if the LocalDevice doesn't have a deviceIdentityToken |
@@ -82,6 +84,8 @@ ASSERT request.headers["X-Ably-DeviceToken"] == "test-device-identity-token"
 
 ## RSH7a1 — subscribeDevice fails if no deviceIdentityToken
 
+**Test ID**: `rest/unit/RSH7a1/subscribe-device-no-token-fails-0`
+
 **Spec requirement:** RSH7a1 — Fails if the LocalDevice doesn't have a `deviceIdentityToken`, ie. it isn't registered yet.
 
 Tests that `subscribeDevice()` fails when the local device has no `deviceIdentityToken`.
@@ -118,6 +122,8 @@ ASSERT error.message CONTAINS "deviceIdentityToken"
 ---
 
 ## RSH7b1, RSH7b2 — subscribeClient sends POST with clientId and channel name
+
+**Test ID**: `rest/unit/RSH7b2/subscribe-client-post-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -176,6 +182,8 @@ ASSERT body["clientId"] == "test-client"
 
 ## RSH7b1 — subscribeClient fails if no clientId
 
+**Test ID**: `rest/unit/RSH7b1/subscribe-client-no-clientid-fails-0`
+
 **Spec requirement:** RSH7b1 — Fails if the LocalDevice doesn't have a `clientId`.
 
 Tests that `subscribeClient()` fails when the local device has no `clientId`.
@@ -212,6 +220,8 @@ ASSERT error.message CONTAINS "clientId"
 ---
 
 ## RSH7c1, RSH7c2, RSH7c3 — unsubscribeDevice sends DELETE with deviceId, channel name, and device auth
+
+**Test ID**: `rest/unit/RSH7c2/unsubscribe-device-delete-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -269,6 +279,8 @@ ASSERT request.headers["X-Ably-DeviceToken"] == "test-device-identity-token"
 
 ## RSH7c1 — unsubscribeDevice fails if no deviceIdentityToken
 
+**Test ID**: `rest/unit/RSH7c1/unsubscribe-device-no-token-fails-0`
+
 **Spec requirement:** RSH7c1 — Fails if the LocalDevice doesn't have a `deviceIdentityToken`, ie. it isn't registered yet.
 
 Tests that `unsubscribeDevice()` fails when the local device has no `deviceIdentityToken`.
@@ -305,6 +317,8 @@ ASSERT error.message CONTAINS "deviceIdentityToken"
 ---
 
 ## RSH7d1, RSH7d2 — unsubscribeClient sends DELETE with clientId and channel name
+
+**Test ID**: `rest/unit/RSH7d2/unsubscribe-client-delete-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -358,6 +372,8 @@ ASSERT request.url.queryParams["clientId"] == "test-client"
 
 ## RSH7d1 — unsubscribeClient fails if no clientId
 
+**Test ID**: `rest/unit/RSH7d1/unsubscribe-client-no-clientid-fails-0`
+
 **Spec requirement:** RSH7d1 — Fails if the LocalDevice doesn't have a `clientId`.
 
 Tests that `unsubscribeClient()` fails when the local device has no `clientId`.
@@ -394,6 +410,8 @@ ASSERT error.message CONTAINS "clientId"
 ---
 
 ## RSH7e — listSubscriptions sends GET with channel, deviceId, clientId, and concatFilters
+
+**Test ID**: `rest/unit/RSH7e/list-subscriptions-with-filters-0`
 
 **Spec requirement:** RSH7e — `#listSubscriptions(params)` performs a GET request to `/push/channelSubscriptions` and returns a paginated result with `PushChannelSubscription` objects filtered by the provided params, the channel name, the device ID, and the client ID if it exists, as supported by the REST API. A `concatFilters` param needs to be set to `true` as well.
 
@@ -468,6 +486,8 @@ ASSERT result.items[1].clientId == "test-client"
 ---
 
 ## RSH7e — listSubscriptions omits clientId when LocalDevice has no clientId
+
+**Test ID**: `rest/unit/RSH7e/list-subscriptions-omits-clientid-1`
 
 **Spec requirement:** RSH7e — The client ID is included if it exists.
 

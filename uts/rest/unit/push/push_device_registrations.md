@@ -13,6 +13,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ## RSH1b1 — get returns DeviceDetails for known device
 
+**Test ID**: `rest/unit/RSH1b1/get-device-details-0`
+
 **Spec requirement:** RSH1b1 — `#get(deviceId)` performs a request to `/push/deviceRegistrations/:deviceId` and returns a `DeviceDetails` object.
 
 Tests that `get()` sends a GET request with the correct path and returns a parsed `DeviceDetails`.
@@ -70,6 +72,8 @@ ASSERT device.push.state == "Active"
 
 ## RSH1b1 — get returns error for unknown device
 
+**Test ID**: `rest/unit/RSH1b1/get-unknown-device-error-1`
+
 **Spec requirement:** RSH1b1 — Results in a not found error if the device cannot be found.
 
 Tests that `get()` propagates a 404 error when the device does not exist.
@@ -103,6 +107,8 @@ ASSERT error.statusCode == 404
 ---
 
 ## RSH1b1 — get URL-encodes deviceId
+
+**Test ID**: `rest/unit/RSH1b1/get-url-encodes-deviceid-2`
 
 **Spec requirement:** RSH1b1 — `#get(deviceId)` performs a request to `/push/deviceRegistrations/:deviceId`.
 
@@ -145,6 +151,8 @@ ASSERT captured_requests[0].url.path == "/push/deviceRegistrations/" + encode_ur
 ---
 
 ## RSH1b2 — list returns paginated DeviceDetails filtered by deviceId
+
+**Test ID**: `rest/unit/RSH1b2/list-filtered-by-deviceid-0`
 
 **Spec requirement:** RSH1b2 — `#list(params)` performs a request to `/push/deviceRegistrations` and returns a paginated result with `DeviceDetails` objects filtered by the provided params.
 
@@ -198,6 +206,8 @@ ASSERT result.items[0].id == "device-001"
 
 ## RSH1b2 — list returns paginated DeviceDetails filtered by clientId
 
+**Test ID**: `rest/unit/RSH1b2/list-filtered-by-clientid-1`
+
 **Spec requirement:** RSH1b2 — A test should exist filtering by `clientId`.
 
 Tests that `list()` sends a GET with `clientId` filter.
@@ -250,6 +260,8 @@ ASSERT result.items[1].clientId == "client-abc"
 
 ## RSH1b2 — list supports limit for pagination
 
+**Test ID**: `rest/unit/RSH1b2/list-with-limit-param-2`
+
 **Spec requirement:** RSH1b2 — A test should exist controlling the pagination with the `limit` attribute.
 
 Tests that `list()` forwards the `limit` parameter.
@@ -290,6 +302,8 @@ ASSERT captured_requests[0].url.queryParams["limit"] == "2"
 ---
 
 ## RSH1b3 — save issues PUT with DeviceDetails
+
+**Test ID**: `rest/unit/RSH1b3/save-put-device-details-0`
 
 **Spec requirement:** RSH1b3 — `#save(device)` issues a `PUT` request to `/push/deviceRegistrations/:deviceId` using the `DeviceDetails` object argument.
 
@@ -359,6 +373,8 @@ ASSERT result.push.state == "Active"
 ---
 
 ## RSH1b3 — save updates existing device
+
+**Test ID**: `rest/unit/RSH1b3/save-updates-existing-1`
 
 **Spec requirement:** RSH1b3 — A test should exist for a successful subsequent save with an update.
 
@@ -437,6 +453,8 @@ ASSERT request_count == 2
 
 ## RSH1b3 — save propagates server error
 
+**Test ID**: `rest/unit/RSH1b3/save-error-propagated-2`
+
 **Spec requirement:** RSH1b3 — A test should exist for a failed save operation.
 
 Tests that a server error during save is propagated to the caller.
@@ -478,6 +496,8 @@ ASSERT error.statusCode == 400
 
 ## RSH1b4 — remove issues DELETE for device
 
+**Test ID**: `rest/unit/RSH1b4/remove-delete-device-0`
+
 **Spec requirement:** RSH1b4 — `#remove(deviceId)` issues a `DELETE` request to `/push/deviceRegistrations/:deviceId`.
 
 Tests that `remove()` sends a DELETE request with the correct path.
@@ -516,6 +536,8 @@ ASSERT request.url.path == "/push/deviceRegistrations/" + encode_uri_component("
 
 ## RSH1b4 — remove succeeds for nonexistent device
 
+**Test ID**: `rest/unit/RSH1b4/remove-nonexistent-succeeds-1`
+
 **Spec requirement:** RSH1b4 — A test should exist that deletes a device that does not exist but still succeeds.
 
 Tests that removing a nonexistent device does not throw an error.
@@ -542,6 +564,8 @@ AWAIT client.push.admin.deviceRegistrations.remove("nonexistent-device")
 ---
 
 ## RSH1b5 — removeWhere issues DELETE with clientId param
+
+**Test ID**: `rest/unit/RSH1b5/remove-where-clientid-0`
 
 **Spec requirement:** RSH1b5 — `#removeWhere(params)` issues a `DELETE` request to `/push/deviceRegistrations` and deletes the registered devices matching the provided `params`.
 
@@ -582,6 +606,8 @@ ASSERT request.url.queryParams["clientId"] == "client-abc"
 
 ## RSH1b5 — removeWhere issues DELETE with deviceId param
 
+**Test ID**: `rest/unit/RSH1b5/remove-where-deviceid-1`
+
 **Spec requirement:** RSH1b5 — A test should exist that deletes devices by `deviceId`.
 
 Tests that `removeWhere()` sends a DELETE with `deviceId` as a query parameter.
@@ -617,6 +643,8 @@ ASSERT captured_requests[0].url.queryParams["deviceId"] == "device-001"
 ---
 
 ## RSH1b5 — removeWhere succeeds with no matching devices
+
+**Test ID**: `rest/unit/RSH1b5/remove-where-no-match-succeeds-2`
 
 **Spec requirement:** RSH1b5 — A test should exist that issues a delete for devices with no matching params and checks the operation still succeeds.
 

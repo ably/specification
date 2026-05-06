@@ -18,6 +18,8 @@ Fallback tests require the mock to support:
 
 ## RSC15m - Fallback only when fallback domains non-empty
 
+**Test ID**: `rest/unit/RSC15m/no-fallback-empty-hosts-0`
+
 **Spec requirement:** Fallback retry is only attempted when fallback hosts are configured (non-empty list).
 
 Tests that fallback behavior is skipped when no fallback hosts are configured.
@@ -44,6 +46,8 @@ ASSERT error.statusCode == 500
 ---
 
 ## RSC15a - Fallback hosts tried in random order
+
+**Test ID**: `rest/unit/RSC15a/fallback-random-order-0`
 
 **Spec requirement:** When the primary host fails, fallback hosts must be tried in random order to distribute load.
 
@@ -96,6 +100,8 @@ ASSERT ALL host IN fallback_hosts_used: host IN expected_fallbacks
 ---
 
 ## RSC15l - Qualifying errors trigger fallback
+
+**Test ID**: `rest/unit/RSC15l/qualifying-errors-trigger-fallback-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -170,6 +176,8 @@ ASSERT mock_http.captured_requests.length == 2
 
 ## RSC15l4 - CloudFront errors trigger fallback
 
+**Test ID**: `rest/unit/RSC15l4/cloudfront-error-triggers-fallback-0`
+
 **Spec requirement:** Responses with a CloudFront Server header and status >= 400 must trigger fallback retry.
 
 Tests that responses with CloudFront server header and status >= 400 trigger fallback.
@@ -206,6 +214,8 @@ These tests verify that fallback behavior works correctly for different network 
 
 ### RSC15l - Connection refused triggers fallback
 
+**Test ID**: `rest/unit/RSC15l/connection-refused-fallback-0`
+
 ```pseudo
 request_count = 0
 
@@ -236,6 +246,8 @@ ASSERT request_count == 2
 
 ### RSC15l - DNS error triggers fallback
 
+**Test ID**: `rest/unit/RSC15l/dns-error-fallback-1`
+
 ```pseudo
 request_count = 0
 
@@ -264,6 +276,8 @@ ASSERT request_count == 2
 ```
 
 ### RSC15l - Connection timeout triggers fallback
+
+**Test ID**: `rest/unit/RSC15l/connection-timeout-fallback-2`
 
 ```pseudo
 request_count = 0
@@ -296,6 +310,8 @@ ASSERT request_count == 2
 ```
 
 ### RSC15l - Request timeout triggers fallback
+
+**Test ID**: `rest/unit/RSC15l/request-timeout-fallback-3`
 
 ```pseudo
 request_count = 0
@@ -333,6 +349,8 @@ ASSERT captured_hosts[0] != captured_hosts[1]
 
 ### RSC15l - HTTP 5xx errors trigger fallback
 
+**Test ID**: `rest/unit/RSC15l/http-5xx-triggers-fallback-4`
+
 ```pseudo
 FOR EACH status_code IN [500, 501, 502, 503, 504]:
   request_count = 0
@@ -359,6 +377,8 @@ FOR EACH status_code IN [500, 501, 502, 503, 504]:
 
 ### RSC15l - HTTP 4xx errors do NOT trigger fallback
 
+**Test ID**: `rest/unit/RSC15l/http-4xx-no-fallback-5`
+
 ```pseudo
 FOR EACH status_code IN [400, 401, 404]:
   request_count = 0
@@ -384,6 +404,8 @@ FOR EACH status_code IN [400, 401, 404]:
 ---
 
 ## RSC15j - Host header matches request host
+
+**Test ID**: `rest/unit/RSC15j/host-header-matches-request-0`
 
 **Spec requirement:** The HTTP Host header must match the actual host being requested, including for fallback hosts.
 
@@ -417,6 +439,8 @@ ASSERT request_1.headers["Host"] != request_2.headers["Host"]
 ---
 
 ## RSC15f - Successful fallback host cached
+
+**Test ID**: `rest/unit/RSC15f/successful-fallback-cached-0`
 
 **Spec requirement:** When a fallback host succeeds, it should be cached and used for subsequent requests (for a limited time).
 
@@ -465,6 +489,8 @@ ASSERT mock_http.captured_requests[2].url.host == "main.a.fallback.ably-realtime
 
 ## RSC15f - Cached fallback expires after timeout
 
+**Test ID**: `rest/unit/RSC15f/cached-fallback-expires-1`
+
 **Spec requirement:** Cached fallback hosts must expire after `fallbackRetryTimeout` duration, after which the primary host is tried again.
 
 Tests that cached fallback host is cleared after `fallbackRetryTimeout`.
@@ -506,6 +532,8 @@ ASSERT mock_http.captured_requests[2].url.host == "main.realtime.ably.net"
 ---
 
 ## RSC15f - Expired preferred fallback host not resurrected by late in-flight success
+
+**Test ID**: `rest/unit/RSC15f/expired-not-resurrected-2`
 
 **Spec requirement:** After `fallbackRetryTimeout` has elapsed the preference must be un-stored and future requests must restart the fallback sequence from the primary host. A late-arriving successful response against the previously-preferred fallback must not re-establish it as the preference.
 
@@ -591,6 +619,8 @@ ASSERT mock_http.captured_requests[4].url.host == "main.realtime.ably.net"
 
 ## REC1a - Default primary domain
 
+**Test ID**: `rest/unit/REC1a/default-primary-domain-0`
+
 **Spec requirement:** When no endpoint configuration is provided, the default primary domain is `rest.ably.io` for REST and `realtime.ably.io` for Realtime.
 
 Tests that the default primary domain is used when no endpoint options are specified.
@@ -619,6 +649,8 @@ ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
 
 ## REC1b2 - Endpoint option as explicit hostname (with period)
 
+**Test ID**: `rest/unit/REC1b2/explicit-hostname-with-period-0`
+
 Tests that when `endpoint` contains a period (`.`), it's treated as an explicit hostname.
 
 ### Setup
@@ -646,6 +678,8 @@ ASSERT mock_http.captured_requests[0].url.host == "custom.ably.example.com"
 
 ## REC1b2 - Endpoint option as localhost
 
+**Test ID**: `rest/unit/REC1b2/endpoint-localhost-1`
+
 Tests that `endpoint: "localhost"` is treated as an explicit hostname.
 
 ### Setup
@@ -672,6 +706,8 @@ ASSERT mock_http.captured_requests[0].url.host == "localhost"
 ---
 
 ## REC1b2 - Endpoint option as IPv6 address
+
+**Test ID**: `rest/unit/REC1b2/endpoint-ipv6-address-2`
 
 Tests that `endpoint` containing `::` is treated as an explicit hostname (IPv6).
 
@@ -702,6 +738,8 @@ ASSERT mock_http.captured_requests[0].url.host == "::1" OR
 
 ## REC1b3 - Endpoint option as nonprod routing policy
 
+**Test ID**: `rest/unit/REC1b3/nonprod-routing-policy-0`
+
 Tests that `endpoint: "nonprod:[id]"` resolves to `[id].realtime.ably-nonprod.net`.
 
 ### Setup
@@ -728,6 +766,8 @@ ASSERT mock_http.captured_requests[0].url.host == "staging.realtime.ably-nonprod
 ---
 
 ## REC1b4 - Endpoint option as production routing policy
+
+**Test ID**: `rest/unit/REC1b4/production-routing-policy-0`
 
 Tests that `endpoint: "[id]"` (without period or nonprod prefix) resolves to `[id].realtime.ably.net`.
 
@@ -756,6 +796,8 @@ ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
 
 ## REC1b1 - Endpoint conflicts with deprecated environment option
 
+**Test ID**: `rest/unit/REC1b1/endpoint-conflicts-environment-0`
+
 Tests that specifying both `endpoint` and `environment` is invalid.
 
 ### Setup
@@ -776,6 +818,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 ---
 
 ## REC1b1 - Endpoint conflicts with deprecated restHost option
+
+**Test ID**: `rest/unit/REC1b1/endpoint-conflicts-resthost-1`
 
 Tests that specifying both `endpoint` and `restHost` is invalid.
 
@@ -798,6 +842,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 
 ## REC1b1 - Endpoint conflicts with deprecated realtimeHost option
 
+**Test ID**: `rest/unit/REC1b1/endpoint-conflicts-realtimehost-2`
+
 Tests that specifying both `endpoint` and `realtimeHost` is invalid.
 
 ### Setup
@@ -819,6 +865,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 
 ## REC1b1 - Endpoint conflicts with deprecated fallbackHostsUseDefault option
 
+**Test ID**: `rest/unit/REC1b1/endpoint-conflicts-fallback-default-3`
+
 Tests that specifying both `endpoint` and `fallbackHostsUseDefault` is invalid.
 
 ### Setup
@@ -839,6 +887,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 ---
 
 ## REC1c2 - Deprecated environment option determines primary domain
+
+**Test ID**: `rest/unit/REC1c2/environment-sets-primary-domain-0`
 
 Tests that the deprecated `environment` option sets primary domain to `[id].realtime.ably.net`.
 
@@ -867,6 +917,8 @@ ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
 
 ## REC1c1 - Environment conflicts with restHost
 
+**Test ID**: `rest/unit/REC1c1/environment-conflicts-resthost-0`
+
 Tests that specifying both `environment` and `restHost` is invalid.
 
 ### Setup
@@ -888,6 +940,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 
 ## REC1c1 - Environment conflicts with realtimeHost
 
+**Test ID**: `rest/unit/REC1c1/environment-conflicts-realtimehost-1`
+
 Tests that specifying both `environment` and `realtimeHost` is invalid.
 
 ### Setup
@@ -908,6 +962,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 ---
 
 ## REC1d1 - Deprecated restHost option determines primary domain
+
+**Test ID**: `rest/unit/REC1d1/resthost-sets-primary-domain-0`
 
 Tests that the deprecated `restHost` option sets the primary domain.
 
@@ -936,6 +992,8 @@ ASSERT mock_http.captured_requests[0].url.host == "custom.rest.example.com"
 
 ## REC1d2 - Deprecated realtimeHost option determines primary domain (when restHost not set)
 
+**Test ID**: `rest/unit/REC1d2/realtimehost-sets-primary-domain-0`
+
 Tests that `realtimeHost` sets primary domain when `restHost` is not specified.
 
 ### Setup
@@ -962,6 +1020,8 @@ ASSERT mock_http.captured_requests[0].url.host == "custom.realtime.example.com"
 ---
 
 ## REC1d - restHost takes precedence over realtimeHost
+
+**Test ID**: `rest/unit/REC1d/resthost-precedence-over-realtimehost-0`
 
 Tests that when both `restHost` and `realtimeHost` are specified, `restHost` is used for REST requests.
 
@@ -993,6 +1053,8 @@ ASSERT mock_http.captured_requests[0].url.host == "rest.example.com"
 # REC2 - Fallback Domains Configuration
 
 ## REC2c1 - Default fallback domains
+
+**Test ID**: `rest/unit/REC2c1/default-fallback-domains-0`
 
 **Spec requirement:** When using default configuration, fallback domains follow the pattern `[a-e].ably-realtime.com`.
 
@@ -1035,6 +1097,8 @@ ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
 
 ## REC2a2 - Custom fallbackHosts option
 
+**Test ID**: `rest/unit/REC2a2/custom-fallback-hosts-0`
+
 Tests that the `fallbackHosts` option overrides default fallbacks.
 
 ### Setup
@@ -1065,6 +1129,8 @@ ASSERT mock_http.captured_requests[1].url.host IN ["fb1.example.com", "fb2.examp
 
 ## REC2a1 - fallbackHosts conflicts with fallbackHostsUseDefault
 
+**Test ID**: `rest/unit/REC2a1/fallback-hosts-conflicts-use-default-0`
+
 Tests that specifying both `fallbackHosts` and `fallbackHostsUseDefault` is invalid.
 
 ### Setup
@@ -1085,6 +1151,8 @@ ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message 
 ---
 
 ## REC2b - Deprecated fallbackHostsUseDefault option
+
+**Test ID**: `rest/unit/REC2b/fallback-hosts-use-default-0`
 
 Tests that `fallbackHostsUseDefault: true` uses the default fallback domains.
 
@@ -1126,6 +1194,8 @@ ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
 
 ## REC2c2 - Explicit hostname endpoint has no fallbacks
 
+**Test ID**: `rest/unit/REC2c2/explicit-hostname-no-fallbacks-0`
+
 Tests that when `endpoint` is an explicit hostname, fallback domains are empty.
 
 ### Setup
@@ -1155,6 +1225,8 @@ ASSERT mock_http.captured_requests[0].url.host == "custom.ably.example.com"
 ---
 
 ## REC2c3 - Nonprod routing policy fallback domains
+
+**Test ID**: `rest/unit/REC2c3/nonprod-fallback-domains-0`
 
 Tests that nonprod routing policy has corresponding nonprod fallback domains.
 
@@ -1194,6 +1266,8 @@ ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
 
 ## REC2c4 - Production routing policy fallback domains (via endpoint)
 
+**Test ID**: `rest/unit/REC2c4/production-endpoint-fallback-domains-0`
+
 Tests that production routing policy via `endpoint` has corresponding fallback domains.
 
 ### Setup
@@ -1231,6 +1305,8 @@ ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
 ---
 
 ## REC2c5 - Production routing policy fallback domains (via deprecated environment)
+
+**Test ID**: `rest/unit/REC2c5/production-environment-fallback-domains-0`
 
 Tests that production routing policy via deprecated `environment` has corresponding fallback domains.
 
@@ -1270,6 +1346,8 @@ ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
 
 ## REC2c6 - Custom restHost has no fallbacks
 
+**Test ID**: `rest/unit/REC2c6/custom-resthost-no-fallbacks-0`
+
 Tests that deprecated `restHost` option results in no fallback domains.
 
 ### Setup
@@ -1299,6 +1377,8 @@ ASSERT mock_http.captured_requests[0].url.host == "custom.rest.example.com"
 ---
 
 ## REC2c6 - Custom realtimeHost has no fallbacks
+
+**Test ID**: `rest/unit/REC2c6/custom-realtimehost-no-fallbacks-1`
 
 Tests that deprecated `realtimeHost` option results in no fallback domains.
 
@@ -1331,6 +1411,8 @@ ASSERT mock_http.captured_requests[0].url.host == "custom.realtime.example.com"
 # REC3 - Connectivity Check URL
 
 ## REC3a - Default connectivity check URL
+
+**Test ID**: `rest/unit/REC3a/default-connectivity-check-url-0`
 
 Tests that the default connectivity check URL is `https://internet-up.ably-realtime.com/is-the-internet-up.txt`.
 
@@ -1372,6 +1454,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## REC3b - Custom connectivity check URL
+
+**Test ID**: `rest/unit/REC3b/custom-connectivity-check-url-0`
 
 Tests that the `connectivityCheckUrl` option overrides the default.
 
@@ -1415,6 +1499,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## REC3 - Connectivity check response validation
+
+**Test ID**: `rest/unit/REC3/connectivity-check-validation-0`
 
 Tests that the connectivity check expects a specific response.
 

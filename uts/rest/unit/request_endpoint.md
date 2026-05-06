@@ -17,6 +17,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ### RSC25 - Default primary domain used for requests
 
+**Test ID**: `rest/unit/RSC25/default-primary-domain-0`
+
 Tests that REST requests are sent to the default primary domain when no endpoint configuration is provided.
 
 #### Setup
@@ -44,6 +46,8 @@ ASSERT mock_http.captured_requests[0].url.host == DEFAULT_REST_HOST
 ---
 
 ### RSC25 - Custom endpoint used for requests
+
+**Test ID**: `rest/unit/RSC25/custom-endpoint-domain-1`
 
 Tests that REST requests are sent to a custom production routing policy domain.
 
@@ -76,6 +80,8 @@ ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
 
 ### RSC25 - Multiple requests all go to primary domain
 
+**Test ID**: `rest/unit/RSC25/multiple-requests-primary-domain-2`
+
 Tests that successive requests continue to use the primary domain (no unexpected host switching).
 
 #### Setup
@@ -106,6 +112,8 @@ FOR EACH request IN mock_http.captured_requests:
 ---
 
 ### RSC25 - Primary domain tried first before fallback
+
+**Test ID**: `rest/unit/RSC25/primary-tried-before-fallback-3`
 
 Tests that when the primary host fails and a fallback succeeds, the primary was attempted first.
 
@@ -143,6 +151,8 @@ ASSERT mock_http.captured_requests[1].url.host != DEFAULT_REST_HOST
 ---
 
 ### RSC25 - Request path preserved when sent to primary domain
+
+**Test ID**: `rest/unit/RSC25/request-path-preserved-4`
 
 Tests that the request path and query parameters are correctly constructed when sent to the primary domain.
 

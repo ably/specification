@@ -13,6 +13,8 @@ See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastruct
 
 ## RSC5 - Auth Attribute
 
+**Test ID**: `rest/unit/RSC5/auth-attribute-accessible-0`
+
 **Spec requirement:** `RestClient#auth` attribute provides access to the `Auth` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor.
 
 ### Setup
@@ -31,6 +33,8 @@ ASSERT client.auth IS Auth
 ---
 
 ## RSC7e - X-Ably-Version header
+
+**Test ID**: `rest/unit/RSC7e/ably-version-header-0`
 
 **Spec requirement:** All REST requests must include the `X-Ably-Version` header with the spec version.
 
@@ -67,6 +71,8 @@ ASSERT captured_request.headers["X-Ably-Version"] matches pattern "[0-9.]+"
 ---
 
 ## RSC7d, RSC7d1, RSC7d2 - Ably-Agent header
+
+**Test ID**: `rest/unit/RSC7d/ably-agent-header-format-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -105,6 +111,8 @@ ASSERT agent matches pattern "ably-[a-z]+/[0-9]+\\.[0-9]+\\.[0-9]+"
 
 ## RSC7c - Request ID when addRequestIds enabled
 
+**Test ID**: `rest/unit/RSC7c/request-id-included-0`
+
 **Spec requirement:** When `addRequestIds` is true, all requests must include a `request_id` query parameter with a unique URL-safe identifier.
 
 Tests that `request_id` query parameter is included when `addRequestIds` is true.
@@ -139,6 +147,8 @@ ASSERT request_id matches pattern "[A-Za-z0-9_-]+"
 ---
 
 ## RSC7c - Request ID preserved on fallback retry
+
+**Test ID**: `rest/unit/RSC7c/request-id-preserved-fallback-1`
 
 **Spec requirement:** The same `request_id` must be preserved when retrying a failed request to fallback hosts.
 
@@ -177,6 +187,8 @@ ASSERT request_id_1 == request_id_2  # Same ID for retry
 ---
 
 ## RSC8a, RSC8b - Protocol selection
+
+**Test ID**: `rest/unit/RSC8a/protocol-selection-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -221,6 +233,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSC8c - Accept and Content-Type headers
 
+**Test ID**: `rest/unit/RSC8c/accept-content-type-headers-0`
+
 **Spec requirement:** Accept and Content-Type headers must match the configured protocol (application/json or application/x-msgpack).
 
 Tests that Accept and Content-Type headers reflect the configured protocol.
@@ -251,6 +265,8 @@ ASSERT request.headers["Content-Type"] == "application/json"
 ---
 
 ## RSC8d - Handle mismatched response Content-Type
+
+**Test ID**: `rest/unit/RSC8d/mismatched-response-content-type-0`
 
 **Spec requirement:** The client must be able to decode responses in either JSON or MessagePack format, regardless of which format was requested.
 
@@ -285,6 +301,8 @@ ASSERT result IS DateTime OR result == 1234567890000
 ---
 
 ## RSC8e - Unsupported Content-Type handling
+
+**Test ID**: `rest/unit/RSC8e/unsupported-content-type-0`
 
 **Spec requirement:** When the server returns an unsupported Content-Type, the client must raise an error with code 40013 for 2xx responses, or propagate the HTTP status code for error responses.
 
@@ -340,6 +358,8 @@ ASSERT error.code == 40013
 
 ## RSC8 - Error response decoded from MessagePack
 
+**Test ID**: `rest/unit/RSC8/error-decoded-from-msgpack-0`
+
 **Spec requirement:** When the server returns an error response with `Content-Type: application/x-msgpack`, the SDK must decode the error body using MessagePack (not JSON). The error code, status code, and message must be correctly extracted. This is the default behaviour when `useBinaryProtocol` is `true` (the default), because the `Accept: application/x-msgpack` header causes the server to return all responses — including errors — in MessagePack format.
 
 ### Setup
@@ -391,6 +411,8 @@ losing the real error information. The SDK must check the response
 
 ## RSC13 - Request timeouts
 
+**Test ID**: `rest/unit/RSC13/request-timeout-enforced-0`
+
 **Spec requirement:** HTTP requests must respect the `httpRequestTimeout` option and fail with code 50003 when the timeout is exceeded.
 
 Tests that configured timeouts are applied to HTTP requests.
@@ -439,6 +461,8 @@ short timeout duration (e.g. 100ms), not the full mock delay.
 
 ## RSC17 - ClientId Attribute
 
+**Test ID**: `rest/unit/RSC17/client-id-from-options-0`
+
 **Spec requirement:** When instantiating a `RestClient`, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`.
 
 ### Setup
@@ -459,6 +483,8 @@ ASSERT client.clientId == client.auth.clientId
 
 ## RSC17 - ClientId Attribute
 
+**Test ID**: `rest/unit/RSC17/client-id-matches-auth-1`
+
 **Spec requirement:** When instantiating a `RestClient`, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`.
 
 ### Setup
@@ -478,6 +504,8 @@ ASSERT client.clientId == client.auth.clientId
 ---
 
 ## RSC18 - TLS configuration
+
+**Test ID**: `rest/unit/RSC18/tls-controls-protocol-scheme-0`
 
 **Spec requirement:** The `tls` option controls whether HTTPS (true, default) or HTTP (false) is used for REST requests.
 
@@ -516,6 +544,8 @@ FOR EACH test_case IN test_cases:
 ---
 
 ## RSC18 - Basic auth over HTTP rejected
+
+**Test ID**: `rest/unit/RSC18/basic-auth-over-http-rejected-1`
 
 **Spec requirement:** Basic authentication (API key) must be rejected when `tls` is false. Token authentication is permitted over HTTP. Error code 40103.
 

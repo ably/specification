@@ -12,6 +12,8 @@ No mocks required - these verify type structure, constructors, and encoding.
 
 ## TM2a-TM2i - Message attributes
 
+**Test ID**: `rest/unit/TM2a/message-attributes-0`
+
 **Spec requirement:** Message type must provide all required attributes according to TM2a-TM2i specifications.
 
 | Spec | Attribute | Description |
@@ -78,6 +80,8 @@ ASSERT message.extras["push"]["notification"]["title"] == "Hello"
 
 ## TM3 - fromEncoded / fromEncodedArray
 
+**Test ID**: `rest/unit/TM3/from-encoded-deserialization-0`
+
 **Spec requirement (TM3):** `fromEncoded` and `fromEncodedArray` are alternative constructors that take an already-deserialized Message-like object (or array of such), and optionally a `channelOptions`, and return a `Message` (or array of `Messages`) that is decoded and decrypted as specified in RSL6. The idiomatic method name varies by SDK (e.g., `fromEncoded` in JS, `fromJson`/`fromMap` in Dart).
 
 Tests that `fromEncoded` correctly deserializes wire-format messages.
@@ -109,6 +113,8 @@ ASSERT message.extras["headers"]["x-custom"] == "value"
 ---
 
 ## TM3 - fromEncoded decodes encoding field
+
+**Test ID**: `rest/unit/TM3/from-encoded-decodes-encoding-1`
 
 **Spec requirement (TM3):** `fromEncoded` decodes data based on the `encoding` field, with any residual transforms left in the `encoding` property per RSL6b.
 
@@ -143,6 +149,8 @@ FOR EACH test_case IN test_cases:
 
 ## TM4 - Message constructors
 
+**Test ID**: `rest/unit/TM4/message-constructors-0`
+
 **Spec requirement (TM4):** `Message` has constructors `constructor(name: String?, data: Data?)` and `constructor(name: String?, data: Data?, clientId: String?)`.
 
 Tests that `Message` can be constructed with the specified signatures.
@@ -171,6 +179,8 @@ ASSERT message.data IS null OR message.data IS undefined
 
 ## TM - Null/missing attributes
 
+**Test ID**: `rest/unit/TM/null-missing-attributes-0`
+
 **Spec requirement:** Message type must handle null or missing optional attributes correctly.
 
 Tests that null or missing attributes are handled correctly.
@@ -191,6 +201,8 @@ ASSERT message.timestamp IS null OR message.timestamp IS undefined
 ---
 
 ## TM - Message with extras
+
+**Test ID**: `rest/unit/TM/message-with-extras-1`
 
 **Spec requirement:** Message extras field must support arbitrary metadata including push notification configuration (TM2h).
 

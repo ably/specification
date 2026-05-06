@@ -16,6 +16,8 @@ channel state effects on queued presence actions (RTL11).
 
 ## RTP1 - HAS_PRESENCE flag triggers sync
 
+**Test ID**: `realtime/unit/RTP1/has-presence-triggers-sync-0`
+
 **Spec requirement:** When a channel ATTACHED ProtocolMessage is received with the
 HAS_PRESENCE flag set, the server will perform a SYNC operation. If the flag is 0
 or absent, the presence map should be considered in sync immediately with no members.
@@ -73,6 +75,8 @@ CLOSE_CLIENT(client)
 
 ## RTP1 - No HAS_PRESENCE flag means empty presence
 
+**Test ID**: `realtime/unit/RTP1/no-has-presence-empty-1`
+
 **Spec requirement:** If the flag is 0 or absent, the presence map should be considered
 in sync immediately with no members present on the channel.
 
@@ -117,6 +121,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP1, RTP19a - No HAS_PRESENCE clears existing members
+
+**Test ID**: `realtime/unit/RTP1/no-has-presence-clears-existing-2`
 
 **Spec requirement (RTP19a):** If the PresenceMap has existing members when an ATTACHED
 message is received without a HAS_PRESENCE flag, emit a LEAVE event for each existing
@@ -214,6 +220,8 @@ CLOSE_CLIENT(client)
 
 ## RTP5a - DETACHED clears both presence maps
 
+**Test ID**: `realtime/unit/RTP5a/detached-clears-presence-maps-0`
+
 **Spec requirement:** If the channel enters the DETACHED state, all queued presence
 messages fail immediately, and both the PresenceMap and internal PresenceMap (RTP17)
 are cleared. LEAVE events should NOT be emitted when clearing.
@@ -286,6 +294,8 @@ CLOSE_CLIENT(client)
 
 ## RTP5a - FAILED clears both presence maps
 
+**Test ID**: `realtime/unit/RTP5a/failed-clears-presence-maps-1`
+
 **Spec requirement:** Same as DETACHED — FAILED state clears both maps, no LEAVE emitted.
 
 ### Setup
@@ -353,6 +363,8 @@ CLOSE_CLIENT(client)
 
 ## RTP5b - ATTACHED sends queued presence messages
 
+**Test ID**: `realtime/unit/RTP5b/attached-sends-queued-presence-0`
+
 **Spec requirement:** If a channel enters the ATTACHED state then all queued presence
 messages will be sent immediately.
 
@@ -411,6 +423,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP5f - SUSPENDED maintains presence map
+
+**Test ID**: `realtime/unit/RTP5f/suspended-maintains-presence-map-0`
 
 **Spec requirement:** If the channel enters SUSPENDED, all queued presence messages fail
 immediately, but the PresenceMap is maintained. This ensures that when the channel later
@@ -476,6 +490,8 @@ CLOSE_CLIENT(client)
 
 ## RTP13 - syncComplete attribute
 
+**Test ID**: `realtime/unit/RTP13/sync-complete-attribute-0`
+
 **Spec requirement:** RealtimePresence#syncComplete is true if the initial SYNC
 operation has completed for the members present on the channel.
 
@@ -540,6 +556,8 @@ CLOSE_CLIENT(client)
 
 ## RTL9, RTL9a - RealtimeChannel#presence attribute
 
+**Test ID**: `realtime/unit/RTL9/presence-attribute-0`
+
 **Spec requirement (RTL9):** `RealtimeChannel#presence` attribute.
 **Spec requirement (RTL9a):** Returns the `RealtimePresence` object for this channel.
 
@@ -579,6 +597,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL11 - Queued presence actions fail on DETACHED
+
+**Test ID**: `realtime/unit/RTL11/queued-presence-fail-detached-0`
 
 **Spec requirement (RTL11):** If a channel enters the DETACHED, SUSPENDED or FAILED
 state, then all presence actions that are still queued for send on that channel per
@@ -644,6 +664,8 @@ CLOSE_CLIENT(client)
 
 ## RTL11 - Queued presence actions fail on SUSPENDED
 
+**Test ID**: `realtime/unit/RTL11/queued-presence-fail-suspended-1`
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL11-suspended-${random_id()}"
@@ -701,6 +723,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL11 - Queued presence actions fail on FAILED
+
+**Test ID**: `realtime/unit/RTL11/queued-presence-fail-failed-2`
 
 ### Setup
 ```pseudo
@@ -760,6 +784,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL11a - ACK/NACK unaffected by channel state changes
+
+**Test ID**: `realtime/unit/RTL11a/ack-nack-unaffected-by-state-0`
 
 **Spec requirement (RTL11a):** For clarity, any messages awaiting an ACK or NACK are
 unaffected by channel state changes i.e. a channel that becomes detached following an

@@ -32,6 +32,8 @@ AFTER ALL TESTS:
 
 ## RTL7a - Subscribe with no name filter receives all messages
 
+**Test ID**: `realtime/integration/RTL7a/subscribe-all-messages-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL7a | Subscribe with a single listener argument subscribes to all messages |
@@ -99,6 +101,8 @@ CLOSE_CLIENT(subscriber)
 ---
 
 ## RTL7b - Subscribe with name filter receives only matching messages
+
+**Test ID**: `realtime/integration/RTL7b/subscribe-filtered-by-name-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -177,6 +181,8 @@ CLOSE_CLIENT(subscriber)
 ---
 
 ## RTL7 - Bidirectional message flow
+
+**Test ID**: `realtime/integration/RTL7/bidirectional-message-flow-0`
 
 | Spec | Requirement |
 |------|-------------|

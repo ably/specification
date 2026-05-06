@@ -69,6 +69,8 @@ small vcdiff deltas rather than sending full messages.
 
 ## PC3 - Delta plugin decodes messages end-to-end
 
+**Test ID**: `realtime/integration/PC3/delta-decode-end-to-end-0`
+
 **Spec requirement:** A plugin provided with the PluginType key `vcdiff` should be
 capable of decoding vcdiff-encoded messages.
 
@@ -143,6 +145,8 @@ client.close()
 ---
 
 ## RTL19b - Dissimilar payloads received without delta encoding
+
+**Test ID**: `realtime/integration/RTL19b/dissimilar-payloads-no-delta-0`
 
 **Spec requirement:** In the case of a non-delta message, the resulting `data` value
 is stored as the base payload.
@@ -231,6 +235,8 @@ client.close()
 
 ## PC3 - No deltas without delta channel param
 
+**Test ID**: `realtime/integration/PC3/no-deltas-without-param-1`
+
 **Spec requirement:** The vcdiff plugin is only used when the channel is configured to
 request delta compression from the server.
 
@@ -294,6 +300,8 @@ client.close()
 ---
 
 ## RTL18, RTL18b, RTL18c, RTL20 - Recovery after last message ID mismatch
+
+**Test ID**: `realtime/integration/RTL18/recovery-message-id-mismatch-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -398,6 +406,8 @@ client.close()
 
 ## RTL18, RTL18c - Recovery after decode failure
 
+**Test ID**: `realtime/integration/RTL18/recovery-decode-failure-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL18 | Decode failure triggers automatic recovery |
@@ -473,6 +483,8 @@ client.close()
 ---
 
 ## PC3 - No plugin causes FAILED state
+
+**Test ID**: `realtime/integration/PC3/no-plugin-causes-failed-2`
 
 **Spec requirement:** Without a vcdiff decoder plugin, vcdiff-encoded messages cannot
 be decoded and the channel should transition to FAILED.

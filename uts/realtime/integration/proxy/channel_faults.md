@@ -55,6 +55,8 @@ AFTER EACH TEST:
 
 ## Test 13: RTL4f -- Attach timeout (server doesn't respond)
 
+**Test ID**: `realtime/proxy/RTL4f/attach-timeout-suppressed-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL4f | If an ATTACHED ProtocolMessage is not received within realtimeRequestTimeout, the attach request should be treated as though it has failed and the channel should transition to the SUSPENDED state |
@@ -159,6 +161,8 @@ FOR frame IN attach_frames:
 
 ## Test 14: RTL14 -- Server responds with ERROR to ATTACH
 
+**Test ID**: `realtime/proxy/RTL14/error-on-attach-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL14 | If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to the FAILED state and the RealtimeChannel.errorReason should be set |
@@ -253,6 +257,8 @@ ASSERT client.connection.state == ConnectionState.connected
 ---
 
 ## Test 15: RTL5f -- Detach timeout (server doesn't respond)
+
+**Test ID**: `realtime/proxy/RTL5f/detach-timeout-suppressed-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -352,6 +358,8 @@ ASSERT client.connection.state == ConnectionState.connected
 
 ## Test 16: RTL13a -- Server sends unsolicited DETACHED, channel re-attaches
 
+**Test ID**: `realtime/proxy/RTL13a/unsolicited-detach-reattach-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL13a | If the channel is ATTACHED and receives a server-initiated DETACHED, an immediate reattach attempt should be made by sending ATTACH, transitioning to ATTACHING with the error from the DETACHED message |
@@ -447,6 +455,8 @@ ASSERT attach_frames.length >= 2
 
 ## Test 17: RTL14 -- Server sends channel ERROR, channel goes FAILED
 
+**Test ID**: `realtime/proxy/RTL14/channel-error-goes-failed-1`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL14 | If an ERROR ProtocolMessage is received for this channel, the channel should immediately transition to the FAILED state, and the RealtimeChannel.errorReason should be set |
@@ -536,6 +546,8 @@ ASSERT client.connection.state == ConnectionState.connected
 ---
 
 ## Test 24: RTL12 -- ATTACHED with resumed=false on already-attached channel
+
+**Test ID**: `realtime/proxy/RTL12/attached-non-resumed-update-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -636,6 +648,8 @@ ASSERT client.connection.state == ConnectionState.connected
 ---
 
 ## Test 25: RTL3d -- Channels reattach after connection recovery
+
+**Test ID**: `realtime/proxy/RTL3d/channels-reattach-on-reconnect-0`
 
 | Spec | Requirement |
 |------|-------------|

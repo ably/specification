@@ -21,6 +21,8 @@ See rest_client.md for the complete `MockHttpClient` interface specification.
 
 ## RSL2a - History returns PaginatedResult
 
+**Test ID**: `rest/unit/RSL2a/returns-paginated-result-0`
+
 **Spec requirement:** The `history()` method must return a `PaginatedResult` object containing an array of `Message` objects.
 
 Tests that `history()` returns a `PaginatedResult` containing messages.
@@ -66,6 +68,8 @@ ASSERT result.items[0].data == "data1"
 ---
 
 ## RSL2b - History query parameters
+
+**Test ID**: `rest/unit/RSL2b/query-parameters-0`
 
 **Spec requirement:** History method parameters (start, end, direction, limit) must be encoded as query string parameters in the HTTP request.
 
@@ -117,6 +121,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSL2b1 - Default direction is backwards
 
+**Test ID**: `rest/unit/RSL2b1/default-direction-backwards-0`
+
 **Spec requirement:** When the direction parameter is not specified, the default direction for history queries must be backwards (newest messages first).
 
 Tests that the default direction for history is backwards (newest first).
@@ -158,6 +164,8 @@ IF "direction" IN request.url.query_params:
 
 ## RSL2b2 - Limit parameter
 
+**Test ID**: `rest/unit/RSL2b2/limit-parameter-0`
+
 **Spec requirement:** The limit parameter must control the maximum number of messages returned in a single history query.
 
 Tests that limit parameter restricts the number of returned items.
@@ -195,6 +203,8 @@ ASSERT request.url.query_params["limit"] == "10"
 ---
 
 ## RSL2b3 - Default limit is 100
+
+**Test ID**: `rest/unit/RSL2b3/default-limit-hundred-0`
 
 **Spec requirement:** When the limit parameter is not specified, the default limit must be 100 messages.
 
@@ -236,6 +246,8 @@ IF "limit" IN request.url.query_params:
 ---
 
 ## RSL2 - History request URL format
+
+**Test ID**: `rest/unit/RSL2/request-url-format-0`
 
 **Spec requirement:** History requests must use the URL path `/channels/<channel_name>/messages` with proper URL encoding of the channel name.
 
@@ -286,6 +298,8 @@ FOR EACH test_case IN test_cases:
 ---
 
 ## RSL2 - History with time range
+
+**Test ID**: `rest/unit/RSL2/history-time-range-1`
 
 **Spec requirement:** History queries must support start and end time parameters to retrieve messages within a specific time window.
 

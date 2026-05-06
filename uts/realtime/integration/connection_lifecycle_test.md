@@ -31,6 +31,8 @@ AFTER ALL TESTS:
 
 ## RTN4b, RTN21 - Successful connection establishment
 
+**Test ID**: `realtime/integration/RTN4b/successful-connection-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN4b | When a connection is initiated, it transitions INITIALIZED → CONNECTING → CONNECTED |
@@ -90,6 +92,8 @@ CLOSE_CLIENT(client)
 
 ## RTN4c, RTN12, RTN12a - Graceful connection close
 
+**Test ID**: `realtime/integration/RTN4c/graceful-close-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN4c | Normal disconnection: CONNECTED → CLOSING → CLOSED |
@@ -144,6 +148,8 @@ ASSERT client.connection.key IS null
 ---
 
 ## RTN11, RTN4b - Connect and reconnect cycle
+
+**Test ID**: `realtime/integration/RTN11/connect-reconnect-cycle-0`
 
 | Spec | Requirement |
 |------|-------------|

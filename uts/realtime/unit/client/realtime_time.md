@@ -9,6 +9,8 @@ Unit test with mocked HTTP client
 
 ## RTC6 - RealtimeClient#time proxies to RestClient#time
 
+**Test ID**: `realtime/unit/RTC6/time-proxies-rest-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTC6a | Proxy to `RestClient#time` presented with an async or threaded interface as appropriate |

@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL3e - DISCONNECTED has no effect on ATTACHED channel
 
+**Test ID**: `realtime/unit/RTL3e/disconnected-attached-noop-0`
+
 **Spec requirement:** If the connection state enters the DISCONNECTED state, it will have no effect on the channel states.
 
 Tests that a channel in the ATTACHED state is unaffected when the connection transitions to DISCONNECTED.
@@ -68,6 +70,8 @@ CLOSE_CLIENT(client)
 
 ## RTL3e - DISCONNECTED has no effect on ATTACHING channel
 
+**Test ID**: `realtime/unit/RTL3e/disconnected-attaching-noop-1`
+
 **Spec requirement:** If the connection state enters the DISCONNECTED state, it will have no effect on the channel states.
 
 Tests that a channel in the ATTACHING state is unaffected when the connection transitions to DISCONNECTED.
@@ -121,6 +125,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL3a - FAILED connection transitions ATTACHED channel to FAILED
+
+**Test ID**: `realtime/unit/RTL3a/failed-attached-to-failed-0`
 
 **Spec requirement:** If the connection state enters the FAILED state, then an ATTACHING or ATTACHED channel state will transition to FAILED and set the `RealtimeChannel#errorReason`.
 
@@ -190,6 +196,8 @@ CLOSE_CLIENT(client)
 
 ## RTL3a - FAILED connection transitions ATTACHING channel to FAILED
 
+**Test ID**: `realtime/unit/RTL3a/failed-attaching-to-failed-1`
+
 **Spec requirement:** If the connection state enters the FAILED state, then an ATTACHING or ATTACHED channel state will transition to FAILED and set the `RealtimeChannel#errorReason`.
 
 Tests that a channel in the ATTACHING state transitions to FAILED when the connection enters FAILED.
@@ -254,6 +262,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL3a - Channels in other states are unaffected by FAILED connection
+
+**Test ID**: `realtime/unit/RTL3a/other-states-unaffected-2`
 
 **Spec requirement:** If the connection state enters the FAILED state, then an ATTACHING or ATTACHED channel state will transition to FAILED.
 
@@ -331,6 +341,8 @@ CLOSE_CLIENT(client)
 
 ## RTL3b - CLOSED connection transitions ATTACHED channel to DETACHED
 
+**Test ID**: `realtime/unit/RTL3b/closed-attached-to-detached-0`
+
 **Spec requirement:** If the connection state enters the CLOSED state, then an ATTACHING or ATTACHED channel state will transition to DETACHED.
 
 Tests that an attached channel transitions to DETACHED when the connection is explicitly closed.
@@ -385,6 +397,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL3b - CLOSED connection transitions ATTACHING channel to DETACHED
+
+**Test ID**: `realtime/unit/RTL3b/closed-attaching-to-detached-1`
 
 **Spec requirement:** If the connection state enters the CLOSED state, then an ATTACHING or ATTACHED channel state will transition to DETACHED.
 
@@ -442,6 +456,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL3c - SUSPENDED connection transitions ATTACHED channel to SUSPENDED
+
+**Test ID**: `realtime/unit/RTL3c/suspended-attached-to-suspended-0`
 
 **Spec requirement:** If the connection state enters the SUSPENDED state, then an ATTACHING or ATTACHED channel state will transition to SUSPENDED.
 
@@ -524,6 +540,8 @@ CLOSE_CLIENT(client)
 
 ## RTL3c - SUSPENDED connection transitions ATTACHING channel to SUSPENDED
 
+**Test ID**: `realtime/unit/RTL3c/suspended-attaching-to-suspended-1`
+
 **Spec requirement:** If the connection state enters the SUSPENDED state, then an ATTACHING or ATTACHED channel state will transition to SUSPENDED.
 
 Tests that a channel in the ATTACHING state transitions to SUSPENDED when the connection enters SUSPENDED state.
@@ -604,6 +622,8 @@ CLOSE_CLIENT(client)
 
 ## RTL3d, RTL4c1 - CONNECTED connection re-attaches ATTACHED channels with channelSerial
 
+**Test ID**: `realtime/unit/RTL3d/reattach-attached-with-serial-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL3d | If the connection state enters the CONNECTED state, any channels in the ATTACHING, ATTACHED, or SUSPENDED states should be transitioned to ATTACHING and initiate an RTL4c attach sequence |
@@ -682,6 +702,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL3d - CONNECTED connection re-attaches SUSPENDED channels
+
+**Test ID**: `realtime/unit/RTL3d/reattach-suspended-channels-1`
 
 **Spec requirement:** If the connection state enters the CONNECTED state, any channels in the ATTACHING, ATTACHED, or SUSPENDED states should be transitioned to ATTACHING and initiate an RTL4c attach sequence.
 
@@ -787,6 +809,8 @@ CLOSE_CLIENT(client)
 
 ## RTL3d - Channels in INITIALIZED or DETACHED are not re-attached on CONNECTED
 
+**Test ID**: `realtime/unit/RTL3d/init-detached-not-reattached-2`
+
 **Spec requirement:** If the connection state enters the CONNECTED state, any channels in the ATTACHING, ATTACHED, or SUSPENDED states should be transitioned to ATTACHING.
 
 Tests that channels in INITIALIZED or DETACHED states are not affected when the connection becomes CONNECTED.
@@ -870,6 +894,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL3d - Multiple channels re-attached on CONNECTED
+
+**Test ID**: `realtime/unit/RTL3d/multiple-channels-reattached-3`
 
 **Spec requirement:** If the connection state enters the CONNECTED state, any channels in the ATTACHING, ATTACHED, or SUSPENDED states should be transitioned to ATTACHING and initiate an RTL4c attach sequence.
 

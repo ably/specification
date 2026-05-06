@@ -24,6 +24,8 @@ Tests the `time()` method which retrieves the current server time from Ably.
 
 ## RSC16 - time() returns server time
 
+**Test ID**: `rest/unit/RSC16/returns-server-time-0`
+
 **Spec requirement:** The `time()` method retrieves the server time from the `/time` endpoint and returns it as a DateTime or timestamp.
 
 Tests that `time()` returns the server time as a DateTime/timestamp.
@@ -66,6 +68,8 @@ ASSERT request.path == "/time"
 ---
 
 ## RSC16 - time() request format
+
+**Test ID**: `rest/unit/RSC16/request-format-get-time-1`
 
 **Spec requirement:** The time request must be a GET request to `/time` with standard Ably headers.
 
@@ -110,6 +114,8 @@ ASSERT "Ably-Agent" IN request.headers
 
 ## RSC16 - time() does not require authentication
 
+**Test ID**: `rest/unit/RSC16/no-auth-required-2`
+
 **Spec requirement:** The `/time` endpoint does not require authentication and should not send an Authorization header, even when credentials are available.
 
 Tests that time() does not send authentication credentials, even when the client has them.
@@ -150,6 +156,8 @@ ASSERT "Authorization" NOT IN request.headers
 ---
 
 ## RSC16 - time() works without TLS
+
+**Test ID**: `rest/unit/RSC16/works-without-tls-3`
 
 **Spec requirement:** The `/time` endpoint does not require authentication, so it should be callable over HTTP (non-TLS) without sending credentials. The RSC18 restriction (no basic auth over non-TLS) does not apply because time() doesn't send authentication.
 
@@ -202,6 +210,8 @@ This test verifies that the RSC18 check (which rejects basic auth over non-TLS c
 ---
 
 ## RSC16 - time() error handling
+
+**Test ID**: `rest/unit/RSC16/error-propagated-4`
 
 **Spec requirement:** Errors from the `/time` endpoint should be properly propagated to the caller.
 

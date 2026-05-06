@@ -11,6 +11,8 @@ These tests verify the channels collection management functionality. No mock inf
 
 ## RTS1 - Channels collection accessible via RealtimeClient
 
+**Test ID**: `realtime/unit/RTS1/channels-collection-accessible-0`
+
 **Spec requirement:** `Channels` is a collection of `RealtimeChannel` objects accessible through `RealtimeClient#channels`.
 
 Tests that the Realtime client exposes a channels collection.
@@ -35,6 +37,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS2 - Check if channel exists
+
+**Test ID**: `realtime/unit/RTS2/channel-exists-check-0`
 
 **Spec requirement:** Methods should exist to check if a channel exists or iterate through the existing channels.
 
@@ -75,6 +79,8 @@ CLOSE_CLIENT(client)
 
 ## RTS2 - Iterate through existing channels
 
+**Test ID**: `realtime/unit/RTS2/iterate-channels-1`
+
 **Spec requirement:** Methods should exist to check if a channel exists or iterate through the existing channels.
 
 Tests that channel names can be iterated.
@@ -112,6 +118,8 @@ CLOSE_CLIENT(client)
 
 ## RTS3a - Get creates new channel if none exists
 
+**Test ID**: `realtime/unit/RTS3a/get-creates-new-channel-0`
+
 **Spec requirement:** Creates a new `RealtimeChannel` object for the specified channel if none exists, or returns the existing channel.
 
 Tests that `get()` creates a new channel when called with a new name.
@@ -140,6 +148,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS3a - Get returns existing channel
+
+**Test ID**: `realtime/unit/RTS3a/get-returns-existing-channel-1`
 
 **Spec requirement:** Creates a new `RealtimeChannel` object for the specified channel if none exists, or returns the existing channel.
 
@@ -172,6 +182,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS3a - Operator subscript creates or returns channel
+
+**Test ID**: `realtime/unit/RTS3a/subscript-operator-channel-2`
 
 **Spec requirement:** Creates a new `RealtimeChannel` object for the specified channel if none exists, or returns the existing channel.
 
@@ -208,6 +220,8 @@ CLOSE_CLIENT(client)
 
 ## RTS4a - Release detaches and removes channel
 
+**Test ID**: `realtime/unit/RTS4a/release-removes-channel-0`
+
 **Spec requirement:** Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected.
 
 Tests that `release()` removes the channel from the collection.
@@ -239,6 +253,8 @@ CLOSE_CLIENT(client)
 
 ## RTS4a - Release on non-existent channel is no-op
 
+**Test ID**: `realtime/unit/RTS4a/release-nonexistent-noop-1`
+
 **Spec requirement:** Detaches the channel and then releases the channel resource.
 
 Tests that releasing a channel that doesn't exist completes without error.
@@ -266,6 +282,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS4a - Release calls detach on attached channel
+
+**Test ID**: `realtime/unit/RTS4a/release-detaches-attached-2`
 
 **Spec requirement:** Detaches the channel and then releases the channel resource.
 
@@ -303,6 +321,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTS3a - Get after release creates new channel
+
+**Test ID**: `realtime/unit/RTS3a/get-after-release-new-3`
 
 **Spec requirement:** Creates a new `RealtimeChannel` object for the specified channel if none exists.
 

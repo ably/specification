@@ -9,6 +9,8 @@ Unit test (no mocking needed — pure type construction and serialization)
 
 ## TM5 — MessageAction enum values
 
+**Test ID**: `rest/unit/TM5/message-action-enum-values-0`
+
 **Spec requirement:** TM5 — `Message` `Action` enum has the following values in order from zero: `MESSAGE_CREATE`, `MESSAGE_UPDATE`, `MESSAGE_DELETE`, `META`, `MESSAGE_SUMMARY`, `MESSAGE_APPEND`.
 
 Tests that the `MessageAction` enum has the correct numeric values for wire serialization.
@@ -30,6 +32,8 @@ ASSERT MessageAction.fromInt(5) == MessageAction.MESSAGE_APPEND
 ---
 
 ## TM2j, TM2r — Message has action and serial fields
+
+**Test ID**: `rest/unit/TM2j/action-and-serial-fields-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -63,6 +67,8 @@ ASSERT json_data["data"] == "hello"
 ---
 
 ## TM2s — Message.version populated from wire
+
+**Test ID**: `rest/unit/TM2s/version-populated-from-wire-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -107,6 +113,8 @@ ASSERT msg.version.metadata["tool"] == "editor"
 
 ## TM2s1, TM2s2 — Message.version defaults when not on wire
 
+**Test ID**: `rest/unit/TM2s1/version-defaults-from-message-0`
+
 | Spec | Requirement |
 |------|-------------|
 | TM2s | If a message does not contain a `version` object the SDK must initialize one and set a subset of fields |
@@ -147,6 +155,8 @@ ASSERT msg.version.metadata IS null
 
 ## TM2u, TM8a — Message.annotations defaults to empty
 
+**Test ID**: `rest/unit/TM2u/annotations-defaults-empty-0`
+
 | Spec | Requirement |
 |------|-------------|
 | TM2u | `annotations` is an object of type `MessageAnnotations`. If not set on the wire, the SDK must set it to an empty `MessageAnnotations` object |
@@ -173,6 +183,8 @@ ASSERT msg.annotations.summary IS empty  # No keys
 ---
 
 ## MOP2a–c — MessageOperation fields
+
+**Test ID**: `rest/unit/MOP2a/message-operation-fields-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -220,6 +232,8 @@ ASSERT "metadata" NOT IN empty_json
 
 ## UDR2a — UpdateDeleteResult fields
 
+**Test ID**: `rest/unit/UDR2a/update-delete-result-fields-0`
+
 | Spec | Requirement |
 |------|-------------|
 | UDR1 | Contains the result of an update or delete message operation |
@@ -246,6 +260,8 @@ ASSERT result3.versionSerial IS null
 ---
 
 ## TAN2 — Annotation type attributes and action encoding
+
+**Test ID**: `rest/unit/TAN2/annotation-attributes-and-action-0`
 
 | Spec | Requirement |
 |------|-------------|

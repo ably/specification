@@ -29,6 +29,8 @@ AFTER ALL TESTS:
 
 ## RSL2a - History returns published messages
 
+**Test ID**: `rest/integration/RSL2a/history-returns-messages-0`
+
 **Spec requirement:** RSL2a - `history` returns a `PaginatedResult` containing messages for the channel.
 
 Tests that published messages appear in channel history.
@@ -82,6 +84,8 @@ ASSERT ALL msg IN history.items: msg.timestamp IS NOT null
 
 ## RSL2b1 - History direction forwards
 
+**Test ID**: `rest/integration/RSL2b1/history-direction-forwards-0`
+
 **Spec requirement:** RSL2b1 - `direction` param controls message ordering (forwards = oldest first).
 
 Tests that `direction: forwards` returns messages oldest-first.
@@ -127,6 +131,8 @@ ASSERT history.items[2].name == "third"
 
 ## RSL2b2 - History limit parameter
 
+**Test ID**: `rest/integration/RSL2b2/history-limit-parameter-0`
+
 **Spec requirement:** RSL2b2 - `limit` param restricts the number of messages returned.
 
 Tests that `limit` parameter restricts number of returned messages.
@@ -171,6 +177,8 @@ ASSERT history.items[4].name == "event-6"
 ---
 
 ## RSL2b3 - History time range parameters
+
+**Test ID**: `rest/integration/RSL2b3/history-time-range-0`
 
 **Spec requirement:** RSL2b3 - `start` and `end` params filter messages by timestamp range.
 
@@ -246,6 +254,8 @@ ASSERT ANY msg IN late_history.items: msg.name STARTS WITH "late"
 ---
 
 ## RSL2 - History on channel with no messages
+
+**Test ID**: `rest/integration/RSL2/history-empty-channel-0`
 
 **Spec requirement:** RSL2a - `history` returns empty `PaginatedResult` when channel has no messages.
 

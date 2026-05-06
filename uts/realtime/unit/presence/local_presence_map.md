@@ -34,6 +34,8 @@ LocalPresenceMap:
 
 ## RTP17h - Keyed by clientId, not memberKey
 
+**Test ID**: `realtime/unit/RTP17h/keyed-by-clientid-0`
+
 **Spec requirement:** Unlike the main PresenceMap (keyed by memberKey), the RTP17
 PresenceMap must be keyed only by clientId. Otherwise, entries associated with old
 connectionIds would never be removed, even if the user deliberately leaves presence.
@@ -79,6 +81,8 @@ ASSERT map.get("user-1").connectionId == "conn-B"
 
 ## RTP17b - ENTER adds to map
 
+**Test ID**: `realtime/unit/RTP17b/enter-adds-to-map-0`
+
 **Spec requirement:** Any ENTER event with a connectionId matching the current client's
 connectionId should be applied to the RTP17 presence map.
 
@@ -111,6 +115,8 @@ ASSERT map.values().length == 1
 
 ## RTP17b - UPDATE with no prior entry adds to map
 
+**Test ID**: `realtime/unit/RTP17b/update-adds-to-map-1`
+
 **Spec requirement:** ENTER and UPDATE are interchangeable — both add a member to the
 map. An UPDATE on a clientId that has no prior entry behaves identically to an ENTER.
 
@@ -142,6 +148,8 @@ ASSERT map.values().length == 1
 ---
 
 ## RTP17b - ENTER after ENTER overwrites
+
+**Test ID**: `realtime/unit/RTP17b/enter-overwrites-enter-2`
 
 **Spec requirement:** ENTER and UPDATE are interchangeable. A second ENTER for the same
 clientId overwrites the first, just as an UPDATE would.
@@ -183,6 +191,8 @@ ASSERT map.get("client-1").data == "second"
 
 ## RTP17b - UPDATE after ENTER overwrites
 
+**Test ID**: `realtime/unit/RTP17b/update-overwrites-enter-3`
+
 **Spec requirement:** UPDATE overwrites a prior ENTER for the same clientId.
 
 ### Setup
@@ -222,6 +232,8 @@ ASSERT map.get("client-1").data == "updated"
 
 ## RTP17b - PRESENT adds to map
 
+**Test ID**: `realtime/unit/RTP17b/present-adds-to-map-4`
+
 **Spec requirement:** Any PRESENT event with a matching connectionId should be applied.
 
 ### Setup
@@ -251,6 +263,8 @@ ASSERT map.get("client-1").data == "present"
 ---
 
 ## RTP17b - Non-synthesized LEAVE removes from map
+
+**Test ID**: `realtime/unit/RTP17b/non-synthesized-leave-removes-5`
 
 **Spec requirement:** Any LEAVE event with a connectionId matching the current client's
 connectionId that is NOT a synthesized leave should remove the member.
@@ -296,6 +310,8 @@ ASSERT map.values().length == 0
 ---
 
 ## RTP17b - Synthesized LEAVE is ignored
+
+**Test ID**: `realtime/unit/RTP17b/synthesized-leave-ignored-6`
 
 **Spec requirement:** A synthesized leave event (where connectionId is NOT an initial
 substring of its id, per RTP2b1) should NOT be applied to the RTP17 presence map.
@@ -350,6 +366,8 @@ ASSERT map.values().length == 1
 
 ## RTP17 - Multiple clientIds coexist
 
+**Test ID**: `realtime/unit/RTP17/multiple-clientids-coexist-0`
+
 **Spec requirement:** The local presence map can contain multiple members with different
 clientIds (e.g., when a single connection enters presence with multiple clientIds using
 enterClient).
@@ -381,6 +399,8 @@ ASSERT map.get("carol").data == "carol-data"
 
 ## RTP17 - Remove one of multiple members
 
+**Test ID**: `realtime/unit/RTP17/remove-one-of-multiple-1`
+
 ### Setup
 ```pseudo
 map = LocalPresenceMap()
@@ -404,6 +424,8 @@ ASSERT map.values().length == 1
 ---
 
 ## clear() resets all state
+
+**Test ID**: `realtime/unit/RTP17/clear-resets-state-2`
 
 **Spec requirement (RTP5a):** When the channel enters DETACHED or FAILED state, the
 internal PresenceMap is cleared. This ensures members are not automatically re-entered
@@ -435,6 +457,8 @@ ASSERT map.get("bob") IS null
 
 ## RTP17 - Get returns null for unknown clientId
 
+**Test ID**: `realtime/unit/RTP17/get-null-unknown-clientid-3`
+
 ### Setup
 ```pseudo
 map = LocalPresenceMap()
@@ -453,6 +477,8 @@ ASSERT result IS null
 ---
 
 ## RTP17 - Remove for unknown clientId is a no-op
+
+**Test ID**: `realtime/unit/RTP17/remove-unknown-noop-4`
 
 ### Setup
 ```pseudo

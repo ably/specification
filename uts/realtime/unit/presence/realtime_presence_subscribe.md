@@ -16,6 +16,8 @@ channel depending on the `attachOnSubscribe` channel option.
 
 ## RTP6a - Subscribe to all presence events
 
+**Test ID**: `realtime/unit/RTP6a/subscribe-all-presence-events-0`
+
 **Spec requirement:** Subscribe with a single listener argument subscribes a listener to
 all presence messages.
 
@@ -94,6 +96,8 @@ CLOSE_CLIENT(client)
 
 ## RTP6b - Subscribe filtered by action
 
+**Test ID**: `realtime/unit/RTP6b/subscribe-filtered-by-action-0`
+
 **Spec requirement:** Subscribe with an action argument and a listener subscribes the
 listener to receive only presence messages with that action.
 
@@ -162,6 +166,8 @@ CLOSE_CLIENT(client)
 
 ## RTP6b - Subscribe filtered by multiple actions
 
+**Test ID**: `realtime/unit/RTP6b/subscribe-filtered-multiple-actions-1`
+
 **Spec requirement:** The action argument may also be an array of actions.
 
 ### Setup
@@ -217,6 +223,8 @@ CLOSE_CLIENT(client)
 
 ## RTP6d - Subscribe implicitly attaches channel
 
+**Test ID**: `realtime/unit/RTP6d/subscribe-implicitly-attaches-0`
+
 **Spec requirement:** If the `attachOnSubscribe` channel option is true (default),
 implicitly attach the RealtimeChannel if the channel is in the INITIALIZED, DETACHING,
 or DETACHED states.
@@ -265,6 +273,8 @@ CLOSE_CLIENT(client)
 
 ## RTP6e - Subscribe with attachOnSubscribe=false does not attach
 
+**Test ID**: `realtime/unit/RTP6e/subscribe-no-attach-option-0`
+
 **Spec requirement:** If the `attachOnSubscribe` channel option is false, do not
 implicitly attach.
 
@@ -308,6 +318,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP7c - Unsubscribe all listeners
+
+**Test ID**: `realtime/unit/RTP7c/unsubscribe-all-listeners-0`
 
 **Spec requirement:** Unsubscribe with no arguments unsubscribes all listeners.
 
@@ -377,6 +389,8 @@ CLOSE_CLIENT(client)
 
 ## RTP7a - Unsubscribe specific listener
 
+**Test ID**: `realtime/unit/RTP7a/unsubscribe-specific-listener-0`
+
 **Spec requirement:** Unsubscribe with a single listener argument unsubscribes that
 specific listener.
 
@@ -435,6 +449,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP7b - Unsubscribe listener for specific action
+
+**Test ID**: `realtime/unit/RTP7b/unsubscribe-for-specific-action-0`
 
 **Spec requirement:** Unsubscribe with an action argument and a listener unsubscribes
 the listener for that action only.
@@ -495,6 +511,8 @@ CLOSE_CLIENT(client)
 
 ## RTP6 - Presence events update the PresenceMap
 
+**Test ID**: `realtime/unit/RTP6/presence-events-update-map-0`
+
 **Spec requirement:** Incoming presence messages are applied to the PresenceMap (RTP2)
 before being emitted to subscribers.
 
@@ -548,6 +566,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP6 - Multiple presence messages in single ProtocolMessage
+
+**Test ID**: `realtime/unit/RTP6/multiple-presence-in-single-message-1`
 
 **Spec requirement:** A PRESENCE ProtocolMessage may contain multiple PresenceMessages.
 

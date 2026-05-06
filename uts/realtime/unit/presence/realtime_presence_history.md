@@ -14,6 +14,8 @@ It supports the same parameters as `RestPresence#history` and returns a `Paginat
 
 ## RTP12a - history supports same params as RestPresence#history
 
+**Test ID**: `realtime/unit/RTP12a/history-supports-rest-params-0`
+
 **Spec requirement:** Supports all the same params as RestPresence#history.
 
 ### Setup
@@ -74,6 +76,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTP12c - history returns PaginatedResult
+
+**Test ID**: `realtime/unit/RTP12c/history-returns-paginated-result-0`
 
 **Spec requirement:** Returns a PaginatedResult page containing the first page of
 messages in the PaginatedResult#items attribute.

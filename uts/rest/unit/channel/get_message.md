@@ -13,6 +13,8 @@ These tests use the mock HTTP infrastructure defined in `uts/test/rest/unit/help
 
 ## RSL11b — getMessage sends GET to correct endpoint
 
+**Test ID**: `rest/unit/RSL11b/get-correct-endpoint-0`
+
 **Spec requirement:** RSL11b — The SDK must send a GET request to the endpoint `/channels/{channelName}/messages/{serial}`.
 
 Tests that `getMessage()` sends a GET request to the correct URL.
@@ -58,6 +60,8 @@ ASSERT request.body IS null OR request.body IS empty
 ---
 
 ## RSL11c — getMessage returns decoded Message
+
+**Test ID**: `rest/unit/RSL11c/returns-decoded-message-0`
 
 **Spec requirement:** RSL11c — Returns the decoded `Message` object for the specified message serial.
 
@@ -113,6 +117,8 @@ ASSERT msg.version.serial == "version-serial-1"
 
 ## RSL11b — getMessage URL-encodes serial in path
 
+**Test ID**: `rest/unit/RSL11b/url-encodes-serial-1`
+
 **Spec requirement:** RSL11b — The serial must be URL-encoded when used in the request path.
 
 Tests that special characters in the serial are properly URL-encoded.
@@ -154,6 +160,8 @@ ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "
 ---
 
 ## RSL11a — getMessage with missing serial throws error
+
+**Test ID**: `rest/unit/RSL11a/missing-serial-error-0`
 
 **Spec requirement:** RSL11a — Takes a first argument of a `serial` string of the message to be retrieved. The serial must be present.
 

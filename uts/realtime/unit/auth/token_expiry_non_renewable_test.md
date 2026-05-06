@@ -17,6 +17,8 @@ These tests verify the behaviour when a token or tokenDetails is used to instant
 
 ## RSA4a1 - Instantiation with non-renewable token logs info-level warning
 
+**Test ID**: `realtime/unit/RSA4a1/non-renewable-token-logs-warning-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA4a | When a token or tokenDetails is used to instantiate the library, and no means to renew the token is provided (either an API key, authCallback or authUrl) |
@@ -86,6 +88,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4a2 - Server token error with non-renewable token transitions to FAILED
+
+**Test ID**: `realtime/unit/RSA4a2/token-error-non-renewable-failed-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -157,6 +161,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RSA4a2 - Server token error with non-renewable token does not retry
+
+**Test ID**: `realtime/unit/RSA4a2/token-error-non-renewable-no-retry-1`
 
 | Spec | Requirement |
 |------|-------------|

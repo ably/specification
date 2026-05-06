@@ -40,6 +40,8 @@ AFTER ALL TESTS:
 
 ## RSH1a — publish sends push notification to clientId
 
+**Test ID**: `rest/integration/RSH1a/push-publish-clientid-0`
+
 **Spec requirement:** RSH1a — `publish(recipient, data)` performs an HTTP request to `/push/publish`.
 
 Tests that a push notification can be published to a `clientId` recipient. The sandbox accepts the request even though no real device receives it.
@@ -71,6 +73,8 @@ AWAIT client.push.admin.publish(
 
 ## RSH1a — publish rejects invalid recipient
 
+**Test ID**: `rest/integration/RSH1a/push-publish-invalid-recipient-1`
+
 **Spec requirement:** RSH1a — Tests should exist with invalid recipient details.
 
 Tests that the sandbox returns an error for an empty recipient.
@@ -96,6 +100,8 @@ ASSERT error.code IS NOT null
 ---
 
 ## RSH1b3, RSH1b1 — save and get device registration
+
+**Test ID**: `rest/integration/RSH1b3/save-and-get-device-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -150,6 +156,8 @@ AWAIT client.push.admin.deviceRegistrations.remove(device_id)
 ---
 
 ## RSH1b3 — save updates existing device registration
+
+**Test ID**: `rest/integration/RSH1b3/update-device-registration-1`
 
 **Spec requirement:** RSH1b3 — A test should exist for a successful subsequent save with an update.
 
@@ -207,6 +215,8 @@ AWAIT client.push.admin.deviceRegistrations.remove(device_id)
 
 ## RSH1b1 — get returns error for unknown device
 
+**Test ID**: `rest/integration/RSH1b1/get-unknown-device-error-0`
+
 **Spec requirement:** RSH1b1 — Results in a not found error if the device cannot be found.
 
 Tests that retrieving a nonexistent device returns a not-found error.
@@ -229,6 +239,8 @@ ASSERT error.statusCode == 404
 ---
 
 ## RSH1b2 — list device registrations with filters
+
+**Test ID**: `rest/integration/RSH1b2/list-devices-filtered-0`
 
 **Spec requirement:** RSH1b2 — `#list(params)` returns a paginated result with `DeviceDetails` filtered by params.
 
@@ -275,6 +287,8 @@ AWAIT client.push.admin.deviceRegistrations.remove(device_id)
 ---
 
 ## RSH1b2 — list supports pagination with limit
+
+**Test ID**: `rest/integration/RSH1b2/list-devices-pagination-1`
 
 **Spec requirement:** RSH1b2 — A test should exist controlling the pagination with the `limit` attribute.
 
@@ -329,6 +343,8 @@ FOR device_id IN device_ids:
 
 ## RSH1b4 — remove deletes device registration
 
+**Test ID**: `rest/integration/RSH1b4/remove-device-0`
+
 **Spec requirement:** RSH1b4 — `#remove(deviceId)` deletes the registered device.
 
 Tests that a registered device can be removed and is no longer retrievable.
@@ -367,6 +383,8 @@ ASSERT error.statusCode == 404
 
 ## RSH1b4 — remove succeeds for nonexistent device
 
+**Test ID**: `rest/integration/RSH1b4/remove-nonexistent-device-1`
+
 **Spec requirement:** RSH1b4 — Deleting a device that does not exist still succeeds.
 
 ### Setup
@@ -387,6 +405,8 @@ AWAIT client.push.admin.deviceRegistrations.remove("nonexistent-device-" + rando
 ---
 
 ## RSH1b5 — removeWhere deletes devices by clientId
+
+**Test ID**: `rest/integration/RSH1b5/remove-where-clientid-0`
 
 **Spec requirement:** RSH1b5 — `#removeWhere(params)` deletes registered devices matching params.
 
@@ -430,6 +450,8 @@ ASSERT result.items.length == 0
 ---
 
 ## RSH1c3, RSH1c1 — save and list channel subscriptions
+
+**Test ID**: `rest/integration/RSH1c3/save-and-list-subscriptions-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -500,6 +522,8 @@ AWAIT client.push.admin.deviceRegistrations.remove(device_id)
 
 ## RSH1c3 — save channel subscription with clientId
 
+**Test ID**: `rest/integration/RSH1c3/save-subscription-clientid-1`
+
 **Spec requirement:** RSH1c3 — A test should exist for saving a `clientId`-based subscription.
 
 ### Setup
@@ -538,6 +562,8 @@ AWAIT client.push.admin.channelSubscriptions.remove(PushChannelSubscription(
 ---
 
 ## RSH1c2 — listChannels returns channel names with subscriptions
+
+**Test ID**: `rest/integration/RSH1c2/list-channels-with-subscriptions-0`
 
 **Spec requirement:** RSH1c2 — `#listChannels(params)` returns a paginated result with `String` objects.
 
@@ -584,6 +610,8 @@ AWAIT client.push.admin.channelSubscriptions.remove(PushChannelSubscription(
 
 ## RSH1c4 — remove deletes channel subscription
 
+**Test ID**: `rest/integration/RSH1c4/remove-channel-subscription-0`
+
 **Spec requirement:** RSH1c4 — `#remove(subscription)` deletes a channel subscription using subscription attributes as params.
 
 Tests that a subscription can be removed and no longer appears in list results.
@@ -625,6 +653,8 @@ ASSERT result.items.length == 0
 
 ## RSH1c4 — remove succeeds for nonexistent subscription
 
+**Test ID**: `rest/integration/RSH1c4/remove-nonexistent-subscription-1`
+
 **Spec requirement:** RSH1c4 — Deleting a subscription that does not exist still succeeds.
 
 ### Setup
@@ -648,6 +678,8 @@ AWAIT client.push.admin.channelSubscriptions.remove(PushChannelSubscription(
 ---
 
 ## RSH1c5 — removeWhere deletes subscriptions by clientId
+
+**Test ID**: `rest/integration/RSH1c5/remove-where-subscriptions-0`
 
 **Spec requirement:** RSH1c5 — `#removeWhere(params)` deletes matching channel subscriptions.
 

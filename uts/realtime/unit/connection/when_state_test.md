@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTN26a - whenState calls listener immediately if already in state
 
+**Test ID**: `realtime/unit/RTN26a/immediate-callback-current-state-0`
+
 **Spec requirement:** If the connection is already in the given state, calls the listener with a null argument.
 
 Tests that whenState invokes callback immediately when the connection is already in the target state.
@@ -80,6 +82,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN26b - whenState waits for state if not already in it
+
+**Test ID**: `realtime/unit/RTN26b/deferred-callback-future-state-0`
 
 **Spec requirement:** Else, calls #once with the given state and listener.
 
@@ -156,6 +160,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN26b - whenState only fires once
+
+**Test ID**: `realtime/unit/RTN26b/fires-only-once-1`
 
 **Spec requirement:** whenState uses #once, meaning it should only fire once, not on every subsequent occurrence of the state.
 
@@ -260,6 +266,8 @@ CLOSE_CLIENT(client)
 
 ## RTN26a - Multiple whenState calls
 
+**Test ID**: `realtime/unit/RTN26a/multiple-whenstate-calls-1`
+
 **Spec requirement:** Multiple calls to whenState should each be handled independently.
 
 Tests that multiple whenState listeners can be registered and each behaves correctly.
@@ -334,6 +342,8 @@ CLOSE_CLIENT(client)
 
 ## RTN26a - whenState with already-passed state
 
+**Test ID**: `realtime/unit/RTN26a/no-fire-for-past-state-2`
+
 **Spec requirement:** whenState should invoke immediately with null if already in the target state.
 
 Tests that whenState for a state that was passed but is no longer current does NOT fire immediately.
@@ -398,6 +408,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN26 - whenState with different states
+
+**Test ID**: `realtime/unit/RTN26/whenstate-different-states-0`
 
 **Spec requirement:** whenState should work correctly for all connection states.
 

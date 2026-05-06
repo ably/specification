@@ -12,6 +12,8 @@ No mocks required - these verify type structure.
 
 ## TI1-TI5 - ErrorInfo attributes
 
+**Test ID**: `rest/unit/TI1/errorinfo-attributes-0`
+
 **Spec requirement:** ErrorInfo type must provide all required attributes according to TI1-TI5 specifications.
 
 | Spec | Attribute | Description |
@@ -74,6 +76,8 @@ ASSERT error.cause == original_error
 
 ## TI - ErrorInfo from JSON response
 
+**Test ID**: `rest/unit/TI/errorinfo-from-json-0`
+
 **Spec requirement:** ErrorInfo type must support deserialization from Ably JSON error responses.
 
 Tests that `ErrorInfo` can be deserialized from Ably error response.
@@ -100,6 +104,8 @@ ASSERT error.href == "https://help.ably.io/error/40100"
 ---
 
 ## TI - ErrorInfo with nested error
+
+**Test ID**: `rest/unit/TI/errorinfo-nested-cause-1`
 
 **Spec requirement:** ErrorInfo must support nested error structures with a cause field (TI5).
 
@@ -132,6 +138,8 @@ IF error.cause IS ErrorInfo:
 
 ## TI - AblyException wraps ErrorInfo
 
+**Test ID**: `rest/unit/TI/ably-exception-wraps-errorinfo-2`
+
 **Spec requirement:** AblyException (throwable) must wrap ErrorInfo and expose its attributes.
 
 Tests that `AblyException` (throwable) wraps `ErrorInfo`.
@@ -155,6 +163,8 @@ ASSERT exception.errorInfo == error_info
 ---
 
 ## TI - Common error codes
+
+**Test ID**: `rest/unit/TI/common-error-codes-3`
 
 **Spec requirement:** ErrorInfo must correctly handle common Ably error codes with their corresponding status codes and meanings.
 
@@ -192,6 +202,8 @@ FOR EACH test_case IN test_cases:
 
 ## TI - Error string representation
 
+**Test ID**: `rest/unit/TI/error-string-representation-4`
+
 **Spec requirement:** ErrorInfo must provide a useful string representation including error code, status code, and message.
 
 Tests that errors have a useful string representation.
@@ -215,6 +227,8 @@ ASSERT "Unauthorized" IN string_repr OR "token" IN string_repr
 ---
 
 ## TI - Error equality
+
+**Test ID**: `rest/unit/TI/error-equality-5`
 
 **Spec requirement:** ErrorInfo must support equality comparison based on error attributes.
 

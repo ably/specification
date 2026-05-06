@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL4a - Attach when already attached is no-op
 
+**Test ID**: `realtime/unit/RTL4a/already-attached-noop-0`
+
 **Spec requirement:** If already ATTACHED nothing is done.
 
 Tests that calling attach on an already-attached channel returns immediately.
@@ -63,6 +65,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4h - Attach while attaching waits for completion
+
+**Test ID**: `realtime/unit/RTL4h/attach-while-attaching-0`
 
 **Spec requirement:** If the channel is in a pending state ATTACHING, do the attach operation after the completion of the pending request.
 
@@ -123,6 +127,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4h - Attach while detaching waits then attaches
+
+**Test ID**: `realtime/unit/RTL4h/attach-while-detaching-1`
 
 **Spec requirement:** If the channel is in a pending state DETACHING, do the attach operation after the completion of the pending request.
 
@@ -194,6 +200,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4g - Attach from failed state proceeds with attach
 
+**Test ID**: `realtime/unit/RTL4g/attach-from-failed-0`
+
 **Spec requirement:** If the channel is in the FAILED state, the attach request proceeds with a channel attach described in RTL4b, RTL4i and RTL4c.
 
 Tests that a channel in the FAILED state can be re-attached. errorReason clearing is verified as part of the RTL4c behavior (successful attach clears errorReason).
@@ -254,6 +262,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4c - Successful attach clears errorReason
+
+**Test ID**: `realtime/unit/RTL4c/clears-error-reason-0`
 
 **Spec requirement:** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 
@@ -334,6 +344,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4b - Attach fails when connection is closed
 
+**Test ID**: `realtime/unit/RTL4b/fails-connection-closed-0`
+
 **Spec requirement:** If the connection state is CLOSED, CLOSING, SUSPENDED or FAILED, the attach request results in an error.
 
 Tests that attach fails when connection is in closed state.
@@ -374,6 +386,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4b - Attach fails when connection is failed
+
+**Test ID**: `realtime/unit/RTL4b/fails-connection-failed-1`
 
 **Spec requirement:** If the connection state is FAILED, the attach request results in an error.
 
@@ -418,6 +432,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4b - Attach fails when connection is suspended
+
+**Test ID**: `realtime/unit/RTL4b/fails-connection-suspended-2`
 
 **Spec requirement:** If the connection state is SUSPENDED, the attach request results in an error.
 
@@ -464,6 +480,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4i - Attach queued when connection is connecting
 
+**Test ID**: `realtime/unit/RTL4i/queued-while-connecting-0`
+
 **Spec requirement:** If the connection state is INITIALIZED, CONNECTING or DISCONNECTED, the channel should be put into the ATTACHING state.
 
 Tests that attach transitions channel to attaching when connection is connecting.
@@ -506,6 +524,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4i - Attach completes when connection becomes connected
+
+**Test ID**: `realtime/unit/RTL4i/completes-on-connected-1`
 
 **Spec requirement:** Attach message will be sent once the connection becomes CONNECTED.
 
@@ -565,6 +585,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4c - Attach sends ATTACH message and transitions to attaching
 
+**Test ID**: `realtime/unit/RTL4c/sends-attach-message-1`
+
 **Spec requirement:** An ATTACH ProtocolMessage is sent to the server, the state transitions to ATTACHING.
 
 Tests the normal attach flow.
@@ -617,6 +639,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4c1 - ATTACH message includes channelSerial when available
+
+**Test ID**: `realtime/unit/RTL4c1/includes-channel-serial-0`
 
 **Spec requirement:** The ATTACH ProtocolMessage channelSerial field must be set to the RTL15b channelSerial. If the RTL15b channelSerial is not set, the field may be set to null or omitted.
 
@@ -672,6 +696,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4f - Attach times out and transitions to suspended
 
+**Test ID**: `realtime/unit/RTL4f/timeout-to-suspended-0`
+
 **Spec requirement:** If an ATTACHED ProtocolMessage is not received within realtimeRequestTimeout, the attach request should be treated as though it has failed and the channel should transition to the SUSPENDED state.
 
 Tests attach timeout behavior.
@@ -724,6 +750,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4k - ATTACH includes params from ChannelOptions
 
+**Test ID**: `realtime/unit/RTL4k/includes-channel-params-0`
+
 **Spec requirement:** If the user has specified a non-empty params object in the ChannelOptions, it must be included in a params field of the ATTACH ProtocolMessage.
 
 Tests that channel params are included in ATTACH message.
@@ -774,6 +802,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4l - ATTACH includes modes as flags
+
+**Test ID**: `realtime/unit/RTL4l/modes-encoded-as-flags-0`
 
 **Spec requirement:** If the user has specified a modes array in the ChannelOptions, it must be encoded as a bitfield and set as the flags field of the ATTACH ProtocolMessage.
 
@@ -827,6 +857,8 @@ CLOSE_CLIENT(client)
 
 ## RTL4m - Channel modes populated from ATTACHED response
 
+**Test ID**: `realtime/unit/RTL4m/modes-from-attached-0`
+
 **Spec requirement:** On receipt of an ATTACHED, the client library should decode the flags into an array of ChannelModes and expose it as a read-only modes field.
 
 Tests that modes are decoded from ATTACHED flags.
@@ -871,6 +903,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4j - ATTACH_RESUME flag set for reattach
+
+**Test ID**: `realtime/unit/RTL4j/attach-resume-flag-0`
 
 **Spec requirement:** If the attach is not a clean attach, the library should set the ATTACH_RESUME flag in the ATTACH message. Per RTL4j1, `attachResume` is cleared when the channel enters DETACHING or FAILED, so a detach+reattach IS a clean attach and should NOT have ATTACH_RESUME. A reattach while still attached (e.g. via setOptions) is NOT a clean attach and SHOULD have ATTACH_RESUME.
 

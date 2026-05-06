@@ -32,6 +32,8 @@ AFTER ALL TESTS:
 
 ## RTN14a - Invalid API key causes FAILED
 
+**Test ID**: `realtime/integration/RTN14a/invalid-key-failed-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTN14a | If an API key is invalid, the connection transitions to FAILED |
@@ -70,6 +72,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN14g - Revoked key causes FAILED
+
+**Test ID**: `realtime/integration/RTN14g/revoked-key-failed-0`
 
 | Spec | Requirement |
 |------|-------------|

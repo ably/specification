@@ -35,6 +35,8 @@ AFTER ALL TESTS:
 
 ## RTP2, RTP11a - Presence SYNC delivers existing members
 
+**Test ID**: `realtime/integration/RTP2/sync-delivers-members-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTP2 | A PresenceMap is maintained via SYNC |
@@ -99,6 +101,8 @@ CLOSE_CLIENT(client_b)
 ---
 
 ## RTP2 - Presence SYNC with multiple members
+
+**Test ID**: `realtime/integration/RTP2/sync-multiple-members-1`
 
 | Spec | Requirement |
 |------|-------------|

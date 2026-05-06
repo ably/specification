@@ -20,6 +20,8 @@ See `rest_client.md` for detailed mock interface documentation.
 
 ### RSC22c1 - Single BatchPublishSpec sends POST to /messages
 
+**Test ID**: `rest/unit/RSC22c/single-spec-post-messages-0`
+
 **Spec requirement:** A single BatchPublishSpec is sent as a POST to `/messages` with the spec in the request body.
 
 ```pseudo
@@ -39,6 +41,8 @@ And the captured request body contains:
 
 ### RSC22c2 - Array of BatchPublishSpecs sends POST to /messages
 
+**Test ID**: `rest/unit/RSC22c/array-specs-post-messages-0`
+
 **Spec requirement:** An array of BatchPublishSpecs is sent as a POST to `/messages` with an array of specs in the request body.
 
 ```pseudo
@@ -55,6 +59,8 @@ And the captured request body is an array containing both specs
 ```
 
 ### RSC22c3 - Single spec returns single BatchResult
+
+**Test ID**: `rest/unit/RSC22c/single-spec-single-result-0`
 
 **Spec requirement:** When a single BatchPublishSpec is sent, the response is a single BatchResult (not an array).
 
@@ -75,6 +81,8 @@ And the result contains the success result for channel_name
 
 ### RSC22c4 - Array of specs returns array of BatchResults
 
+**Test ID**: `rest/unit/RSC22c/array-specs-array-results-0`
+
 **Spec requirement:** When an array of BatchPublishSpecs is sent, the response is an array of BatchResults.
 
 ```pseudo
@@ -94,6 +102,8 @@ And each result corresponds to the respective spec
 
 ### RSC22c5 - Multiple channels in spec produces multiple results
 
+**Test ID**: `rest/unit/RSC22c/multiple-channels-multiple-results-0`
+
 **Spec requirement:** A BatchPublishSpec with multiple channels produces multiple results in the response, one per channel.
 
 ```pseudo
@@ -109,6 +119,8 @@ Then the BatchResult contains results for all three channels
 ```
 
 ### RSC22c6 - Messages are encoded according to RSL4
+
+**Test ID**: `rest/unit/RSC22c/messages-encoded-per-rsl4-0`
 
 **Spec requirement:** Messages must be encoded according to RSL4 (String, Binary base64, JSON stringified).
 
@@ -128,6 +140,8 @@ Then the captured request shows each message is encoded per RSL4:
 ```
 
 ### RSC22c7 - Request uses correct authentication
+
+**Test ID**: `rest/unit/RSC22c/uses-configured-auth-0`
 
 **Spec requirement:** Batch publish requests must use the configured authentication mechanism.
 
@@ -155,6 +169,8 @@ Then the captured POST request includes Authorization: Basic <base64(key)>
 
 ### RSC22d - Idempotent IDs generated when enabled
 
+**Test ID**: `rest/unit/RSC22d/idempotent-ids-generated-0`
+
 **Spec requirement:** With idempotentRestPublishing enabled, messages without IDs get unique IDs generated in baseId:serial format per RSL1k1, applied to each BatchPublishSpec separately.
 
 ```pseudo
@@ -168,6 +184,8 @@ And each BatchPublishSpec gets a separate base ID
 
 ### RSC22d - Explicit message IDs preserved
 
+**Test ID**: `rest/unit/RSC22d/explicit-ids-preserved-0`
+
 **Spec requirement:** Per RSL1k3, messages with explicit IDs must have those IDs preserved as-is, even when idempotent publishing is enabled.
 
 ```pseudo
@@ -178,6 +196,8 @@ Then the captured request shows the explicit ids are preserved (not overwritten)
 ```
 
 ### RSC22d - Idempotent IDs not generated when disabled
+
+**Test ID**: `rest/unit/RSC22d/ids-not-generated-disabled-0`
 
 **Spec requirement:** When idempotent REST publishing is disabled, no IDs are generated for messages without IDs.
 
@@ -194,6 +214,8 @@ Then the captured request shows messages are sent without id fields
 
 ### BSP2a - channels is array of strings
 
+**Test ID**: `rest/unit/BSP2a/channels-array-strings-0`
+
 **Spec requirement:** The channels field must be an array of channel name strings.
 
 ```pseudo
@@ -207,6 +229,8 @@ Then the serialized spec in the captured request contains channels as a string a
 ```
 
 ### BSP2b - messages is array of Message objects
+
+**Test ID**: `rest/unit/BSP2b/messages-array-objects-0`
 
 **Spec requirement:** The messages field must be an array of Message objects, each serialized according to TM* rules.
 
@@ -228,6 +252,8 @@ And each message is serialized according to TM* rules
 
 ### BPR2a - channel field contains channel name
 
+**Test ID**: `rest/unit/BPR2a/success-channel-name-0`
+
 **Spec requirement:** The channel field contains the name of the channel where messages were published.
 
 ```pseudo
@@ -241,6 +267,8 @@ Then result.channel equals channel_name
 ```
 
 ### BPR2b - messageId contains the message ID prefix
+
+**Test ID**: `rest/unit/BPR2b/success-message-id-prefix-0`
 
 **Spec requirement:** The messageId field contains the unique ID prefix for the published messages.
 
@@ -256,6 +284,8 @@ Then result.messageId equals "unique-id-prefix"
 
 ### BPR2c - serials contains array of message serials
 
+**Test ID**: `rest/unit/BPR2c/serials-array-0`
+
 **Spec requirement:** The serials field contains an array of serial numbers, one per published message.
 
 ```pseudo
@@ -270,6 +300,8 @@ And serials.length matches the number of messages published
 ```
 
 ### BPR2c1 - serials may contain null for conflated messages
+
+**Test ID**: `rest/unit/BPR2c/serials-null-conflated-0`
 
 **Spec requirement:** The serials array may contain null values for messages that were conflated (deduplicated).
 
@@ -290,6 +322,8 @@ And the null indicates the second message was discarded due to conflation
 
 ### BPF2a - channel field contains failed channel name
 
+**Test ID**: `rest/unit/BPF2a/failure-channel-name-0`
+
 **Spec requirement:** The channel field contains the name of the channel that failed.
 
 ```pseudo
@@ -306,6 +340,8 @@ Then result.channel equals channel_name
 ```
 
 ### BPF2b - error contains ErrorInfo for failure reason
+
+**Test ID**: `rest/unit/BPF2b/failure-error-info-0`
 
 **Spec requirement:** The error field contains an ErrorInfo object with code, statusCode, and message.
 
@@ -336,6 +372,8 @@ And result.error.message contains "not permitted"
 
 ### BatchResult1 - Partial success with mixed results
 
+**Test ID**: `rest/unit/RSC22c/partial-success-mixed-results-0`
+
 **Spec requirement:** A batch publish can succeed for some channels and fail for others.
 
 ```pseudo
@@ -357,6 +395,8 @@ And result[1] is a BatchPublishFailureResult
 
 ### BatchResult2 - Distinguishing success from failure results
 
+**Test ID**: `rest/unit/RSC22c/distinguish-success-failure-0`
+
 **Spec requirement:** Success and failure results can be distinguished by the presence of messageId/serials vs error fields.
 
 ```pseudo
@@ -375,6 +415,8 @@ Then each result can be identified as success or failure:
 
 ### RSC22_Error1 - Invalid BatchPublishSpec rejected
 
+**Test ID**: `rest/unit/RSC22/empty-channels-rejected-0`
+
 **Spec requirement:** Empty channels array must be rejected with a validation error.
 
 ```pseudo
@@ -385,6 +427,8 @@ And the error indicates invalid request
 ```
 
 ### RSC22_Error2 - Empty messages array rejected
+
+**Test ID**: `rest/unit/RSC22/empty-messages-rejected-0`
 
 **Spec requirement:** Empty messages array must be rejected with a validation error.
 
@@ -398,6 +442,8 @@ And the error indicates invalid request
 ```
 
 ### RSC22_Error3 - Server error returns AblyException
+
+**Test ID**: `rest/unit/RSC22/server-error-propagated-0`
 
 **Spec requirement:** Server errors (5xx) must be propagated as AblyException with the error code and status.
 
@@ -414,6 +460,8 @@ And exception.statusCode equals 500
 ```
 
 ### RSC22_Error4 - Authentication error returns AblyException
+
+**Test ID**: `rest/unit/RSC22/auth-error-propagated-0`
 
 **Spec requirement:** Authentication errors (401) must be propagated as AblyException with the error code and status.
 
@@ -435,6 +483,8 @@ And exception.statusCode equals 401
 
 ### RSC22_Headers1 - Standard headers included
 
+**Test ID**: `rest/unit/RSC22/standard-headers-included-0`
+
 **Spec requirement:** All batch publish requests must include standard Ably protocol headers.
 
 ```pseudo
@@ -450,6 +500,8 @@ Then the captured request includes:
 ```
 
 ### RSC22_Headers2 - Request ID included when enabled
+
+**Test ID**: `rest/unit/RSC22/request-id-included-0`
 
 **Spec requirement:** When addRequestIds is enabled, a unique request_id query parameter must be included.
 
@@ -469,6 +521,8 @@ And the request_id is a unique identifier
 
 ### RSC22_Batch1 - Multiple messages per channel
 
+**Test ID**: `rest/unit/RSC22/multiple-messages-per-channel-0`
+
 **Spec requirement:** A batch can include many messages to be published to a single channel.
 
 ```pseudo
@@ -485,6 +539,8 @@ And the mock response confirms all messages were processed
 ```
 
 ### RSC22_Batch2 - Multiple channels with multiple messages
+
+**Test ID**: `rest/unit/RSC22/multiple-channels-multiple-messages-0`
 
 **Spec requirement:** A batch can publish multiple messages to multiple channels (cartesian product).
 

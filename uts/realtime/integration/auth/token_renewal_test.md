@@ -36,6 +36,8 @@ AFTER ALL TESTS:
 
 ## RSA4b, RTN14b - Token renewal on expiry
 
+**Test ID**: `realtime/integration/RSA4b/token-renewal-on-expiry-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSA4b | Client with renewable token automatically reissues on token error |

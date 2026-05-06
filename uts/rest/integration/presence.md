@@ -57,6 +57,8 @@ The `ably-common/test-resources/test-app-setup.json` includes pre-populated pres
 
 ### RSP1_Integration - Access presence from channel
 
+**Test ID**: `rest/integration/RSP1/access-presence-from-channel-0`
+
 **Spec requirement:** RSP1 - `RestPresence` object is accessible via `channel.presence`.
 
 ```pseudo
@@ -77,6 +79,8 @@ ASSERT presence IS RestPresence
 ## RSP3 - RestPresence#get
 
 ### RSP3_Integration_1 - Get presence members from fixture channel
+
+**Test ID**: `rest/integration/RSP3/get-presence-members-0`
 
 **Spec requirement:** RSP3 - `get()` returns a `PaginatedResult` containing current presence members.
 
@@ -103,6 +107,8 @@ ASSERT "client_json" IN client_ids
 
 ### RSP3_Integration_2 - Get returns PresenceMessage with correct fields
 
+**Test ID**: `rest/integration/RSP3/presence-message-fields-1`
+
 **Spec requirement:** RSP3 - Each item in the result is a `PresenceMessage` with action, clientId, data, and connectionId.
 
 ```pseudo
@@ -127,6 +133,8 @@ ASSERT member.connectionId IS NOT null
 
 ### RSP3a1_Integration - Get with limit parameter
 
+**Test ID**: `rest/integration/RSP3a1/get-with-limit-0`
+
 **Spec requirement:** RSP3a1 - `limit` param restricts the number of presence members returned.
 
 ```pseudo
@@ -148,6 +156,8 @@ IF result.hasNext():
 
 ### RSP3a2_Integration - Get with clientId filter
 
+**Test ID**: `rest/integration/RSP3a2/get-with-clientid-filter-0`
+
 **Spec requirement:** RSP3a2 - `clientId` param filters results to specified client.
 
 ```pseudo
@@ -167,6 +177,8 @@ ASSERT result.items[0].data == "{ \"test\": \"This is a JSONObject clientData pa
 ```
 
 ### RSP3_Integration_Empty - Get on channel with no presence
+
+**Test ID**: `rest/integration/RSP3/get-empty-channel-2`
 
 **Spec requirement:** RSP3 - `get()` returns empty `PaginatedResult` when no members are present.
 
@@ -192,6 +204,8 @@ ASSERT result.hasNext() == false
 ## RSP4 - RestPresence#history
 
 ### RSP4_Integration_1 - History returns presence events
+
+**Test ID**: `rest/integration/RSP4/history-returns-events-0`
 
 **Spec requirement:** RSP4 - `history()` returns a `PaginatedResult` containing presence event history.
 
@@ -239,6 +253,8 @@ ASSERT PresenceAction.leave IN actions
 ```
 
 ### RSP4b1_Integration - History with start/end time range
+
+**Test ID**: `rest/integration/RSP4b1/history-time-range-0`
 
 **Spec requirement:** RSP4b1 - `start` and `end` params filter history by timestamp range.
 
@@ -289,6 +305,8 @@ ASSERT history.items.length >= 2
 
 ### RSP4b2_Integration - History direction forwards
 
+**Test ID**: `rest/integration/RSP4b2/history-direction-forwards-0`
+
 **Spec requirement:** RSP4b2 - `direction` param controls event ordering (forwards = oldest first).
 
 ```pseudo
@@ -335,6 +353,8 @@ ASSERT history_backwards.items[0].data == "third"
 ```
 
 ### RSP4b3_Integration - History with limit and pagination
+
+**Test ID**: `rest/integration/RSP4b3/history-limit-pagination-0`
 
 **Spec requirement:** RSP4b3 - `limit` param restricts history results and enables pagination.
 
@@ -387,6 +407,8 @@ ASSERT page2.items.length >= 1
 
 ### RSP5_Integration_1 - String data decoded correctly
 
+**Test ID**: `rest/integration/RSP5/decode-string-data-0`
+
 **Spec requirement:** RSP5 - Presence message `data` is decoded according to its encoding.
 
 ```pseudo
@@ -405,6 +427,8 @@ ASSERT result.items[0].data == "This is a string clientData payload"
 
 ### RSP5_Integration_2 - JSON data decoded to object
 
+**Test ID**: `rest/integration/RSP5/decode-json-data-1`
+
 **Spec requirement:** RSP5 - JSON-encoded presence data is decoded to native objects.
 
 ```pseudo
@@ -422,6 +446,8 @@ ASSERT result.items[0].data["example"]["json"] == "Object"
 ```
 
 ### RSP5_Integration_3 - Encrypted data decoded with cipher
+
+**Test ID**: `rest/integration/RSP5/decode-encrypted-data-2`
 
 **Spec requirement:** RSP5 - Encrypted presence data is automatically decrypted when cipher is configured.
 
@@ -451,6 +477,8 @@ ASSERT result.items[0].data IS NOT null
 ```
 
 ### RSP5_Integration_4 - History messages also decoded
+
+**Test ID**: `rest/integration/RSP5/decode-history-messages-3`
 
 **Spec requirement:** RSP5 - Presence history messages are decoded the same way as current presence.
 
@@ -495,6 +523,8 @@ ASSERT history.items[0].data["number"] == 123
 
 ### RSP_Pagination_Integration - Full pagination through presence members
 
+**Test ID**: `rest/integration/RSP3/full-pagination-3`
+
 **Spec requirement:** RSP3 - Presence `get()` supports pagination through all members.
 
 ```pseudo
@@ -531,6 +561,8 @@ ASSERT len(set(client_ids)) == len(client_ids)
 
 ### RSP_Error_Integration_1 - Invalid credentials rejected
 
+**Test ID**: `rest/integration/RSP3/invalid-credentials-rejected-4`
+
 **Spec requirement:** RSP3 - Presence operations with invalid credentials return authentication errors.
 
 ```pseudo
@@ -545,6 +577,8 @@ ASSERT error.code >= 40100 AND error.code < 40200
 ```
 
 ### RSP_Error_Integration_2 - Insufficient permissions rejected
+
+**Test ID**: `rest/integration/RSP3/subscribe-capability-sufficient-5`
 
 **Spec requirement:** RSP3 - Presence operations succeed with appropriate capabilities.
 

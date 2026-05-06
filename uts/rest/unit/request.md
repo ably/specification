@@ -23,6 +23,8 @@ The `request()` method provides a generic way to make HTTP requests to Ably endp
 
 ## RSC19f - Method signature supports required HTTP methods
 
+**Test ID**: `rest/unit/RSC19f/supports-http-methods-0`
+
 **Spec requirement:** The `request()` method must support GET, POST, PUT, PATCH, and DELETE HTTP methods.
 
 Tests that the request() method supports GET, POST, PUT, PATCH, and DELETE methods.
@@ -70,6 +72,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSC19f - Query parameters passed correctly
 
+**Test ID**: `rest/unit/RSC19f/query-params-passed-1`
+
 **Spec requirement:** The `params` argument must add query parameters to the request URL.
 
 Tests that the params argument adds URL query parameters.
@@ -110,6 +114,8 @@ ASSERT request.url.query_params["direction"] == "backwards"
 
 ## RSC19f - Custom headers passed correctly
 
+**Test ID**: `rest/unit/RSC19f/custom-headers-passed-2`
+
 **Spec requirement:** The `headers` argument must add custom HTTP headers to the request.
 
 Tests that the headers argument adds custom HTTP headers.
@@ -149,6 +155,8 @@ ASSERT request.headers["X-Another"] == "another-value"
 ---
 
 ## RSC19f - Request body sent correctly
+
+**Test ID**: `rest/unit/RSC19f/request-body-sent-3`
 
 **Spec requirement:** The `body` argument must be included in the request and encoded according to the configured protocol.
 
@@ -194,6 +202,8 @@ ASSERT body["data"] == "payload"
 
 ## RSC19f1 - X-Ably-Version header uses explicit version parameter
 
+**Test ID**: `rest/unit/RSC19f1/version-param-sets-header-0`
+
 Tests that the version parameter sets the X-Ably-Version header.
 
 ### Setup
@@ -226,6 +236,8 @@ FOR EACH test_case IN test_cases:
 ---
 
 ## RSC19b - Uses configured authentication
+
+**Test ID**: `rest/unit/RSC19b/uses-configured-auth-0`
 
 **Spec requirement:** The `request()` method must use the REST client's configured authentication mechanism (Basic auth for API keys, Bearer token for token auth).
 
@@ -301,6 +313,8 @@ ASSERT request.headers["Authorization"] STARTS_WITH "Bearer "
 
 ## RSC19c - Protocol headers set correctly (JSON)
 
+**Test ID**: `rest/unit/RSC19c/protocol-headers-json-0`
+
 Tests that Accept and Content-Type headers reflect the configured protocol.
 
 ### Setup
@@ -333,6 +347,8 @@ ASSERT request.headers["Content-Type"] == "application/json"
 
 ## RSC19c - Protocol headers set correctly (MsgPack)
 
+**Test ID**: `rest/unit/RSC19c/protocol-headers-msgpack-1`
+
 Tests that Accept and Content-Type headers reflect MsgPack protocol when configured.
 
 ### Setup
@@ -364,6 +380,8 @@ ASSERT request.headers["Content-Type"] == "application/x-msgpack"
 ---
 
 ## RSC19c - Request body encoded according to protocol
+
+**Test ID**: `rest/unit/RSC19c/body-encoded-per-protocol-2`
 
 Tests that the request body is encoded using the configured protocol.
 
@@ -431,6 +449,8 @@ ASSERT body["data"] == "value"
 
 ## RSC19c - Response body decoded according to Content-Type
 
+**Test ID**: `rest/unit/RSC19c/response-decoded-by-content-type-3`
+
 Tests that the response body is automatically decoded based on Content-Type header.
 
 ### Test Case 1: JSON response
@@ -488,6 +508,8 @@ ASSERT items[0]["id"] == "1"
 
 ## RSC19d, HP4 - HttpPaginatedResponse provides status code
 
+**Test ID**: `rest/unit/RSC19d/response-status-code-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSC19d | Request returns HttpPaginatedResponse |
@@ -531,6 +553,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSC19d, HP5 - HttpPaginatedResponse provides success indicator
 
+**Test ID**: `rest/unit/RSC19d/response-success-indicator-1`
+
 Tests that the success property correctly reflects 2xx status codes.
 
 ### Setup
@@ -571,6 +595,8 @@ FOR EACH test_case IN test_cases:
 
 ## RSC19d, HP6 - HttpPaginatedResponse provides error code from header
 
+**Test ID**: `rest/unit/RSC19d/response-error-code-header-2`
+
 Tests that the errorCode property extracts the value from X-Ably-Errorcode header.
 
 ### Setup
@@ -597,6 +623,8 @@ ASSERT response.errorCode == 40101
 ---
 
 ## RSC19d, HP7 - HttpPaginatedResponse provides error message from header
+
+**Test ID**: `rest/unit/RSC19d/response-error-message-header-3`
 
 Tests that the errorMessage property extracts the value from X-Ably-Errormessage header.
 
@@ -627,6 +655,8 @@ ASSERT response.errorMessage == "Token expired"
 ---
 
 ## RSC19d, HP8 - HttpPaginatedResponse provides all response headers
+
+**Test ID**: `rest/unit/RSC19d/response-headers-accessible-4`
 
 Tests that all response headers are accessible.
 
@@ -662,6 +692,8 @@ ASSERT headers["X-Custom-Header"] == "custom-value"
 
 ## RSC19d, HP3 - HttpPaginatedResponse provides response items
 
+**Test ID**: `rest/unit/RSC19d/response-items-decoded-5`
+
 Tests that the items() method returns the decoded response body.
 
 ### Setup
@@ -691,6 +723,8 @@ ASSERT items[1]["id"] == "msg2"
 ---
 
 ## RSC19d, HP1 - HttpPaginatedResponse pagination support
+
+**Test ID**: `rest/unit/RSC19d/pagination-with-link-headers-6`
 
 | Spec | Requirement |
 |------|-------------|
@@ -744,6 +778,8 @@ ASSERT response.hasNext() == false
 
 ## RSC19d - Non-array response handling
 
+**Test ID**: `rest/unit/RSC19d/non-array-response-handling-7`
+
 Tests that non-array responses are handled correctly (wrapped as single item).
 
 ### Setup
@@ -770,6 +806,8 @@ ASSERT items.length == 1 OR items["time"] == 1234567890000
 ---
 
 ## RSC19e - Network error handling
+
+**Test ID**: `rest/unit/RSC19e/network-error-propagated-0`
 
 **Spec requirement:** Network errors must be properly propagated to the caller after all fallback attempts are exhausted.
 
@@ -798,6 +836,8 @@ ASSERT error.code == 80000 OR error.message CONTAINS "network" OR error.message 
 
 ## RSC19e - Timeout error handling
 
+**Test ID**: `rest/unit/RSC19e/timeout-error-handling-1`
+
 Tests that request timeouts are properly handled.
 
 ### Setup
@@ -825,6 +865,8 @@ ASSERT error.code == 50003 OR error.message CONTAINS "timeout"
 ---
 
 ## RSC19e - HTTP error status does not trigger fallback
+
+**Test ID**: `rest/unit/RSC19e/http-error-no-fallback-2`
 
 Tests that HTTP error responses (4xx, 5xx with valid Ably error body) are returned directly without fallback retry.
 
@@ -861,6 +903,8 @@ ASSERT mock_http.captured_requests.length == 1
 ---
 
 ## RSC19e, RSC15 - Fallback hosts tried on server errors
+
+**Test ID**: `rest/unit/RSC19e/fallback-on-server-error-3`
 
 Tests that fallback hosts are attempted when primary host returns server error without valid Ably error.
 
@@ -902,6 +946,8 @@ ASSERT mock_http.captured_requests[1].url.host == "fallback.ably-realtime.com"
 
 ## RSC19b - Cannot override authentication
 
+**Test ID**: `rest/unit/RSC19b/cannot-override-auth-1`
+
 Tests that the request() method does not allow overriding the configured authentication via custom headers.
 
 ### Setup
@@ -938,6 +984,8 @@ This behavior may vary by implementation. Some libraries may allow header overri
 
 ## RSC19f - Path with leading slash
 
+**Test ID**: `rest/unit/RSC19f/path-leading-slash-handling-4`
+
 Tests that paths are handled correctly whether or not they include a leading slash.
 
 ### Setup
@@ -968,6 +1016,8 @@ FOR EACH test_case IN test_cases:
 ---
 
 ## RSC19d - Empty response handling
+
+**Test ID**: `rest/unit/RSC19d/empty-response-handling-8`
 
 Tests that empty responses (204 No Content) are handled correctly.
 

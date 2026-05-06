@@ -13,6 +13,8 @@ These tests use the mock HTTP infrastructure defined in `uts/test/rest/unit/help
 
 ## RSL10 — channel.annotations returns RestAnnotations
 
+**Test ID**: `rest/unit/RSL10/annotations-attribute-type-0`
+
 **Spec requirement:** RSL10 — `RestChannel#annotations` attribute contains the `RestAnnotations` object for this channel.
 
 Tests that the channel exposes an `annotations` attribute of type `RestAnnotations`.
@@ -37,6 +39,8 @@ ASSERT channel.annotations IS RestAnnotations
 ---
 
 ## RSAN1c6, RSAN1c1, RSAN1c2 — publish sends POST with ANNOTATION_CREATE to correct endpoint
+
+**Test ID**: `rest/unit/RSAN1c6/publish-post-annotation-create-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -95,6 +99,8 @@ ASSERT annotation["name"] == "like"
 
 ## RSAN1a3 — publish validates type is required
 
+**Test ID**: `rest/unit/RSAN1a3/publish-type-required-0`
+
 **Spec requirement:** RSAN1a3 — The SDK must validate that the user supplied a `type`. All other fields are optional.
 
 Tests that publishing an annotation without a `type` field throws an error.
@@ -125,6 +131,8 @@ ASSERT error.code == 40003
 ---
 
 ## RSAN1c3 — annotation data encoded per RSL4
+
+**Test ID**: `rest/unit/RSAN1c3/annotation-data-encoded-0`
 
 **Spec requirement:** RSAN1c3 — If the user has supplied an `Annotation.data`, that must be encoded (and the `encoding` set) just as it would be for a `Message`, per `RSL4`.
 
@@ -170,6 +178,8 @@ ASSERT parse_json(annotation["data"]) == { "key": "value", "nested": { "a": 1 } 
 ---
 
 ## RSAN1c4 — idempotent ID generated when enabled
+
+**Test ID**: `rest/unit/RSAN1c4/idempotent-id-generated-0`
 
 **Spec requirement:** RSAN1c4 — If `idempotentRestPublishing` is enabled and the annotation has an empty `id`, the SDK should generate a base64-encoded random string, append `:0`, and set it as the `Annotation.id`.
 
@@ -222,6 +232,8 @@ ASSERT parts[1] == "0"
 ---
 
 ## RSAN1c4 — idempotent ID not generated when disabled
+
+**Test ID**: `rest/unit/RSAN1c4/idempotent-id-not-generated-1`
 
 **Spec requirement:** RSAN1c4 — The SDK should only generate idempotent IDs when `idempotentRestPublishing` is enabled.
 

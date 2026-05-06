@@ -21,6 +21,8 @@ See rest_client.md for the complete `MockHttpClient` interface specification.
 
 ## RSL1k1 - idempotentRestPublishing default
 
+**Test ID**: `rest/unit/RSL1k1/idempotent-default-true-0`
+
 **Spec requirement:** The `idempotentRestPublishing` client option must default to `true` for library versions >= 1.2.
 
 Tests the default value of `idempotentRestPublishing` option.
@@ -42,6 +44,8 @@ ASSERT client.options.idempotentRestPublishing == true
 ---
 
 ## RSL1k2 - Message ID format when idempotent publishing enabled
+
+**Test ID**: `rest/unit/RSL1k2/message-id-format-0`
 
 **Spec requirement:** When `idempotentRestPublishing` is enabled, library-generated message IDs must follow the format `<base64>:<serial>` where base64 is a URL-safe base64-encoded random value and serial is a zero-based sequential integer.
 
@@ -96,6 +100,8 @@ ASSERT parts[1] == "0"
 ---
 
 ## RSL1k2 - Serial increments for batch publish
+
+**Test ID**: `rest/unit/RSL1k2/serial-increments-batch-1`
 
 **Spec requirement:** When publishing multiple messages in a batch, all messages must share the same base ID with incrementing serial numbers starting from 0.
 
@@ -157,6 +163,8 @@ ASSERT serials == [0, 1, 2]
 
 ## RSL1k3 - Separate publishes get unique base IDs
 
+**Test ID**: `rest/unit/RSL1k3/unique-base-ids-0`
+
 **Spec requirement:** Each separate publish call must generate a new unique base ID, even for messages published to the same channel.
 
 Tests that separate publish calls generate unique base IDs.
@@ -204,6 +212,8 @@ ASSERT base1 != base2
 
 ## RSL1k3 - No ID generated when idempotent publishing disabled
 
+**Test ID**: `rest/unit/RSL1k3/no-id-when-disabled-1`
+
 **Spec requirement:** When `idempotentRestPublishing` is false, the library must not automatically generate message IDs.
 
 Tests that message IDs are not automatically generated when disabled.
@@ -246,6 +256,8 @@ ASSERT "id" NOT IN body
 ---
 
 ## RSL1k - Client-supplied ID preserved
+
+**Test ID**: `rest/unit/RSL1k/client-id-preserved-0`
 
 **Spec requirement:** Client-supplied message IDs must be preserved and transmitted exactly as provided, even when `idempotentRestPublishing` is enabled.
 
@@ -291,6 +303,8 @@ ASSERT body["id"] == "my-custom-id"
 ---
 
 ## RSL1k2 - Same ID used on retry
+
+**Test ID**: `rest/unit/RSL1k2/same-id-on-retry-2`
 
 **Spec requirement:** When a publish request is retried after a failure, the same message ID(s) must be used to ensure idempotent behavior.
 
@@ -344,6 +358,8 @@ ASSERT body1["id"] == body2["id"]
 ---
 
 ## RSL1k - Mixed client and library IDs in batch
+
+**Test ID**: `rest/unit/RSL1k/mixed-ids-in-batch-1`
 
 **Spec requirement:** In a batch publish, messages with client-supplied IDs must be preserved, while messages without IDs receive library-generated IDs using the standard format.
 

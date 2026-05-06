@@ -21,6 +21,8 @@ RTB1 defines how retry delays are calculated for connections in the DISCONNECTED
 
 ## RTB1a - Backoff coefficient follows min((n+2)/3, 2) for successive retries
 
+**Test ID**: `realtime/unit/RTB1a/backoff-coefficient-sequence-0`
+
 **Spec requirement:** The backoff coefficient for the nth retry is calculated as the minimum of `(n + 2) / 3` and `2` (resulting in the sequence `[1, 4/3, 5/3, 2, 2, ...]`).
 
 Tests that the backoff coefficient calculation produces the correct sequence of values for successive retries.
@@ -69,6 +71,8 @@ FOR i IN 3..9:
 
 ## RTB1b - Jitter coefficient is between 0.8 and 1.0
 
+**Test ID**: `realtime/unit/RTB1b/jitter-coefficient-range-0`
+
 **Spec requirement:** The jitter coefficient is a random number between 0.8 and 1. The randomness of this number doesn't need to be cryptographically secure but should be approximately uniformly distributed.
 
 Tests that the jitter coefficient is always within the valid range and shows reasonable distribution.
@@ -114,6 +118,8 @@ ASSERT max_value - min_value > 0.05
 ---
 
 ## RTB1 - Combined retry delay for DISCONNECTED connections
+
+**Test ID**: `realtime/unit/RTB1/disconnected-retry-delay-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -227,6 +233,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTB1 - Combined retry delay for SUSPENDED channels
+
+**Test ID**: `realtime/unit/RTB1/suspended-channel-retry-delay-1`
 
 | Spec | Requirement |
 |------|-------------|

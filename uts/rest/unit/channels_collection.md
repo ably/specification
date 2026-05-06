@@ -11,6 +11,8 @@ These tests verify the REST channels collection management functionality. No moc
 
 ## RSN1 - Channels collection accessible via RestClient
 
+**Test ID**: `rest/unit/RSN1/channels-collection-accessible-0`
+
 **Spec requirement:** `Channels` is a collection of `RestChannel` objects accessible through `RestClient#channels`.
 
 Tests that the Rest client exposes a channels collection.
@@ -29,6 +31,8 @@ ASSERT client.channels IS NOT null
 ---
 
 ## RSN2 - Check if channel exists
+
+**Test ID**: `rest/unit/RSN2/check-channel-exists-0`
 
 **Spec requirement:** Methods should exist to check if a channel exists or iterate through the existing channels.
 
@@ -68,6 +72,8 @@ ASSERT exists_other == false
 
 ## RSN2 - Iterate through existing channels
 
+**Test ID**: `rest/unit/RSN2/iterate-channels-1`
+
 **Spec requirement:** Methods should exist to check if a channel exists or iterate through the existing channels.
 
 Tests that channels can be iterated.
@@ -104,6 +110,8 @@ ASSERT length(channel_names) == 3
 
 ## RSN3a - Get creates new channel if none exists
 
+**Test ID**: `rest/unit/RSN3a/get-creates-new-channel-0`
+
 **Spec requirement:** Creates a new `RestChannel` object for the specified channel if none exists, or returns the existing channel. `ChannelOptions` can be provided in an optional second argument.
 
 ### Setup
@@ -129,6 +137,8 @@ ASSERT client.channels.exists(channel_name) == true
 
 ## RSN3a - Get returns existing channel
 
+**Test ID**: `rest/unit/RSN3a/get-returns-existing-channel-1`
+
 **Spec requirement:** Creates a new `RestChannel` object for the specified channel if none exists, or returns the existing channel.
 
 ### Setup
@@ -153,6 +163,8 @@ ASSERT channel1.name == channel_name
 ---
 
 ## RSN3a - Operator subscript creates or returns channel
+
+**Test ID**: `rest/unit/RSN3a/subscript-creates-or-returns-2`
 
 **Spec requirement:** Creates a new `RestChannel` object for the specified channel if none exists, or returns the existing channel.
 
@@ -181,6 +193,8 @@ ASSERT channel1.name == channel_name
 
 ## RSN4a - Release removes channel
 
+**Test ID**: `rest/unit/RSN4a/release-removes-channel-0`
+
 **Spec requirement:** Takes one argument, the channel name, and releases the corresponding channel entity (that is, deletes it to allow it to be garbage collected).
 
 ### Setup
@@ -207,6 +221,8 @@ ASSERT client.channels.exists(channel_name) == false
 
 ## RSN4b - Release on non-existent channel is no-op
 
+**Test ID**: `rest/unit/RSN4b/release-nonexistent-noop-0`
+
 **Spec requirement:** Calling `release()` with a channel name that does not correspond to an extant channel entity must return without error.
 
 ### Setup
@@ -230,6 +246,8 @@ ASSERT client.channels.exists(channel_name) == false
 ---
 
 ## RSN3a - Get after release creates new channel
+
+**Test ID**: `rest/unit/RSN3a/get-after-release-new-instance-3`
 
 **Spec requirement:** Creates a new `RestChannel` object for the specified channel if none exists.
 

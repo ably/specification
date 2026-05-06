@@ -13,6 +13,8 @@ These tests use the mock HTTP infrastructure defined in `uts/test/rest/unit/help
 
 ## RSL1n — publish() returns PublishResult with serials (single message)
 
+**Test ID**: `rest/unit/RSL1n/publish-result-single-message-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSL1n | On success, returns a `PublishResult` containing the serials of the published messages |
@@ -54,6 +56,8 @@ ASSERT result.serials[0] == "serial-abc"
 ---
 
 ## RSL1n — publish() returns PublishResult with serials (batch)
+
+**Test ID**: `rest/unit/RSL1n/publish-result-batch-serials-1`
 
 **Spec requirement:** RSL1n — When publishing multiple messages, the returned `PublishResult.serials` array has one entry per message, corresponding 1:1.
 
@@ -99,6 +103,8 @@ ASSERT result.serials[2] == "s3"
 ---
 
 ## RSL1n — publish() returns PublishResult with null serial (conflated message)
+
+**Test ID**: `rest/unit/RSL1n/publish-result-null-serial-2`
 
 | Spec | Requirement |
 |------|-------------|

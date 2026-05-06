@@ -25,6 +25,8 @@ This mirrors the `Connection#whenState` function (RTN26).
 
 ## RTL25a - whenState resolves immediately if already in state
 
+**Test ID**: `realtime/unit/RTL25a/resolves-immediately-current-0`
+
 **Spec requirement:** If the channel is already in the given state, resolves
 immediately with a `null` value.
 
@@ -88,6 +90,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL25b - whenState waits for state if not already in it
+
+**Test ID**: `realtime/unit/RTL25b/waits-for-state-change-0`
 
 **Spec requirement:** If the channel is not in the given state, waits for the
 state to be reached and resolves with the `ChannelStateChange`.
@@ -159,6 +163,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL25b - whenState only fires once
+
+**Test ID**: `realtime/unit/RTL25b/fires-once-only-1`
 
 **Spec requirement:** whenState resolves only once, even if the state is entered
 multiple times. Subsequent entries into the same state do not trigger additional
@@ -245,6 +251,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL25a - whenState for past state does not fire
+
+**Test ID**: `realtime/unit/RTL25a/past-state-does-not-resolve-1`
 
 **Spec requirement:** whenState checks the current state. If the channel has
 already passed through a state but is no longer in it, whenState should NOT

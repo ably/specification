@@ -24,6 +24,8 @@ period, Ably forcibly disconnects via a `DISCONNECTED` message with a token erro
 
 ## RTN22 - Server sends AUTH, client re-authenticates
 
+**Test ID**: `realtime/unit/RTN22/server-auth-triggers-reauth-0`
+
 **Spec requirement:** Ably can request that a connected client re-authenticates by sending the client an `AUTH` ProtocolMessage. The client must then immediately start a new authentication process as described in RTC8.
 
 Tests that receiving an `AUTH` message from the server triggers the client to obtain a new token and send an `AUTH` message back.
@@ -123,6 +125,8 @@ CLOSE_CLIENT(client)
 
 ## RTN22 - Connection remains CONNECTED during server-initiated reauth
 
+**Test ID**: `realtime/unit/RTN22/stays-connected-during-reauth-1`
+
 **Spec requirement:** The re-authentication triggered by the server's AUTH message must follow the RTC8 flow — if the connection is CONNECTED, an AUTH message is sent without disconnecting.
 
 Tests that the connection state does not change during server-initiated re-authentication.
@@ -211,6 +215,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTN22a - Forced disconnect on reauth failure
+
+**Test ID**: `realtime/unit/RTN22a/forced-disconnect-reauth-failure-0`
 
 **Spec requirement:** Ably reserves the right to forcibly disconnect a client that does not re-authenticate within an acceptable period. A client is forcibly disconnected following a `DISCONNECTED` message containing an error code in the range 40140–40149. This forces the client to re-authenticate and resume via RTN15h.
 

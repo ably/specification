@@ -29,6 +29,8 @@ LogHandler(level: LogLevel, message: String, context: Map<String, dynamic>)
 
 ## RSC2 - Default log level is warn
 
+**Test ID**: `rest/unit/RSC2/default-log-level-warn-0`
+
 **Spec requirement:** The default log level is `warn`. Only `error` and `warn` level
 events should be emitted when the default level is used.
 
@@ -58,6 +60,8 @@ ASSERT ALL log IN captured_logs: log.level IN [error, warn]
 ---
 
 ## TO3b - Log level can be changed
+
+**Test ID**: `rest/unit/TO3b/log-level-changeable-0`
 
 **Spec requirement:** The log level can be changed via `ClientOptions.logLevel`.
 Setting the level to `verbose` should capture all log events.
@@ -99,6 +103,8 @@ ASSERT ANY log IN debug_logs: log.message CONTAINS "HTTP request"
 
 ## TO3c - Custom log handler receives structured events
 
+**Test ID**: `rest/unit/TO3c/custom-handler-structured-events-0`
+
 **Spec requirement:** A custom log handler provided via `ClientOptions.logHandler`
 receives structured log events with level, message, and context.
 
@@ -135,6 +141,8 @@ ASSERT ANY log IN captured_logs: log.context IS NOT EMPTY
 
 ## TO3c2 - Structured context contains expected keys
 
+**Test ID**: `rest/unit/TO3c2/context-contains-expected-keys-0`
+
 **Spec requirement:** The structured context map contains relevant key-value pairs
 for the log event. HTTP request logs include method, host, and path.
 
@@ -169,6 +177,8 @@ ASSERT "path" IN http_logs[0].context
 ---
 
 ## RSC2b - LogLevel.none produces no log events
+
+**Test ID**: `rest/unit/RSC2b/log-level-none-suppresses-all-0`
 
 **Spec requirement:** Setting log level to `none` should suppress all log output.
 

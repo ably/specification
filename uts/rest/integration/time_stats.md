@@ -29,6 +29,8 @@ AFTER ALL TESTS:
 
 ## RSC16 - time() returns server time
 
+**Test ID**: `rest/integration/RSC16/time-returns-server-time-0`
+
 **Spec requirement:** RSC16 - `time()` obtains the current server time.
 
 Tests that `time()` returns the current server time.
@@ -63,6 +65,8 @@ ASSERT server_time <= after_request + 5000ms
 
 ## RSC6 - stats() returns application statistics
 
+**Test ID**: `rest/integration/RSC6/stats-returns-result-0`
+
 **Spec requirement:** RSC6 - `stats()` returns a `PaginatedResult` containing application statistics.
 
 Tests that `stats()` returns stats for the application.
@@ -96,6 +100,8 @@ IF result.items.length > 0:
 ---
 
 ## RSC6 - stats() with parameters
+
+**Test ID**: `rest/integration/RSC6/stats-with-parameters-1`
 
 **Spec requirement:** RSC6 - `stats()` supports `limit`, `direction`, and `unit` parameters.
 

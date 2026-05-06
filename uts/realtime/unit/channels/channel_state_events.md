@@ -13,6 +13,8 @@ See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSock
 
 ## RTL2b - Channel state attribute
 
+**Test ID**: `realtime/unit/RTL2b/channel-state-attribute-0`
+
 **Spec requirement:** `RealtimeChannel#state` attribute is the current state of the channel, of type `ChannelState`.
 
 Tests that channel has a state attribute of type ChannelState.
@@ -35,6 +37,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL2b - Channel initial state is initialized
+
+**Test ID**: `realtime/unit/RTL2b/initial-state-initialized-1`
 
 **Spec requirement:** Channel state attribute reflects the current state.
 
@@ -61,6 +65,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL2a - State change events emitted for every state change
+
+**Test ID**: `realtime/unit/RTL2a/state-change-events-emitted-0`
 
 **Spec requirement:** It emits a `ChannelState` `ChannelEvent` for every channel state change.
 
@@ -113,6 +119,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL2d, TH1, TH2, TH5 - ChannelStateChange object structure
+
+**Test ID**: `realtime/unit/RTL2d/state-change-object-structure-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -169,6 +177,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL2d, TH3 - ChannelStateChange includes error reason when applicable
+
+**Test ID**: `realtime/unit/RTL2d/state-change-error-reason-1`
 
 **Spec requirement:** Any state change triggered by a ProtocolMessage that contains an error member should populate the reason with that error.
 
@@ -227,6 +237,8 @@ CLOSE_CLIENT(client)
 
 ## RTL2 - Filtered event subscription
 
+**Test ID**: `realtime/unit/RTL2/filtered-event-subscription-0`
+
 **Spec requirement:** RealtimeChannel implements EventEmitter and emits ChannelEvent events.
 
 Tests that subscribing to a specific event only receives that event.
@@ -273,6 +285,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL2g - UPDATE event for condition changes without state change
+
+**Test ID**: `realtime/unit/RTL2g/update-event-condition-change-0`
 
 **Spec requirement:** It emits an UPDATE ChannelEvent for changes to channel
 conditions for which the ChannelState does not change, unless explicitly
@@ -339,6 +353,8 @@ CLOSE_CLIENT(client)
 
 ## RTL2g - No duplicate state events
 
+**Test ID**: `realtime/unit/RTL2g/no-duplicate-state-events-1`
+
 **Spec requirement:** The library must never emit a ChannelState ChannelEvent for a state equal to the previous state.
 
 Tests that state events are not emitted when state doesn't actually change.
@@ -399,6 +415,8 @@ CLOSE_CLIENT(client)
 
 ## RTL2i, TH6 - hasBacklog flag in ChannelStateChange
 
+**Test ID**: `realtime/unit/RTL2i/has-backlog-flag-true-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RTL2i | ChannelStateChange may expose hasBacklog property |
@@ -450,6 +468,8 @@ CLOSE_CLIENT(client)
 
 ## RTL2i - hasBacklog false when flag not present
 
+**Test ID**: `realtime/unit/RTL2i/has-backlog-flag-false-1`
+
 **Spec requirement:** hasBacklog should only be true when ATTACHED message contains HAS_BACKLOG flag.
 
 Tests that hasBacklog is false when the flag is not present.
@@ -498,6 +518,8 @@ CLOSE_CLIENT(client)
 
 ## RTL2d - resumed flag in ChannelStateChange
 
+**Test ID**: `realtime/unit/RTL2d/resumed-flag-propagated-2`
+
 **Spec requirement:** ChannelStateChange has a resumed property indicating whether the ATTACHED message had the RESUMED flag set.
 
 Tests that resumed flag is correctly propagated.
@@ -545,6 +567,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## Channel errorReason attribute
+
+**Test ID**: `realtime/unit/RTL24/error-reason-populated-0`
 
 **Spec requirement:** Channel should expose error information when in failed state.
 
@@ -595,6 +619,8 @@ CLOSE_CLIENT(client)
 ---
 
 ## RTL4c - errorReason cleared on successful attach
+
+**Test ID**: `realtime/unit/RTL4c/error-reason-cleared-attach-0`
 
 **Spec requirement (RTL4c):** When the confirmation ATTACHED ProtocolMessage is received, the channel's errorReason is set to null.
 
