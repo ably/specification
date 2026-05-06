@@ -20,7 +20,7 @@ The key words "must", "must not", "required", "shall", "shall not", "should", "s
 - `(AIT-GP1)` The SDK must be split into a generic layer and one or more framework-specific layers. The generic layer must have no dependencies on any AI framework (e.g. Vercel AI SDK). Framework-specific layers implement codecs and provide convenience wrappers.
 - `(AIT-GP2)` All generic components must be parameterized by a `Codec` interface. The codec defines how application-level events are encoded to Ably messages and decoded back.
 - `(AIT-GP3)` The generic layer must use only `x-ably-*` message headers. Domain-specific headers (e.g. headers specific to the Vercel AI SDK) must only appear in framework-specific layers.
-- `(AIT-GP4)` A single shared Ably channel must be used per transport instance. All features (streaming, cancellation, history) operate over this shared channel.
+- `(AIT-GP4)` A single shared Ably channel must be used per session instance. All features (streaming, cancellation, history) operate over this shared channel.
 - `(AIT-GP5)` All dependencies must be passed through constructors or factory options. There must be no singletons, service locators, or global state.
 - `(AIT-GP6)` When raising an `ErrorInfo`, avoid relying on the generic `40000` and `50000` codes.
   - `(AIT-GP6a)` Prefer codes already defined in `ably-common`, for example — use `InvalidArgument` (`40003`) for an invalid argument passed to a function.
@@ -65,89 +65,93 @@ The codec layer defines the contract between domain event streams and Ably's nat
 
 ### Lifecycle Tracker
 
-- `(AIT-CD13)` The decoder must support a lifecycle tracker that synthesizes missing lifecycle events (e.g. `start`, `start-step`) when a client joins a stream mid-turn. Phases must be emitted in configuration order before content events.
+- `(AIT-CD13)` The decoder must support a lifecycle tracker that synthesizes missing lifecycle events (e.g. `start`, `start-step`) when a client joins a stream mid-run. Phases must be emitted in configuration order before content events.
 
 ### Encoder Hooks
 
 - `(AIT-CD14)` The encoder core must invoke an optional `onMessage` hook before each Ably message is published. The hook receives the message before it is sent to the channel writer. If the hook throws, the encoder must catch and log the exception without interrupting the publish.
 
-## Server Transport {#server-transport}
+## Agent Session {#agent-session}
 
-The server transport manages the server-side turn lifecycle over an Ably channel. It composes a `TurnManager` for lifecycle event publishing and pipes event streams through the encoder.
+The agent (server-side) session manages the run lifecycle over an Ably channel. It composes a `RunManager` for lifecycle event publishing and pipes event streams through the encoder.
 
 ### Factory
 
-- `(AIT-ST1)` The SDK must provide a `createServerTransport` factory that accepts a channel, codec, optional logger, and optional `onError` callback, and returns a `ServerTransport`.
-- `(AIT-ST2)` On construction, the transport must subscribe to the cancel message name (`x-ably-cancel`) on the channel so that cancel messages from clients are routed to active turns.
+- `(AIT-ST1)` The SDK must provide a `createAgentSession` factory that accepts a channel, codec, optional logger, and optional `onError` callback, and returns an `AgentSession`.
+- `(AIT-ST2)` `connect()` must subscribe to the cancel message name (`x-ably-cancel`) on the channel — subscribe implicitly attaches the channel — so that cancel messages from clients are routed to active runs. It must be idempotent: subsequent calls return the same promise. All run-lifecycle methods (`start`, `addMessages`, `addEvents`, `pipe`, `end`) must throw `InvalidArgument` until `connect()` resolves.
 
-### Turn Lifecycle
+### Run Lifecycle
 
-- `(AIT-ST3)` `newTurn` must synchronously return a `Turn` object. No channel activity must occur until `start()` is called.
-  - `(AIT-ST3a)` The turn must be registered for cancel routing immediately on creation, so that cancel messages arriving before `start()` still fire the turn's abort signal.
-- `(AIT-ST4)` `start()` must publish a turn-start event (`x-ably-turn-start`) with the turn's `x-ably-turn-id` and `x-ably-turn-client-id` headers. It must be idempotent.
-  - `(AIT-ST4a)` If the turn was cancelled before `start()`, `start()` must raise an error.
-  - `(AIT-ST4b)` If the turn-start publish fails, `start()` must reject with an `Ably.ErrorInfo` carrying code `TurnLifecycleError` and wrapping the underlying error as `cause`. The per-turn `onError` callback must NOT be invoked — the rejected promise is the sole delivery channel.
-- `(AIT-ST5)` `addMessages()` must accept `TreeNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
-  - `(AIT-ST5a)` Per-node `parentId` and `forkOf` fields take precedence; turn-level defaults apply when those fields are undefined.
+- `(AIT-ST3)` `createRun(invocation, runtime?)` must synchronously return a `Run` object. The {@link Invocation} carries identity (`runId`, `clientId`, `parent`, `forkOf`, `messages`, `history`, `events`); `runtime` carries per-request hooks (`signal`, `onMessage`, `onAbort`, `onCancel`, `onError`). No channel activity must occur until `start()` is called.
+  - `(AIT-ST3a)` The run must be registered for cancel routing immediately on creation, so that cancel messages arriving before `start()` still fire the run's abort signal.
+- `(AIT-ST4)` `start()` must publish a run-start event (`x-ably-run-start`) with the run's `x-ably-run-id` and `x-ably-run-client-id` headers. It must be idempotent.
+  - `(AIT-ST4a)` If the run was cancelled before `start()`, `start()` must raise an error.
+  - `(AIT-ST4b)` If the run-start publish fails, `start()` must reject with an `Ably.ErrorInfo` carrying code `RunLifecycleError` and wrapping the underlying error as `cause`. The per-run `onError` callback must NOT be invoked — the rejected promise is the sole delivery channel.
+- `(AIT-ST5)` `addMessages()` must accept `MessageNode[]` and require that `start()` has been called. For each node, it must create a codec encoder with transport headers built from the node's typed fields (`msgId`, `parentId`, `forkOf`) merged with its `headers`, and publish the message through the encoder.
+  - `(AIT-ST5a)` Per-node `parentId` and `forkOf` fields take precedence; run-level defaults apply when those fields are undefined.
   - `(AIT-ST5b)` `addMessages()` must return an `AddMessagesResult` containing the `msgId` of each published node, in order. This allows the caller to pass the last msg-id as the assistant message's parent.
-  - `(AIT-ST5c)` If a publish fails in `addMessages()` or `addEvents()`, the method must reject with an `Ably.ErrorInfo` carrying code `TurnLifecycleError` and wrapping the underlying error as `cause`. The per-turn `onError` callback must NOT be invoked — the rejected promise is the sole delivery channel.
-- `(AIT-ST6)` `streamResponse()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-turn-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
-  - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation `parent` override, then turn-level `parent`.
-  - `(AIT-ST6b)` `streamResponse()` must return a `StreamResult` with a `reason` field indicating `"complete"`, `"cancelled"`, or `"error"`.
+  - `(AIT-ST5c)` If a publish fails in `addMessages()` or `addEvents()`, the method must reject with an `Ably.ErrorInfo` carrying code `RunLifecycleError` and wrapping the underlying error as `cause`. The per-run `onError` callback must NOT be invoked — the rejected promise is the sole delivery channel.
+- `(AIT-ST6)` `pipe()` must require that `start()` has been called. It must create a codec encoder with transport headers (`x-ably-role: "assistant"`, `x-ably-run-id`, unique `x-ably-msg-id`, and parent/forkOf headers) and pipe the event stream through the encoder.
+  - `(AIT-ST6a)` The assistant message's parent must be resolved in order: per-operation `parent` override, then run-level `parent`.
+  - `(AIT-ST6b)` `pipe()` must return a `StreamResult` with a `reason` field indicating `"complete"`, `"cancelled"`, or `"error"`.
     - `(AIT-ST6b1)` Reason `"complete"`: the source stream was fully consumed and the encoder was closed.
-    - `(AIT-ST6b2)` Reason `"cancelled"`: the turn's abort signal fired. If an `onAbort` callback was provided in the turn options, it must be invoked with a write function before the stream ends.
-    - `(AIT-ST6b3)` Reason `"error"`: the source stream threw. The encoder must be closed best-effort; failure to close must not propagate. `streamResponse()` must not throw; it must return a `StreamResult` whose `error` field holds the original caught error (preserving provider-specific type information). The per-turn `onError` callback must be invoked with an `Ably.ErrorInfo` wrapping the original error.
-    - `(AIT-ST6b4)` Error details from `"error"` streams must NOT automatically propagate to the client transport. The client receives only `reason: "error"` on the turn-end event. Server implementations that need to surface error details to the client must do so explicitly — for example, by mutating the turn-end message through the `onMessage` hook or by publishing application-defined events before `end()`. Rationale: automatic propagation could leak server internals and would impose a protocol contract on all codecs.
-  - `(AIT-ST6c)` `streamResponse()` must NOT call `end()` — the caller is responsible for calling `end()` after the stream finishes.
-- `(AIT-ST7)` `end()` must require that `start()` has been called. It must publish a turn-end event (`x-ably-turn-end`) with the turn's ID, clientId, and reason header. It must be idempotent.
-  - `(AIT-ST7a)` After `end()`, the turn must be deregistered from cancel routing regardless of whether the publish succeeds.
-  - `(AIT-ST7b)` If the turn-end publish fails, `end()` must reject with an `Ably.ErrorInfo` carrying code `TurnLifecycleError` and wrapping the underlying error as `cause`. The per-turn `onError` callback must NOT be invoked. The turn must still be deregistered from cancel routing (per `AIT-ST7a`).
+    - `(AIT-ST6b2)` Reason `"cancelled"`: the run's abort signal fired. If an `onAbort` callback was provided in the runtime options, it must be invoked with a write function before the stream ends.
+    - `(AIT-ST6b3)` Reason `"error"`: the source stream threw. The encoder must be closed best-effort; failure to close must not propagate. `pipe()` must not throw; it must return a `StreamResult` whose `error` field holds the original caught error (preserving provider-specific type information). The per-run `onError` callback must be invoked with an `Ably.ErrorInfo` wrapping the original error.
+    - `(AIT-ST6b4)` Error details from `"error"` streams must NOT automatically propagate to the client session. The client receives only `reason: "error"` on the run-end event. Server implementations that need to surface error details to the client must do so explicitly — for example, by mutating the run-end message through the `onMessage` hook or by publishing application-defined events before `end()`. Rationale: automatic propagation could leak server internals and would impose a protocol contract on all codecs.
+  - `(AIT-ST6c)` `pipe()` must NOT call `end()` — the caller is responsible for calling `end()` after the stream finishes.
+- `(AIT-ST7)` `end()` must require that `start()` has been called. It must publish a run-end event (`x-ably-run-end`) with the run's ID, clientId, and reason header. It must be idempotent.
+  - `(AIT-ST7a)` After `end()`, the run must be deregistered from cancel routing regardless of whether the publish succeeds.
+  - `(AIT-ST7b)` If the run-end publish fails, `end()` must reject with an `Ably.ErrorInfo` carrying code `RunLifecycleError` and wrapping the underlying error as `cause`. The per-run `onError` callback must NOT be invoked. The run must still be deregistered from cancel routing (per `AIT-ST7a`).
 
 ### Cancel Routing
 
-- `(AIT-ST8)` The server transport must route cancel messages from the channel to registered turns by parsing cancel filter headers from the incoming message.
-  - `(AIT-ST8a)` `x-ably-cancel-turn-id`: cancel a specific turn by ID.
-  - `(AIT-ST8b)` `x-ably-cancel-own` (value `"true"`): cancel all turns belonging to the sender's `clientId`.
-  - `(AIT-ST8c)` `x-ably-cancel-client-id`: cancel all turns belonging to a specific `clientId`.
-  - `(AIT-ST8d)` `x-ably-cancel-all` (value `"true"`): cancel all turns on the channel.
-- `(AIT-ST9)` If a per-turn `onCancel` hook is provided, it must be invoked before aborting. If it returns `false`, the turn must not be aborted.
-  - `(AIT-ST9a)` If the `onCancel` hook throws, the error must be reported via the per-turn or transport-level `onError` callback, and processing must continue for remaining matched turns.
+- `(AIT-ST8)` The agent session must route cancel messages from the channel to registered runs by parsing cancel filter headers from the incoming message.
+  - `(AIT-ST8a)` `x-ably-cancel-run-id`: cancel a specific run by ID.
+  - `(AIT-ST8b)` `x-ably-cancel-own` (value `"true"`): cancel all runs belonging to the sender's `clientId`.
+  - `(AIT-ST8c)` `x-ably-cancel-client-id`: cancel all runs belonging to a specific `clientId`.
+  - `(AIT-ST8d)` `x-ably-cancel-all` (value `"true"`): cancel all runs on the channel.
+- `(AIT-ST9)` If a per-run `onCancel` hook is provided, it must be invoked before aborting. If it returns `false`, the run must not be aborted.
+  - `(AIT-ST9a)` If the `onCancel` hook throws, the error must be reported via the per-run or session-level `onError` callback, and processing must continue for remaining matched runs.
 
-### Transport Close
+### Session Close
 
-- `(AIT-ST11)` `close()` must unsubscribe from cancel messages, abort all registered turns, and clean up the turn manager. It must also stop listening for channel state changes (AIT-ST12). `close()` must be idempotent.
+- `(AIT-ST11)` `close()` must unsubscribe from cancel messages, abort all registered runs, and clean up the run manager. It must also stop listening for channel state changes (AIT-ST12). `close()` must be idempotent.
 
 ### Channel Continuity
 
-- `(AIT-ST12)` The server transport must monitor the channel for continuity loss. Continuity is lost when the channel enters FAILED, SUSPENDED, or DETACHED, or re-attaches with `resumed: false`.
-  - `(AIT-ST12a)` On continuity loss, the error must be emitted via the transport-level `onError` callback with code `ChannelContinuityLost` (104006). Active turns must not be automatically aborted, and the per-turn `onError` callback must not be invoked, since continuity loss is not scoped to any turn. The SDK user is responsible for reacting (e.g. iterating active turns or aborting their own external signals) if they wish to terminate in-flight work.
+- `(AIT-ST12)` The agent session must monitor the channel for continuity loss. Continuity is lost when the channel enters FAILED, SUSPENDED, or DETACHED, or re-attaches with `resumed: false`.
+  - `(AIT-ST12a)` On continuity loss, the error must be emitted via the session-level `onError` callback with code `ChannelContinuityLost` (104006). Active runs must not be automatically aborted, and the per-run `onError` callback must not be invoked, since continuity loss is not scoped to any run. The SDK user is responsible for reacting (e.g. iterating active runs or aborting their own external signals) if they wish to terminate in-flight work.
 
-## Client Transport {#client-transport}
+### Invocation
 
-The client transport manages the client-side conversation lifecycle over an Ably channel. It composes a Tree for branching message history, a StreamRouter for per-turn event streams, and a codec decoder for processing incoming Ably messages.
+- `(AIT-ST13)` The SDK must provide an `Invocation` class with a static `fromJSON(data: InvocationData)` factory that wraps the JSON wire body sent from the client to the agent endpoint. `InvocationData` carries `runId`, `clientId`, `sessionName`, optional `messages`, optional `history`, optional `events`, optional `parent`, and optional `forkOf`. Omitted optional fields default to empty arrays / `undefined` on the constructed `Invocation`.
+
+## Client Session {#client-session}
+
+The client session manages the client-side conversation lifecycle over an Ably channel. It composes a Tree for branching message history, a StreamRouter for per-run event streams, and a codec decoder for processing incoming Ably messages.
 
 ### Factory
 
-- `(AIT-CT1)` The SDK must provide a `createClientTransport` factory that accepts a channel, codec, and transport options, and returns a `ClientTransport`.
-- `(AIT-CT2)` On construction, the transport must subscribe to the channel for incoming messages before the channel attaches (Ably RTL7g) to guarantee no messages are missed.
+- `(AIT-CT1)` The SDK must provide a `createClientSession` factory that accepts a channel, codec, and session options, and returns a `ClientSession`.
+- `(AIT-CT2)` `connect()` must subscribe to the channel for incoming messages — subscribe implicitly attaches the channel (Ably RTL7g) to guarantee no messages are missed. It must be idempotent: subsequent calls return the same promise. All write methods (`send`, `regenerate`, `edit`, `update`, `cancel`, `waitForRun`) must throw `InvalidArgument` until `connect()` resolves.
 
 ### Send
 
-- `(AIT-CT3)` `send()` must create a new turn, optimistically insert user messages into the conversation tree, and return an `ActiveTurn` handle containing a decoded event stream, the turn ID, and a cancel function.
-  - `(AIT-CT3a)` The HTTP POST to the server must be fire-and-forget — the returned stream must be available immediately, without waiting for the POST to complete.
-  - `(AIT-CT3b)` If the HTTP POST fails (network error or non-2xx response), the error must be emitted via `on('error')`, not thrown. The turn's stream must be errored via `errorStream()` (AIT-CT14c) with code `TransportSendFailed` (104005). For non-2xx responses, the HTTP status code must be used as the `statusCode`. For network errors, the original error must be wrapped as the `cause`.
+- `(AIT-CT3)` `send()` must create a new run, optimistically insert user messages into the conversation tree, and return an `ActiveRun` handle containing a decoded event stream, the run ID, and a cancel function.
+  - `(AIT-CT3a)` The HTTP POST to the agent must be fire-and-forget — the returned stream must be available immediately, without waiting for the POST to complete.
+  - `(AIT-CT3b)` If the HTTP POST fails (network error or non-2xx response), the error must be emitted via `on('error')`, not thrown. The run's stream must be errored via `errorStream()` (AIT-CT14c) with code `SessionSendFailed` (104005). For non-2xx responses, the HTTP status code must be used as the `statusCode`. For network errors, the original error must be wrapped as the `cause`.
   - `(AIT-CT3c)` Each user message must be assigned a unique `x-ably-msg-id` and optimistically inserted into the conversation tree before the POST is sent.
   - `(AIT-CT3d)` If `parent` is not explicitly provided and `forkOf` is not set, the parent must be auto-computed from the last message in the current thread.
   - `(AIT-CT3e)` When multiple messages are sent in a single `send()` call, they must be chained — each subsequent message must parent off the previous message in the batch, not the original auto-computed parent.
-- `(AIT-CT4)` `send()` must throw if the transport is closed.
+- `(AIT-CT4)` `send()` must throw if the session is closed.
 
 ### Regenerate
 
-- `(AIT-CT5)` `regenerate()` must create a new turn that forks the target message with `forkOf` set to the target, `parent` set to the target's parent, and truncated history (everything before the target). No new user messages are sent.
+- `(AIT-CT5)` `regenerate()` must create a new run that forks the target message with `forkOf` set to the target, `parent` set to the target's parent, and truncated history (everything before the target). No new user messages are sent.
 
 ### Edit
 
-- `(AIT-CT6)` `edit()` must create a new turn that forks the target message with replacement user messages. `forkOf` must be set to the target, `parent` to the target's parent.
+- `(AIT-CT6)` `edit()` must create a new run that forks the target message with replacement user messages. `forkOf` must be set to the target, `parent` to the target's parent.
 
 ### Cancel
 
@@ -156,20 +160,20 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Event Subscription
 
-- `(AIT-CT8)` The transport must support event subscriptions via `on(event, handler)` returning an unsubscribe function.
+- `(AIT-CT8)` The session must support event subscriptions via `on(event, handler)` returning an unsubscribe function.
   - `(AIT-CT8a)` `view.on('update')` must notify when the view's message list changes (messages added, updated, or removed).
-  - `(AIT-CT8b)` `tree.on('turn')` or `view.on('turn')` must notify on turn lifecycle events (start and end) with the turn ID, client ID, and end reason.
-  - `(AIT-CT8c)` `on('error')` must surface non-fatal transport errors as `ErrorInfo`.
-  - `(AIT-CT8d)` If the transport is closed, `on()` must return a no-op unsubscribe function.
+  - `(AIT-CT8b)` `tree.on('run')` or `view.on('run')` must notify on run lifecycle events (start and end) with the run ID, client ID, and end reason.
+  - `(AIT-CT8c)` `on('error')` must surface non-fatal session errors as `ErrorInfo`.
+  - `(AIT-CT8d)` If the session is closed, `on()` must return a no-op unsubscribe function.
   - `(AIT-CT8e)` `tree.on('ably-message')` must notify when a raw Ably message is received.
 
 ### Message Access
 
-- `(AIT-CT9)` `view.flattenNodes()` must return the flattened conversation tree as `TreeNode[]` along the view's selected branches, including typed `msgId`, `parentId`, `forkOf`, `headers`, and `serial` fields.
-- `(AIT-CT10)` `transport.tree` must expose the conversation tree for structural queries (sibling listing, node lookup).
-- `(AIT-CT10a)` `transport.view` must expose a default view for message access with history pagination and branch navigation.
-- `(AIT-CT10b)` `transport.createView()` must return a new independent view over the same tree. Each view must have independent branch selections and pagination state.
-- `(AIT-CT10c)` `transport.close()` must close all views created via `createView()` in addition to the default view.
+- `(AIT-CT9)` `view.flattenNodes()` must return the flattened conversation tree as `MessageNode[]` along the view's selected branches, including typed `msgId`, `parentId`, `forkOf`, `headers`, and `serial` fields.
+- `(AIT-CT10)` `session.tree` must expose the conversation tree for structural queries (sibling listing, node lookup).
+- `(AIT-CT10a)` `session.view` must expose a default view for message access with history pagination and branch navigation.
+- `(AIT-CT10b)` `session.createView()` must return a new independent view over the same tree. Each view must have independent branch selections and pagination state.
+- `(AIT-CT10c)` `session.close()` must close all views created via `createView()` in addition to the default view.
 
 ### History
 
@@ -180,7 +184,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Close
 
-- `(AIT-CT12)` `close()` must unsubscribe from the channel, close all active turn streams, clear all event handlers, and prevent further operations.
+- `(AIT-CT12)` `close()` must unsubscribe from the channel, close all active run streams, clear all event handlers, and prevent further operations.
   - `(AIT-CT12a)` An optional `cancel` filter must publish a cancel message before teardown. Cancel publish failure must be swallowed (best-effort).
   - `(AIT-CT12b)` `close()` must be idempotent.
 
@@ -196,7 +200,7 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Stream Router
 
-- `(AIT-CT14)` The client transport must route decoded events to per-turn `ReadableStream`s via a stream router.
+- `(AIT-CT14)` The client session must route decoded events to per-run `ReadableStream`s via a stream router.
   - `(AIT-CT14a)` Terminal events (as determined by the codec's `isTerminal` predicate) must close the stream after enqueue.
   - `(AIT-CT14b)` `closeStream()` must close the controller and remove the entry, allowing the consumer to read the stream to completion.
   - `(AIT-CT14c)` `errorStream()` must error the controller with the given error and remove the entry. The consumer's reader will reject with the error.
@@ -207,21 +211,21 @@ The client transport manages the client-side conversation lifecycle over an Ably
 
 ### Observer / Multi-Client Sync
 
-- `(AIT-CT16)` Events from non-own turns must be accumulated through the codec's `MessageAccumulator` and upserted into the conversation tree, enabling multi-client synchronization.
-  - `(AIT-CT16a)` Turn lifecycle events (`x-ably-turn-start`, `x-ably-turn-end`) must update active turn tracking for all clients on the channel.
+- `(AIT-CT16)` Events from non-own runs must be accumulated through the codec's `MessageAccumulator` and upserted into the conversation tree, enabling multi-client synchronization.
+  - `(AIT-CT16a)` Run lifecycle events (`x-ably-run-start`, `x-ably-run-end`) must update active run tracking for all clients on the channel.
 
-### Active Turn Tracking
+### Active Run Tracking
 
-- `(AIT-CT17)` `tree.getActiveTurnIds()` or `view.getActiveTurnIds()` must return currently active turns grouped by client ID.
+- `(AIT-CT17)` `tree.getActiveRunIds()` or `view.getActiveRunIds()` must return currently active runs grouped by client ID.
 
-### Wait for Turn
+### Wait for Run
 
-- `(AIT-CT18)` `waitForTurn()` must return a promise that resolves when all active turns matching the filter have completed. It must resolve immediately if no matching turns are active. If no filter is provided, it must default to `{ own: true }`.
+- `(AIT-CT18)` `waitForRun()` must return a promise that resolves when all active runs matching the filter have completed. It must resolve immediately if no matching runs are active. If no filter is provided, it must default to `{ own: true }`.
 
 ### Channel Continuity
 
-- `(AIT-CT19)` The client transport must monitor the channel for continuity loss. Continuity is lost when the channel enters FAILED, SUSPENDED, or DETACHED, or re-attaches with `resumed: false`.
-  - `(AIT-CT19a)` On continuity loss, all active own-turn streams must be errored via `errorStream()` (AIT-CT14c) with code `ChannelContinuityLost` (104006), and the error must be emitted via `on('error')`.
+- `(AIT-CT19)` The client session must monitor the channel for continuity loss. Continuity is lost when the channel enters FAILED, SUSPENDED, or DETACHED, or re-attaches with `resumed: false`.
+  - `(AIT-CT19a)` On continuity loss, all active own-run streams must be errored via `errorStream()` (AIT-CT14c) with code `ChannelContinuityLost` (104006), and the error must be emitted via `on('error')`.
 
 ### Channel Health
 
@@ -255,29 +259,29 @@ The codes listed here shall be defined in any error enums that exist in the clie
         // Spec: AIT-CD6
         EncoderRecoveryFailed = 104000,
 
-        // A transport-level channel subscription callback threw unexpectedly.
+        // A session-level channel subscription callback threw unexpectedly.
         // To be accompanied by status code 500.
-        TransportSubscriptionError = 104001,
+        SessionSubscriptionError = 104001,
 
         // Cancel listener or onCancel hook threw while processing a cancel message.
         // To be accompanied by status code 500.
         // Spec: AIT-ST9a
         CancelListenerError = 104002,
 
-        // A publish within a turn failed (lifecycle event, message, or event).
+        // A publish within a run failed (lifecycle event, message, or event).
         // To be accompanied by status code 500.
-        // Spec: AIT-ST4b, AIT-ST5c
-        TurnLifecycleError = 104003,
+        // Spec: AIT-ST4b, AIT-ST5c, AIT-ST7b
+        RunLifecycleError = 104003,
 
-        // An operation was attempted on a transport that has already been closed.
+        // An operation was attempted on a session that has already been closed.
         // To be accompanied by status code 400.
-        // Spec: AIT-CT4, AIT-CT12
-        TransportClosed = 104004,
+        // Spec: AIT-CT4, AIT-CT12, AIT-ST2 (connect after close)
+        SessionClosed = 104004,
 
-        // The HTTP POST to the server endpoint failed (network error or non-2xx response).
+        // The HTTP POST to the agent endpoint failed (network error or non-2xx response).
         // To be accompanied by status code 500.
         // Spec: AIT-CT3b
-        TransportSendFailed = 104005,
+        SessionSendFailed = 104005,
 
         // The Ably channel lost message continuity — the channel entered
         // FAILED, SUSPENDED, or DETACHED, or re-attached with resumed: false.
