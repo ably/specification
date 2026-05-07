@@ -488,34 +488,14 @@ ASSERT http_requests.length == 1
 |------|-------------|
 | RSL1k4 | An explicit test for idempotency of publishes with library-generated ids shall exist that simulates an error response to a successful publish, expects an automatic retry by the library, and verifies that the batch is published only once |
 
-### Proxy Limitation
+### Proxy Action
 
-RSL1k4 requires the proxy to **forward** the publish request to the server
-(so the publish actually succeeds), and then **replace** the real success
-response with a fake 5xx error response back to the client. This causes the
-SDK to believe the publish failed and retry it, while the server already
-persisted the message. The server then deduplicates the retry based on the
-library-generated message `id`.
-
-The current proxy infrastructure does NOT support a "modify response" or
-"forward then replace response" action. The available `http_respond` action
-intercepts the request BEFORE forwarding it to the server, which means the
-publish never reaches the server at all. This makes it impossible to test
-real client-server idempotency agreement, because:
-
-1. With `http_respond`: the first publish never reaches the server, so the
-   retry is the first actual publish. No deduplication occurs -- the test
-   would pass trivially without verifying idempotency.
-
-2. What is needed: an action like `http_forward_then_respond` that forwards
-   the request upstream, waits for the real response, discards it, and
-   returns a fake error response to the client instead. This would let the
-   publish succeed server-side while the client sees a failure and retries.
-
-### Test Specification (requires proxy enhancement)
-
-The following test is specified for completeness but **cannot be implemented
-until the proxy supports a forward-then-replace-response action**.
+This test uses the `http_replace_response` proxy action, which forwards the
+request to the upstream server (so the publish actually succeeds), discards
+the real response, and returns a fake 5xx error response to the client. This
+causes the SDK to believe the publish failed and retry it, while the server
+already persisted the message. The server then deduplicates the retry based
+on the library-generated message `id`.
 
 #### Setup
 
@@ -526,11 +506,7 @@ session = create_proxy_session(
   rules: [{
     "match": { "type": "http_request", "method": "POST", "pathContains": "/channels/" },
     "action": {
-      # NOTE: This action type does not exist yet in the proxy.
-      # It would need to: (1) forward the request to the upstream server,
-      # (2) wait for the real response, (3) discard it, and (4) return the
-      # fake error response below to the client.
-      "type": "http_forward_then_respond",
+      "type": "http_replace_response",
       "status": 503,
       "body": { "error": { "code": 50300, "statusCode": 503, "message": "Service temporarily unavailable" } }
     },
