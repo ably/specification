@@ -66,7 +66,7 @@ ASSERT options.maxMessageSize == 65536
 options = ClientOptions(
   key: "appId.keyId:keySecret",
   clientId: "my-client",
-  endpoint: "sandbox",
+  endpoint: "test",
   tls: false,
   httpRequestTimeout: 30000,
   useBinaryProtocol: false,
@@ -76,7 +76,7 @@ options = ClientOptions(
 
 ASSERT options.key == "appId.keyId:keySecret"
 ASSERT options.clientId == "my-client"
-ASSERT options.endpoint == "sandbox"
+ASSERT options.endpoint == "test"
 ASSERT options.tls == false
 ASSERT options.httpRequestTimeout == 30000
 ASSERT options.useBinaryProtocol == false
@@ -252,7 +252,7 @@ Tests that endpoint option affects default hosts.
 | ID | Endpoint | Expected Rest Host |
 |----|----------|--------------------|
 | 1 | (none/production) | `rest.ably.io` |
-| 2 | `"sandbox"` | `sandbox-rest.ably.io` |
+| 2 | `"test"` | `test-rest.ably.io` |
 | 3 | `"custom-env"` | `custom-env-rest.ably.io` |
 
 ### Note
@@ -295,7 +295,7 @@ Tests that conflicting options are detected.
 ClientOptions(
   key: "appId.keyId:keySecret",
   restHost: "custom.host.com",
-  endpoint: "sandbox"
+  endpoint: "test"
 ) FAILS WITH error
 ASSERT error.message CONTAINS "restHost" OR error.message CONTAINS "endpoint"
 ```

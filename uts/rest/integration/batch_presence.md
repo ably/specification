@@ -88,7 +88,7 @@ channel_b_name = "batch-presence-b-" + random_id()
 
 realtime = Realtime(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -111,7 +111,7 @@ AWAIT ch_b.presence.enterClient("user-3", data: "data-b1")
 # Query via REST batchPresence (keep realtime open so presence persists)
 rest = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -171,7 +171,7 @@ denied_channel = "denied-batch-" + random_id()
 # Enter members on both channels using the full-access key
 realtime = Realtime(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -194,7 +194,7 @@ AWAIT realtime.close()
 # Query with restricted key (only has access to "batch-allowed" channel)
 restricted_rest = Rest(options: ClientOptions(
   key: restricted_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -245,7 +245,7 @@ populated_channel = "batch-populated-" + random_id()
 # Enter a member on only the populated channel
 realtime = Realtime(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -265,7 +265,7 @@ AWAIT ch.presence.enterClient("someone", data: "here")
 ```pseudo
 rest = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 

@@ -19,7 +19,7 @@ Proxy integration tests use this to verify fault-handling behaviour against the 
 ```pseudo
 # 1. Create a proxy session with rules
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [ ...rules... ]
 )
@@ -66,7 +66,7 @@ interface ProxySession:
   close()
 
 function create_proxy_session(
-  endpoint: String,       # e.g. "sandbox" → resolves to sandbox-realtime.ably.io / sandbox-rest.ably.io
+  endpoint: String,       # e.g. "nonprod:sandbox" → resolves to sandbox-realtime.ably.io / sandbox-rest.ably.io
   port: Int,
   rules?: List<Rule>,
   timeoutMs?: Int         # Session auto-cleanup timeout (default 30000)

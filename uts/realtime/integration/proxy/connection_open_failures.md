@@ -65,7 +65,7 @@ Tests that when the server responds with a fatal ERROR (non-token error code) du
 ```pseudo
 # Create proxy session that replaces the first CONNECTED with a fatal ERROR
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
@@ -150,7 +150,7 @@ auth_callback_count = 0
 
 # Create proxy session that injects token error on first CONNECTED only
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
@@ -245,7 +245,7 @@ Tests that when the first WebSocket connection is refused at the transport level
 ```pseudo
 # Create proxy session that refuses the first WebSocket connection
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "ws_connect", "count": 1 },
@@ -324,7 +324,7 @@ Tests that when the server responds with a connection-level ERROR (no channel fi
 ```pseudo
 # Create proxy session that replaces the first CONNECTED with a server ERROR
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
@@ -407,7 +407,7 @@ Tests that when the server accepts the WebSocket but never sends a CONNECTED mes
 ```pseudo
 # Create proxy session that suppresses all CONNECTED messages
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },

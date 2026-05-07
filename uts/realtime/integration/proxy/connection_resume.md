@@ -58,7 +58,7 @@ Tests that an unexpected transport disconnect causes the SDK to reconnect and at
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 0,
   rules: [
     {
@@ -162,7 +162,7 @@ frame) after a 1-second delay.
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 0,
   rules: [
     {
@@ -210,7 +210,7 @@ Tests that after an unexpected disconnect and successful resume, the connection 
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 1,
   rules: [
     {
@@ -308,7 +308,7 @@ Tests that when a resume fails (simulated by the proxy replacing the server's se
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 2,
   rules: [
     {
@@ -441,7 +441,7 @@ Tests that when the proxy injects a DISCONNECTED message with a token error (cod
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 3,
   rules: [
     {
@@ -468,7 +468,7 @@ session = create_proxy_session(
 
 ```pseudo
 # Provision a token via REST using the API key (promise-based)
-rest = Ably.Rest(options: ClientOptions(key: api_key, endpoint: "sandbox"))
+rest = Ably.Rest(options: ClientOptions(key: api_key, endpoint: "nonprod:sandbox"))
 token_details = AWAIT rest.auth.requestToken()
 token_string = token_details.token
 ```
@@ -552,7 +552,7 @@ Tests that when the proxy injects a DISCONNECTED message with a non-token error 
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 4,
   rules: [
     {
@@ -668,7 +668,7 @@ Tests that a connection-level ERROR ProtocolMessage (no channel field) causes th
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 5,
   rules: []
 )
@@ -798,7 +798,7 @@ Tests that when the client has been disconnected for longer than connectionState
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 6,
   rules: [
     {
@@ -931,7 +931,7 @@ Tests that a message awaiting ACK on the old transport is resent after reconnect
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 7,
   rules: [
     {
@@ -1066,7 +1066,7 @@ Use a direct proxy session (passthrough, no rules) to connect to the sandbox, at
 
 ```pseudo
 session_1 = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 8,
   rules: []
 )
@@ -1089,7 +1089,7 @@ A second proxy session is used so we can inspect the `recover` query parameter i
 
 ```pseudo
 session_2 = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 9,
   rules: []
 )
@@ -1205,7 +1205,7 @@ Tests that when a recovery attempt fails (the server responds with a new connect
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 10,
   rules: [
     {

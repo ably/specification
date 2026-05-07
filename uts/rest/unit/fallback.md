@@ -778,7 +778,7 @@ mock_http.queue_response(200, { "time": 1234567890000 })
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox"
+  endpoint: "test"
 ))
 ```
 
@@ -789,7 +789,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
+ASSERT mock_http.captured_requests[0].url.host == "test.realtime.ably.net"
 ```
 
 ---
@@ -809,7 +809,7 @@ Tests that specifying both `endpoint` and `environment` is invalid.
 ```pseudo
 Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox",
+  endpoint: "test",
   environment: "production"  # Deprecated, conflicts with endpoint
 )) FAILS WITH error
 ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
@@ -832,7 +832,7 @@ Tests that specifying both `endpoint` and `restHost` is invalid.
 ```pseudo
 Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox",
+  endpoint: "test",
   restHost: "custom.host.com"  # Deprecated, conflicts with endpoint
 )) FAILS WITH error
 ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
@@ -855,7 +855,7 @@ Tests that specifying both `endpoint` and `realtimeHost` is invalid.
 ```pseudo
 Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox",
+  endpoint: "test",
   realtimeHost: "custom.realtime.com"  # Deprecated, conflicts with endpoint
 )) FAILS WITH error
 ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
@@ -878,7 +878,7 @@ Tests that specifying both `endpoint` and `fallbackHostsUseDefault` is invalid.
 ```pseudo
 Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox",
+  endpoint: "test",
   fallbackHostsUseDefault: true  # Deprecated, conflicts with endpoint
 )) FAILS WITH error
 ASSERT error.code == 40000 OR error.message CONTAINS "invalid" OR error.message CONTAINS "conflict"
@@ -1278,7 +1278,7 @@ mock_http.queue_response(200, { "time": 1234567890000 })
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox"
+  endpoint: "test"
 ))
 ```
 
@@ -1290,14 +1290,14 @@ AWAIT client.time()
 ### Assertions
 ```pseudo
 ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
+ASSERT mock_http.captured_requests[0].url.host == "test.realtime.ably.net"
 
 expected_fallbacks = [
-  "sandbox.a.fallback.ably-realtime.com",
-  "sandbox.b.fallback.ably-realtime.com",
-  "sandbox.c.fallback.ably-realtime.com",
-  "sandbox.d.fallback.ably-realtime.com",
-  "sandbox.e.fallback.ably-realtime.com"
+  "test.a.fallback.ably-realtime.com",
+  "test.b.fallback.ably-realtime.com",
+  "test.c.fallback.ably-realtime.com",
+  "test.d.fallback.ably-realtime.com",
+  "test.e.fallback.ably-realtime.com"
 ]
 ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
 ```

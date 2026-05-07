@@ -92,7 +92,7 @@ counting_decoder = VCDiffDecoder(
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false,
   plugins: { vcdiff: counting_decoder }
 ))
@@ -174,7 +174,7 @@ counting_decoder = VCDiffDecoder(
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false,
   plugins: { vcdiff: counting_decoder }
 ))
@@ -256,7 +256,7 @@ counting_decoder = VCDiffDecoder(
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false,
   plugins: { vcdiff: counting_decoder }
 ))
@@ -330,7 +330,7 @@ counting_decoder = VCDiffDecoder(
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false,
   plugins: { vcdiff: counting_decoder }
 ))
@@ -427,7 +427,7 @@ failing_decoder = FailingVCDiffDecoder()
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false,
   plugins: { vcdiff: failing_decoder }
 ))
@@ -506,14 +506,14 @@ channel_name = "delta-no-plugin-" + random_id()
 # Subscriber — no vcdiff plugin, but requests delta channel param
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 # Publisher — separate connection, publishes without delta param
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```

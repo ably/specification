@@ -39,7 +39,7 @@ Tests that published messages appear in channel history.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "history-test-RSL2a-" + random_id()
 channel = client.channels.get(channel_name)
@@ -94,7 +94,7 @@ Tests that `direction: forwards` returns messages oldest-first.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "history-direction-" + random_id()
 channel = client.channels.get(channel_name)
@@ -141,7 +141,7 @@ Tests that `limit` parameter restricts number of returned messages.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "history-limit-" + random_id()
 channel = client.channels.get(channel_name)
@@ -188,7 +188,7 @@ Tests that `start` and `end` parameters filter messages by time.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "history-timerange-" + random_id()
 channel = client.channels.get(channel_name)
@@ -265,7 +265,7 @@ Tests that history on an empty channel returns empty result.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 # Use a fresh channel with no messages
 channel_name = "history-empty-" + random_id()
