@@ -66,7 +66,7 @@ interface ProxySession:
   close()
 
 function create_proxy_session(
-  endpoint: String,       # e.g. "nonprod:sandbox" → resolves to sandbox-realtime.ably.io / sandbox-rest.ably.io
+  endpoint: String,       # e.g. "nonprod:sandbox" → resolves to sandbox.realtime.ably-nonprod.net
   port: Int,
   rules?: List<Rule>,
   timeoutMs?: Int         # Session auto-cleanup timeout (default 30000)
