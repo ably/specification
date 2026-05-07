@@ -14,7 +14,7 @@ This guide provides comprehensive guidance for writing portable test specificati
 ### Integration Tests (Ably Sandbox)
 - Run against `https://sandbox.realtime.ably-nonprod.net`
 - Provision apps via `POST /apps` with body from `ably-common/test-resources/test-app-setup.json`
-- Use `endpoint: "sandbox"` in ClientOptions
+- Use `endpoint: "nonprod:sandbox"` in ClientOptions
 
 ### Proxy Integration Tests (Ably Sandbox via Proxy)
 - Run against Ably Sandbox through a programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy))

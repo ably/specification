@@ -48,7 +48,7 @@ server accepted the TokenRequest.
 # Client A creates TokenRequests using the API key
 creator = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # Client B connects using TokenRequests from client A
@@ -56,7 +56,7 @@ client = Realtime(options: ClientOptions(
   authCallback: FUNCTION(params):
     token_request = AWAIT creator.auth.createTokenRequest()
     RETURN token_request,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -97,7 +97,7 @@ test_client_id = "token-request-client-" + random_id()
 
 creator = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 client = Realtime(options: ClientOptions(
@@ -107,7 +107,7 @@ client = Realtime(options: ClientOptions(
     )
     RETURN token_request,
   clientId: test_client_id,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))

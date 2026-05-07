@@ -30,7 +30,7 @@ AFTER ALL TESTS:
 
 ### Notes
 - All clients use `useBinaryProtocol: false` (SDK does not implement msgpack)
-- All clients use `endpoint: "sandbox"`
+- All clients use `endpoint: "nonprod:sandbox"`
 - These tests require the platform to support push notifications and the local device to be configurable for push registration. If the sandbox or platform does not support push device registration, these tests should be skipped.
 - A device must be registered (via `push.admin.deviceRegistrations.save`) before device-based channel subscriptions can be created
 - The `PushChannel` methods operate on behalf of the local device — the `LocalDevice` must be configured to simulate a registered push target device
@@ -54,7 +54,7 @@ Tests the full device subscription lifecycle: register a device, subscribe it to
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -138,7 +138,7 @@ Tests the full client subscription lifecycle: configure a local device with a `c
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 

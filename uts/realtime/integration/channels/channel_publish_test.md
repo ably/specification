@@ -48,14 +48,14 @@ channel_name = "publish-string-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -116,14 +116,14 @@ channel_name = "publish-json-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -188,14 +188,14 @@ channel_name = "publish-binary-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -257,14 +257,14 @@ channel_name = "publish-connid-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -323,14 +323,14 @@ channel_name = "pushenabled:publish-extras-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))

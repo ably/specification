@@ -47,14 +47,14 @@ channel_name = "subscribe-all-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -117,14 +117,14 @@ channel_name = "subscribe-filtered-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -197,7 +197,7 @@ channel_name = "subscribe-bidir-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false,
   clientId: "client-a"
@@ -205,7 +205,7 @@ client_a = Realtime(options: ClientOptions(
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false,
   clientId: "client-b"

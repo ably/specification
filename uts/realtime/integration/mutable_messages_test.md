@@ -41,7 +41,7 @@ AFTER ALL TESTS:
 
 ### Notes
 - All clients use `useBinaryProtocol: false` (SDK does not implement msgpack)
-- All clients use `endpoint: "sandbox"`
+- All clients use `endpoint: "nonprod:sandbox"`
 - All channel names use the `mutable:` namespace prefix — the test app setup configures
   the `mutable` namespace with `mutableMessages: true`
 
@@ -63,13 +63,13 @@ channel_name = "mutable:rt-update-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -170,13 +170,13 @@ channel_name = "mutable:rt-delete-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -258,13 +258,13 @@ channel_name = "mutable:rt-append-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -352,13 +352,13 @@ channel_name = "mutable:rt-lifecycle-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -480,7 +480,7 @@ channel_name = "mutable:rt-get-versions-" + random_id()
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -572,13 +572,13 @@ channel_name = "mutable:rt-annotations-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -697,13 +697,13 @@ channel_name = "mutable:rt-ann-filter-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
@@ -816,7 +816,7 @@ channel_name = "mutable:rt-ann-implicit-attach-" + random_id()
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 

@@ -44,12 +44,12 @@ channel_name = "history-RTL10d-" + random_id()
 
 publisher = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 publisher.connect()

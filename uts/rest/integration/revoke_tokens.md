@@ -98,7 +98,7 @@ client_id = "revoke-client-" + random_id()
 # Create a key-auth REST client (using the revocable key) for revoking and token issuance
 key_client = Rest(options: ClientOptions(
   key: revocable_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # Request a native token for the clientId
@@ -107,7 +107,7 @@ token_details = AWAIT key_client.auth.requestToken(clientId: client_id)
 # Create a Realtime client using the token, and wait for it to connect
 realtime_client = Realtime(options: ClientOptions(
   token: token_details,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 AWAIT realtime_client.connection.once("connected")
 ```
@@ -160,7 +160,7 @@ jwt = generate_jwt(
 # Create a client using token auth (JWT)
 token_rest = Rest(options: ClientOptions(
   token: jwt,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -199,7 +199,7 @@ client_id = "revoke-margin-client-" + random_id()
 
 key_client = Rest(options: ClientOptions(
   key: revocable_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -253,7 +253,7 @@ client_id = "revoke-mixed-client-" + random_id()
 # Create a key-auth REST client for revoking and token issuance
 key_client = Rest(options: ClientOptions(
   key: revocable_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # Request a native token for the clientId
@@ -262,7 +262,7 @@ token_details = AWAIT key_client.auth.requestToken(clientId: client_id)
 # Create a Realtime client using the token, and wait for it to connect
 realtime_client = Realtime(options: ClientOptions(
   token: token_details,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 AWAIT realtime_client.connection.once("connected")
 ```

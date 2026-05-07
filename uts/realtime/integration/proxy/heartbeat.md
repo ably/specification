@@ -65,7 +65,7 @@ The proxy closes the WebSocket connection after a 2s delay from ws_connect, simu
 ```pseudo
 # Create proxy session that closes the WebSocket after 2s to simulate transport failure
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "delay_after_ws_connect", "delayMs": 2000 },

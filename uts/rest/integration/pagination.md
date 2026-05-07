@@ -42,7 +42,7 @@ Tests that `PaginatedResult` contains items and provides navigation methods.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "pagination-basic-" + random_id()
 channel = client.channels.get(channel_name)
@@ -92,7 +92,7 @@ Tests that `next()` retrieves the next page of results.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "pagination-next-" + random_id()
 channel = client.channels.get(channel_name)
@@ -148,7 +148,7 @@ Tests that `first()` returns to the first page of results.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "pagination-first-" + random_id()
 channel = client.channels.get(channel_name)
@@ -196,7 +196,7 @@ Tests iteration through entire result set using pagination.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "pagination-iterate-" + random_id()
 channel = client.channels.get(channel_name)
@@ -254,7 +254,7 @@ Tests behavior when calling `next()` on the last page.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "pagination-lastnext-" + random_id()
 channel = client.channels.get(channel_name)

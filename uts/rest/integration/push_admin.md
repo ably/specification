@@ -32,7 +32,7 @@ AFTER ALL TESTS:
 
 ### Notes
 - All clients use `useBinaryProtocol: false` (SDK does not implement msgpack)
-- All clients use `endpoint: "sandbox"`
+- All clients use `endpoint: "nonprod:sandbox"`
 - Push admin operations require the `push-admin` capability — use `push_admin_key` or `full_access_key`
 - Device registrations created during tests must be cleaned up to avoid polluting the sandbox
 
@@ -50,7 +50,7 @@ Tests that a push notification can be published to a `clientId` recipient. The s
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -83,7 +83,7 @@ Tests that the sandbox returns an error for an empty recipient.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -114,7 +114,7 @@ Tests the full device registration lifecycle: save, then retrieve.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 device_id = "test-device-" + random_id()
@@ -167,7 +167,7 @@ Tests that saving a device with the same ID updates the existing registration.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 device_id = "test-device-update-" + random_id()
@@ -225,7 +225,7 @@ Tests that retrieving a nonexistent device returns a not-found error.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -250,7 +250,7 @@ Tests listing device registrations filtered by `deviceId`.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 device_id = "test-device-list-" + random_id()
@@ -298,7 +298,7 @@ Tests that the `limit` parameter restricts the number of results.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 client_id = "test-client-list-" + random_id()
@@ -353,7 +353,7 @@ Tests that a registered device can be removed and is no longer retrievable.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 device_id = "test-device-remove-" + random_id()
@@ -391,7 +391,7 @@ ASSERT error.statusCode == 404
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -416,7 +416,7 @@ Tests that devices can be bulk-removed by `clientId`.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 client_id = "test-client-removeWhere-" + random_id()
@@ -464,7 +464,7 @@ Tests the channel subscription lifecycle: save then list.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 device_id = "test-device-sub-" + random_id()
@@ -530,7 +530,7 @@ AWAIT client.push.admin.deviceRegistrations.remove(device_id)
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 client_id = "test-client-sub-" + random_id()
@@ -573,7 +573,7 @@ Tests that channels with active subscriptions appear in listChannels.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 client_id = "test-client-lc-" + random_id()
@@ -620,7 +620,7 @@ Tests that a subscription can be removed and no longer appears in list results.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 client_id = "test-client-rm-" + random_id()
@@ -661,7 +661,7 @@ ASSERT result.items.length == 0
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -689,7 +689,7 @@ Tests that subscriptions can be bulk-removed by `clientId`.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 client_id = "test-client-rwsub-" + random_id()

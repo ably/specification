@@ -45,7 +45,7 @@ Tests that a Realtime client can successfully connect to Ably via WebSocket.
 ```pseudo
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -107,7 +107,7 @@ Tests that a connected client can gracefully close the connection.
 ```pseudo
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # Establish connection first
@@ -163,7 +163,7 @@ Tests that a client can be closed and reconnected multiple times.
 ```pseudo
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false  # Don't connect automatically
 ))
 ```

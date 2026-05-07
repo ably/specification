@@ -48,7 +48,7 @@ Tests that API key authentication works against real server.
 channel_name = "test-RSA4-" + random_id()
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -86,7 +86,7 @@ jwt = generate_jwt(
 channel_name = "test-RSA8-jwt-" + random_id()
 client = Rest(options: ClientOptions(
   token: jwt,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -115,7 +115,7 @@ Tests obtaining a native token and using it for authentication.
 # First client with API key to obtain token
 key_client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -128,7 +128,7 @@ token_details = AWAIT key_client.auth.requestToken()
 channel_name = "test-RSA8-native-" + random_id()
 token_client = Rest(options: ClientOptions(
   token: token_details.token,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # Verify token works
@@ -158,7 +158,7 @@ Tests using an `authCallback` that returns a `TokenRequest`, which is then excha
 # Client that generates token requests
 token_request_client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # authCallback that creates and returns a TokenRequest
@@ -168,7 +168,7 @@ auth_callback = FUNCTION(params):
 channel_name = "test-RSA8-callback-" + random_id()
 client = Rest(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -205,7 +205,7 @@ auth_callback = FUNCTION(params):
 channel_name = "test-RSA8-jwt-callback-" + random_id()
 client = Rest(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -239,7 +239,7 @@ invalid_key = app_id + ".invalidKey:invalidSecret"
 
 client = Rest(options: ClientOptions(
   key: invalid_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -285,7 +285,7 @@ auth_callback = FUNCTION(params):
 channel_name = "test-RSC10-renewal-" + random_id()
 client = Rest(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -329,7 +329,7 @@ jwt = generate_jwt(
 
 client = Rest(options: ClientOptions(
   token: jwt,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 

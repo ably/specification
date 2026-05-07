@@ -50,7 +50,7 @@ auth_callback = FUNCTION(params):
 
 client = Realtime(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false
 ))
 ```
@@ -113,7 +113,7 @@ auth_callback = FUNCTION(params):
 
 client = Realtime(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false
 ))
 ```
@@ -160,7 +160,7 @@ auth_callback = FUNCTION(params):
 
 client = Realtime(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false
 ))
 ```
@@ -209,7 +209,7 @@ auth_callback = FUNCTION(params):
 client = Realtime(options: ClientOptions(
   authCallback: auth_callback,
   clientId: test_client_id,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false
 ))
 ```
@@ -251,7 +251,7 @@ auth_callback = FUNCTION(params):
 EXPECT THROW creating Realtime(options: ClientOptions(
   authCallback: auth_callback,
   clientId: "wrong-client-id",
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false
 ))
 ```

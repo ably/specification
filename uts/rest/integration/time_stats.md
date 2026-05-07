@@ -39,7 +39,7 @@ Tests that `time()` returns the current server time.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -75,7 +75,7 @@ Tests that `stats()` returns stats for the application.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 
@@ -111,7 +111,7 @@ Tests that `stats()` correctly applies query parameters.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 ```
 

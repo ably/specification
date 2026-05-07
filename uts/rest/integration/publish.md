@@ -46,7 +46,7 @@ channel_name = "forbidden-channel-" + random_id()  # Not in restricted key's cap
 
 restricted_client = Rest(options: ClientOptions(
   key: restricted_key,  # Key without publish capability for this channel
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 restricted_channel = restricted_client.channels.get(channel_name)
 ```
@@ -72,7 +72,7 @@ Tests that successful publish returns a result with message serials.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "test-serials-" + random_id()
 channel = client.channels.get(channel_name)
@@ -115,7 +115,7 @@ Tests that multiple publishes with the same client-supplied ID result in single 
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "idempotent-explicit-" + random_id()
 channel = client.channels.get(channel_name)
@@ -161,7 +161,7 @@ Tests that publish params are correctly transmitted by using the `_forceNack` te
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 channel_name = "force-nack-test-" + random_id()
 channel = client.channels.get(channel_name)
@@ -191,7 +191,7 @@ Tests that server rejects message with clientId different from authenticated cli
 # Create a token with a specific clientId
 key_client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 token_details = AWAIT key_client.auth.requestToken(
@@ -201,7 +201,7 @@ token_details = AWAIT key_client.auth.requestToken(
 # Client using token with clientId
 token_client = Rest(options: ClientOptions(
   token: token_details.token,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel_name = "clientid-mismatch-" + random_id()

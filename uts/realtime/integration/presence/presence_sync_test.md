@@ -52,7 +52,7 @@ channel_name = "presence-sync-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "sync-member-a",
   autoConnect: false,
   useBinaryProtocol: false
@@ -60,7 +60,7 @@ client_a = Realtime(options: ClientOptions(
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -118,14 +118,14 @@ member_count = 10
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))

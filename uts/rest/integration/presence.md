@@ -64,7 +64,7 @@ The `ably-common/test-resources/test-app-setup.json` includes pre-populated pres
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -89,7 +89,7 @@ Retrieves the pre-populated presence members from the sandbox fixture channel.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -114,7 +114,7 @@ ASSERT "client_json" IN client_ids
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -140,7 +140,7 @@ ASSERT member.connectionId IS NOT null
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -163,7 +163,7 @@ IF result.hasNext():
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -185,7 +185,7 @@ ASSERT result.items[0].data == "{ \"test\": \"This is a JSONObject clientData pa
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # Use a unique channel name that has no presence members
@@ -214,7 +214,7 @@ This test creates presence history by entering and leaving a channel.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel_name = "presence-history-" + random_id()
@@ -222,7 +222,7 @@ channel_name = "presence-history-" + random_id()
 # Use realtime client to generate presence history
 realtime = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "test-client"
 ))
 
@@ -261,7 +261,7 @@ ASSERT PresenceAction.leave IN actions
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "test-client"
 ))
 
@@ -273,7 +273,7 @@ time_before = now_millis()
 # Generate presence events via realtime
 realtime = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "time-test-client"
 ))
 
@@ -312,7 +312,7 @@ ASSERT history.items.length >= 2
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel_name = "presence-direction-" + random_id()
@@ -320,7 +320,7 @@ channel_name = "presence-direction-" + random_id()
 # Generate ordered presence events
 realtime = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "direction-client"
 ))
 
@@ -361,7 +361,7 @@ ASSERT history_backwards.items[0].data == "third"
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel_name = "presence-limit-" + random_id()
@@ -369,7 +369,7 @@ channel_name = "presence-limit-" + random_id()
 # Generate multiple presence events
 realtime = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "limit-client"
 ))
 
@@ -414,7 +414,7 @@ ASSERT page2.items.length >= 1
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -434,7 +434,7 @@ ASSERT result.items[0].data == "This is a string clientData payload"
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel = client.channels.get("persisted:presence_fixtures")
@@ -454,7 +454,7 @@ ASSERT result.items[0].data["example"]["json"] == "Object"
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 cipher_key = base64_decode("WUP6u0K7MXI5Zeo0VppPwg==")
@@ -485,7 +485,7 @@ ASSERT result.items[0].data IS NOT null
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 channel_name = "presence-decode-history-" + random_id()
@@ -493,7 +493,7 @@ channel_name = "presence-decode-history-" + random_id()
 # Generate presence event with JSON data
 realtime = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "decode-client"
 ))
 
@@ -530,7 +530,7 @@ ASSERT history.items[0].data["number"] == 123
 ```pseudo
 client = Rest(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # The fixture channel has multiple members
@@ -568,7 +568,7 @@ ASSERT len(set(client_ids)) == len(client_ids)
 ```pseudo
 client = Rest(options: ClientOptions(
   key: "invalid.key:secret",
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 AWAIT client.channels.get("test").presence.get() FAILS WITH error
@@ -588,7 +588,7 @@ restricted_key = app_config.keys[3].key_str
 
 client = Rest(options: ClientOptions(
   key: restricted_key,
-  endpoint: "sandbox"
+  endpoint: "nonprod:sandbox"
 ))
 
 # This should work - subscribe capability is sufficient for presence.get
