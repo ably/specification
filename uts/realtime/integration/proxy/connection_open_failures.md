@@ -23,7 +23,7 @@ Tests run against the Ably Sandbox via a programmable proxy.
 ```pseudo
 BEFORE ALL TESTS:
   # Provision test app
-  response = POST https://sandbox-rest.ably.io/apps
+  response = POST https://sandbox.realtime.ably-nonprod.net/apps
     WITH body from ably-common/test-resources/test-app-setup.json
 
   app_config = parse_json(response.body)
@@ -32,7 +32,7 @@ BEFORE ALL TESTS:
 
 AFTER ALL TESTS:
   # Clean up test app
-  DELETE https://sandbox-rest.ably.io/apps/{app_id}
+  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
     WITH Authorization: Basic {api_key}
 ```
 
@@ -488,7 +488,7 @@ function request_token_from_sandbox(api_key, token_params):
   key_secret = api_key.split(":")[1]
 
   # Request a token from the sandbox REST API
-  response = POST https://sandbox-rest.ably.io/keys/{key_name}/requestToken
+  response = POST https://sandbox.realtime.ably-nonprod.net/keys/{key_name}/requestToken
     WITH Authorization: Basic base64(api_key)
     WITH body: token_params OR {}
 
