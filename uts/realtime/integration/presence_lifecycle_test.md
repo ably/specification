@@ -56,13 +56,13 @@ member_count = 50
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```
@@ -144,14 +144,14 @@ channel_name = "presence-lifecycle-" + random_id()
 
 client_a = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   clientId: "lifecycle-client",
   useBinaryProtocol: false
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 ```

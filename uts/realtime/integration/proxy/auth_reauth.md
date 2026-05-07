@@ -62,7 +62,7 @@ Tests that when the proxy injects a server-initiated AUTH ProtocolMessage (actio
 
 ```pseudo
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: port_base + 0,
   rules: []
 )

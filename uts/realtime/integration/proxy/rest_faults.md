@@ -88,7 +88,7 @@ auth_callback_count = 0
 
 # Create proxy session that returns 401 on the first channel request
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "http_request", "pathContains": "/channels/" },
@@ -174,7 +174,7 @@ Tests that when a REST request receives an HTTP 503 (Service Unavailable) and th
 ```pseudo
 # Create proxy session that returns 503 on the first channel request
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: [{
     "match": { "type": "http_request", "pathContains": "/channels/" },
@@ -250,7 +250,7 @@ Tests that the proxy transparently forwards both WebSocket and HTTP traffic with
 ```pseudo
 # Create proxy session with no rules (pure passthrough)
 session = create_proxy_session(
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   port: allocated_port,
   rules: []
 )

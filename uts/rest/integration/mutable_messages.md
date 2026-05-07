@@ -30,7 +30,7 @@ AFTER ALL TESTS:
 
 ### Notes
 - All clients use `useBinaryProtocol: false` (SDK does not implement msgpack)
-- All clients use `endpoint: "sandbox"`
+- All clients use `endpoint: "nonprod:sandbox"`
 - All channel names use the `mutable:` namespace prefix — the test app setup configures the `mutable` namespace with `mutableMessages: true`, which is required for getMessage, updateMessage, deleteMessage, appendMessage, and annotations
 
 ### Annotation HTTP Body Format
@@ -65,7 +65,7 @@ Tests that publish returns real serials from the Ably sandbox.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSL1n-serials-" + random_id()
@@ -110,7 +110,7 @@ Tests that a published message can be retrieved by its serial.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSL11-getMessage-" + random_id()
@@ -151,7 +151,7 @@ Tests that a published message can be updated and the update is visible via `get
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSL15-update-" + random_id()
@@ -206,7 +206,7 @@ Tests that a published message can be deleted.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSL15-delete-" + random_id()
@@ -256,7 +256,7 @@ Tests that version history contains the original and all updates.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSL14-versions-" + random_id()
@@ -314,7 +314,7 @@ Tests that a message can be appended to.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSL15-append-" + random_id()
@@ -359,7 +359,7 @@ Tests the full annotation lifecycle: create, verify, delete.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSAN-lifecycle-" + random_id()
@@ -417,7 +417,7 @@ Tests that multiple annotations can be retrieved as a paginated result.
 ```pseudo
 client = Rest(options: ClientOptions(
   key: full_access_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   useBinaryProtocol: false
 ))
 channel_name = "mutable:test-RSAN3-paginated-" + random_id()

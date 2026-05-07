@@ -156,7 +156,7 @@ Proxy tests additionally set up a proxy session per test or group of tests. See 
 ```pseudo
 BEFORE EACH TEST:
   session = create_proxy_session(
-    endpoint: "sandbox",
+    endpoint: "nonprod:sandbox",
     port: allocated_port,
     rules: [ ...initial rules... ]
   )
@@ -172,7 +172,7 @@ Integration test clients use:
 ```pseudo
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",          # Direct sandbox tests
+  endpoint: "nonprod:sandbox",          # Direct sandbox tests
   useBinaryProtocol: false,
   autoConnect: false
 ))

@@ -51,7 +51,7 @@ channel_name = "attach-RTL4c-" + random_id()
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -96,7 +96,7 @@ channel_name = "detach-RTL5d-" + random_id()
 
 client = Realtime(options: ClientOptions(
   key: api_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -143,7 +143,7 @@ channel_name = "publish-not-allowed-" + random_id()
 # Use key with subscribe-only capability
 client = Realtime(options: ClientOptions(
   key: subscribe_only_key,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))

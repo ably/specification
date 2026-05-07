@@ -61,7 +61,7 @@ mock_http = MockHttpClient(
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  endpoint: "sandbox"
+  endpoint: "test"
 ))
 ```
 
@@ -73,7 +73,7 @@ AWAIT client.time()
 #### Assertions
 ```pseudo
 ASSERT mock_http.captured_requests.length == 1
-ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
+ASSERT mock_http.captured_requests[0].url.host == "test.realtime.ably.net"
 ```
 
 ---

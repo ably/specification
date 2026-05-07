@@ -72,7 +72,7 @@ auth_callback = FUNCTION(params):
 
 client = Realtime(options: ClientOptions(
   authCallback: auth_callback,
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))

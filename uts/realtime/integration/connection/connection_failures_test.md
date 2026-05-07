@@ -46,7 +46,7 @@ the error set on Connection#errorReason.
 ```pseudo
 client = Realtime(options: ClientOptions(
   key: "invalid.key:secret",
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
@@ -92,7 +92,7 @@ rejects the connection with a 404 or 401 error, which is not a token error
 # Use a key with a valid format but non-existent app
 client = Realtime(options: ClientOptions(
   key: "nonexistent.keyname:keysecret",
-  endpoint: "sandbox",
+  endpoint: "nonprod:sandbox",
   autoConnect: false,
   useBinaryProtocol: false
 ))
