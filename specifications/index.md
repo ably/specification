@@ -80,5 +80,3 @@ All Ably client libraries at a minimum support [WebSockets](https://ably.com/top
 All client libraries share API documentation within this repository so that where possible, the documentation is [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). Where client libraries differ in regards to their API or usage, the language specific variations are documented in this repository, which in turn are replicated in the primary [Ably documentation](https://ably.com/docs).
 
 All client libraries developed or modified must reflect the changes to this documentation. You can fork this repository at <https://github.com/ably/docs> and issue a Pull Request.
-
-Read how to use our [Ably Textile format](/client-lib-development-guide/documentation-formatting-guide).

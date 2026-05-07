@@ -39,15 +39,15 @@ by adding a local development HTTP server.
 
 ## Features Spec Points
 
-When making changes to [the spec](textile/features.textile), please follow these guidelines:
+When making changes to [the spec](specifications/features.md), please follow these guidelines:
 
 - **Ordering**: Spec items should generally appear in ID order, but priority should be placed on ordering them in a way that makes coherent sense, even if that results in them being numbered out-of-order. For example, if `XXX1`, `XXX2` and `XXX3` exist but it would make more sense for `XXX3` to follow `XXX1`, then just move the spec items accordingly without changing their IDs
 - **Structuring**: When structuring the specification and defining the relationships between clauses and subclauses, generally avoid placing behavior descriptions and implementation details in the parent clause. The parent clause should primarily serve as an informational header for its subclauses. However, if it improves coherence, including behavior descriptions in the parent clause is permissible.
 - **Clarity**: Refrain from using conditional statements and multiple behavior descriptions within a single spec item. These should be separated into distinct subclauses for clarity.
 - **Addition**: When adding a new spec item, choose an ID that is greater than all others that exist in the given section, even if there is a gap in the currently assigned IDs.
 - **Modification**: Spec items should never be mutated, except to patch a mistake that doesn't change the semantics for SDK implementations. Follow the guidance outlined here in respect of _Replacement_ if the meaning or scope of a spec point needs to change.
-- **Removal**: When removing a spec item, it must remain but replace all text with `This clause has been deleted as of specification version @X.Y@.` (uses textile markup).
-- **Replacement**: When replacing a spec item, it must remain but replace all text with `This clause has been replaced by "@Z@":#Z as of specification version @X.Y@.` (uses textile markup).
+- **Removal**: When removing a spec item, it must remain but replace all text with `This clause has been deleted as of specification version X.Y.`.
+- **Replacement**: When replacing a spec item, it must remain but replace all text with ``This clause has been replaced by [`Z`](#Z) as of specification version X.Y.``.
 - **Deprecation**: Our approach to deprecating features is yet to be fully evolved and documented, however we have a current standard in place whereby the text "(deprecated)" is inserted at the beginning of a specification point to declare that it will be removed in a future release. The likely outcome is that in the next major release of the spec/protocol we'll remove that spec item, per guidance above.
 
 ### Additional Notes on Features Spec Point _Removal_ and _Replacement_
@@ -58,8 +58,8 @@ If the clause being removed or replaced has subclauses then the expected implica
 
 Variations on the replacement text for removed or replaced spec items is allowed, as long as the overarching structure remains the same. For example:
 
-- When a spec item has been removed because a new spec point has made it redundant, which is the case for `RTN15f` after specification version `1.2`, where the replacement text is: `This clause has been deleted (redundant to "RTN19a":#RTN19a) as of specification version @1.2@.`
-- When a spec item has been replaced by more than one new spec item, which is the case for `RTN16b` after specification version `1.2`, where the replacement text is: `This clause has been replaced by "@RTN16g@":#RTN16g and "@RTN16m@":#RTN16m as of specification version @1.2@.`
+- When a spec item has been removed because a new spec point has made it redundant, which is the case for `RTN15f` after specification version `1.2`, where the replacement text is: `This clause has been deleted (redundant to [RTN19a](#RTN19a)) as of specification version 1.2.`
+- When a spec item has been replaced by more than one new spec item, which is the case for `RTN16b` after specification version `1.2`, where the replacement text is: ``This clause has been replaced by [`RTN16g`](#RTN16g) and [`RTN16m`](#RTN16m) as of specification version 1.2.``
 
 Historically, before the above guidance was established - in particular around _Removal_ and _Replacement_ - there have been some cases where spec points were completely deleted.
 This left us open to the problem that client library references to spec items could end up semantically invalid if that spec point was re-used later.
