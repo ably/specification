@@ -48,7 +48,7 @@ results (HTTP 400). This format is not used by current SDKs.
 
 ## Sandbox Setup
 
-Tests run against the Ably Sandbox at `https://sandbox-rest.ably.io`.
+Tests run against the Ably Sandbox at `https://sandbox.realtime.ably-nonprod.net`.
 
 ### App Provisioning
 
@@ -58,7 +58,7 @@ Uses `ably-common/test-resources/test-app-setup.json` which provides:
 
 ```pseudo
 BEFORE ALL TESTS:
-  response = POST https://sandbox-rest.ably.io/apps
+  response = POST https://sandbox.realtime.ably-nonprod.net/apps
     WITH body from ably-common/test-resources/test-app-setup.json
 
   app_config = parse_json(response.body)
@@ -67,7 +67,7 @@ BEFORE ALL TESTS:
   app_id = app_config.app_id
 
 AFTER ALL TESTS:
-  DELETE https://sandbox-rest.ably.io/apps/{app_id}
+  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
     WITH Authorization: Basic {full_access_key}
 ```
 

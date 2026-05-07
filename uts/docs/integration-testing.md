@@ -137,7 +137,7 @@ Every integration test file includes the standard sandbox provisioning:
 
 ```pseudo
 BEFORE ALL TESTS:
-  response = POST https://sandbox-rest.ably.io/apps
+  response = POST https://sandbox.realtime.ably-nonprod.net/apps
     WITH body from ably-common/test-resources/test-app-setup.json
 
   app_config = parse_json(response.body)
@@ -145,7 +145,7 @@ BEFORE ALL TESTS:
   app_id = app_config.app_id
 
 AFTER ALL TESTS:
-  DELETE https://sandbox-rest.ably.io/apps/{app_id}
+  DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
     WITH Authorization: Basic {api_key}
 ```
 
