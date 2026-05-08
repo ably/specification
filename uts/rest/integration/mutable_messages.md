@@ -5,6 +5,13 @@ Spec points: `RSL1n`, `RSL11`, `RSL14`, `RSL15`, `RSAN1`, `RSAN2`, `RSAN3`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Sandbox Setup
 
 Tests run against the Ably Sandbox at `https://sandbox.realtime.ably-nonprod.net`.
@@ -29,7 +36,7 @@ AFTER ALL TESTS:
 ```
 
 ### Notes
-- All clients use `useBinaryProtocol: false` (SDK does not implement msgpack)
+- All clients use `useBinaryProtocol: PROTOCOL == "msgpack"` (see Protocol Variants)
 - All clients use `endpoint: "nonprod:sandbox"`
 - All channel names use the `mutable:` namespace prefix — the test app setup configures the `mutable` namespace with `mutableMessages: true`, which is required for getMessage, updateMessage, deleteMessage, appendMessage, and annotations
 
@@ -66,7 +73,7 @@ Tests that publish returns real serials from the Ably sandbox.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSL1n-serials-" + random_id()
 channel = client.channels.get(channel_name)
@@ -111,7 +118,7 @@ Tests that a published message can be retrieved by its serial.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSL11-getMessage-" + random_id()
 channel = client.channels.get(channel_name)
@@ -152,7 +159,7 @@ Tests that a published message can be updated and the update is visible via `get
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSL15-update-" + random_id()
 channel = client.channels.get(channel_name)
@@ -207,7 +214,7 @@ Tests that a published message can be deleted.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSL15-delete-" + random_id()
 channel = client.channels.get(channel_name)
@@ -257,7 +264,7 @@ Tests that version history contains the original and all updates.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSL14-versions-" + random_id()
 channel = client.channels.get(channel_name)
@@ -315,7 +322,7 @@ Tests that a message can be appended to.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSL15-append-" + random_id()
 channel = client.channels.get(channel_name)
@@ -360,7 +367,7 @@ Tests the full annotation lifecycle: create, verify, delete.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSAN-lifecycle-" + random_id()
 channel = client.channels.get(channel_name)
@@ -418,7 +425,7 @@ Tests that multiple annotations can be retrieved as a paginated result.
 client = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 channel_name = "mutable:test-RSAN3-paginated-" + random_id()
 channel = client.channels.get(channel_name)
