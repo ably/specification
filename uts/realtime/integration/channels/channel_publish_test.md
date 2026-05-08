@@ -5,6 +5,13 @@ Spec points: `RTL6`, `RTL6f`, `RSL4`, `RSL6`, `RSL6a2`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 End-to-end verification that messages published on one realtime connection are
@@ -50,14 +57,14 @@ publisher = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 publisher.connect()
@@ -118,14 +125,14 @@ publisher = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 publisher.connect()
@@ -190,14 +197,14 @@ publisher = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 publisher.connect()
@@ -259,14 +266,14 @@ publisher = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 publisher.connect()
@@ -325,14 +332,14 @@ publisher = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   autoConnect: false,
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 publisher.connect()

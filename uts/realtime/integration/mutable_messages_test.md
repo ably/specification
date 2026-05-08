@@ -5,6 +5,13 @@ Spec points: `RTL28`, `RTL31`, `RTL32`, `RTAN1`, `RTAN2`, `RTAN4`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 End-to-end verification of mutable messages and annotations over realtime
@@ -21,7 +28,7 @@ integration tests (`rest/integration/mutable_messages.md`) by verifying:
 
 Tests run against the Ably Sandbox at `https://sandbox.realtime.ably-nonprod.net`.
 
-**Note:** `useBinaryProtocol: false` is required if the SDK does not implement msgpack.
+**Note:** `useBinaryProtocol: PROTOCOL == "msgpack"` is used so tests run with both protocols (see Protocol Variants).
 
 ### App Provisioning
 
@@ -40,7 +47,7 @@ AFTER ALL TESTS:
 ```
 
 ### Notes
-- All clients use `useBinaryProtocol: false` (SDK does not implement msgpack)
+- All clients use `useBinaryProtocol: PROTOCOL == "msgpack"` (see Protocol Variants)
 - All clients use `endpoint: "nonprod:sandbox"`
 - All channel names use the `mutable:` namespace prefix — the test app setup configures
   the `mutable` namespace with `mutableMessages: true`
@@ -64,13 +71,13 @@ channel_name = "mutable:rt-update-" + random_id()
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_a.connect()
@@ -171,13 +178,13 @@ channel_name = "mutable:rt-delete-" + random_id()
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_a.connect()
@@ -259,13 +266,13 @@ channel_name = "mutable:rt-append-" + random_id()
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_a.connect()
@@ -353,13 +360,13 @@ channel_name = "mutable:rt-lifecycle-" + random_id()
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_a.connect()
@@ -481,7 +488,7 @@ channel_name = "mutable:rt-get-versions-" + random_id()
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client.connect()
@@ -573,13 +580,13 @@ channel_name = "mutable:rt-annotations-" + random_id()
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_a.connect()
@@ -698,13 +705,13 @@ channel_name = "mutable:rt-ann-filter-" + random_id()
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_a.connect()
@@ -817,7 +824,7 @@ channel_name = "mutable:rt-ann-implicit-attach-" + random_id()
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client.connect()

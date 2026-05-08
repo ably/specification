@@ -5,6 +5,13 @@ Spec points: `RTP4`, `RTP6`, `RTP8`, `RTP9`, `RTP10`, `RTP11a`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 End-to-end verification of the realtime presence lifecycle using two connections
@@ -18,7 +25,7 @@ broadcasts presence events, delivers SYNC data, and maintains presence state.
 
 Tests run against the Ably Sandbox at `https://sandbox.realtime.ably-nonprod.net`.
 
-**Note:** `useBinaryProtocol: false` is required if the SDK does not implement msgpack.
+**Note:** `useBinaryProtocol: PROTOCOL == "msgpack"` is used so tests run with both protocols (see Protocol Variants).
 
 ### App Provisioning
 
@@ -57,13 +64,13 @@ member_count = 50
 client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 ```
 
@@ -146,13 +153,13 @@ client_a = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
   clientId: "lifecycle-client",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 client_b = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 ```
 

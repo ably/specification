@@ -15,6 +15,7 @@ This guide provides comprehensive guidance for writing portable test specificati
 - Run against `https://sandbox.realtime.ably-nonprod.net`
 - Provision apps via `POST /apps` with body from `ably-common/test-resources/test-app-setup.json`
 - Use `endpoint: "nonprod:sandbox"` in ClientOptions
+- **Protocol variants:** Data-path tests (publish, history, presence, etc.) must run with both JSON and msgpack. Add a `## Protocol Variants` section after `## Test Type` and use `useBinaryProtocol: PROTOCOL == "msgpack"` in ClientOptions. See `docs/integration-testing.md` for the full convention. Specs without this header default to JSON only.
 
 ### Proxy Integration Tests (Ably Sandbox via Proxy)
 - Run against Ably Sandbox through a programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy))
