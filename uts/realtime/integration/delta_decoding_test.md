@@ -5,6 +5,13 @@ Spec points: `PC3`, `PC3a`, `RTL18`, `RTL18b`, `RTL18c`, `RTL19b`, `RTL20`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 End-to-end verification of vcdiff delta decoding using real connections against the
@@ -30,7 +37,7 @@ order compared to `VD2a`.
 
 Tests run against the Ably Sandbox at `https://sandbox.realtime.ably-nonprod.net`.
 
-**Note:** `useBinaryProtocol: false` is required if the SDK does not implement msgpack.
+**Note:** `useBinaryProtocol: PROTOCOL == "msgpack"` is used so tests run with both protocols (see Protocol Variants).
 
 ### App Provisioning
 
@@ -93,7 +100,7 @@ counting_decoder = VCDiffDecoder(
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false,
+  useBinaryProtocol: PROTOCOL == "msgpack",
   plugins: { vcdiff: counting_decoder }
 ))
 ```
@@ -175,7 +182,7 @@ counting_decoder = VCDiffDecoder(
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false,
+  useBinaryProtocol: PROTOCOL == "msgpack",
   plugins: { vcdiff: counting_decoder }
 ))
 
@@ -257,7 +264,7 @@ counting_decoder = VCDiffDecoder(
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false,
+  useBinaryProtocol: PROTOCOL == "msgpack",
   plugins: { vcdiff: counting_decoder }
 ))
 ```
@@ -331,7 +338,7 @@ counting_decoder = VCDiffDecoder(
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false,
+  useBinaryProtocol: PROTOCOL == "msgpack",
   plugins: { vcdiff: counting_decoder }
 ))
 ```
@@ -428,7 +435,7 @@ failing_decoder = FailingVCDiffDecoder()
 client = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false,
+  useBinaryProtocol: PROTOCOL == "msgpack",
   plugins: { vcdiff: failing_decoder }
 ))
 ```
@@ -507,14 +514,14 @@ channel_name = "delta-no-plugin-" + random_id()
 subscriber = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 # Publisher — separate connection, publishes without delta param
 publisher = Realtime(options: ClientOptions(
   key: api_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 ```
 

@@ -236,6 +236,66 @@ The goal is: every await in the test is bounded, and the suite timeout is genero
 - Proxy tests should use proxy event logs for verification rather than timing-dependent assertions
 - When tests pass in isolation but fail in the full suite, suspect sandbox rate limiting or connection exhaustion — increase the suite timeout rather than adding retries
 
+## Protocol Variants
+
+The Ably client library spec (G1) requires that tests run with all supported protocols. Integration tests that exercise the data encoding/decoding path must run with both JSON and msgpack to verify data integrity through the full encode-transmit-decode pipeline.
+
+### Which tests need both protocols?
+
+Only tests on the **data path** need both protocols. These are tests where messages, presence data, or other payloads pass through the SDK's encoding layer, through the server, and back. Examples include publish/subscribe round-trips, history retrieval, presence data, delta decoding, and mutable message operations.
+
+Tests for **connection lifecycle**, **authentication**, **channel attach/detach**, and other protocol-agnostic behaviours do not need protocol variants. These tests exercise control-plane operations whose correctness does not depend on the wire encoding of message payloads.
+
+**Proxy tests always use JSON.** The proxy only supports text WebSocket frames, so proxy-based tests cannot use msgpack.
+
+### Spec file convention
+
+A spec file that requires protocol variant testing includes a `## Protocol Variants` section immediately after `## Test Type`:
+
+```markdown
+## Test Type
+Integration test against Ably sandbox
+
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+```
+
+The `PROTOCOL` variable is available in pseudocode and is set to `"json"` or `"msgpack"` for the current run. Client options use the standard pattern:
+
+```pseudo
+client = Rest(options: ClientOptions(
+  key: api_key,
+  endpoint: "nonprod:sandbox",
+  useBinaryProtocol: PROTOCOL == "msgpack"
+))
+```
+
+### Default behaviour
+
+Spec files **without** a `## Protocol Variants` section default to JSON only. No special handling is required in derived test implementations for these specs.
+
+### Annotated specs
+
+The following integration test specs are annotated with `## Protocol Variants`:
+
+**REST:**
+- `rest/integration/publish.md`
+- `rest/integration/history.md`
+- `rest/integration/presence.md`
+- `rest/integration/batch_presence.md`
+- `rest/integration/mutable_messages.md`
+
+**Realtime:**
+- `realtime/integration/channels/channel_publish_test.md`
+- `realtime/integration/channel_history_test.md`
+- `realtime/integration/presence_lifecycle_test.md`
+- `realtime/integration/mutable_messages_test.md`
+- `realtime/integration/delta_decoding_test.md`
+
 ## Writing Proxy Tests
 
 The proxy mediates between the SDK and the real Ably server. It is not a mock server. Tests should be written to rely on actual server responses as much as possible, with the proxy intervening only where necessary to create the specific fault or error condition under test.

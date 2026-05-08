@@ -5,6 +5,13 @@ Spec points: `RSC24`, `BGR2`, `BGF2`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 End-to-end verification of `RestClient#batchPresence` against the Ably sandbox.
@@ -89,7 +96,7 @@ channel_b_name = "batch-presence-b-" + random_id()
 realtime = Realtime(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 ```
 
@@ -112,7 +119,7 @@ AWAIT ch_b.presence.enterClient("user-3", data: "data-b1")
 rest = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 result = AWAIT rest.batchPresence([channel_a_name, channel_b_name])
@@ -172,7 +179,7 @@ denied_channel = "denied-batch-" + random_id()
 realtime = Realtime(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 realtime.connect()
@@ -195,7 +202,7 @@ AWAIT realtime.close()
 restricted_rest = Rest(options: ClientOptions(
   key: restricted_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 result = AWAIT restricted_rest.batchPresence([allowed_channel, denied_channel])
@@ -246,7 +253,7 @@ populated_channel = "batch-populated-" + random_id()
 realtime = Realtime(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 realtime.connect()
@@ -266,7 +273,7 @@ AWAIT ch.presence.enterClient("someone", data: "here")
 rest = Rest(options: ClientOptions(
   key: full_access_key,
   endpoint: "nonprod:sandbox",
-  useBinaryProtocol: false
+  useBinaryProtocol: PROTOCOL == "msgpack"
 ))
 
 result = AWAIT rest.batchPresence([empty_channel, populated_channel])

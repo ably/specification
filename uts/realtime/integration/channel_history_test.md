@@ -5,6 +5,13 @@ Spec points: `RTL10d`
 ## Test Type
 Integration test against Ably Sandbox endpoint
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Sandbox Setup
 
 Tests run against the Ably Sandbox at `https://sandbox.realtime.ably-nonprod.net`.
