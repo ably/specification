@@ -19,18 +19,18 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO23a)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
   - `(RTO23b)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
-  - `(RTO23d)` Returns the object with id `root` from the internal `ObjectsPool` as a `LiveMap`
-- `(RTO11)` `RealtimeObject#createMap` function:
-  - `(RTO11a)` Expects the following arguments:
-    - `(RTO11a1)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap>` (optional) - the initial entries for the new `LiveMap` object
-  - `(RTO11b)` The return type is a `LiveMap`, which is returned once the required I/O has successfully completed
-  - `(RTO11c)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTO11d)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
-  - `(RTO11e)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
-  - `(RTO11f)` Creates an `ObjectMessage` for a `MAP_CREATE` action in the following way:
-    - `(RTO11f1)` If `entries` is null or not of type `Dict`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that `entries` must be a `Dict`. Note that `entries` is an optional argument, and if omitted, this error must not be thrown
-    - `(RTO11f2)` If any of the keys provided in `entries` are not of type `String`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that keys must be `String`
-    - `(RTO11f3)` If any of the values provided in `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
+  - `(RTO23d)` Returns a `PathObject` ([RTPO1](#RTPO1)) wrapping the `LiveMap` with id `root` from the internal `ObjectsPool`. The `PathObject` is created with an empty path, rooted at the `root` `LiveMap`
+- `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11a)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11a1)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11b)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11c)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11d)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11e)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11f)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f1)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f2)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f3)` This clause has been replaced by [RTLMV3](#RTLMV3).
     - `(RTO11f4)` This clause has been replaced by [RTO11f14](#RTO11f14) as of specification version 6.0.0.
       - `(RTO11f4a)` This clause has been replaced by [RTO11f14a](#RTO11f14a) as of specification version 6.0.0.
       - `(RTO11f4b)` This clause has been replaced by [RTO11f14b](#RTO11f14b) as of specification version 6.0.0.
@@ -43,98 +43,83 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
           - `(RTO11f4c1e)` This clause has been replaced by [RTO11f14c1e](#RTO11f14c1e) as of specification version 6.0.0.
           - `(RTO11f4c1f)` This clause has been replaced by [RTO11f14c1f](#RTO11f14c1f) as of specification version 6.0.0.
         - `(RTO11f4c2)` This clause has been replaced by [RTO11f14c2](#RTO11f14c2) as of specification version 6.0.0.
-    - `(RTO11f14)` Create a `MapCreate` object with the initial value for the new `LiveMap`:
-      - `(RTO11f14a)` Set `MapCreate.semantics` to `ObjectsMapSemantics.LWW`
-      - `(RTO11f14b)` Set `MapCreate.entries` to an empty map if `entries` is omitted
-      - `(RTO11f14c)` Otherwise, set `MapCreate.entries` based on the provided `entries`. For each key-value pair in `entries`:
-        - `(RTO11f14c1)` Create an `ObjectsMapEntry` for the current value:
-          - `(RTO11f14c1a)` If the value is of type `LiveCounter` or `LiveMap`, set `ObjectsMapEntry.data.objectId` to the `objectId` of that object
-          - `(RTO11f14c1b)` If the value is of type `JsonArray` or `JsonObject`, set `ObjectsMapEntry.data.json` to that value
-          - `(RTO11f14c1c)` If the value is of type `String`, set `ObjectsMapEntry.data.string` to that value
-          - `(RTO11f14c1d)` If the value is of type `Number`, set `ObjectsMapEntry.data.number` to that value
-          - `(RTO11f14c1e)` If the value is of type `Boolean`, set `ObjectsMapEntry.data.boolean` to that value
-          - `(RTO11f14c1f)` If the value is of type `Binary`, set `ObjectsMapEntry.data.bytes` to that value
-        - `(RTO11f14c2)` Add a new entry to `MapCreate.entries` with the current key and the created `ObjectsMapEntry` as the value
+    - `(RTO11f14)` This clause has been replaced by [RTLMV3](#RTLMV3).
+      - `(RTO11f14a)` This clause has been replaced by [RTLMV3](#RTLMV3).
+      - `(RTO11f14b)` This clause has been replaced by [RTLMV3](#RTLMV3).
+      - `(RTO11f14c)` This clause has been replaced by [RTLMV3](#RTLMV3).
+        - `(RTO11f14c1)` This clause has been replaced by [RTLMV3](#RTLMV3).
+          - `(RTO11f14c1a)` This clause has been replaced by [RTLMV3](#RTLMV3).
+          - `(RTO11f14c1b)` This clause has been replaced by [RTLMV3](#RTLMV3).
+          - `(RTO11f14c1c)` This clause has been replaced by [RTLMV3](#RTLMV3).
+          - `(RTO11f14c1d)` This clause has been replaced by [RTLMV3](#RTLMV3).
+          - `(RTO11f14c1e)` This clause has been replaced by [RTLMV3](#RTLMV3).
+          - `(RTO11f14c1f)` This clause has been replaced by [RTLMV3](#RTLMV3).
+        - `(RTO11f14c2)` This clause has been replaced by [RTLMV3](#RTLMV3).
     - `(RTO11f5)` This clause has been replaced by [RTO11f15](#RTO11f15) as of specification version 6.0.0.
-    - `(RTO11f15)` Create an initial value JSON string based on `MapCreate` object from [RTO11f14](#RTO11f14) as follows:
-      - `(RTO11f15a)` The `MapCreate` object may contain user-provided `ObjectData` that requires encoding. Encode the `ObjectData` values using the procedure described in [OD4](../features#OD4)
-      - `(RTO11f15b)` Return a JSON string representation of the encoded `MapCreate` object
-    - `(RTO11f6)` Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
-    - `(RTO11f7)` Get the current server time as described in [RTO16](#RTO16)
-    - `(RTO11f8)` Create an `objectId` for the new `LiveMap` object as described in [RTO14](#RTO14), passing in `map` string as the `type`, the initial value JSON string from [RTO11f15](#RTO11f15), the nonce from [RTO11f6](#RTO11f6), and the server time from [RTO11f7](#RTO11f7)
-    - `(RTO11f9)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.MAP_CREATE`
-    - `(RTO11f10)` Set `ObjectMessage.operation.objectId` to the `objectId` created in [RTO11f8](#RTO11f8)
+    - `(RTO11f15)` This clause has been replaced by [RTLMV3](#RTLMV3).
+      - `(RTO11f15a)` This clause has been replaced by [RTLMV3](#RTLMV3).
+      - `(RTO11f15b)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f6)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f7)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f8)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f9)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f10)` This clause has been replaced by [RTLMV3](#RTLMV3).
     - `(RTO11f11)` This clause has been replaced by [RTO11f16](#RTO11f16) as of specification version 6.0.0.
     - `(RTO11f12)` This clause has been replaced by [RTO11f17](#RTO11f17) as of specification version 6.0.0.
     - `(RTO11f13)` This clause has been deleted as of specification version 6.0.0.
-    - `(RTO11f16)` Set `ObjectMessage.operation.mapCreateWithObjectId.nonce` to the nonce value created in [RTO11f6](#RTO11f6)
-    - `(RTO11f17)` Set `ObjectMessage.operation.mapCreateWithObjectId.initialValue` to the JSON string created in [RTO11f15](#RTO11f15)
-    - `(RTO11f18)` The client library must retain the `MapCreate` object from [RTO11f14](#RTO11f14) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.
+    - `(RTO11f16)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f17)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f18)` This clause has been replaced by [RTLMV4j5](#RTLMV4j5).
   - `(RTO11g)` This clause has been replaced by [RTO11i](#RTO11i)
-  - `(RTO11i)` Publishes the `ObjectMessage` from [RTO11f](#RTO11f) using `RealtimeObject#publishAndApply` ([RTO20](#RTO20)), passing the `ObjectMessage` as a single element in the array
-    - `(RTO11i1)` The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the `createMap` operation continues
-  - `(RTO11h)` Returns a `LiveMap` instance:
+  - `(RTO11i)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11i1)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11h)` This clause has been replaced by [RTLMV3](#RTLMV3).
     - `(RTO11h1)` This clause has been deleted.
-    - `(RTO11h2)` If an object with the `ObjectMessage.operation.objectId` exists in the internal `ObjectsPool`, return it
-    - `(RTO11h3)` Otherwise, if the object does not exist in the internal `ObjectsPool`:
+    - `(RTO11h2)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11h3)` This clause has been replaced by [RTLMV3](#RTLMV3).
       - `(RTO11h3a)` This clause has been deleted.
       - `(RTO11h3b)` This clause has been deleted.
       - `(RTO11h3c)` This clause has been deleted.
-      - `(RTO11h3d)` The library should throw an `ErrorInfo` error with `statusCode` 500 and `code` 50000 (Note: this is not expected to happen since the object should have been created as part of applying the `MAP_CREATE` operation via `publishAndApply` in [RTO11i](#RTO11i))
-- `(RTO12)` `RealtimeObject#createCounter` function:
-  - `(RTO12a)` Expects the following arguments:
-    - `(RTO12a1)` `count` `Number` (optional) - the initial count for the new `LiveCounter` object
-  - `(RTO12b)` The return type is a `LiveCounter`, which is returned once the required I/O has successfully completed
-  - `(RTO12c)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTO12d)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
-  - `(RTO12e)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
-  - `(RTO12f)` Creates an `ObjectMessage` for a `COUNTER_CREATE` action in the following way:
-    - `(RTO12f1)` If `count` is null, not of type `Number`, or not a finite number, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that `count` must be a valid number. Note that `count` is an optional argument, and if omitted, this error must not be thrown
+      - `(RTO11h3d)` This clause has been replaced by [RTLMV3](#RTLMV3).
+- `(RTO12)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12a)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12a1)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12b)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12c)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12d)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12e)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12f)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f1)` This clause has been replaced by [RTLCV3](#RTLCV3).
     - `(RTO12f2)` This clause has been replaced by [RTO12f12](#RTO12f12) as of specification version 6.0.0.
       - `(RTO12f2a)` This clause has been replaced by [RTO12f12a](#RTO12f12a) as of specification version 6.0.0.
       - `(RTO12f2b)` This clause has been replaced by [RTO12f12b](#RTO12f12b) as of specification version 6.0.0.
-    - `(RTO12f12)` Create a `CounterCreate` object with the initial value for the new `LiveCounter`:
-      - `(RTO12f12a)` Set `CounterCreate.count` to 0 if `count` is omitted
-      - `(RTO12f12b)` Otherwise, set `CounterCreate.count` to the provided `count` value
+    - `(RTO12f12)` This clause has been replaced by [RTLCV3](#RTLCV3).
+      - `(RTO12f12a)` This clause has been replaced by [RTLCV3](#RTLCV3).
+      - `(RTO12f12b)` This clause has been replaced by [RTLCV3](#RTLCV3).
     - `(RTO12f3)` This clause has been replaced by [RTO12f13](#RTO12f13) as of specification version 6.0.0.
-    - `(RTO12f13)` Create an initial value JSON string by generating a JSON string representation of the `CounterCreate` object from [RTO12f12](#RTO12f12)
-    - `(RTO12f4)` Create a unique string nonce with 16+ characters; the nonce is used to ensure object ID uniqueness across clients
-    - `(RTO12f5)` Get the current server time as described in [RTO16](#RTO16)
-    - `(RTO12f6)` Create an `objectId` for the new `LiveCounter` object as described in [RTO14](#RTO14), passing in `counter` string as the `type`, the initial value JSON string from [RTO12f13](#RTO12f13), the nonce from [RTO12f4](#RTO12f4), and the server time from [RTO12f5](#RTO12f5)
-    - `(RTO12f7)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.COUNTER_CREATE`
-    - `(RTO12f8)` Set `ObjectMessage.operation.objectId` to the `objectId` created in [RTO12f6](#RTO12f6)
+    - `(RTO12f13)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f4)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f5)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f6)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f7)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f8)` This clause has been replaced by [RTLCV3](#RTLCV3).
     - `(RTO12f9)` This clause has been replaced by [RTO12f14](#RTO12f14) as of specification version 6.0.0.
     - `(RTO12f10)` This clause has been replaced by [RTO12f15](#RTO12f15) as of specification version 6.0.0.
     - `(RTO12f11)` This clause has been deleted as of specification version 6.0.0.
-
-\* `(RTO12f14)` Set `ObjectMessage.operation.counterCreateWithObjectId.nonce` to the nonce value created in [RTO12f4](#RTO12f4)
-
-\* `(RTO12f15)` Set `ObjectMessage.operation.counterCreateWithObjectId.initialValue` to the JSON string created in [RTO12f13](#RTO12f13)
-
-\* `(RTO12f16)` The client library must retain the `CounterCreate` object from [RTO12f12](#RTO12f12) alongside the `CounterCreateWithObjectId`. It is the operation from which the `CounterCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4k2](../features#OOP4k2)) and local application of the operation ([RTLC16](#RTLC16)). This `CounterCreate` is for local use only and must not be sent over the wire.
-
-`(RTO12g)` This clause has been replaced by [RTO12i](#RTO12i)
-
-`(RTO12i)` Publishes the `ObjectMessage` from [RTO12f](#RTO12f) using `RealtimeObject#publishAndApply` ([RTO20](#RTO20)), passing the `ObjectMessage` as a single element in the array
-
-\* `(RTO12i1)` The client library waits for the publish operation I/O to complete. On failure, an error is returned to the caller; on success, the `createCounter` operation continues
-
-`(RTO12h)` Returns a `LiveCounter` instance:
-
-\* `(RTO12h1)` This clause has been deleted.
-
-\* `(RTO12h2)` If an object with the `ObjectMessage.operation.objectId` exists in the internal `ObjectsPool`, return it
-
-\* `(RTO12h3)` Otherwise, if the object does not exist in the internal `ObjectsPool`:
-
-`(RTO12h3a)` This clause has been deleted.
-
-`(RTO12h3b)` This clause has been deleted.
-
-`(RTO12h3c)` This clause has been deleted.
-
-`(RTO12h3d)` The library should throw an `ErrorInfo` error with `statusCode` 500 and `code` 50000 (Note: this is not expected to happen since the object should have been created as part of applying the `COUNTER_CREATE` operation via `publishAndApply` in [RTO12i](#RTO12i))
-
+    - `(RTO12f14)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f15)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f16)` This clause has been replaced by [RTLCV4g5](#RTLCV4g5).
+  - `(RTO12g)` This clause has been replaced by [RTO12i](#RTO12i)
+  - `(RTO12i)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12i1)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12h)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12h1)` This clause has been deleted.
+    - `(RTO12h2)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12h3)` This clause has been replaced by [RTLCV3](#RTLCV3).
+      - `(RTO12h3a)` This clause has been deleted.
+      - `(RTO12h3b)` This clause has been deleted.
+      - `(RTO12h3c)` This clause has been deleted.
+      - `(RTO12h3d)` This clause has been replaced by [RTLCV3](#RTLCV3).
 - `(RTO2)` Certain object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
   - `(RTO2a)` If the channel is in the `ATTACHED` state, the presence of the required channel mode is checked against the set of channel modes granted by the server per [RTL4m](../features#RTL4m) :
     - `(RTO2a1)` If the channel mode is in the set, the operation is allowed
@@ -303,6 +288,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO22)` `ObjectsOperationSource` is an internal enum describing the source of an operation being applied:
   - `(RTO22a)` `LOCAL` - an operation that originated locally, being applied upon receipt of the `ACK` from Realtime
   - `(RTO22b)` `CHANNEL` - an operation received over a Realtime channel
+- `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
+  - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
+  - `(RTO24b)` When a `LiveObject` in the `ObjectsPool` emits a `LiveObjectUpdate` (per [RTLO4b4](#RTLO4b4)), the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified:
+    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located
+    - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
+    - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
+    - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` with a `PathObject` pointing to the event path and the `ObjectMessage` that caused the change, and call the subscription's listener
+    - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
 
 ### LiveObject
 
@@ -330,9 +323,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b4c)` When a `LiveObjectUpdate` is emitted:
         - `(RTLO4b4c1)` If `LiveObjectUpdate` is indicated to be a no-op, do nothing
         - `(RTLO4b4c2)` Otherwise, the registered listener is called with the `LiveObjectUpdate` object
-    - `(RTLO4b5)` The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
-      - `(RTLO4b5a)` The subscription object includes an `unsubscribe` function
-      - `(RTLO4b5b)` Calling `unsubscribe` deregisters the listener previously registered by the user via the corresponding `subscribe` call
+    - `(RTLO4b5)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
+      - `(RTLO4b5a)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
+      - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
+    - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
   - `(RTLO4c)` public `unsubscribe` - unsubscribes a previously registered listener
     - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
@@ -457,7 +451,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLC10b)` This clause has been replaced by [RTLC16b](#RTLC16b) as of specification version 6.0.0.
   - `(RTLC10c)` This clause has been replaced by [RTLC16c](#RTLC16c) as of specification version 6.0.0.
   - `(RTLC10d)` This clause has been replaced by [RTLC16d](#RTLC16d) as of specification version 6.0.0.
-- `(RTLC16)` The initial value from an `ObjectOperation` can be merged into this `LiveCounter` in the following way. Let `counterCreate` be `ObjectOperation.counterCreate` if present, else the `CounterCreate` from which `ObjectOperation.counterCreateWithObjectId` was derived (see [RTO12f16](#RTO12f16)):
+- `(RTLC16)` The initial value from an `ObjectOperation` can be merged into this `LiveCounter` in the following way. Let `counterCreate` be `ObjectOperation.counterCreate` if present, else the `CounterCreate` from which `ObjectOperation.counterCreateWithObjectId` was derived (see [RTLCV4g5](#RTLCV4g5)):
   - `(RTLC16a)` Add `counterCreate.count` to `data`, if it exists
   - `(RTLC16b)` Set the private flag `createOperationIsMerged` to `true`
   - `(RTLC16c)` If `counterCreate.count` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `counterCreate.count`
@@ -521,12 +515,13 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTLM20)` `LiveMap#set` function:
   - `(RTLM20a)` Expects the following arguments:
     - `(RTLM20a1)` `key` `String` - the key to set the value for
-    - `(RTLM20a2)` `value` `Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap` - the value to assign to the key
+    - `(RTLM20a2)` This clause has been replaced by [RTLM20a3](#RTLM20a3).
+    - `(RTLM20a3)` `value` `Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType` - the value to assign to the key
   - `(RTLM20b)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
   - `(RTLM20c)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTLM20d)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
   - `(RTLM20e)` Creates an `ObjectMessage` for a `MAP_SET` action in the following way:
-    - `(RTLM20e1)` Validates the provided `key` and `value` in a similar way as described in [RTO11f2](#RTO11f2) and [RTO11f3](#RTO11f3)
+    - `(RTLM20e1)` Validates the provided `key` and `value` in a similar way as described in [RTLMV4b](#RTLMV4b) and [RTLMV4c](#RTLMV4c)
     - `(RTLM20e2)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.MAP_SET`
     - `(RTLM20e3)` Set `ObjectMessage.operation.objectId` to the Object ID of this `LiveMap`
     - `(RTLM20e4)` This clause has been replaced by [RTLM20e6](#RTLM20e6) as of specification version 6.0.0.
@@ -539,14 +534,20 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM20e5f)` This clause has been replaced by [RTLM20e7f](#RTLM20e7f) as of specification version 6.0.0.
     - `(RTLM20e6)` Set `ObjectMessage.operation.mapSet.key` to the provided `key` value
     - `(RTLM20e7)` Set `ObjectMessage.operation.mapSet.value` depending on the type of the provided `value`:
-      - `(RTLM20e7a)` If the `value` is of type `LiveCounter` or `LiveMap`, set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` of that object
+      - `(RTLM20e7a)` This clause has been replaced by [RTLM20e7g](#RTLM20e7g).
+      - `(RTLM20e7g)` If the `value` is of type `LiveCounterValueType` or `LiveMapValueType`:
+        - `(RTLM20e7g1)` Consume the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively to generate `*_CREATE` `ObjectMessages`. Collect all generated `ObjectMessages`
+        - `(RTLM20e7g2)` Set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` from the outermost `*_CREATE` `ObjectMessage`
       - `(RTLM20e7b)` If the `value` is of type `JsonArray` or `JsonObject`, set `ObjectMessage.operation.mapSet.value.json` to that value
       - `(RTLM20e7c)` If the `value` is of type `String`, set `ObjectMessage.operation.mapSet.value.string` to that value
       - `(RTLM20e7d)` If the `value` is of type `Number`, set `ObjectMessage.operation.mapSet.value.number` to that value
       - `(RTLM20e7e)` If the `value` is of type `Boolean`, set `ObjectMessage.operation.mapSet.value.boolean` to that value
       - `(RTLM20e7f)` If the `value` is of type `Binary`, set `ObjectMessage.operation.mapSet.value.bytes` to that value
   - `(RTLM20f)` This clause has been replaced by [RTLM20g](#RTLM20g)
-  - `(RTLM20g)` Publishes the `ObjectMessage` from [RTLM20e](#RTLM20e) using `RealtimeObject#publishAndApply` ([RTO20](#RTO20)), passing the `ObjectMessage` as a single element in the array
+  - `(RTLM20g)` This clause has been replaced by [RTLM20h](#RTLM20h).
+  - `(RTLM20h)` Publishes all `ObjectMessages` using `RealtimeObject#publishAndApply` ([RTO20](#RTO20)):
+    - `(RTLM20h1)` If the `value` is of type `LiveCounterValueType` or `LiveMapValueType`, the array contains the `*_CREATE` `ObjectMessages` collected in [RTLM20e7g1](#RTLM20e7g1) followed by the `MAP_SET` `ObjectMessage` from [RTLM20e](#RTLM20e)
+    - `(RTLM20h2)` Otherwise, the `MAP_SET` `ObjectMessage` from [RTLM20e](#RTLM20e) is passed as a single element in the array
 - `(RTLM21)` `LiveMap#remove` function:
   - `(RTLM21a)` Expects the following arguments:
     - `(RTLM21a1)` `key` `String` - the key to remove the value for
@@ -554,7 +555,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM21c)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTLM21d)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
   - `(RTLM21e)` Creates an `ObjectMessage` for a `MAP_REMOVE` action in the following way:
-    - `(RTLM21e1)` Validates the provided `key` in a similar way as described in [RTO11f2](#RTO11f2)
+    - `(RTLM21e1)` Validates the provided `key` in a similar way as described in [RTLMV4b](#RTLMV4b)
     - `(RTLM21e2)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.MAP_REMOVE`
     - `(RTLM21e3)` Set `ObjectMessage.operation.objectId` to the Object ID of this `LiveMap`
     - `(RTLM21e4)` This clause has been replaced by [RTLM21e5](#RTLM21e5) as of specification version 6.0.0.
@@ -697,7 +698,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM17a2)` This clause has been replaced by [RTLM23a2](#RTLM23a2) as of specification version 6.0.0.
   - `(RTLM17b)` This clause has been replaced by [RTLM23b](#RTLM23b) as of specification version 6.0.0.
   - `(RTLM17c)` This clause has been replaced by [RTLM23c](#RTLM23c) as of specification version 6.0.0.
-- `(RTLM23)` The initial value from an `ObjectOperation` can be merged into this `LiveMap` in the following way. Let `mapCreate` be `ObjectOperation.mapCreate` if present, else the `MapCreate` from which `ObjectOperation.mapCreateWithObjectId` was derived (see [RTO11f18](#RTO11f18)):
+- `(RTLM23)` The initial value from an `ObjectOperation` can be merged into this `LiveMap` in the following way. Let `mapCreate` be `ObjectOperation.mapCreate` if present, else the `MapCreate` from which `ObjectOperation.mapCreateWithObjectId` was derived (see [RTLMV4j5](#RTLMV4j5)):
   - `(RTLM23a)` For each key-`ObjectsMapEntry` pair in `mapCreate.entries`:
     - `(RTLM23a1)` If `ObjectsMapEntry.tombstone` is `false` or omitted, apply the `MAP_SET` operation to the current key as described in [RTLM7](#RTLM7), passing in `ObjectsMapEntry.data` and the current key as `MapSet`, and `ObjectsMapEntry.timeserial` as `serial`. Store the returned `LiveMapUpdate` object for use in [RTLM23c](#RTLM23c)
     - `(RTLM23a2)` If `ObjectsMapEntry.tombstone` is `true`, apply the `MAP_REMOVE` operation to the current key as described in [RTLM8](#RTLM8), passing in the current key as `MapRemove`, `ObjectsMapEntry.timeserial` as `serial`, and `ObjectsMapEntry.serialTimestamp` as `serialTimestamp`. Store the returned `LiveMapUpdate` object for use in [RTLM23c](#RTLM23c)
@@ -715,15 +716,284 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM22b2)` For each key that exists in the non-tombstoned entries of `newData` but does not exist in the non-tombstoned entries of `previousData`, add the key to `LiveMapUpdate.update` with the value `updated`
     - `(RTLM22b3)` For each key that exists in the non-tombstoned entries of both `previousData` and `newData`, perform a deep comparison of the `data` attributes from `previousData` and `newData`. If the data values differ, add the key to `LiveMapUpdate.update` with the value `updated`
 
+### LiveCounterValueType
+
+A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCounter` object. It stores the desired initial count value and is consumed when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in `LiveMap.create` ([RTLMV3](#RTLMV3)).
+
+- `(RTLCV1)` `LiveCounterValueType` is an immutable value type representing the intent to create a new `LiveCounter` with a specific initial count
+- `(RTLCV2)` `LiveCounterValueType` has the following internal properties:
+  - `(RTLCV2a)` `count` `Number` - the initial count value for the `LiveCounter` to be created
+- `(RTLCV3)` `LiveCounter.create` static factory function:
+  - `(RTLCV3a)` Expects the following arguments:
+    - `(RTLCV3a1)` `initialCount` `Number` (optional) - the initial count for the new `LiveCounter` object. Defaults to 0
+  - `(RTLCV3b)` Returns a new `LiveCounterValueType` instance with the internal `count` set to the provided `initialCount` (or 0 if omitted)
+  - `(RTLCV3c)` No input validation is performed at creation time. Validation is deferred to the consumption procedure ([RTLCV4](#RTLCV4))
+  - `(RTLCV3d)` The returned `LiveCounterValueType` is immutable and must not be modified after creation
+- `(RTLCV4)` Internal consumption procedure - when a `LiveCounterValueType` is consumed by a mutation method (e.g. `LiveMap#set` or as an entry value during `LiveMapValueType` consumption per [RTLMV4](#RTLMV4)), a `COUNTER_CREATE` `ObjectMessage` is generated as follows:
+  - `(RTLCV4a)` If the internal `count` is not undefined and (is not of type `Number` or is not a finite number), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that the counter value must be a valid number
+  - `(RTLCV4b)` Create a `CounterCreate` object:
+    - `(RTLCV4b1)` Set `CounterCreate.count` to the internal `count` value, or to 0 if undefined
+  - `(RTLCV4c)` Create an initial value JSON string by generating a JSON string representation of the `CounterCreate` object
+  - `(RTLCV4d)` Create a unique string nonce with 16+ characters
+  - `(RTLCV4e)` Get the current server time as described in [RTO16](#RTO16)
+  - `(RTLCV4f)` Create an `objectId` for the new `LiveCounter` as described in [RTO14](#RTO14), passing in `counter` as the `type`, the initial value JSON string from [RTLCV4c](#RTLCV4c), the nonce from [RTLCV4d](#RTLCV4d), and the server time from [RTLCV4e](#RTLCV4e)
+  - `(RTLCV4g)` Create an `ObjectMessage` with:
+    - `(RTLCV4g1)` `ObjectMessage.operation.action` set to `ObjectOperationAction.COUNTER_CREATE`
+    - `(RTLCV4g2)` `ObjectMessage.operation.objectId` set to the `objectId` from [RTLCV4f](#RTLCV4f)
+    - `(RTLCV4g3)` `ObjectMessage.operation.counterCreateWithObjectId.nonce` set to the nonce from [RTLCV4d](#RTLCV4d)
+    - `(RTLCV4g4)` `ObjectMessage.operation.counterCreateWithObjectId.initialValue` set to the JSON string from [RTLCV4c](#RTLCV4c)
+    - `(RTLCV4g5)` The client library must retain the `CounterCreate` object from [RTLCV4b](#RTLCV4b) alongside the `CounterCreateWithObjectId`. It is the operation from which the `CounterCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4k2](../features#OOP4k2)) and local application of the operation ([RTLC16](#RTLC16)). This `CounterCreate` is for local use only and must not be sent over the wire.
+  - `(RTLCV4h)` Return the `ObjectMessage`
+
+### LiveMapValueType
+
+A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` object. It stores the desired initial entries and is consumed when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in another `LiveMap.create` ([RTLMV3](#RTLMV3)) call. Supports arbitrarily deep nesting of `LiveMapValueType` and `LiveCounterValueType` values within entries.
+
+- `(RTLMV1)` `LiveMapValueType` is an immutable value type representing the intent to create a new `LiveMap` with specific initial entries
+- `(RTLMV2)` `LiveMapValueType` has the following internal properties:
+  - `(RTLMV2a)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>` (optional) - the initial entries for the `LiveMap` to be created
+- `(RTLMV3)` `LiveMap.create` static factory function:
+  - `(RTLMV3a)` Expects the following arguments:
+    - `(RTLMV3a1)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>` (optional) - the initial entries for the new `LiveMap` object
+  - `(RTLMV3b)` Returns a new `LiveMapValueType` instance with the internal `entries` set to the provided `entries` (or undefined if omitted)
+  - `(RTLMV3c)` No input validation is performed at creation time. Validation is deferred to the consumption procedure ([RTLMV4](#RTLMV4))
+  - `(RTLMV3d)` The returned `LiveMapValueType` is immutable and must not be modified after creation
+- `(RTLMV4)` Internal consumption procedure - when a `LiveMapValueType` is consumed by a mutation method (e.g. `LiveMap#set` or as an entry value during another `LiveMapValueType` consumption), `ObjectMessages` are generated as follows:
+  - `(RTLMV4a)` If the internal `entries` is not undefined and (is null or is not of type `Dict`), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that entries must be a `Dict`
+  - `(RTLMV4b)` If any of the keys in the internal `entries` are not of type `String`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that keys must be `String`
+  - `(RTLMV4c)` If any of the values in the internal `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
+  - `(RTLMV4d)` Build entries for the `MapCreate` object. For each key-value pair in the internal `entries` (if present), create an `ObjectsMapEntry` for the value:
+    - `(RTLMV4d1)` If the value is of type `LiveCounterValueType`, consume it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
+    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively consume it per [RTLMV4](#RTLMV4) to generate `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the outermost `MAP_CREATE` `ObjectMessage`
+    - `(RTLMV4d3)` If the value is of type `JsonArray` or `JsonObject`, set `ObjectsMapEntry.data.json` to that value
+    - `(RTLMV4d4)` If the value is of type `String`, set `ObjectsMapEntry.data.string` to that value
+    - `(RTLMV4d5)` If the value is of type `Number`, set `ObjectsMapEntry.data.number` to that value
+    - `(RTLMV4d6)` If the value is of type `Boolean`, set `ObjectsMapEntry.data.boolean` to that value
+    - `(RTLMV4d7)` If the value is of type `Binary`, set `ObjectsMapEntry.data.bytes` to that value
+  - `(RTLMV4e)` Create a `MapCreate` object:
+    - `(RTLMV4e1)` Set `MapCreate.semantics` to `ObjectsMapSemantics.LWW`
+    - `(RTLMV4e2)` Set `MapCreate.entries` to an empty map if the internal `entries` is undefined, otherwise to the entries built in [RTLMV4d](#RTLMV4d)
+  - `(RTLMV4f)` Create an initial value JSON string based on the `MapCreate` object:
+    - `(RTLMV4f1)` The `MapCreate` object may contain user-provided `ObjectData` that requires encoding. Encode the `ObjectData` values using the procedure described in [OD4](../features#OD4)
+    - `(RTLMV4f2)` Return a JSON string representation of the encoded `MapCreate` object
+  - `(RTLMV4g)` Create a unique string nonce with 16+ characters
+  - `(RTLMV4h)` Get the current server time as described in [RTO16](#RTO16)
+  - `(RTLMV4i)` Create an `objectId` for the new `LiveMap` as described in [RTO14](#RTO14), passing in `map` as the `type`, the initial value JSON string from [RTLMV4f](#RTLMV4f), the nonce from [RTLMV4g](#RTLMV4g), and the server time from [RTLMV4h](#RTLMV4h)
+  - `(RTLMV4j)` Create an `ObjectMessage` with:
+    - `(RTLMV4j1)` `ObjectMessage.operation.action` set to `ObjectOperationAction.MAP_CREATE`
+    - `(RTLMV4j2)` `ObjectMessage.operation.objectId` set to the `objectId` from [RTLMV4i](#RTLMV4i)
+    - `(RTLMV4j3)` `ObjectMessage.operation.mapCreateWithObjectId.nonce` set to the nonce from [RTLMV4g](#RTLMV4g)
+    - `(RTLMV4j4)` `ObjectMessage.operation.mapCreateWithObjectId.initialValue` set to the JSON string from [RTLMV4f](#RTLMV4f)
+    - `(RTLMV4j5)` The client library must retain the `MapCreate` object from [RTLMV4e](#RTLMV4e) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.
+  - `(RTLMV4k)` Return an ordered array containing all `ObjectMessages` collected from nested value type consumptions in [RTLMV4d](#RTLMV4d) (in depth-first order), followed by the `MAP_CREATE` `ObjectMessage` from [RTLMV4j](#RTLMV4j)
+
+### PathObject
+
+A `PathObject` is a lazy, path-based reference into the LiveObjects tree. It stores a path (as an ordered list of string segments) from the root `LiveMap` and resolves it at the time each method is called. This means a `PathObject` survives object replacements: if the object at a given path changes (e.g. via a `MAP_SET` operation), the same `PathObject` will resolve to the new object on subsequent calls.
+
+A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which returns a `PathObject` rooted at the channel's root `LiveMap` with an empty path. Further `PathObjects` are obtained by navigating with `PathObject#get` or `PathObject#at`.
+
+- `(RTPO1)` The `PathObject` class provides a path-based view over the LiveObjects tree
+  - `(RTPO1a)` A specific SDK implementation may choose to expose a subset of the methods available on the `PathObject` class based on the expected type at the path. For example, when the user provides a type structure as a generic type parameter to `RealtimeObject#get`, the SDK may use type-specific class names (e.g. `LiveMapPathObject`, `LiveCounterPathObject`, `PrimitivePathObject`) that only expose the methods applicable to that type. The specification describes the general `PathObject` class with the full set of methods
+- `(RTPO2)` `PathObject` has the following internal properties:
+  - `(RTPO2a)` `path` - an ordered list of string segments representing the path from the root `LiveMap` to this position in the tree
+  - `(RTPO2b)` `root` - a reference to the root `LiveMap` instance from the internal `ObjectsPool`
+- `(RTPO3)` Internal path resolution procedure - resolves the stored `path` against the LiveObjects tree:
+  - `(RTPO3a)` Starting from `root`, walk through the path segments in order. For each segment:
+    - `(RTPO3a1)` The current object must be a `LiveMap`. If it is not, the resolution has failed
+    - `(RTPO3a2)` Look up the segment as a key in the current `LiveMap` using `LiveMap#get` ([RTLM5](#RTLM5)). If the result is undefined/null, the resolution has failed
+    - `(RTPO3a3)` The result becomes the current object for the next segment
+  - `(RTPO3b)` If the path is empty, the result is the `root` `LiveMap` itself
+  - `(RTPO3c)` On resolution failure:
+    - `(RTPO3c1)` For read operations (`value`, `instance`, `entries`, `keys`, `values`, `size`, `compact`, `compactJson`), return undefined/null. The client library may log a debug or trace message
+    - `(RTPO3c2)` For write operations (`set`, `remove`, `increment`, `decrement`), the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92005, indicating that the path could not be resolved
+- `(RTPO4)` `PathObject#path` function:
+  - `(RTPO4a)` Returns a dot-delimited string representation of the stored path segments
+  - `(RTPO4b)` Any dot characters (`.`) occurring within individual path segments must be escaped with a backslash (`\`) in the returned string. For example, a path with segments `["a", "b.c", "d"]` is represented as `a.b\.c.d`
+  - `(RTPO4c)` An empty path (root `PathObject`) returns an empty string
+- `(RTPO5)` `PathObject#get` function:
+  - `(RTPO5a)` Expects the following arguments:
+    - `(RTPO5a1)` `key` `String` - the key to navigate to
+  - `(RTPO5b)` If `key` is not of type `String`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that the key must be a `String`
+  - `(RTPO5c)` Returns a new `PathObject` with the same `root` and with `key` appended to the current `path` segments
+  - `(RTPO5d)` This is purely navigational and does not resolve the path or access any `LiveObject` data
+- `(RTPO6)` `PathObject#at` function:
+  - `(RTPO6a)` Expects the following arguments:
+    - `(RTPO6a1)` `path` `String` - a dot-delimited path string
+  - `(RTPO6b)` Parses the dot-delimited `path` string into individual segments, respecting backslash-escaped dots (a `\.` sequence is treated as a literal dot within a segment, not a separator)
+  - `(RTPO6c)` Returns a new `PathObject` with the same `root` and with the parsed segments appended to the current `path` segments
+  - `(RTPO6d)` This is a convenience for chaining multiple `PathObject#get` calls. For example, `pathObject.at("a.b.c")` is equivalent to `pathObject.get("a").get("b").get("c")`
+- `(RTPO7)` `PathObject#value` function:
+  - `(RTPO7a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO7b)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
+  - `(RTPO7c)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
+  - `(RTPO7d)` If the resolved value is a `LiveMap`, returns undefined/null
+  - `(RTPO7e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+- `(RTPO8)` `PathObject#instance` function:
+  - `(RTPO8a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO8b)` If the resolved value is a `LiveObject` (i.e. a `LiveMap` or `LiveCounter`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping that `LiveObject`
+  - `(RTPO8c)` If the resolved value is a primitive, returns undefined/null
+  - `(RTPO8d)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+- `(RTPO9)` `PathObject#entries` function:
+  - `(RTPO9a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO9b)` If the resolved value is a `LiveMap`, returns an iterator yielding `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
+  - `(RTPO9c)` Only non-tombstoned entries are included, following the same rules as `LiveMap#entries` ([RTLM11](#RTLM11))
+  - `(RTPO9d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty iterator
+- `(RTPO10)` `PathObject#keys` function:
+  - `(RTPO10a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that it yields only the keys
+- `(RTPO11)` `PathObject#values` function:
+  - `(RTPO11a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that it yields only the `PathObject` values
+- `(RTPO12)` `PathObject#size` function:
+  - `(RTPO12a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO12b)` If the resolved value is a `LiveMap`, returns the number of non-tombstoned entries (equivalent to `LiveMap#size`, see [RTLM10](#RTLM10))
+  - `(RTPO12c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns undefined/null
+- `(RTPO13)` `PathObject#compact` function:
+  - `(RTPO13a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO13b)` If the resolved value is a `LiveMap`, returns a recursively compacted representation as a plain key-value object:
+    - `(RTPO13b1)` Each entry in the `LiveMap` is included in the result. Tombstoned entries are excluded
+    - `(RTPO13b2)` Nested `LiveMap` values are recursively compacted into nested plain key-value objects
+    - `(RTPO13b3)` Nested `LiveCounter` values are resolved to their numeric value
+    - `(RTPO13b4)` Primitive values (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`) are included as-is
+    - `(RTPO13b5)` Cyclic references (a `LiveMap` that has already been visited during this compaction) are represented by reusing the same in-memory object reference to the already-compacted result for that `LiveMap`
+  - `(RTPO13c)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `PathObject#value`)
+  - `(RTPO13d)` If the resolved value is a primitive, returns the value directly (equivalent to `PathObject#value`)
+  - `(RTPO13e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+- `(RTPO14)` `PathObject#compactJson` function:
+  - `(RTPO14a)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)) except for the following differences, which ensure the result is JSON-serializable:
+    - `(RTPO14a1)` `Binary` values are encoded as base64 strings instead of being included as-is
+    - `(RTPO14a2)` Cyclic references are represented as an object with a single `objectId` property containing the Object ID of the referenced `LiveMap`, instead of reusing the in-memory object reference
+- `(RTPO15)` `PathObject#set` function:
+  - `(RTPO15a)` Expects the following arguments:
+    - `(RTPO15a1)` `key` `String` - the key to set the value for
+    - `(RTPO15a2)` `value` - the value to assign to the key. Accepted types are the same as for `LiveMap#set` ([RTLM20](#RTLM20))
+  - `(RTPO15b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO15c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
+  - `(RTPO15d)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that the operation is not supported for the resolved object type
+- `(RTPO16)` `PathObject#remove` function:
+  - `(RTPO16a)` Expects the following arguments:
+    - `(RTPO16a1)` `key` `String` - the key to remove the value for
+  - `(RTPO16b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO16c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
+  - `(RTPO16d)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTPO17)` `PathObject#increment` function:
+  - `(RTPO17a)` Expects the following arguments:
+    - `(RTPO17a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
+  - `(RTPO17b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO17c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
+  - `(RTPO17d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTPO18)` `PathObject#decrement` function:
+  - `(RTPO18a)` Expects the following arguments:
+    - `(RTPO18a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
+  - `(RTPO18b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO18c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
+  - `(RTPO18d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTPO19)` `PathObject#subscribe` function:
+  - `(RTPO19a)` Expects the following arguments:
+    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d)) when a change occurs at or below this path
+    - `(RTPO19a2)` `options` `PathObjectSubscriptionOptions` (optional) - subscription options
+  - `(RTPO19b)` `PathObjectSubscriptionOptions` has the following properties:
+    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener:
+      - `(RTPO19b1a)` If undefined (default), the subscription receives events for changes at any depth below the subscribed path
+      - `(RTPO19b1b)` If `depth` is 1, only changes to the object at the exact subscribed path trigger the listener
+      - `(RTPO19b1c)` If `depth` is `n`, changes up to `n - 1` levels of children below the subscribed path trigger the listener
+      - `(RTPO19b1d)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+  - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
+  - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
+    - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
+    - `(RTPO19d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
+  - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
+  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
+  - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTPO20)` `PathObject#unsubscribe` function:
+  - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
+  - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTPO21)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
+  - `(RTPO21a)` Expects the following arguments:
+    - `(RTPO21a1)` `options` `PathObjectSubscriptionOptions` (optional) - same options as `PathObject#subscribe` ([RTPO19b](#RTPO19b))
+  - `(RTPO21b)` Returns a stream or iterable that yields `PathObjectSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
+  - `(RTPO21c)` Internally wraps `PathObject#subscribe` ([RTPO19](#RTPO19)), converting the callback-based subscription into the appropriate streaming or iterable pattern
+
+### Instance
+
+An `Instance` holds a direct reference to a specific resolved `LiveObject` or primitive value. Unlike `PathObject` which is path-addressed and re-resolves on each call, `Instance` is identity-addressed: it follows the specific object it was created with, regardless of where that object sits in the tree.
+
+- `(RTINS1)` The `Instance` class provides a direct-reference view of a `LiveObject` or primitive value
+  - `(RTINS1a)` A specific SDK implementation may choose to expose a subset of the methods available on the `Instance` class based on the known underlying type. For example, the SDK may use type-specific class names (e.g. `LiveMapInstance`, `LiveCounterInstance`, `PrimitiveInstance`) that only expose the methods applicable to the wrapped type. The specification describes the general `Instance` class with the full set of methods
+- `(RTINS2)` `Instance` has the following internal properties:
+  - `(RTINS2a)` `value` - a reference to the wrapped `LiveObject` or primitive value
+- `(RTINS3)` `Instance#id` property:
+  - `(RTINS3a)` If the wrapped value is a `LiveObject`, returns the `objectId` of that object
+  - `(RTINS3b)` If the wrapped value is a primitive, returns undefined/null
+- `(RTINS4)` `Instance#value` function:
+  - `(RTINS4a)` If the wrapped value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
+  - `(RTINS4b)` If the wrapped value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
+  - `(RTINS4c)` If the wrapped value is a `LiveMap`, returns undefined/null
+- `(RTINS5)` `Instance#get` function:
+  - `(RTINS5a)` Expects the following arguments:
+    - `(RTINS5a1)` `key` `String` - the key to look up
+  - `(RTINS5b)` If the wrapped value is a `LiveMap`, looks up the value at `key` using `LiveMap#get` ([RTLM5](#RTLM5)) and returns a new `Instance` wrapping the result. If the result is undefined/null, returns undefined/null
+  - `(RTINS5c)` If the wrapped value is not a `LiveMap`, returns undefined/null
+- `(RTINS6)` `Instance#entries` function:
+  - `(RTINS6a)` If the wrapped value is a `LiveMap`, returns an iterator yielding `[key, Instance]` pairs, where each `Instance` wraps the corresponding entry value from `LiveMap#entries` ([RTLM11](#RTLM11))
+  - `(RTINS6b)` If the wrapped value is not a `LiveMap`, returns an empty iterator
+- `(RTINS7)` `Instance#keys` function:
+  - `(RTINS7a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that it yields only the keys
+- `(RTINS8)` `Instance#values` function:
+  - `(RTINS8a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that it yields only the `Instance` values
+- `(RTINS9)` `Instance#size` function:
+  - `(RTINS9a)` If the wrapped value is a `LiveMap`, returns the number of non-tombstoned entries (equivalent to `LiveMap#size`, see [RTLM10](#RTLM10))
+  - `(RTINS9b)` If the wrapped value is not a `LiveMap`, returns undefined/null
+- `(RTINS10)` `Instance#compact` function:
+  - `(RTINS10a)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)), but operates on the wrapped value directly instead of resolving a path
+- `(RTINS11)` `Instance#compactJson` function:
+  - `(RTINS11a)` Behaves identically to `PathObject#compactJson` ([RTPO14](#RTPO14)), but operates on the wrapped value directly instead of resolving a path
+- `(RTINS12)` `Instance#set` function:
+  - `(RTINS12a)` Expects the following arguments:
+    - `(RTINS12a1)` `key` `String` - the key to set the value for
+    - `(RTINS12a2)` `value` - the value to assign to the key. Accepted types are the same as for `LiveMap#set` ([RTLM20](#RTLM20))
+  - `(RTINS12b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
+  - `(RTINS12c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTINS13)` `Instance#remove` function:
+  - `(RTINS13a)` Expects the following arguments:
+    - `(RTINS13a1)` `key` `String` - the key to remove the value for
+  - `(RTINS13b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
+  - `(RTINS13c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTINS14)` `Instance#increment` function:
+  - `(RTINS14a)` Expects the following arguments:
+    - `(RTINS14a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
+  - `(RTINS14b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
+  - `(RTINS14c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTINS15)` `Instance#decrement` function:
+  - `(RTINS15a)` Expects the following arguments:
+    - `(RTINS15a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
+  - `(RTINS15b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
+  - `(RTINS15c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+- `(RTINS16)` `Instance#subscribe` function:
+  - `(RTINS16a)` Expects the following arguments:
+    - `(RTINS16a1)` `listener` - a callback function that receives an `InstanceSubscriptionEvent` ([RTINS16d](#RTINS16d)) when the wrapped object is updated
+  - `(RTINS16b)` If the wrapped value is not a `LiveObject` (i.e. it is a primitive), the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that subscribe is not supported for primitive values
+  - `(RTINS16c)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
+  - `(RTINS16d)` The listener receives an `InstanceSubscriptionEvent` object with:
+    - `(RTINS16d1)` `object` - the `Instance` representing the updated object
+    - `(RTINS16d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
+  - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
+  - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
+  - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTINS17)` `Instance#unsubscribe` function:
+  - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
+  - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTINS18)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
+  - `(RTINS18a)` If the wrapped value is not a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS18b)` Returns a stream or iterable that yields `InstanceSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
+  - `(RTINS18c)` Internally wraps `Instance#subscribe` ([RTINS16](#RTINS16)), converting the callback-based subscription into the appropriate streaming or iterable pattern
+
 ## Interface Definition {#idl}
 
 Describes types for RealtimeObject.\
 Types and their properties/methods are public and exposed to users by default. An `internal` label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
 
     class RealtimeObject: // RTO*
-      get() => io LiveMap // RTO23
-      createMap(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap> entries?) => io LiveMap // RTO11
-      createCounter(Number count?) => io LiveCounter // RTO12
+      get() => io PathObject // RTO23
       on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18
       off(() ->) // RTO19
       publish(ObjectMessage[]) => io PublishResult // RTO15, internal
@@ -745,41 +1015,95 @@ Types and their properties/methods are public and exposed to users by default. A
     interface StatusSubscription: // RTO18f
       off() // RTO18f1
 
-    class LiveObject: // RTLO*
-      objectId: String // RTLO3a, internal
-      siteTimeserials: Dict<String, String> // RTLO3b, internal
-      createOperationIsMerged: Boolean // RTLO3c, internal
-      isTombstone: Boolean // RTLO3d, internal
-      tombstonedAt: Time? // RTLO3e, internal
-      canApplyOperation(ObjectMessage) -> Boolean // RTLO4a, internal
-      tombstone(ObjectMessage) // RTLO4e, internal
-      subscribe((LiveObjectUpdate) ->) -> LiveObjectSubscription // RTLO4b
+    class LiveObject: // RTLO*, internal
+      objectId: String // RTLO3a
+      siteTimeserials: Dict<String, String> // RTLO3b
+      createOperationIsMerged: Boolean // RTLO3c
+      isTombstone: Boolean // RTLO3d
+      tombstonedAt: Time? // RTLO3e
+      canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
+      tombstone(ObjectMessage) // RTLO4e
+      subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
       unsubscribe((LiveObjectUpdate) ->) // RTLO4c
-
-    interface LiveObjectSubscription: // RTLO4b5
-      unsubscribe() // RTLO4b5a
 
     interface LiveObjectUpdate: // RTLO4b4
       update: Object // RTLO4b4a
-      noop: Boolean // RTLO4b4b, internal
+      noop: Boolean // RTLO4b4b
 
     class LiveCounter extends LiveObject: // RTLC*, RTLC1
-      value() -> Number // RTLC5
-      increment(Number amount) => io // RTLC12
-      decrement(Number amount) => io // RTLC13
+      value() -> Number // RTLC5, internal
+      increment(Number amount) => io // RTLC12, internal
+      decrement(Number amount) => io // RTLC13, internal
+      static create(Number initialCount?) -> LiveCounterValueType // RTLCV3
 
-    interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a
+    interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a, internal
       update: { amount: Number } // RTLC11b, RTLC11b1
 
-    class LiveMap extends LiveObject: // RTLM*, RTLM1
+    class LiveMap extends LiveObject: // RTLM*, RTLM1, internal
       clearTimeserial: String? // RTLM25, internal
-      get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5
-      size() -> Number // RTLM10
-      entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
-      keys() -> String[] // RTLM12
-      values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13
-      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTLM20
-      remove(String key) => io // RTLM21
+      get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5, internal
+      size() -> Number // RTLM10, internal
+      entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11, internal
+      keys() -> String[] // RTLM12, internal
+      values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13, internal
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTLM20, internal
+      remove(String key) => io // RTLM21, internal
+      static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
 
-    interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a
+    interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a, internal
       update: Dict<String, 'updated' | 'removed'> // RTLM18b
+
+    class LiveCounterValueType: // RTLCV*
+      // created via LiveCounter.create(), RTLCV3
+
+    class LiveMapValueType: // RTLMV*
+      // created via LiveMap.create(), RTLMV3
+
+    interface PathObjectSubscriptionEvent: // RTPO19d
+      object: PathObject // RTPO19d1
+      message: ObjectMessage? // RTPO19d2
+
+    interface PathObjectSubscriptionOptions: // RTPO19b
+      depth: Number? // RTPO19b1
+
+    interface InstanceSubscriptionEvent: // RTINS16d
+      object: Instance // RTINS16d1
+      message: ObjectMessage? // RTINS16d2
+
+    class PathObject: // RTPO*
+      path() -> String // RTPO4
+      get(String key) -> PathObject // RTPO5
+      at(String path) -> PathObject // RTPO6
+      value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTPO7
+      instance() -> Instance? // RTPO8
+      entries() -> Iterator<[String, PathObject]> // RTPO9
+      keys() -> Iterator<String> // RTPO10
+      values() -> Iterator<PathObject> // RTPO11
+      size() -> Number? // RTPO12
+      compact() -> Object? // RTPO13
+      compactJson() -> Object? // RTPO14
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTPO15
+      remove(String key) => io // RTPO16
+      increment(Number amount?) => io // RTPO17
+      decrement(Number amount?) => io // RTPO18
+      subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
+      unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
+      subscribeIterator(PathObjectSubscriptionOptions? options) -> Stream<PathObjectSubscriptionEvent> // RTPO21
+
+    class Instance: // RTINS*
+      id: String? // RTINS3
+      value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTINS4
+      get(String key) -> Instance? // RTINS5
+      entries() -> Iterator<[String, Instance]> // RTINS6
+      keys() -> Iterator<String> // RTINS7
+      values() -> Iterator<Instance> // RTINS8
+      size() -> Number? // RTINS9
+      compact() -> Object? // RTINS10
+      compactJson() -> Object? // RTINS11
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTINS12
+      remove(String key) => io // RTINS13
+      increment(Number amount?) => io // RTINS14
+      decrement(Number amount?) => io // RTINS15
+      subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
+      unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
+      subscribeIterator() -> Stream<InstanceSubscriptionEvent> // RTINS18
