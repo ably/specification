@@ -344,7 +344,6 @@ Tests that [behaviour] when the proxy injects [fault].
 ```pseudo
 session = create_proxy_session(
   target: TargetConfig(realtimeHost: "sandbox.realtime.ably-nonprod.net", restHost: "sandbox.realtime.ably-nonprod.net"),
-  port: allocated_port,
   rules: [{
     "match": { ... },
     "action": { ... },
