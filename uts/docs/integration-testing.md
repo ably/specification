@@ -157,7 +157,6 @@ Proxy tests additionally set up a proxy session per test or group of tests. See 
 BEFORE EACH TEST:
   session = create_proxy_session(
     endpoint: "nonprod:sandbox",
-    port: allocated_port,
     rules: [ ...initial rules... ]
   )
 
