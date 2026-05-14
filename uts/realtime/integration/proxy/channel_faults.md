@@ -71,7 +71,7 @@ channel_name = "test-RTL4f-${random_id()}"
 # Create proxy session that suppresses ATTACH messages for our channel
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_server", "action": "ATTACH", "channel": channel_name },
     "action": { "type": "suppress" },
@@ -177,7 +177,7 @@ channel_name = "test-RTL14-error-on-attach-${random_id()}"
 # Create proxy session that replaces ATTACHED with channel ERROR
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "ATTACHED", "channel": channel_name },
     "action": {
@@ -274,7 +274,7 @@ channel_name = "test-RTL5f-${random_id()}"
 # Phase 1: Create proxy session with NO fault rules (clean passthrough)
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -374,7 +374,7 @@ channel_name = "test-RTL13a-${random_id()}"
 # Create proxy session with clean passthrough (no fault rules initially)
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -471,7 +471,7 @@ channel_name = "test-RTL14-${random_id()}"
 # Create proxy session with clean passthrough
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -563,7 +563,7 @@ channel_name = "test-RTL12-${random_id()}"
 # Create proxy session with clean passthrough
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -666,7 +666,7 @@ channel_b_name = "test-RTL3d-b-${random_id()}"
 # Create proxy session with clean passthrough
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 

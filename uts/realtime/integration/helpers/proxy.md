@@ -20,7 +20,6 @@ Proxy integration tests use this to verify fault-handling behaviour against the 
 # 1. Create a proxy session with rules
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
   rules: [ ...rules... ]
 )
 
@@ -58,7 +57,7 @@ session.close()
 interface ProxySession:
   session_id: String
   proxy_host: String     # Always "localhost"
-  proxy_port: Int        # Assigned from port pool
+  proxy_port: Int        # Auto-assigned by proxy, or explicit if specified
 
   add_rules(rules: List<Rule>, position?: "append"|"prepend")
   trigger_action(action: ActionRequest)
@@ -67,7 +66,7 @@ interface ProxySession:
 
 function create_proxy_session(
   endpoint: String,       # e.g. "nonprod:sandbox" → resolves to sandbox.realtime.ably-nonprod.net
-  port: Int,
+  port?: Int,             # Optional; proxy auto-assigns a free port if omitted
   rules?: List<Rule>,
   timeoutMs?: Int         # Session auto-cleanup timeout (default 30000)
 ): ProxySession
