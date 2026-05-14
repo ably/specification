@@ -80,7 +80,7 @@ channel_name = "objects-sync-interrupt-" + random_id()
 // Disconnect after first OBJECT_SYNC frame
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": 20 },
     "action": { "type": "disconnect" },
@@ -163,7 +163,7 @@ AWAIT root_a.set("key1", "initial")
 // Client B: through proxy, will be disconnected
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -242,7 +242,7 @@ channel_name = "objects-detach-resync-" + random_id()
 
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -318,7 +318,7 @@ channel_name = "objects-publish-failed-" + random_id()
 
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 
@@ -403,7 +403,7 @@ AWAIT root_a.set("existing", "before")
 // Client B: through proxy with delayed OBJECT_SYNC
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": 20 },
     "action": { "type": "delay", "delayMs": 3000 },
