@@ -4,9 +4,134 @@ title: Objects Features
 
 ## Overview
 
-This document outlines the feature specification for the Objects feature of the Realtime system. It is currently under development and stored separately from the main specification to simplify the initial implementation of the feature in other SDKs. Once completed, it will be moved to the main [features](../features) spec.
+This document outlines the feature specification for the Objects feature, including both its Realtime entry point ([RealtimeObjects](#realtime-objects)) and its REST entry point ([RestObject](#rest-object)). It is currently under development and stored separately from the main specification to simplify the initial implementation of the feature in other SDKs. Once completed, it will be moved to the main [features](../features) spec.
 
 Objects feature enables clients to store shared data as "objects" on a channel. When an object is updated, changes are automatically propagated to all subscribed clients in realtime, ensuring each client always sees the latest state.
+
+### RestObject {#rest-object}
+
+- `(RSO1)` `RestObject` is the entry point for object operations performed by a REST client:
+  - `(RSO1a)` There is one `RestObject` instance per `RestChannel`, accessed via the [`RestChannel#object`](../features#RSL16) attribute.
+  - `(RSO1b)` The `LiveObjects` plugin that provides [`RealtimeObjects`](#RTO1) for realtime channels also provides `RestObject` for REST channels; see [PC5](../features#PC5).
+- `(RSO2)` `RestObject#get` function:
+  - `(RSO2a)` Expects the following arguments:
+    - `(RSO2a1)` `params` `RestObjectGetParams` (optional) - the request parameters, with the following fields:
+      - `(RSO2a1a)` `objectId` `String` (optional) - the identifier of the object to fetch. If omitted, the channel object is used as the target
+      - `(RSO2a1b)` `path` `String` (optional) - a sub-path within the target, evaluated relative to the channel object or the specified `objectId`. The library must treat the value opaquely; see [RSO6](#RSO6)
+      - `(RSO2a1c)` `compact` `Boolean` (optional, default `true`) - selects the response format
+  - `(RSO2b)` The return type depends on `params.compact`:
+    - `(RSO2b1)` When `params.compact` is `true` or omitted, returns a `RestObjectGetCompactResult` ([RSO8](#RSO8))
+    - `(RSO2b2)` When `params.compact` is `false`, returns a `RestObjectGetFullResult` ([RSO9](#RSO9))
+  - `(RSO2c)` Sends a `GET` request to `/channels/{channelName}/object`, with `/{objectId}` appended only if `params.objectId` is provided. The `objectId` path segment must be percent-encoded per [RFC 3986 §2.1](https://datatracker.ietf.org/doc/html/rfc3986#section-2.1).
+  - `(RSO2d)` The `params.path` and `params.compact` fields, if provided, must be sent as URL query string parameters.
+  - `(RSO2e)` The response body must be decoded per [RSC8](../features#RSC8).
+  - `(RSO2f)` When `params.compact` is `true` or omitted, the decoded response body must be returned to the caller verbatim. The library must perform no further structural transformation or decoding.
+  - `(RSO2g)` When `params.compact` is `false`, the library must decode the response as follows. Let `wireNode` be the decoded response body:
+    - `(RSO2g1)` If `wireNode` has a `map` field, return a `RestLiveMap` ([RSO14](#RSO14)). Each `map.entries[key].data` must be recursively decoded by re-applying the rules of [RSO2g](#RSO2g) to the entry value
+    - `(RSO2g2)` If `wireNode` has a `counter` field, return a `RestLiveCounter` ([RSO15](#RSO15)) without further decoding
+    - `(RSO2g3)` Otherwise, treat `wireNode` as an [`ObjectData`](../features#OD1) leaf and decode it per [OD5](../features#OD5)
+    - `(RSO2g4)` Unrecognized object shapes or `ObjectData` fields must be passed through to the caller unmodified, in accordance with [RSF1](../features#RSF1)
+  - `(RSO2h)` The library must not perform client-side validation of `params.objectId` or `params.path` content; any server-returned error must be surfaced to the caller as a rejected `ErrorInfo`.
+- `(RSO3)` `RestObject#publish` function:
+  - `(RSO3a)` Expects the following arguments:
+    - `(RSO3a1)` `op` `RestObjectOperation` ([RSO5](#RSO5)) or `RestObjectOperation[]` - a single operation or an array of operations to publish
+  - `(RSO3b)` The return type is a `RestObjectPublishResult` ([RSO10](#RSO10)).
+  - `(RSO3c)` When `op` is an array, all operations must be sent in a single server request.
+  - `(RSO3d)` Constructs the wire payload for each operation as follows:
+    - `(RSO3d1)` If the operation includes a `mapCreate.semantics` field, the library must encode the semantics value per [OMP2](../features#OMP2). If the value is unrecognized, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+    - `(RSO3d2)` Any [`ObjectData`](../features#OD1) values reachable from the operation must be encoded per [OD4](../features#OD4). This applies at least to `mapSet.value` and to the `data` field of each entry in `mapCreate.entries`
+    - `(RSO3d3)` The `id`, `objectId`, and `path` fields of the operation, if provided by the caller, must be preserved verbatim in the wire payload
+    - `(RSO3d4)` The library must not include an explicit [`ObjectOperationAction`](../features#OOP2) `action` field in the wire payload; the action is inferred from the operation-specific field that is set
+  - `(RSO3e)` Sends a `POST` request to `/channels/{channelName}/object` with the encoded operations as a JSON array body, encoded per [RSC8](../features#RSC8).
+  - `(RSO3f)` The library must not auto-generate `RestObjectOperation.id` values. The [`idempotentRestPublishing`](../features#TO3n) option ([RSL1k1](../features#RSL1k1)) does not apply to `RestObject#publish`.
+  - `(RSO3g)` The library must not perform client-side validation of operation targeting (combinations of `objectId` and `path`); any server-returned error must be surfaced to the caller as a rejected `ErrorInfo`.
+  - `(RSO3h)` The library must not enforce a client-side limit on the number of operations in a batch; any size limit is server-enforced and surfaced via the response as a rejected `ErrorInfo`.
+- `(RSO4)` `RestObject#generateObjectId` function:
+  - `(RSO4a)` Expects the following arguments:
+    - `(RSO4a1)` `createBody` `RestObjectGenerateIdBody` ([RSO12](#RSO12)) - a body containing either a `mapCreate` or a `counterCreate` field
+  - `(RSO4b)` The return type is a `RestObjectGenerateIdResult` ([RSO11](#RSO11)). The library performs no I/O for this function: the returned values are computed locally and are intended to be supplied by the caller to a subsequent `mapCreateWithObjectId` ([RSO5d](#RSO5d)) or `counterCreateWithObjectId` ([RSO5h](#RSO5h)) operation.
+  - `(RSO4c)` If neither `createBody.mapCreate` nor `createBody.counterCreate` is provided, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003.
+  - `(RSO4d)` The `type` argument for [RTO14](#RTO14) is `map` if `createBody.mapCreate` was provided, or `counter` if `createBody.counterCreate` was provided.
+  - `(RSO4e)` Constructs the JSON-encoded `initialValue` string as follows. The `initialValue` is always carried as a JSON string regardless of the connection's negotiated transport format, so encoding must use the JSON protocol rules from [OD4d](../features#OD4d):
+    - `(RSO4e1)` If `createBody.mapCreate` was provided:
+      - `(RSO4e1a)` The library must encode `createBody.mapCreate.semantics` per [OMP2](../features#OMP2). If the value is unrecognized, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+      - `(RSO4e1b)` For each entry in `createBody.mapCreate.entries`, the library must encode the entry's `data` value per [OD4d](../features#OD4d)
+      - `(RSO4e1c)` The library must produce a JSON-string representation of the resulting body, equivalent to [RTO11f15](#RTO11f15)
+    - `(RSO4e2)` If `createBody.counterCreate` was provided, the library must produce a JSON-string representation of the body, equivalent to [RTO12f13](#RTO12f13)
+  - `(RSO4f)` Generates a unique string `nonce`, as described in [RTO11f6](#RTO11f6).
+  - `(RSO4g)` Retrieves the current server time as described in [RTO16](#RTO16).
+  - `(RSO4h)` Constructs an `objectId` as described in [RTO14](#RTO14), passing the `type` from [RSO4d](#RSO4d), the `initialValue` from [RSO4e](#RSO4e), the `nonce` from [RSO4f](#RSO4f), and the server time from [RSO4g](#RSO4g).
+  - `(RSO4i)` Returns a `RestObjectGenerateIdResult` containing the `objectId`, `nonce`, and `initialValue`.
+  - `(RSO4j)` Two invocations with the same `createBody` produce different `objectId` and `nonce` values, because `nonce` is freshly generated per call ([RSO4f](#RSO4f)) and feeds into the `objectId` derivation ([RTO14](#RTO14)).
+  - `(RSO4k)` The `initialValue` is deterministic for a given `createBody`: identical input produces identical output. This follows from the encoding procedure in [RSO4e](#RSO4e), which depends only on the input.
+- `(RSO5)` `RestObjectOperation` is the public input type accepted by [`RestObject#publish`](#RSO3). It is a tagged union of operation payloads:
+  - `(RSO5a)` Common fields available on every `RestObjectOperation`:
+    - `(RSO5a1)` `id` `String` (optional) - per-operation message ID for idempotent publishing; see [RSO3f](#RSO3f)
+    - `(RSO5a2)` `objectId` `String` (optional) - targets a specific object by ID
+    - `(RSO5a3)` `path` `String` (optional) - targets one or more objects by their location in the channel object; see [RSO6](#RSO6)
+  - `(RSO5b)` Each `RestObjectOperation` must include exactly one of the operation-specific body fields defined in [RSO5c](#RSO5c) through [RSO5i](#RSO5i).
+    - `(RSO5b1)` If a caller-supplied `RestObjectOperation` has zero, or more than one, of these body fields set, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003 before sending any HTTP request.
+  - `(RSO5c)` `mapCreate` operation - creates a new map. Body type is `RestObjectMapCreate`:
+    - `(RSO5c1)` `semantics` `ObjectsMapSemantics` enum ([OMP2](../features#OMP2))
+    - `(RSO5c2)` `entries` `Dict<String, RestObjectMapEntry>` ([RSO13](#RSO13)) - the initial entries for the map
+    - `(RSO5c3)` The `objectId` common field ([RSO5a2](#RSO5a2)) must not be set; the `path` common field ([RSO5a3](#RSO5a3)) is optional. If `path` is also omitted, the operation creates a standalone object whose identifier is returned in the response.
+  - `(RSO5d)` `mapCreateWithObjectId` operation - creates a new map using a client-supplied object ID generated via [`generateObjectId`](#RSO4). Body type is `RestObjectCreateWithObjectId`:
+    - `(RSO5d1)` `initialValue` `String` - the JSON-encoded initial value used when generating the `objectId`. The caller must use the value returned by [`generateObjectId`](#RSO4) unchanged
+    - `(RSO5d2)` `nonce` `String` - the nonce used when generating the `objectId`. The caller must use the value returned by [`generateObjectId`](#RSO4) unchanged
+    - `(RSO5d3)` The `objectId` common field ([RSO5a2](#RSO5a2)) must be set to the `objectId` value returned by the [`generateObjectId`](#RSO4) call that produced `initialValue` and `nonce`; the `path` common field ([RSO5a3](#RSO5a3)) must not be set.
+  - `(RSO5e)` `mapSet` operation - sets a key in an existing map. Body type is `RestObjectMapSet`:
+    - `(RSO5e1)` `key` `String` - the key to set
+    - `(RSO5e2)` `value` `PublishObjectData` ([RSO7](#RSO7)) - the value to assign to the key
+    - `(RSO5e3)` Exactly one of the `objectId` ([RSO5a2](#RSO5a2)) or `path` ([RSO5a3](#RSO5a3)) common fields must be set.
+  - `(RSO5f)` `mapRemove` operation - removes a key from an existing map. Body type is `RestObjectMapRemove`:
+    - `(RSO5f1)` `key` `String` - the key to remove
+    - `(RSO5f2)` Exactly one of the `objectId` ([RSO5a2](#RSO5a2)) or `path` ([RSO5a3](#RSO5a3)) common fields must be set.
+  - `(RSO5g)` `counterCreate` operation - creates a new counter. Body type is `RestObjectCounterCreate`:
+    - `(RSO5g1)` `count` `Number` - the initial value of the counter
+    - `(RSO5g2)` The `objectId` common field ([RSO5a2](#RSO5a2)) must not be set; the `path` common field ([RSO5a3](#RSO5a3)) is optional. If `path` is also omitted, the operation creates a standalone object whose identifier is returned in the response.
+  - `(RSO5h)` `counterCreateWithObjectId` operation - creates a new counter using a client-supplied object ID generated via [`generateObjectId`](#RSO4). Body type and field constraints (including the targeting rules of [RSO5d3](#RSO5d3)) are the same as [RSO5d](#RSO5d).
+  - `(RSO5i)` `counterInc` operation - changes the value of an existing counter by a signed `Number` amount. Body type is `RestObjectCounterInc`:
+    - `(RSO5i1)` `number` `Number` - the amount to add to the counter (use a negative value to decrement)
+    - `(RSO5i2)` Exactly one of the `objectId` ([RSO5a2](#RSO5a2)) or `path` ([RSO5a3](#RSO5a3)) common fields must be set.
+  - `(RSO5j)` For plain `mapCreate` ([RSO5c](#RSO5c)) and `counterCreate` ([RSO5g](#RSO5g)) operations, the server generates the `objectId` and returns it in [`RestObjectPublishResult.objectIds`](#RSO10c). This differs from [`RealtimeObjects#createMap`](#RTO11) and [`RealtimeObjects#createCounter`](#RTO12), where the client library generates the `objectId` locally per [RTO14](#RTO14) before publishing the create operation. The `mapCreateWithObjectId` ([RSO5d](#RSO5d)) and `counterCreateWithObjectId` ([RSO5h](#RSO5h)) operations provide equivalent client-side ID generation for REST callers via [`RestObject#generateObjectId`](#RSO4), which is useful when a batch needs to reference newly-created objects by ID before the server has assigned them.
+- `(RSO6)` The library must pass caller-supplied `path` strings (in [`RestObject#get`](#RSO2) `params` and in [`RestObjectOperation`](#RSO5)) to the server without modification or normalization. Path semantics are server-defined.
+- `(RSO7)` `PublishObjectData` is the user-facing leaf value type used in [`RestObjectOperation`](#RSO5) fields that carry a leaf value, such as the `value` field of [`mapSet`](#RSO5e) and the `data` field of each entry in `mapCreate.entries` ([RSO5c2](#RSO5c2)). Exactly one of the following typed fields must be set:
+  - `(RSO7a)` `string` `String`
+  - `(RSO7b)` `number` `Number`
+  - `(RSO7c)` `boolean` `Boolean`
+  - `(RSO7d)` `bytes` `Binary`
+  - `(RSO7e)` `json` `JsonObject | JsonArray`
+  - `(RSO7f)` `objectId` `String` - a reference to an existing object by its ID
+- `(RSO8)` `RestObjectGetCompactResult` is the return type of [`RestObject#get`](#RSO2) when `params.compact` is `true` or omitted. The library returns the decoded response body verbatim per [RSO2f](#RSO2f); the shape and value formats are server-defined and are not transformed by the library.
+- `(RSO9)` `RestObjectGetFullResult` is the return type of [`RestObject#get`](#RSO2) when `params.compact` is `false`. It is one of:
+  - `(RSO9a)` `RestLiveMap` ([RSO14](#RSO14)), returned when the response body has a `map` field per [RSO2g1](#RSO2g1)
+  - `(RSO9b)` `RestLiveCounter` ([RSO15](#RSO15)), returned when the response body has a `counter` field per [RSO2g2](#RSO2g2)
+  - `(RSO9c)` A decoded [`ObjectData`](../features#OD1) leaf, returned when the response is a typed leaf value per [RSO2g3](#RSO2g3). The library must return an `ObjectData` instance with:
+    - `(RSO9c1)` The [`objectId`](../features#OD2a) and [`encoding`](../features#OD2b) fields unset. (If the response carried an object reference, the result would instead be a `RestLiveMap` ([RSO9a](#RSO9a)), `RestLiveCounter` ([RSO9b](#RSO9b)), or unrecognized-object fallback ([RSO9d](#RSO9d)).)
+    - `(RSO9c2)` Values decoded per [OD5](../features#OD5): in particular, `bytes` holds a native `Binary` value rather than a Base64-encoded string, and any JSON-encoded payload appears as the parsed `JsonObject` or `JsonArray` rather than as a JSON-encoded string
+  - `(RSO9d)` For object types unrecognized by the library, an object containing at minimum `{ objectId: String }`, with additional fields passed through unmodified per [RSF1](../features#RSF1)
+- `(RSO10)` `RestObjectPublishResult` is the return type of [`RestObject#publish`](#RSO3). Its attributes are:
+  - `(RSO10a)` `messageId` `String`
+  - `(RSO10b)` `channel` `String`
+  - `(RSO10c)` `objectIds` `Array<String>` - the identifiers of the objects affected by the operations
+- `(RSO11)` `RestObjectGenerateIdResult` is the return type of [`RestObject#generateObjectId`](#RSO4). Its attributes are:
+  - `(RSO11a)` `objectId` `String` - the generated object identifier
+  - `(RSO11b)` `nonce` `String` - the nonce used to derive the `objectId`; the caller passes this verbatim into the matching [RSO5d](#RSO5d) or [RSO5h](#RSO5h) operation
+  - `(RSO11c)` `initialValue` `String` - the JSON-encoded initial value used to derive the `objectId`; the caller passes this verbatim into the matching [RSO5d](#RSO5d) or [RSO5h](#RSO5h) operation
+- `(RSO12)` `RestObjectGenerateIdBody` is the argument type for [`RestObject#generateObjectId`](#RSO4). Exactly one of the following fields must be set:
+  - `(RSO12a)` `mapCreate` `RestObjectMapCreate` ([RSO5c](#RSO5c))
+  - `(RSO12b)` `counterCreate` `RestObjectCounterCreate` ([RSO5g](#RSO5g))
+- `(RSO13)` `RestObjectMapEntry` is the user-facing entry type used in `RestObjectMapCreate.entries` ([RSO5c2](#RSO5c2)). Its attributes are:
+  - `(RSO13a)` `data` `PublishObjectData` ([RSO7](#RSO7))
+- `(RSO14)` `RestLiveMap` is the full-format representation of a map object returned by [`RestObject#get`](#RSO2) with `params.compact` set to `false`. Its attributes are:
+  - `(RSO14a)` `objectId` `String` - the identifier of the map object
+  - `(RSO14b)` `map.semantics` `ObjectsMapSemantics` ([OMP2](../features#OMP2)) - the conflict-resolution semantics. Unrecognized server values must be preserved per [RSF1](../features#RSF1)
+  - `(RSO14c)` `map.entries` `Dict<String, RestLiveMapEntry>` ([RSO16](#RSO16))
+- `(RSO15)` `RestLiveCounter` is the full-format representation of a counter object returned by [`RestObject#get`](#RSO2) with `params.compact` set to `false`. Its attributes are:
+  - `(RSO15a)` `objectId` `String` - the identifier of the counter object
+  - `(RSO15b)` `counter.data.number` `Number` - the current value of the counter
+- `(RSO16)` `RestLiveMapEntry` is the entry type used in `RestLiveMap.map.entries` ([RSO14c](#RSO14c)). Its attributes are:
+  - `(RSO16a)` `data` `RestObjectGetFullResult` ([RSO9](#RSO9)) - recursively decoded per [RSO2g](#RSO2g)
 
 ### RealtimeObjects {#realtime-objects}
 
@@ -712,8 +837,91 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 ## Interface Definition {#idl}
 
-Describes types for RealtimeObjects.\
+Describes types for RestObject and RealtimeObjects.\
 Types and their properties/methods are public and exposed to users by default. An `internal` label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
+
+    class RestObject: // RSO*
+      get(RestObjectGetParams params?) => io RestObjectGetCompactResult | RestObjectGetFullResult // RSO2
+      publish(RestObjectOperation | RestObjectOperation[] op) => io RestObjectPublishResult // RSO3
+      generateObjectId(RestObjectGenerateIdBody createBody) => RestObjectGenerateIdResult // RSO4
+
+    class RestObjectGetParams: // RSO2a1
+      objectId: String? // RSO2a1a
+      path: String? // RSO2a1b
+      compact: Boolean default true // RSO2a1c
+
+    class RestObjectOperation: // RSO5
+      id: String? // RSO5a1
+      objectId: String? // RSO5a2
+      path: String? // RSO5a3
+      mapCreate: RestObjectMapCreate? // RSO5c
+      mapCreateWithObjectId: RestObjectCreateWithObjectId? // RSO5d
+      mapSet: RestObjectMapSet? // RSO5e
+      mapRemove: RestObjectMapRemove? // RSO5f
+      counterCreate: RestObjectCounterCreate? // RSO5g
+      counterCreateWithObjectId: RestObjectCreateWithObjectId? // RSO5h
+      counterInc: RestObjectCounterInc? // RSO5i
+
+    class RestObjectMapCreate: // RSO5c
+      semantics: ObjectsMapSemantics // RSO5c1
+      entries: Dict<String, RestObjectMapEntry> // RSO5c2
+
+    class RestObjectMapSet: // RSO5e
+      key: String // RSO5e1
+      value: PublishObjectData // RSO5e2
+
+    class RestObjectMapRemove: // RSO5f
+      key: String // RSO5f1
+
+    class RestObjectCounterCreate: // RSO5g
+      count: Number // RSO5g1
+
+    class RestObjectCounterInc: // RSO5i
+      number: Number // RSO5i1
+
+    class RestObjectCreateWithObjectId: // RSO5d, RSO5h
+      initialValue: String // RSO5d1
+      nonce: String // RSO5d2
+
+    class RestObjectMapEntry: // RSO13
+      data: PublishObjectData // RSO13a
+
+    class PublishObjectData: // RSO7
+      string: String? // RSO7a
+      number: Number? // RSO7b
+      boolean: Boolean? // RSO7c
+      bytes: Binary? // RSO7d
+      json: JsonObject | JsonArray? // RSO7e
+      objectId: String? // RSO7f
+
+    class RestObjectGenerateIdBody: // RSO12
+      mapCreate: RestObjectMapCreate? // RSO12a
+      counterCreate: RestObjectCounterCreate? // RSO12b
+
+    class RestObjectPublishResult: // RSO10
+      messageId: String // RSO10a
+      channel: String // RSO10b
+      objectIds: [String] // RSO10c
+
+    class RestObjectGenerateIdResult: // RSO11
+      objectId: String // RSO11a
+      nonce: String // RSO11b
+      initialValue: String // RSO11c
+
+    class RestLiveMap: // RSO14
+      objectId: String // RSO14a
+      map: { semantics: ObjectsMapSemantics, entries: Dict<String, RestLiveMapEntry> } // RSO14b, RSO14c
+
+    class RestLiveCounter: // RSO15
+      objectId: String // RSO15a
+      counter: { data: { number: Number } } // RSO15b
+
+    class RestLiveMapEntry: // RSO16
+      data: RestObjectGetFullResult // RSO16a
+
+    // RestObjectGetCompactResult (RSO8) is opaque to the library and not modelled here.
+    // RestObjectGetFullResult (RSO9) is a discriminated union of RestLiveMap, RestLiveCounter,
+    // ObjectData, and a forwards-compatibility fallback; see the corresponding spec clauses.
 
     class RealtimeObjects: // RTO*
       getRoot() => io LiveMap // RTO1
