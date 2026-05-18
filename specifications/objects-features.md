@@ -20,17 +20,18 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO23b)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
   - `(RTO23d)` Returns a `PathObject` ([RTPO1](#RTPO1)) wrapping the `LiveMap` with id `root` from the internal `ObjectsPool`. The `PathObject` is created with an empty path, rooted at the `root` `LiveMap`
+  - `(RTO23e)` (non-normative) In host languages with parametric polymorphism, SDKs MAY accept a user-supplied type parameter to narrow the resolved `PathObject`'s downstream typing — e.g. `channel.object.get<MyType>()`. The type parameter is a compile-time hint only; the runtime behaviour of [RTO23](#RTO23) is unchanged.
 - `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11a)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11a1)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11b)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11c)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11d)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11e)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11f)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f1)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f2)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f3)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11a)` This clause has been replaced by [RTLMV3a](#RTLMV3a).
+    - `(RTO11a1)` This clause has been replaced by [RTLMV3a1](#RTLMV3a1).
+  - `(RTO11b)` This clause has been replaced by [RTLMV3b](#RTLMV3b).
+  - `(RTO11c)` This clause has been replaced by [RTLM20b](#RTLM20b).
+  - `(RTO11d)` This clause has been replaced by [RTLM20c](#RTLM20c).
+  - `(RTO11e)` This clause has been replaced by [RTLM20d](#RTLM20d).
+  - `(RTO11f)` This clause has been replaced by [RTLMV4](#RTLMV4).
+    - `(RTO11f1)` This clause has been replaced by [RTLMV4a](#RTLMV4a).
+    - `(RTO11f2)` This clause has been replaced by [RTLMV4b](#RTLMV4b).
+    - `(RTO11f3)` This clause has been replaced by [RTLMV4c](#RTLMV4c).
     - `(RTO11f4)` This clause has been replaced by [RTO11f14](#RTO11f14) as of specification version 6.0.0.
       - `(RTO11f4a)` This clause has been replaced by [RTO11f14a](#RTO11f14a) as of specification version 6.0.0.
       - `(RTO11f4b)` This clause has been replaced by [RTO11f14b](#RTO11f14b) as of specification version 6.0.0.
@@ -43,83 +44,83 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
           - `(RTO11f4c1e)` This clause has been replaced by [RTO11f14c1e](#RTO11f14c1e) as of specification version 6.0.0.
           - `(RTO11f4c1f)` This clause has been replaced by [RTO11f14c1f](#RTO11f14c1f) as of specification version 6.0.0.
         - `(RTO11f4c2)` This clause has been replaced by [RTO11f14c2](#RTO11f14c2) as of specification version 6.0.0.
-    - `(RTO11f14)` This clause has been replaced by [RTLMV3](#RTLMV3).
-      - `(RTO11f14a)` This clause has been replaced by [RTLMV3](#RTLMV3).
-      - `(RTO11f14b)` This clause has been replaced by [RTLMV3](#RTLMV3).
-      - `(RTO11f14c)` This clause has been replaced by [RTLMV3](#RTLMV3).
-        - `(RTO11f14c1)` This clause has been replaced by [RTLMV3](#RTLMV3).
-          - `(RTO11f14c1a)` This clause has been replaced by [RTLMV3](#RTLMV3).
-          - `(RTO11f14c1b)` This clause has been replaced by [RTLMV3](#RTLMV3).
-          - `(RTO11f14c1c)` This clause has been replaced by [RTLMV3](#RTLMV3).
-          - `(RTO11f14c1d)` This clause has been replaced by [RTLMV3](#RTLMV3).
-          - `(RTO11f14c1e)` This clause has been replaced by [RTLMV3](#RTLMV3).
-          - `(RTO11f14c1f)` This clause has been replaced by [RTLMV3](#RTLMV3).
-        - `(RTO11f14c2)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f14)` This clause has been replaced by [RTLMV4e](#RTLMV4e).
+      - `(RTO11f14a)` This clause has been replaced by [RTLMV4e1](#RTLMV4e1).
+      - `(RTO11f14b)` This clause has been replaced by [RTLMV4e2](#RTLMV4e2).
+      - `(RTO11f14c)` This clause has been replaced by [RTLMV4d](#RTLMV4d).
+        - `(RTO11f14c1)` This clause has been replaced by [RTLMV4d](#RTLMV4d).
+          - `(RTO11f14c1a)` This clause has been replaced by [RTLMV4d1](#RTLMV4d1).
+          - `(RTO11f14c1b)` This clause has been replaced by [RTLMV4d2](#RTLMV4d2).
+          - `(RTO11f14c1c)` This clause has been replaced by [RTLMV4d3](#RTLMV4d3).
+          - `(RTO11f14c1d)` This clause has been replaced by [RTLMV4d4](#RTLMV4d4).
+          - `(RTO11f14c1e)` This clause has been replaced by [RTLMV4d5](#RTLMV4d5).
+          - `(RTO11f14c1f)` This clause has been replaced by [RTLMV4d6](#RTLMV4d6).
+        - `(RTO11f14c2)` This clause has been replaced by [RTLMV4d7](#RTLMV4d7).
     - `(RTO11f5)` This clause has been replaced by [RTO11f15](#RTO11f15) as of specification version 6.0.0.
-    - `(RTO11f15)` This clause has been replaced by [RTLMV3](#RTLMV3).
-      - `(RTO11f15a)` This clause has been replaced by [RTLMV3](#RTLMV3).
-      - `(RTO11f15b)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f6)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f7)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f8)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f9)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f10)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f15)` This clause has been replaced by [RTLMV4f](#RTLMV4f).
+      - `(RTO11f15a)` This clause has been replaced by [RTLMV4f1](#RTLMV4f1).
+      - `(RTO11f15b)` This clause has been replaced by [RTLMV4f2](#RTLMV4f2).
+    - `(RTO11f6)` This clause has been replaced by [RTLMV4g](#RTLMV4g).
+    - `(RTO11f7)` This clause has been replaced by [RTLMV4h](#RTLMV4h).
+    - `(RTO11f8)` This clause has been replaced by [RTLMV4i](#RTLMV4i).
+    - `(RTO11f9)` This clause has been replaced by [RTLMV4j1](#RTLMV4j1).
+    - `(RTO11f10)` This clause has been replaced by [RTLMV4j2](#RTLMV4j2).
     - `(RTO11f11)` This clause has been replaced by [RTO11f16](#RTO11f16) as of specification version 6.0.0.
     - `(RTO11f12)` This clause has been replaced by [RTO11f17](#RTO11f17) as of specification version 6.0.0.
     - `(RTO11f13)` This clause has been deleted as of specification version 6.0.0.
-    - `(RTO11f16)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11f17)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11f16)` This clause has been replaced by [RTLMV4j3](#RTLMV4j3).
+    - `(RTO11f17)` This clause has been replaced by [RTLMV4j4](#RTLMV4j4).
     - `(RTO11f18)` This clause has been replaced by [RTLMV4j5](#RTLMV4j5).
-  - `(RTO11g)` This clause has been replaced by [RTO11i](#RTO11i)
-  - `(RTO11i)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11i1)` This clause has been replaced by [RTLMV3](#RTLMV3).
-  - `(RTO11h)` This clause has been replaced by [RTLMV3](#RTLMV3).
+  - `(RTO11g)` This clause has been deleted as of specification version X.Y.
+  - `(RTO11i)` This clause has been deleted as of specification version X.Y.
+    - `(RTO11i1)` This clause has been deleted as of specification version X.Y.
+  - `(RTO11h)` This clause has been deleted as of specification version X.Y.
     - `(RTO11h1)` This clause has been deleted.
-    - `(RTO11h2)` This clause has been replaced by [RTLMV3](#RTLMV3).
-    - `(RTO11h3)` This clause has been replaced by [RTLMV3](#RTLMV3).
+    - `(RTO11h2)` This clause has been deleted as of specification version X.Y.
+    - `(RTO11h3)` This clause has been deleted as of specification version X.Y.
       - `(RTO11h3a)` This clause has been deleted.
       - `(RTO11h3b)` This clause has been deleted.
       - `(RTO11h3c)` This clause has been deleted.
-      - `(RTO11h3d)` This clause has been replaced by [RTLMV3](#RTLMV3).
+      - `(RTO11h3d)` This clause has been deleted as of specification version X.Y.
 - `(RTO12)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12a)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12a1)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12b)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12c)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12d)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12e)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12f)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f1)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12a)` This clause has been replaced by [RTLCV3a](#RTLCV3a).
+    - `(RTO12a1)` This clause has been replaced by [RTLCV3a1](#RTLCV3a1).
+  - `(RTO12b)` This clause has been replaced by [RTLCV3b](#RTLCV3b).
+  - `(RTO12c)` This clause has been replaced by [RTLC12b](#RTLC12b).
+  - `(RTO12d)` This clause has been replaced by [RTLC12c](#RTLC12c).
+  - `(RTO12e)` This clause has been replaced by [RTLC12d](#RTLC12d).
+  - `(RTO12f)` This clause has been replaced by [RTLCV4](#RTLCV4).
+    - `(RTO12f1)` This clause has been replaced by [RTLCV4a](#RTLCV4a).
     - `(RTO12f2)` This clause has been replaced by [RTO12f12](#RTO12f12) as of specification version 6.0.0.
       - `(RTO12f2a)` This clause has been replaced by [RTO12f12a](#RTO12f12a) as of specification version 6.0.0.
       - `(RTO12f2b)` This clause has been replaced by [RTO12f12b](#RTO12f12b) as of specification version 6.0.0.
-    - `(RTO12f12)` This clause has been replaced by [RTLCV3](#RTLCV3).
-      - `(RTO12f12a)` This clause has been replaced by [RTLCV3](#RTLCV3).
-      - `(RTO12f12b)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f12)` This clause has been replaced by [RTLCV4b](#RTLCV4b).
+      - `(RTO12f12a)` This clause has been replaced by [RTLCV4b1](#RTLCV4b1).
+      - `(RTO12f12b)` This clause has been replaced by [RTLCV4b1](#RTLCV4b1).
     - `(RTO12f3)` This clause has been replaced by [RTO12f13](#RTO12f13) as of specification version 6.0.0.
-    - `(RTO12f13)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f4)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f5)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f6)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f7)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f8)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f13)` This clause has been replaced by [RTLCV4c](#RTLCV4c).
+    - `(RTO12f4)` This clause has been replaced by [RTLCV4d](#RTLCV4d).
+    - `(RTO12f5)` This clause has been replaced by [RTLCV4e](#RTLCV4e).
+    - `(RTO12f6)` This clause has been replaced by [RTLCV4f](#RTLCV4f).
+    - `(RTO12f7)` This clause has been replaced by [RTLCV4g1](#RTLCV4g1).
+    - `(RTO12f8)` This clause has been replaced by [RTLCV4g2](#RTLCV4g2).
     - `(RTO12f9)` This clause has been replaced by [RTO12f14](#RTO12f14) as of specification version 6.0.0.
     - `(RTO12f10)` This clause has been replaced by [RTO12f15](#RTO12f15) as of specification version 6.0.0.
     - `(RTO12f11)` This clause has been deleted as of specification version 6.0.0.
-    - `(RTO12f14)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12f15)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12f14)` This clause has been replaced by [RTLCV4g3](#RTLCV4g3).
+    - `(RTO12f15)` This clause has been replaced by [RTLCV4g4](#RTLCV4g4).
     - `(RTO12f16)` This clause has been replaced by [RTLCV4g5](#RTLCV4g5).
-  - `(RTO12g)` This clause has been replaced by [RTO12i](#RTO12i)
-  - `(RTO12i)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12i1)` This clause has been replaced by [RTLCV3](#RTLCV3).
-  - `(RTO12h)` This clause has been replaced by [RTLCV3](#RTLCV3).
+  - `(RTO12g)` This clause has been deleted as of specification version X.Y.
+  - `(RTO12i)` This clause has been deleted as of specification version X.Y.
+    - `(RTO12i1)` This clause has been deleted as of specification version X.Y.
+  - `(RTO12h)` This clause has been deleted as of specification version X.Y.
     - `(RTO12h1)` This clause has been deleted.
-    - `(RTO12h2)` This clause has been replaced by [RTLCV3](#RTLCV3).
-    - `(RTO12h3)` This clause has been replaced by [RTLCV3](#RTLCV3).
+    - `(RTO12h2)` This clause has been deleted as of specification version X.Y.
+    - `(RTO12h3)` This clause has been deleted as of specification version X.Y.
       - `(RTO12h3a)` This clause has been deleted.
       - `(RTO12h3b)` This clause has been deleted.
       - `(RTO12h3c)` This clause has been deleted.
-      - `(RTO12h3d)` This clause has been replaced by [RTLCV3](#RTLCV3).
+      - `(RTO12h3d)` This clause has been deleted as of specification version X.Y.
 - `(RTO2)` Certain object operations may require a specific channel mode to be set on a channel in order to be performed. If a specific channel mode is required by an operation, then:
   - `(RTO2a)` If the channel is in the `ATTACHED` state, the presence of the required channel mode is checked against the set of channel modes granted by the server per [RTL4m](../features#RTL4m) :
     - `(RTO2a1)` If the channel mode is in the set, the operation is allowed
@@ -180,6 +181,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5c4)` The `SyncObjectsPool` must be cleared
     - `(RTO5c5)` The `bufferedObjectOperations` list must be cleared
     - `(RTO5c9)` The `appliedOnAckSerials` set ([RTO7b](#RTO7b)) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the `appliedOnAckSerials` no longer accurately describes which operations have been applied to the channel's LiveObjects data
+    - `(RTO5c10)` After re-establishing the `ObjectsPool` per [RTO5c1](#RTO5c1) and [RTO5c2](#RTO5c2), the client MUST rebuild every `parentReferences` map ([RTLO3f](#RTLO3f)). Specifically:
+      - `(RTO5c10a)` Clear all existing `parentReferences` on every `LiveObject` in the pool
+      - `(RTO5c10b)` For each `LiveMap` in the pool, iterate its current non-tombstoned entries; for each entry whose `data.objectId` references another `LiveObject` in the pool, add a parent reference on the referenced object with `(this LiveMap, entryKey)` per [RTLO3f](#RTLO3f)
     - `(RTO5c8)` The [RTO17](#RTO17) sync state must transition to `SYNCED`
 - `(RTO6)` Certain object operations may require creating a zero-value object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
   - `(RTO6a)` If an object with `objectId` exists in `ObjectsPool`, do not create a new object
@@ -291,11 +295,21 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
   - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
   - `(RTO24b)` When a `LiveObject` in the `ObjectsPool` emits a `LiveObjectUpdate` (per [RTLO4b4](#RTLO4b4)), the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified:
-    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located
+    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located by calling [`LiveObject#getFullPaths`](#RTLO3g)
     - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
     - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
     - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` with a `PathObject` pointing to the event path and the `ObjectMessage` that caused the change, and call the subscription's listener
     - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
+  - `(RTO24c)` Path events have a boolean `bubbles` attribute (default `true`):
+    - `(RTO24c1)` A bubbling event MUST be matched against any subscription whose path is a prefix of (or equal to) the event path, subject to the depth filter in [RTO24b3](#RTO24b3)
+    - `(RTO24c2)` A non-bubbling event MUST be matched ONLY against subscriptions whose path is exactly equal to the event path. The `depth` option ([RTPO19b1](#RTPO19b1)) is ignored for non-bubbling events
+  - `(RTO24d)` Event emission rules:
+    - `(RTO24d1)` For every path returned by [`LiveObject#getFullPaths`](#RTLO3g) for the updated `LiveObject`, the register MUST emit one bubbling path event with `path` set to that resolved path
+    - `(RTO24d2)` If the emitted `LiveObjectUpdate` is a `LiveMapUpdate` (per [RTLM18](#RTLM18)), the register MUST additionally emit one non-bubbling event per (resolved path, updated key) combination, with event `path` set to `[...resolvedPath, key]`. The rationale is to deliver an identity-change notification to subscribers whose path coincides with the entry at which the parent's `MAP_SET`/`MAP_REMOVE` occurred - these subscribers would otherwise miss the event because the new child object (if any) emits no event of its own at this point
+    - `(RTO24d3)` `OBJECT_DELETE` (tombstone) updates MUST be emitted only as bubbling events
+  - `(RTO24e)` If multiple resolved paths to the same `LiveObject` match a single subscription (e.g. the subscription is at a common ancestor and the object is referenced under multiple keys in the subtree), the listener MUST be invoked once per matching path. The `PathObjectSubscriptionEvent.object` ([RTPO19d1](#RTPO19d1)) MUST be constructed with the specific resolved path for each invocation
+  - `(RTO24f)` Registering the same listener at the same path multiple times via [RTPO19](#RTPO19) MUST produce independent subscriptions, each deregistered independently via its returned `Subscription`
+  - `(RTO24g)` The order in which listeners across distinct subscriptions are invoked for a single event is unspecified. Implementations SHOULD invoke listeners in registration order where the underlying data structures permit, but consumers MUST NOT rely on this
 
 ### LiveObject
 
@@ -312,6 +326,16 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO3d1)` Set to `false` when the `LiveObject` is initialized
   - `(RTLO3e)` protected `tombstonedAt` (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if `isTombstone` is `true`
     - `(RTLO3e1)` Set to undefined/null when the `LiveObject` is initialized
+  - `(RTLO3f)` protected `parentReferences` - a mapping from each parent `LiveMap` to the set of keys at which that `LiveMap` currently references this `LiveObject`. The map MUST be maintained as map operations are applied so that path-based subscribers ([RTO24](#RTO24)) can determine every path the object currently occupies in the LiveObjects tree
+    - `(RTLO3f1)` Set to an empty map when the `LiveObject` is initialized
+    - `(RTLO3f2)` When a `MAP_SET` operation adds an entry whose `ObjectData.objectId` references another `LiveObject` in the local `ObjectsPool`, the referenced object's `parentReferences` MUST be updated to include the entry `(parent LiveMap, key)`
+    - `(RTLO3f3)` When a `MAP_SET` operation replaces an entry that previously referenced an object, the previously-referenced object's `parentReferences` entry for `(parent LiveMap, key)` MUST be removed before the new reference is added
+    - `(RTLO3f4)` When a `MAP_REMOVE` operation tombstones an entry that previously referenced an object, the previously-referenced object's `parentReferences` entry for `(parent LiveMap, key)` MUST be removed
+    - `(RTLO3f5)` When a `MAP_CLEAR` operation removes an entry that previously referenced an object, the previously-referenced object's `parentReferences` entry for `(parent LiveMap, key)` MUST be removed
+    - `(RTLO3f6)` When a `LiveMap` is tombstoned per [RTLO4e](#RTLO4e), all references it holds to other `LiveObjects` MUST be removed from those objects' `parentReferences` maps
+  - `(RTLO3g)` internal `getFullPaths` function - returns the set of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward
+    - `(RTLO3g1)` Implementations MUST guard against cycles using a visited set so that traversal of a cyclic reference graph terminates and returns a bounded number of paths
+    - `(RTLO3g2)` If the object has no parent references at the time of the call (e.g. orphaned or not yet reachable from root), the result MUST be an empty list and no path events are emitted for this `LiveObject`
 - `(RTLO4)` `LiveObject` methods:
   - `(RTLO4b)` public `subscribe` - subscribes a user to data updates on this `LiveObject` instance
     - `(RTLO4b1)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
@@ -328,6 +352,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
     - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+    - `(RTLO4b8)` When a `LiveObjectUpdate` is emitted as a result of a tombstone - i.e. an `OBJECT_DELETE` operation or a sync state with `tombstone: true` - the listener invocation order MUST be:
+      - `(RTLO4b8a)` Invoke all registered listeners with the tombstone `LiveObjectUpdate` first, per [RTLO4b4c2](#RTLO4b4c2)
+      - `(RTLO4b8b)` After all listeners have been invoked, the library MUST deregister every listener currently registered on this `LiveObject` (equivalent to removing all `Subscription` objects returned by prior calls to [RTLO4b](#RTLO4b))
+      - `(RTLO4b8c)` Subsequent updates on this `LiveObject` MUST NOT invoke the deregistered listeners
+    - `(RTLO4b9)` Path-based subscriptions ([RTPO19](#RTPO19)) are NOT affected by [RTLO4b8](#RTLO4b8): they remain registered after the underlying object is tombstoned, because path subscriptions follow a path, not an object identity. A subsequent `MAP_SET` on the parent that creates a new object at the same path will deliver further events to the existing path subscription
+    - `(RTLO4b10)` If a registered listener throws when invoked with a `LiveObjectUpdate` per [RTLO4b4c2](#RTLO4b4c2), the error MUST be caught and logged. The error MUST NOT affect the dispatch to other listeners registered on the same `LiveObject`, nor abort the iteration over the listener list
   - `(RTLO4c)` public `unsubscribe` - unsubscribes a previously registered listener
     - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
     - `(RTLO4c2)` A user may provide a listener they wish to deregister from receiving data updates for this `LiveObject`
@@ -521,7 +551,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM20c)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTLM20d)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
   - `(RTLM20e)` Creates an `ObjectMessage` for a `MAP_SET` action in the following way:
-    - `(RTLM20e1)` Validates the provided `key` and `value` in a similar way as described in [RTLMV4b](#RTLMV4b) and [RTLMV4c](#RTLMV4c)
+    - `(RTLM20e1)` This clause has been replaced by [RTLM20e8](#RTLM20e8).
     - `(RTLM20e2)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.MAP_SET`
     - `(RTLM20e3)` Set `ObjectMessage.operation.objectId` to the Object ID of this `LiveMap`
     - `(RTLM20e4)` This clause has been replaced by [RTLM20e6](#RTLM20e6) as of specification version 6.0.0.
@@ -543,6 +573,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM20e7d)` If the `value` is of type `Number`, set `ObjectMessage.operation.mapSet.value.number` to that value
       - `(RTLM20e7e)` If the `value` is of type `Boolean`, set `ObjectMessage.operation.mapSet.value.boolean` to that value
       - `(RTLM20e7f)` If the `value` is of type `Binary`, set `ObjectMessage.operation.mapSet.value.bytes` to that value
+    - `(RTLM20e8)` Validation procedure (supersedes [RTLM20e1](#RTLM20e1)). MUST be performed before any I/O or value-type consumption:
+      - `(RTLM20e8a)` If `key` is not of type `String`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+      - `(RTLM20e8b)` If `value` is `null` (in languages with a null type), or is not one of `String`, `Number`, `Boolean`, `Binary`, `JsonArray`, `JsonObject`, `LiveCounterValueType`, or `LiveMapValueType`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013
+      - `(RTLM20e8c)` If `value` is a runtime instance of `LiveMap` or `LiveCounter` (i.e. an existing live-object reference held by the SDK) that is NOT a `LiveMapValueType` or `LiveCounterValueType`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that raw `LiveMap`/`LiveCounter` references cannot be set; the user must construct a new value type via [LiveMap.create](#RTLMV3) or [LiveCounter.create](#RTLCV3) to assign equivalent state
   - `(RTLM20f)` This clause has been replaced by [RTLM20g](#RTLM20g)
   - `(RTLM20g)` This clause has been replaced by [RTLM20h](#RTLM20h).
   - `(RTLM20h)` Publishes all `ObjectMessages` using `RealtimeObject#publishAndApply` ([RTO20](#RTO20)):
@@ -729,10 +763,11 @@ A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCount
   - `(RTLCV3b)` Returns a new `LiveCounterValueType` instance with the internal `count` set to the provided `initialCount` (or 0 if omitted)
   - `(RTLCV3c)` No input validation is performed at creation time. Validation is deferred to the consumption procedure ([RTLCV4](#RTLCV4))
   - `(RTLCV3d)` The returned `LiveCounterValueType` is immutable and must not be modified after creation
+  - `(RTLCV3e)` Implementations MAY return the `LiveCounterValueType` instance from `LiveCounter.create` typed as the underlying `LiveCounter` interface (i.e. brand-equivalent) for ergonomic compatibility with mutation methods like [LiveMap#set](#RTLM20). SDKs are free to expose a distinct `LiveCounterValueType` type if their host language type system makes that more idiomatic.
 - `(RTLCV4)` Internal consumption procedure - when a `LiveCounterValueType` is consumed by a mutation method (e.g. `LiveMap#set` or as an entry value during `LiveMapValueType` consumption per [RTLMV4](#RTLMV4)), a `COUNTER_CREATE` `ObjectMessage` is generated as follows:
-  - `(RTLCV4a)` If the internal `count` is not undefined and (is not of type `Number` or is not a finite number), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that the counter value must be a valid number
+  - `(RTLCV4a)` If the internal `count` is not of type `Number` or is not a finite number, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that the counter value must be a valid number. Note: the internal `count` is always set per [RTLCV3a1](#RTLCV3a1) (defaults to 0); a value of `undefined` is therefore not expected at consumption time
   - `(RTLCV4b)` Create a `CounterCreate` object:
-    - `(RTLCV4b1)` Set `CounterCreate.count` to the internal `count` value, or to 0 if undefined
+    - `(RTLCV4b1)` Set `CounterCreate.count` to the internal `count` value
   - `(RTLCV4c)` Create an initial value JSON string by generating a JSON string representation of the `CounterCreate` object
   - `(RTLCV4d)` Create a unique string nonce with 16+ characters
   - `(RTLCV4e)` Get the current server time as described in [RTO16](#RTO16)
@@ -757,11 +792,12 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
     - `(RTLMV3a1)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>` (optional) - the initial entries for the new `LiveMap` object
   - `(RTLMV3b)` Returns a new `LiveMapValueType` instance with the internal `entries` set to the provided `entries` (or undefined if omitted)
   - `(RTLMV3c)` No input validation is performed at creation time. Validation is deferred to the consumption procedure ([RTLMV4](#RTLMV4))
-  - `(RTLMV3d)` The returned `LiveMapValueType` is immutable and must not be modified after creation
+  - `(RTLMV3d)` The returned `LiveMapValueType` instance is shallowly immutable: its own properties (e.g. `entries`) MUST NOT be reassigned after creation. SDKs MAY shallow-freeze the value type instance. SDKs are NOT required to deep-freeze or deep-copy the user-provided `entries` object. Users SHOULD NOT mutate the `entries` object after passing it to [`LiveMap.create`](#RTLMV3); the behaviour is unspecified if they do.
+  - `(RTLMV3e)` Implementations MAY return the `LiveMapValueType` instance from `LiveMap.create` typed as the underlying `LiveMap` interface (i.e. brand-equivalent) for ergonomic compatibility with mutation methods like [LiveMap#set](#RTLM20). SDKs are free to expose a distinct `LiveMapValueType` type if their host language type system makes that more idiomatic.
 - `(RTLMV4)` Internal consumption procedure - when a `LiveMapValueType` is consumed by a mutation method (e.g. `LiveMap#set` or as an entry value during another `LiveMapValueType` consumption), `ObjectMessages` are generated as follows:
-  - `(RTLMV4a)` If the internal `entries` is not undefined and (is null or is not of type `Dict`), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that entries must be a `Dict`
-  - `(RTLMV4b)` If any of the keys in the internal `entries` are not of type `String`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that keys must be `String`
-  - `(RTLMV4c)` If any of the values in the internal `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
+  - `(RTLMV4a)` If the internal `entries` is not undefined and (is null or is not of type `Dict`), the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that entries must be a `Dict`
+  - `(RTLMV4b)` If any of the keys in the internal `entries` are not of type `String`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that keys must be `String`
+  - `(RTLMV4c)` If any of the values in the internal `entries` is `null` (in languages with a null type), or is not one of `String`, `Number`, `Boolean`, `Binary`, `JsonArray`, `JsonObject`, `LiveCounterValueType`, or `LiveMapValueType`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013
   - `(RTLMV4d)` Build entries for the `MapCreate` object. For each key-value pair in the internal `entries` (if present), create an `ObjectsMapEntry` for the value:
     - `(RTLMV4d1)` If the value is of type `LiveCounterValueType`, consume it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
     - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively consume it per [RTLMV4](#RTLMV4) to generate `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the outermost `MAP_CREATE` `ObjectMessage`
@@ -772,7 +808,7 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
     - `(RTLMV4d7)` If the value is of type `Binary`, set `ObjectsMapEntry.data.bytes` to that value
   - `(RTLMV4e)` Create a `MapCreate` object:
     - `(RTLMV4e1)` Set `MapCreate.semantics` to `ObjectsMapSemantics.LWW`
-    - `(RTLMV4e2)` Set `MapCreate.entries` to an empty map if the internal `entries` is undefined, otherwise to the entries built in [RTLMV4d](#RTLMV4d)
+    - `(RTLMV4e2)` Set `MapCreate.entries` to an empty map if the internal `entries` is undefined, otherwise to the entries built in [RTLMV4d](#RTLMV4d). The ordering of entries in `MapCreate.entries` is not significant for correctness.
   - `(RTLMV4f)` Create an initial value JSON string based on the `MapCreate` object:
     - `(RTLMV4f1)` The `MapCreate` object may contain user-provided `ObjectData` that requires encoding. Encode the `ObjectData` values using the procedure described in [OD4](../features#OD4)
     - `(RTLMV4f2)` Return a JSON string representation of the encoded `MapCreate` object
@@ -786,6 +822,9 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
     - `(RTLMV4j4)` `ObjectMessage.operation.mapCreateWithObjectId.initialValue` set to the JSON string from [RTLMV4f](#RTLMV4f)
     - `(RTLMV4j5)` The client library must retain the `MapCreate` object from [RTLMV4e](#RTLMV4e) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.
   - `(RTLMV4k)` Return an ordered array containing all `ObjectMessages` collected from nested value type consumptions in [RTLMV4d](#RTLMV4d) (in depth-first order), followed by the `MAP_CREATE` `ObjectMessage` from [RTLMV4j](#RTLMV4j)
+  - `(RTLMV4l)` (non-normative) Validation errors from [RTLMV4a](#RTLMV4a), [RTLMV4b](#RTLMV4b), and [RTLMV4c](#RTLMV4c) MAY be raised in any order; implementations MUST raise at least one error if any validation fails.
+  - `(RTLMV4m)` (non-normative) Implementations MAY parallelise server-time fetches ([RTLMV4h](#RTLMV4h)) across nested value-type consumptions, provided the resulting `objectId`s remain reproducible per [RTO14](#RTO14).
+  - `(RTLMV4n)` (non-normative) Wherever this specification references `Number` (e.g. `LiveCounterValueType.count`, `MAP_SET` numeric values), it refers to the canonical finite numeric type of the host language. BigInt-equivalent types MAY be supported as an SDK extension but are not required by this specification.
 
 ### PathObject
 
@@ -823,10 +862,16 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO6b)` Parses the dot-delimited `path` string into individual segments, respecting backslash-escaped dots (a `\.` sequence is treated as a literal dot within a segment, not a separator)
   - `(RTPO6c)` Returns a new `PathObject` with the same `root` and with the parsed segments appended to the current `path` segments
   - `(RTPO6d)` This is a convenience for chaining multiple `PathObject#get` calls. For example, `pathObject.at("a.b.c")` is equivalent to `pathObject.get("a").get("b").get("c")`
+  - `(RTPO6e)` If `path` is not of type `String`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+  - `(RTPO6f)` (non-normative) Path parsing edge cases:
+    - `(RTPO6f1)` An empty `path` string (`at("")`) appends a single empty segment to the current path. This is rarely useful but is well-defined.
+    - `(RTPO6f2)` Consecutive separators (`at("a..b")`) produce an empty middle segment, equivalent to `get("a").get("").get("b")`.
+    - `(RTPO6f3)` A trailing escape sequence (e.g. `at("a\\")`) preserves the literal backslash in the resulting segment.
+    - `(RTPO6f4)` For any `PathObject` `p` obtained via [RTO23](#RTO23) or composed only of [RTPO5](#RTPO5)/[RTPO6](#RTPO6) calls with non-empty string-only segments, `at(p.path())` MUST resolve to the same logical path as `p`.
 - `(RTPO7)` `PathObject#value` function:
   - `(RTPO7a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
   - `(RTPO7b)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
-  - `(RTPO7c)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
+  - `(RTPO7c)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`, or `null` in languages with a null type), returns the value directly
   - `(RTPO7d)` If the resolved value is a `LiveMap`, returns undefined/null
   - `(RTPO7e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO8)` `PathObject#instance` function:
@@ -854,14 +899,14 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
     - `(RTPO13b2)` Nested `LiveMap` values are recursively compacted into nested plain key-value objects
     - `(RTPO13b3)` Nested `LiveCounter` values are resolved to their numeric value
     - `(RTPO13b4)` Primitive values (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`) are included as-is
-    - `(RTPO13b5)` Cyclic references (a `LiveMap` that has already been visited during this compaction) are represented by reusing the same in-memory object reference to the already-compacted result for that `LiveMap`
+    - `(RTPO13b5)` When a nested `LiveMap` has already been visited during this compaction - whether the reference forms a cycle or simply appears more than once in the graph - it MUST be represented by reusing the same in-memory object reference returned for the prior visit, rather than recomputing
   - `(RTPO13c)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `PathObject#value`)
   - `(RTPO13d)` If the resolved value is a primitive, returns the value directly (equivalent to `PathObject#value`)
   - `(RTPO13e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO14)` `PathObject#compactJson` function:
   - `(RTPO14a)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)) except for the following differences, which ensure the result is JSON-serializable:
     - `(RTPO14a1)` `Binary` values are encoded as base64 strings instead of being included as-is
-    - `(RTPO14a2)` Cyclic references are represented as an object with a single `objectId` property containing the Object ID of the referenced `LiveMap`, instead of reusing the in-memory object reference
+    - `(RTPO14a2)` When a nested `LiveMap` has already been visited during this compaction - whether the reference forms a cycle or simply appears more than once in the graph - it MUST be represented as an object with a single `objectId` property containing the Object ID of the referenced `LiveMap`, instead of recomputing
 - `(RTPO15)` `PathObject#set` function:
   - `(RTPO15a)` Expects the following arguments:
     - `(RTPO15a1)` `key` `String` - the key to set the value for
@@ -869,24 +914,30 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO15b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
   - `(RTPO15c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
   - `(RTPO15d)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that the operation is not supported for the resolved object type
+  - `(RTPO15e)` Before resolving the path, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLM20c](#RTLM20c), and the `echoMessages` check of [RTLM20d](#RTLM20d). If any of these checks fail, the library MUST throw before attempting path resolution
 - `(RTPO16)` `PathObject#remove` function:
   - `(RTPO16a)` Expects the following arguments:
     - `(RTPO16a1)` `key` `String` - the key to remove the value for
   - `(RTPO16b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
   - `(RTPO16c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
   - `(RTPO16d)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTPO16e)` Before resolving the path, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLM20c](#RTLM20c), and the `echoMessages` check of [RTLM20d](#RTLM20d)
 - `(RTPO17)` `PathObject#increment` function:
   - `(RTPO17a)` Expects the following arguments:
     - `(RTPO17a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
   - `(RTPO17b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
   - `(RTPO17c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
   - `(RTPO17d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTPO17e)` Before resolving the path, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLC12c](#RTLC12c), and the `echoMessages` check of [RTLC12d](#RTLC12d)
+  - `(RTPO17f)` If `amount` is provided but not a valid finite `Number`, the underlying [RTLC12e1](#RTLC12e1) validation MUST apply and the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003. If `amount` is omitted or null, it defaults to 1 per [RTPO17a1](#RTPO17a1)
 - `(RTPO18)` `PathObject#decrement` function:
   - `(RTPO18a)` Expects the following arguments:
     - `(RTPO18a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
   - `(RTPO18b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
   - `(RTPO18c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
   - `(RTPO18d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTPO18e)` Before resolving the path, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLC12c](#RTLC12c), and the `echoMessages` check of [RTLC12d](#RTLC12d)
+  - `(RTPO18f)` If `amount` is provided but not a valid finite `Number`, the underlying [RTLC12e1](#RTLC12e1) validation MUST apply and the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003. If `amount` is omitted or null, it defaults to 1 per [RTPO18a1](#RTPO18a1)
 - `(RTPO19)` `PathObject#subscribe` function:
   - `(RTPO19a)` Expects the following arguments:
     - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d)) when a change occurs at or below this path
@@ -902,16 +953,19 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
     - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
     - `(RTPO19d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
   - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
-  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
+  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering per [RTO24c1](#RTO24c1). In addition, when a parent operation changes the value at the subscribed path (e.g. via a `MAP_SET` overwriting the entry at this path), the subscription receives a separate non-bubbling event ([RTO24c2](#RTO24c2)) at its exact path so the subscriber is notified of the identity change. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc. (subject to depth), and also receives a non-bubbling event when `a`'s `MAP_SET` replaces the entry at key `b`. The full dispatch rules are described in [RTO24d](#RTO24d)
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTPO20)` `PathObject#unsubscribe` function:
-  - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
-  - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+  - `(RTPO19h)` If `options` is provided and is not of type `PathObjectSubscriptionOptions` (e.g. not a Dict/Object), the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+  - `(RTPO19i)` Before delegating to the subscription register, the wrapper MUST perform the `OBJECT_SUBSCRIBE` channel-mode check ([RTO2](#RTO2)) and the channel-state check of [RTLO4b2](#RTLO4b2), since [RTLO4b](#RTLO4b) is internal
+- `(RTPO20)` This clause has been deleted as of specification version X.Y. Listeners are deregistered exclusively via the `Subscription` object returned from [RTPO19](#RTPO19).
+  - `(RTPO20a)` This clause has been deleted as of specification version X.Y.
+  - `(RTPO20b)` This clause has been deleted as of specification version X.Y.
 - `(RTPO21)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
   - `(RTPO21a)` Expects the following arguments:
     - `(RTPO21a1)` `options` `PathObjectSubscriptionOptions` (optional) - same options as `PathObject#subscribe` ([RTPO19b](#RTPO19b))
   - `(RTPO21b)` Returns a stream or iterable that yields `PathObjectSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
   - `(RTPO21c)` Internally wraps `PathObject#subscribe` ([RTPO19](#RTPO19)), converting the callback-based subscription into the appropriate streaming or iterable pattern
+  - `(RTPO21d)` When the returned stream/iterable is closed (e.g. early termination of a `for await … of` loop, or explicit close), the underlying subscription created via [RTPO19](#RTPO19) MUST be deregistered
 
 ### Instance
 
@@ -924,15 +978,17 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 - `(RTINS3)` `Instance#id` property:
   - `(RTINS3a)` If the wrapped value is a `LiveObject`, returns the `objectId` of that object
   - `(RTINS3b)` If the wrapped value is a primitive, returns undefined/null
+  - `(RTINS3c)` `id` is the Object ID assigned to the wrapped `LiveObject` at creation time and is immutable: it does not change when the object is tombstoned. For primitives, `id` remains undefined regardless of source
 - `(RTINS4)` `Instance#value` function:
   - `(RTINS4a)` If the wrapped value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
-  - `(RTINS4b)` If the wrapped value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
+  - `(RTINS4b)` If the wrapped value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`, or `null` in languages with a null type), returns the value directly
   - `(RTINS4c)` If the wrapped value is a `LiveMap`, returns undefined/null
 - `(RTINS5)` `Instance#get` function:
   - `(RTINS5a)` Expects the following arguments:
     - `(RTINS5a1)` `key` `String` - the key to look up
   - `(RTINS5b)` If the wrapped value is a `LiveMap`, looks up the value at `key` using `LiveMap#get` ([RTLM5](#RTLM5)) and returns a new `Instance` wrapping the result. If the result is undefined/null, returns undefined/null
   - `(RTINS5c)` If the wrapped value is not a `LiveMap`, returns undefined/null
+  - `(RTINS5d)` If the wrapped value is a `LiveMap` and `key` is not of type `String`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003. If the wrapped value is not a `LiveMap`, the key-type validation MAY be skipped because the method returns undefined per [RTINS5c](#RTINS5c)
 - `(RTINS6)` `Instance#entries` function:
   - `(RTINS6a)` If the wrapped value is a `LiveMap`, returns an iterator yielding `[key, Instance]` pairs, where each `Instance` wraps the corresponding entry value from `LiveMap#entries` ([RTLM11](#RTLM11))
   - `(RTINS6b)` If the wrapped value is not a `LiveMap`, returns an empty iterator
@@ -953,21 +1009,27 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
     - `(RTINS12a2)` `value` - the value to assign to the key. Accepted types are the same as for `LiveMap#set` ([RTLM20](#RTLM20))
   - `(RTINS12b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
   - `(RTINS12c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS12d)` Before checking the wrapped type, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLM20c](#RTLM20c), and the `echoMessages` check of [RTLM20d](#RTLM20d)
 - `(RTINS13)` `Instance#remove` function:
   - `(RTINS13a)` Expects the following arguments:
     - `(RTINS13a1)` `key` `String` - the key to remove the value for
   - `(RTINS13b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
   - `(RTINS13c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS13d)` Before checking the wrapped type, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLM20c](#RTLM20c), and the `echoMessages` check of [RTLM20d](#RTLM20d)
 - `(RTINS14)` `Instance#increment` function:
   - `(RTINS14a)` Expects the following arguments:
     - `(RTINS14a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
   - `(RTINS14b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
   - `(RTINS14c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS14d)` Before checking the wrapped type, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLC12c](#RTLC12c), and the `echoMessages` check of [RTLC12d](#RTLC12d)
+  - `(RTINS14e)` If `amount` is provided but not a valid finite `Number`, the underlying [RTLC12e1](#RTLC12e1) validation MUST apply and the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003. If `amount` is omitted or null, it defaults to 1 per [RTINS14a1](#RTINS14a1)
 - `(RTINS15)` `Instance#decrement` function:
   - `(RTINS15a)` Expects the following arguments:
     - `(RTINS15a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
   - `(RTINS15b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
   - `(RTINS15c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS15d)` Before checking the wrapped type, the wrapper MUST perform the `OBJECT_PUBLISH` channel-mode check ([RTO2](#RTO2)), the channel-state check of [RTLC12c](#RTLC12c), and the `echoMessages` check of [RTLC12d](#RTLC12d)
+  - `(RTINS15e)` If `amount` is provided but not a valid finite `Number`, the underlying [RTLC12e1](#RTLC12e1) validation MUST apply and the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003. If `amount` is omitted or null, it defaults to 1 per [RTINS15a1](#RTINS15a1)
 - `(RTINS16)` `Instance#subscribe` function:
   - `(RTINS16a)` Expects the following arguments:
     - `(RTINS16a1)` `listener` - a callback function that receives an `InstanceSubscriptionEvent` ([RTINS16d](#RTINS16d)) when the wrapped object is updated
@@ -979,18 +1041,29 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTINS17)` `Instance#unsubscribe` function:
-  - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
-  - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+  - `(RTINS16h)` Because this method delegates to [RTLO4b](#RTLO4b), the auto-deregistration behaviour of [RTLO4b8](#RTLO4b8) applies: the listener will receive the tombstone update for the wrapped `LiveObject` and then be deregistered
+  - `(RTINS16i)` Before delegating to [LiveObject#subscribe](#RTLO4b), the wrapper MUST perform the `OBJECT_SUBSCRIBE` channel-mode check ([RTO2](#RTO2)) and the channel-state check of [RTLO4b2](#RTLO4b2)
+- `(RTINS17)` This clause has been deleted as of specification version X.Y. Listeners are deregistered exclusively via the `Subscription` object returned from [RTINS16](#RTINS16).
+  - `(RTINS17a)` This clause has been deleted as of specification version X.Y.
+  - `(RTINS17b)` This clause has been deleted as of specification version X.Y.
 - `(RTINS18)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
   - `(RTINS18a)` If the wrapped value is not a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
   - `(RTINS18b)` Returns a stream or iterable that yields `InstanceSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
   - `(RTINS18c)` Internally wraps `Instance#subscribe` ([RTINS16](#RTINS16)), converting the callback-based subscription into the appropriate streaming or iterable pattern
+  - `(RTINS18d)` When the returned stream/iterable is closed (e.g. early termination of a `for await … of` loop, or explicit close), the underlying subscription created via [RTINS16](#RTINS16) MUST be deregistered
 
 ## Interface Definition {#idl}
 
 Describes types for RealtimeObject.\
 Types and their properties/methods are public and exposed to users by default. An `internal` label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
+
+    // Named type aliases used throughout the IDL below
+    type Primitive = Boolean | Binary | Number | String | JsonArray | JsonObject
+    type LiveObjectType = LiveMap | LiveCounter
+    type Value = LiveObjectType | Primitive
+
+    interface ObjectIdReference: // see RTPO14a2
+      objectId: String
 
     class RealtimeObject: // RTO*
       get() => io PathObject // RTO23
@@ -1054,9 +1127,11 @@ Types and their properties/methods are public and exposed to users by default. A
       update: Dict<String, 'updated' | 'removed'> // RTLM18b
 
     class LiveCounterValueType: // RTLCV*
+      count: Number // RTLCV2a, internal
       // created via LiveCounter.create(), RTLCV3
 
     class LiveMapValueType: // RTLMV*
+      entries: Dict<String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType)>? // RTLMV2a, internal
       // created via LiveMap.create(), RTLMV3
 
     interface PathObjectSubscriptionEvent: // RTPO19d
@@ -1087,7 +1162,6 @@ Types and their properties/methods are public and exposed to users by default. A
       increment(Number amount?) => io // RTPO17
       decrement(Number amount?) => io // RTPO18
       subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
-      unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
       subscribeIterator(PathObjectSubscriptionOptions? options) -> Stream<PathObjectSubscriptionEvent> // RTPO21
 
     class Instance: // RTINS*
@@ -1105,5 +1179,4 @@ Types and their properties/methods are public and exposed to users by default. A
       increment(Number amount?) => io // RTINS14
       decrement(Number amount?) => io // RTINS15
       subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
-      unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
       subscribeIterator() -> Stream<InstanceSubscriptionEvent> // RTINS18
