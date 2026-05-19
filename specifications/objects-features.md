@@ -12,9 +12,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 - `(RTO1)` `RealtimeObjects#getRoot` function:
   - `(RTO1a)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTO1b)` This clause has been replaced by [RTO1e](#RTO1e) and [RTO1f](#RTO1f).
-  - `(RTO1e)` If the channel is in the `INITIALIZED`, `DETACHED`, `DETACHING`, or `ATTACHING` state, implicitly attach the `RealtimeChannel` and wait for the attach to complete
-  - `(RTO1f)` If the channel is in the `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001, indicating that the channel operation failed due to the current channel state
+  - `(RTO1b)` This clause has been replaced by [RTO1e](#RTO1e), [RTO1f](#RTO1f), and [RTO1g](#RTO1g).
+  - `(RTO1e)` If the channel (see [RTL2](#RTL2) for channel states) is in the `INITIALIZED`, `DETACHED`, `DETACHING`, or `ATTACHING` state, implicitly attach the `RealtimeChannel` and wait for the attach to complete. This follows the same implicit-attach pattern as [RTP11b](#RTP11b) for `RealtimePresence#get`
+    - `(RTO1e1)` If the implicit attach fails (for example, the channel transitions to the `FAILED` state, or the underlying `attach()` operation is rejected for any other reason), the call MUST reject with the same `ErrorInfo` that caused the attach to fail
+  - `(RTO1f)` If the channel is in the `FAILED` state, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001, indicating that the channel operation failed due to the current channel state
+  - `(RTO1g)` If the channel is in the `ATTACHED` or `SUSPENDED` state, proceed without attaching. A `SUSPENDED` channel is intentionally not re-attached so that any locally-held object state remains readable while the connection is being re-established
   - `(RTO1c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
   - `(RTO1d)` Returns the object with id `root` from the internal `ObjectsPool` as a `LiveMap`
 - `(RTO11)` `RealtimeObjects#createMap` function:
