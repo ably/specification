@@ -836,13 +836,13 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO8d)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO9)` `PathObject#entries` function:
   - `(RTPO9a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO9b)` If the resolved value is a `LiveMap`, returns an iterator yielding `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
+  - `(RTPO9b)` If the resolved value is a `LiveMap`, returns an array of `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
   - `(RTPO9c)` Only non-tombstoned entries are included, following the same rules as `LiveMap#entries` ([RTLM11](#RTLM11))
-  - `(RTPO9d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty iterator
+  - `(RTPO9d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO10)` `PathObject#keys` function:
-  - `(RTPO10a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that it yields only the keys
+  - `(RTPO10a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that the array contains only the keys
 - `(RTPO11)` `PathObject#values` function:
-  - `(RTPO11a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that it yields only the `PathObject` values
+  - `(RTPO11a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that the array contains only the `PathObject` values
 - `(RTPO12)` `PathObject#size` function:
   - `(RTPO12a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
   - `(RTPO12b)` If the resolved value is a `LiveMap`, returns the number of non-tombstoned entries (equivalent to `LiveMap#size`, see [RTLM10](#RTLM10))
@@ -934,12 +934,12 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS5b)` If the wrapped value is a `LiveMap`, looks up the value at `key` using `LiveMap#get` ([RTLM5](#RTLM5)) and returns a new `Instance` wrapping the result. If the result is undefined/null, returns undefined/null
   - `(RTINS5c)` If the wrapped value is not a `LiveMap`, returns undefined/null
 - `(RTINS6)` `Instance#entries` function:
-  - `(RTINS6a)` If the wrapped value is a `LiveMap`, returns an iterator yielding `[key, Instance]` pairs, where each `Instance` wraps the corresponding entry value from `LiveMap#entries` ([RTLM11](#RTLM11))
-  - `(RTINS6b)` If the wrapped value is not a `LiveMap`, returns an empty iterator
+  - `(RTINS6a)` If the wrapped value is a `LiveMap`, returns an array of `[key, Instance]` pairs, where each `Instance` wraps the corresponding entry value from `LiveMap#entries` ([RTLM11](#RTLM11))
+  - `(RTINS6b)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS7)` `Instance#keys` function:
-  - `(RTINS7a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that it yields only the keys
+  - `(RTINS7a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that the array contains only the keys
 - `(RTINS8)` `Instance#values` function:
-  - `(RTINS8a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that it yields only the `Instance` values
+  - `(RTINS8a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that the array contains only the `Instance` values
 - `(RTINS9)` `Instance#size` function:
   - `(RTINS9a)` If the wrapped value is a `LiveMap`, returns the number of non-tombstoned entries (equivalent to `LiveMap#size`, see [RTLM10](#RTLM10))
   - `(RTINS9b)` If the wrapped value is not a `LiveMap`, returns undefined/null
@@ -1076,9 +1076,9 @@ Types and their properties/methods are public and exposed to users by default. A
       at(String path) -> PathObject // RTPO6
       value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTPO7
       instance() -> Instance? // RTPO8
-      entries() -> Iterator<[String, PathObject]> // RTPO9
-      keys() -> Iterator<String> // RTPO10
-      values() -> Iterator<PathObject> // RTPO11
+      entries() -> [String, PathObject][] // RTPO9
+      keys() -> String[] // RTPO10
+      values() -> PathObject[] // RTPO11
       size() -> Number? // RTPO12
       compact() -> Object? // RTPO13
       compactJson() -> Object? // RTPO14
@@ -1094,9 +1094,9 @@ Types and their properties/methods are public and exposed to users by default. A
       id: String? // RTINS3
       value() -> (Boolean | Binary | Number | String | JsonArray | JsonObject)? // RTINS4
       get(String key) -> Instance? // RTINS5
-      entries() -> Iterator<[String, Instance]> // RTINS6
-      keys() -> Iterator<String> // RTINS7
-      values() -> Iterator<Instance> // RTINS8
+      entries() -> [String, Instance][] // RTINS6
+      keys() -> String[] // RTINS7
+      values() -> Instance[] // RTINS8
       size() -> Number? // RTINS9
       compact() -> Object? // RTINS10
       compactJson() -> Object? // RTINS11
