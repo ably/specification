@@ -832,7 +832,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO6d)` This is a convenience for chaining multiple `PathObject#get` calls. For example, `pathObject.at("a.b.c")` is equivalent to `pathObject.get("a").get("b").get("c")`
 - `(RTPO7)` `PathObject#value` function:
   - `(RTPO7a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO7b)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
+  - `(RTPO7b)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#value` ([RTLC5](#RTLC5))
   - `(RTPO7c)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
   - `(RTPO7d)` If the resolved value is a `LiveMap`, returns undefined/null
   - `(RTPO7e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
@@ -843,16 +843,19 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO8d)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO9)` `PathObject#entries` function:
   - `(RTPO9a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO9b)` If the resolved value is a `LiveMap`, returns an array of `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
-  - `(RTPO9c)` Only non-tombstoned entries are included, following the same rules as `LiveMap#entries` ([RTLM11](#RTLM11))
-  - `(RTPO9d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
+  - `(RTPO9b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12)) and returns an array of `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
+  - `(RTPO9c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO10)` `PathObject#keys` function:
-  - `(RTPO10a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that the array contains only the keys
+  - `(RTPO10a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO10b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12))
+  - `(RTPO10c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO11)` `PathObject#values` function:
-  - `(RTPO11a)` Behaves identically to `PathObject#entries` ([RTPO9](#RTPO9)) except that the array contains only the `PathObject` values
+  - `(RTPO11a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO11b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12)) and returns an array of `PathObject`s, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
+  - `(RTPO11c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO12)` `PathObject#size` function:
   - `(RTPO12a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO12b)` If the resolved value is a `LiveMap`, returns the number of non-tombstoned entries (equivalent to `LiveMap#size`, see [RTLM10](#RTLM10))
+  - `(RTPO12b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#size` ([RTLM10](#RTLM10))
   - `(RTPO12c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns undefined/null
 - `(RTPO13)` `PathObject#compact` function:
   - `(RTPO13a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
@@ -932,7 +935,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS3a)` If the wrapped value is a `LiveObject`, returns the `objectId` of that object
   - `(RTINS3b)` If the wrapped value is a primitive, returns undefined/null
 - `(RTINS4)` `Instance#value` function:
-  - `(RTINS4a)` If the wrapped value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
+  - `(RTINS4a)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#value` ([RTLC5](#RTLC5))
   - `(RTINS4b)` If the wrapped value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
   - `(RTINS4c)` If the wrapped value is a `LiveMap`, returns undefined/null
 - `(RTINS5)` `Instance#get` function:
@@ -941,14 +944,16 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS5b)` If the wrapped value is a `LiveMap`, looks up the value at `key` using `LiveMap#get` ([RTLM5](#RTLM5)) and returns a new `Instance` wrapping the result. If the result is undefined/null, returns undefined/null
   - `(RTINS5c)` If the wrapped value is not a `LiveMap`, returns undefined/null
 - `(RTINS6)` `Instance#entries` function:
-  - `(RTINS6a)` If the wrapped value is a `LiveMap`, returns an array of `[key, Instance]` pairs, where each `Instance` wraps the corresponding entry value from `LiveMap#entries` ([RTLM11](#RTLM11))
+  - `(RTINS6a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#entries` ([RTLM11](#RTLM11)) and returns an array of `[key, Instance]` pairs, where each `Instance` wraps the corresponding value
   - `(RTINS6b)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS7)` `Instance#keys` function:
-  - `(RTINS7a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that the array contains only the keys
+  - `(RTINS7a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12))
+  - `(RTINS7b)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS8)` `Instance#values` function:
-  - `(RTINS8a)` Behaves identically to `Instance#entries` ([RTINS6](#RTINS6)) except that the array contains only the `Instance` values
+  - `(RTINS8a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#values` ([RTLM13](#RTLM13)) and returns an array of `Instance`s, where each `Instance` wraps the corresponding value
+  - `(RTINS8b)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS9)` `Instance#size` function:
-  - `(RTINS9a)` If the wrapped value is a `LiveMap`, returns the number of non-tombstoned entries (equivalent to `LiveMap#size`, see [RTLM10](#RTLM10))
+  - `(RTINS9a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#size` ([RTLM10](#RTLM10))
   - `(RTINS9b)` If the wrapped value is not a `LiveMap`, returns undefined/null
 - `(RTINS10)` `Instance#compact` function:
   - `(RTINS10a)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)), but operates on the wrapped value directly instead of resolving a path
