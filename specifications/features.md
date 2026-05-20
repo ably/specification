@@ -1874,7 +1874,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(SUB1)` A `Subscription` represents a registration for receiving events from a subscribe operation
 - `(SUB2)` The `Subscription` object has the following method:
-  - `(SUB2a)` `unsubscribe` - deregisters the listener that was registered by the corresponding `subscribe` call. Once `unsubscribe` called, the listener must not be called for any subsequent events
+  - `(SUB2a)` `unsubscribe` - deregisters the listener that was registered by the corresponding `subscribe` call. Once `unsubscribe` is called, the listener must not be called for any subsequent events
 
 ### Option types {#options}
 
