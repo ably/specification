@@ -986,7 +986,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16b)` If the wrapped value is not a `LiveObject` (i.e. it is a primitive), the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that subscribe is not supported for primitive values
   - `(RTINS16c)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
   - `(RTINS16d)` The listener receives an `InstanceSubscriptionEvent` object with:
-    - `(RTINS16d1)` `object` - the `Instance` representing the updated object
+    - `(RTINS16d1)` `object` - an `Instance` wrapping the underlying `LiveObject`
     - `(RTINS16d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
