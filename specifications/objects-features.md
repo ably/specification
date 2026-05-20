@@ -1026,7 +1026,7 @@ Types and their properties/methods are public and exposed to users by default. A
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
       unsubscribe((LiveObjectUpdate) ->) // RTLO4c
 
-    interface LiveObjectUpdate: // RTLO4b4
+    interface LiveObjectUpdate: // RTLO4b4, internal
       update: Object // RTLO4b4a
       noop: Boolean // RTLO4b4b
 
