@@ -543,7 +543,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM20e7)` Set `ObjectMessage.operation.mapSet.value` depending on the type of the provided `value`:
       - `(RTLM20e7a)` This clause has been replaced by [RTLM20e7g](#RTLM20e7g).
       - `(RTLM20e7g)` If the `value` is of type `LiveCounterValueType` or `LiveMapValueType`:
-        - `(RTLM20e7g1)` Consume the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively to generate `*_CREATE` `ObjectMessages`. Collect all generated `ObjectMessages`
+        - `(RTLM20e7g1)` Evaluate the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively to generate `*_CREATE` `ObjectMessages`. Collect all generated `ObjectMessages`
         - `(RTLM20e7g2)` Set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` from the outermost `*_CREATE` `ObjectMessage`
       - `(RTLM20e7b)` If the `value` is of type `JsonArray` or `JsonObject`, set `ObjectMessage.operation.mapSet.value.json` to that value
       - `(RTLM20e7c)` If the `value` is of type `String`, set `ObjectMessage.operation.mapSet.value.string` to that value
@@ -725,7 +725,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 ### LiveCounterValueType
 
-A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCounter` object. It stores the desired initial count value and is consumed when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in `LiveMap.create` ([RTLMV3](#RTLMV3)).
+A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCounter` object. It stores the desired initial count value and is evaluated when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in `LiveMap.create` ([RTLMV3](#RTLMV3)).
 
 - `(RTLCV1)` `LiveCounterValueType` is an immutable value type representing the intent to create a new `LiveCounter` with a specific initial count
 - `(RTLCV2)` `LiveCounterValueType` has the following internal properties:
@@ -734,9 +734,9 @@ A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCount
   - `(RTLCV3a)` Expects the following arguments:
     - `(RTLCV3a1)` `initialCount` `Number` (optional) - the initial count for the new `LiveCounter` object. Defaults to 0
   - `(RTLCV3b)` Returns a new `LiveCounterValueType` instance with the internal `count` set to the provided `initialCount` (or 0 if omitted)
-  - `(RTLCV3c)` No input validation is performed at creation time. Validation is deferred to the consumption procedure ([RTLCV4](#RTLCV4))
+  - `(RTLCV3c)` No input validation is performed at creation time. Validation is deferred to the evaluation procedure ([RTLCV4](#RTLCV4))
   - `(RTLCV3d)` The returned `LiveCounterValueType` is immutable and must not be modified after creation
-- `(RTLCV4)` Internal consumption procedure - when a `LiveCounterValueType` is consumed by a mutation method (e.g. `LiveMap#set` or as an entry value during `LiveMapValueType` consumption per [RTLMV4](#RTLMV4)), a `COUNTER_CREATE` `ObjectMessage` is generated as follows:
+- `(RTLCV4)` Internal evaluation procedure - when a `LiveCounterValueType` is evaluated by a mutation method (e.g. `LiveMap#set` or as an entry value during `LiveMapValueType` evaluation per [RTLMV4](#RTLMV4)), a `COUNTER_CREATE` `ObjectMessage` is generated as follows:
   - `(RTLCV4a)` If the internal `count` is not undefined and (is not of type `Number` or is not a finite number), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that the counter value must be a valid number
   - `(RTLCV4b)` Create a `CounterCreate` object:
     - `(RTLCV4b1)` Set `CounterCreate.count` to the internal `count` value, or to 0 if undefined
@@ -754,7 +754,7 @@ A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCount
 
 ### LiveMapValueType
 
-A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` object. It stores the desired initial entries and is consumed when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in another `LiveMap.create` ([RTLMV3](#RTLMV3)) call. Supports arbitrarily deep nesting of `LiveMapValueType` and `LiveCounterValueType` values within entries.
+A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` object. It stores the desired initial entries and is evaluated when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in another `LiveMap.create` ([RTLMV3](#RTLMV3)) call. Supports arbitrarily deep nesting of `LiveMapValueType` and `LiveCounterValueType` values within entries.
 
 - `(RTLMV1)` `LiveMapValueType` is an immutable value type representing the intent to create a new `LiveMap` with specific initial entries
 - `(RTLMV2)` `LiveMapValueType` has the following internal properties:
@@ -763,15 +763,15 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
   - `(RTLMV3a)` Expects the following arguments:
     - `(RTLMV3a1)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>` (optional) - the initial entries for the new `LiveMap` object
   - `(RTLMV3b)` Returns a new `LiveMapValueType` instance with the internal `entries` set to the provided `entries` (or undefined if omitted)
-  - `(RTLMV3c)` No input validation is performed at creation time. Validation is deferred to the consumption procedure ([RTLMV4](#RTLMV4))
+  - `(RTLMV3c)` No input validation is performed at creation time. Validation is deferred to the evaluation procedure ([RTLMV4](#RTLMV4))
   - `(RTLMV3d)` The returned `LiveMapValueType` is immutable and must not be modified after creation
-- `(RTLMV4)` Internal consumption procedure - when a `LiveMapValueType` is consumed by a mutation method (e.g. `LiveMap#set` or as an entry value during another `LiveMapValueType` consumption), `ObjectMessages` are generated as follows:
+- `(RTLMV4)` Internal evaluation procedure - when a `LiveMapValueType` is evaluated by a mutation method (e.g. `LiveMap#set` or as an entry value during another `LiveMapValueType` evaluation), `ObjectMessages` are generated as follows:
   - `(RTLMV4a)` If the internal `entries` is not undefined and (is null or is not of type `Dict`), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that entries must be a `Dict`
   - `(RTLMV4b)` If any of the keys in the internal `entries` are not of type `String`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that keys must be `String`
   - `(RTLMV4c)` If any of the values in the internal `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
   - `(RTLMV4d)` Build entries for the `MapCreate` object. For each key-value pair in the internal `entries` (if present), create an `ObjectsMapEntry` for the value:
-    - `(RTLMV4d1)` If the value is of type `LiveCounterValueType`, consume it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
-    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively consume it per [RTLMV4](#RTLMV4) to generate `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the outermost `MAP_CREATE` `ObjectMessage`
+    - `(RTLMV4d1)` If the value is of type `LiveCounterValueType`, evaluate it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
+    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively evaluate it per [RTLMV4](#RTLMV4) to generate `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the outermost `MAP_CREATE` `ObjectMessage`
     - `(RTLMV4d3)` If the value is of type `JsonArray` or `JsonObject`, set `ObjectsMapEntry.data.json` to that value
     - `(RTLMV4d4)` If the value is of type `String`, set `ObjectsMapEntry.data.string` to that value
     - `(RTLMV4d5)` If the value is of type `Number`, set `ObjectsMapEntry.data.number` to that value
@@ -792,7 +792,7 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
     - `(RTLMV4j3)` `ObjectMessage.operation.mapCreateWithObjectId.nonce` set to the nonce from [RTLMV4g](#RTLMV4g)
     - `(RTLMV4j4)` `ObjectMessage.operation.mapCreateWithObjectId.initialValue` set to the JSON string from [RTLMV4f](#RTLMV4f)
     - `(RTLMV4j5)` The client library must retain the `MapCreate` object from [RTLMV4e](#RTLMV4e) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.
-  - `(RTLMV4k)` Return an ordered array containing all `ObjectMessages` collected from nested value type consumptions in [RTLMV4d](#RTLMV4d) (in depth-first order), followed by the `MAP_CREATE` `ObjectMessage` from [RTLMV4j](#RTLMV4j)
+  - `(RTLMV4k)` Return an ordered array containing all `ObjectMessages` collected from nested value type evaluations in [RTLMV4d](#RTLMV4d) (in depth-first order), followed by the `MAP_CREATE` `ObjectMessage` from [RTLMV4j](#RTLMV4j)
 
 ### PathObject
 
