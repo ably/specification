@@ -370,6 +370,9 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
   - `(RSL15c)` The SDK must not mutate the user-supplied `Message` object.
   - `(RSL15d)` The request body must be encoded to the appropriate format per `RSC8`.
   - `(RSL15e)` On success, returns an `UpdateDeleteResult` object. The API response body will contain a superset of the fields of a `UpdateDeleteResult`. Indicates an error if the operation was not successful.
+- `(RSL16)` `RestChannel#object` attribute:
+  - `(RSL16a)` Returns the `RestObject` object for this channel [RSO1](../objects-features#RSO1)
+  - `(RSL16b)` It is a programmer error to access this property without first providing the `Objects` plugin ([PC5](#PC5)) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an `ErrorInfo` with `statusCode` 400 and `code` 40019.
 
 ### Plugins
 
@@ -377,7 +380,9 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
 - `(PC2)` No generic plugin interface is specified, and therefore there is no common API exposed by all plugins. However, for type-safety, the opaque interface `Plugin` should be used in strongly-typed languages as the type of the `ClientOptions.plugins` collection as per [TO3o](#TO3o).
 - `(PC3)` A plugin provided with the `PluginType` enum key value of `vcdiff` should be capable of decoding "vcdiff"-encoded messages. It must implement the `VCDiffDecoder` interface and the client library must be able to use it by casting it to this interface.
   - `(PC3a)` The base argument of the `VCDiffDecoder.decode` method should receive the stored base payload of the last message on a channel as specified by [RTL19](#RTL19). If the base payload is a string it should be encoded to binary using UTF-8 before being passed as base argument of the `VCDiffDecoder.decode` method.
-- `(PC5)` A plugin provided with the `PluginType` enum key value of `Objects` should provide the [RealtimeObjects](../objects-features#RTO1) feature functionality for realtime channels ([RTL27](#RTL27)). The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables the Objects feature for a realtime channel, are left for individual implementations to decide.
+- `(PC5)` A plugin provided with the `PluginType` enum key value of `Objects` should provide the capabilities described in the subclauses below. The plugin object itself is not expected to provide a public API. The type of the plugin object, and how it enables these features for a channel, are left for individual implementations to decide.
+  - `(PC5a)` the [RealtimeObjects](../objects-features#RTO1) feature functionality for realtime channels ([RTL27](#RTL27))
+  - `(PC5b)` the [RestObject](../objects-features#RSO1) feature functionality for REST channels ([RSL16](#RSL16))
 - `(PC4)` A client library is allowed to accept plugins other than those specified in this specification, through the use of additional `ClientOptions.plugins` keys defined by that library. The library is responsible for defining the interface of these plugins, and for making sure that these keys do not clash with the keys defined in this specification.
 
 ### PluginType {#plugin-type}
@@ -443,6 +448,10 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
   - `(RSAN3a)` Accepts a message identifier (similar to `RSAN1a`, must at least accept a `messageSerial` string, should also accept a `Message` object containing a `serial`) and optional `Dict<string, stringifiable>` params
   - `(RSAN3b)` Sends a GET request to the endpoint `/channels/{channelName}/messages/{messageSerial}/annotations`, where `messageSerial` is the identifier specified in the first argument, and any `params` are sent in the querystring
   - `(RSAN3c)` Returns a `PaginatedResult<Annotation>` page containing the first page of decoded `Annotation` objects in the `PaginatedResult#items` attribute
+
+### RestObject {#rest-object}
+
+Reserved for `RestObject` feature specification, see [objects-features](../objects-features). Reserved spec point: `RSO`
 
 ### Forwards compatibility {#rest-compatibility}
 
@@ -2230,6 +2239,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
     class RestChannel: // RSL*
       name: String // RSL9
       presence: RestPresence // RSL3
+      object: RestObject // RSL16
       history(
         start: Time, // RSL2b1
         end: Time api-default now(), // RSL2b1
