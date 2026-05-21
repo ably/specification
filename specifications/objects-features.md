@@ -299,16 +299,6 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
     - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` with a `PathObject` pointing to the event path and the `ObjectMessage` that caused the change, and call the subscription's listener
     - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
-  - `(RTO24c)` Path events have a boolean `bubbles` attribute (default `true`):
-    - `(RTO24c1)` A bubbling event MUST be matched against any subscription whose path is a prefix of (or equal to) the event path, subject to the depth filter in [RTO24b3](#RTO24b3)
-    - `(RTO24c2)` A non-bubbling event MUST be matched ONLY against subscriptions whose path is exactly equal to the event path. The `depth` option ([RTPO19b1](#RTPO19b1)) is ignored for non-bubbling events
-  - `(RTO24d)` Event emission rules:
-    - `(RTO24d1)` For every path returned by [`LiveObject#getFullPaths`](#RTLO3g) for the updated `LiveObject`, the register MUST emit one bubbling path event with `path` set to that resolved path
-    - `(RTO24d2)` If the emitted `LiveObjectUpdate` is a `LiveMapUpdate` (per [RTLM18](#RTLM18)), the register MUST additionally emit one non-bubbling event per (resolved path, updated key) combination, with event `path` set to `[...resolvedPath, key]`. The rationale is to deliver an identity-change notification to subscribers whose path coincides with the entry at which the parent's `MAP_SET`/`MAP_REMOVE` occurred - these subscribers would otherwise miss the event because the new child object (if any) emits no event of its own at this point
-    - `(RTO24d3)` `OBJECT_DELETE` (tombstone) updates MUST be emitted only as bubbling events
-  - `(RTO24e)` If multiple resolved paths to the same `LiveObject` match a single subscription (e.g. the subscription is at a common ancestor and the object is referenced under multiple keys in the subtree), the listener MUST be invoked once per matching path. The `PathObjectSubscriptionEvent.object` ([RTPO19d1](#RTPO19d1)) MUST be constructed with the specific resolved path for each invocation
-  - `(RTO24f)` Registering the same listener at the same path multiple times via [RTPO19](#RTPO19) MUST produce independent subscriptions, each deregistered independently via its returned `Subscription`
-  - `(RTO24g)` The order in which listeners across distinct subscriptions are invoked for a single event is unspecified. Implementations SHOULD invoke listeners in registration order where the underlying data structures permit, but consumers MUST NOT rely on this
 
 ### LiveObject
 
@@ -944,7 +934,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
     - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
     - `(RTPO19d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
   - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
-  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering per [RTO24c1](#RTO24c1). In addition, when a parent operation changes the value at the subscribed path (e.g. via a `MAP_SET` overwriting the entry at this path), the subscription receives a separate non-bubbling event ([RTO24c2](#RTO24c2)) at its exact path so the subscriber is notified of the identity change. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc. (subject to depth), and also receives a non-bubbling event when `a`'s `MAP_SET` replaces the entry at key `b`. The full dispatch rules are described in [RTO24d](#RTO24d)
+  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
   - `(RTPO19h)` If `options` is provided and is not of type `PathObjectSubscriptionOptions` (e.g. not a Dict/Object), the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
   - `(RTPO19i)` Before delegating to the subscription register, the wrapper MUST perform the `OBJECT_SUBSCRIBE` channel-mode check ([RTO2](#RTO2)) and the channel-state check of [RTLO4b2](#RTLO4b2), since [RTLO4b](#RTLO4b) is internal
