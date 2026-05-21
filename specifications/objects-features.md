@@ -180,6 +180,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5c4)` The `SyncObjectsPool` must be cleared
     - `(RTO5c5)` The `bufferedObjectOperations` list must be cleared
     - `(RTO5c9)` The `appliedOnAckSerials` set ([RTO7b](#RTO7b)) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the `appliedOnAckSerials` no longer accurately describes which operations have been applied to the channel's LiveObjects data
+    - `(RTO5c10)` After re-establishing the `ObjectsPool` per [RTO5c1](#RTO5c1) and [RTO5c2](#RTO5c2), the client MUST rebuild every `parentReferences` map ([RTLO3f](#RTLO3f)). Specifically:
+      - `(RTO5c10a)` Clear all existing `parentReferences` on every `LiveObject` in the pool
+      - `(RTO5c10b)` For each `LiveMap` in the pool, iterate its current non-tombstoned entries; for each entry whose `data.objectId` references another `LiveObject` in the pool, add a parent reference on the referenced object with `(this LiveMap, entryKey)` per [RTLO3f](#RTLO3f)
     - `(RTO5c8)` The [RTO17](#RTO17) sync state must transition to `SYNCED`
 - `(RTO6)` Certain object operations may require creating a zero-value object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
   - `(RTO6a)` If an object with `objectId` exists in `ObjectsPool`, do not create a new object
@@ -291,7 +294,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
   - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
   - `(RTO24b)` When a `LiveObject` in the `ObjectsPool` emits a `LiveObjectUpdate` (per [RTLO4b4](#RTLO4b4)), the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified:
-    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located
+    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located by calling [`LiveObject#getFullPaths`](#RTLO3g)
     - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
     - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
     - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` whose `object` is a `PathObject` pointing to the event path and whose `message` is a `PublicAPI::ObjectMessage` derived from the source `ObjectMessage` per [PAOM3](#PAOM3), and call the subscription's listener
@@ -312,6 +315,16 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO3d1)` Set to `false` when the `LiveObject` is initialized
   - `(RTLO3e)` protected `tombstonedAt` (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if `isTombstone` is `true`
     - `(RTLO3e1)` Set to undefined/null when the `LiveObject` is initialized
+  - `(RTLO3f)` protected `parentReferences` - a mapping from each parent `LiveMap` to the set of keys at which that `LiveMap` currently references this `LiveObject`. The map MUST be maintained as map operations are applied so that path-based subscribers ([RTO24](#RTO24)) can determine every path the object currently occupies in the LiveObjects tree
+    - `(RTLO3f1)` Set to an empty map when the `LiveObject` is initialized
+    - `(RTLO3f2)` When a `MAP_SET` operation adds an entry whose `ObjectData.objectId` references another `LiveObject` in the local `ObjectsPool`, the referenced object's `parentReferences` MUST be updated to include the entry `(parent LiveMap, key)`
+    - `(RTLO3f3)` When a `MAP_SET` operation replaces an entry that previously referenced an object, the previously-referenced object's `parentReferences` entry for `(parent LiveMap, key)` MUST be removed before the new reference is added
+    - `(RTLO3f4)` When a `MAP_REMOVE` operation tombstones an entry that previously referenced an object, the previously-referenced object's `parentReferences` entry for `(parent LiveMap, key)` MUST be removed
+    - `(RTLO3f5)` When a `MAP_CLEAR` operation removes an entry that previously referenced an object, the previously-referenced object's `parentReferences` entry for `(parent LiveMap, key)` MUST be removed
+    - `(RTLO3f6)` When a `LiveMap` is tombstoned per [RTLO4e](#RTLO4e), all references it holds to other `LiveObjects` MUST be removed from those objects' `parentReferences` maps
+  - `(RTLO3g)` internal `getFullPaths` function - returns the set of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward
+    - `(RTLO3g1)` Implementations MUST guard against cycles using a visited set so that traversal of a cyclic reference graph terminates and returns a bounded number of paths
+    - `(RTLO3g2)` If the object has no parent references at the time of the call (e.g. orphaned or not yet reachable from root), the result MUST be an empty list and no path events are emitted for this `LiveObject`
 - `(RTLO4)` `LiveObject` methods:
   - `(RTLO4b)` `subscribe` - subscribes a user to data updates on this `LiveObject` instance
     - `(RTLO4b1)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
@@ -328,11 +341,17 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
     - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-  - `(RTLO4c)` `unsubscribe` - unsubscribes a previously registered listener
-    - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
-    - `(RTLO4c2)` A user may provide a listener they wish to deregister from receiving data updates for this `LiveObject`
-    - `(RTLO4c3)` Once deregistered, subsequent data updates for this `LiveObject` must not result in the listener being called
-    - `(RTLO4c4)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+    - `(RTLO4b8)` When a `LiveObjectUpdate` is emitted as a result of a tombstone - i.e. an `OBJECT_DELETE` operation or a sync state with `tombstone: true` - the listener invocation order MUST be:
+      - `(RTLO4b8a)` Invoke all registered listeners with the tombstone `LiveObjectUpdate` first, per [RTLO4b4c2](#RTLO4b4c2)
+      - `(RTLO4b8b)` After all listeners have been invoked, the library MUST deregister every listener currently registered on this `LiveObject` (equivalent to removing all `Subscription` objects returned by prior calls to [RTLO4b](#RTLO4b))
+      - `(RTLO4b8c)` Subsequent updates on this `LiveObject` MUST NOT invoke the deregistered listeners
+    - `(RTLO4b9)` Path-based subscriptions ([RTPO19](#RTPO19)) are NOT affected by [RTLO4b8](#RTLO4b8): they remain registered after the underlying object is tombstoned, because path subscriptions follow a path, not an object identity. A subsequent `MAP_SET` on the parent that creates a new object at the same path will deliver further events to the existing path subscription
+    - `(RTLO4b10)` If a registered listener throws when invoked with a `LiveObjectUpdate` per [RTLO4b4c2](#RTLO4b4c2), the error MUST be caught and logged. The error MUST NOT affect the dispatch to other listeners registered on the same `LiveObject`, nor abort the iteration over the listener list
+  - `(RTLO4c)` This clause has been deleted
+    - `(RTLO4c1)` This clause has been deleted
+    - `(RTLO4c2)` This clause has been deleted
+    - `(RTLO4c3)` This clause has been deleted
+    - `(RTLO4c4)` This clause has been deleted
   - `(RTLO4a)` protected `canApplyOperation` - a convenience method used to determine whether the `ObjectMessage.operation` should be applied to this object based on a serial value
     - `(RTLO4a1)` Expects the following arguments:
       - `(RTLO4a1a)` `ObjectMessage`
@@ -907,9 +926,9 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
   - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTPO20)` `PathObject#unsubscribe` function:
-  - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
-  - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTPO20)` This clause has been deleted
+  - `(RTPO20a)` This clause has been deleted
+  - `(RTPO20b)` This clause has been deleted
 
 ### Instance
 
@@ -979,9 +998,9 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTINS17)` `Instance#unsubscribe` function:
-  - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
-  - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+- `(RTINS17)` This clause has been deleted
+  - `(RTINS17a)` This clause has been deleted
+  - `(RTINS17b)` This clause has been deleted
 
 ### PublicAPI::ObjectMessage
 
@@ -1031,6 +1050,9 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 Describes types for RealtimeObject.\
 Types and their properties/methods are public and exposed to users by default. An `internal` label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
 
+    // Primitive is an alias used throughout the IDL
+    type Primitive = Boolean | Binary | Number | String | JsonArray | JsonObject // internal
+
     class RealtimeObject: // RTO*
       get() => io PathObject // RTO23
       on(ObjectsEvent event, (() ->) callback) -> StatusSubscription // RTO18
@@ -1063,7 +1085,6 @@ Types and their properties/methods are public and exposed to users by default. A
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       tombstone(ObjectMessage) // RTLO4e
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
-      unsubscribe((LiveObjectUpdate) ->) // RTLO4c
 
     interface LiveObjectUpdate: // RTLO4b4, internal
       update: Object // RTLO4b4a
@@ -1091,9 +1112,11 @@ Types and their properties/methods are public and exposed to users by default. A
       update: Dict<String, 'updated' | 'removed'> // RTLM18b
 
     class LiveCounterValueType: // RTLCV*
+      count: Number // RTLCV2a, internal
       static create(Number initialCount?) -> LiveCounterValueType // RTLCV3
 
     class LiveMapValueType: // RTLMV*
+      entries: Dict<String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType)>? // RTLMV2a, internal
       static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
 
     interface PathObjectSubscriptionEvent: // RTPO19d
@@ -1147,7 +1170,6 @@ Types and their properties/methods are public and exposed to users by default. A
       increment(Number amount?) => io // RTPO17
       decrement(Number amount?) => io // RTPO18
       subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
-      unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
 
     class Instance: // RTINS*
       id: String? // RTINS3
@@ -1164,4 +1186,3 @@ Types and their properties/methods are public and exposed to users by default. A
       increment(Number amount?) => io // RTINS14
       decrement(Number amount?) => io // RTINS15
       subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
-      unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
