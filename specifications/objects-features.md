@@ -910,11 +910,6 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
 - `(RTPO20)` `PathObject#unsubscribe` function:
   - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
   - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTPO21)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
-  - `(RTPO21a)` Expects the following arguments:
-    - `(RTPO21a1)` `options` `PathObjectSubscriptionOptions` (optional) - same options as `PathObject#subscribe` ([RTPO19b](#RTPO19b))
-  - `(RTPO21b)` Returns a stream or iterable that yields `PathObjectSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
-  - `(RTPO21c)` Internally wraps `PathObject#subscribe` ([RTPO19](#RTPO19)), converting the callback-based subscription into the appropriate streaming or iterable pattern
 
 ### Instance
 
@@ -987,10 +982,6 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 - `(RTINS17)` `Instance#unsubscribe` function:
   - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
   - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTINS18)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
-  - `(RTINS18a)` If the wrapped value is not a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
-  - `(RTINS18b)` Returns a stream or iterable that yields `InstanceSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
-  - `(RTINS18c)` Internally wraps `Instance#subscribe` ([RTINS16](#RTINS16)), converting the callback-based subscription into the appropriate streaming or iterable pattern
 
 ## Interface Definition {#idl}
 
@@ -1091,7 +1082,6 @@ Types and their properties/methods are public and exposed to users by default. A
       decrement(Number amount?) => io // RTPO18
       subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
       unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
-      subscribeIterator(PathObjectSubscriptionOptions? options) -> Stream<PathObjectSubscriptionEvent> // RTPO21
 
     class Instance: // RTINS*
       id: String? // RTINS3
@@ -1109,4 +1099,3 @@ Types and their properties/methods are public and exposed to users by default. A
       decrement(Number amount?) => io // RTINS15
       subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
       unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
-      subscribeIterator() -> Stream<InstanceSubscriptionEvent> // RTINS18
