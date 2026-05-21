@@ -291,13 +291,25 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
   - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
   - `(RTO24b)` Path-based subscription dispatch: given a `LiveObject` and a `LiveObjectUpdate`, the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified by performing the following actions in order:
-    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the `LiveObject` is located
-    - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
-    - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
-    - `(RTO24b4)` Call the subscription's listener with a `PathObjectSubscriptionEvent` that has:
-      - `(RTO24b4a)` `object` - a `PathObject` pointing to the event path
-      - `(RTO24b4b)` `message` - if `LiveObjectUpdate.objectMessage` is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` derived from `LiveObjectUpdate.objectMessage` per [PAOM3](#PAOM3); otherwise omitted
-    - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
+    - `(RTO24b1)` Let `pathsToThis` be the set of paths returned by calling `getFullPaths` ([RTLO4f](#RTLO4f)) on the `LiveObject`
+    - `(RTO24b2)` For each `pathToThis` in `pathsToThis`:
+      - `(RTO24b2a)` Construct an ordered list of candidate paths `candidatePaths`, in order of decreasing preference:
+        - `(RTO24b2a1)` The first (most-preferred) candidate is `pathToThis` itself
+        - `(RTO24b2a2)` If the `LiveObjectUpdate` is a `LiveMapUpdate`, then for each key in `LiveMapUpdate.update`, append a further candidate consisting of `pathToThis` extended by that key
+      - `(RTO24b2b)` For each registered subscription, find the first `eventPath` in `candidatePaths` that the subscription covers per [RTO24c1](#RTO24c1). If no such `eventPath` exists, do nothing for this subscription. Otherwise, call the subscription's listener exactly once with a `PathObjectSubscriptionEvent` that has:
+        - `(RTO24b2b1)` `object` - a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2)) set to `eventPath` and `root` ([RTPO2b](#RTPO2)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
+        - `(RTO24b2b2)` `message` - if `LiveObjectUpdate.objectMessage` is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` derived from `LiveObjectUpdate.objectMessage` per [PAOM3](#PAOM3); otherwise omitted
+      - `(RTO24b2c)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions, nor to other `pathToThis` iterations
+  - `(RTO24c)` Subscription coverage:
+    - `(RTO24c1)` A subscription with subscribed path `subPath` and `depth` option is said to *cover* a path `eventPath` if and only if `subPath` is a prefix of `eventPath` (treating `subPath` as a prefix of itself, so that an exact path match also satisfies this condition), and either `depth` is undefined/null or `eventPath.length - subPath.length + 1 <= depth`
+    - `(RTO24c2)` (non-normative) Coverage examples, for a subscription at path `["users"]`:
+      - `(RTO24c2a)` With `depth` undefined/null: covers `["users"]`, `["users", "emma"]`, `["users", "emma", "visits"]`, and so on at any depth
+      - `(RTO24c2b)` With `depth = 1`: covers `["users"]`; does not cover `["users", "emma"]` or any deeper path
+      - `(RTO24c2c)` With `depth = 2`: covers `["users"]` and `["users", "emma"]`; does not cover `["users", "emma", "visits"]` or any deeper path
+      - `(RTO24c2d)` With any `depth`: does not cover `["admins"]` or `["userPosts"]`, since the subscription path is not a prefix of either
+  - `(RTO24d)` (non-normative) Consequences of the dispatch model in [RTO24b](#RTO24b):
+    - `(RTO24d1)` Each subscription receives at most one notification per `pathToThis`. When the same subscription's subscribed path covers both `pathToThis` and one of the longer candidate paths derived from it, the shorter `pathToThis` is the one reported to the listener
+    - `(RTO24d2)` A subscription whose subscribed path is `parentMap.someKey` still receives notifications when the parent map emits a `LiveMapUpdate` mentioning `someKey`, even though the underlying `LiveObjectUpdate` is emitted by the parent map, not by the entry's object
 
 ### LiveObject
 
@@ -356,6 +368,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
     - `(RTLO4e4)` Set the `data` attribute of the `LiveObject` to the value described in [RTLC4b](#RTLC4b) or [RTLM4c](#RTLM4c), depending on the object type
+  - `(RTLO4f)` protected `getFullPaths` - returns the set of paths in the LiveObjects tree at which this `LiveObject` is currently located. Each path is an ordered list of string segments from the root `LiveMap`. The same `LiveObject` may be reachable from multiple paths (e.g. when it is referenced by more than one map entry) or from zero paths (e.g. when it is not a descendant of the root). Used by path-based subscription dispatch ([RTO24b](#RTO24b))
+    - `(RTLO4f1)` TODO: The procedure for computing the set of paths is to be specified separately
 - `(RTLO5)` An `OBJECT_DELETE` operation can be applied to a `LiveObject` in the following way:
   - `(RTLO5a)` Expects the following arguments:
     - `(RTLO5a1)` `ObjectMessage`
@@ -911,21 +925,17 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO18d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTPO19)` `PathObject#subscribe` function:
   - `(RTPO19a)` Expects the following arguments:
-    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d)) when a change occurs at or below this path
+    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d))
     - `(RTPO19a2)` `options` `PathObjectSubscriptionOptions` (optional) - subscription options
   - `(RTPO19b)` `PathObjectSubscriptionOptions` has the following properties:
-    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener:
-      - `(RTPO19b1a)` If undefined (default), the subscription receives events for changes at any depth below the subscribed path
-      - `(RTPO19b1b)` If `depth` is 1, only changes to the object at the exact subscribed path trigger the listener
-      - `(RTPO19b1c)` If `depth` is `n`, changes up to `n - 1` levels of children below the subscribed path trigger the listener
-      - `(RTPO19b1d)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener. Defaults to undefined/null. The `depth` value is interpreted by the subscription coverage rule in [RTO24c1](#RTO24c1); see [RTO24c2](#RTO24c2) for worked examples
+      - `(RTPO19b1a)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
   - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
     - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
     - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the [RTLO4b4](#RTLO4b4) emission that triggered this event is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
-  - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
-  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
-  - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+  - `(RTPO19e)` Adds a subscription to the `RealtimeObject`'s `PathObjectSubscriptionRegister` ([RTO24](#RTO24)) with subscribed path equal to this `PathObject`'s `path` (per [RTPO2a](#RTPO2a)), the provided `listener`, and the provided `options.depth`
+  - `(RTPO19f)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 - `(RTPO20)` `PathObject#unsubscribe` function:
   - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
   - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
