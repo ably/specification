@@ -718,12 +718,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 ### LiveCounterValueType
 
-A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCounter` object. It stores the desired initial count value and is evaluated when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in `LiveMap.create` ([RTLMV3](#RTLMV3)).
+A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCounter` object. It stores the desired initial count value and is evaluated when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in `LiveMapValueType.create` ([RTLMV3](#RTLMV3)).
 
 - `(RTLCV1)` `LiveCounterValueType` is an immutable value type representing the intent to create a new `LiveCounter` with a specific initial count
 - `(RTLCV2)` `LiveCounterValueType` has the following internal properties:
   - `(RTLCV2a)` `count` `Number` - the initial count value for the `LiveCounter` to be created
-- `(RTLCV3)` `LiveCounter.create` static factory function:
+- `(RTLCV3)` `LiveCounterValueType.create` static factory function:
   - `(RTLCV3a)` Expects the following arguments:
     - `(RTLCV3a1)` `initialCount` `Number` (optional) - the initial count for the new `LiveCounter` object. Defaults to 0
   - `(RTLCV3b)` Returns a new `LiveCounterValueType` instance with the internal `count` set to the provided `initialCount` (or 0 if omitted)
@@ -747,12 +747,12 @@ A `LiveCounterValueType` is an immutable blueprint for creating a new `LiveCount
 
 ### LiveMapValueType
 
-A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` object. It stores the desired initial entries and is evaluated when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in another `LiveMap.create` ([RTLMV3](#RTLMV3)) call. Supports arbitrarily deep nesting of `LiveMapValueType` and `LiveCounterValueType` values within entries.
+A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` object. It stores the desired initial entries and is evaluated when passed to a mutation method such as `LiveMap#set` ([RTLM20](#RTLM20)) or as an entry value in another `LiveMapValueType.create` ([RTLMV3](#RTLMV3)) call. Supports arbitrarily deep nesting of `LiveMapValueType` and `LiveCounterValueType` values within entries.
 
 - `(RTLMV1)` `LiveMapValueType` is an immutable value type representing the intent to create a new `LiveMap` with specific initial entries
 - `(RTLMV2)` `LiveMapValueType` has the following internal properties:
   - `(RTLMV2a)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>` (optional) - the initial entries for the `LiveMap` to be created
-- `(RTLMV3)` `LiveMap.create` static factory function:
+- `(RTLMV3)` `LiveMapValueType.create` static factory function:
   - `(RTLMV3a)` Expects the following arguments:
     - `(RTLMV3a1)` `entries` `Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType>` (optional) - the initial entries for the new `LiveMap` object
   - `(RTLMV3b)` Returns a new `LiveMapValueType` instance with the internal `entries` set to the provided `entries` (or undefined if omitted)
@@ -1035,34 +1035,32 @@ Types and their properties/methods are public and exposed to users by default. A
       update: Object // RTLO4b4a
       noop: Boolean // RTLO4b4b
 
-    class LiveCounter extends LiveObject: // RTLC*, RTLC1
-      value() -> Number // RTLC5, internal
-      increment(Number amount) => io // RTLC12, internal
-      decrement(Number amount) => io // RTLC13, internal
-      static create(Number initialCount?) -> LiveCounterValueType // RTLCV3
+    class LiveCounter extends LiveObject: // RTLC*, RTLC1, internal
+      value() -> Number // RTLC5
+      increment(Number amount) => io // RTLC12
+      decrement(Number amount) => io // RTLC13
 
     interface LiveCounterUpdate extends LiveObjectUpdate: // RTLC11, RTLC11a, internal
       update: { amount: Number } // RTLC11b, RTLC11b1
 
     class LiveMap extends LiveObject: // RTLM*, RTLM1, internal
-      clearTimeserial: String? // RTLM25, internal
-      get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5, internal
-      size() -> Number // RTLM10, internal
-      entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11, internal
-      keys() -> String[] // RTLM12, internal
-      values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13, internal
-      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTLM20, internal
-      remove(String key) => io // RTLM21, internal
-      static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
+      clearTimeserial: String? // RTLM25
+      get(key: String) -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)? // RTLM5
+      size() -> Number // RTLM10
+      entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?][] // RTLM11
+      keys() -> String[] // RTLM12
+      values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)?[] // RTLM13
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType) value) => io // RTLM20
+      remove(String key) => io // RTLM21
 
     interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a, internal
       update: Dict<String, 'updated' | 'removed'> // RTLM18b
 
     class LiveCounterValueType: // RTLCV*
-      // created via LiveCounter.create(), RTLCV3
+      static create(Number initialCount?) -> LiveCounterValueType // RTLCV3
 
     class LiveMapValueType: // RTLMV*
-      // created via LiveMap.create(), RTLMV3
+      static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
 
     interface PathObjectSubscriptionEvent: // RTPO19d
       object: PathObject // RTPO19d1
