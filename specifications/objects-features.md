@@ -290,11 +290,13 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO22b)` `CHANNEL` - an operation received over a Realtime channel
 - `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
   - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
-  - `(RTO24b)` When a `LiveObject` in the `ObjectsPool` emits a `LiveObjectUpdate` (per [RTLO4b4](#RTLO4b4)), the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified:
-    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located
+  - `(RTO24b)` Path-based subscription dispatch: given a `LiveObject` and a `LiveObjectUpdate`, the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified by performing the following actions in order:
+    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the `LiveObject` is located
     - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
     - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
-    - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` whose `object` is a `PathObject` pointing to the event path and whose `message` is a `PublicAPI::ObjectMessage` derived from the source `ObjectMessage` per [PAOM3](#PAOM3), and call the subscription's listener
+    - `(RTO24b4)` Call the subscription's listener with a `PathObjectSubscriptionEvent` that has:
+      - `(RTO24b4a)` `object` - a `PathObject` pointing to the event path
+      - `(RTO24b4b)` `message` - if `LiveObjectUpdate.objectMessage` is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` derived from `LiveObjectUpdate.objectMessage` per [PAOM3](#PAOM3); otherwise omitted
     - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
 
 ### LiveObject
@@ -323,7 +325,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b4d)` `LiveObjectUpdate.objectMessage` is an optional `ObjectMessage` - the source `ObjectMessage` that caused this update, if any
       - `(RTLO4b4c)` When a `LiveObjectUpdate` is emitted:
         - `(RTLO4b4c1)` If `LiveObjectUpdate` is indicated to be a no-op, do nothing
-        - `(RTLO4b4c2)` Otherwise, the registered listener is called with the `LiveObjectUpdate` object
+        - `(RTLO4b4c2)` This clause has been replaced by [RTLO4b4c3](#RTLO4b4c3) as of specification version 6.0.0.
+        - `(RTLO4b4c3)` Otherwise:
+          - `(RTLO4b4c3a)` The registered listener of each subscription created via `LiveObject#subscribe` ([RTLO4b](#RTLO4b)) on this `LiveObject` is called with the `LiveObjectUpdate`
+          - `(RTLO4b4c3b)` Perform path-based subscription dispatch as described in [RTO24b](#RTO24b), passing this `LiveObject` and the `LiveObjectUpdate`
     - `(RTLO4b5)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
       - `(RTLO4b5a)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
@@ -910,7 +915,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
     - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
-    - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if the event was caused by an `ObjectMessage` received on the channel, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from that source `ObjectMessage` per [PAOM3](#PAOM3); otherwise omitted
+    - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the [RTLO4b4](#RTLO4b4) emission that triggered this event is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
   - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
   - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
@@ -982,7 +987,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16c)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
   - `(RTINS16d)` The listener receives an `InstanceSubscriptionEvent` object with:
     - `(RTINS16d1)` `object` - an `Instance` wrapping the underlying `LiveObject`
-    - `(RTINS16d2)` `message` `PublicAPI::ObjectMessage` (optional) - if the event was caused by an `ObjectMessage` received on the channel, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from that source `ObjectMessage` per [PAOM3](#PAOM3); otherwise omitted
+    - `(RTINS16d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the underlying `LiveObject#subscribe` notification is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
