@@ -347,11 +347,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b8c)` Subsequent updates on this `LiveObject` MUST NOT invoke the deregistered listeners
     - `(RTLO4b9)` Path-based subscriptions ([RTPO19](#RTPO19)) are NOT affected by [RTLO4b8](#RTLO4b8): they remain registered after the underlying object is tombstoned, because path subscriptions follow a path, not an object identity. A subsequent `MAP_SET` on the parent that creates a new object at the same path will deliver further events to the existing path subscription
     - `(RTLO4b10)` If a registered listener throws when invoked with a `LiveObjectUpdate` per [RTLO4b4c2](#RTLO4b4c2), the error MUST be caught and logged. The error MUST NOT affect the dispatch to other listeners registered on the same `LiveObject`, nor abort the iteration over the listener list
-  - `(RTLO4c)` public `unsubscribe` - unsubscribes a previously registered listener
-    - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
-    - `(RTLO4c2)` A user may provide a listener they wish to deregister from receiving data updates for this `LiveObject`
-    - `(RTLO4c3)` Once deregistered, subsequent data updates for this `LiveObject` must not result in the listener being called
-    - `(RTLO4c4)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+  - `(RTLO4c)` This clause has been deleted
+    - `(RTLO4c1)` This clause has been deleted
+    - `(RTLO4c2)` This clause has been deleted
+    - `(RTLO4c3)` This clause has been deleted
+    - `(RTLO4c4)` This clause has been deleted
   - `(RTLO4a)` protected `canApplyOperation` - a convenience method used to determine whether the `ObjectMessage.operation` should be applied to this object based on a serial value
     - `(RTLO4a1)` Expects the following arguments:
       - `(RTLO4a1a)` `ObjectMessage`
@@ -938,9 +938,9 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
   - `(RTPO19h)` If `options` is provided and is not of type `PathObjectSubscriptionOptions` (e.g. not a Dict/Object), the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
   - `(RTPO19i)` Before delegating to the subscription register, the wrapper MUST perform the `OBJECT_SUBSCRIBE` channel-mode check ([RTO2](#RTO2)) and the channel-state check of [RTLO4b2](#RTLO4b2), since [RTLO4b](#RTLO4b) is internal
-- `(RTPO20)` This clause has been deleted as of specification version X.Y. Listeners are deregistered exclusively via the `Subscription` object returned from [RTPO19](#RTPO19).
-  - `(RTPO20a)` This clause has been deleted as of specification version X.Y.
-  - `(RTPO20b)` This clause has been deleted as of specification version X.Y.
+- `(RTPO20)` This clause has been deleted
+  - `(RTPO20a)` This clause has been deleted
+  - `(RTPO20b)` This clause has been deleted
 - `(RTPO21)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
   - `(RTPO21a)` Expects the following arguments:
     - `(RTPO21a1)` `options` `PathObjectSubscriptionOptions` (optional) - same options as `PathObject#subscribe` ([RTPO19b](#RTPO19b))
@@ -1024,9 +1024,9 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
   - `(RTINS16h)` Because this method delegates to [RTLO4b](#RTLO4b), the auto-deregistration behaviour of [RTLO4b8](#RTLO4b8) applies: the listener will receive the tombstone update for the wrapped `LiveObject` and then be deregistered
   - `(RTINS16i)` Before delegating to [LiveObject#subscribe](#RTLO4b), the wrapper MUST perform the `OBJECT_SUBSCRIBE` channel-mode check ([RTO2](#RTO2)) and the channel-state check of [RTLO4b2](#RTLO4b2)
-- `(RTINS17)` This clause has been deleted as of specification version X.Y. Listeners are deregistered exclusively via the `Subscription` object returned from [RTINS16](#RTINS16).
-  - `(RTINS17a)` This clause has been deleted as of specification version X.Y.
-  - `(RTINS17b)` This clause has been deleted as of specification version X.Y.
+- `(RTINS17)` This clause has been deleted
+  - `(RTINS17a)` This clause has been deleted
+  - `(RTINS17b)` This clause has been deleted
 - `(RTINS18)` The client library should provide a method that allows consuming subscription events as a stream or iterable, rather than via a callback. A suggested name for this method is `subscribeIterator`:
   - `(RTINS18a)` If the wrapped value is not a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
   - `(RTINS18b)` Returns a stream or iterable that yields `InstanceSubscriptionEvent` objects, using the idiomatic construct for the language (e.g. async iterators, channels, flows, or async sequences)
@@ -1038,13 +1038,8 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 Describes types for RealtimeObject.\
 Types and their properties/methods are public and exposed to users by default. An `internal` label may be used to indicate that a type or its property/method must not be exposed to users and is intended for internal SDK use only.
 
-    // Named type aliases used throughout the IDL below
-    type Primitive = Boolean | Binary | Number | String | JsonArray | JsonObject
-    type LiveObjectType = LiveMap | LiveCounter
-    type Value = LiveObjectType | Primitive
-
-    interface ObjectIdReference: // see RTPO14a2
-      objectId: String
+    // Primitive is an alias used throughout the IDL
+    type Primitive = Boolean | Binary | Number | String | JsonArray | JsonObject // internal
 
     class RealtimeObject: // RTO*
       get() => io PathObject // RTO23
@@ -1078,7 +1073,6 @@ Types and their properties/methods are public and exposed to users by default. A
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       tombstone(ObjectMessage) // RTLO4e
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
-      unsubscribe((LiveObjectUpdate) ->) // RTLO4c
 
     interface LiveObjectUpdate: // RTLO4b4
       update: Object // RTLO4b4a
