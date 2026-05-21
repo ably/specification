@@ -20,7 +20,6 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO23b)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
   - `(RTO23d)` Returns a `PathObject` ([RTPO1](#RTPO1)) wrapping the `LiveMap` with id `root` from the internal `ObjectsPool`. The `PathObject` is created with an empty path, rooted at the `root` `LiveMap`
-  - `(RTO23e)` (non-normative) In host languages with parametric polymorphism, SDKs MAY accept a user-supplied type parameter to narrow the resolved `PathObject`'s downstream typing — e.g. `channel.object.get<MyType>()`. The type parameter is a compile-time hint only; the runtime behaviour of [RTO23](#RTO23) is unchanged.
 - `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
   - `(RTO11a)` This clause has been replaced by [RTLMV3a](#RTLMV3a).
     - `(RTO11a1)` This clause has been replaced by [RTLMV3a1](#RTLMV3a1).
@@ -822,9 +821,6 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
     - `(RTLMV4j4)` `ObjectMessage.operation.mapCreateWithObjectId.initialValue` set to the JSON string from [RTLMV4f](#RTLMV4f)
     - `(RTLMV4j5)` The client library must retain the `MapCreate` object from [RTLMV4e](#RTLMV4e) alongside the `MapCreateWithObjectId`. It is the operation from which the `MapCreateWithObjectId` was derived, and is needed for message size calculation ([OOP4h2](../features#OOP4h2)) and local application of the operation ([RTLM23](#RTLM23)). This `MapCreate` is for local use only and must not be sent over the wire.
   - `(RTLMV4k)` Return an ordered array containing all `ObjectMessages` collected from nested value type consumptions in [RTLMV4d](#RTLMV4d) (in depth-first order), followed by the `MAP_CREATE` `ObjectMessage` from [RTLMV4j](#RTLMV4j)
-  - `(RTLMV4l)` (non-normative) Validation errors from [RTLMV4a](#RTLMV4a), [RTLMV4b](#RTLMV4b), and [RTLMV4c](#RTLMV4c) MAY be raised in any order; implementations MUST raise at least one error if any validation fails.
-  - `(RTLMV4m)` (non-normative) Implementations MAY parallelise server-time fetches ([RTLMV4h](#RTLMV4h)) across nested value-type consumptions, provided the resulting `objectId`s remain reproducible per [RTO14](#RTO14).
-  - `(RTLMV4n)` (non-normative) Wherever this specification references `Number` (e.g. `LiveCounterValueType.count`, `MAP_SET` numeric values), it refers to the canonical finite numeric type of the host language. BigInt-equivalent types MAY be supported as an SDK extension but are not required by this specification.
 
 ### PathObject
 
@@ -863,11 +859,6 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO6c)` Returns a new `PathObject` with the same `root` and with the parsed segments appended to the current `path` segments
   - `(RTPO6d)` This is a convenience for chaining multiple `PathObject#get` calls. For example, `pathObject.at("a.b.c")` is equivalent to `pathObject.get("a").get("b").get("c")`
   - `(RTPO6e)` If `path` is not of type `String`, the library MUST throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
-  - `(RTPO6f)` (non-normative) Path parsing edge cases:
-    - `(RTPO6f1)` An empty `path` string (`at("")`) appends a single empty segment to the current path. This is rarely useful but is well-defined.
-    - `(RTPO6f2)` Consecutive separators (`at("a..b")`) produce an empty middle segment, equivalent to `get("a").get("").get("b")`.
-    - `(RTPO6f3)` A trailing escape sequence (e.g. `at("a\\")`) preserves the literal backslash in the resulting segment.
-    - `(RTPO6f4)` For any `PathObject` `p` obtained via [RTO23](#RTO23) or composed only of [RTPO5](#RTPO5)/[RTPO6](#RTPO6) calls with non-empty string-only segments, `at(p.path())` MUST resolve to the same logical path as `p`.
 - `(RTPO7)` `PathObject#value` function:
   - `(RTPO7a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
   - `(RTPO7b)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `LiveCounter#value`, see [RTLC5](#RTLC5))
