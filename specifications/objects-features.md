@@ -138,7 +138,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO4b)` If the `HAS_OBJECTS` flag is 0 or there is no `flags` field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
     - `(RTO4b1)` All objects except the one with id `root` must be removed from the internal `ObjectsPool`
     - `(RTO4b2)` The data for the `LiveMap` with id `root` must be cleared by setting it to a zero-value per [RTLM4](#RTLM4). Note that the client SDK must not create a new `LiveMap` instance with id `root`; it must only clear the internal data of the existing `LiveMap` with id `root`
-      - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `LiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`
+      - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `LiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`
     - `(RTO4b3)` The `SyncObjectsPool` must be cleared
     - `(RTO4b5)` This clause has been replaced by [RTO4d](#RTO4d)
     - `(RTO4b4)` Perform the actions for objects sync completion as described in [RTO5c](#RTO5c)
@@ -165,12 +165,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO5c)` When the objects sync has completed, the client library must perform the following actions in order:
     - `(RTO5c1)` For each `ObjectMessage` in the `SyncObjectsPool`, let `ObjectState` be `ObjectMessage.object`:
       - `(RTO5c1a)` If an object with `ObjectState.objectId` exists in the internal `ObjectsPool`:
-        - `(RTO5c1a1)` Replace the internal data for the object as described in [RTLC6](#RTLC6) or [RTLM6](#RTLM6) depending on the object type, passing in current `ObjectState`
+        - `(RTO5c1a1)` Replace the internal data for the object as described in [RTLC6](#RTLC6) or [RTLM6](#RTLM6) depending on the object type, passing in the current `ObjectMessage`
         - `(RTO5c1a2)` Store the `LiveObjectUpdate` object returned by the operation, along with a reference to the updated object
       - `(RTO5c1b)` If an object with `ObjectState.objectId` does not exist in the internal `ObjectsPool`:
         - `(RTO5c1b1)` Create a new `LiveObject` using the data from `ObjectState` and add it to the internal `ObjectsPool`:
-          - `(RTO5c1b1a)` If `ObjectState.counter` is present, create a zero-value `LiveCounter` (per [RTLC4](#RTLC4)), set its private `objectId` equal to `ObjectState.objectId` and replace its internal data using the current `ObjectState` per [RTLC6](#RTLC6)
-          - `(RTO5c1b1b)` If `ObjectState.map` is present, create a zero-value `LiveMap` (per [RTLM4](#RTLM4)), set its private `objectId` equal to `ObjectState.objectId`, set its private `semantics` equal to `ObjectState.map.semantics` and replace its internal data using the current `ObjectState` per [RTLM6](#RTLM6)
+          - `(RTO5c1b1a)` If `ObjectState.counter` is present, create a zero-value `LiveCounter` (per [RTLC4](#RTLC4)), set its private `objectId` equal to `ObjectState.objectId` and replace its internal data using the current `ObjectMessage` per [RTLC6](#RTLC6)
+          - `(RTO5c1b1b)` If `ObjectState.map` is present, create a zero-value `LiveMap` (per [RTLM4](#RTLM4)), set its private `objectId` equal to `ObjectState.objectId`, set its private `semantics` equal to `ObjectState.map.semantics` and replace its internal data using the current `ObjectMessage` per [RTLM6](#RTLM6)
           - `(RTO5c1b1c)` This clause has been deleted (redundant to [RTO5f3](#RTO5f3)).
     - `(RTO5c2)` Remove any objects from the internal `ObjectsPool` for which `objectId`s were not received during the sync sequence
       - `(RTO5c2a)` The object with ID `root` must not be removed from `ObjectsPool`, as per [RTO3b](#RTO3b)
@@ -320,6 +320,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO4b4)` An update to `LiveObject` data is communicated by internally emitting a `LiveObjectUpdate` object for this `LiveObject`, or in any other platform-appropriate manner:
       - `(RTLO4b4a)` `LiveObjectUpdate.update` contains the specific information about what was changed on the object. The exact type depends on the object type
       - `(RTLO4b4b)` The `LiveObjectUpdate.noop` internal property can be used to indicate that the update was a no-op
+      - `(RTLO4b4d)` `LiveObjectUpdate.objectMessage` is an optional `ObjectMessage` - the source `ObjectMessage` that caused this update, if any
       - `(RTLO4b4c)` When a `LiveObjectUpdate` is emitted:
         - `(RTLO4b4c1)` If `LiveObjectUpdate` is indicated to be a no-op, do nothing
         - `(RTLO4b4c2)` Otherwise, the registered listener is called with the `LiveObjectUpdate` object
@@ -392,19 +393,19 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLC13a1)` `amount` `Number` - the amount by which to decrement the counter value
   - `(RTLC13b)` This is an alias for calling [`LiveCounter#increment`](#RTLC12) with a negative `amount` and must be implemented with the same behavior
   - `(RTLC13c)` If the client library chooses to delegate to `LiveCounter#increment` with a negated `amount`, then in languages where negating a non-number may result in implicit type coercion, the `amount` argument must first be validated as described in [RTLC12e1](#RTLC12e1) before proceeding
-- `(RTLC6)` `LiveCounter`'s internal `data` can be replaced with the provided `ObjectState` in the following way:
+- `(RTLC6)` `LiveCounter`'s internal `data` can be replaced with the `ObjectState` from a provided `ObjectMessage` (which the caller must ensure has its `object` field populated; let `ObjectState` refer to `ObjectMessage.object`) in the following way:
   - `(RTLC6a)` Replace the private `siteTimeserials` of the `LiveCounter` with the value from `ObjectState.siteTimeserials`
   - `(RTLC6e)` If `LiveCounter.isTombstone` is `true`, finish processing the `ObjectState`
     - `(RTLC6e1)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`, indicating that no update was made to the object
-  - `(RTLC6f)` If `ObjectState.tombstone` is `true`, tombstone the current `LiveCounter` using [`LiveObject.tombstone`](#RTLO4e), passing in the outer `ObjectMessage` for the `ObjectState`. Finish processing the `ObjectState`
-    - `(RTLC6f1)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to the negative `data` value that this `LiveCounter` had before being tombstoned
+  - `(RTLC6f)` If `ObjectState.tombstone` is `true`, tombstone the current `LiveCounter` using [`LiveObject.tombstone`](#RTLO4e), passing in the `ObjectMessage`. Finish processing the `ObjectState`
+    - `(RTLC6f1)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to the negative `data` value that this `LiveCounter` had before being tombstoned, and `LiveCounterUpdate.objectMessage` set to the provided `ObjectMessage`
   - `(RTLC6g)` Store the current `data` value as `previousData` for use in [RTLC6h](#RTLC6h)
   - `(RTLC6b)` Set the private flag `createOperationIsMerged` to `false`
   - `(RTLC6c)` Set `data` to the value of `ObjectState.counter.count`, or to 0 if it does not exist
-  - `(RTLC6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveCounter` as described in [RTLC16](#RTLC16), passing in the `ObjectState.createOp` instance. Discard the `LiveCounterUpdate` object returned by the merge operation
+  - `(RTLC6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveCounter` as described in [RTLC16](#RTLC16), passing in the `ObjectState.createOp` instance and the `ObjectMessage`. Discard the `LiveCounterUpdate` object returned by the merge operation
     - `(RTLC6d1)` This clause has been replaced by [RTLC10a](#RTLC10a)
     - `(RTLC6d2)` This clause has been replaced by [RTLC10b](#RTLC10b)
-  - `(RTLC6h)` Calculate the diff between `previousData` from [RTLC6g](#RTLC6g) and the current `data` per [RTLC14](#RTLC14), and return the resulting `LiveCounterUpdate` object
+  - `(RTLC6h)` Calculate the diff between `previousData` from [RTLC6g](#RTLC6g) and the current `data` per [RTLC14](#RTLC14), set `LiveCounterUpdate.objectMessage` on the resulting update to the provided `ObjectMessage`, and return the resulting `LiveCounterUpdate` object
 - `(RTLC7)` An `ObjectOperation` from `ObjectMessage.operation` can be applied to a `LiveCounter` by performing the following actions in order:
   - `(RTLC7f)` Expects the following arguments:
     - `(RTLC7f1)` `ObjectMessage` - an `ObjectMessage` instance with an existing `ObjectMessage.operation` object, with `ObjectMessage.operation.objectId` matching the Object ID of this `LiveCounter`. This `ObjectMessage` represents the operation to be applied to this `LiveCounter`
@@ -415,46 +416,48 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLC7c)` If `source` is `CHANNEL`, set the entry in the private `siteTimeserials` map at the key `ObjectMessage.siteCode` to equal `ObjectMessage.serial`
   - `(RTLC7e)` If `LiveCounter.isTombstone` is `true`, the operation cannot be applied to the object. Finish processing the `ObjectMessage` without taking any further action. No data update event is emitted. Return `false`
   - `(RTLC7d)` The `ObjectMessage.operation.action` field (see [`ObjectOperationAction`](../features#OOP2)) determines the type of operation to apply:
-    - `(RTLC7d1)` If `ObjectMessage.operation.action` is set to `COUNTER_CREATE`, apply the operation as described in [RTLC8](#RTLC8), passing in `ObjectMessage.operation`
+    - `(RTLC7d1)` If `ObjectMessage.operation.action` is set to `COUNTER_CREATE`, apply the operation as described in [RTLC8](#RTLC8), passing in `ObjectMessage.operation` and `ObjectMessage`
       - `(RTLC7d1a)` Emit the `LiveCounterUpdate` object returned as a result of applying the operation
       - `(RTLC7d1b)` Return `true`
     - `(RTLC7d2)` This clause has been replaced by [RTLC7d5](#RTLC7d5) as of specification version 6.0.0.
       - `(RTLC7d2a)` This clause has been replaced by [RTLC7d5a](#RTLC7d5a) as of specification version 6.0.0.
       - `(RTLC7d2b)` This clause has been replaced by [RTLC7d5b](#RTLC7d5b) as of specification version 6.0.0.
-    - `(RTLC7d5)` If `ObjectMessage.operation.action` is set to `COUNTER_INC`, apply the operation as described in [RTLC9](#RTLC9), passing in `ObjectMessage.operation.counterInc`
+    - `(RTLC7d5)` If `ObjectMessage.operation.action` is set to `COUNTER_INC`, apply the operation as described in [RTLC9](#RTLC9), passing in `ObjectMessage.operation.counterInc` and `ObjectMessage`
       - `(RTLC7d5a)` Emit the `LiveCounterUpdate` object returned as a result of applying the operation
       - `(RTLC7d5b)` Return `true`
     - `(RTLC7d4)` If `ObjectMessage.operation.action` is set to `OBJECT_DELETE`, apply the operation as described in [RTLO5](#RTLO5), passing in `ObjectMessage`
-      - `(RTLC7d4a)` Emit a `LiveCounterUpdate` object after applying the `OBJECT_DELETE` operation, with `LiveCounterUpdate.update.amount` set to the negated value that this `LiveCounter` held before the operation was applied
+      - `(RTLC7d4a)` Emit a `LiveCounterUpdate` object after applying the `OBJECT_DELETE` operation, with `LiveCounterUpdate.update.amount` set to the negated value that this `LiveCounter` held before the operation was applied and `LiveCounterUpdate.objectMessage` set to `ObjectMessage`
       - `(RTLC7d4b)` Return `true`
     - `(RTLC7d3)` Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current `ObjectMessage` without taking any further action. No data update event is emitted. Return `false`
 - `(RTLC8)` A `COUNTER_CREATE` operation can be applied to a `LiveCounter` in the following way:
   - `(RTLC8a)` Expects the following arguments:
     - `(RTLC8a1)` `ObjectOperation`
+    - `(RTLC8a2)` `ObjectMessage` - the source `ObjectMessage` that contains the operation
   - `(RTLC8d)` The return type is a `LiveCounterUpdate` object, which indicates the data update for this `LiveCounter`
   - `(RTLC8b)` If the private flag `createOperationIsMerged` is `true`, log a debug or trace message indicating that the operation will not be applied because a `COUNTER_CREATE` operation has already been applied to this `LiveCounter`. Discard the operation without taking any further action, and return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`, indicating that no update was made to the object
-  - `(RTLC8c)` Otherwise merge the initial value into the `LiveCounter` as described in [RTLC16](#RTLC16), passing in the `ObjectOperation` instance
+  - `(RTLC8c)` Otherwise merge the initial value into the `LiveCounter` as described in [RTLC16](#RTLC16), passing in the `ObjectOperation` instance and the `ObjectMessage`
   - `(RTLC8e)` Return the `LiveCounterUpdate` object returned by [RTLC16](#RTLC16)
 - `(RTLC9)` A `COUNTER_INC` operation can be applied to a `LiveCounter` in the following way:
   - `(RTLC9a)` Expects the following arguments:
     - `(RTLC9a1)` This clause has been replaced by [RTLC9a2](#RTLC9a2) as of specification version 6.0.0.
     - `(RTLC9a2)` `CounterInc`
+    - `(RTLC9a3)` `ObjectMessage` - the source `ObjectMessage` that contains the operation
   - `(RTLC9c)` The return type is a `LiveCounterUpdate` object, which indicates the data update for this `LiveCounter`
   - `(RTLC9b)` This clause has been replaced by [RTLC9f](#RTLC9f) as of specification version 6.0.0.
   - `(RTLC9d)` This clause has been replaced by [RTLC9g](#RTLC9g) as of specification version 6.0.0.
   - `(RTLC9e)` This clause has been replaced by [RTLC9h](#RTLC9h) as of specification version 6.0.0.
   - `(RTLC9f)` Add `CounterInc.number` to `data`, if it exists
-  - `(RTLC9g)` If `CounterInc.number` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `CounterInc.number`
+  - `(RTLC9g)` If `CounterInc.number` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `CounterInc.number` and `LiveCounterUpdate.objectMessage` set to the provided `ObjectMessage`
   - `(RTLC9h)` If `CounterInc.number` does not exist, return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`
 - `(RTLC10)` This clause has been replaced by [RTLC16](#RTLC16) as of specification version 6.0.0.
   - `(RTLC10a)` This clause has been replaced by [RTLC16a](#RTLC16a) as of specification version 6.0.0.
   - `(RTLC10b)` This clause has been replaced by [RTLC16b](#RTLC16b) as of specification version 6.0.0.
   - `(RTLC10c)` This clause has been replaced by [RTLC16c](#RTLC16c) as of specification version 6.0.0.
   - `(RTLC10d)` This clause has been replaced by [RTLC16d](#RTLC16d) as of specification version 6.0.0.
-- `(RTLC16)` The initial value from an `ObjectOperation` can be merged into this `LiveCounter` in the following way. Let `counterCreate` be `ObjectOperation.counterCreate` if present, else the `CounterCreate` from which `ObjectOperation.counterCreateWithObjectId` was derived (see [RTLCV4g5](#RTLCV4g5)):
+- `(RTLC16)` The initial value from an `ObjectOperation` can be merged into this `LiveCounter` in the following way. Expects an `ObjectOperation` and an `ObjectMessage` (the source `ObjectMessage` that contains the operation) as arguments. Let `counterCreate` be `ObjectOperation.counterCreate` if present, else the `CounterCreate` from which `ObjectOperation.counterCreateWithObjectId` was derived (see [RTLCV4g5](#RTLCV4g5)):
   - `(RTLC16a)` Add `counterCreate.count` to `data`, if it exists
   - `(RTLC16b)` Set the private flag `createOperationIsMerged` to `true`
-  - `(RTLC16c)` If `counterCreate.count` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `counterCreate.count`
+  - `(RTLC16c)` If `counterCreate.count` exists, return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `counterCreate.count` and `LiveCounterUpdate.objectMessage` set to the provided `ObjectMessage`
   - `(RTLC16d)` If `counterCreate.count` does not exist, return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`
 - `(RTLC14)` The diff between two `LiveCounter` data values can be calculated in the following way:
   - `(RTLC14a)` Expects the following arguments:
@@ -566,12 +569,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM14a)` The method returns true if `ObjectsMapEntry.tombstone` is true
   - `(RTLM14c)` The method returns true if `ObjectsMapEntry.data.objectId` exists, there is an object in the local `ObjectsPool` with that id, and that `LiveObject.isTombstone` property is `true`
   - `(RTLM14b)` Otherwise, it returns false
-- `(RTLM6)` `LiveMap` internal `data` can be replaced with the provided `ObjectState` in the following way:
+- `(RTLM6)` `LiveMap` internal `data` can be replaced with the `ObjectState` from a provided `ObjectMessage` (which the caller must ensure has its `object` field populated; let `ObjectState` refer to `ObjectMessage.object`) in the following way:
   - `(RTLM6a)` Replace the private `siteTimeserials` of the `LiveMap` with the value from `ObjectState.siteTimeserials`
   - `(RTLM6e)` If `LiveMap.isTombstone` is `true`, finish processing the `ObjectState`
     - `(RTLM6e1)` Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
-  - `(RTLM6f)` If `ObjectState.tombstone` is `true`, tombstone the current `LiveMap` using [`LiveObject.tombstone`](#RTLO4e), passing in the outer `ObjectMessage` for the `ObjectState`. Finish processing the `ObjectState`
-    - `(RTLM6f1)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of the object being tombstoned, each set to `removed`
+  - `(RTLM6f)` If `ObjectState.tombstone` is `true`, tombstone the current `LiveMap` using [`LiveObject.tombstone`](#RTLO4e), passing in the `ObjectMessage`. Finish processing the `ObjectState`
+    - `(RTLM6f1)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of the object being tombstoned, each set to `removed`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
   - `(RTLM6g)` Store the current `data` value as `previousData` for use in [RTLM6h](#RTLM6h)
   - `(RTLM6b)` Set the private flag `createOperationIsMerged` to `false`
   - `(RTLM6i)` Set the private `clearTimeserial` to `ObjectState.map.clearTimeserial`, or to `null` if not provided
@@ -580,12 +583,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM6c1a)` This clause has been replaced by [RTLO6a](#RTLO6a)
       - `(RTLM6c1b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLM6c1b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
-  - `(RTLM6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveMap` as described in [RTLM23](#RTLM23), passing in the `ObjectState.createOp` instance. Discard the `LiveMapUpdate` object returned by the merge operation
+  - `(RTLM6d)` If `ObjectState.createOp` is present, merge the initial value into the `LiveMap` as described in [RTLM23](#RTLM23), passing in the `ObjectState.createOp` instance and the `ObjectMessage`. Discard the `LiveMapUpdate` object returned by the merge operation
     - `(RTLM6d1)` This clause has been replaced by [RTLM17a](#RTLM17a)
       - `(RTLM6d1a)` This clause has been replaced by [RTLM17a1](#RTLM17a1)
       - `(RTLM6d1b)` This clause has been replaced by [RTLM17a2](#RTLM17a2)
     - `(RTLM6d2)` This clause has been replaced by [RTLM17b](#RTLM17b)
-  - `(RTLM6h)` Calculate the diff between `previousData` from [RTLM6g](#RTLM6g) and the current `data` per [RTLM22](#RTLM22), and return the resulting `LiveMapUpdate` object
+  - `(RTLM6h)` Calculate the diff between `previousData` from [RTLM6g](#RTLM6g) and the current `data` per [RTLM22](#RTLM22), set `LiveMapUpdate.objectMessage` on the resulting update to the provided `ObjectMessage`, and return the resulting `LiveMapUpdate` object
 - `(RTLM15)` An `ObjectOperation` from `ObjectMessage.operation` can be applied to a `LiveMap` by performing the following actions in order:
   - `(RTLM15f)` Expects the following arguments:
     - `(RTLM15f1)` `ObjectMessage` - an `ObjectMessage` instance with an existing `ObjectMessage.operation` object, with `ObjectMessage.operation.objectId` matching the Object ID of this `LiveMap`. This `ObjectMessage` represents the operation to be applied to this `LiveMap`
@@ -596,41 +599,43 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM15c)` If `source` is `CHANNEL`, set the entry in the private `siteTimeserials` map at the key `ObjectMessage.siteCode` to equal `ObjectMessage.serial`
   - `(RTLM15e)` If `LiveMap.isTombstone` is `true`, the operation cannot be applied to the object. Finish processing the `ObjectMessage` without taking any further action. No data update event is emitted. Return `false`
   - `(RTLM15d)` The `ObjectMessage.operation.action` field (see [`ObjectOperationAction`](../features#OOP2)) determines the type of operation to apply:
-    - `(RTLM15d1)` If `ObjectMessage.operation.action` is set to `MAP_CREATE`, apply the operation as described in [RTLM16](#RTLM16), passing in `ObjectMessage.operation`
+    - `(RTLM15d1)` If `ObjectMessage.operation.action` is set to `MAP_CREATE`, apply the operation as described in [RTLM16](#RTLM16), passing in `ObjectMessage.operation` and `ObjectMessage`
       - `(RTLM15d1a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
       - `(RTLM15d1b)` Return `true`
     - `(RTLM15d2)` This clause has been replaced by [RTLM15d6](#RTLM15d6) as of specification version 6.0.0.
       - `(RTLM15d2a)` This clause has been replaced by [RTLM15d6a](#RTLM15d6a) as of specification version 6.0.0.
       - `(RTLM15d2b)` This clause has been replaced by [RTLM15d6b](#RTLM15d6b) as of specification version 6.0.0.
-    - `(RTLM15d6)` If `ObjectMessage.operation.action` is set to `MAP_SET`, apply the operation as described in [RTLM7](#RTLM7), passing in `ObjectMessage.operation.mapSet` and `ObjectMessage.serial`
+    - `(RTLM15d6)` If `ObjectMessage.operation.action` is set to `MAP_SET`, apply the operation as described in [RTLM7](#RTLM7), passing in `ObjectMessage.operation.mapSet`, `ObjectMessage.serial`, and `ObjectMessage`
       - `(RTLM15d6a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
       - `(RTLM15d6b)` Return `true`
     - `(RTLM15d3)` This clause has been replaced by [RTLM15d7](#RTLM15d7) as of specification version 6.0.0.
       - `(RTLM15d3a)` This clause has been replaced by [RTLM15d7a](#RTLM15d7a) as of specification version 6.0.0.
       - `(RTLM15d3b)` This clause has been replaced by [RTLM15d7b](#RTLM15d7b) as of specification version 6.0.0.
-    - `(RTLM15d7)` If `ObjectMessage.operation.action` is set to `MAP_REMOVE`, apply the operation as described in [RTLM8](#RTLM8), passing in `ObjectMessage.operation.mapRemove`, `ObjectMessage.serial` and `ObjectMessage.serialTimestamp`
+    - `(RTLM15d7)` If `ObjectMessage.operation.action` is set to `MAP_REMOVE`, apply the operation as described in [RTLM8](#RTLM8), passing in `ObjectMessage.operation.mapRemove`, `ObjectMessage.serial`, `ObjectMessage.serialTimestamp`, and `ObjectMessage`
       - `(RTLM15d7a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
       - `(RTLM15d7b)` Return `true`
     - `(RTLM15d5)` If `ObjectMessage.operation.action` is set to `OBJECT_DELETE`, apply the operation as described in [RTLO5](#RTLO5), passing in `ObjectMessage`
-      - `(RTLM15d5a)` Emit a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of applying the `OBJECT_DELETE` operation, each set to `removed`
+      - `(RTLM15d5a)` Emit a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of applying the `OBJECT_DELETE` operation, each set to `removed`, and `LiveMapUpdate.objectMessage` set to `ObjectMessage`
       - `(RTLM15d5b)` Return `true`
-    - `(RTLM15d8)` If `ObjectMessage.operation.action` is set to `MAP_CLEAR`, apply the operation as described in [RTLM24](#RTLM24), passing in `ObjectMessage.serial`
+    - `(RTLM15d8)` If `ObjectMessage.operation.action` is set to `MAP_CLEAR`, apply the operation as described in [RTLM24](#RTLM24), passing in `ObjectMessage.serial` and `ObjectMessage`
       - `(RTLM15d8a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
       - `(RTLM15d8b)` Return `true`
     - `(RTLM15d4)` Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current `ObjectMessage` without taking any further action. No data update event is emitted. Return `false`
 - `(RTLM16)` A `MAP_CREATE` operation can be applied to a `LiveMap` in the following way:
   - `(RTLM16a)` Expects the following arguments:
     - `(RTLM16a1)` `ObjectOperation`
+    - `(RTLM16a2)` `ObjectMessage` - the source `ObjectMessage` that contains the operation
   - `(RTLM16e)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
   - `(RTLM16b)` If the private flag `createOperationIsMerged` is `true`, log a debug or trace message indicating that the operation will not be applied because a `MAP_CREATE` operation has already been applied to this `LiveMap`. Discard the operation without taking any further action, and return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM16c)` This clause has been deleted.
-  - `(RTLM16d)` Otherwise merge the initial value into the `LiveMap` as described in [RTLM23](#RTLM23), passing in the `ObjectOperation` instance
+  - `(RTLM16d)` Otherwise merge the initial value into the `LiveMap` as described in [RTLM23](#RTLM23), passing in the `ObjectOperation` instance and the `ObjectMessage`
   - `(RTLM16f)` Return the `LiveMapUpdate` object returned by [RTLM23](#RTLM23)
 - `(RTLM7)` A `MAP_SET` operation for a key can be applied to a `LiveMap` in the following way:
   - `(RTLM7d)` Expects the following arguments:
     - `(RTLM7d1)` This clause has been replaced by [RTLM7d3](#RTLM7d3) as of specification version 6.0.0.
     - `(RTLM7d3)` `MapSet`
     - `(RTLM7d2)` `serial` string - operation's serial value
+    - `(RTLM7d4)` `ObjectMessage` - the source `ObjectMessage` that contains the operation
   - `(RTLM7e)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
   - `(RTLM7h)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM7a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
@@ -650,13 +655,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM7c1)` This clause has been replaced by [RTLM7g1](#RTLM7g1) as of specification version 6.0.0.
   - `(RTLM7g)` If `MapSet.value.objectId` is non-empty:
     - `(RTLM7g1)` Create a zero-value `LiveObject` for this `objectId` in the internal `ObjectsPool` per [RTO6](#RTO6)
-  - `(RTLM7f)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `updated`
+  - `(RTLM7f)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `updated`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
 - `(RTLM8)` A `MAP_REMOVE` operation for a key can be applied to a `LiveMap` in the following way:
   - `(RTLM8c)` Expects the following arguments:
     - `(RTLM8c1)` This clause has been replaced by [RTLM8c4](#RTLM8c4) as of specification version 6.0.0.
     - `(RTLM8c4)` `MapRemove`
     - `(RTLM8c2)` `serial` string - operation's serial value
     - `(RTLM8c3)` `serialTimestamp` Time - operation's serial timestamp value
+    - `(RTLM8c5)` `ObjectMessage` - the source `ObjectMessage` that contains the operation
   - `(RTLM8d)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
   - `(RTLM8g)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM8a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
@@ -674,10 +680,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM8f1)` This clause has been replaced by [RTLO6a](#RTLO6a)
     - `(RTLM8f2)` This clause has been replaced by [RTLO6b](#RTLO6b)
       - `(RTLM8f2a)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
-  - `(RTLM8e)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `removed`
+  - `(RTLM8e)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `removed`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
 - `(RTLM24)` A `MAP_CLEAR` operation can be applied to a `LiveMap` in the following way:
   - `(RTLM24a)` Expects the following arguments:
     - `(RTLM24a1)` `serial` string - the operation's serial value
+    - `(RTLM24a2)` `ObjectMessage` - the source `ObjectMessage` that contains the operation
   - `(RTLM24b)` The return type is a `LiveMapUpdate` object, which indicates the data update for this `LiveMap`
   - `(RTLM24c)` If the private `clearTimeserial` is non-null and is lexicographically greater than the provided `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM24d)` Set the private `clearTimeserial` to the provided `serial`
@@ -685,7 +692,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM24e1)` If `ObjectsMapEntry.timeserial` is null or omitted, or the `serial` is lexicographically greater than `ObjectsMapEntry.timeserial`:
       - `(RTLM24e1a)` Remove the entry from the internal `data` map. The entry is not retained as a tombstone.
       - `(RTLM24e1b)` Record the key for the `LiveMapUpdate` as `removed`
-  - `(RTLM24f)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` containing each key recorded in [RTLM24e1b](#RTLM24e1b) set to `removed`
+  - `(RTLM24f)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` containing each key recorded in [RTLM24e1b](#RTLM24e1b) set to `removed`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
 - `(RTLM9)` Whether a map operation can be applied to a map entry is determined as follows:
   - `(RTLM9a)` For a `LiveMap` with `semantics` set to `ObjectsMapSemantics.LWW` (Last-Write-Wins CRDT semantics), the operation must only be applied if its serial is strictly greater ("after") than the entry's serial when compared lexicographically
   - `(RTLM9b)` If both the entry serial and the operation serial are null or empty strings, they are treated as the "earliest possible" serials and considered "equal", so the operation must not be applied
@@ -698,12 +705,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM17a2)` This clause has been replaced by [RTLM23a2](#RTLM23a2) as of specification version 6.0.0.
   - `(RTLM17b)` This clause has been replaced by [RTLM23b](#RTLM23b) as of specification version 6.0.0.
   - `(RTLM17c)` This clause has been replaced by [RTLM23c](#RTLM23c) as of specification version 6.0.0.
-- `(RTLM23)` The initial value from an `ObjectOperation` can be merged into this `LiveMap` in the following way. Let `mapCreate` be `ObjectOperation.mapCreate` if present, else the `MapCreate` from which `ObjectOperation.mapCreateWithObjectId` was derived (see [RTLMV4j5](#RTLMV4j5)):
+- `(RTLM23)` The initial value from an `ObjectOperation` can be merged into this `LiveMap` in the following way. Expects an `ObjectOperation` and an `ObjectMessage` (the source `ObjectMessage` that contains the operation) as arguments. Let `mapCreate` be `ObjectOperation.mapCreate` if present, else the `MapCreate` from which `ObjectOperation.mapCreateWithObjectId` was derived (see [RTLMV4j5](#RTLMV4j5)):
   - `(RTLM23a)` For each key-`ObjectsMapEntry` pair in `mapCreate.entries`:
-    - `(RTLM23a1)` If `ObjectsMapEntry.tombstone` is `false` or omitted, apply the `MAP_SET` operation to the current key as described in [RTLM7](#RTLM7), passing in `ObjectsMapEntry.data` and the current key as `MapSet`, and `ObjectsMapEntry.timeserial` as `serial`. Store the returned `LiveMapUpdate` object for use in [RTLM23c](#RTLM23c)
-    - `(RTLM23a2)` If `ObjectsMapEntry.tombstone` is `true`, apply the `MAP_REMOVE` operation to the current key as described in [RTLM8](#RTLM8), passing in the current key as `MapRemove`, `ObjectsMapEntry.timeserial` as `serial`, and `ObjectsMapEntry.serialTimestamp` as `serialTimestamp`. Store the returned `LiveMapUpdate` object for use in [RTLM23c](#RTLM23c)
+    - `(RTLM23a1)` If `ObjectsMapEntry.tombstone` is `false` or omitted, apply the `MAP_SET` operation to the current key as described in [RTLM7](#RTLM7), passing in `ObjectsMapEntry.data` and the current key as `MapSet`, `ObjectsMapEntry.timeserial` as `serial`, and the `ObjectMessage`. Store the returned `LiveMapUpdate` object for use in [RTLM23c](#RTLM23c)
+    - `(RTLM23a2)` If `ObjectsMapEntry.tombstone` is `true`, apply the `MAP_REMOVE` operation to the current key as described in [RTLM8](#RTLM8), passing in the current key as `MapRemove`, `ObjectsMapEntry.timeserial` as `serial`, `ObjectsMapEntry.serialTimestamp` as `serialTimestamp`, and the `ObjectMessage`. Store the returned `LiveMapUpdate` object for use in [RTLM23c](#RTLM23c)
   - `(RTLM23b)` Set the private flag `createOperationIsMerged` to `true`
-  - `(RTLM23c)` Return a single `LiveMapUpdate` object, where `LiveMapUpdate.update` is a merged map containing all key-value pairs from the `LiveMapUpdate.update` maps of the stored `LiveMapUpdate` objects. Skip any stored `LiveMapUpdate` objects marked as no-op
+  - `(RTLM23c)` Return a single `LiveMapUpdate` object, where `LiveMapUpdate.update` is a merged map containing all key-value pairs from the `LiveMapUpdate.update` maps of the stored `LiveMapUpdate` objects (skipping any stored `LiveMapUpdate` objects marked as no-op), and `LiveMapUpdate.objectMessage` is set to the provided `ObjectMessage`
 - `(RTLM19)` The `LiveMap` can be checked to determine whether it should release resources for its tombstoned `ObjectsMapEntry` entries as follows:
   - `(RTLM19a)` For each `ObjectsMapEntry` in the internal `data`:
     - `(RTLM19a1)` If `ObjectsMapEntry.tombstone` is `true`, and the difference between the current time and `ObjectsMapEntry.tombstonedAt` is greater than or equal to the [grace period](#RTO10b), remove the entry from the internal `data` map and release resources for the corresponding `ObjectsMapEntry` entity to allow it to be garbage collected
@@ -1068,6 +1075,7 @@ Types and their properties/methods are public and exposed to users by default. A
     interface LiveObjectUpdate: // RTLO4b4, internal
       update: Object // RTLO4b4a
       noop: Boolean // RTLO4b4b
+      objectMessage: ObjectMessage? // RTLO4b4d
 
     class LiveCounter extends LiveObject: // RTLC*, RTLC1, internal
       value() -> Number // RTLC5
