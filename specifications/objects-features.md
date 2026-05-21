@@ -313,7 +313,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLO3e)` protected `tombstonedAt` (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if `isTombstone` is `true`
     - `(RTLO3e1)` Set to undefined/null when the `LiveObject` is initialized
 - `(RTLO4)` `LiveObject` methods:
-  - `(RTLO4b)` public `subscribe` - subscribes a user to data updates on this `LiveObject` instance
+  - `(RTLO4b)` `subscribe` - subscribes a user to data updates on this `LiveObject` instance
     - `(RTLO4b1)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
     - `(RTLO4b2)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
     - `(RTLO4b3)` A user may provide a listener to subscribe to data updates on this `LiveObject` instance
@@ -328,7 +328,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
     - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-  - `(RTLO4c)` public `unsubscribe` - unsubscribes a previously registered listener
+  - `(RTLO4c)` `unsubscribe` - unsubscribes a previously registered listener
     - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
     - `(RTLO4c2)` A user may provide a listener they wish to deregister from receiving data updates for this `LiveObject`
     - `(RTLO4c3)` Once deregistered, subsequent data updates for this `LiveObject` must not result in the listener being called
