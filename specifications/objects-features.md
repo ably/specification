@@ -294,7 +294,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located
     - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
     - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
-    - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` with a `PathObject` pointing to the event path and the `ObjectMessage` that caused the change, and call the subscription's listener
+    - `(RTO24b4)` Create a `PathObjectSubscriptionEvent` whose `object` is a `PathObject` pointing to the event path and whose `message` is a `PublicAPI::ObjectMessage` derived from the source `ObjectMessage` per [PAOM3](#PAOM3), and call the subscription's listener
     - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
 
 ### LiveObject
@@ -910,7 +910,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
     - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
-    - `(RTPO19d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
+    - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if the event was caused by an `ObjectMessage` received on the channel, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from that source `ObjectMessage` per [PAOM3](#PAOM3); otherwise omitted
   - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
   - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
@@ -982,13 +982,56 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16c)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
   - `(RTINS16d)` The listener receives an `InstanceSubscriptionEvent` object with:
     - `(RTINS16d1)` `object` - an `Instance` wrapping the underlying `LiveObject`
-    - `(RTINS16d2)` `message` `ObjectMessage` (optional) - the `ObjectMessage` that caused the change
+    - `(RTINS16d2)` `message` `PublicAPI::ObjectMessage` (optional) - if the event was caused by an `ObjectMessage` received on the channel, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from that source `ObjectMessage` per [PAOM3](#PAOM3); otherwise omitted
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 - `(RTINS17)` `Instance#unsubscribe` function:
   - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
   - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+
+### PublicAPI::ObjectMessage
+
+- `(PAOM1)` A `PublicAPI::ObjectMessage` is the user-facing representation of an inbound `ObjectMessage` ([OM1](../features#OM1)) that carried an operation. It is delivered to user subscription listeners (see [RTPO19d2](#RTPO19d2), [RTINS16d2](#RTINS16d2)) so that user code can inspect the metadata of the message that triggered an object change. The `PublicAPI::` prefix is used to avoid a name clash with `ObjectMessage`; SDKs expose this type to users as `ObjectMessage`.
+- `(PAOM2)` The attributes available in a `PublicAPI::ObjectMessage` are:
+  - `(PAOM2a)` `id` string - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
+  - `(PAOM2b)` `clientId` string (optional) - the `clientId` ([OM2b](../features#OM2b)) of the source `ObjectMessage`
+  - `(PAOM2c)` `connectionId` string - the `connectionId` ([OM2c](../features#OM2c)) of the source `ObjectMessage`
+  - `(PAOM2d)` `timestamp` Time - the `timestamp` ([OM2e](../features#OM2e)) of the source `ObjectMessage`
+  - `(PAOM2e)` `channel` string - the name of the channel on which the source `ObjectMessage` was received
+  - `(PAOM2f)` `operation` `PublicAPI::ObjectOperation` ([PAOOP1](#PAOOP1)) - a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
+  - `(PAOM2g)` `serial` string (optional) - the `serial` ([OM2h](../features#OM2h)) of the source `ObjectMessage`
+  - `(PAOM2h)` `serialTimestamp` Time (optional) - the `serialTimestamp` ([OM2j](../features#OM2j)) of the source `ObjectMessage`
+  - `(PAOM2i)` `siteCode` string (optional) - the `siteCode` ([OM2i](../features#OM2i)) of the source `ObjectMessage`
+  - `(PAOM2j)` `extras` JSON-encodable object (optional) - the `extras` ([OM2d](../features#OM2d)) of the source `ObjectMessage`
+- `(PAOM3)` To construct a `PublicAPI::ObjectMessage` from a source `ObjectMessage` received on a channel `channel`:
+  - `(PAOM3a)` Set the `channel` attribute to `channel.name`
+  - `(PAOM3b)` Copy `id`, `clientId`, `connectionId`, `timestamp`, `serial`, `serialTimestamp`, `siteCode`, and `extras` from the source `ObjectMessage` to the corresponding attributes of the `PublicAPI::ObjectMessage`
+  - `(PAOM3c)` Set `operation` to a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
+
+### PublicAPI::ObjectOperation
+
+- `(PAOOP1)` A `PublicAPI::ObjectOperation` is the user-facing representation of an `ObjectOperation` ([OOP1](../features#OOP1)). It is the type of the `operation` attribute of a `PublicAPI::ObjectMessage` ([PAOM2f](#PAOM2f)). The `PublicAPI::` prefix is used to avoid a name clash with `ObjectOperation`; SDKs expose this type to users as `ObjectOperation`. It differs from `ObjectOperation` in that it does not carry the `mapCreateWithObjectId` ([OOP3p](../features#OOP3p)) or `counterCreateWithObjectId` ([OOP3q](../features#OOP3q)) variants: these are outbound-only representations that are resolved back to their derived `MapCreate` / `CounterCreate` forms when constructing a `PublicAPI::ObjectOperation`.
+- `(PAOOP2)` The attributes available in a `PublicAPI::ObjectOperation` are:
+  - `(PAOOP2a)` `action` `ObjectOperationAction` ([OOP2](../features#OOP2)) - the `action` ([OOP3a](../features#OOP3a)) of the source `ObjectOperation`
+  - `(PAOOP2b)` `objectId` string - the `objectId` ([OOP3b](../features#OOP3b)) of the source `ObjectOperation`
+  - `(PAOOP2c)` `mapCreate` `MapCreate` (optional) - the `MapCreate` payload, if applicable (see [PAOOP3b](#PAOOP3b))
+  - `(PAOOP2d)` `mapSet` `MapSet` (optional) - the `mapSet` ([OOP3k](../features#OOP3k)) of the source `ObjectOperation`
+  - `(PAOOP2e)` `mapRemove` `MapRemove` (optional) - the `mapRemove` ([OOP3l](../features#OOP3l)) of the source `ObjectOperation`
+  - `(PAOOP2f)` `counterCreate` `CounterCreate` (optional) - the `CounterCreate` payload, if applicable (see [PAOOP3c](#PAOOP3c))
+  - `(PAOOP2g)` `counterInc` `CounterInc` (optional) - the `counterInc` ([OOP3n](../features#OOP3n)) of the source `ObjectOperation`
+  - `(PAOOP2h)` `objectDelete` `ObjectDelete` (optional) - the `objectDelete` ([OOP3o](../features#OOP3o)) of the source `ObjectOperation`
+  - `(PAOOP2i)` `mapClear` `MapClear` (optional) - the `mapClear` ([OOP3r](../features#OOP3r)) of the source `ObjectOperation`
+- `(PAOOP3)` To construct a `PublicAPI::ObjectOperation` from a source `ObjectOperation`:
+  - `(PAOOP3a)` Copy `action`, `objectId`, `mapSet`, `mapRemove`, `counterInc`, `objectDelete`, and `mapClear` from the source `ObjectOperation` to the corresponding attributes of the `PublicAPI::ObjectOperation`
+  - `(PAOOP3b)` Set `mapCreate` as follows:
+    - `(PAOOP3b1)` If `mapCreate` ([OOP3j](../features#OOP3j)) is present on the source, set `mapCreate` to that value
+    - `(PAOOP3b2)` Else if `mapCreateWithObjectId` ([OOP3p](../features#OOP3p)) is present on the source, set `mapCreate` to the `MapCreate` from which it was derived (retained per [RTLMV4j5](#RTLMV4j5))
+    - `(PAOOP3b3)` Otherwise omit `mapCreate`
+  - `(PAOOP3c)` Set `counterCreate` as follows:
+    - `(PAOOP3c1)` If `counterCreate` ([OOP3m](../features#OOP3m)) is present on the source, set `counterCreate` to that value
+    - `(PAOOP3c2)` Else if `counterCreateWithObjectId` ([OOP3q](../features#OOP3q)) is present on the source, set `counterCreate` to the `CounterCreate` from which it was derived (retained per [RTLCV4g5](#RTLCV4g5))
+    - `(PAOOP3c3)` Otherwise omit `counterCreate`
 
 ## Interface Definition {#idl}
 
@@ -1062,14 +1105,37 @@ Types and their properties/methods are public and exposed to users by default. A
 
     interface PathObjectSubscriptionEvent: // RTPO19d
       object: PathObject // RTPO19d1
-      message: ObjectMessage? // RTPO19d2
+      message: PublicAPI::ObjectMessage? // RTPO19d2
 
     interface PathObjectSubscriptionOptions: // RTPO19b
       depth: Number? // RTPO19b1
 
     interface InstanceSubscriptionEvent: // RTINS16d
       object: Instance // RTINS16d1
-      message: ObjectMessage? // RTINS16d2
+      message: PublicAPI::ObjectMessage? // RTINS16d2
+
+    class PublicAPI::ObjectMessage: // PAOM*
+      id: String // PAOM2a
+      clientId: String? // PAOM2b
+      connectionId: String // PAOM2c
+      timestamp: Time // PAOM2d
+      channel: String // PAOM2e
+      operation: PublicAPI::ObjectOperation // PAOM2f
+      serial: String? // PAOM2g
+      serialTimestamp: Time? // PAOM2h
+      siteCode: String? // PAOM2i
+      extras: JsonObject? // PAOM2j
+
+    class PublicAPI::ObjectOperation: // PAOOP*
+      action: ObjectOperationAction // PAOOP2a
+      objectId: String // PAOOP2b
+      mapCreate: MapCreate? // PAOOP2c
+      mapSet: MapSet? // PAOOP2d
+      mapRemove: MapRemove? // PAOOP2e
+      counterCreate: CounterCreate? // PAOOP2f
+      counterInc: CounterInc? // PAOOP2g
+      objectDelete: ObjectDelete? // PAOOP2h
+      mapClear: MapClear? // PAOOP2i
 
     class PathObject: // RTPO*
       path() -> String // RTPO4
