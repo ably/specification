@@ -347,17 +347,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
         - `(RTLO4b4c3)` Otherwise:
           - `(RTLO4b4c3a)` The registered listener of each subscription created via `LiveObject#subscribe` ([RTLO4b](#RTLO4b)) on this `LiveObject` is called with the `LiveObjectUpdate`
           - `(RTLO4b4c3b)` Perform path-based subscription dispatch as described in [RTO24b](#RTO24b), passing this `LiveObject` and the `LiveObjectUpdate`
+          - `(RTLO4b4c3c)` When a `LiveObjectUpdate` is emitted as a result of a tombstone - i.e. an `OBJECT_DELETE` operation or a sync state with `tombstone: true`, after all listeners have been invoked from [RTLO4b4c3a](#RTLO4b4c3a) and [RTLO4b4c3b](#RTLO4b4c3b), the library MUST deregister all listeners on this `LiveObject`. Path-based subscriptions ([RTPO19](#RTPO19)) are NOT affected by `tombstone` update.
     - `(RTLO4b5)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
       - `(RTLO4b5a)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
     - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-    - `(RTLO4b8)` When a `LiveObjectUpdate` is emitted as a result of a tombstone - i.e. an `OBJECT_DELETE` operation or a sync state with `tombstone: true` - the listener invocation order MUST be:
-      - `(RTLO4b8a)` Invoke all registered listeners with the tombstone `LiveObjectUpdate` first, per [RTLO4b4c2](#RTLO4b4c2)
-      - `(RTLO4b8b)` After all listeners have been invoked, the library MUST deregister every listener currently registered on this `LiveObject` (equivalent to removing all `Subscription` objects returned by prior calls to [RTLO4b](#RTLO4b))
-      - `(RTLO4b8c)` Subsequent updates on this `LiveObject` MUST NOT invoke the deregistered listeners
-    - `(RTLO4b9)` Path-based subscriptions ([RTPO19](#RTPO19)) are NOT affected by [RTLO4b8](#RTLO4b8): they remain registered after the underlying object is tombstoned, because path subscriptions follow a path, not an object identity. A subsequent `MAP_SET` on the parent that creates a new object at the same path will deliver further events to the existing path subscription
-    - `(RTLO4b10)` If a registered listener throws when invoked with a `LiveObjectUpdate` per [RTLO4b4c2](#RTLO4b4c2), the error MUST be caught and logged. The error MUST NOT affect the dispatch to other listeners registered on the same `LiveObject`, nor abort the iteration over the listener list
   - `(RTLO4c)` This clause has been deleted
     - `(RTLO4c1)` This clause has been deleted
     - `(RTLO4c2)` This clause has been deleted
