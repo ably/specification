@@ -343,11 +343,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
     - `(RTLO4b7)` Returns a [`Subscription`](../features#SUB1) object
     - `(RTLO4b6)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-  - `(RTLO4c)` `unsubscribe` - unsubscribes a previously registered listener
-    - `(RTLO4c1)` This operation does not require any specific channel modes to be granted, nor does it require the channel to be in a specific state
-    - `(RTLO4c2)` A user may provide a listener they wish to deregister from receiving data updates for this `LiveObject`
-    - `(RTLO4c3)` Once deregistered, subsequent data updates for this `LiveObject` must not result in the listener being called
-    - `(RTLO4c4)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+  - `(RTLO4c)` This clause has been deleted
+    - `(RTLO4c1)` This clause has been deleted
+    - `(RTLO4c2)` This clause has been deleted
+    - `(RTLO4c3)` This clause has been deleted
+    - `(RTLO4c4)` This clause has been deleted
   - `(RTLO4a)` protected `canApplyOperation` - a convenience method used to determine whether the `ObjectMessage.operation` should be applied to this object based on a serial value
     - `(RTLO4a1)` Expects the following arguments:
       - `(RTLO4a1a)` `ObjectMessage`
@@ -926,9 +926,6 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
     - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the [RTLO4b4](#RTLO4b4) emission that triggered this event is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
   - `(RTPO19e)` Adds a subscription to the `RealtimeObject`'s `PathObjectSubscriptionRegister` ([RTO24](#RTO24)) with subscribed path equal to this `PathObject`'s `path` (per [RTPO2a](#RTPO2a)), the provided `listener`, and the provided `options.depth`
   - `(RTPO19f)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTPO20)` `PathObject#unsubscribe` function:
-  - `(RTPO20a)` Accepts a `listener` argument and deregisters it from receiving further events for this `PathObject`'s path
-  - `(RTPO20b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 
 ### Instance
 
@@ -998,9 +995,6 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTINS17)` `Instance#unsubscribe` function:
-  - `(RTINS17a)` Accepts a `listener` argument and deregisters it from receiving further events using `LiveObject#unsubscribe` ([RTLO4c](#RTLO4c))
-  - `(RTINS17b)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 
 ### PublicAPI::ObjectMessage
 
@@ -1082,7 +1076,6 @@ Types and their properties/methods are public and exposed to users by default. A
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       tombstone(ObjectMessage) // RTLO4e
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
-      unsubscribe((LiveObjectUpdate) ->) // RTLO4c
 
     interface LiveObjectUpdate: // RTLO4b4, internal
       update: Object // RTLO4b4a
@@ -1167,7 +1160,6 @@ Types and their properties/methods are public and exposed to users by default. A
       increment(Number amount?) => io // RTPO17
       decrement(Number amount?) => io // RTPO18
       subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
-      unsubscribe((PathObjectSubscriptionEvent) -> listener) // RTPO20
 
     class Instance: // RTINS*
       id: String? // RTINS3
@@ -1184,4 +1176,3 @@ Types and their properties/methods are public and exposed to users by default. A
       increment(Number amount?) => io // RTINS14
       decrement(Number amount?) => io // RTINS15
       subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
-      unsubscribe((InstanceSubscriptionEvent) -> listener) // RTINS17
