@@ -323,6 +323,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO3d1)` Set to `false` when the `LiveObject` is initialized
   - `(RTLO3e)` protected `tombstonedAt` (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if `isTombstone` is `true`
     - `(RTLO3e1)` Set to undefined/null when the `LiveObject` is initialized
+  - `(RTLO3f)` protected `parentReferences` `Dict<String, Set<String>>` - tracks which `LiveMap`s in the local `ObjectsPool` currently reference this `LiveObject`, and at which keys they do so. The mapping is keyed by the parent `LiveMap`'s `objectId`, with each value being the set of keys at which that `LiveMap` references this `LiveObject`. Used by `getFullPaths` ([RTLO4f](#RTLO4f)) to determine every path the object currently occupies in the LiveObjects tree
+    - `(RTLO3f1)` This mapping is keyed by `objectId` for consistency with the rest of the LiveObjects spec, where references between objects are stored as `objectId`s and resolved via the `ObjectsPool` on demand. Implementations may store a direct reference to the parent `LiveMap` instead — for example to avoid an `ObjectsPool` lookup at each step of `getFullPaths` ([RTLO4f](#RTLO4f)) traversal — provided the observable behaviour is unchanged. Such implementations should be aware that this may introduce reference cycles between `LiveMap`s, and must ensure this does not cause memory leaks
+    - `(RTLO3f2)` TODO: The detailed maintenance rules for `parentReferences` (across `MAP_SET`, `MAP_REMOVE`, `MAP_CLEAR`, `LiveMap` tombstoning, and post-sync rebuild) are to be specified by Sachin in a follow-up; see https://github.com/ably/specification/pull/480 for the in-progress draft
 - `(RTLO4)` `LiveObject` methods:
   - `(RTLO4b)` `subscribe` - subscribes a user to data updates on this `LiveObject` instance
     - `(RTLO4b1)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
@@ -1080,6 +1083,7 @@ Types and their properties/methods are public and exposed to users by default. A
       createOperationIsMerged: Boolean // RTLO3c
       isTombstone: Boolean // RTLO3d
       tombstonedAt: Time? // RTLO3e
+      parentReferences: Dict<String, Set<String>> // RTLO3f
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       tombstone(ObjectMessage) // RTLO4e
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
