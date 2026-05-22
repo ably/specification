@@ -295,13 +295,22 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO24)` Internal `PathObjectSubscriptionRegister` - manages path-based subscriptions for `PathObject#subscribe` ([RTPO19](#RTPO19))
   - `(RTO24a)` The `RealtimeObject` instance maintains a single `PathObjectSubscriptionRegister` that manages all path-based subscriptions for the channel
   - `(RTO24b)` Path-based subscription dispatch: given a `LiveObject` and a `LiveObjectUpdate`, the `PathObjectSubscriptionRegister` must determine which subscriptions should be notified by performing the following actions in order:
-    - `(RTO24b1)` Determine the paths in the LiveObjects tree at which the updated `LiveObject` is located by calling [`LiveObject#getFullPaths`](#RTLO3g)
-    - `(RTO24b2)` For each registered subscription, check whether the event path starts with (or equals) the subscription's path
-    - `(RTO24b3)` If the event path matches, apply depth filtering: the event is dispatched to the subscription if the number of path segments from the subscription path to the event path plus 1 does not exceed the subscription's `depth` option (or if `depth` is undefined). Formally, the event is dispatched if `eventPath.length - subscriptionPath.length + 1 <= depth`
-    - `(RTO24b4)` Call the subscription's listener with a `PathObjectSubscriptionEvent` that has:
-      - `(RTO24b4a)` `object` - a `PathObject` pointing to the event path
-      - `(RTO24b4b)` `message` - if `LiveObjectUpdate.objectMessage` is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` derived from `LiveObjectUpdate.objectMessage` per [PAOM3](#PAOM3); otherwise omitted
-    - `(RTO24b5)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions
+    - `(RTO24b1)` Let `pathsToThis` be the set of paths returned by calling `getFullPaths` ([RTLO4f](#RTLO4f)) on the `LiveObject`
+    - `(RTO24b2)` For each `pathToThis` in `pathsToThis`:
+      - `(RTO24b2a)` Construct an ordered list of candidate paths `candidatePaths`, in order of decreasing preference:
+        - `(RTO24b2a1)` The first (most-preferred) candidate is `pathToThis` itself
+        - `(RTO24b2a2)` If the `LiveObjectUpdate` is a `LiveMapUpdate`, then for each key in `LiveMapUpdate.update`, append a further candidate consisting of `pathToThis` extended by that key
+      - `(RTO24b2b)` For each registered subscription, find the first `eventPath` in `candidatePaths` that the subscription covers per [RTO24c1](#RTO24c1). If no such `eventPath` exists, do nothing for this subscription. Otherwise, call the subscription's listener exactly once with a `PathObjectSubscriptionEvent` that has:
+        - `(RTO24b2b1)` `object` - a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2)) set to `eventPath` and `root` ([RTPO2b](#RTPO2)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
+        - `(RTO24b2b2)` `message` - if `LiveObjectUpdate.objectMessage` is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` derived from `LiveObjectUpdate.objectMessage` per [PAOM3](#PAOM3); otherwise omitted
+      - `(RTO24b2c)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions, nor to other `pathToThis` iterations
+  - `(RTO24c)` Subscription coverage:
+    - `(RTO24c1)` A subscription with subscribed path `subPath` and `depth` option is said to *cover* a path `eventPath` if and only if `subPath` is a prefix of `eventPath` (treating `subPath` as a prefix of itself, so that an exact path match also satisfies this condition), and either `depth` is undefined/null or `eventPath.length - subPath.length + 1 <= depth`
+    - `(RTO24c2)` (non-normative) Coverage examples, for a subscription at path `["users"]`:
+      - `(RTO24c2a)` With `depth` undefined/null: covers `["users"]`, `["users", "emma"]`, `["users", "emma", "visits"]`, and so on at any depth
+      - `(RTO24c2b)` With `depth = 1`: covers `["users"]`; does not cover `["users", "emma"]` or any deeper path
+      - `(RTO24c2c)` With `depth = 2`: covers `["users"]` and `["users", "emma"]`; does not cover `["users", "emma", "visits"]` or any deeper path
+      - `(RTO24c2d)` With any `depth`: does not cover `["admins"]` or `["userPosts"]`, since the subscription path is not a prefix of either
 
 ### LiveObject
 
@@ -318,16 +327,15 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO3d1)` Set to `false` when the `LiveObject` is initialized
   - `(RTLO3e)` protected `tombstonedAt` (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if `isTombstone` is `true`
     - `(RTLO3e1)` Set to undefined/null when the `LiveObject` is initialized
+<<<<<<< HEAD
+// TODO: Sort out this conflict once I've understood Sachin's changes — the bottom half is my reworded thing that makes the values be strings (also I noticed it's a Set); need to make sure it's consistent with the way that Sachin has specified the manipulations of these values
   - `(RTLO3f)` protected `parentReferences` Map<LiveMap, String[]> - contains mapping from each parent `LiveMap` to the set of keys at which that `LiveMap` currently references this `LiveObject`. This map should be updated as `LiveMap` operations are applied so that path-based subscribers ([RTO24](#RTO24)) can determine every path the object currently occupies in the LiveObjects tree
     - `(RTLO3f1)` Set to an empty map when the `LiveObject` is initialized
-  - `(RTLO3g)` internal `getFullPaths` function - returns the list of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward. Each returned path is an ordered sequence of keys from `root` to this `LiveObject`.
-    - `(RTLO3g1)` `getFullPaths` MUST be implemented as an enumeration of all *simple paths* from this `LiveObject` to the root `LiveMap` over the inverse of the `parentReferences` graph (i.e. walking child → parent). A *simple path* is a path along which no `LiveObject` appears more than once. This is the standard graph problem, typically solved by a depth-first traversal with path-local backtracking equivalent to NetworkX's `all_simple_paths`. Implementation should choose iterative DFS with explicit stack (easier to read and debugging).
-    - `(RTLO3g2)` If this `LiveObject` is the root `LiveMap` (objectId `root`), the returned list MUST contain exactly one path, and that path MUST be empty (zero key segments). This makes the root reachable from itself via the empty key sequence
-    - `(RTLO3g3)` If this `LiveObject` is not the root `LiveMap` and has no entries in its `parentReferences` at the time of the call (e.g. orphaned, or not yet reachable from root), the returned list MUST be empty
-    - `(RTLO3g4)` While traversing paths, suppress cyclic paths whenever a sibling branch had already revisited the same node. Reference behaviour on cyclic graphs is given by NetworkX's `all_simple_paths`, which implementations MAY consult for worked examples
-    - `(RTLO3g5)` When a single parent `LiveMap` references this `LiveObject` at multiple keys, the returned list MUST contain one distinct path per such key, each ending at the corresponding key
-    - `(RTLO3g6)` When this `LiveObject` is reachable via multiple distinct ancestor paths (either because it has multiple parents in `parentReferences`, or because any ancestor on the way to root itself has multiple paths to root), the returned list MUST contain one path per distinct ancestor path
-    - `(RTLO3g7)` The order of paths in the returned list is not mandatory. Implementations MAY return paths in any order; callers requiring a stable order MUST sort the result themselves
+=======
+  - `(RTLO3f)` protected `parentReferences` `Dict<String, Set<String>>` - tracks which `LiveMap`s in the local `ObjectsPool` currently reference this `LiveObject`, and at which keys they do so. The mapping is keyed by the parent `LiveMap`'s `objectId`, with each value being the set of keys at which that `LiveMap` references this `LiveObject`. Used by `getFullPaths` ([RTLO4f](#RTLO4f)) to determine every path the object currently occupies in the LiveObjects tree
+    - `(RTLO3f1)` This mapping is keyed by `objectId` for consistency with the rest of the LiveObjects spec, where references between objects are stored as `objectId`s and resolved via the `ObjectsPool` on demand. Implementations may store a direct reference to the parent `LiveMap` instead — for example to avoid an `ObjectsPool` lookup at each step of `getFullPaths` ([RTLO4f](#RTLO4f)) traversal — provided the observable behaviour is unchanged. Such implementations should be aware that this may introduce reference cycles between `LiveMap`s, and must ensure this does not cause memory leaks
+    - `(RTLO3f2)` TODO: The detailed maintenance rules for `parentReferences` (across `MAP_SET`, `MAP_REMOVE`, `MAP_CLEAR`, `LiveMap` tombstoning, and post-sync rebuild) are to be specified by Sachin in a follow-up; see https://github.com/ably/specification/pull/480 for the in-progress draft
+>>>>>>> origin/AIT-30/liveobjects-path-based-api-spec
 - `(RTLO4)` `LiveObject` methods:
   - `(RTLO4b)` `subscribe` - subscribes a user to data updates on this `LiveObject` instance
     - `(RTLO4b1)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
@@ -382,6 +390,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
         - `(RTLO4e5a1)` If `entry.value.data` have `objectId` as a field, retrieve corresponding child `LiveObject` from `ObjectsPool` using given `objectId`
         - `(RTLO4e5a2)` If child `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4g](#RTLO4g), passing current `LiveMap` as `parent` and the iterated `entry.value` as `key`
     - `(RTLO4e4)` Set the data for the `LiveObject` to a zero-value, as described in [RTLC4](#RTLC4) or [RTLM4](#RTLM4) depending on the object type
+  - `(RTLO4f)` internal `getFullPaths` function - returns the list of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward. Each returned path is an ordered sequence of keys from `root` to this `LiveObject`.
+    - `(RTLO4f1)` `getFullPaths` MUST be implemented as an enumeration of all *simple paths* from this `LiveObject` to the root `LiveMap` over the inverse of the `parentReferences` graph (i.e. walking child → parent). A *simple path* is a path along which no `LiveObject` appears more than once. This is the standard graph problem, typically solved by a depth-first traversal with path-local backtracking equivalent to NetworkX's `all_simple_paths`. Implementation should choose iterative DFS with explicit stack (easier to read and debugging).
+    - `(RTLO4f2)` If this `LiveObject` is the root `LiveMap` (objectId `root`), the returned list MUST contain exactly one path, and that path MUST be empty (zero key segments). This makes the root reachable from itself via the empty key sequence
+    - `(RTLO4f3)` If this `LiveObject` is not the root `LiveMap` and has no entries in its `parentReferences` at the time of the call (e.g. orphaned, or not yet reachable from root), the returned list MUST be empty
+    - `(RTLO4f4)` While traversing paths, suppress cyclic paths whenever a sibling branch had already revisited the same node. Reference behaviour on cyclic graphs is given by NetworkX's `all_simple_paths`, which implementations MAY consult for worked examples
+    - `(RTLO4f5)` When a single parent `LiveMap` references this `LiveObject` at multiple keys, the returned list MUST contain one distinct path per such key, each ending at the corresponding key
+    - `(RTLO4f6)` When this `LiveObject` is reachable via multiple distinct ancestor paths (either because it has multiple parents in `parentReferences`, or because any ancestor on the way to root itself has multiple paths to root), the returned list MUST contain one path per distinct ancestor path
+    - `(RTLO4f7)` The order of paths in the returned list is not mandatory. Implementations MAY return paths in any order; callers requiring a stable order MUST sort the result themselves
 - `(RTLO5)` An `OBJECT_DELETE` operation can be applied to a `LiveObject` in the following way:
   - `(RTLO5a)` Expects the following arguments:
     - `(RTLO5a1)` `ObjectMessage`
@@ -570,8 +586,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM20e7)` Set `ObjectMessage.operation.mapSet.value` depending on the type of the provided `value`:
       - `(RTLM20e7a)` This clause has been replaced by [RTLM20e7g](#RTLM20e7g).
       - `(RTLM20e7g)` If the `value` is of type `LiveCounterValueType` or `LiveMapValueType`:
-        - `(RTLM20e7g1)` Evaluate the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively to generate `*_CREATE` `ObjectMessages`. Collect all generated `ObjectMessages`
-        - `(RTLM20e7g2)` Set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` from the outermost `*_CREATE` `ObjectMessage`
+        - `(RTLM20e7g1)` Evaluate the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively. Collect all generated `ObjectMessages` into an ordered list — for [RTLCV4](#RTLCV4) the list contains the single returned `ObjectMessage`; for [RTLMV4](#RTLMV4) the list is the returned array
+        - `(RTLM20e7g2)` Set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` from the final `ObjectMessage` in the list gathered in [`RTLM20e7g1`](#RTLM20e7g1)
       - `(RTLM20e7b)` If the `value` is of type `JsonArray` or `JsonObject`, set `ObjectMessage.operation.mapSet.value.json` to that value
       - `(RTLM20e7c)` If the `value` is of type `String`, set `ObjectMessage.operation.mapSet.value.string` to that value
       - `(RTLM20e7d)` If the `value` is of type `Number`, set `ObjectMessage.operation.mapSet.value.number` to that value
@@ -814,7 +830,7 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
   - `(RTLMV4c)` If any of the values in the internal `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
   - `(RTLMV4d)` Build entries for the `MapCreate` object. For each key-value pair in the internal `entries` (if present), create an `ObjectsMapEntry` for the value:
     - `(RTLMV4d1)` If the value is of type `LiveCounterValueType`, evaluate it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
-    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively evaluate it per [RTLMV4](#RTLMV4) to generate `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the outermost `MAP_CREATE` `ObjectMessage`
+    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively evaluate it per [RTLMV4](#RTLMV4) to generate an ordered array of `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the final `ObjectMessage` in the array
     - `(RTLMV4d3)` If the value is of type `JsonArray` or `JsonObject`, set `ObjectsMapEntry.data.json` to that value
     - `(RTLMV4d4)` If the value is of type `String`, set `ObjectsMapEntry.data.string` to that value
     - `(RTLMV4d5)` If the value is of type `Number`, set `ObjectsMapEntry.data.number` to that value
@@ -942,24 +958,17 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO18d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTPO19)` `PathObject#subscribe` function:
   - `(RTPO19a)` Expects the following arguments:
-    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d)) when a change occurs at or below this path
+    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d))
     - `(RTPO19a2)` `options` `PathObjectSubscriptionOptions` (optional) - subscription options
   - `(RTPO19b)` `PathObjectSubscriptionOptions` has the following properties:
-    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener:
-      - `(RTPO19b1a)` If undefined (default), the subscription receives events for changes at any depth below the subscribed path
-      - `(RTPO19b1b)` If `depth` is 1, only changes to the object at the exact subscribed path trigger the listener
-      - `(RTPO19b1c)` If `depth` is `n`, changes up to `n - 1` levels of children below the subscribed path trigger the listener
-      - `(RTPO19b1d)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener. Defaults to undefined/null. The `depth` value is interpreted by the subscription coverage rule in [RTO24c1](#RTO24c1); see [RTO24c2](#RTO24c2) for worked examples
+      - `(RTPO19b1a)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
   - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
     - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
     - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the [RTLO4b4](#RTLO4b4) emission that triggered this event is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
-  - `(RTPO19e)` The subscription is path-based: it follows the path, not a specific object. If the object at the path changes identity (e.g. via a `MAP_SET` operation replacing it), the subscription continues to deliver events for the new object at that path
-  - `(RTPO19f)` Events at child paths bubble up to the subscription, subject to depth filtering. For example, a subscription at path `a.b` receives events for changes at `a.b`, `a.b.c`, `a.b.c.d`, etc., depending on the configured depth. The dispatch rules are described in [RTO24b](#RTO24b)
-  - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTPO20)` This clause has been deleted
-  - `(RTPO20a)` This clause has been deleted
-  - `(RTPO20b)` This clause has been deleted
+  - `(RTPO19e)` Adds a subscription to the `RealtimeObject`'s `PathObjectSubscriptionRegister` ([RTO24](#RTO24)) with subscribed path equal to this `PathObject`'s `path` (per [RTPO2a](#RTPO2a)), the provided `listener`, and the provided `options.depth`
+  - `(RTPO19f)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 
 ### Instance
 
@@ -1029,18 +1038,15 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
   - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
-- `(RTINS17)` This clause has been deleted
-  - `(RTINS17a)` This clause has been deleted
-  - `(RTINS17b)` This clause has been deleted
 
 ### PublicAPI::ObjectMessage
 
 - `(PAOM1)` A `PublicAPI::ObjectMessage` is the user-facing representation of an inbound `ObjectMessage` ([OM1](../features#OM1)) that carried an operation. It is delivered to user subscription listeners (see [RTPO19d2](#RTPO19d2), [RTINS16d2](#RTINS16d2)) so that user code can inspect the metadata of the message that triggered an object change. The `PublicAPI::` prefix is used to avoid a name clash with `ObjectMessage`; SDKs expose this type to users as `ObjectMessage`.
 - `(PAOM2)` The attributes available in a `PublicAPI::ObjectMessage` are:
-  - `(PAOM2a)` `id` string - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
+  - `(PAOM2a)` `id` string (optional) - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
   - `(PAOM2b)` `clientId` string (optional) - the `clientId` ([OM2b](../features#OM2b)) of the source `ObjectMessage`
-  - `(PAOM2c)` `connectionId` string - the `connectionId` ([OM2c](../features#OM2c)) of the source `ObjectMessage`
-  - `(PAOM2d)` `timestamp` Time - the `timestamp` ([OM2e](../features#OM2e)) of the source `ObjectMessage`
+  - `(PAOM2c)` `connectionId` string (optional) - the `connectionId` ([OM2c](../features#OM2c)) of the source `ObjectMessage`
+  - `(PAOM2d)` `timestamp` Time (optional) - the `timestamp` ([OM2e](../features#OM2e)) of the source `ObjectMessage`
   - `(PAOM2e)` `channel` string - the name of the channel on which the source `ObjectMessage` was received
   - `(PAOM2f)` `operation` `PublicAPI::ObjectOperation` ([PAOOP1](#PAOOP1)) - a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
   - `(PAOM2g)` `serial` string (optional) - the `serial` ([OM2h](../features#OM2h)) of the source `ObjectMessage`
@@ -1048,9 +1054,11 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(PAOM2i)` `siteCode` string (optional) - the `siteCode` ([OM2i](../features#OM2i)) of the source `ObjectMessage`
   - `(PAOM2j)` `extras` JSON-encodable object (optional) - the `extras` ([OM2d](../features#OM2d)) of the source `ObjectMessage`
 - `(PAOM3)` To construct a `PublicAPI::ObjectMessage` from a source `ObjectMessage` received on a channel `channel`:
-  - `(PAOM3a)` Set the `channel` attribute to `channel.name`
-  - `(PAOM3b)` Copy `id`, `clientId`, `connectionId`, `timestamp`, `serial`, `serialTimestamp`, `siteCode`, and `extras` from the source `ObjectMessage` to the corresponding attributes of the `PublicAPI::ObjectMessage`
-  - `(PAOM3c)` Set `operation` to a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
+  - `(PAOM3a)` Preconditions (callers are responsible for ensuring these):
+    - `(PAOM3a1)` The source `ObjectMessage` has its `operation` ([OM2f](../features#OM2f)) field populated
+  - `(PAOM3b)` Set the `channel` attribute to `channel.name`
+  - `(PAOM3c)` Copy `id`, `clientId`, `connectionId`, `timestamp`, `serial`, `serialTimestamp`, `siteCode`, and `extras` from the source `ObjectMessage` to the corresponding attributes of the `PublicAPI::ObjectMessage`
+  - `(PAOM3d)` Set `operation` to a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
 
 ### PublicAPI::ObjectOperation
 
@@ -1113,6 +1121,7 @@ Types and their properties/methods are public and exposed to users by default. A
       createOperationIsMerged: Boolean // RTLO3c
       isTombstone: Boolean // RTLO3d
       tombstonedAt: Time? // RTLO3e
+      parentReferences: Dict<String, Set<String>> // RTLO3f
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       addParentReference(parent, key) // RTLO4f
       removeParentReference(parent, key) // RTLO4g
@@ -1165,10 +1174,10 @@ Types and their properties/methods are public and exposed to users by default. A
       message: PublicAPI::ObjectMessage? // RTINS16d2
 
     class PublicAPI::ObjectMessage: // PAOM*
-      id: String // PAOM2a
+      id: String? // PAOM2a
       clientId: String? // PAOM2b
-      connectionId: String // PAOM2c
-      timestamp: Time // PAOM2d
+      connectionId: String? // PAOM2c
+      timestamp: Time? // PAOM2d
       channel: String // PAOM2e
       operation: PublicAPI::ObjectOperation // PAOM2f
       serial: String? // PAOM2g
