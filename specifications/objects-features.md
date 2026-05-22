@@ -377,9 +377,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e3a)` This clause has been replaced by [RTLO6a](#RTLO6a)
       - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
-    - `(RTLO4e5)` If this `LiveObject` is a `LiveMap`, before [RTLO4e4](#RTLO4e4) is applied, for each `ObjectsMapEntry` in this `LiveMap`'s current `data`:
-      - `(RTLO4e5a)` If `ObjectsMapEntry.data` is not an `ObjectIdObjectData`, no action is required for that entry
-      - `(RTLO4e5b)` Otherwise, if a `LiveObject` with `objectId` equal to `ObjectsMapEntry.data.objectId` exists in the local `ObjectsPool`, call its `removeParentReference(parent, key)` method per [RTLO3f3](#RTLO3f3), passing this `LiveMap` as `parent` and the iterated entry's key as `key`
+    - `(RTLO4e5)` If the current `LiveObject` is of type `LiveMap`, then before [RTLO4e4](#RTLO4e4) is applied, do following:
+      - `(RTLO4e5a)` For each iterated `entry` in current `LiveMap`'s internal `data`:
+        - `(RTLO4e5a1)` If `entry.value.data` have `objectId` as a field, retrieve corresponding child `LiveObject` from `ObjectsPool` using given `objectId`
+        - `(RTLO4e5a2)` If child `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO3f3](#RTLO3f3), passing current `LiveMap` as `parent` and the iterated `entry.value` as `key`
     - `(RTLO4e4)` Set the data for the `LiveObject` to a zero-value, as described in [RTLC4](#RTLC4) or [RTLM4](#RTLM4) depending on the object type
 - `(RTLO5)` An `OBJECT_DELETE` operation can be applied to a `LiveObject` in the following way:
   - `(RTLO5a)` Expects the following arguments:
