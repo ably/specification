@@ -1104,9 +1104,11 @@ Types and their properties/methods are public and exposed to users by default. A
       update: Dict<String, 'updated' | 'removed'> // RTLM18b
 
     class LiveCounterValueType: // RTLCV*
+      count: Number // RTLCV2a, internal
       static create(Number initialCount?) -> LiveCounterValueType // RTLCV3
 
     class LiveMapValueType: // RTLMV*
+      entries: Dict<String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType)>? // RTLMV2a, internal
       static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
 
     interface PathObjectSubscriptionEvent: // RTPO19d
