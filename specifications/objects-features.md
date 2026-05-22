@@ -1020,9 +1020,11 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(PAOM2i)` `siteCode` string (optional) - the `siteCode` ([OM2i](../features#OM2i)) of the source `ObjectMessage`
   - `(PAOM2j)` `extras` JSON-encodable object (optional) - the `extras` ([OM2d](../features#OM2d)) of the source `ObjectMessage`
 - `(PAOM3)` To construct a `PublicAPI::ObjectMessage` from a source `ObjectMessage` received on a channel `channel`:
-  - `(PAOM3a)` Set the `channel` attribute to `channel.name`
-  - `(PAOM3b)` Copy `id`, `clientId`, `connectionId`, `timestamp`, `serial`, `serialTimestamp`, `siteCode`, and `extras` from the source `ObjectMessage` to the corresponding attributes of the `PublicAPI::ObjectMessage`
-  - `(PAOM3c)` Set `operation` to a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
+  - `(PAOM3a)` Preconditions (callers are responsible for ensuring these):
+    - `(PAOM3a1)` The source `ObjectMessage` has its `operation` ([OM2f](../features#OM2f)) field populated
+  - `(PAOM3b)` Set the `channel` attribute to `channel.name`
+  - `(PAOM3c)` Copy `id`, `clientId`, `connectionId`, `timestamp`, `serial`, `serialTimestamp`, `siteCode`, and `extras` from the source `ObjectMessage` to the corresponding attributes of the `PublicAPI::ObjectMessage`
+  - `(PAOM3d)` Set `operation` to a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
 
 ### PublicAPI::ObjectOperation
 
