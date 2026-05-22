@@ -368,8 +368,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
     - `(RTLO4e4)` Set the data for the `LiveObject` to a zero-value, as described in [RTLC4](#RTLC4) or [RTLM4](#RTLM4) depending on the object type
-  - `(RTLO4f)` protected `getFullPaths` - returns the set of paths in the LiveObjects tree at which this `LiveObject` is currently located. Each path is an ordered list of string segments from the root `LiveMap`. The same `LiveObject` may be reachable from multiple paths (e.g. when it is referenced by more than one map entry) or from zero paths (e.g. when it is not a descendant of the root). Used by path-based subscription dispatch ([RTO24b](#RTO24b))
-    - `(RTLO4f1)` TODO: The procedure for computing the set of paths is to be specified separately
+  - `(RTLO4f)` internal `getFullPaths` function - returns the list of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward. Each returned path is an ordered sequence of keys from `root` to this `LiveObject`.
+    - `(RTLO4f1)` `getFullPaths` MUST be implemented as an enumeration of all *simple paths* from this `LiveObject` to the root `LiveMap` over the inverse of the `parentReferences` graph (i.e. walking child → parent). A *simple path* is a path along which no `LiveObject` appears more than once. This is the standard graph problem, typically solved by a depth-first traversal with path-local backtracking equivalent to NetworkX's `all_simple_paths`. Implementation should choose iterative DFS with explicit stack (easier to read and debugging).
+    - `(RTLO4f2)` If this `LiveObject` is the root `LiveMap` (objectId `root`), the returned list MUST contain exactly one path, and that path MUST be empty (zero key segments). This makes the root reachable from itself via the empty key sequence
+    - `(RTLO4f3)` If this `LiveObject` is not the root `LiveMap` and has no entries in its `parentReferences` at the time of the call (e.g. orphaned, or not yet reachable from root), the returned list MUST be empty
+    - `(RTLO4f4)` While traversing paths, suppress cyclic paths whenever a sibling branch had already revisited the same node. Reference behaviour on cyclic graphs is given by NetworkX's `all_simple_paths`, which implementations MAY consult for worked examples
+    - `(RTLO4f5)` When a single parent `LiveMap` references this `LiveObject` at multiple keys, the returned list MUST contain one distinct path per such key, each ending at the corresponding key
+    - `(RTLO4f6)` When this `LiveObject` is reachable via multiple distinct ancestor paths (either because it has multiple parents in `parentReferences`, or because any ancestor on the way to root itself has multiple paths to root), the returned list MUST contain one path per distinct ancestor path
+    - `(RTLO4f7)` The order of paths in the returned list is not mandatory. Implementations MAY return paths in any order; callers requiring a stable order MUST sort the result themselves
 - `(RTLO5)` An `OBJECT_DELETE` operation can be applied to a `LiveObject` in the following way:
   - `(RTLO5a)` Expects the following arguments:
     - `(RTLO5a1)` `ObjectMessage`
