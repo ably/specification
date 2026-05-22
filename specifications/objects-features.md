@@ -307,9 +307,6 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTO24c2b)` With `depth = 1`: covers `["users"]`; does not cover `["users", "emma"]` or any deeper path
       - `(RTO24c2c)` With `depth = 2`: covers `["users"]` and `["users", "emma"]`; does not cover `["users", "emma", "visits"]` or any deeper path
       - `(RTO24c2d)` With any `depth`: does not cover `["admins"]` or `["userPosts"]`, since the subscription path is not a prefix of either
-  - `(RTO24d)` (non-normative) Consequences of the dispatch model in [RTO24b](#RTO24b):
-    - `(RTO24d1)` Each subscription receives at most one notification per `pathToThis`. When the same subscription's subscribed path covers both `pathToThis` and one of the longer candidate paths derived from it, the shorter `pathToThis` is the one reported to the listener
-    - `(RTO24d2)` A subscription whose subscribed path is `parentMap.someKey` still receives notifications when the parent map emits a `LiveMapUpdate` mentioning `someKey`, even though the underlying `LiveObjectUpdate` is emitted by the parent map, not by the entry's object
 
 ### LiveObject
 
