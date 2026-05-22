@@ -730,9 +730,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM24d)` Set the private `clearTimeserial` to the provided `serial`
   - `(RTLM24e)` For each `ObjectsMapEntry` in the internal `data`:
     - `(RTLM24e1)` If `ObjectsMapEntry.timeserial` is null or omitted, or the `serial` is lexicographically greater than `ObjectsMapEntry.timeserial`:
-      - `(RTLM24e1c)` Before [RTLM24e1a](#RTLM24e1a) is applied, the parent reference recorded on the `LiveObject` referenced by this entry (if any) MUST be removed:
-        - `(RTLM24e1c1)` If `ObjectsMapEntry.data` is not an `ObjectIdObjectData`, no action is required
-        - `(RTLM24e1c2)` Otherwise, if a `LiveObject` with `objectId` equal to `ObjectsMapEntry.data.objectId` exists in the local `ObjectsPool`, call its `removeParentReference(parent, key)` method per [RTLO3f3](#RTLO3f3), passing this `LiveMap` as `parent` and the iterated entry key as `key`
+      - `(RTLM24e1c)` If the current `ObjectsMapEntry` is of type `LiveObject`, the parent reference recorded on existing `ObjectsMapEntry` MUST be removed:
+        - `(RTLM24e1c1)`  To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
+        - `(RTLM24e1c2)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO3f3](#RTLO3f3), passing this `LiveMap` as `parent` and the iterated entry key as `key`
       - `(RTLM24e1a)` Remove the entry from the internal `data` map. The entry is not retained as a tombstone.
       - `(RTLM24e1b)` Record the key for the `LiveMapUpdate` as `removed`
   - `(RTLM24f)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` containing each key recorded in [RTLM24e1b](#RTLM24e1b) set to `removed`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
