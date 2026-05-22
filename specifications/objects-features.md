@@ -571,8 +571,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM20e7)` Set `ObjectMessage.operation.mapSet.value` depending on the type of the provided `value`:
       - `(RTLM20e7a)` This clause has been replaced by [RTLM20e7g](#RTLM20e7g).
       - `(RTLM20e7g)` If the `value` is of type `LiveCounterValueType` or `LiveMapValueType`:
-        - `(RTLM20e7g1)` Evaluate the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively to generate `*_CREATE` `ObjectMessages`. Collect all generated `ObjectMessages`
-        - `(RTLM20e7g2)` Set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` from the outermost `*_CREATE` `ObjectMessage`
+        - `(RTLM20e7g1)` Evaluate the value type per [RTLCV4](#RTLCV4) or [RTLMV4](#RTLMV4) respectively. Collect all generated `ObjectMessages` into an ordered list — for [RTLCV4](#RTLCV4) the list contains the single returned `ObjectMessage`; for [RTLMV4](#RTLMV4) the list is the returned array
+        - `(RTLM20e7g2)` Set `ObjectMessage.operation.mapSet.value.objectId` to the `objectId` from the final `ObjectMessage` in the list gathered in [`RTLM20e7g1`](#RTLM20e7g1)
       - `(RTLM20e7b)` If the `value` is of type `JsonArray` or `JsonObject`, set `ObjectMessage.operation.mapSet.value.json` to that value
       - `(RTLM20e7c)` If the `value` is of type `String`, set `ObjectMessage.operation.mapSet.value.string` to that value
       - `(RTLM20e7d)` If the `value` is of type `Number`, set `ObjectMessage.operation.mapSet.value.number` to that value
@@ -803,7 +803,7 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
   - `(RTLMV4c)` If any of the values in the internal `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
   - `(RTLMV4d)` Build entries for the `MapCreate` object. For each key-value pair in the internal `entries` (if present), create an `ObjectsMapEntry` for the value:
     - `(RTLMV4d1)` If the value is of type `LiveCounterValueType`, evaluate it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
-    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively evaluate it per [RTLMV4](#RTLMV4) to generate `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the outermost `MAP_CREATE` `ObjectMessage`
+    - `(RTLMV4d2)` If the value is of type `LiveMapValueType`, recursively evaluate it per [RTLMV4](#RTLMV4) to generate an ordered array of `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the final `ObjectMessage` in the array
     - `(RTLMV4d3)` If the value is of type `JsonArray` or `JsonObject`, set `ObjectsMapEntry.data.json` to that value
     - `(RTLMV4d4)` If the value is of type `String`, set `ObjectsMapEntry.data.string` to that value
     - `(RTLMV4d5)` If the value is of type `Number`, set `ObjectsMapEntry.data.number` to that value
