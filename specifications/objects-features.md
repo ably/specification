@@ -1009,10 +1009,10 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 
 - `(PAOM1)` A `PublicAPI::ObjectMessage` is the user-facing representation of an inbound `ObjectMessage` ([OM1](../features#OM1)) that carried an operation. It is delivered to user subscription listeners (see [RTPO19d2](#RTPO19d2), [RTINS16d2](#RTINS16d2)) so that user code can inspect the metadata of the message that triggered an object change. The `PublicAPI::` prefix is used to avoid a name clash with `ObjectMessage`; SDKs expose this type to users as `ObjectMessage`.
 - `(PAOM2)` The attributes available in a `PublicAPI::ObjectMessage` are:
-  - `(PAOM2a)` `id` string - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
+  - `(PAOM2a)` `id` string (optional) - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
   - `(PAOM2b)` `clientId` string (optional) - the `clientId` ([OM2b](../features#OM2b)) of the source `ObjectMessage`
   - `(PAOM2c)` `connectionId` string (optional) - the `connectionId` ([OM2c](../features#OM2c)) of the source `ObjectMessage`
-  - `(PAOM2d)` `timestamp` Time - the `timestamp` ([OM2e](../features#OM2e)) of the source `ObjectMessage`
+  - `(PAOM2d)` `timestamp` Time (optional) - the `timestamp` ([OM2e](../features#OM2e)) of the source `ObjectMessage`
   - `(PAOM2e)` `channel` string - the name of the channel on which the source `ObjectMessage` was received
   - `(PAOM2f)` `operation` `PublicAPI::ObjectOperation` ([PAOOP1](#PAOOP1)) - a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
   - `(PAOM2g)` `serial` string (optional) - the `serial` ([OM2h](../features#OM2h)) of the source `ObjectMessage`
@@ -1135,10 +1135,10 @@ Types and their properties/methods are public and exposed to users by default. A
       message: PublicAPI::ObjectMessage? // RTINS16d2
 
     class PublicAPI::ObjectMessage: // PAOM*
-      id: String // PAOM2a
+      id: String? // PAOM2a
       clientId: String? // PAOM2b
       connectionId: String? // PAOM2c
-      timestamp: Time // PAOM2d
+      timestamp: Time? // PAOM2d
       channel: String // PAOM2e
       operation: PublicAPI::ObjectOperation // PAOM2f
       serial: String? // PAOM2g
