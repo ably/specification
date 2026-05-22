@@ -704,14 +704,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM8g)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM8a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM8a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
+    - `(RTLM8a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM8a2](#RTLM8a2) is applied, the parent reference recorded on existing `ObjectsMapEntry` MUST be removed:
+      - `(RTLM8a3a)` To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
+      - `(RTLM8a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO3f3](#RTLO3f3), passing this `LiveMap` as `parent` and the operation's key as `key`
     - `(RTLM8a2)` Otherwise, apply the operation to the existing entry:
       - `(RTLM8a2a)` Set `ObjectsMapEntry.data` to undefined/null
       - `(RTLM8a2b)` Set `ObjectsMapEntry.timeserial` to the provided `serial`
       - `(RTLM8a2c)` Set `ObjectsMapEntry.tombstone` to `true`
       - `(RTLM8a2d)` Set `ObjectsMapEntry.tombstonedAt` to the value calculated per [RTLO6](#RTLO6), using the provided `serialTimestamp`
-      - `(RTLM8a2e)` Before [RTLM8a2a](#RTLM8a2a) is applied, the parent reference recorded on the previously-referenced `LiveObject` (if any) MUST be removed:
-        - `(RTLM8a2e1)` If `ObjectsMapEntry.data` is not an `ObjectIdObjectData`, no action is required
-        - `(RTLM8a2e2)` Otherwise, if a `LiveObject` with `objectId` equal to `ObjectsMapEntry.data.objectId` exists in the local `ObjectsPool`, call its `removeParentReference(parent, key)` method per [RTLO3f3](#RTLO3f3), passing this `LiveMap` as `parent` and the operation's key as `key`
   - `(RTLM8b)` If an entry does not exist in the private `data` for the specified key:
     - `(RTLM8b1)` Create a new `ObjectsMapEntry` in `data` for the specified key, with `ObjectsMapEntry.data` set to undefined/null and `ObjectsMapEntry.timeserial` set to the provided `serial`
     - `(RTLM8b2)` Set `ObjectsMapEntry.tombstone` for the new entry to `true`
