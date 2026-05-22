@@ -1011,7 +1011,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 - `(PAOM2)` The attributes available in a `PublicAPI::ObjectMessage` are:
   - `(PAOM2a)` `id` string - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
   - `(PAOM2b)` `clientId` string (optional) - the `clientId` ([OM2b](../features#OM2b)) of the source `ObjectMessage`
-  - `(PAOM2c)` `connectionId` string - the `connectionId` ([OM2c](../features#OM2c)) of the source `ObjectMessage`
+  - `(PAOM2c)` `connectionId` string (optional) - the `connectionId` ([OM2c](../features#OM2c)) of the source `ObjectMessage`
   - `(PAOM2d)` `timestamp` Time - the `timestamp` ([OM2e](../features#OM2e)) of the source `ObjectMessage`
   - `(PAOM2e)` `channel` string - the name of the channel on which the source `ObjectMessage` was received
   - `(PAOM2f)` `operation` `PublicAPI::ObjectOperation` ([PAOOP1](#PAOOP1)) - a `PublicAPI::ObjectOperation` derived per [PAOOP3](#PAOOP3) from the `operation` ([OM2f](../features#OM2f)) of the source `ObjectMessage`
@@ -1135,7 +1135,7 @@ Types and their properties/methods are public and exposed to users by default. A
     class PublicAPI::ObjectMessage: // PAOM*
       id: String // PAOM2a
       clientId: String? // PAOM2b
-      connectionId: String // PAOM2c
+      connectionId: String? // PAOM2c
       timestamp: Time // PAOM2d
       channel: String // PAOM2e
       operation: PublicAPI::ObjectOperation // PAOM2f
