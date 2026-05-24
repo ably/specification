@@ -367,12 +367,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO4a5)` If the `siteSerial` for this `LiveObject` is null or an empty string, return true
     - `(RTLO4a6)` If the `siteSerial` for this `LiveObject` is not an empty string, return true if `ObjectMessage.serial` is greater than `siteSerial` when compared lexicographically
   - `(RTLO4g)` internal `addParentReference(parent, key)` method - records that the `LiveMap` `parent` references this `LiveObject` at `key`
-    - `(RTLO4g1)` If `parent` is already present in `parentReferences`, `key` must be added to the existing set associated with `parent`
-    - `(RTLO4g2)` Otherwise, a new entry must be inserted into `parentReferences` for `parent` with a set containing only `key`
+    - `(RTLO4g1)` If `parentReferences` already contains an entry whose key is `parent.objectId`, add `key` to that entry's set
+    - `(RTLO4g2)` Otherwise, insert into `parentReferences` a new entry whose key is `parent.objectId` and whose value is a set containing only `key`
   - `(RTLO4h)` internal `removeParentReference(parent, key)` method - removes the recorded reference from `parent` at `key`
-    - `(RTLO4h1)` If `parent` is not present in `parentReferences`, the call must be a no-op
-    - `(RTLO4h2)` Otherwise, `key` must be removed from the set associated with `parent`
-    - `(RTLO4h3)` If, as a result of [RTLO4h2](#RTLO4h2), the set associated with `parent` is empty, the `parent` entry must be removed from `parentReferences`
+    - `(RTLO4h1)` If `parentReferences` does not contain an entry whose key is `parent.objectId`, do nothing
+    - `(RTLO4h2)` Otherwise, remove `key` from that entry's set
+    - `(RTLO4h3)` If, as a result of [RTLO4h2](#RTLO4h2), that entry's set is empty, remove the entry from `parentReferences`
   - `(RTLO4e)` protected `tombstone` - a convenience method used to tombstone this `LiveObject`. The realtime system reserves the right to tombstone an object (i.e. mark it for deletion from the objects pool) by publishing an `OBJECT_DELETE` operation at any time if the object is orphaned (not a descendant of the root object) or remains uninitialized (no `*_CREATE` operation has been received) for an extended period. Only the realtime system may publish an `OBJECT_DELETE` operation; clients must never send it. This method describes the steps the client library must take when it needs to tombstone an object locally. Eventually, tombstoned objects will be garbage collected following the procedure described in [RTO10](#RTO10)
     - `(RTLO4e1)` Expects the following arguments:
       - `(RTLO4e1a)` `ObjectMessage`
