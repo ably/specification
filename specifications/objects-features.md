@@ -380,7 +380,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e3a)` This clause has been replaced by [RTLO6a](#RTLO6a)
       - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
-    - `(RTLO4e9)` If the `LiveObject` is a `LiveMap`, then before [RTLO4e4](#RTLO4e4) is applied, for each `ObjectsMapEntry` in `LiveMap.data`:
+    - `(RTLO4e9)` If the `LiveObject` is a `LiveMap`, then before `LiveMap.data` is reset per [RTLO4e4](#RTLO4e4), for each `ObjectsMapEntry` in `LiveMap.data`:
       - `(RTLO4e9a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
       - `(RTLO4e9b)` If the [`RTLO4e9a`](#RTLO4e9a) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the iterated entry's key as `key`
     - `(RTLO4e4)` Set the `data` attribute of the `LiveObject` to the value described in [RTLC4b](#RTLC4b) or [RTLM4c](#RTLM4c), depending on the object type
@@ -697,10 +697,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM7h)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM7a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM7a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
-    - `(RTLM7a3)` Before [RTLM7a2](#RTLM7a2e) is applied:
-      - `(RTLM7a3a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
-      - `(RTLM7a3b)` If the [`RTLM7a3a`](#RTLM7a3a) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the specified key as `key`
     - `(RTLM7a2)` Otherwise, apply the operation to the existing entry:
+      - `(RTLM7a3)` Before `ObjectsMapEntry.data` is set per [RTLM7a2e](#RTLM7a2e):
+        - `(RTLM7a3a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
+        - `(RTLM7a3b)` If the [`RTLM7a3a`](#RTLM7a3a) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the specified key as `key`
       - `(RTLM7a2a)` This clause has been replaced by [RTLM7a2e](#RTLM7a2e) as of specification version 6.0.0.
       - `(RTLM7a2e)` Set `ObjectsMapEntry.data` to the `MapSet.value`
       - `(RTLM7a2b)` Set `ObjectsMapEntry.timeserial` to the provided `serial`
@@ -728,10 +728,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM8g)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM8a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM8a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
-    - `(RTLM8a3)` Before [RTLM8a2](#RTLM8a2) is applied:
-      - `(RTLM8a3a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
-      - `(RTLM8a3b)` If the [`RTLM8a3a`](#RTLM8a3a) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the specified key as `key`
     - `(RTLM8a2)` Otherwise, apply the operation to the existing entry:
+      - `(RTLM8a3)` Before `ObjectsMapEntry.data` is cleared per [RTLM8a2a](#RTLM8a2a):
+        - `(RTLM8a3a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
+        - `(RTLM8a3b)` If the [`RTLM8a3a`](#RTLM8a3a) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the specified key as `key`
       - `(RTLM8a2a)` Set `ObjectsMapEntry.data` to undefined/null
       - `(RTLM8a2b)` Set `ObjectsMapEntry.timeserial` to the provided `serial`
       - `(RTLM8a2c)` Set `ObjectsMapEntry.tombstone` to `true`
@@ -754,7 +754,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM24d)` Set the private `clearTimeserial` to the provided `serial`
   - `(RTLM24e)` For each `ObjectsMapEntry` in the internal `data`:
     - `(RTLM24e1)` If `ObjectsMapEntry.timeserial` is null or omitted, or the `serial` is lexicographically greater than `ObjectsMapEntry.timeserial`:
-      - `(RTLM24e1c)` Before [RTLM24e1a](#RTLM24e1a) is applied:
+      - `(RTLM24e1c)` Before the `ObjectsMapEntry` is removed per [RTLM24e1a](#RTLM24e1a):
         - `(RTLM24e1c1)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
         - `(RTLM24e1c2)` If the [`RTLM24e1c1`](#RTLM24e1c1) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the iterated entry's key as `key`
       - `(RTLM24e1a)` Remove the entry from the internal `data` map. The entry is not retained as a tombstone.
