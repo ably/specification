@@ -335,12 +335,15 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4b4a)` `LiveObjectUpdate.update` contains the specific information about what was changed on the object. The exact type depends on the object type
       - `(RTLO4b4b)` The `LiveObjectUpdate.noop` internal property can be used to indicate that the update was a no-op
       - `(RTLO4b4d)` `LiveObjectUpdate.objectMessage` is an optional `ObjectMessage` - the source `ObjectMessage` that caused this update, if any
+      - `(RTLO4b4e)` The `LiveObjectUpdate.tombstone` internal Boolean property indicates that this update was emitted as a result of this `LiveObject` being tombstoned. It defaults to `false` if not explicitly set
       - `(RTLO4b4c)` When a `LiveObjectUpdate` is emitted:
         - `(RTLO4b4c1)` If `LiveObjectUpdate` is indicated to be a no-op, do nothing
         - `(RTLO4b4c2)` This clause has been replaced by [RTLO4b4c3](#RTLO4b4c3) as of specification version 6.0.0.
         - `(RTLO4b4c3)` Otherwise:
           - `(RTLO4b4c3a)` The registered listener of each subscription created via `LiveObject#subscribe` ([RTLO4b](#RTLO4b)) on this `LiveObject` is called with the `LiveObjectUpdate`
           - `(RTLO4b4c3b)` Perform path-based subscription dispatch as described in [RTO24b](#RTO24b), passing this `LiveObject` and the `LiveObjectUpdate`
+          - `(RTLO4b4c3c)` If `LiveObjectUpdate.tombstone` is `true`, after [RTLO4b4c3a](#RTLO4b4c3a) has completed, the library must deregister all listeners on this `LiveObject` that were registered via `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
+            - `(RTLO4b4c3c1)` (non-normative) Path-based subscriptions ([RTPO19](#RTPO19)) are unaffected, because their lifetime is tied to the path rather than to this `LiveObject` instance
     - `(RTLO4b5)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
       - `(RTLO4b5a)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
       - `(RTLO4b5b)` This clause has been replaced by [RTLO4b7](#RTLO4b7)
@@ -368,6 +371,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
     - `(RTLO4e4)` Set the `data` attribute of the `LiveObject` to the value described in [RTLC4b](#RTLC4b) or [RTLM4c](#RTLM4c), depending on the object type
+    - `(RTLO4e5)` Compute a `LiveObjectUpdate` representing the data change resulting from this `LiveObject` being tombstoned, by calculating the diff between the `data` value from before [RTLO4e4](#RTLO4e4) was applied (as `previousData`) and the current `data` value (as `newData`), per [RTLC14](#RTLC14) or [RTLM22](#RTLM22), depending on the object type
+    - `(RTLO4e6)` Set `LiveObjectUpdate.tombstone` to `true` on the object computed in [RTLO4e5](#RTLO4e5)
+    - `(RTLO4e7)` Set `LiveObjectUpdate.objectMessage` on the object computed in [RTLO4e5](#RTLO4e5) to the `ObjectMessage` argument
+    - `(RTLO4e8)` Return the `LiveObjectUpdate` object computed in [RTLO4e5](#RTLO4e5)
   - `(RTLO4f)` internal `getFullPaths` function - returns the list of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward. Each returned path is an ordered sequence of keys from `root` to this `LiveObject`.
     - `(RTLO4f1)` `getFullPaths` MUST be implemented as an enumeration of all *simple paths* from this `LiveObject` to the root `LiveMap` over the inverse of the `parentReferences` graph (i.e. walking child → parent). A *simple path* is a path along which no `LiveObject` appears more than once. This is the standard graph problem, typically solved by a depth-first traversal with path-local backtracking equivalent to NetworkX's `all_simple_paths`. Implementation should choose iterative DFS with explicit stack (easier to read and debugging).
     - `(RTLO4f2)` If this `LiveObject` is the root `LiveMap` (objectId `root`), the returned list MUST contain exactly one path, and that path MUST be empty (zero key segments). This makes the root reachable from itself via the empty key sequence
@@ -380,6 +387,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLO5a)` Expects the following arguments:
     - `(RTLO5a1)` `ObjectMessage`
   - `(RTLO5b)` Tombstone the current `LiveObject` using [`LiveObject.tombstone`](#RTLO4e), passing in the `ObjectMessage`
+  - `(RTLO5c)` Return the `LiveObjectUpdate` returned by the `LiveObject.tombstone` call performed in [RTLO5b](#RTLO5b)
 - `(RTLO6)` A `tombstonedAt` value can be calculated from a provided `serialTimestamp` as follows:
   - `(RTLO6a)` It is equal to `serialTimestamp` if it exists
   - `(RTLO6b)` Otherwise, it is equal to the current time using the local clock
@@ -425,7 +433,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLC6e)` If `LiveCounter.isTombstone` is `true`, finish processing the `ObjectState`
     - `(RTLC6e1)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLC6f)` If `ObjectState.tombstone` is `true`, tombstone the current `LiveCounter` using [`LiveObject.tombstone`](#RTLO4e), passing in the `ObjectMessage`. Finish processing the `ObjectState`
-    - `(RTLC6f1)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to the negative `data` value that this `LiveCounter` had before being tombstoned, and `LiveCounterUpdate.objectMessage` set to the provided `ObjectMessage`
+    - `(RTLC6f1)` This clause has been replaced by [RTLC6f2](#RTLC6f2) as of specification version 6.0.0.
+    - `(RTLC6f2)` Return the `LiveCounterUpdate` returned by the `LiveObject.tombstone` call performed in [RTLC6f](#RTLC6f)
   - `(RTLC6g)` Store the current `data` value as `previousData` for use in [RTLC6h](#RTLC6h)
   - `(RTLC6b)` Set the private flag `createOperationIsMerged` to `false`
   - `(RTLC6c)` Set `data` to the value of `ObjectState.counter.count`, or to 0 if it does not exist
@@ -453,7 +462,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLC7d5a)` Emit the `LiveCounterUpdate` object returned as a result of applying the operation
       - `(RTLC7d5b)` Return `true`
     - `(RTLC7d4)` If `ObjectMessage.operation.action` is set to `OBJECT_DELETE`, apply the operation as described in [RTLO5](#RTLO5), passing in `ObjectMessage`
-      - `(RTLC7d4a)` Emit a `LiveCounterUpdate` object after applying the `OBJECT_DELETE` operation, with `LiveCounterUpdate.update.amount` set to the negated value that this `LiveCounter` held before the operation was applied and `LiveCounterUpdate.objectMessage` set to `ObjectMessage`
+      - `(RTLC7d4a)` This clause has been replaced by [RTLC7d4c](#RTLC7d4c) as of specification version 6.0.0.
+      - `(RTLC7d4c)` Emit the `LiveCounterUpdate` object returned as a result of applying the operation
       - `(RTLC7d4b)` Return `true`
     - `(RTLC7d3)` Otherwise, log a warning that an object operation message with an unsupported action has been received, and discard the current `ObjectMessage` without taking any further action. No data update event is emitted. Return `false`
 - `(RTLC8)` A `COUNTER_CREATE` operation can be applied to a `LiveCounter` in the following way:
@@ -606,7 +616,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM6e)` If `LiveMap.isTombstone` is `true`, finish processing the `ObjectState`
     - `(RTLM6e1)` Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM6f)` If `ObjectState.tombstone` is `true`, tombstone the current `LiveMap` using [`LiveObject.tombstone`](#RTLO4e), passing in the `ObjectMessage`. Finish processing the `ObjectState`
-    - `(RTLM6f1)` Return a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of the object being tombstoned, each set to `removed`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
+    - `(RTLM6f1)` This clause has been replaced by [RTLM6f2](#RTLM6f2) as of specification version 6.0.0.
+    - `(RTLM6f2)` Return the `LiveMapUpdate` returned by the `LiveObject.tombstone` call performed in [RTLM6f](#RTLM6f)
   - `(RTLM6g)` Store the current `data` value as `previousData` for use in [RTLM6h](#RTLM6h)
   - `(RTLM6b)` Set the private flag `createOperationIsMerged` to `false`
   - `(RTLM6i)` Set the private `clearTimeserial` to `ObjectState.map.clearTimeserial`, or to `null` if not provided
@@ -647,7 +658,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM15d7a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
       - `(RTLM15d7b)` Return `true`
     - `(RTLM15d5)` If `ObjectMessage.operation.action` is set to `OBJECT_DELETE`, apply the operation as described in [RTLO5](#RTLO5), passing in `ObjectMessage`
-      - `(RTLM15d5a)` Emit a `LiveMapUpdate` object with `LiveMapUpdate.update` consisting of entries for the keys that were removed as a result of applying the `OBJECT_DELETE` operation, each set to `removed`, and `LiveMapUpdate.objectMessage` set to `ObjectMessage`
+      - `(RTLM15d5a)` This clause has been replaced by [RTLM15d5c](#RTLM15d5c) as of specification version 6.0.0.
+      - `(RTLM15d5c)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
       - `(RTLM15d5b)` Return `true`
     - `(RTLM15d8)` If `ObjectMessage.operation.action` is set to `MAP_CLEAR`, apply the operation as described in [RTLM24](#RTLM24), passing in `ObjectMessage.serial` and `ObjectMessage`
       - `(RTLM15d8a)` Emit the `LiveMapUpdate` object returned as a result of applying the operation
@@ -1093,13 +1105,14 @@ Types and their properties/methods are public and exposed to users by default. A
       tombstonedAt: Time? // RTLO3e
       parentReferences: Dict<String, Set<String>> // RTLO3f
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
-      tombstone(ObjectMessage) // RTLO4e
+      tombstone(ObjectMessage) -> LiveObjectUpdate // RTLO4e
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
 
     interface LiveObjectUpdate: // RTLO4b4, internal
       update: Object // RTLO4b4a
       noop: Boolean // RTLO4b4b
       objectMessage: ObjectMessage? // RTLO4b4d
+      tombstone: Boolean // RTLO4b4e
 
     class LiveCounter extends LiveObject: // RTLC*, RTLC1, internal
       value() -> Number // RTLC5
