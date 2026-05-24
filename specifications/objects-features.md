@@ -130,14 +130,14 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTO3)` An internal `ObjectsPool` should be used to maintain the list of objects present on a channel
   - `(RTO3a)` `ObjectsPool` is a `Dict<String, LiveObject>` - a map of `LiveObject`s keyed by [`objectId`](../features#OST2a) string
   - `(RTO3b)` It must always contain a `LiveMap` object with id `root`
-    - `(RTO3b1)` Upon initialization of the `ObjectsPool`, create a new `LiveMap` (per [RTLM4](#RTLM4)) with `objectId` set to `root` and add it to the `ObjectsPool`
+    - `(RTO3b1)` Upon initialization of the `ObjectsPool`, create a new `LiveMap` per [RTLM4](#RTLM4) with `objectId` set to `root` and add it to the `ObjectsPool`
 - `(RTO4)` When a channel `ATTACHED` `ProtocolMessage` is received, the client library must perform the following actions in order. The `ProtocolMessage` may contain a `HAS_OBJECTS` bit flag (see [TR3](../features#TR3)); note that some of the following actions are conditional on this flag.
   - `(RTO4c)` The [RTO17](#RTO17) sync state must transition to `SYNCING` if not already `SYNCING`
   - `(RTO4d)` The `bufferedObjectOperations` list must be cleared without applying any buffered operations
   - `(RTO4a)` If the `HAS_OBJECTS` flag is 1, the server will shortly perform an `OBJECT_SYNC` sequence as described in [RTO5](#RTO5). Note that this does not imply that objects are definitely present on the channel, only that there may be; the `OBJECT_SYNC` message may be empty
   - `(RTO4b)` If the `HAS_OBJECTS` flag is 0 or there is no `flags` field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
     - `(RTO4b1)` All objects except the one with id `root` must be removed from the internal `ObjectsPool`
-    - `(RTO4b2)` The data for the `LiveMap` with id `root` must be cleared by setting it to a zero-value per [RTLM4](#RTLM4). Note that the client SDK must not create a new `LiveMap` instance with id `root`; it must only clear the internal data of the existing `LiveMap` with id `root`
+    - `(RTO4b2)` The data for the `LiveMap` with id `root` must be set to the value described in [RTLM4c](#RTLM4c). Note that the client SDK must not create a new `LiveMap` instance with id `root`; it must only clear the internal data of the existing `LiveMap` with id `root`
       - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `LiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`
     - `(RTO4b3)` The `SyncObjectsPool` must be cleared
     - `(RTO4b5)` This clause has been replaced by [RTO4d](#RTO4d)
@@ -169,8 +169,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
         - `(RTO5c1a2)` Store the `LiveObjectUpdate` object returned by the operation, along with a reference to the updated object
       - `(RTO5c1b)` If an object with `ObjectState.objectId` does not exist in the internal `ObjectsPool`:
         - `(RTO5c1b1)` Create a new `LiveObject` using the data from `ObjectState` and add it to the internal `ObjectsPool`:
-          - `(RTO5c1b1a)` If `ObjectState.counter` is present, create a zero-value `LiveCounter` (per [RTLC4](#RTLC4)), set its private `objectId` equal to `ObjectState.objectId` and replace its internal data using the current `ObjectMessage` per [RTLC6](#RTLC6)
-          - `(RTO5c1b1b)` If `ObjectState.map` is present, create a zero-value `LiveMap` (per [RTLM4](#RTLM4)), set its private `objectId` equal to `ObjectState.objectId`, set its private `semantics` equal to `ObjectState.map.semantics` and replace its internal data using the current `ObjectMessage` per [RTLM6](#RTLM6)
+          - `(RTO5c1b1a)` If `ObjectState.counter` is present, create a new `LiveCounter` per [RTLC4](#RTLC4) by passing in `ObjectState.objectId` as `objectId`, and then replace its internal data using the current `ObjectMessage` per [RTLC6](#RTLC6)
+          - `(RTO5c1b1b)` If `ObjectState.map` is present, create a new `LiveMap` per [RTLM4](#RTLM4) by passing in `ObjectState.objectId` as `objectId`, `ObjectState.map.semantics` as `semantics`, and then replace its internal data using the current `ObjectMessage` per [RTLM6](#RTLM6)
           - `(RTO5c1b1c)` This clause has been deleted (redundant to [RTO5f3](#RTO5f3)).
     - `(RTO5c2)` Remove any objects from the internal `ObjectsPool` for which `objectId`s were not received during the sync sequence
       - `(RTO5c2a)` The object with ID `root` must not be removed from `ObjectsPool`, as per [RTO3b](#RTO3b)
@@ -185,12 +185,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5c5)` The `bufferedObjectOperations` list must be cleared
     - `(RTO5c9)` The `appliedOnAckSerials` set ([RTO7b](#RTO7b)) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the `appliedOnAckSerials` no longer accurately describes which operations have been applied to the channel's LiveObjects data
     - `(RTO5c8)` The [RTO17](#RTO17) sync state must transition to `SYNCED`
-- `(RTO6)` Certain object operations may require creating a zero-value object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
+- `(RTO6)` Certain object operations may require creating a new object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
   - `(RTO6a)` If an object with `objectId` exists in `ObjectsPool`, do not create a new object
   - `(RTO6b)` The expected type of the object can be inferred from the provided `objectId`:
     - `(RTO6b1)` Split the `objectId` (formatted as `[type]:[hash]&#64;[timestamp]`, see [RTO14c](#RTO14c)) on the separator `:` and parse the first part as the type string
-    - `(RTO6b2)` If the parsed type is `map`, create a zero-value `LiveMap` per [RTLM4](#RTLM4) in the `ObjectsPool`
-    - `(RTO6b3)` If the parsed type is `counter`, create a zero-value `LiveCounter` per [RTLC4](#RTLC4) in the `ObjectsPool`
+    - `(RTO6b2)` If the parsed type is `map`, create a new `LiveMap` per [RTLM4](#RTLM4) by passing in the `objectId`, and add it to the `ObjectsPool`
+    - `(RTO6b3)` If the parsed type is `counter`, create a new `LiveCounter` per [RTLC4](#RTLC4) by passing in the `objectId`, and add it to the `ObjectsPool`
 - `(RTO7)` The client library may receive `OBJECT` `ProtocolMessages` in realtime over the channel concurrently with `OBJECT_SYNC` `ProtocolMessages` during the object sync sequence ([RTO5](#RTO5)). Some of the incoming `OBJECT` messages may have already been applied to the objects described in the sync sequence, while others may not. Therefore, the client must buffer `OBJECT` messages during the sync sequence so that it can determine which of them should be applied to the objects once the sync is complete. See [RTO8](#RTO8)
   - `(RTO7a)` The `RealtimeObject` instance has an internal attribute `bufferedObjectOperations`, which is an array of `ObjectMessage` instances. This is used to store the buffered `ObjectMessages`, as described in [RTO8a](#RTO8a).
     - `(RTO7a1)` This array is empty upon `RealtimeObject` initialization
@@ -208,7 +208,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO9a3)` If the `appliedOnAckSerials` set ([RTO7b](#RTO7b)) contains `ObjectMessage.serial`, log a debug or trace message indicating that the operation has already been applied upon receipt of the ACK, remove this value from the set, and discard the current `ObjectMessage` without taking any further action
     - `(RTO9a2)` The `ObjectMessage.operation.action` field (see [`ObjectOperationAction`](../features#OOP2)) determines the type of operation to apply:
       - `(RTO9a2a)` If `ObjectMessage.operation.action` is one of the following: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`, or `MAP_CLEAR`, then:
-        - `(RTO9a2a1)` If it does not already exist, create a zero-value `LiveObject` in the internal `ObjectsPool` per [RTO6](#RTO6) using the `objectId` from `ObjectMessage.operation.objectId`
+        - `(RTO9a2a1)` If it does not already exist, create a new `LiveObject` in the internal `ObjectsPool` per [RTO6](#RTO6) using the `objectId` from `ObjectMessage.operation.objectId`
         - `(RTO9a2a2)` Get the `LiveObject` instance from the internal `ObjectsPool` using the `objectId` from `ObjectMessage.operation.objectId`
         - `(RTO9a2a3)` Apply the `ObjectMessage.operation` to the `LiveObject`; see [RTLC7](#RTLC7), [RTLM15](#RTLM15), passing the `source` parameter. The operation returns a boolean indicating whether the operation was successfully applied
         - `(RTO9a2a4)` If `source` is `LOCAL` and [RTO9a2a3](#RTO9a2a3) returned `true`, add `ObjectMessage.serial` to the internal `appliedOnAckSerials` set ([RTO7b](#RTO7b))
@@ -389,7 +389,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e5a)` For each iterated `entry` in current `LiveMap`'s private `data`:
         - `(RTLO4e5a1)` If `entry.value.data` have `objectId` as a field, retrieve corresponding child `LiveObject` from `ObjectsPool` using given `objectId`
         - `(RTLO4e5a2)` If child `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4g](#RTLO4g), passing current `LiveMap` as `parent` and the iterated `entry.value` as `key`
-    - `(RTLO4e4)` Set the data for the `LiveObject` to a zero-value, as described in [RTLC4](#RTLC4) or [RTLM4](#RTLM4) depending on the object type
+    - `(RTLO4e4)` Set the `data` attribute of the `LiveObject` to the value described in [RTLC4b](#RTLC4b) or [RTLM4c](#RTLM4c), depending on the object type
   - `(RTLO4f)` internal `getFullPaths` function - returns the list of distinct paths from the root `LiveMap` (objectId `root`) to this `LiveObject`, computed by traversing `parentReferences` upward. Each returned path is an ordered sequence of keys from `root` to this `LiveObject`.
     - `(RTLO4f1)` `getFullPaths` MUST be implemented as an enumeration of all *simple paths* from this `LiveObject` to the root `LiveMap` over the inverse of the `parentReferences` graph (i.e. walking child → parent). A *simple path* is a path along which no `LiveObject` appears more than once. This is the standard graph problem, typically solved by a depth-first traversal with path-local backtracking equivalent to NetworkX's `all_simple_paths`. Implementation should choose iterative DFS with explicit stack (easier to read and debugging).
     - `(RTLO4f2)` If this `LiveObject` is the root `LiveMap` (objectId `root`), the returned list MUST contain exactly one path, and that path MUST be empty (zero key segments). This makes the root reachable from itself via the empty key sequence
@@ -412,7 +412,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTLC1)` The `LiveCounter` extends `LiveObject`
 - `(RTLC2)` Represents the counter object type for Object IDs of type `counter`
 - `(RTLC3)` Holds a 64-bit floating-point number as a private `data`
-- `(RTLC4)` The zero-value `LiveCounter` is a `LiveCounter` with `data` set to 0
+- `(RTLC4)` A new empty `LiveCounter` can be created with the following values:
+  - `(RTLC4a)` `objectId` is passed into the constructor and set upon creation
+  - `(RTLC4b)` `data` is set to 0
 - `(RTLC11)` Data updates for a `LiveCounter` are emitted using the `LiveCounterUpdate` object:
   - `(RTLC11a)` `LiveCounterUpdate` extends `LiveObjectUpdate`
   - `(RTLC11b)` `LiveCounterUpdate.update` has the following properties:
@@ -520,7 +522,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM3a)` `ObjectsMapEntry` entries in a `LiveMap` have the following attributes in addition to those defined in [OME2](../features#OME2):
     - `(RTLM3a1)` `tombstonedAt` (optional) Time - a timestamp indicating when this map entry was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if the corresponding `ObjectsMapEntry.tombstone` is `true`
 - `(RTLM25)` Holds a nullable private `clearTimeserial` string, initially `null`
-- `(RTLM4)` The zero-value `LiveMap` is a `LiveMap` with `data` set to an empty map and `clearTimeserial` set to `null`
+- `(RTLM4)` A new empty `LiveMap` can be created with the following values:
+  - `(RTLM4a)` `objectId` is passed into the constructor and set upon creation
+  - `(RTLM4b)` `semantics` may be passed into the constructor and set upon creation; if not provided, it defaults to [`ObjectsMapSemantics.LWW`](../features#OMP2)
+  - `(RTLM4c)` `data` is set to an empty map
+  - `(RTLM4d)` `clearTimeserial` is set to `null`
 - `(RTLM18)` Data updates for a `LiveMap` are emitted using the `LiveMapUpdate` object:
   - `(RTLM18a)` `LiveMapUpdate` extends `LiveObjectUpdate`
   - `(RTLM18b)` `LiveMapUpdate.update` is of type `Dict<String, 'updated' | 'removed'>` - a map of `LiveMap` keys that were either updated or removed, with the corresponding value indicating the type of change for each key
@@ -532,14 +538,15 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM5d)` Returns the value from the current `data` at the specified key, as follows:
     - `(RTLM5d1)` If no `ObjectsMapEntry` exists at the key, return undefined/null
     - `(RTLM5d2)` If an `ObjectsMapEntry` exists at the key:
-      - `(RTLM5d2a)` If `ObjectsMapEntry.tombstone` is `true`, return undefined/null
+      - `(RTLM5d2h)` If the `ObjectsMapEntry` is tombstoned (per [RTLM14](#RTLM14)), return undefined/null
+      - `(RTLM5d2a)` This clause has been replaced by [RTLM5d2h](#RTLM5d2h)
       - `(RTLM5d2b)` If `ObjectsMapEntry.data.boolean` exists, return it
       - `(RTLM5d2c)` If `ObjectsMapEntry.data.bytes` exists, return it
       - `(RTLM5d2d)` If `ObjectsMapEntry.data.number` exists, return it
       - `(RTLM5d2e)` If `ObjectsMapEntry.data.string` exists, return it
       - `(RTLM5d2f)` If `ObjectsMapEntry.data.objectId` exists, get the object stored at that `objectId` from the internal `ObjectsPool`:
         - `(RTLM5d2f1)` If an object with id `objectId` does not exist, return undefined/null
-        - `(RTLM5d2f3)` If an object with id `objectId` exists and its `LiveObject.isTombstone` is `true`, return undefined/null
+        - `(RTLM5d2f3)` This clause has been replaced by [RTLM5d2h](#RTLM5d2h)
         - `(RTLM5d2f2)` Otherwise, return the object with id `objectId`
       - `(RTLM5d2g)` Otherwise, return undefined/null
 - `(RTLM10)` `LiveMap#size`:
@@ -704,7 +711,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM7c)` This clause has been replaced by [RTLM7g](#RTLM7g) as of specification version 6.0.0.
     - `(RTLM7c1)` This clause has been replaced by [RTLM7g1](#RTLM7g1) as of specification version 6.0.0.
   - `(RTLM7g)` If `MapSet.value.objectId` is non-empty:
-    - `(RTLM7g1)` Create a zero-value `LiveObject` for this `objectId` in the internal `ObjectsPool` per [RTO6](#RTO6)
+    - `(RTLM7g1)` Create a new `LiveObject` for this `objectId` in the internal `ObjectsPool` per [RTO6](#RTO6)
   - `(RTLM7i)` A parent reference MUST be recorded on the `LiveObject` newly referenced by this entry (if any):
     - `(RTLM7i1)` If `MapSet.value.objectId` is not present, no action is required
     - `(RTLM7i2)` Otherwise, call `addParentReference(parent, key)` per [RTLO4f](#RTLO4f) on the `LiveObject` in the local `ObjectsPool` with `objectId` equal to `MapSet.value.objectId` (guaranteed to exist per [RTLM7g](#RTLM7g)), passing this `LiveMap` as `parent` and the operation's key as `key`
