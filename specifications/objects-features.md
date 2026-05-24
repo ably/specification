@@ -699,7 +699,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM7a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
     - `(RTLM7a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM7a2](#RTLM7a2e) is applied, the parent reference recorded on existing `ObjectsMapEntry` must be removed:
       - `(RTLM7a3a)` To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
-      - `(RTLM7a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the operation's key as `key`
+      - `(RTLM7a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the specified key as `key`
     - `(RTLM7a2)` Otherwise, apply the operation to the existing entry:
       - `(RTLM7a2a)` This clause has been replaced by [RTLM7a2e](#RTLM7a2e) as of specification version 6.0.0.
       - `(RTLM7a2e)` Set `ObjectsMapEntry.data` to the `MapSet.value`
@@ -715,9 +715,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM7c1)` This clause has been replaced by [RTLM7g1](#RTLM7g1) as of specification version 6.0.0.
   - `(RTLM7g)` If `MapSet.value.objectId` is non-empty:
     - `(RTLM7g1)` Create a new `LiveObject` for this `objectId` in the internal `ObjectsPool` per [RTO6](#RTO6)
-  - `(RTLM7i)` A parent reference must be recorded on the `LiveObject` newly referenced by this entry (if any):
-    - `(RTLM7i1)` If `MapSet.value.objectId` is not present, no action is required
-    - `(RTLM7i2)` Otherwise, call `addParentReference(parent, key)` per [RTLO4g](#RTLO4g) on the `LiveObject` in the local `ObjectsPool` with `objectId` equal to `MapSet.value.objectId` (guaranteed to exist per [RTLM7g](#RTLM7g)), passing this `LiveMap` as `parent` and the operation's key as `key`
+    - `(RTLM7g2)` Call `addParentReference(parent, key)` per [RTLO4g](#RTLO4g) on the `LiveObject` from [RTLM7g1](#RTLM7g1), passing this `LiveMap` as `parent` and the specified key as `key`
   - `(RTLM7f)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `updated`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
 - `(RTLM8)` A `MAP_REMOVE` operation for a key can be applied to a `LiveMap` in the following way:
   - `(RTLM8c)` Expects the following arguments:
@@ -732,7 +730,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM8a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
     - `(RTLM8a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM8a2](#RTLM8a2) is applied, the parent reference recorded on existing `ObjectsMapEntry` must be removed:
       - `(RTLM8a3a)` To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
-      - `(RTLM8a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the operation's key as `key`
+      - `(RTLM8a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the specified key as `key`
     - `(RTLM8a2)` Otherwise, apply the operation to the existing entry:
       - `(RTLM8a2a)` Set `ObjectsMapEntry.data` to undefined/null
       - `(RTLM8a2b)` Set `ObjectsMapEntry.timeserial` to the provided `serial`
