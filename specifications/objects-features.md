@@ -380,11 +380,10 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLO4e3a)` This clause has been replaced by [RTLO6a](#RTLO6a)
       - `(RTLO4e3b)` This clause has been replaced by [RTLO6b](#RTLO6b)
         - `(RTLO4e3b1)` This clause has been replaced by [RTLO6b1](#RTLO6b1)
-    - `(RTLO4e9)` If the current `LiveObject` is of type `LiveMap`, then before [RTLO4e4](#RTLO4e4) is applied, do following:
-      - `(RTLO4e9a)` For each iterated `entry` in current `LiveMap`'s private `data`:
-        - `(RTLO4e9a1)` If `entry.value.data` have `objectId` as a field, retrieve corresponding child `LiveObject` from `ObjectsPool` using given `objectId`
-        - `(RTLO4e9a2)` If child `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing current `LiveMap` as `parent` and the iterated `entry.value` as `key`
     - `(RTLO4e4)` Set the `data` attribute of the `LiveObject` to the value described in [RTLC4b](#RTLC4b) or [RTLM4c](#RTLM4c), depending on the object type
+    - `(RTLO4e9)` If the `LiveObject` is a `LiveMap`, then for each `ObjectsMapEntry` in the previous value of `LiveMap.data` (that is, the value before resetting it in [`RTLO4e4`](#RTLO4e4)):
+      - `(RTLO4e9a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
+      - `(RTLO4e9b)` If the [`RTLO4e9a`](#RTLO4e9a) fetch returned an object, then call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing the `LiveMap` as `parent` and the iterated entry's key as `key`
     - `(RTLO4e5)` Compute a `LiveObjectUpdate` representing the data change resulting from this `LiveObject` being tombstoned, by calculating the diff between the `data` value from before [RTLO4e4](#RTLO4e4) was applied (as `previousData`) and the current `data` value (as `newData`), per [RTLC14](#RTLC14) or [RTLM22](#RTLM22), depending on the object type
     - `(RTLO4e6)` Set `LiveObjectUpdate.tombstone` to `true` on the object computed in [RTLO4e5](#RTLO4e5)
     - `(RTLO4e7)` Set `LiveObjectUpdate.objectMessage` on the object computed in [RTLO4e5](#RTLO4e5) to the `ObjectMessage` argument
