@@ -174,7 +174,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
           - `(RTO5c1b1c)` This clause has been deleted (redundant to [RTO5f3](#RTO5f3)).
     - `(RTO5c2)` Remove any objects from the internal `ObjectsPool` for which `objectId`s were not received during the sync sequence
       - `(RTO5c2a)` The object with ID `root` must not be removed from `ObjectsPool`, as per [RTO3b](#RTO3b)
-    - `(RTO5c10)` After re-establishing the `ObjectsPool` per [RTO5c1](#RTO5c1) and [RTO5c2](#RTO5c2), the client MUST rebuild every `parentReferences` map ([RTLO3f](#RTLO3f)). Specifically:
+    - `(RTO5c10)` After re-establishing the `ObjectsPool` per [RTO5c1](#RTO5c1) and [RTO5c2](#RTO5c2), the client must rebuild every `parentReferences` map ([RTLO3f](#RTLO3f)). Specifically:
       - `(RTO5c10a)` For each `LiveObject` in the internal `ObjectsPool` ([RTO3](#RTO3)), reset its `parentReferences` to an empty map as defined in [RTLO3f2](#RTLO3f2)
       - `(RTO5c10b)` After [RTO5c10a](#RTO5c10a) has completed, for each `LiveMap` in the internal `ObjectsPool`, iterate its `LiveMap#entries` as per [RTLM11](#RTLM11)
         - `(RTO5c10b1)` For each iterated entry whose value type is `LiveObject`, call `addParentReference(parent, key)` on the `LiveObject` (per [RTLO4g](#RTLO4g)), passing the iterated `LiveMap` as `parent` and the iterated entry key as `key`
@@ -367,12 +367,12 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO4a5)` If the `siteSerial` for this `LiveObject` is null or an empty string, return true
     - `(RTLO4a6)` If the `siteSerial` for this `LiveObject` is not an empty string, return true if `ObjectMessage.serial` is greater than `siteSerial` when compared lexicographically
   - `(RTLO4g)` internal `addParentReference(parent, key)` method - records that the `LiveMap` `parent` references this `LiveObject` at `key`
-    - `(RTLO4g1)` If `parent` is already present in `parentReferences`, `key` MUST be added to the existing set associated with `parent`
-    - `(RTLO4g2)` Otherwise, a new entry MUST be inserted into `parentReferences` for `parent` with a set containing only `key`
+    - `(RTLO4g1)` If `parent` is already present in `parentReferences`, `key` must be added to the existing set associated with `parent`
+    - `(RTLO4g2)` Otherwise, a new entry must be inserted into `parentReferences` for `parent` with a set containing only `key`
   - `(RTLO4h)` internal `removeParentReference(parent, key)` method - removes the recorded reference from `parent` at `key`
-    - `(RTLO4h1)` If `parent` is not present in `parentReferences`, the call MUST be a no-op
-    - `(RTLO4h2)` Otherwise, `key` MUST be removed from the set associated with `parent`
-    - `(RTLO4h3)` If, as a result of [RTLO4h2](#RTLO4h2), the set associated with `parent` is empty, the `parent` entry MUST be removed from `parentReferences`
+    - `(RTLO4h1)` If `parent` is not present in `parentReferences`, the call must be a no-op
+    - `(RTLO4h2)` Otherwise, `key` must be removed from the set associated with `parent`
+    - `(RTLO4h3)` If, as a result of [RTLO4h2](#RTLO4h2), the set associated with `parent` is empty, the `parent` entry must be removed from `parentReferences`
   - `(RTLO4e)` protected `tombstone` - a convenience method used to tombstone this `LiveObject`. The realtime system reserves the right to tombstone an object (i.e. mark it for deletion from the objects pool) by publishing an `OBJECT_DELETE` operation at any time if the object is orphaned (not a descendant of the root object) or remains uninitialized (no `*_CREATE` operation has been received) for an extended period. Only the realtime system may publish an `OBJECT_DELETE` operation; clients must never send it. This method describes the steps the client library must take when it needs to tombstone an object locally. Eventually, tombstoned objects will be garbage collected following the procedure described in [RTO10](#RTO10)
     - `(RTLO4e1)` Expects the following arguments:
       - `(RTLO4e1a)` `ObjectMessage`
@@ -699,7 +699,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM7h)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM7a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM7a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
-    - `(RTLM7a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM7a2](#RTLM7a2e) is applied, the parent reference recorded on existing `ObjectsMapEntry` MUST be removed:
+    - `(RTLM7a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM7a2](#RTLM7a2e) is applied, the parent reference recorded on existing `ObjectsMapEntry` must be removed:
       - `(RTLM7a3a)` To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
       - `(RTLM7a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the operation's key as `key`
     - `(RTLM7a2)` Otherwise, apply the operation to the existing entry:
@@ -717,7 +717,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM7c1)` This clause has been replaced by [RTLM7g1](#RTLM7g1) as of specification version 6.0.0.
   - `(RTLM7g)` If `MapSet.value.objectId` is non-empty:
     - `(RTLM7g1)` Create a new `LiveObject` for this `objectId` in the internal `ObjectsPool` per [RTO6](#RTO6)
-  - `(RTLM7i)` A parent reference MUST be recorded on the `LiveObject` newly referenced by this entry (if any):
+  - `(RTLM7i)` A parent reference must be recorded on the `LiveObject` newly referenced by this entry (if any):
     - `(RTLM7i1)` If `MapSet.value.objectId` is not present, no action is required
     - `(RTLM7i2)` Otherwise, call `addParentReference(parent, key)` per [RTLO4g](#RTLO4g) on the `LiveObject` in the local `ObjectsPool` with `objectId` equal to `MapSet.value.objectId` (guaranteed to exist per [RTLM7g](#RTLM7g)), passing this `LiveMap` as `parent` and the operation's key as `key`
   - `(RTLM7f)` Return a `LiveMapUpdate` object with a `LiveMapUpdate.update` map containing the key used in this operation set to `updated`, and `LiveMapUpdate.objectMessage` set to the provided `ObjectMessage`
@@ -732,7 +732,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM8g)` If the private `clearTimeserial` is non-null, and the provided `serial` is null or the `clearTimeserial` is lexicographically greater than or equal to `serial`, discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
   - `(RTLM8a)` If an `ObjectsMapEntry` exists in the private `data` for the specified key:
     - `(RTLM8a1)` If the operation cannot be applied to the existing entry as per [RTLM9](#RTLM9), discard the operation without taking any action. Return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true`, indicating that no update was made to the object
-    - `(RTLM8a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM8a2](#RTLM8a2) is applied, the parent reference recorded on existing `ObjectsMapEntry` MUST be removed:
+    - `(RTLM8a3)` If the current `ObjectsMapEntry` is of type `LiveObject`, before [RTLM8a2](#RTLM8a2) is applied, the parent reference recorded on existing `ObjectsMapEntry` must be removed:
       - `(RTLM8a3a)` To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
       - `(RTLM8a3b)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the operation's key as `key`
     - `(RTLM8a2)` Otherwise, apply the operation to the existing entry:
@@ -758,7 +758,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM24d)` Set the private `clearTimeserial` to the provided `serial`
   - `(RTLM24e)` For each `ObjectsMapEntry` in the internal `data`:
     - `(RTLM24e1)` If `ObjectsMapEntry.timeserial` is null or omitted, or the `serial` is lexicographically greater than `ObjectsMapEntry.timeserial`:
-      - `(RTLM24e1c)` If the current `ObjectsMapEntry` is of type `LiveObject`, the parent reference recorded on existing `ObjectsMapEntry` MUST be removed:
+      - `(RTLM24e1c)` If the current `ObjectsMapEntry` is of type `LiveObject`, the parent reference recorded on existing `ObjectsMapEntry` must be removed:
         - `(RTLM24e1c1)`  To check `ObjectsMapEntry` is of type `LiveObject`, validate `ObjectsMapEntry.data` has a `objectId` field, retrieve corresponding `LiveObject` from `ObjectsPool` using given `objectId`
         - `(RTLM24e1c2)` If `LiveObject` exists, call its `removeParentReference(parent, key)` method per [RTLO4h](#RTLO4h), passing this `LiveMap` as `parent` and the iterated entry key as `key`
       - `(RTLM24e1a)` Remove the entry from the internal `data` map. The entry is not retained as a tombstone.
