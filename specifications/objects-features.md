@@ -174,10 +174,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
           - `(RTO5c1b1c)` This clause has been deleted (redundant to [RTO5f3](#RTO5f3)).
     - `(RTO5c2)` Remove any objects from the internal `ObjectsPool` for which `objectId`s were not received during the sync sequence
       - `(RTO5c2a)` The object with ID `root` must not be removed from `ObjectsPool`, as per [RTO3b](#RTO3b)
-    - `(RTO5c10)` After re-establishing the `ObjectsPool` per [RTO5c1](#RTO5c1) and [RTO5c2](#RTO5c2), the client must rebuild every `parentReferences` map ([RTLO3f](#RTLO3f)). Specifically:
-      - `(RTO5c10a)` For each `LiveObject` in the internal `ObjectsPool` ([RTO3](#RTO3)), reset its `parentReferences` to an empty map as defined in [RTLO3f2](#RTLO3f2)
-      - `(RTO5c10b)` After [RTO5c10a](#RTO5c10a) has completed, for each `LiveMap` in the internal `ObjectsPool`, iterate its `LiveMap#entries` as per [RTLM11](#RTLM11)
-        - `(RTO5c10b1)` For each iterated entry whose value type is `LiveObject`, call `addParentReference(parent, key)` on the `LiveObject` (per [RTLO4g](#RTLO4g)), passing the iterated `LiveMap` as `parent` and the iterated entry key as `key`
+    - `(RTO5c10)` Rebuild every `parentReferences` map ([RTLO3f](#RTLO3f)):
+      - `(RTO5c10a)` For each `LiveObject` in the internal `ObjectsPool`, reset its `parentReferences` to the initial value defined in [RTLO3f2](#RTLO3f2)
+      - `(RTO5c10b)` For each `LiveMap` in the internal `ObjectsPool`, iterate its `LiveMap#entries` ([RTLM11](#RTLM11)); for each entry whose value is a `LiveObject`, call `addParentReference(parent, key)` on that `LiveObject` per [RTLO4g](#RTLO4g), passing the `LiveMap` as `parent` and the entry's key as `key`
     - `(RTO5c7)` For each previously existing object that was updated as a result of [RTO5c1a](#RTO5c1a), emit the corresponding stored `LiveObjectUpdate` object from [RTO5c1a2](#RTO5c1a2)
     - `(RTO5c6)` `ObjectMessages` stored in the `bufferedObjectOperations` list are applied as described in [RTO9](#RTO9), passing `source` as `CHANNEL`
     - `(RTO5c3)` Clear any stored sync sequence identifiers and cursor values
