@@ -1133,6 +1133,7 @@ Types and their properties/methods are public and exposed to users by default. A
       parentReferences: Dict<String, Set<String>> // RTLO3f
       canApplyOperation(ObjectMessage) -> Boolean // RTLO4a
       tombstone(ObjectMessage) -> LiveObjectUpdate // RTLO4e
+      getFullPaths() -> String[][] // RTLO4f
       addParentReference(LiveMap parent, String key) // RTLO4g
       removeParentReference(LiveMap parent, String key) // RTLO4h
       subscribe((LiveObjectUpdate) ->) -> Subscription // RTLO4b
