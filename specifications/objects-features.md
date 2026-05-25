@@ -127,6 +127,13 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO2b)` Otherwise, a best-effort attempt is made, and the channel mode is checked against the set of channel modes requested by the user per [TB2d](../features#TB2d) :
     - `(RTO2b1)` If the channel mode is in the set, the operation is allowed
     - `(RTO2b2)` If the channel mode is missing, unless otherwise specified by the operation, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40024, indicating that the operation cannot be performed without the required channel mode
+- `(RTO25)` Certain object operations may require the *access API preconditions* to be satisfied in order to be performed. If the access API preconditions are required by an operation, then before doing anything else:
+  - `(RTO25a)` Require the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
+  - `(RTO25b)` If the channel is in the `DETACHED` or `FAILED` state, throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+- `(RTO26)` Certain object operations may require the *write API preconditions* to be satisfied in order to be performed. If the write API preconditions are required by an operation, then before doing anything else:
+  - `(RTO26a)` Require the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
+  - `(RTO26b)` If the channel is in the `DETACHED`, `FAILED`, or `SUSPENDED` state, throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+  - `(RTO26c)` If [`echoMessages`](../features#TO3h) client option is `false`, throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
 - `(RTO3)` An internal `ObjectsPool` should be used to maintain the list of objects present on a channel
   - `(RTO3a)` `ObjectsPool` is a `Dict<String, LiveObject>` - a map of `LiveObject`s keyed by [`objectId`](../features#OST2a) string
   - `(RTO3b)` It must always contain a `LiveMap` object with id `root`
@@ -331,8 +338,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO3f2)` Set to an empty map when the `LiveObject` is initialized
 - `(RTLO4)` `LiveObject` methods:
   - `(RTLO4b)` `subscribe` - subscribes a user to data updates on this `LiveObject` instance
-    - `(RTLO4b1)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-    - `(RTLO4b2)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+    - `(RTLO4b1)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
+    - `(RTLO4b2)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
     - `(RTLO4b3)` A user may provide a listener to subscribe to data updates on this `LiveObject` instance
     - `(RTLO4b4)` An update to `LiveObject` data is communicated by internally emitting a `LiveObjectUpdate` object for this `LiveObject`, or in any other platform-appropriate manner:
       - `(RTLO4b4a)` `LiveObjectUpdate.update` contains the specific information about what was changed on the object. The exact type depends on the object type
@@ -416,15 +423,15 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLC11b)` `LiveCounterUpdate.update` has the following properties:
     - `(RTLC11b1)` `amount` number - the value by which the counter was incremented or decremented
 - `(RTLC5)` `LiveCounter#value` function:
-  - `(RTLC5a)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLC5b)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+  - `(RTLC5a)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
+  - `(RTLC5b)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
   - `(RTLC5c)` Returns the current `data` value
 - `(RTLC12)` `LiveCounter#increment` function:
   - `(RTLC12a)` Expects the following arguments:
     - `(RTLC12a1)` `amount` `Number` - the amount by which to increment the counter value
-  - `(RTLC12b)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLC12c)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
-  - `(RTLC12d)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
+  - `(RTLC12b)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
+  - `(RTLC12c)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
+  - `(RTLC12d)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
   - `(RTLC12e)` Creates an `ObjectMessage` for a `COUNTER_INC` action in the following way:
     - `(RTLC12e1)` If `amount` is null, not of type `Number`, not a finite number, or omitted, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that `amount` must be a valid number
     - `(RTLC12e2)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.COUNTER_INC`
@@ -530,8 +537,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM18b)` `LiveMapUpdate.update` is of type `Dict<String, 'updated' | 'removed'>` - a map of `LiveMap` keys that were either updated or removed, with the corresponding value indicating the type of change for each key
 - `(RTLM5)` `LiveMap#get` function:
   - `(RTLM5a)` Accepts a key of type String
-  - `(RTLM5b)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLM5c)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+  - `(RTLM5b)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
+  - `(RTLM5c)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
   - `(RTLM5e)` If `LiveMap.isTombstone` is `true`, return undefined/null
   - `(RTLM5d)` Returns the value from the current `data` at the specified key, as follows:
     - `(RTLM5d1)` If no `ObjectsMapEntry` exists at the key, return undefined/null
@@ -549,13 +556,13 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTLM5d2g)` Otherwise, return undefined/null
 - `(RTLM10)` `LiveMap#size`:
   - `(RTLM10a)` A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a property similar to `Map.size` for the native `Map` class
-  - `(RTLM10b)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLM10c)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+  - `(RTLM10b)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
+  - `(RTLM10c)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
   - `(RTLM10d)` Returns the number of non-tombstoned entries (per [RTLM14](#RTLM14)) in the internal `data` map
 - `(RTLM11)` `LiveMap#entries`:
   - `(RTLM11a)` A method or property, depending on what is more idiomatic for the platform to use for a Map/Dictionary interface. For example, in JavaScript, this is a method similar to `Map.entries()` for the native `Map` class
-  - `(RTLM11b)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLM11c)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+  - `(RTLM11b)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
+  - `(RTLM11c)` This clause has been replaced by [RTO25](#RTO25); the access API preconditions are now checked by callers
   - `(RTLM11d)` Returns key-value pairs from the internal `data` map:
     - `(RTLM11d1)` Pairs with tombstoned entries (per [RTLM14](#RTLM14)) are not returned
     - `(RTLM11d3)` `ObjectsMapEntry` values are mapped to user-facing values following the same procedure as in [RTLM5d2](#RTLM5d2)
@@ -572,9 +579,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM20a1)` `key` `String` - the key to set the value for
     - `(RTLM20a2)` This clause has been replaced by [RTLM20a3](#RTLM20a3).
     - `(RTLM20a3)` `value` `Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType` - the value to assign to the key
-  - `(RTLM20b)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLM20c)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
-  - `(RTLM20d)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
+  - `(RTLM20b)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
+  - `(RTLM20c)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
+  - `(RTLM20d)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
   - `(RTLM20e)` Creates an `ObjectMessage` for a `MAP_SET` action in the following way:
     - `(RTLM20e1)` Validates the provided `key` and `value` in a similar way as described in [RTLMV4b](#RTLMV4b) and [RTLMV4c](#RTLMV4c)
     - `(RTLM20e2)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.MAP_SET`
@@ -606,9 +613,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTLM21)` `LiveMap#remove` function:
   - `(RTLM21a)` Expects the following arguments:
     - `(RTLM21a1)` `key` `String` - the key to remove the value for
-  - `(RTLM21b)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTLM21c)` If the channel is in the `DETACHED`, `FAILED` or `SUSPENDED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
-  - `(RTLM21d)` If [`echoMessages`](../features#TO3h) client option is `false`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that `echoMessages` must be enabled for this operation
+  - `(RTLM21b)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
+  - `(RTLM21c)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
+  - `(RTLM21d)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
   - `(RTLM21e)` Creates an `ObjectMessage` for a `MAP_REMOVE` action in the following way:
     - `(RTLM21e1)` Validates the provided `key` in a similar way as described in [RTLMV4b](#RTLMV4b)
     - `(RTLM21e2)` Set `ObjectMessage.operation.action` to `ObjectOperationAction.MAP_REMOVE`
@@ -895,85 +902,98 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO6c)` Returns a new `PathObject` with the same `root` and with the parsed segments appended to the current `path` segments
   - `(RTPO6d)` This is a convenience for chaining multiple `PathObject#get` calls. For example, `pathObject.at("a.b.c")` is equivalent to `pathObject.get("a").get("b").get("c")`
 - `(RTPO7)` `PathObject#value` function:
-  - `(RTPO7a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO7b)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#value` ([RTLC5](#RTLC5))
-  - `(RTPO7c)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
-  - `(RTPO7d)` If the resolved value is a `LiveMap`, returns undefined/null
-  - `(RTPO7e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+  - `(RTPO7a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO7b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO7c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#value` ([RTLC5](#RTLC5))
+  - `(RTPO7d)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
+  - `(RTPO7e)` If the resolved value is a `LiveMap`, returns undefined/null
+  - `(RTPO7f)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO8)` `PathObject#instance` function:
-  - `(RTPO8a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO8b)` If the resolved value is a `LiveObject` (i.e. a `LiveMap` or `LiveCounter`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping that `LiveObject`
-  - `(RTPO8c)` If the resolved value is a primitive, returns undefined/null
-  - `(RTPO8d)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+  - `(RTPO8a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO8b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO8c)` If the resolved value is a `LiveObject` (i.e. a `LiveMap` or `LiveCounter`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping that `LiveObject`
+  - `(RTPO8d)` If the resolved value is a primitive, returns undefined/null
+  - `(RTPO8e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO9)` `PathObject#entries` function:
-  - `(RTPO9a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO9b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12)) and returns an array of `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
-  - `(RTPO9c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
+  - `(RTPO9a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO9b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO9c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12)) and returns an array of `[key, PathObject]` pairs, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
+  - `(RTPO9d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO10)` `PathObject#keys` function:
-  - `(RTPO10a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO10b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12))
-  - `(RTPO10c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
+  - `(RTPO10a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO10b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO10c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12))
+  - `(RTPO10d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO11)` `PathObject#values` function:
-  - `(RTPO11a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO11b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12)) and returns an array of `PathObject`s, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
-  - `(RTPO11c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
+  - `(RTPO11a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO11b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO11c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12)) and returns an array of `PathObject`s, where each `PathObject` is created as if by calling `PathObject#get` with the corresponding key on this `PathObject`
+  - `(RTPO11d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns an empty array
 - `(RTPO12)` `PathObject#size` function:
-  - `(RTPO12a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO12b)` If the resolved value is a `LiveMap`, delegates to `LiveMap#size` ([RTLM10](#RTLM10))
-  - `(RTPO12c)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns undefined/null
+  - `(RTPO12a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO12b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO12c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#size` ([RTLM10](#RTLM10))
+  - `(RTPO12d)` If the resolved value is not a `LiveMap`, or if path resolution fails, returns undefined/null
 - `(RTPO13)` `PathObject#compact` function:
-  - `(RTPO13a)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
-  - `(RTPO13b)` If the resolved value is a `LiveMap`, returns a recursively compacted representation as a plain key-value object:
-    - `(RTPO13b1)` Each entry in the `LiveMap` is included in the result. Tombstoned entries are excluded
-    - `(RTPO13b2)` Nested `LiveMap` values are recursively compacted into nested plain key-value objects
-    - `(RTPO13b3)` Nested `LiveCounter` values are resolved to their numeric value
-    - `(RTPO13b4)` Primitive values (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`) are included as-is
-    - `(RTPO13b5)` Cyclic references (a `LiveMap` that has already been visited during this compaction) are represented by reusing the same in-memory object reference to the already-compacted result for that `LiveMap`
-  - `(RTPO13c)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `PathObject#value`)
-  - `(RTPO13d)` If the resolved value is a primitive, returns the value directly (equivalent to `PathObject#value`)
-  - `(RTPO13e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+  - `(RTPO13a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO13b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
+  - `(RTPO13c)` If the resolved value is a `LiveMap`, returns a recursively compacted representation as a plain key-value object:
+    - `(RTPO13c1)` Each entry in the `LiveMap` is included in the result. Tombstoned entries are excluded
+    - `(RTPO13c2)` Nested `LiveMap` values are recursively compacted into nested plain key-value objects
+    - `(RTPO13c3)` Nested `LiveCounter` values are resolved to their numeric value
+    - `(RTPO13c4)` Primitive values (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`) are included as-is
+    - `(RTPO13c5)` Cyclic references (a `LiveMap` that has already been visited during this compaction) are represented by reusing the same in-memory object reference to the already-compacted result for that `LiveMap`
+  - `(RTPO13d)` If the resolved value is a `LiveCounter`, returns its current numeric value (equivalent to `PathObject#value`)
+  - `(RTPO13e)` If the resolved value is a primitive, returns the value directly (equivalent to `PathObject#value`)
+  - `(RTPO13f)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO14)` `PathObject#compactJson` function:
-  - `(RTPO14a)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)) except for the following differences, which ensure the result is JSON-serializable:
-    - `(RTPO14a1)` `Binary` values are encoded as base64 strings instead of being included as-is
-    - `(RTPO14a2)` Cyclic references are represented as an object with a single `objectId` property containing the Object ID of the referenced `LiveMap`, instead of reusing the in-memory object reference
+  - `(RTPO14a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO14b)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)) except for the following differences, which ensure the result is JSON-serializable:
+    - `(RTPO14b1)` `Binary` values are encoded as base64 strings instead of being included as-is
+    - `(RTPO14b2)` Cyclic references are represented as an object with a single `objectId` property containing the Object ID of the referenced `LiveMap`, instead of reusing the in-memory object reference
 - `(RTPO15)` `PathObject#set` function:
   - `(RTPO15a)` Expects the following arguments:
     - `(RTPO15a1)` `key` `String` - the key to set the value for
     - `(RTPO15a2)` `value` - the value to assign to the key. Accepted types are the same as for `LiveMap#set` ([RTLM20](#RTLM20))
-  - `(RTPO15b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
-  - `(RTPO15c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
-  - `(RTPO15d)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that the operation is not supported for the resolved object type
+  - `(RTPO15b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTPO15c)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO15d)` If the resolved value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
+  - `(RTPO15e)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that the operation is not supported for the resolved object type
 - `(RTPO16)` `PathObject#remove` function:
   - `(RTPO16a)` Expects the following arguments:
     - `(RTPO16a1)` `key` `String` - the key to remove the value for
-  - `(RTPO16b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
-  - `(RTPO16c)` If the resolved value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
-  - `(RTPO16d)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTPO16b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTPO16c)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO16d)` If the resolved value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
+  - `(RTPO16e)` If the resolved value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTPO17)` `PathObject#increment` function:
   - `(RTPO17a)` Expects the following arguments:
     - `(RTPO17a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
-  - `(RTPO17b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
-  - `(RTPO17c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
-  - `(RTPO17d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTPO17b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTPO17c)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO17d)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
+  - `(RTPO17e)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTPO18)` `PathObject#decrement` function:
   - `(RTPO18a)` Expects the following arguments:
     - `(RTPO18a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
-  - `(RTPO18b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
-  - `(RTPO18c)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
-  - `(RTPO18d)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTPO18b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTPO18c)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3)). On failure, throws per [RTPO3c2](#RTPO3c2)
+  - `(RTPO18d)` If the resolved value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
+  - `(RTPO18e)` If the resolved value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTPO19)` `PathObject#subscribe` function:
   - `(RTPO19a)` Expects the following arguments:
-    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19d](#RTPO19d))
+    - `(RTPO19a1)` `listener` - a callback function that receives a `PathObjectSubscriptionEvent` ([RTPO19e](#RTPO19e))
     - `(RTPO19a2)` `options` `PathObjectSubscriptionOptions` (optional) - subscription options
-  - `(RTPO19b)` `PathObjectSubscriptionOptions` has the following properties:
-    - `(RTPO19b1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener. Defaults to undefined/null. The `depth` value is interpreted by the subscription coverage rule in [RTO24c1](#RTO24c1); see [RTO24c2](#RTO24c2) for worked examples
-      - `(RTPO19b1a)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
-  - `(RTPO19c)` Returns a [`Subscription`](../features#SUB1) object
-  - `(RTPO19d)` The listener receives a `PathObjectSubscriptionEvent` object with:
-    - `(RTPO19d1)` `object` - a `PathObject` pointing to the path where the change occurred
-    - `(RTPO19d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the [RTLO4b4](#RTLO4b4) emission that triggered this event is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
-  - `(RTPO19e)` Adds a subscription to the `RealtimeObject`'s `PathObjectSubscriptionRegister` ([RTO24](#RTO24)) with subscribed path equal to this `PathObject`'s `path` (per [RTPO2a](#RTPO2a)), the provided `listener`, and the provided `options.depth`
-  - `(RTPO19f)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+  - `(RTPO19b)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTPO19c)` `PathObjectSubscriptionOptions` has the following properties:
+    - `(RTPO19c1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener. Defaults to undefined/null. The `depth` value is interpreted by the subscription coverage rule in [RTO24c1](#RTO24c1); see [RTO24c2](#RTO24c2) for worked examples
+      - `(RTPO19c1a)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
+  - `(RTPO19d)` Returns a [`Subscription`](../features#SUB1) object
+  - `(RTPO19e)` The listener receives a `PathObjectSubscriptionEvent` object with:
+    - `(RTPO19e1)` `object` - a `PathObject` pointing to the path where the change occurred
+    - `(RTPO19e2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the [RTLO4b4](#RTLO4b4) emission that triggered this event is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
+  - `(RTPO19f)` Adds a subscription to the `RealtimeObject`'s `PathObjectSubscriptionRegister` ([RTO24](#RTO24)) with subscribed path equal to this `PathObject`'s `path` (per [RTPO2a](#RTPO2a)), the provided `listener`, and the provided `options.depth`
+  - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 
 ### Instance
 
@@ -987,66 +1007,79 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS3a)` If the wrapped value is a `LiveObject`, returns the `objectId` of that object
   - `(RTINS3b)` If the wrapped value is a primitive, returns undefined/null
 - `(RTINS4)` `Instance#value` function:
-  - `(RTINS4a)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#value` ([RTLC5](#RTLC5))
-  - `(RTINS4b)` If the wrapped value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
-  - `(RTINS4c)` If the wrapped value is a `LiveMap`, returns undefined/null
+  - `(RTINS4a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS4b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#value` ([RTLC5](#RTLC5))
+  - `(RTINS4c)` If the wrapped value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns the value directly
+  - `(RTINS4d)` If the wrapped value is a `LiveMap`, returns undefined/null
 - `(RTINS5)` `Instance#get` function:
   - `(RTINS5a)` Expects the following arguments:
     - `(RTINS5a1)` `key` `String` - the key to look up
-  - `(RTINS5b)` If the wrapped value is a `LiveMap`, looks up the value at `key` using `LiveMap#get` ([RTLM5](#RTLM5)) and returns a new `Instance` wrapping the result. If the result is undefined/null, returns undefined/null
-  - `(RTINS5c)` If the wrapped value is not a `LiveMap`, returns undefined/null
+  - `(RTINS5b)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS5c)` If the wrapped value is a `LiveMap`, looks up the value at `key` using `LiveMap#get` ([RTLM5](#RTLM5)) and returns a new `Instance` wrapping the result. If the result is undefined/null, returns undefined/null
+  - `(RTINS5d)` If the wrapped value is not a `LiveMap`, returns undefined/null
 - `(RTINS6)` `Instance#entries` function:
-  - `(RTINS6a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#entries` ([RTLM11](#RTLM11)) and returns an array of `[key, Instance]` pairs, where each `Instance` wraps the corresponding value
-  - `(RTINS6b)` If the wrapped value is not a `LiveMap`, returns an empty array
+  - `(RTINS6a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS6b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#entries` ([RTLM11](#RTLM11)) and returns an array of `[key, Instance]` pairs, where each `Instance` wraps the corresponding value
+  - `(RTINS6c)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS7)` `Instance#keys` function:
-  - `(RTINS7a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12))
-  - `(RTINS7b)` If the wrapped value is not a `LiveMap`, returns an empty array
+  - `(RTINS7a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS7b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#keys` ([RTLM12](#RTLM12))
+  - `(RTINS7c)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS8)` `Instance#values` function:
-  - `(RTINS8a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#values` ([RTLM13](#RTLM13)) and returns an array of `Instance`s, where each `Instance` wraps the corresponding value
-  - `(RTINS8b)` If the wrapped value is not a `LiveMap`, returns an empty array
+  - `(RTINS8a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS8b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#values` ([RTLM13](#RTLM13)) and returns an array of `Instance`s, where each `Instance` wraps the corresponding value
+  - `(RTINS8c)` If the wrapped value is not a `LiveMap`, returns an empty array
 - `(RTINS9)` `Instance#size` function:
-  - `(RTINS9a)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#size` ([RTLM10](#RTLM10))
-  - `(RTINS9b)` If the wrapped value is not a `LiveMap`, returns undefined/null
+  - `(RTINS9a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS9b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#size` ([RTLM10](#RTLM10))
+  - `(RTINS9c)` If the wrapped value is not a `LiveMap`, returns undefined/null
 - `(RTINS10)` `Instance#compact` function:
-  - `(RTINS10a)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)), but operates on the wrapped value directly instead of resolving a path
+  - `(RTINS10a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS10b)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)), but operates on the wrapped value directly instead of resolving a path
 - `(RTINS11)` `Instance#compactJson` function:
-  - `(RTINS11a)` Behaves identically to `PathObject#compactJson` ([RTPO14](#RTPO14)), but operates on the wrapped value directly instead of resolving a path
+  - `(RTINS11a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS11b)` Behaves identically to `PathObject#compactJson` ([RTPO14](#RTPO14)), but operates on the wrapped value directly instead of resolving a path
 - `(RTINS12)` `Instance#set` function:
   - `(RTINS12a)` Expects the following arguments:
     - `(RTINS12a1)` `key` `String` - the key to set the value for
     - `(RTINS12a2)` `value` - the value to assign to the key. Accepted types are the same as for `LiveMap#set` ([RTLM20](#RTLM20))
-  - `(RTINS12b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
-  - `(RTINS12c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS12b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTINS12c)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#set` ([RTLM20](#RTLM20)) with the provided `key` and `value`
+  - `(RTINS12d)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTINS13)` `Instance#remove` function:
   - `(RTINS13a)` Expects the following arguments:
     - `(RTINS13a1)` `key` `String` - the key to remove the value for
-  - `(RTINS13b)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
-  - `(RTINS13c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS13b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTINS13c)` If the wrapped value is a `LiveMap`, delegates to `LiveMap#remove` ([RTLM21](#RTLM21)) with the provided `key`
+  - `(RTINS13d)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTINS14)` `Instance#increment` function:
   - `(RTINS14a)` Expects the following arguments:
     - `(RTINS14a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
-  - `(RTINS14b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
-  - `(RTINS14c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS14b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTINS14c)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#increment` ([RTLC12](#RTLC12)) with the provided `amount`
+  - `(RTINS14d)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTINS15)` `Instance#decrement` function:
   - `(RTINS15a)` Expects the following arguments:
     - `(RTINS15a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
-  - `(RTINS15b)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
-  - `(RTINS15c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTINS15b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTINS15c)` If the wrapped value is a `LiveCounter`, delegates to `LiveCounter#decrement` ([RTLC13](#RTLC13)) with the provided `amount`
+  - `(RTINS15d)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
 - `(RTINS16)` `Instance#subscribe` function:
   - `(RTINS16a)` Expects the following arguments:
-    - `(RTINS16a1)` `listener` - a callback function that receives an `InstanceSubscriptionEvent` ([RTINS16d](#RTINS16d)) when the wrapped object is updated
-  - `(RTINS16b)` If the wrapped value is not a `LiveObject` (i.e. it is a primitive), the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that subscribe is not supported for primitive values
-  - `(RTINS16c)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
-  - `(RTINS16d)` The listener receives an `InstanceSubscriptionEvent` object with:
-    - `(RTINS16d1)` `object` - an `Instance` wrapping the underlying `LiveObject`
-    - `(RTINS16d2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the underlying `LiveObject#subscribe` notification is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
-  - `(RTINS16e)` Returns a [`Subscription`](../features#SUB1) object
-  - `(RTINS16f)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
-  - `(RTINS16g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+    - `(RTINS16a1)` `listener` - a callback function that receives an `InstanceSubscriptionEvent` ([RTINS16e](#RTINS16e)) when the wrapped object is updated
+  - `(RTINS16b)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTINS16c)` If the wrapped value is not a `LiveObject` (i.e. it is a primitive), the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007, indicating that subscribe is not supported for primitive values
+  - `(RTINS16d)` Subscribes to data updates on the underlying `LiveObject` using `LiveObject#subscribe` ([RTLO4b](#RTLO4b))
+  - `(RTINS16e)` The listener receives an `InstanceSubscriptionEvent` object with:
+    - `(RTINS16e1)` `object` - an `Instance` wrapping the underlying `LiveObject`
+    - `(RTINS16e2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the underlying `LiveObject#subscribe` notification is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
+  - `(RTINS16f)` Returns a [`Subscription`](../features#SUB1) object
+  - `(RTINS16g)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
+  - `(RTINS16h)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 
 ### PublicAPI::ObjectMessage
 
-- `(PAOM1)` A `PublicAPI::ObjectMessage` is the user-facing representation of an inbound `ObjectMessage` ([OM1](../features#OM1)) that carried an operation. It is delivered to user subscription listeners (see [RTPO19d2](#RTPO19d2), [RTINS16d2](#RTINS16d2)) so that user code can inspect the metadata of the message that triggered an object change. The `PublicAPI::` prefix is used to avoid a name clash with `ObjectMessage`; SDKs expose this type to users as `ObjectMessage`.
+- `(PAOM1)` A `PublicAPI::ObjectMessage` is the user-facing representation of an inbound `ObjectMessage` ([OM1](../features#OM1)) that carried an operation. It is delivered to user subscription listeners (see [RTPO19e2](#RTPO19e2), [RTINS16e2](#RTINS16e2)) so that user code can inspect the metadata of the message that triggered an object change. The `PublicAPI::` prefix is used to avoid a name clash with `ObjectMessage`; SDKs expose this type to users as `ObjectMessage`.
 - `(PAOM2)` The attributes available in a `PublicAPI::ObjectMessage` are:
   - `(PAOM2a)` `id` string (optional) - the `id` ([OM2a](../features#OM2a)) of the source `ObjectMessage`
   - `(PAOM2b)` `clientId` string (optional) - the `clientId` ([OM2b](../features#OM2b)) of the source `ObjectMessage`
@@ -1166,16 +1199,16 @@ Types and their properties/methods are public and exposed to users by default. A
       entries: Dict<String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType)>? // RTLMV2a, internal
       static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType> entries?) -> LiveMapValueType // RTLMV3
 
-    interface PathObjectSubscriptionEvent: // RTPO19d
-      object: PathObject // RTPO19d1
-      message: PublicAPI::ObjectMessage? // RTPO19d2
+    interface PathObjectSubscriptionEvent: // RTPO19e
+      object: PathObject // RTPO19e1
+      message: PublicAPI::ObjectMessage? // RTPO19e2
 
-    interface PathObjectSubscriptionOptions: // RTPO19b
-      depth: Number? // RTPO19b1
+    interface PathObjectSubscriptionOptions: // RTPO19c
+      depth: Number? // RTPO19c1
 
-    interface InstanceSubscriptionEvent: // RTINS16d
-      object: Instance // RTINS16d1
-      message: PublicAPI::ObjectMessage? // RTINS16d2
+    interface InstanceSubscriptionEvent: // RTINS16e
+      object: Instance // RTINS16e1
+      message: PublicAPI::ObjectMessage? // RTINS16e2
 
     class PublicAPI::ObjectMessage: // PAOM*
       id: String? // PAOM2a
