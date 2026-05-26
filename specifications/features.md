@@ -1250,6 +1250,10 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(TM8)` The attributes available in a `MessageAnnotations` object are:
   - `(TM8a)` `summary` `Dict<string, JsonObject>` - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing `summary` field on the wire indicates an empty summary, equivalent to an object with no keys. The SDK must initialize this object if not present.
     - `(TM8a1)` A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
+  - `(TM8b)` `summaryVersion` - an object identifying the version of the summary itself. It is distinct from the enclosing `Message`'s `serial`, `timestamp`, and `version` fields, which all continue to refer to the referenced message (i.e. the message that the summary is of). The fields are:
+    - `(TM8b1)` `serial` - an opaque timeserial string identifying this version of the summary.
+    - `(TM8b2)` `timestamp` - time in milliseconds since epoch at which this version of the summary was produced. This is the time component encoded in the [TM8b1](#TM8b1) `serial`, so the two cannot drift.
+    - `(TM8b3)` The SDK MUST populate `summaryVersion` from the value received on the wire when one is present, regardless of whether [TM8a](#TM8a) `summary` is empty (the version advances on every summary publish, including ones that produce an empty `summary`, so consumers can order successive summaries on the same referenced message). When `summaryVersion` is absent on the wire the SDK MUST leave it unset (e.g. `null`); the SDK MUST NOT synthesise a default value for it.
 
 #### DeltaExtras
 
@@ -2916,6 +2920,11 @@ Each type, method, and attribute is labelled with the name of one or more clause
 
     class MessageAnnotations:
       summary: Dict<string, JsonObject>? // TM8a
+      summaryVersion: SummaryVersion? // TM8b
+
+    class SummaryVersion:
+      serial: string // TM8b1
+      timestamp: number // TM8b2
 
     class MessageVersion:
       serial: string? // TM2s1

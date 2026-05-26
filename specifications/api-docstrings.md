@@ -914,6 +914,16 @@ Contains annotations that have been made to a message.
 | Method / Property | Parameter | Returns | Spec | Description |
 |---|---|---|---|---|
 | summary: Dict<String, JsonObject>? ||| TM8a | An object whose keys are annotation types, and the values are aggregated summaries for that annotation type. |
+| summaryVersion: SummaryVersion? ||| TM8b | Identifies the version of the summary itself, distinct from the enclosing Message's `serial`, `timestamp`, and `version` fields (which all refer to the referenced message). Set on `MESSAGE_SUMMARY` events; absent on other actions. |
+
+## class SummaryVersion
+
+Identifies a particular version of an annotation summary on a message. Allows ordering successive summaries on the same referenced message, and reasoning about when the summary itself was produced (as distinct from when the referenced message was published).
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| serial: String ||| TM8b1 | An opaque timeserial that identifies this version of the summary. |
+| timestamp: Time ||| TM8b2 | Time in milliseconds since epoch at which this version of the summary was produced. Equal to the time component encoded in `serial`. |
 
 ## class PresenceMessage
 
