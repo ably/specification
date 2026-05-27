@@ -32,6 +32,20 @@ map:prefs@1000 (LiveMap, semantics: LWW)
 All map entries have timeserial `"t:0"` and `tombstone: false` unless otherwise noted.
 All objects have `siteTimeserials: { "aaa": "t:0" }` and `createOperationIsMerged: true` unless otherwise noted.
 
+### Expected parentReferences after sync
+
+After `setup_synced_channel` completes (including the RTO5c10 rebuild), each object's `parentReferences` should be:
+
+| Object | parentReferences |
+|--------|-----------------|
+| `root` | `{}` (empty -- root is not referenced by any parent) |
+| `counter:score@1000` | `{ "root": {"score"} }` |
+| `map:profile@1000` | `{ "root": {"profile"} }` |
+| `counter:nested@1000` | `{ "map:profile@1000": {"nested_counter"} }` |
+| `map:prefs@1000` | `{ "map:profile@1000": {"prefs"} }` |
+
+Only entries whose value is a `LiveObject` (i.e. `data.objectId` is present) contribute to parentReferences. Primitive-valued entries ("name", "age", "active", "data", "avatar", "email", "theme") do not.
+
 ---
 
 ## STANDARD_POOL_OBJECTS
@@ -216,11 +230,42 @@ build_object_state(objectId, siteTimeserials, opts):
   RETURN ObjectMessage(object: state)
 ```
 
+### ObjectMessage Builder (State wrapper)
+
+Wraps an existing `ObjectState` in an `ObjectMessage` with the `object` field populated. Used when `replaceData` (RTLC6, RTLM6) needs an `ObjectMessage` rather than a bare `ObjectState`.
+
+```pseudo
+build_object_message_with_state(objectState):
+  RETURN ObjectMessage(object: objectState)
+```
+
+### PublicAPI::ObjectMessage Builder
+
+Constructs a `PublicAPI::ObjectMessage` from an internal `ObjectMessage` and a channel name, per PAOM3. Used by subscription tests that verify the user-facing message delivered to listeners.
+
+```pseudo
+build_public_object_message(objectMessage, channelName):
+  pub = PublicAPI::ObjectMessage()
+  pub.channel = channelName
+  pub.id = objectMessage.id
+  pub.clientId = objectMessage.clientId
+  pub.connectionId = objectMessage.connectionId
+  pub.timestamp = objectMessage.timestamp
+  pub.serial = objectMessage.serial
+  pub.serialTimestamp = objectMessage.serialTimestamp
+  pub.siteCode = objectMessage.siteCode
+  pub.extras = objectMessage.extras
+  pub.operation = PublicAPI::ObjectOperation from objectMessage.operation per PAOOP3
+  RETURN pub
+```
+
 ---
 
 ## Standard Synced-Channel Setup
 
 Used by all mock WebSocket test files. Creates a connected client with a synced channel containing the standard test pool.
+
+After the OBJECT_SYNC sequence completes, the SDK rebuilds parentReferences per RTO5c10: reset all LiveObject parentReferences to empty (RTLO3f2), then iterate all LiveMap entries calling addParentReference (RTLO4g) for each entry whose value is a LiveObject. See "Expected parentReferences after sync" above for the resulting state.
 
 ```pseudo
 setup_synced_channel(channel_name):

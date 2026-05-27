@@ -23,6 +23,8 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 |------|-------------|
 | RTLC5c | Returns current data value |
 
+Note: RTLC5a and RTLC5b have been replaced by RTO25. The access API preconditions (OBJECT_SUBSCRIBE mode check and channel state check) are now the caller's responsibility and are tested separately in `objects/unit/rto25_access_preconditions.md`.
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
@@ -33,16 +35,6 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 counter = root.get("score")
 ASSERT counter.value() == 100
 ```
-
----
-
-## RTLC5a - value() requires OBJECT_SUBSCRIBE mode
-
-**Test ID**: `objects/unit/RTLC5a/value-requires-subscribe-0`
-
-**Spec requirement:** Requires OBJECT_SUBSCRIBE channel mode per RTO2.
-
-This is implicitly tested by `setup_synced_channel` which always includes OBJECT_SUBSCRIBE. A negative test would use a channel without OBJECT_SUBSCRIBE and verify the error.
 
 ---
 
@@ -124,87 +116,11 @@ ASSERT root.get("score").value() == 150
 
 ---
 
-## RTLC12b - increment requires OBJECT_PUBLISH mode
+## RTLC12b/c/d - increment write preconditions (replaced by RTO26)
 
 **Test ID**: `objects/unit/RTLC12b/increment-requires-publish-0`
 
-**Spec requirement:** Requires OBJECT_PUBLISH channel mode.
-
-### Setup
-```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
-      objectsGCGracePeriod: 86400000
-    })
-  ),
-  onMessageFromClient: (msg) => {
-    IF msg.action == ATTACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
-        flags: HAS_OBJECTS, modes: ["OBJECT_SUBSCRIBE"]
-      ))
-      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
-  }
-)
-install_mock(mock_ws)
-client = Realtime(options: { key: "fake:key" })
-channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
-root = AWAIT channel.object.get()
-```
-
-### Test Steps
-```pseudo
-AWAIT root.increment(10) FAILS WITH error
-```
-
-### Assertions
-```pseudo
-ASSERT error.code == 40024
-```
-
----
-
-## RTLC12d - increment with echoMessages false throws
-
-**Test ID**: `objects/unit/RTLC12d/echo-messages-false-0`
-
-**Spec requirement:** If echoMessages is false, throw 40000.
-
-### Setup
-```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
-      objectsGCGracePeriod: 86400000
-    })
-  ),
-  onMessageFromClient: (msg) => {
-    IF msg.action == ATTACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
-        flags: HAS_OBJECTS
-      ))
-      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
-  }
-)
-install_mock(mock_ws)
-client = Realtime(options: { key: "fake:key", echoMessages: false })
-channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
-root = AWAIT channel.object.get()
-```
-
-### Test Steps
-```pseudo
-AWAIT root.increment(10) FAILS WITH error
-```
-
-### Assertions
-```pseudo
-ASSERT error.code == 40000
-```
+Note: RTLC12b, RTLC12c, and RTLC12d have been replaced by RTO26. The write API preconditions (OBJECT_PUBLISH mode check, channel state check, and echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/rto26_write_preconditions.md`.
 
 ---
 

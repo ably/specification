@@ -21,8 +21,9 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO15b | Resolves path, on failure throws RTPO3c2 |
-| RTPO15c | LiveMap -> delegates to LiveMap#set |
+| RTPO15b | Checks write API preconditions per RTO26 |
+| RTPO15c | Resolves path, on failure throws RTPO3c2 |
+| RTPO15d | LiveMap -> delegates to LiveMap#set (RTLM20) |
 
 ### Setup
 ```pseudo
@@ -45,6 +46,11 @@ ASSERT root.get("name").value() == "Bob"
 
 **Test ID**: `objects/unit/RTPO15/set-nested-path-0`
 
+| Spec | Requirement |
+|------|-------------|
+| RTPO15a2 | value accepts same types as LiveMap#set (RTLM20): primitives and LiveCounterValueType/LiveMapValueType |
+| RTPO15b | Checks write API preconditions per RTO26 |
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
@@ -66,7 +72,10 @@ ASSERT root.get("profile").get("email").value() == "bob@example.com"
 
 **Test ID**: `objects/unit/RTPO15d/set-non-map-throws-0`
 
-**Spec requirement:** If resolved value is not a LiveMap, throw 92007.
+| Spec | Requirement |
+|------|-------------|
+| RTPO15b | Checks write API preconditions per RTO26 |
+| RTPO15e | Not LiveMap -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -91,8 +100,9 @@ ASSERT error.code == 92007
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO16b | Resolves path, on failure throws RTPO3c2 |
-| RTPO16c | LiveMap -> delegates to LiveMap#remove |
+| RTPO16b | Checks write API preconditions per RTO26 |
+| RTPO16c | Resolves path, on failure throws RTPO3c2 |
+| RTPO16d | LiveMap -> delegates to LiveMap#remove (RTLM21) |
 
 ### Setup
 ```pseudo
@@ -115,7 +125,10 @@ ASSERT root.get("name").value() == null
 
 **Test ID**: `objects/unit/RTPO16d/remove-non-map-throws-0`
 
-**Spec requirement:** If resolved value is not a LiveMap, throw 92007.
+| Spec | Requirement |
+|------|-------------|
+| RTPO16b | Checks write API preconditions per RTO26 |
+| RTPO16e | Not LiveMap -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -140,8 +153,9 @@ ASSERT error.code == 92007
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO17b | Resolves path, on failure throws RTPO3c2 |
-| RTPO17c | LiveCounter -> delegates to LiveCounter#increment |
+| RTPO17b | Checks write API preconditions per RTO26 |
+| RTPO17c | Resolves path, on failure throws RTPO3c2 |
+| RTPO17d | LiveCounter -> delegates to LiveCounter#increment (RTLC12) |
 
 ### Setup
 ```pseudo
@@ -164,7 +178,10 @@ ASSERT root.get("score").value() == 125
 
 **Test ID**: `objects/unit/RTPO17/increment-default-amount-0`
 
-**Spec requirement:** amount defaults to 1.
+| Spec | Requirement |
+|------|-------------|
+| RTPO17a1 | amount defaults to 1 |
+| RTPO17b | Checks write API preconditions per RTO26 |
 
 ### Setup
 ```pseudo
@@ -187,7 +204,10 @@ ASSERT root.get("score").value() == 101
 
 **Test ID**: `objects/unit/RTPO17d/increment-non-counter-throws-0`
 
-**Spec requirement:** If resolved value is not a LiveCounter, throw 92007.
+| Spec | Requirement |
+|------|-------------|
+| RTPO17b | Checks write API preconditions per RTO26 |
+| RTPO17e | Not LiveCounter -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -212,8 +232,9 @@ ASSERT error.code == 92007
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO18b | Resolves path, on failure throws RTPO3c2 |
-| RTPO18c | LiveCounter -> delegates to LiveCounter#decrement |
+| RTPO18b | Checks write API preconditions per RTO26 |
+| RTPO18c | Resolves path, on failure throws RTPO3c2 |
+| RTPO18d | LiveCounter -> delegates to LiveCounter#decrement (RTLC13) |
 
 ### Setup
 ```pseudo
@@ -236,7 +257,10 @@ ASSERT root.get("score").value() == 90
 
 **Test ID**: `objects/unit/RTPO18/decrement-default-amount-0`
 
-**Spec requirement:** amount defaults to 1.
+| Spec | Requirement |
+|------|-------------|
+| RTPO18a1 | amount defaults to 1 |
+| RTPO18b | Checks write API preconditions per RTO26 |
 
 ### Setup
 ```pseudo
@@ -259,7 +283,10 @@ ASSERT root.get("score").value() == 99
 
 **Test ID**: `objects/unit/RTPO18d/decrement-non-counter-throws-0`
 
-**Spec requirement:** If resolved value is not a LiveCounter, throw 92007.
+| Spec | Requirement |
+|------|-------------|
+| RTPO18b | Checks write API preconditions per RTO26 |
+| RTPO18e | Not LiveCounter -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -282,7 +309,10 @@ ASSERT error.code == 92007
 
 **Test ID**: `objects/unit/RTPO3c2/set-unresolvable-throws-0`
 
-**Spec requirement:** For write operations, if path resolution fails, throw 92005.
+| Spec | Requirement |
+|------|-------------|
+| RTPO15b | Checks write API preconditions per RTO26 |
+| RTPO3c2 | Write operations on unresolvable path throw ErrorInfo with statusCode 400, code 92005 |
 
 ### Setup
 ```pseudo
@@ -297,6 +327,7 @@ AWAIT root.get("nonexistent").get("deep").set("key", "value") FAILS WITH error
 ### Assertions
 ```pseudo
 ASSERT error.code == 92005
+ASSERT error.statusCode == 400
 ```
 
 ---
@@ -304,6 +335,11 @@ ASSERT error.code == 92005
 ## RTPO3c2 - increment() on unresolvable path throws 92005
 
 **Test ID**: `objects/unit/RTPO3c2/increment-unresolvable-throws-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTPO17b | Checks write API preconditions per RTO26 |
+| RTPO3c2 | Write operations on unresolvable path throw ErrorInfo with statusCode 400, code 92005 |
 
 ### Setup
 ```pseudo
@@ -318,4 +354,5 @@ AWAIT root.get("nonexistent").increment(5) FAILS WITH error
 ### Assertions
 ```pseudo
 ASSERT error.code == 92005
+ASSERT error.statusCode == 400
 ```

@@ -3,11 +3,11 @@
 Spec points: `RTLCV1`–`RTLCV4`, `RTLMV1`–`RTLMV4`
 
 ## Test Type
-Unit test — pure construction and consumption, no mocks required.
+Unit test — pure construction and evaluation, no mocks required.
 
 ## Purpose
 
-Tests `LiveCounterValueType` and `LiveMapValueType` — immutable blueprints created via `LiveCounter.create()` and `LiveMap.create()` static factories. When consumed by a mutation method, they generate `ObjectMessages` with v6 wire format fields (`counterCreateWithObjectId`, `mapCreateWithObjectId`).
+Tests `LiveCounterValueType` and `LiveMapValueType` — immutable blueprints created via `LiveCounter.create()` and `LiveMap.create()` static factories. When evaluated by a mutation method, they generate `ObjectMessages` with v6 wire format fields (`counterCreateWithObjectId`, `mapCreateWithObjectId`).
 
 ---
 
@@ -56,7 +56,7 @@ ASSERT vt.count == 0
 
 **Test ID**: `objects/unit/RTLCV3c/no-validation-at-create-0`
 
-**Spec requirement:** No input validation is performed at creation time; deferred to consumption.
+**Spec requirement:** No input validation is performed at creation time. Validation is deferred to the evaluation procedure (RTLCV4).
 
 ### Test Steps
 ```pseudo
@@ -70,9 +70,9 @@ ASSERT vt IS LiveCounterValueType
 
 ---
 
-## RTLCV4 - Consumption generates COUNTER_CREATE ObjectMessage
+## RTLCV4 - Evaluation generates COUNTER_CREATE ObjectMessage
 
-**Test ID**: `objects/unit/RTLCV4/consume-generates-message-0`
+**Test ID**: `objects/unit/RTLCV4/evaluate-generates-message-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -88,7 +88,7 @@ ASSERT vt IS LiveCounterValueType
 ### Test Steps
 ```pseudo
 vt = LiveCounter.create(42)
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -106,16 +106,16 @@ ASSERT msg.operation.counterCreateWithObjectId.initialValue IS NOT null
 
 ---
 
-## RTLCV4g5 - Consumption retains local CounterCreate
+## RTLCV4g5 - Evaluation retains local CounterCreate
 
 **Test ID**: `objects/unit/RTLCV4g5/retains-local-counter-create-0`
 
-**Spec requirement:** Client must retain CounterCreate alongside CounterCreateWithObjectId for local use.
+**Spec requirement:** Client must retain CounterCreate alongside CounterCreateWithObjectId for local use (RTLCV4g5). Needed for message size calculation and local application.
 
 ### Test Steps
 ```pseudo
 vt = LiveCounter.create(42)
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -127,16 +127,16 @@ ASSERT msg.operation.counterCreate.count == 42
 
 ---
 
-## RTLCV4a - Consumption validates count type
+## RTLCV4a - Evaluation validates count type
 
-**Test ID**: `objects/unit/RTLCV4a/consume-validates-count-0`
+**Test ID**: `objects/unit/RTLCV4a/evaluate-validates-count-0`
 
-**Spec requirement:** If count is not undefined and (not a Number or not finite), throw 40003.
+**Spec requirement:** If count is not undefined and (not a Number or not finite), throw 40003 (RTLCV4a). Validation happens during evaluation, not at creation time.
 
 ### Test Steps
 ```pseudo
 vt = LiveCounter.create("not_a_number")
-consume(vt) FAILS WITH error
+evaluate(vt) FAILS WITH error
 ```
 
 ### Assertions
@@ -146,16 +146,16 @@ ASSERT error.code == 40003
 
 ---
 
-## RTLCV4 - Consumption with count 0
+## RTLCV4 - Evaluation with count 0
 
-**Test ID**: `objects/unit/RTLCV4/consume-zero-count-0`
+**Test ID**: `objects/unit/RTLCV4/evaluate-zero-count-0`
 
 **Spec requirement:** count=0 is valid and should be included in CounterCreate.
 
 ### Test Steps
 ```pseudo
 vt = LiveCounter.create(0)
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -211,9 +211,9 @@ ASSERT vt IS LiveMapValueType
 
 ---
 
-## RTLMV4 - Consumption generates MAP_CREATE ObjectMessage
+## RTLMV4 - Evaluation generates MAP_CREATE ObjectMessage
 
-**Test ID**: `objects/unit/RTLMV4/consume-generates-message-0`
+**Test ID**: `objects/unit/RTLMV4/evaluate-generates-message-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -228,7 +228,7 @@ ASSERT vt IS LiveMapValueType
 ### Test Steps
 ```pseudo
 vt = LiveMap.create({ "name": "Alice" })
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -244,16 +244,16 @@ ASSERT msg.operation.mapCreateWithObjectId.initialValue IS NOT null
 
 ---
 
-## RTLMV4j5 - Consumption retains local MapCreate
+## RTLMV4j5 - Evaluation retains local MapCreate
 
 **Test ID**: `objects/unit/RTLMV4j5/retains-local-map-create-0`
 
-**Spec requirement:** Client must retain MapCreate alongside MapCreateWithObjectId for local use.
+**Spec requirement:** Client must retain MapCreate alongside MapCreateWithObjectId for local use (RTLMV4j5). Needed for message size calculation and local application.
 
 ### Test Steps
 ```pseudo
 vt = LiveMap.create({ "name": "Alice" })
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -287,7 +287,7 @@ vt = LiveMap.create({
   "json_arr": [1, 2, 3],
   "json_obj": { "key": "value" }
 })
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -309,8 +309,8 @@ ASSERT entries["json_obj"].data.json == { "key": "value" }
 
 | Spec | Requirement |
 |------|-------------|
-| RTLMV4d1 | LiveCounterValueType consumed, ObjectMessage collected, objectId set |
-| RTLMV4d2 | LiveMapValueType recursively consumed, all ObjectMessages collected |
+| RTLMV4d1 | LiveCounterValueType evaluated, ObjectMessage collected, objectId set |
+| RTLMV4d2 | LiveMapValueType recursively evaluated, all ObjectMessages collected |
 | RTLMV4k | Return depth-first order: inner creates before outer |
 
 ### Test Steps
@@ -322,7 +322,7 @@ inner_map = LiveMap.create({
 outer = LiveMap.create({
   "child": inner_map
 })
-messages = consume(outer)
+messages = evaluate(outer)
 ```
 
 ### Assertions
@@ -345,16 +345,16 @@ ASSERT messages[2].operation.mapCreate.entries["child"].data.objectId == inner_m
 
 ---
 
-## RTLMV4a - Consumption validates entries type
+## RTLMV4a - Evaluation validates entries type
 
-**Test ID**: `objects/unit/RTLMV4a/consume-validates-entries-0`
+**Test ID**: `objects/unit/RTLMV4a/evaluate-validates-entries-0`
 
-**Spec requirement:** If entries is not undefined and (is null or not Dict), throw 40003.
+**Spec requirement:** If entries is not undefined and (is null or not Dict), throw 40003 (RTLMV4a). Validation happens during evaluation, not at creation time.
 
 ### Test Steps
 ```pseudo
 vt = LiveMap.create(null)
-consume(vt) FAILS WITH error
+evaluate(vt) FAILS WITH error
 ```
 
 ### Assertions
@@ -364,16 +364,16 @@ ASSERT error.code == 40003
 
 ---
 
-## RTLMV4b - Consumption validates key types
+## RTLMV4b - Evaluation validates key types
 
-**Test ID**: `objects/unit/RTLMV4b/consume-validates-keys-0`
+**Test ID**: `objects/unit/RTLMV4b/evaluate-validates-keys-0`
 
-**Spec requirement:** If any key is not String, throw 40003.
+**Spec requirement:** If any key is not String, throw 40003 (RTLMV4b).
 
 ### Test Steps
 ```pseudo
 vt = LiveMap.create({ 123: "value" })
-consume(vt) FAILS WITH error
+evaluate(vt) FAILS WITH error
 ```
 
 ### Assertions
@@ -383,16 +383,16 @@ ASSERT error.code == 40003
 
 ---
 
-## RTLMV4c - Consumption validates value types
+## RTLMV4c - Evaluation validates value types
 
-**Test ID**: `objects/unit/RTLMV4c/consume-validates-values-0`
+**Test ID**: `objects/unit/RTLMV4c/evaluate-validates-values-0`
 
-**Spec requirement:** If any value is not an expected type, throw 40013.
+**Spec requirement:** If any value is not an expected type, throw 40013 (RTLMV4c).
 
 ### Test Steps
 ```pseudo
 vt = LiveMap.create({ "fn": some_function })
-consume(vt) FAILS WITH error
+evaluate(vt) FAILS WITH error
 ```
 
 ### Assertions
@@ -411,7 +411,7 @@ ASSERT error.code == 40013
 ### Test Steps
 ```pseudo
 vt = LiveMap.create()
-messages = consume(vt)
+messages = evaluate(vt)
 ```
 
 ### Assertions
@@ -445,7 +445,7 @@ type_scenarios = [
 
 FOR scenario IN type_scenarios:
   vt = LiveMap.create({ "test_key": scenario.input })
-  messages = consume(vt)
+  messages = evaluate(vt)
   entry = messages[0].operation.mapCreate.entries["test_key"]
   ASSERT entry.data[scenario.expected_field] == scenario.expected_value
 ```

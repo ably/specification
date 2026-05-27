@@ -82,7 +82,7 @@ ASSERT pool.syncState == SYNCING
 |------|-------------|
 | RTO4b1 | Remove all objects except root |
 | RTO4b2 | Clear root LiveMap data to zero-value |
-| RTO4b2a | Emit LiveMapUpdate for root with removed entries |
+| RTO4b2a | Emit LiveMapUpdate for root with removed entries, without populating objectMessage |
 | RTO4b4 | Perform sync completion actions |
 
 ### Setup
@@ -114,6 +114,7 @@ ASSERT "root" IN pool
 ASSERT pool["root"].data == {}
 ASSERT updates.length >= 1
 ASSERT updates[0].update == { "name": "removed" }
+ASSERT updates[0].objectMessage IS null
 ```
 
 ---
@@ -907,4 +908,226 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
 ASSERT pool.syncState == SYNCED
 ASSERT "old_key" NOT IN pool["root"].data
 ASSERT pool["root"].data["new_key"].data == { string: "new" }
+```
+
+---
+
+## RTO5c10 - Sync completion rebuilds parentReferences
+
+**Test ID**: `objects/unit/RTO5c10/sync-rebuilds-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO5c10 | Rebuild every parentReferences map after sync completion |
+| RTO5c10a | For each LiveObject in ObjectsPool, reset parentReferences to empty map (RTLO3f2) |
+| RTO5c10b | For each LiveMap, iterate entries (RTLM11); for each entry whose value is a LiveObject, call addParentReference(parent, key) per RTLO4g |
+
+Tests that after a normal sync, each LiveObject in the pool has correct parentReferences matching its position in the synced tree.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+```
+
+### Test Steps
+```pseudo
+pool.processObjectSync(build_object_sync_message("test", "sync1:", [
+  build_object_state("root", {"aaa": "t:0"}, {
+    map: {
+      semantics: "LWW",
+      entries: {
+        "score":   { data: { objectId: "counter:score@1000" }, timeserial: "t:0" },
+        "profile": { data: { objectId: "map:profile@1000" },  timeserial: "t:0" },
+        "name":    { data: { string: "Alice" },                timeserial: "t:0" }
+      }
+    },
+    createOp: { mapCreate: { semantics: "LWW", entries: {} } }
+  }),
+  build_object_state("counter:score@1000", {"aaa": "t:0"}, {
+    counter: { count: 100 },
+    createOp: { counterCreate: { count: 100 } }
+  }),
+  build_object_state("map:profile@1000", {"aaa": "t:0"}, {
+    map: {
+      semantics: "LWW",
+      entries: {
+        "nested_counter": { data: { objectId: "counter:nested@1000" }, timeserial: "t:0" }
+      }
+    },
+    createOp: { mapCreate: { semantics: "LWW", entries: {} } }
+  }),
+  build_object_state("counter:nested@1000", {"aaa": "t:0"}, {
+    counter: { count: 5 },
+    createOp: { counterCreate: { count: 5 } }
+  })
+]))
+```
+
+### Assertions
+```pseudo
+# root is not referenced by any parent
+ASSERT pool["root"].parentReferences == {}
+
+# counter:score@1000 is referenced by root at key "score"
+ASSERT pool["counter:score@1000"].parentReferences == { "root": {"score"} }
+
+# map:profile@1000 is referenced by root at key "profile"
+ASSERT pool["map:profile@1000"].parentReferences == { "root": {"profile"} }
+
+# counter:nested@1000 is referenced by map:profile@1000 at key "nested_counter"
+ASSERT pool["counter:nested@1000"].parentReferences == { "map:profile@1000": {"nested_counter"} }
+
+# Primitive-valued entries ("name") do not appear in any parentReferences
+```
+
+---
+
+## RTO5c10 - Re-sync rebuilds parentReferences with new tree structure
+
+**Test ID**: `objects/unit/RTO5c10/resync-rebuilds-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO5c10a | Reset parentReferences to empty map before rebuilding |
+| RTO5c10b | Rebuild from current LiveMap entries after sync completion |
+
+Tests that after a second sync sequence with a different tree structure, parentReferences are reset then rebuilt to reflect the new tree, not the old one.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+
+# First sync: counter:abc@1000 is a child of root
+pool.processObjectSync(build_object_sync_message("test", "sync1:", [
+  build_object_state("root", {"aaa": "t:0"}, {
+    map: {
+      semantics: "LWW",
+      entries: {
+        "counter_key": { data: { objectId: "counter:abc@1000" }, timeserial: "t:0" }
+      }
+    },
+    createOp: { mapCreate: { semantics: "LWW", entries: {} } }
+  }),
+  build_object_state("counter:abc@1000", {"aaa": "t:0"}, {
+    counter: { count: 10 },
+    createOp: { counterCreate: { count: 10 } }
+  })
+]))
+
+# Verify first sync parentReferences
+ASSERT pool["counter:abc@1000"].parentReferences == { "root": {"counter_key"} }
+```
+
+### Test Steps
+```pseudo
+# Second sync: counter:abc@1000 is now a child of map:wrapper@1000, not root
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor", flags: HAS_OBJECTS
+))
+pool.processObjectSync(build_object_sync_message("test", "sync2:", [
+  build_object_state("root", {"aaa": "t:1"}, {
+    map: {
+      semantics: "LWW",
+      entries: {
+        "wrapper": { data: { objectId: "map:wrapper@1000" }, timeserial: "t:1" }
+      }
+    },
+    createOp: { mapCreate: { semantics: "LWW", entries: {} } }
+  }),
+  build_object_state("map:wrapper@1000", {"aaa": "t:1"}, {
+    map: {
+      semantics: "LWW",
+      entries: {
+        "moved_counter": { data: { objectId: "counter:abc@1000" }, timeserial: "t:1" }
+      }
+    },
+    createOp: { mapCreate: { semantics: "LWW", entries: {} } }
+  }),
+  build_object_state("counter:abc@1000", {"aaa": "t:1"}, {
+    counter: { count: 20 },
+    createOp: { counterCreate: { count: 20 } }
+  })
+]))
+```
+
+### Assertions
+```pseudo
+ASSERT pool.syncState == SYNCED
+
+# root is not referenced by any parent
+ASSERT pool["root"].parentReferences == {}
+
+# map:wrapper@1000 is now a child of root at key "wrapper"
+ASSERT pool["map:wrapper@1000"].parentReferences == { "root": {"wrapper"} }
+
+# counter:abc@1000 is now a child of map:wrapper@1000, NOT of root
+ASSERT pool["counter:abc@1000"].parentReferences == { "map:wrapper@1000": {"moved_counter"} }
+```
+
+---
+
+## RTO5c10 - Empty sync leaves root with empty parentReferences
+
+**Test ID**: `objects/unit/RTO5c10/empty-sync-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO5c10a | Reset parentReferences to empty map |
+| RTO4b | ATTACHED without HAS_OBJECTS performs immediate sync completion |
+
+Tests that after an empty sync (no HAS_OBJECTS flag), root has empty parentReferences because there are no children to reference it.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+
+# First, do a normal sync to populate parentReferences
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+pool.processObjectSync(build_object_sync_message("test", "sync1:", [
+  build_object_state("root", {"aaa": "t:0"}, {
+    map: {
+      semantics: "LWW",
+      entries: {
+        "child": { data: { objectId: "counter:child@1000" }, timeserial: "t:0" }
+      }
+    },
+    createOp: { mapCreate: { semantics: "LWW", entries: {} } }
+  }),
+  build_object_state("counter:child@1000", {"aaa": "t:0"}, {
+    counter: { count: 1 },
+    createOp: { counterCreate: { count: 1 } }
+  })
+]))
+
+# Verify parentReferences are populated after first sync
+ASSERT pool["counter:child@1000"].parentReferences == { "root": {"child"} }
+```
+
+### Test Steps
+```pseudo
+# Empty sync: ATTACHED without HAS_OBJECTS
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", flags: 0
+))
+```
+
+### Assertions
+```pseudo
+ASSERT pool.syncState == SYNCED
+
+# counter:child@1000 was removed from pool (RTO4b1)
+ASSERT "counter:child@1000" NOT IN pool
+
+# root exists with empty data and empty parentReferences
+ASSERT "root" IN pool
+ASSERT pool["root"].data == {}
+ASSERT pool["root"].parentReferences == {}
 ```

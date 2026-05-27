@@ -2,7 +2,7 @@
 
 ## Context
 
-The LiveObjects feature lets clients store shared CRDT data on realtime channels. The specification is at `specification/specifications/objects-features.md` — specifically the path-based API version on branch `origin/AIT-30/liveobjects-path-based-api-spec` (with batch API additions on `origin/AIT-30/liveobjects-batch-api`).
+The LiveObjects feature lets clients store shared CRDT data on realtime channels. The specification is at `specification/specifications/objects-features.md` — the path-based API version squashed as commit `a397e34` ("LiveObjects path-based API spec").
 
 An earlier attempt at UTS test specs exists in `uts/test/realtime/unit/objects/` (14 files). It was written against a different spec namespace (PO* vs RTPO*/RTINS*/RTLCV*/RTLMV*), used v5 wire format field names, had apply-on-ACK contradictions, and duplicated setup across files. We're doing a clean rewrite using the correct spec, informed by that earlier work.
 
@@ -12,7 +12,7 @@ All new test files go in `specification/uts/objects/`.
 
 **Internal (not user-facing):** LiveObject, LiveCounter (CRDT counter), LiveMap (LWW map), ObjectsPool (sync state machine), RealtimeObject (channel orchestrator with publishAndApply)
 
-**Public (user-facing):** PathObject (lazy path reference), Instance (identity-bound reference), LiveCounterValueType/LiveMapValueType (creation descriptors via static `create()` factories), BatchContext (atomic multi-op publish)
+**Public (user-facing):** PathObject (lazy path reference), Instance (identity-bound reference), LiveCounterValueType/LiveMapValueType (creation descriptors via static `create()` factories), PublicAPI::ObjectMessage/ObjectOperation (user-facing event metadata)
 
 **Wire protocol v6:** `counterInc.number`, `mapSet.{key,value}`, `mapRemove.key`, `mapCreate.{semantics,entries}`, `counterCreateWithObjectId.{nonce,initialValue}`, `mapCreateWithObjectId.{nonce,initialValue}`
 
@@ -30,31 +30,32 @@ All new test files go in `specification/uts/objects/`.
 ### Pure Unit Tests (no mocks)
 | File | Spec Points | ~Tests |
 |------|-------------|--------|
-| `unit/live_counter.md` | RTLC1-4, RTLC6-9, RTLC14, RTLC16, RTLO3, RTLO4a, RTLO4e, RTLO5, RTLO6 | ~28 |
-| `unit/live_map.md` | RTLM1-9, RTLM14-16, RTLM18-19, RTLM22-25, RTLO3, RTLO4a, RTLO4e, RTLO5, RTLO6 | ~42 |
-| `unit/objects_pool.md` | RTO3-9 | ~35 |
+| `unit/live_counter.md` | RTLC1-4, RTLC6-9, RTLC14, RTLC16, RTLO3-6, RTLO4b4d-e | ~23 |
+| `unit/live_map.md` | RTLM1-9, RTLM14-16, RTLM18-19, RTLM22-25, RTLO3-6, RTLO4g-h, RTLO4e9 | ~38 |
+| `unit/objects_pool.md` | RTO3-9, RTO5c10 | ~28 |
 | `unit/object_id.md` | RTO14 | ~5 |
-| `unit/value_types.md` | RTLCV1-4, RTLMV1-4 (consumption generates ObjectMessages with v6 wire format) | ~19 |
+| `unit/value_types.md` | RTLCV1-4, RTLMV1-4 (evaluation generates ObjectMessages with v6 wire format) | ~19 |
+| `unit/parent_references.md` | RTLO3f, RTLO4f-h, RTO5c10 (parentReferences, getFullPaths, add/remove/rebuild) | ~20 |
+| `unit/public_object_message.md` | PAOM1-3, PAOOP1-3 (PublicAPI::ObjectMessage/ObjectOperation construction) | ~13 |
 
 ### Mock WebSocket Unit Tests
 | File | Spec Points | ~Tests |
 |------|-------------|--------|
-| `unit/realtime_object.md` | RTO2, RTO10, RTO15-20, RTO22-24 (sync events, publish, publishAndApply, mode checks, GC) | ~33 |
+| `unit/realtime_object.md` | RTO2, RTO10, RTO15-20, RTO22-26 (sync events, publish, publishAndApply, GC, RTO24/25/26 preconditions) | ~36 |
 | `unit/live_counter_api.md` | RTLC5, RTLC11-13 (value, increment, decrement through channel) | ~13 |
-| `unit/live_map_api.md` | RTLM5, RTLM10-13, RTLM20-21, RTLM24 (reads + mutations through channel, echoMessages check) | ~18 |
-| `unit/live_object_subscribe.md` | RTLO4b, RTLO4c (subscribe/unsubscribe on internal LiveObject) | ~8 |
-| `unit/path_object.md` | RTPO1-14 (navigation, value, instance, entries, compact, compactJson) | ~33 |
-| `unit/path_object_mutations.md` | RTPO15-18, RTPO3c2 (set, remove, increment, decrement, error on unresolvable path) | ~12 |
-| `unit/path_object_subscribe.md` | RTPO19-21, RTO24 (path subscriptions, depth filtering, path-following semantics, subscribeIterator) | ~20 |
-| `unit/instance.md` | RTINS1-18 (id, value, get, entries, size, compact, set, remove, increment, subscribe) | ~26 |
-| `unit/batch.md` | RTPO22, RTINS19, RTBC1-16 (batch entry, BatchContext methods, RootBatchContext flush/close) | ~20 |
+| `unit/live_map_api.md` | RTLM5, RTLM10-13, RTLM20-21, RTLM24, RTLCV4, RTLMV4 (reads + mutations, value type evaluation) | ~20 |
+| `unit/live_object_subscribe.md` | RTLO4b, RTLO4b4c3, RTLO4b4d-e, RTLO4b7 (subscribe, dispatch chain, tombstone cleanup, Subscription) | ~11 |
+| `unit/path_object.md` | RTPO1-14, RTO25 (navigation, value, instance, entries, compact, compactJson, access preconditions) | ~27 |
+| `unit/path_object_mutations.md` | RTPO15-18, RTPO3c2, RTO26 (set, remove, increment, decrement, write preconditions) | ~14 |
+| `unit/path_object_subscribe.md` | RTPO19, RTO24 (path subscriptions, depth filtering, dispatch, PAOM delivery) | ~22 |
+| `unit/instance.md` | RTINS1-16 (id, value, get, entries, size, compact, set, remove, increment, subscribe, RTO25/26) | ~21 |
 
 ### Integration Tests (sandbox)
 | File | Spec Points | ~Tests |
 |------|-------------|--------|
 | `integration/objects_lifecycle_test.md` | RTO23, RTPO15, RTPO17 (create objects, mutate via PathObject, read back, REST provisioning) | ~6 |
 | `integration/objects_sync_test.md` | RTO4, RTO5, RTO17 (attach, sync sequence, re-attach) | ~4 |
-| `integration/objects_batch_test.md` | RTPO22, RTBC12-15 (batch publish, atomic delivery) | ~3 |
+| ~~`integration/objects_batch_test.md`~~ | ~~Batch API not in current spec revision~~ | — |
 | `integration/objects_gc_test.md` | RTO10, RTLM19 (behavioral GC verification with ADVANCE_TIME) | ~2 |
 
 ### Proxy Integration Tests
@@ -62,7 +63,7 @@ All new test files go in `specification/uts/objects/`.
 |------|-------------|--------|
 | `integration/proxy/objects_faults.md` | RTO5a2, RTO7, RTO8, RTO17, RTO20e (sync interruption, mutation buffering during re-sync, server-initiated detach, publish failure on FAILED channel, publish during delayed sync) | ~5 |
 
-**Totals: ~21 files, ~330 tests**
+**Totals: ~20 files, ~310 tests**
 
 ---
 
@@ -198,17 +199,17 @@ Pure function tests:
 
 ### `unit/value_types.md` -- LiveCounterValueType / LiveMapValueType
 
-Tests the static `create()` factories and consumption procedure.
+Tests the static `create()` factories and evaluation procedure.
 
 **LiveCounterValueType (RTLCV1-4):**
 1. `LiveCounter.create(42)` -> immutable LiveCounterValueType with count=42
 2. `LiveCounter.create()` -> count defaults to 0
-3. Consumption: validates count, builds CounterCreate, generates objectId, returns ObjectMessage with `counterCreateWithObjectId.{nonce, initialValue}`
-4. Non-number count throws 40003 during consumption
+3. Evaluation: validates count, builds CounterCreate, generates objectId, returns ObjectMessage with `counterCreateWithObjectId.{nonce, initialValue}`
+4. Non-number count throws 40003 during evaluation
 
 **LiveMapValueType (RTLMV1-4):**
 1. `LiveMap.create({entries})` -> immutable LiveMapValueType
-2. Consumption: validates keys/values, builds entries, generates objectId, returns ObjectMessage with `mapCreateWithObjectId.{nonce, initialValue}`
+2. Evaluation: validates keys/values, builds entries, generates objectId, returns ObjectMessage with `mapCreateWithObjectId.{nonce, initialValue}`
 3. Nested value types: LiveMapValueType containing LiveCounterValueType -> depth-first ObjectMessage array (inner creates before outer)
 4. Retains local MapCreate/CounterCreate alongside wire format (RTLMV4j5/RTLCV4g5)
 
@@ -253,14 +254,16 @@ Uses `setup_synced_channel()` from helper.
 
 ### `unit/path_object_subscribe.md` -- Path-Based Subscriptions
 
-- **RTPO19:** subscribe returns Subscription, listener receives PathObjectSubscriptionEvent
-- **RTPO19b1:** depth filtering -- depth=1 (self only), depth=2 (self+children), undefined (all)
-- **RTPO19b1d:** non-positive depth throws 40003
-- **RTPO19e:** follows path not identity -- object replacement at path -> subscription tracks new object
-- **RTPO19f:** child events bubble up to parent subscription
-- **RTO24b3:** depth formula: `eventPath.length - subscriptionPath.length + 1 <= depth`
-- **RTO24b5:** listener exception caught, doesn't affect other listeners
-- **RTPO20:** unsubscribe deregisters
+- **RTPO19:** subscribe returns Subscription (RTPO19d), listener receives PathObjectSubscriptionEvent (RTPO19e)
+- **RTPO19b:** checks RTO25 access API preconditions
+- **RTPO19c1:** depth filtering -- depth=1 (self only), depth=2 (self+children), undefined (all)
+- **RTPO19c1a:** non-positive depth throws 40003
+- **RTPO19e2:** event.message carries PublicAPI::ObjectMessage when operation present
+- **RTPO19f:** follows path not identity -- object replacement at path -> subscription tracks new object
+- **RTO24b2a:** candidate path construction includes map update keys
+- **RTO24c1:** coverage rule: prefix match + depth constraint
+- **RTO24b2c:** listener exception caught, doesn't affect other listeners
+- **RTO24b1:** multi-path dispatch via getFullPaths
 
 ### `unit/instance.md` -- Identity-Bound Reference
 
@@ -287,26 +290,29 @@ Uses `setup_synced_channel()` from helper.
 - **RTLM5:** get(key) returns resolved value
 - **RTLM10/RTLM11:** entries/keys/values iterate non-tombstoned entries
 - **RTLM12/RTLM13:** set/remove construct correct v6 wire ObjectMessages
-- **RTLM20:** set with LiveCounterValueType/LiveMapValueType consumes value type
+- **RTLM20:** set with LiveCounterValueType/LiveMapValueType evaluates value type
 - **RTLM20d/RTLM21d:** echoMessages=false uses publish instead of publishAndApply
 - **RTLM24:** clear constructs MAP_CLEAR ObjectMessage
 
 ### `unit/live_object_subscribe.md` -- Internal Subscription
 
-- **RTLO4b:** subscribe(listener) registers on internal LiveObject
-- **RTLO4c:** unsubscribe removes listener
-- Events fire on applyOperation with update details
+- **RTLO4b:** subscribe(listener) registers on internal LiveObject, returns Subscription (RTLO4b7)
+- **RTLO4b4c3:** dispatch chain: direct listeners → path dispatch → tombstone cleanup
+- **RTLO4b4d/e:** LiveObjectUpdate carries objectMessage and tombstone fields
+- Subscription#unsubscribe deregisters (idempotent)
+- Tombstone update deregisters all direct listeners (RTLO4b4c3c)
 
-### `unit/batch.md` -- Batch API
+### `unit/parent_references.md` -- parentReferences Tracking
 
-- **RTPO22/RTINS19:** batch entry points -- resolve to LiveObject, create RootBatchContext, execute fn, flush
-- **RTPO22c/RTINS19c:** unresolvable path / non-LiveObject throws 92007
-- **RTBC3-11:** read methods delegate to Instance (id, value, get, entries, keys, values, size, compact, compactJson)
-- **RTBC4d:** get() wraps result via RootBatchContext#wrapInstance (memoized by objectId -- RTBC16c)
-- **RTBC12-15:** write methods (set, remove, increment, decrement) queue message constructors synchronously
-- **RTBC16d:** flush executes constructors, publishes all as single array via RTO15 (NOT publishAndApply)
-- **RTBC16e:** closed batch throws 40000 on any method call
-- **RTBC16f:** RootBatchContext closed after flush regardless of success/failure
+- **RTLO3f:** parentReferences initialized to empty Dict<String, Set<String>>
+- **RTLO4g/RTLO4h:** addParentReference/removeParentReference methods
+- **RTLO4f:** getFullPaths — DFS traversal of inverse parentReferences graph, simple paths only
+- **RTO5c10:** post-sync parentReferences rebuild from LiveMap entries
+
+### `unit/public_object_message.md` -- User-Facing Event Types
+
+- **PAOM1-3:** PublicAPI::ObjectMessage construction from internal ObjectMessage
+- **PAOOP1-3:** PublicAPI::ObjectOperation construction, mapCreate/counterCreate resolution from *WithObjectId variants
 
 ---
 
@@ -341,23 +347,23 @@ onMessageFromClient: (msg) => {
 ## Dependency Ordering (write order)
 
 1. `helpers/standard_test_pool.md`
-2. `unit/live_counter.md` -- no dependencies
-3. `unit/live_map.md` -- no dependencies
-4. `unit/object_id.md` -- no dependencies
-5. `unit/objects_pool.md` -- uses LiveCounter/LiveMap concepts
-6. `unit/value_types.md` -- uses objectId generation
-7. `unit/realtime_object.md` -- uses helper, tests orchestration
-8. `unit/live_counter_api.md` -- uses helper
-9. `unit/live_map_api.md` -- uses helper
-10. `unit/live_object_subscribe.md` -- uses helper
-11. `unit/path_object.md` -- uses helper
-12. `unit/instance.md` -- uses helper
-13. `unit/path_object_mutations.md` -- uses helper
-14. `unit/path_object_subscribe.md` -- uses helper
-15. `unit/batch.md` -- uses helper, depends on PathObject/Instance concepts
-16. `integration/objects_lifecycle_test.md`
-17. `integration/objects_sync_test.md`
-18. `integration/objects_batch_test.md`
+2. `unit/parent_references.md` -- foundational for graph tracking
+3. `unit/public_object_message.md` -- standalone type construction
+4. `unit/live_counter.md` -- no dependencies
+5. `unit/live_map.md` -- no dependencies
+6. `unit/object_id.md` -- no dependencies
+7. `unit/objects_pool.md` -- uses LiveCounter/LiveMap concepts
+8. `unit/value_types.md` -- uses objectId generation
+9. `unit/realtime_object.md` -- uses helper, tests orchestration
+10. `unit/live_counter_api.md` -- uses helper
+11. `unit/live_map_api.md` -- uses helper
+12. `unit/live_object_subscribe.md` -- uses helper
+13. `unit/path_object.md` -- uses helper
+14. `unit/instance.md` -- uses helper
+15. `unit/path_object_mutations.md` -- uses helper
+16. `unit/path_object_subscribe.md` -- uses helper
+17. `integration/objects_lifecycle_test.md`
+18. `integration/objects_sync_test.md`
 19. `integration/objects_gc_test.md`
 20. `integration/proxy/objects_faults.md`
 
@@ -370,8 +376,8 @@ onMessageFromClient: (msg) => {
 | Wire format v6 everywhere | Spec branch uses v6 field names; old v5 names are "replaced by" stubs |
 | `appliedOnAckSerials` on RealtimeObject (RTO7b), not on pool | Matches spec's placement; cleared at sync completion (RTO5c9) |
 | No REST test files | objects-features.md has no REST API spec points; REST used only for integration fixture provisioning |
-| `echoMessages` check retained on mutations | Spec retains RTLC12d, RTLM20d, RTLM21d |
-| Batch uses RTO15 (publish), NOT RTO20 (publishAndApply) | RTBC16d says "publishes ... using `RealtimeObject#publish`" -- batch does NOT apply locally on ACK |
+| `echoMessages` check moved to RTO26 | RTO26c checks echoMessages=false; callers (PathObject/Instance) enforce via RTO26 |
+| Batch API deferred | Not included in current spec revision (a397e34); may be added in a future spec update |
 | LiveObject/LiveMap/LiveCounter marked internal but still unit-tested | Direct testing of CRDT logic is essential; public API tests can't cover all edge cases |
 | Test IDs use `objects/unit/` prefix | Matches directory structure, not nested under `realtime/` |
 | Behavioral GC testing via ADVANCE_TIME | Verify GC through observable consequences (value becomes null, object recreatable) rather than internal pool state inspection |

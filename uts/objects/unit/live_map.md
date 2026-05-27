@@ -1,13 +1,13 @@
 # LiveMap Tests
 
-Spec points: `RTLM1`–`RTLM9`, `RTLM14`–`RTLM16`, `RTLM18`–`RTLM19`, `RTLM22`–`RTLM25`, `RTLO3`, `RTLO4a`, `RTLO4e`, `RTLO5`, `RTLO6`
+Spec points: `RTLM1`–`RTLM9`, `RTLM14`–`RTLM16`, `RTLM18`–`RTLM19`, `RTLM22`–`RTLM25`, `RTLO3`, `RTLO4a`, `RTLO4e`, `RTLO4g`, `RTLO4h`, `RTLO5`, `RTLO6`
 
 ## Test Type
 Unit test — pure data structure, no mocks required.
 
 ## Purpose
 
-Tests the `LiveMap` LWW-map CRDT data structure. LiveMap holds a dictionary of `ObjectsMapEntry` values with entry-level last-write-wins semantics, supports set/remove/clear operations, create operations (initial entries merge), data replacement during sync, tombstoning, GC of tombstoned entries, and diff calculation.
+Tests the `LiveMap` LWW-map CRDT data structure. LiveMap holds a dictionary of `ObjectsMapEntry` values with entry-level last-write-wins semantics, supports set/remove/clear operations, create operations (initial entries merge), data replacement during sync, tombstoning, GC of tombstoned entries, diff calculation, and parentReferences maintenance.
 
 Tests operate directly on LiveMap by calling `applyOperation()` and `replaceData()` with constructed messages.
 
@@ -49,7 +49,7 @@ ASSERT map.siteTimeserials == {}
 | Spec | Requirement |
 |------|-------------|
 | RTLM7b4 | Create new ObjectsMapEntry with data and timeserial |
-| RTLM7f | Return LiveMapUpdate with key set to "updated" |
+| RTLM7f | Return LiveMapUpdate with key set to "updated" and objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -68,6 +68,7 @@ ASSERT map.data["name"].data == { string: "Alice" }
 ASSERT map.data["name"].timeserial == "01"
 ASSERT map.data["name"].tombstone == false
 ASSERT update.update == { "name": "updated" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -81,6 +82,7 @@ ASSERT update.update == { "name": "updated" }
 | RTLM7a2e | Set data to MapSet.value |
 | RTLM7a2b | Set timeserial to the provided serial |
 | RTLM7a2c | Set tombstone to false |
+| RTLM7f | Return LiveMapUpdate with objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -101,6 +103,7 @@ update = map.applyOperation(msg, source: CHANNEL)
 ASSERT map.data["name"].data == { string: "Bob" }
 ASSERT map.data["name"].timeserial == "02"
 ASSERT update.update == { "name": "updated" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -216,6 +219,7 @@ update = map.applyOperation(msg, source: CHANNEL)
 ```pseudo
 ASSERT map.data["name"].data == { string: "Bob" }
 ASSERT update.update == { "name": "updated" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -288,7 +292,7 @@ ASSERT pool["counter:new@2000"].data == 0
 | RTLM8a2b | Set timeserial to serial |
 | RTLM8a2c | Set tombstone to true |
 | RTLM8a2d | Set tombstonedAt via RTLO6 |
-| RTLM8e | Return LiveMapUpdate with key set to "removed" |
+| RTLM8e | Return LiveMapUpdate with key set to "removed" and objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -311,6 +315,7 @@ ASSERT map.data["name"].tombstone == true
 ASSERT map.data["name"].timeserial == "02"
 ASSERT map.data["name"].tombstonedAt == 1700000000000
 ASSERT update.update == { "name": "removed" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -324,6 +329,7 @@ ASSERT update.update == { "name": "removed" }
 | RTLM8b1 | Create new entry with data null and timeserial |
 | RTLM8b2 | Set tombstone to true |
 | RTLM8b3 | Set tombstonedAt via RTLO6 |
+| RTLM8e | Return LiveMapUpdate with objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -341,6 +347,7 @@ update = map.applyOperation(msg, source: CHANNEL)
 ASSERT map.data["ghost"].tombstone == true
 ASSERT map.data["ghost"].tombstonedAt == 1700000000000
 ASSERT update.update == { "ghost": "removed" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -383,7 +390,7 @@ ASSERT update.noop == true
 |------|-------------|
 | RTLM24d | Set clearTimeserial to serial |
 | RTLM24e1a | Remove entries with timeserial null or < serial |
-| RTLM24f | Return LiveMapUpdate with removed keys |
+| RTLM24f | Return LiveMapUpdate with removed keys and objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -408,6 +415,7 @@ ASSERT "old" NOT IN map.data
 ASSERT "same" NOT IN map.data
 ASSERT "new" IN map.data
 ASSERT update.update == { "old": "removed", "same": "removed" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -448,6 +456,7 @@ ASSERT update.noop == true
 | RTLM23a1 | Non-tombstoned entries merged via MAP_SET logic |
 | RTLM23a2 | Tombstoned entries merged via MAP_REMOVE logic |
 | RTLM23b | Set createOperationIsMerged to true |
+| RTLM23c | Return LiveMapUpdate with merged update map and objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -472,6 +481,7 @@ ASSERT map.data["name"].data == { string: "Alice" }
 ASSERT map.data["removed_key"].tombstone == true
 ASSERT map.createOperationIsMerged == true
 ASSERT update.update == { "name": "updated", "removed_key": "removed" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -562,8 +572,11 @@ ASSERT map.data == {}
 
 | Spec | Requirement |
 |------|-------------|
-| RTLM15d5a | Emit LiveMapUpdate with removed keys |
+| RTLM15d5c | Emit LiveMapUpdate returned by RTLO5 |
 | RTLM15d5b | Return true |
+| RTLO4e5 | Compute diff for the tombstone update |
+| RTLO4e6 | Set tombstone flag on the update |
+| RTLO4e7 | Set objectMessage on the update |
 
 ### Setup
 ```pseudo
@@ -586,6 +599,8 @@ update = map.applyOperation(msg, source: CHANNEL)
 ASSERT map.isTombstone == true
 ASSERT map.data == {}
 ASSERT update.update == { "name": "removed", "age": "removed" }
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -633,7 +648,7 @@ ASSERT isTombstoned(map.data["dead_ref"]) == true
 | RTLM6b | Set createOperationIsMerged to false |
 | RTLM6i | Set clearTimeserial from ObjectState.map.clearTimeserial |
 | RTLM6c | Set data to ObjectState.map.entries |
-| RTLM6h | Return diff LiveMapUpdate |
+| RTLM6h | Return diff LiveMapUpdate with objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -666,6 +681,7 @@ ASSERT map.clearTimeserial == "03"
 ASSERT "old" NOT IN map.data
 ASSERT map.data["new"].data == { string: "new" }
 ASSERT update.update == { "old": "removed", "new": "updated" }
+ASSERT update.objectMessage == state_msg
 ```
 
 ---
@@ -705,7 +721,7 @@ ASSERT map.data["dead"].tombstonedAt == 1700000050000
 
 **Test ID**: `objects/unit/RTLM6d/replace-data-with-create-op-0`
 
-**Spec requirement:** If createOp present, merge via RTLM23.
+**Spec requirement:** If createOp present, merge via RTLM23, passing in the ObjectMessage.
 
 ### Setup
 ```pseudo
@@ -738,6 +754,45 @@ map.replaceData(state_msg)
 ASSERT map.data["from_sync"].data == { string: "synced" }
 ASSERT map.data["from_create"].data == { string: "created" }
 ASSERT map.createOperationIsMerged == true
+```
+
+---
+
+## RTLM6f - replaceData with tombstone flag tombstones map
+
+**Test ID**: `objects/unit/RTLM6f/replace-data-tombstone-flag-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM6f | If ObjectState.tombstone is true, tombstone the map via LiveObject.tombstone |
+| RTLM6f2 | Return the LiveMapUpdate returned by LiveObject.tombstone |
+| RTLO4e6 | Tombstone flag set on the update |
+| RTLO4e7 | objectMessage set on the update |
+
+### Setup
+```pseudo
+map = LiveMap(objectId: "root", semantics: "LWW")
+map.data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
+}
+```
+
+### Test Steps
+```pseudo
+state_msg = build_object_state("root", {"site1": "01"}, {
+  map: { semantics: "LWW", entries: {} },
+  tombstone: true
+})
+update = map.replaceData(state_msg)
+```
+
+### Assertions
+```pseudo
+ASSERT map.isTombstone == true
+ASSERT map.data == {}
+ASSERT update.update == { "name": "removed" }
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == state_msg
 ```
 
 ---
@@ -922,6 +977,7 @@ ASSERT map.get("ref") == null
 |------|-------------|
 | RTLM7a2c | Set tombstone to false |
 | RTLM7a2d | Set tombstonedAt to null |
+| RTLM7f | Return LiveMapUpdate with objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -943,6 +999,7 @@ ASSERT map.data["name"].data == { string: "Alice" }
 ASSERT map.data["name"].tombstone == false
 ASSERT map.data["name"].tombstonedAt == null
 ASSERT update.update == { "name": "updated" }
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -977,4 +1034,345 @@ ASSERT map.data["after"].data == { string: "b" }
 ASSERT "before" IN update.update
 ASSERT "no_ts" IN update.update
 ASSERT "after" NOT IN update.update
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLM7a3, RTLM7g2 - parentReferences: MAP_SET overwrites entry referencing LiveObject
+
+**Test ID**: `objects/unit/RTLM7a3/map-set-overwrite-objectid-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM7a3a | Before overwriting, check if existing entry has objectId |
+| RTLM7a3b | If old entry references a LiveObject, call removeParentReference on old child |
+| RTLM7g2 | After setting new objectId value, call addParentReference on new child |
+
+Tests that when MAP_SET overwrites an entry whose value is a LiveObject with a new LiveObject value, removeParentReference is called on the old child and addParentReference is called on the new child.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+old_counter = LiveCounter(objectId: "counter:old@1000")
+new_counter = LiveCounter(objectId: "counter:new@2000")
+pool["counter:old@1000"] = old_counter
+pool["counter:new@2000"] = new_counter
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "ref": { data: { objectId: "counter:old@1000" }, timeserial: "01", tombstone: false }
+}
+// Simulate existing parentReference
+old_counter.parentReferences = { "root": {"ref"} }
+```
+
+### Test Steps
+```pseudo
+msg = build_map_set("root", "ref", { objectId: "counter:new@2000" }, "02", "site1")
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.data["ref"].data == { objectId: "counter:new@2000" }
+// removeParentReference was called on the old child
+ASSERT "root" NOT IN old_counter.parentReferences OR "ref" NOT IN old_counter.parentReferences["root"]
+// addParentReference was called on the new child
+ASSERT "root" IN new_counter.parentReferences
+ASSERT "ref" IN new_counter.parentReferences["root"]
+ASSERT update.update == { "ref": "updated" }
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLM7g2 - parentReferences: MAP_SET new entry referencing LiveObject
+
+**Test ID**: `objects/unit/RTLM7g2/map-set-new-entry-add-parent-ref-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM7g2 | After setting new objectId value, call addParentReference on the new child |
+
+Tests that when MAP_SET creates a new entry whose value is a LiveObject, addParentReference is called on the child.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+child_counter = LiveCounter(objectId: "counter:child@1000")
+pool["counter:child@1000"] = child_counter
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+```
+
+### Test Steps
+```pseudo
+msg = build_map_set("root", "score", { objectId: "counter:child@1000" }, "01", "site1")
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.data["score"].data == { objectId: "counter:child@1000" }
+ASSERT "root" IN child_counter.parentReferences
+ASSERT "score" IN child_counter.parentReferences["root"]
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLM7 - parentReferences: MAP_SET with non-LiveObject value does not affect parentReferences
+
+**Test ID**: `objects/unit/RTLM7/map-set-primitive-no-parent-refs-0`
+
+**Spec requirement:** parentReferences operations only apply when the entry value contains an objectId. Primitive values do not trigger addParentReference or removeParentReference.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+old_counter = LiveCounter(objectId: "counter:old@1000")
+pool["counter:old@1000"] = old_counter
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "ref": { data: { objectId: "counter:old@1000" }, timeserial: "01", tombstone: false }
+}
+old_counter.parentReferences = { "root": {"ref"} }
+```
+
+### Test Steps
+```pseudo
+msg = build_map_set("root", "ref", { string: "plain_value" }, "02", "site1")
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.data["ref"].data == { string: "plain_value" }
+// removeParentReference was called on old child (entry previously had objectId)
+ASSERT "root" NOT IN old_counter.parentReferences OR "ref" NOT IN old_counter.parentReferences["root"]
+// No addParentReference call because new value is a primitive
+ASSERT update.update == { "ref": "updated" }
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLM8a3 - parentReferences: MAP_REMOVE entry referencing LiveObject
+
+**Test ID**: `objects/unit/RTLM8a3/map-remove-objectid-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM8a3a | Before tombstoning, check if existing entry has objectId |
+| RTLM8a3b | If entry references a LiveObject, call removeParentReference on the child |
+
+Tests that when MAP_REMOVE tombstones an entry whose value is a LiveObject, removeParentReference is called on the child.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+child_counter = LiveCounter(objectId: "counter:child@1000")
+pool["counter:child@1000"] = child_counter
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "score": { data: { objectId: "counter:child@1000" }, timeserial: "01", tombstone: false }
+}
+child_counter.parentReferences = { "root": {"score"} }
+```
+
+### Test Steps
+```pseudo
+msg = build_map_remove("root", "score", "02", "site1", 1700000000000)
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.data["score"].tombstone == true
+// removeParentReference was called on the child
+ASSERT "root" NOT IN child_counter.parentReferences OR "score" NOT IN child_counter.parentReferences["root"]
+ASSERT update.update == { "score": "removed" }
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLM8 - parentReferences: MAP_REMOVE entry with non-LiveObject value
+
+**Test ID**: `objects/unit/RTLM8/map-remove-primitive-no-parent-refs-0`
+
+**Spec requirement:** MAP_REMOVE on a primitive-valued entry does not call removeParentReference because there is no objectId.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
+}
+```
+
+### Test Steps
+```pseudo
+msg = build_map_remove("root", "name", "02", "site1", 1700000000000)
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.data["name"].tombstone == true
+ASSERT update.update == { "name": "removed" }
+ASSERT update.objectMessage == msg
+// No parentReference calls needed -- test passes without errors
+```
+
+---
+
+## RTLM24e1c - parentReferences: MAP_CLEAR removes parent references for cleared entries
+
+**Test ID**: `objects/unit/RTLM24e1c/map-clear-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM24e1c1 | Before removing entry, check if it has objectId |
+| RTLM24e1c2 | If entry references a LiveObject, call removeParentReference on the child |
+
+Tests that when MAP_CLEAR removes entries that reference LiveObjects, removeParentReference is called for each.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+counter_a = LiveCounter(objectId: "counter:a@1000")
+counter_b = LiveCounter(objectId: "counter:b@1000")
+pool["counter:a@1000"] = counter_a
+pool["counter:b@1000"] = counter_b
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "ref_a":     { data: { objectId: "counter:a@1000" }, timeserial: "02", tombstone: false },
+  "ref_b":     { data: { objectId: "counter:b@1000" }, timeserial: "02", tombstone: false },
+  "primitive": { data: { string: "hello" },            timeserial: "02", tombstone: false },
+  "newer":     { data: { string: "kept" },             timeserial: "09", tombstone: false }
+}
+counter_a.parentReferences = { "root": {"ref_a"} }
+counter_b.parentReferences = { "root": {"ref_b"} }
+```
+
+### Test Steps
+```pseudo
+msg = build_map_clear("root", "05", "site1")
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+// ref_a and ref_b removed (timeserial "02" < "05"), newer kept (timeserial "09" > "05")
+ASSERT "ref_a" NOT IN map.data
+ASSERT "ref_b" NOT IN map.data
+ASSERT "primitive" NOT IN map.data
+ASSERT "newer" IN map.data
+// removeParentReference was called on both child counters
+ASSERT "root" NOT IN counter_a.parentReferences OR "ref_a" NOT IN counter_a.parentReferences["root"]
+ASSERT "root" NOT IN counter_b.parentReferences OR "ref_b" NOT IN counter_b.parentReferences["root"]
+ASSERT update.update == { "ref_a": "removed", "ref_b": "removed", "primitive": "removed" }
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLO4e9 - parentReferences: tombstone LiveMap removes parent references for all entries
+
+**Test ID**: `objects/unit/RTLO4e9/tombstone-map-parent-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4e9a | Before clearing data, for each entry check if it has objectId |
+| RTLO4e9b | If entry references a LiveObject, call removeParentReference on the child |
+
+Tests that when a LiveMap is tombstoned (via OBJECT_DELETE), removeParentReference is called for each entry that references a LiveObject before the data is cleared.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+child_counter = LiveCounter(objectId: "counter:child@1000")
+child_map = LiveMap(objectId: "map:child@1000", semantics: "LWW")
+pool["counter:child@1000"] = child_counter
+pool["map:child@1000"] = child_map
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "counter_ref": { data: { objectId: "counter:child@1000" }, timeserial: "01", tombstone: false },
+  "map_ref":     { data: { objectId: "map:child@1000" },     timeserial: "01", tombstone: false },
+  "name":        { data: { string: "Alice" },                 timeserial: "01", tombstone: false }
+}
+map.siteTimeserials = { "site1": "00" }
+child_counter.parentReferences = { "root": {"counter_ref"} }
+child_map.parentReferences = { "root": {"map_ref"} }
+```
+
+### Test Steps
+```pseudo
+msg = build_object_delete("root", "01", "site1", 1700000000000)
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.isTombstone == true
+ASSERT map.data == {}
+// removeParentReference was called on both children
+ASSERT "root" NOT IN child_counter.parentReferences OR "counter_ref" NOT IN child_counter.parentReferences["root"]
+ASSERT "root" NOT IN child_map.parentReferences OR "map_ref" NOT IN child_map.parentReferences["root"]
+ASSERT update.update == { "counter_ref": "removed", "map_ref": "removed", "name": "removed" }
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLM7a3, RTLM7g2 - parentReferences: MAP_SET overwriting LiveObject with LiveObject calls both remove and add
+
+**Test ID**: `objects/unit/RTLM7a3/map-set-replace-objectid-both-refs-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM7a3b | removeParentReference called on old child before overwrite |
+| RTLM7g2 | addParentReference called on new child after set |
+
+Tests that both removeParentReference and addParentReference are called in the correct order when replacing one LiveObject reference with another.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+old_map = LiveMap(objectId: "map:old@1000", semantics: "LWW")
+new_map = LiveMap(objectId: "map:new@2000", semantics: "LWW")
+pool["map:old@1000"] = old_map
+pool["map:new@2000"] = new_map
+
+map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map.data = {
+  "child": { data: { objectId: "map:old@1000" }, timeserial: "01", tombstone: false }
+}
+old_map.parentReferences = { "root": {"child"} }
+```
+
+### Test Steps
+```pseudo
+msg = build_map_set("root", "child", { objectId: "map:new@2000" }, "02", "site1")
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.data["child"].data == { objectId: "map:new@2000" }
+// Old child no longer references root
+ASSERT "root" NOT IN old_map.parentReferences OR "child" NOT IN old_map.parentReferences["root"]
+// New child references root
+ASSERT "root" IN new_map.parentReferences
+ASSERT "child" IN new_map.parentReferences["root"]
+ASSERT update.update == { "child": "updated" }
+ASSERT update.objectMessage == msg
 ```

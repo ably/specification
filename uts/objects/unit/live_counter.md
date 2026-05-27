@@ -1,6 +1,6 @@
 # LiveCounter Tests
 
-Spec points: `RTLC1`, `RTLC3`, `RTLC4`, `RTLC6`, `RTLC7`, `RTLC8`, `RTLC9`, `RTLC14`, `RTLC16`, `RTLO3`, `RTLO4a`, `RTLO4e`, `RTLO5`, `RTLO6`
+Spec points: `RTLC1`, `RTLC3`, `RTLC4`, `RTLC6`, `RTLC7`, `RTLC8`, `RTLC9`, `RTLC14`, `RTLC16`, `RTLO3`, `RTLO4a`, `RTLO4b4d`, `RTLO4b4e`, `RTLO4e`, `RTLO5`, `RTLO6`
 
 ## Test Type
 Unit test — pure data structure, no mocks required.
@@ -47,7 +47,7 @@ ASSERT counter.siteTimeserials == {}
 | Spec | Requirement |
 |------|-------------|
 | RTLC9f | Add `CounterInc.number` to data if it exists |
-| RTLC9g | Return LiveCounterUpdate with amount set to the number |
+| RTLC9g | Return LiveCounterUpdate with amount set to the number and objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -65,6 +65,7 @@ update = counter.applyOperation(msg, source: CHANNEL)
 ASSERT counter.data == 5
 ASSERT update.noop == false
 ASSERT update.update.amount == 5
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -92,6 +93,7 @@ update = counter.applyOperation(msg, source: CHANNEL)
 ```pseudo
 ASSERT counter.data == 7
 ASSERT update.update.amount == -3
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -164,7 +166,7 @@ ASSERT counter.data == 25
 | RTLC8c | Merge initial value via RTLC16 |
 | RTLC16a | Add counterCreate.count to data |
 | RTLC16b | Set createOperationIsMerged to true |
-| RTLC16c | Return LiveCounterUpdate with amount = count |
+| RTLC16c | Return LiveCounterUpdate with amount = count and objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -182,6 +184,7 @@ update = counter.applyOperation(msg, source: CHANNEL)
 ASSERT counter.data == 42
 ASSERT counter.createOperationIsMerged == true
 ASSERT update.update.amount == 42
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -441,9 +444,13 @@ ASSERT result == true
 | Spec | Requirement |
 |------|-------------|
 | RTLO5b | Tombstone the LiveObject |
+| RTLO5c | Return the LiveObjectUpdate returned by tombstone |
 | RTLO4e2 | Set isTombstone to true |
 | RTLO4e4 | Set data to zero-value |
-| RTLC7d4a | Emit LiveCounterUpdate with negated previous value |
+| RTLO4e5 | Compute diff for the tombstone update |
+| RTLO4e6 | Set tombstone flag on the update |
+| RTLO4e7 | Set objectMessage on the update |
+| RTLC7d4c | Emit LiveCounterUpdate returned by RTLO5 |
 
 ### Setup
 ```pseudo
@@ -464,6 +471,8 @@ ASSERT counter.isTombstone == true
 ASSERT counter.data == 0
 ASSERT counter.tombstonedAt == 1700000000000
 ASSERT update.update.amount == -42
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == msg
 ```
 
 ---
@@ -588,7 +597,7 @@ ASSERT counter.data == 0
 | RTLC6a | Replace siteTimeserials from ObjectState |
 | RTLC6b | Set createOperationIsMerged to false |
 | RTLC6c | Set data to counter.count |
-| RTLC6h | Return diff as LiveCounterUpdate |
+| RTLC6h | Return diff as LiveCounterUpdate with objectMessage set to the provided ObjectMessage |
 
 ### Setup
 ```pseudo
@@ -612,6 +621,7 @@ ASSERT counter.data == 50
 ASSERT counter.siteTimeserials == { "site2": "05" }
 ASSERT counter.createOperationIsMerged == false
 ASSERT update.update.amount == 40
+ASSERT update.objectMessage == state_msg
 ```
 
 ---
@@ -644,6 +654,7 @@ update = counter.replaceData(state_msg)
 ASSERT counter.data == 150
 ASSERT counter.createOperationIsMerged == true
 ASSERT update.update.amount == 150
+ASSERT update.objectMessage == state_msg
 ```
 
 ---
@@ -684,8 +695,10 @@ ASSERT update.noop == true
 
 | Spec | Requirement |
 |------|-------------|
-| RTLC6f | If ObjectState.tombstone is true, tombstone the counter |
-| RTLC6f1 | Return LiveCounterUpdate with amount = negated previous data |
+| RTLC6f | If ObjectState.tombstone is true, tombstone the counter via LiveObject.tombstone |
+| RTLC6f2 | Return the LiveCounterUpdate returned by LiveObject.tombstone |
+| RTLO4e6 | Tombstone flag set on the update |
+| RTLO4e7 | objectMessage set on the update |
 
 ### Setup
 ```pseudo
@@ -707,6 +720,8 @@ update = counter.replaceData(state_msg)
 ASSERT counter.isTombstone == true
 ASSERT counter.data == 0
 ASSERT update.update.amount == -30
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == state_msg
 ```
 
 ---
@@ -735,6 +750,7 @@ update = counter.replaceData(state_msg)
 ```pseudo
 ASSERT counter.data == 0
 ASSERT update.update.amount == -42
+ASSERT update.objectMessage == state_msg
 ```
 
 ---
@@ -762,6 +778,7 @@ update = counter.replaceData(state_msg)
 ### Assertions
 ```pseudo
 ASSERT update.update.amount == 55
+ASSERT update.objectMessage == state_msg
 ```
 
 ---

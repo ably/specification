@@ -1,6 +1,6 @@
 # RealtimeObject Tests
 
-Spec points: `RTO2`, `RTO10`, `RTO15`, `RTO17`–`RTO20`, `RTO22`–`RTO24`
+Spec points: `RTO2`, `RTO10`, `RTO15`, `RTO17`–`RTO20`, `RTO22`–`RTO26`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -21,7 +21,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel`, `setup_synced_ch
 
 | Spec | Requirement |
 |------|-------------|
-| RTO23d | Returns PathObject wrapping root LiveMap with empty path |
+| RTO23d | Returns PathObject with path set to empty list and root set to root LiveMap |
 
 ### Setup
 ```pseudo
@@ -31,7 +31,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel`, `setup_synced_ch
 ### Assertions
 ```pseudo
 ASSERT root IS PathObject
-ASSERT root.path() == ""
+ASSERT root.path == []
 ```
 
 ---
@@ -75,11 +75,15 @@ ASSERT error.code == 40024
 
 ---
 
-## RTO23b - get() throws on DETACHED or FAILED channel
+## RTO23b - get() throws on DETACHED channel
 
 **Test ID**: `objects/unit/RTO23b/get-throws-detached-0`
 
-**Spec requirement:** If channel is DETACHED or FAILED, throw 90001.
+| Spec | Requirement |
+|------|-------------|
+| RTO23b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
+
+Tests that get() on a DETACHED channel throws 90001 per the RTO25 access API preconditions.
 
 ### Setup
 ```pseudo
@@ -88,7 +92,19 @@ mock_ws = MockWebSocket(
     ProtocolMessage(action: CONNECTED, connectionDetails: {
       connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
     })
-  )
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == DETACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: DETACHED, channel: msg.channel
+      ))
+  }
 )
 install_mock(mock_ws)
 client = Realtime(options: { key: "fake:key" })
@@ -97,12 +113,18 @@ channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
 
 ### Test Steps
 ```pseudo
+// Attach and sync first, then detach
+AWAIT channel.object.get()
+AWAIT channel.detach()
+AWAIT_STATE channel.state == DETACHED
+
 AWAIT channel.object.get() FAILS WITH error
 ```
 
 ### Assertions
 ```pseudo
 ASSERT error.code == 90001
+ASSERT error.statusCode == 400
 ```
 
 ---
@@ -153,6 +175,7 @@ root = AWAIT get_future
 ### Assertions
 ```pseudo
 ASSERT root IS PathObject
+ASSERT root.path == []
 ```
 
 ---
@@ -563,6 +586,412 @@ ASSERT error.code == 40024
 
 ---
 
+## RTO25a - Access API precondition requires OBJECT_SUBSCRIBE mode
+
+**Test ID**: `objects/unit/RTO25a/access-requires-subscribe-mode-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO25a | Require OBJECT_SUBSCRIBE channel mode per RTO2 |
+
+Tests that a read operation (e.g. PathObject value()) without OBJECT_SUBSCRIBE mode throws error 40024.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS,
+        modes: ["OBJECT_PUBLISH"]
+      ))
+      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_PUBLISH"] })
+```
+
+### Test Steps
+```pseudo
+AWAIT channel.object.get() FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 40024
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO25b - Access API precondition throws on DETACHED channel
+
+**Test ID**: `objects/unit/RTO25b/access-throws-detached-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO25b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
+
+Tests that calling get() on a DETACHED channel throws 90001.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == DETACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: DETACHED, channel: msg.channel
+      ))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
+```
+
+### Test Steps
+```pseudo
+// Attach, sync, then detach to get channel into DETACHED state
+AWAIT channel.object.get()
+AWAIT channel.detach()
+AWAIT_STATE channel.state == DETACHED
+
+AWAIT channel.object.get() FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 90001
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO25b - Access API precondition throws on FAILED channel
+
+**Test ID**: `objects/unit/RTO25b/access-throws-failed-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO25b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
+
+Tests that calling get() on a FAILED channel throws 90001.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ERROR, channel: msg.channel,
+        error: { code: 90000, statusCode: 400, message: "Channel error" }
+      ))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
+```
+
+### Test Steps
+```pseudo
+// Trigger attach which will fail, putting channel into FAILED state
+channel.attach()
+AWAIT_STATE channel.state == FAILED
+
+AWAIT channel.object.get() FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 90001
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO26a - Write API precondition requires OBJECT_PUBLISH mode
+
+**Test ID**: `objects/unit/RTO26a/write-requires-publish-mode-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO26a | Require OBJECT_PUBLISH channel mode per RTO2 |
+
+Tests that a write operation without OBJECT_PUBLISH mode throws error 40024.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS,
+        modes: ["OBJECT_SUBSCRIBE"]
+      ))
+      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
+root = AWAIT channel.object.get()
+```
+
+### Test Steps
+```pseudo
+AWAIT root.set("name", "Bob") FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 40024
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO26b - Write API precondition throws on DETACHED channel
+
+**Test ID**: `objects/unit/RTO26b/write-throws-detached-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO26b | If channel is DETACHED, FAILED, or SUSPENDED, throw ErrorInfo with statusCode 400 and code 90001 |
+
+Tests that a write operation on a DETACHED channel throws 90001.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+// Detach the channel after sync
+mock_ws.send_to_client(ProtocolMessage(
+  action: DETACHED, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel detached" }
+))
+AWAIT_STATE channel.state == DETACHED
+
+AWAIT root.set("name", "Bob") FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 90001
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO26b - Write API precondition throws on FAILED channel
+
+**Test ID**: `objects/unit/RTO26b/write-throws-failed-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO26b | If channel is DETACHED, FAILED, or SUSPENDED, throw ErrorInfo with statusCode 400 and code 90001 |
+
+Tests that a write operation on a FAILED channel throws 90001.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+// Force channel to FAILED state
+mock_ws.send_to_client(ProtocolMessage(
+  action: ERROR, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel error" }
+))
+AWAIT_STATE channel.state == FAILED
+
+AWAIT root.set("name", "Bob") FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 90001
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO26c - Write API precondition throws when echoMessages is false
+
+**Test ID**: `objects/unit/RTO26c/write-throws-echo-disabled-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO26c | If echoMessages is false, throw ErrorInfo with statusCode 400 and code 40000 |
+
+Tests that a write operation with echoMessages disabled throws 40000.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key", echoMessages: false })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+root = AWAIT channel.object.get()
+```
+
+### Test Steps
+```pseudo
+AWAIT root.set("name", "Bob") FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 40000
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO24a - RealtimeObject maintains a single PathObjectSubscriptionRegister
+
+**Test ID**: `objects/unit/RTO24a/single-register-instance-0`
+
+**Spec requirement:** The RealtimeObject instance maintains a single PathObjectSubscriptionRegister that manages all path-based subscriptions for the channel.
+
+Tests that subscriptions registered via different PathObjects on the same channel share a single register, so updates are dispatched to all matching subscriptions regardless of which PathObject was used to subscribe.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+
+events_root = []
+events_score = []
+
+// Subscribe via root PathObject at path []
+root.subscribe((event) => events_root.append(event))
+
+// Subscribe via a deeper PathObject at path ["score"]
+score_path = root.get("score")
+score_path.subscribe((event) => events_score.append(event))
+```
+
+### Test Steps
+```pseudo
+// Trigger an update on the score counter
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 5, "s:1", "aaa")
+]))
+
+poll_until(events_score.length >= 1, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+// Both subscriptions are managed by the same register and both fire
+ASSERT events_root.length >= 1
+ASSERT events_score.length >= 1
+```
+
+---
+
+## RTO24c1 - Subscription coverage: prefix match with depth constraint
+
+**Test ID**: `objects/unit/RTO24c1/coverage-prefix-depth-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO24c1 | Subscription covers eventPath if subPath is prefix and depth constraint satisfied |
+
+Tests that a subscription with a depth constraint only receives events within the specified depth.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+
+shallow_events = []
+deep_events = []
+
+// Subscribe at root with depth 1 — covers root and immediate children only
+root.subscribe({ depth: 1 }, (event) => shallow_events.append(event))
+
+// Subscribe at root with no depth limit — covers everything
+root.subscribe((event) => deep_events.append(event))
+```
+
+### Test Steps
+```pseudo
+// Update a direct child of root (path ["score"]) — depth 1 from root
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 5, "s:1", "aaa")
+]))
+poll_until(deep_events.length >= 1, timeout: 5s)
+
+// Update a nested object (path ["profile", "nested_counter"]) — depth 2 from root
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:nested@1000", 1, "s:2", "aaa")
+]))
+poll_until(deep_events.length >= 2, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+// Shallow subscription (depth 1) only sees the direct child update
+ASSERT shallow_events.length == 1
+
+// Deep subscription (no depth limit) sees both updates
+ASSERT deep_events.length >= 2
+```
+
+---
+
 ## RTO10 - GC removes tombstoned objects past grace period
 
 **Test ID**: `objects/unit/RTO10/gc-tombstoned-objects-0`
@@ -786,6 +1215,7 @@ root = AWAIT channel.object.get()
 ### Assertions
 ```pseudo
 ASSERT root IS PathObject
+ASSERT root.path == []
 ASSERT channel.state == ATTACHED
 ```
 
@@ -810,7 +1240,7 @@ root2 = AWAIT channel.object.get()
 ### Assertions
 ```pseudo
 ASSERT root2 IS PathObject
-ASSERT root2.path() == ""
+ASSERT root2.path == []
 ```
 
 ---

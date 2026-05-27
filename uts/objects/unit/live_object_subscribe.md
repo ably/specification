@@ -1,6 +1,6 @@
 # LiveObject Subscribe Tests
 
-Spec points: `RTLO4b`, `RTLO4c`
+Spec points: `RTLO4b`, `RTLO4b3`, `RTLO4b4c1`, `RTLO4b4c3a`, `RTLO4b4c3c`, `RTLO4b4d`, `RTLO4b4e`, `RTLO4b6`, `RTLO4b7`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -22,7 +22,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 | Spec | Requirement |
 |------|-------------|
 | RTLO4b3 | User provides listener for data updates |
-| RTLO4b4c2 | Listener called with LiveObjectUpdate |
+| RTLO4b4c3a | Registered listeners called with LiveObjectUpdate |
 | RTLO4b7 | Returns Subscription object |
 
 ### Setup
@@ -45,6 +45,101 @@ poll_until(updates.length >= 1, timeout: 5s)
 ```pseudo
 ASSERT sub IS Subscription
 ASSERT updates.length == 1
+```
+
+---
+
+## RTLO4b7 - subscribe returns Subscription with unsubscribe method
+
+**Test ID**: `objects/unit/RTLO4b7/subscribe-returns-subscription-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4b7 | Returns a Subscription object |
+
+Tests that `subscribe` returns a `Subscription` object that has an `unsubscribe` method.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+instance = root.get("score").instance()
+```
+
+### Test Steps
+```pseudo
+sub = instance.subscribe((event) => {})
+```
+
+### Assertions
+```pseudo
+ASSERT sub IS Subscription
+ASSERT sub.unsubscribe IS Function
+```
+
+---
+
+## RTLO4b7 - Subscription#unsubscribe stops delivery
+
+**Test ID**: `objects/unit/RTLO4b7/subscription-unsubscribe-stops-delivery-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4b7 | Returns a Subscription object |
+| RTLO4b4c3a | Registered listeners called with LiveObjectUpdate |
+
+Tests that calling `unsubscribe()` on the returned `Subscription` deregisters the listener so that subsequent updates do not trigger it.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+updates = []
+instance = root.get("score").instance()
+sub = instance.subscribe((event) => updates.append(event))
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 5, "01", "remote")
+]))
+poll_until(updates.length >= 1, timeout: 5s)
+
+sub.unsubscribe()
+
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 10, "02", "remote")
+]))
+```
+
+### Assertions
+```pseudo
+ASSERT updates.length == 1
+```
+
+---
+
+## RTLO4b7 - Subscription#unsubscribe is idempotent
+
+**Test ID**: `objects/unit/RTLO4b7/subscription-unsubscribe-idempotent-0`
+
+**Spec requirement:** Calling `Subscription#unsubscribe()` multiple times must not throw or produce errors.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+instance = root.get("score").instance()
+sub = instance.subscribe((event) => {})
+```
+
+### Test Steps
+```pseudo
+sub.unsubscribe()
+sub.unsubscribe()
+```
+
+### Assertions
+```pseudo
+// No error thrown — both calls complete without error
 ```
 
 ---
@@ -81,87 +176,6 @@ mock_ws.send_to_client(build_object_message("test", [
 ### Assertions
 ```pseudo
 ASSERT updates.length == 1
-```
-
----
-
-## RTLO4c - unsubscribe deregisters listener
-
-**Test ID**: `objects/unit/RTLO4c/unsubscribe-deregisters-0`
-
-| Spec | Requirement |
-|------|-------------|
-| RTLO4c3 | Once deregistered, subsequent updates do not call listener |
-| RTLO4c4 | No side effects on channel or RealtimeObject |
-
-### Setup
-```pseudo
-{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-updates = []
-instance = root.get("score").instance()
-sub = instance.subscribe((event) => updates.append(event))
-```
-
-### Test Steps
-```pseudo
-mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 5, "01", "remote")
-]))
-poll_until(updates.length >= 1, timeout: 5s)
-
-sub.unsubscribe()
-
-mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 10, "02", "remote")
-]))
-```
-
-### Assertions
-```pseudo
-ASSERT updates.length == 1
-```
-
----
-
-## RTLO4b1 - subscribe requires OBJECT_SUBSCRIBE mode
-
-**Test ID**: `objects/unit/RTLO4b1/subscribe-requires-mode-0`
-
-**Spec requirement:** Requires OBJECT_SUBSCRIBE channel mode per RTO2.
-
-### Setup
-```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
-      objectsGCGracePeriod: 86400000
-    })
-  ),
-  onMessageFromClient: (msg) => {
-    IF msg.action == ATTACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
-        flags: HAS_OBJECTS, modes: ["OBJECT_PUBLISH"]
-      ))
-      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
-  }
-)
-install_mock(mock_ws)
-client = Realtime(options: { key: "fake:key" })
-channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
-root = AWAIT channel.object.get()
-instance = root.get("score").instance()
-```
-
-### Test Steps
-```pseudo
-instance.subscribe((event) => {}) FAILS WITH error
-```
-
-### Assertions
-```pseudo
-ASSERT error.code == 40024
 ```
 
 ---
@@ -220,25 +234,153 @@ ASSERT updates.length == 1
 
 ---
 
-## RTLO4c1 - unsubscribe requires no channel mode
+## RTLO4b4c3c - tombstone update deregisters all LiveObject#subscribe listeners
 
-**Test ID**: `objects/unit/RTLO4c1/unsubscribe-no-mode-required-0`
+**Test ID**: `objects/unit/RTLO4b4c3c/tombstone-deregisters-listeners-0`
 
-**Spec requirement:** Does not require any specific channel modes.
+| Spec | Requirement |
+|------|-------------|
+| RTLO4b4c3c | If LiveObjectUpdate.tombstone is true, deregister all LiveObject#subscribe listeners |
+| RTLO4b4c3a | Listeners are called with the tombstone update itself before deregistration |
+
+Tests that when a tombstone update is emitted, all registered listeners are called with the tombstone update, but subsequent updates do not fire any listener because they have been deregistered.
 
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+updates_a = []
+updates_b = []
 instance = root.get("score").instance()
-sub = instance.subscribe((event) => {})
+instance.subscribe((event) => updates_a.append(event))
+instance.subscribe((event) => updates_b.append(event))
 ```
 
 ### Test Steps
 ```pseudo
-sub.unsubscribe()
+# Send an OBJECT_DELETE which causes a tombstone LiveObjectUpdate
+mock_ws.send_to_client(build_object_message("test", [
+  build_object_delete("counter:score@1000", "50", "remote")
+]))
+poll_until(updates_a.length >= 1, timeout: 5s)
+
+# Both listeners should have received the tombstone update
+ASSERT updates_a.length == 1
+ASSERT updates_a[0].tombstone == true
+ASSERT updates_b.length == 1
+ASSERT updates_b[0].tombstone == true
+
+# Send another update — listeners should have been deregistered by tombstone
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 3, "51", "remote")
+]))
 ```
 
 ### Assertions
 ```pseudo
-// No error thrown
+ASSERT updates_a.length == 1
+ASSERT updates_b.length == 1
+```
+
+---
+
+## RTLO4b4d - LiveObjectUpdate.objectMessage is populated from source ObjectMessage
+
+**Test ID**: `objects/unit/RTLO4b4d/update-has-object-message-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4b4d | LiveObjectUpdate.objectMessage is the source ObjectMessage that caused the update |
+
+Tests that when an update is triggered by an incoming ObjectMessage, the `LiveObjectUpdate.objectMessage` field is populated with that source ObjectMessage.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+updates = []
+instance = root.get("score").instance()
+instance.subscribe((event) => updates.append(event))
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 7, "99", "remote")
+]))
+poll_until(updates.length >= 1, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+ASSERT updates.length == 1
+ASSERT updates[0].objectMessage IS NOT null
+ASSERT updates[0].objectMessage.serial == "99"
+ASSERT updates[0].objectMessage.siteCode == "remote"
+ASSERT updates[0].objectMessage.operation.action == "COUNTER_INC"
+ASSERT updates[0].objectMessage.operation.objectId == "counter:score@1000"
+```
+
+---
+
+## RTLO4b4e - LiveObjectUpdate.tombstone is true for tombstone updates
+
+**Test ID**: `objects/unit/RTLO4b4e/tombstone-flag-true-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4b4e | LiveObjectUpdate.tombstone indicates the update was emitted as a result of tombstoning |
+
+Tests that when a `LiveObject` is tombstoned (e.g. via OBJECT_DELETE), the emitted `LiveObjectUpdate` has `tombstone == true`.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+updates = []
+instance = root.get("score").instance()
+instance.subscribe((event) => updates.append(event))
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(build_object_message("test", [
+  build_object_delete("counter:score@1000", "50", "remote")
+]))
+poll_until(updates.length >= 1, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+ASSERT updates.length == 1
+ASSERT updates[0].tombstone == true
+```
+
+---
+
+## RTLO4b4e - LiveObjectUpdate.tombstone is false for normal updates
+
+**Test ID**: `objects/unit/RTLO4b4e/tombstone-flag-false-0`
+
+**Spec requirement:** LiveObjectUpdate.tombstone defaults to false if not explicitly set.
+
+Tests that for a normal (non-tombstone) update, `LiveObjectUpdate.tombstone` is `false`.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+updates = []
+instance = root.get("score").instance()
+instance.subscribe((event) => updates.append(event))
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 7, "99", "remote")
+]))
+poll_until(updates.length >= 1, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+ASSERT updates.length == 1
+ASSERT updates[0].tombstone == false
 ```

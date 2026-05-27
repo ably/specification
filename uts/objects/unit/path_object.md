@@ -167,7 +167,10 @@ ASSERT po.path() == "a\\.b.c"
 
 **Test ID**: `objects/unit/RTPO7/value-counter-0`
 
-**Spec requirement:** If resolved value is LiveCounter, returns numeric value.
+| Spec | Requirement |
+|------|-------------|
+| RTPO7a | Checks access API preconditions per RTO25 |
+| RTPO7c | LiveCounter -> delegates to LiveCounter#value |
 
 ### Setup
 ```pseudo
@@ -185,7 +188,10 @@ ASSERT root.get("score").value() == 100
 
 **Test ID**: `objects/unit/RTPO7/value-primitive-0`
 
-**Spec requirement:** If resolved value is a primitive, returns the value directly.
+| Spec | Requirement |
+|------|-------------|
+| RTPO7a | Checks access API preconditions per RTO25 |
+| RTPO7d | Primitive -> returns value directly |
 
 ### Setup
 ```pseudo
@@ -205,7 +211,10 @@ ASSERT root.get("active").value() == true
 
 **Test ID**: `objects/unit/RTPO7d/value-livemap-null-0`
 
-**Spec requirement:** If resolved value is a LiveMap, returns null.
+| Spec | Requirement |
+|------|-------------|
+| RTPO7a | Checks access API preconditions per RTO25 |
+| RTPO7e | LiveMap -> returns null |
 
 ### Setup
 ```pseudo
@@ -223,7 +232,10 @@ ASSERT root.get("profile").value() == null
 
 **Test ID**: `objects/unit/RTPO7e/value-unresolvable-null-0`
 
-**Spec requirement:** If path resolution fails, returns null.
+| Spec | Requirement |
+|------|-------------|
+| RTPO7a | Checks access API preconditions per RTO25 |
+| RTPO7f | Resolution failure -> returns null per RTPO3c1 |
 
 ### Setup
 ```pseudo
@@ -243,7 +255,8 @@ ASSERT root.get("nonexistent").get("deep").value() == null
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO8b | LiveMap or LiveCounter -> Instance wrapping that object |
+| RTPO8a | Checks access API preconditions per RTO25 |
+| RTPO8c | LiveObject -> Instance wrapping that object |
 
 ### Setup
 ```pseudo
@@ -267,7 +280,10 @@ ASSERT map_inst.id() == "map:profile@1000"
 
 **Test ID**: `objects/unit/RTPO8c/instance-primitive-null-0`
 
-**Spec requirement:** If resolved value is a primitive, returns null.
+| Spec | Requirement |
+|------|-------------|
+| RTPO8a | Checks access API preconditions per RTO25 |
+| RTPO8d | Primitive -> returns null |
 
 ### Setup
 ```pseudo
@@ -281,14 +297,15 @@ ASSERT root.get("name").instance() == null
 
 ---
 
-## RTPO9 - entries() yields [key, PathObject] pairs
+## RTPO9 - entries() returns array of [key, PathObject] pairs
 
 **Test ID**: `objects/unit/RTPO9/entries-yields-pairs-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO9b | Iterator of [key, PathObject] for LiveMap entries |
-| RTPO9c | Only non-tombstoned entries |
+| RTPO9a | Checks access API preconditions per RTO25 |
+| RTPO9c | Uses LiveMap#keys (RTLM12) to get keys, returns array of [key, PathObject] pairs |
+| RTPO9d | Only non-tombstoned entries (tombstoned excluded by LiveMap#keys) |
 
 ### Setup
 ```pseudo
@@ -311,11 +328,14 @@ ASSERT entries.length == 7
 
 ---
 
-## RTPO9d - entries() returns empty iterator for non-LiveMap
+## RTPO9d - entries() returns empty array for non-LiveMap
 
 **Test ID**: `objects/unit/RTPO9d/entries-non-map-empty-0`
 
-**Spec requirement:** If resolved value is not LiveMap or resolution fails, return empty iterator.
+| Spec | Requirement |
+|------|-------------|
+| RTPO9a | Checks access API preconditions per RTO25 |
+| RTPO9d | Not LiveMap or resolution failure -> returns empty array |
 
 ### Setup
 ```pseudo
@@ -324,7 +344,7 @@ ASSERT entries.length == 7
 
 ### Test Steps
 ```pseudo
-entries = list(root.get("score").entries())
+entries = root.get("score").entries()
 ```
 
 ### Assertions
@@ -334,11 +354,132 @@ ASSERT entries.length == 0
 
 ---
 
+## RTPO10 - keys() returns array of key strings
+
+**Test ID**: `objects/unit/RTPO10/keys-returns-array-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTPO10a | Checks access API preconditions per RTO25 |
+| RTPO10c | LiveMap -> delegates to LiveMap#keys (RTLM12) |
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+keys = root.keys()
+```
+
+### Assertions
+```pseudo
+ASSERT keys IS Array
+ASSERT keys.length == 7
+ASSERT "name" IN keys
+ASSERT "profile" IN keys
+ASSERT "score" IN keys
+```
+
+---
+
+## RTPO10d - keys() returns empty array for non-LiveMap
+
+**Test ID**: `objects/unit/RTPO10d/keys-non-map-empty-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTPO10a | Checks access API preconditions per RTO25 |
+| RTPO10d | Not LiveMap or resolution failure -> returns empty array |
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+keys = root.get("score").keys()
+```
+
+### Assertions
+```pseudo
+ASSERT keys IS Array
+ASSERT keys.length == 0
+```
+
+---
+
+## RTPO11 - values() returns array of PathObjects
+
+**Test ID**: `objects/unit/RTPO11/values-returns-array-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTPO11a | Checks access API preconditions per RTO25 |
+| RTPO11c | LiveMap -> uses LiveMap#keys (RTLM12) and returns array of PathObjects |
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+vals = root.values()
+```
+
+### Assertions
+```pseudo
+ASSERT vals IS Array
+ASSERT vals.length == 7
+// Each element is a PathObject whose path is the key
+paths = {}
+FOR v IN vals:
+  paths[v.path()] = true
+ASSERT paths["name"] == true
+ASSERT paths["profile"] == true
+ASSERT paths["score"] == true
+```
+
+---
+
+## RTPO11d - values() returns empty array for non-LiveMap
+
+**Test ID**: `objects/unit/RTPO11d/values-non-map-empty-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTPO11a | Checks access API preconditions per RTO25 |
+| RTPO11d | Not LiveMap or resolution failure -> returns empty array |
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+vals = root.get("score").values()
+```
+
+### Assertions
+```pseudo
+ASSERT vals IS Array
+ASSERT vals.length == 0
+```
+
+---
+
 ## RTPO12 - size() returns non-tombstoned count
 
 **Test ID**: `objects/unit/RTPO12/size-count-0`
 
-**Spec requirement:** For LiveMap, returns non-tombstoned entry count.
+| Spec | Requirement |
+|------|-------------|
+| RTPO12a | Checks access API preconditions per RTO25 |
+| RTPO12c | LiveMap -> delegates to LiveMap#size (RTLM10) |
 
 ### Setup
 ```pseudo
@@ -356,6 +497,11 @@ ASSERT root.get("profile").size() == 3
 ## RTPO12c - size() returns null for non-LiveMap
 
 **Test ID**: `objects/unit/RTPO12c/size-non-map-null-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTPO12a | Checks access API preconditions per RTO25 |
+| RTPO12d | Not LiveMap or resolution failure -> returns null |
 
 ### Setup
 ```pseudo
@@ -376,10 +522,11 @@ ASSERT root.get("name").size() == null
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO13b1 | Each entry included, tombstoned excluded |
-| RTPO13b2 | Nested LiveMap recursively compacted |
-| RTPO13b3 | Nested LiveCounter resolved to number |
-| RTPO13b4 | Primitives as-is |
+| RTPO13a | Checks access API preconditions per RTO25 |
+| RTPO13c1 | Each entry included, tombstoned excluded |
+| RTPO13c2 | Nested LiveMap recursively compacted |
+| RTPO13c3 | Nested LiveCounter resolved to number |
+| RTPO13c4 | Primitives as-is |
 
 ### Setup
 ```pseudo
@@ -410,7 +557,10 @@ ASSERT result["profile"]["prefs"]["theme"] == "dark"
 
 **Test ID**: `objects/unit/RTPO13b5/compact-cycle-detection-0`
 
-**Spec requirement:** Cyclic references reuse the already-compacted in-memory object.
+| Spec | Requirement |
+|------|-------------|
+| RTPO13a | Checks access API preconditions per RTO25 |
+| RTPO13c5 | Cyclic references reuse already-compacted in-memory object |
 
 ### Setup
 ```pseudo
@@ -437,6 +587,11 @@ ASSERT result["prefs"]["back_ref"] IS result
 
 **Test ID**: `objects/unit/RTPO13c/compact-counter-0`
 
+| Spec | Requirement |
+|------|-------------|
+| RTPO13a | Checks access API preconditions per RTO25 |
+| RTPO13d | LiveCounter -> returns numeric value |
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
@@ -455,8 +610,9 @@ ASSERT root.get("score").compact() == 100
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO14a1 | Binary as base64 strings |
-| RTPO14a2 | Cycles as {objectId: ...} |
+| RTPO14a | Checks access API preconditions per RTO25 |
+| RTPO14b1 | Binary as base64 strings |
+| RTPO14b2 | Cycles as {objectId: ...} |
 
 ### Setup
 ```pseudo
@@ -567,7 +723,10 @@ ASSERT error.code == 40003
 
 **Test ID**: `objects/unit/RTPO7/value-bytes-0`
 
-**Spec requirement:** If resolved value is bytes, returns the raw binary data.
+| Spec | Requirement |
+|------|-------------|
+| RTPO7a | Checks access API preconditions per RTO25 |
+| RTPO7d | Primitive (Binary) -> returns raw binary data |
 
 ### Setup
 ```pseudo
@@ -585,7 +744,10 @@ ASSERT root.get("avatar").value() IS bytes [1, 2, 3]
 
 **Test ID**: `objects/unit/RTPO14/compact-json-bytes-0`
 
-**Spec requirement:** Binary values encoded as base64 strings in JSON representation.
+| Spec | Requirement |
+|------|-------------|
+| RTPO14a | Checks access API preconditions per RTO25 |
+| RTPO14b1 | Binary values encoded as base64 strings |
 
 ### Setup
 ```pseudo

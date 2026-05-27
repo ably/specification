@@ -1,6 +1,6 @@
 # Instance Tests
 
-Spec points: `RTINS1`–`RTINS19`
+Spec points: `RTINS1`–`RTINS16`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -46,8 +46,10 @@ ASSERT map_inst.id() == "map:profile@1000"
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS4a | LiveCounter -> numeric value |
-| RTINS4c | LiveMap -> null |
+| RTINS4a | Checks access API preconditions per RTO25 |
+| RTINS4b | LiveCounter -> delegates to LiveCounter#value |
+| RTINS4c | Primitive -> returns value directly |
+| RTINS4d | LiveMap -> null |
 
 ### Setup
 ```pseudo
@@ -71,8 +73,9 @@ ASSERT map_inst.value() == null
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS5b | LiveMap -> look up key, wrap result in Instance |
-| RTINS5c | Non-LiveMap -> null |
+| RTINS5b | Checks access API preconditions per RTO25 |
+| RTINS5c | LiveMap -> look up key, wrap result in Instance |
+| RTINS5d | Non-LiveMap -> null |
 
 ### Setup
 ```pseudo
@@ -95,14 +98,15 @@ ASSERT null_inst == null
 
 ---
 
-## RTINS6 - entries() yields [key, Instance] pairs
+## RTINS6 - entries() returns array of [key, Instance] pairs
 
 **Test ID**: `objects/unit/RTINS6/entries-yields-instances-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS6a | LiveMap -> [key, Instance] pairs |
-| RTINS6b | Non-LiveMap -> empty iterator |
+| RTINS6a | Checks access API preconditions per RTO25 |
+| RTINS6b | LiveMap -> array of [key, Instance] pairs |
+| RTINS6c | Non-LiveMap -> empty array |
 
 ### Setup
 ```pseudo
@@ -132,8 +136,9 @@ ASSERT entries["name"].value() == "Alice"
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS9a | LiveMap -> non-tombstoned entry count |
-| RTINS9b | Non-LiveMap -> null |
+| RTINS9a | Checks access API preconditions per RTO25 |
+| RTINS9b | LiveMap -> non-tombstoned entry count |
+| RTINS9c | Non-LiveMap -> null |
 
 ### Setup
 ```pseudo
@@ -155,7 +160,10 @@ ASSERT counter_inst.size() == null
 
 **Test ID**: `objects/unit/RTINS10/compact-0`
 
-**Spec requirement:** Behaves identically to PathObject#compact on the wrapped value.
+| Spec | Requirement |
+|------|-------------|
+| RTINS10a | Checks access API preconditions per RTO25 |
+| RTINS10b | Behaves identically to PathObject#compact on the wrapped value |
 
 ### Setup
 ```pseudo
@@ -183,8 +191,9 @@ ASSERT result["profile"]["email"] == "alice@example.com"
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS12b | LiveMap -> delegate to LiveMap#set |
-| RTINS12c | Non-LiveMap -> throw 92007 |
+| RTINS12b | Checks write API preconditions per RTO26 |
+| RTINS12c | LiveMap -> delegate to LiveMap#set |
+| RTINS12d | Non-LiveMap -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -204,9 +213,11 @@ ASSERT root.get("name").value() == "Bob"
 
 ---
 
-## RTINS12c - set() on non-LiveMap throws 92007
+## RTINS12d - set() on non-LiveMap throws 92007
 
-**Test ID**: `objects/unit/RTINS12c/set-non-map-throws-0`
+**Test ID**: `objects/unit/RTINS12d/set-non-map-throws-0`
+
+**Spec requirement:** If the wrapped value is not a LiveMap, throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo
@@ -229,6 +240,12 @@ ASSERT error.code == 92007
 ## RTINS13 - remove() delegates to LiveMap#remove
 
 **Test ID**: `objects/unit/RTINS13/remove-delegates-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTINS13b | Checks write API preconditions per RTO26 |
+| RTINS13c | LiveMap -> delegate to LiveMap#remove |
+| RTINS13d | Non-LiveMap -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -254,8 +271,9 @@ ASSERT root.get("name").value() == null
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS14b | LiveCounter -> delegate to increment |
-| RTINS14c | Non-LiveCounter -> throw 92007 |
+| RTINS14b | Checks write API preconditions per RTO26 |
+| RTINS14c | LiveCounter -> delegate to increment |
+| RTINS14d | Non-LiveCounter -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -275,9 +293,11 @@ ASSERT root.get("score").value() == 125
 
 ---
 
-## RTINS14c - increment() on non-LiveCounter throws 92007
+## RTINS14d - increment() on non-LiveCounter throws 92007
 
-**Test ID**: `objects/unit/RTINS14c/increment-non-counter-throws-0`
+**Test ID**: `objects/unit/RTINS14d/increment-non-counter-throws-0`
+
+**Spec requirement:** If the wrapped value is not a LiveCounter, throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo
@@ -301,6 +321,12 @@ ASSERT error.code == 92007
 
 **Test ID**: `objects/unit/RTINS15/decrement-delegates-0`
 
+| Spec | Requirement |
+|------|-------------|
+| RTINS15b | Checks write API preconditions per RTO26 |
+| RTINS15c | LiveCounter -> delegate to decrement |
+| RTINS15d | Non-LiveCounter -> throw 92007 |
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
@@ -319,16 +345,65 @@ ASSERT root.get("score").value() == 90
 
 ---
 
+## RTINS14a - increment() defaults to 1
+
+**Test ID**: `objects/unit/RTINS14a/increment-default-0`
+
+**Spec requirement:** amount defaults to 1 (RTINS14a1).
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+counter_inst = root.get("score").instance()
+```
+
+### Test Steps
+```pseudo
+AWAIT counter_inst.increment()
+```
+
+### Assertions
+```pseudo
+ASSERT root.get("score").value() == 101
+```
+
+---
+
+## RTINS15a - decrement() defaults to 1
+
+**Test ID**: `objects/unit/RTINS15a/decrement-default-0`
+
+**Spec requirement:** amount defaults to 1 (RTINS15a1).
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+counter_inst = root.get("score").instance()
+```
+
+### Test Steps
+```pseudo
+AWAIT counter_inst.decrement()
+```
+
+### Assertions
+```pseudo
+ASSERT root.get("score").value() == 99
+```
+
+---
+
 ## RTINS16 - subscribe() receives InstanceSubscriptionEvent
 
 **Test ID**: `objects/unit/RTINS16/subscribe-receives-events-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTINS16c | Subscribes via LiveObject#subscribe |
-| RTINS16d1 | Event.object is the Instance |
-| RTINS16e | Returns Subscription |
-| RTINS16f | Identity-based subscription |
+| RTINS16b | Checks access API preconditions per RTO25 |
+| RTINS16d | Subscribes via LiveObject#subscribe (RTLO4b) |
+| RTINS16e1 | Event.object is an Instance wrapping the LiveObject |
+| RTINS16f | Returns Subscription |
+| RTINS16g | Identity-based subscription |
 
 ### Setup
 ```pseudo
@@ -356,11 +431,11 @@ ASSERT events[0].object.id() == "counter:score@1000"
 
 ---
 
-## RTINS16b - subscribe() on primitive throws 92007
+## RTINS16c - subscribe() on primitive throws 92007
 
-**Test ID**: `objects/unit/RTINS16b/subscribe-primitive-throws-0`
+**Test ID**: `objects/unit/RTINS16c/subscribe-primitive-throws-0`
 
-**Spec requirement:** If wrapped value is not LiveObject, throw 92007.
+**Spec requirement:** If wrapped value is not a LiveObject (i.e. it is a primitive), throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo
@@ -380,11 +455,80 @@ ASSERT error.code == 92007
 
 ---
 
-## RTINS16f - Instance subscription follows identity not path
+## RTINS16e2 - InstanceSubscriptionEvent contains PublicAPI::ObjectMessage
 
-**Test ID**: `objects/unit/RTINS16f/subscription-follows-identity-0`
+**Test ID**: `objects/unit/RTINS16e2/subscription-event-message-0`
 
-**Spec requirement:** Instance follows the specific LiveObject, regardless of tree position.
+| Spec | Requirement |
+|------|-------------|
+| RTINS16e1 | Event.object is an Instance wrapping the LiveObject |
+| RTINS16e2 | Event.message is a PublicAPI::ObjectMessage derived from the triggering ObjectMessage |
+
+Tests that the InstanceSubscriptionEvent includes both the `object` (Instance) and `message` (PublicAPI::ObjectMessage) fields when a data update arrives.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+root_inst = root.instance()
+events = []
+root_inst.subscribe((event) => events.append(event))
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(build_object_message("test", [
+  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+]))
+poll_until(events.length >= 1, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+ASSERT events[0].object IS Instance
+ASSERT events[0].object.id() == "root"
+ASSERT events[0].message IS NOT null
+ASSERT events[0].message.channel == "test"
+ASSERT events[0].message.operation.action == "MAP_SET"
+ASSERT events[0].message.operation.objectId == "root"
+ASSERT events[0].message.operation.mapSet.key == "name"
+```
+
+---
+
+## RTINS16f - subscribe() returns Subscription for deregistration
+
+**Test ID**: `objects/unit/RTINS16f/subscribe-returns-subscription-0`
+
+**Spec requirement:** Returns a Subscription object (RTINS16f). Deregistration is via Subscription#unsubscribe.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+counter_inst = root.get("score").instance()
+events = []
+sub = counter_inst.subscribe((event) => events.append(event))
+sub.unsubscribe()
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 7, "99", "remote")
+]))
+```
+
+### Assertions
+```pseudo
+ASSERT events.length == 0
+```
+
+---
+
+## RTINS16g - Instance subscription follows identity not path
+
+**Test ID**: `objects/unit/RTINS16g/subscription-follows-identity-0`
+
+**Spec requirement:** The subscription is identity-based: it follows the specific LiveObject instance, regardless of where it sits in the graph.
 
 ### Setup
 ```pseudo
@@ -414,111 +558,25 @@ ASSERT counter_inst.id() == "counter:score@1000"
 
 ---
 
-## RTINS17 - unsubscribe() deregisters listener
+## RTINS16h - subscribe() has no side effects
 
-**Test ID**: `objects/unit/RTINS17/unsubscribe-0`
+**Test ID**: `objects/unit/RTINS16h/subscribe-no-side-effects-0`
 
-### Setup
-```pseudo
-{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-counter_inst = root.get("score").instance()
-events = []
-sub = counter_inst.subscribe((event) => events.append(event))
-sub.unsubscribe()
-```
-
-### Test Steps
-```pseudo
-mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 7, "99", "remote")
-]))
-```
-
-### Assertions
-```pseudo
-ASSERT events.length == 0
-```
-
----
-
-## RTINS14a - increment() defaults to 1
-
-**Test ID**: `objects/unit/RTINS14a/increment-default-0`
-
-**Spec requirement:** amount defaults to 1.
+**Spec requirement:** The subscribe operation must not have any side effects on RealtimeObject, the underlying channel, or their status.
 
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 counter_inst = root.get("score").instance()
+channel_state_before = channel.state
 ```
 
 ### Test Steps
 ```pseudo
-AWAIT counter_inst.increment()
+sub = counter_inst.subscribe((event) => {})
 ```
 
 ### Assertions
 ```pseudo
-ASSERT root.get("score").value() == 101
-```
-
----
-
-## RTINS15a - decrement() defaults to 1
-
-**Test ID**: `objects/unit/RTINS15a/decrement-default-0`
-
-**Spec requirement:** amount defaults to 1.
-
-### Setup
-```pseudo
-{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-counter_inst = root.get("score").instance()
-```
-
-### Test Steps
-```pseudo
-AWAIT counter_inst.decrement()
-```
-
-### Assertions
-```pseudo
-ASSERT root.get("score").value() == 99
-```
-
----
-
-## RTINS16 - Subscription event contains message metadata
-
-**Test ID**: `objects/unit/RTINS16/subscription-event-metadata-0`
-
-| Spec | Requirement |
-|------|-------------|
-| RTINS16d1 | Event.object is the Instance |
-| RTINS16d2 | Event.message is the ObjectMessage that triggered the update |
-
-### Setup
-```pseudo
-{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-root_inst = root.instance()
-events = []
-root_inst.subscribe((event) => events.append(event))
-```
-
-### Test Steps
-```pseudo
-mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
-]))
-poll_until(events.length >= 1, timeout: 5s)
-```
-
-### Assertions
-```pseudo
-ASSERT events[0].object IS Instance
-ASSERT events[0].object.id() == "root"
-ASSERT events[0].message IS NOT null
-ASSERT events[0].message.operation.action == "MAP_SET"
-ASSERT events[0].message.operation.mapSet.key == "name"
+ASSERT channel.state == channel_state_before
 ```
