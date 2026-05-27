@@ -996,7 +996,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO19g)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 - `(RTPO20)` `PathObject#batch` function:
   - `(RTPO20a)` Expects a synchronous function `fn` that receives a `BatchContext` as its argument
-  - `(RTPO20b)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
+  - `(RTPO20b)` Checks the write API preconditions per [RTO26](#RTO26)
   - `(RTPO20c)` Resolves the path to a `LiveObject` using the internal path resolution procedure. If the path does not resolve to a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
   - `(RTPO20d)` Creates a `RootBatchContext` ([RTBC16](#RTBC16)) wrapping the resolved `Instance`
   - `(RTPO20e)` Executes `fn`, passing the `BatchContext` as argument
@@ -1086,7 +1086,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16h)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 - `(RTINS17)` `Instance#batch` function:
   - `(RTINS17a)` Expects a synchronous function `fn` that receives a `BatchContext` as its argument
-  - `(RTINS17b)` Requires the `OBJECT_PUBLISH` channel mode to be granted per [RTO2](#RTO2)
+  - `(RTINS17b)` Checks the write API preconditions per [RTO26](#RTO26)
   - `(RTINS17c)` If the wrapped value is not a `LiveObject`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
   - `(RTINS17d)` Creates a `RootBatchContext` ([RTBC16](#RTBC16)) wrapping this `Instance`
   - `(RTINS17e)` Executes `fn`, passing the `BatchContext` as argument
@@ -1152,55 +1152,67 @@ A `BatchContext` wraps an `Instance` with synchronous write methods that queue o
   - `(RTBC3b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000, indicating that the batch is closed
 - `(RTBC4)` `BatchContext#get` function:
   - `(RTBC4a)` Expects a `key` `String` argument
-  - `(RTBC4b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC4c)` Delegates to `Instance#get` ([RTINS5](#RTINS5)) on the underlying `Instance`. If the result is undefined, returns undefined
-  - `(RTBC4d)` Otherwise, wraps the resulting `Instance` in a `BatchContext` via the `RootBatchContext#wrapInstance` ([RTBC16c](#RTBC16c)) and returns it
+  - `(RTBC4b)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC4c)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC4d)` Delegates to `Instance#get` ([RTINS5](#RTINS5)) on the underlying `Instance`. If the result is undefined, returns undefined
+  - `(RTBC4e)` Otherwise, wraps the resulting `Instance` in a `BatchContext` via the `RootBatchContext#wrapInstance` ([RTBC16c](#RTBC16c)) and returns it
 - `(RTBC5)` `BatchContext#value` function:
-  - `(RTBC5a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC5b)` Delegates to `Instance#value` ([RTINS4](#RTINS4)) on the underlying `Instance`
+  - `(RTBC5a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC5b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC5c)` Delegates to `Instance#value` ([RTINS4](#RTINS4)) on the underlying `Instance`
 - `(RTBC6)` `BatchContext#entries` function:
-  - `(RTBC6a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC6b)` Delegates to `Instance#entries` ([RTINS6](#RTINS6)) on the underlying `Instance`, wrapping each yielded `Instance` value in a `BatchContext` via `RootBatchContext#wrapInstance` ([RTBC16c](#RTBC16c))
-  - `(RTBC6c)` Yields `[String, BatchContext]` pairs
+  - `(RTBC6a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC6b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC6c)` Delegates to `Instance#entries` ([RTINS6](#RTINS6)) on the underlying `Instance`, wrapping each yielded `Instance` value in a `BatchContext` via `RootBatchContext#wrapInstance` ([RTBC16c](#RTBC16c))
+  - `(RTBC6d)` Yields `[String, BatchContext]` pairs
 - `(RTBC7)` `BatchContext#keys` function:
-  - `(RTBC7a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC7b)` Delegates to `Instance#keys` ([RTINS7](#RTINS7)) on the underlying `Instance`
+  - `(RTBC7a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC7b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC7c)` Delegates to `Instance#keys` ([RTINS7](#RTINS7)) on the underlying `Instance`
 - `(RTBC8)` `BatchContext#values` function:
-  - `(RTBC8a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC8b)` Delegates to `Instance#values` ([RTINS8](#RTINS8)) on the underlying `Instance`, wrapping each yielded `Instance` in a `BatchContext` via `RootBatchContext#wrapInstance` ([RTBC16c](#RTBC16c))
+  - `(RTBC8a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC8b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC8c)` Delegates to `Instance#values` ([RTINS8](#RTINS8)) on the underlying `Instance`, wrapping each yielded `Instance` in a `BatchContext` via `RootBatchContext#wrapInstance` ([RTBC16c](#RTBC16c))
 - `(RTBC9)` `BatchContext#size` function:
-  - `(RTBC9a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC9b)` Delegates to `Instance#size` ([RTINS9](#RTINS9)) on the underlying `Instance`
+  - `(RTBC9a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC9b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC9c)` Delegates to `Instance#size` ([RTINS9](#RTINS9)) on the underlying `Instance`
 - `(RTBC10)` `BatchContext#compact` function:
-  - `(RTBC10a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC10b)` Delegates to `Instance#compact` ([RTINS10](#RTINS10)) on the underlying `Instance`
+  - `(RTBC10a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC10b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC10c)` Delegates to `Instance#compact` ([RTINS10](#RTINS10)) on the underlying `Instance`
 - `(RTBC11)` `BatchContext#compactJson` function:
-  - `(RTBC11a)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC11b)` Delegates to `Instance#compactJson` ([RTINS11](#RTINS11)) on the underlying `Instance`
+  - `(RTBC11a)` Checks the access API preconditions per [RTO25](#RTO25)
+  - `(RTBC11b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC11c)` Delegates to `Instance#compactJson` ([RTINS11](#RTINS11)) on the underlying `Instance`
 - `(RTBC12)` `BatchContext#set` function. This method is synchronous:
   - `(RTBC12a)` Expects the following arguments:
     - `(RTBC12a1)` `key` `String` - the key to set the value for
     - `(RTBC12a2)` `value` `Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounterValueType | LiveMapValueType` - the value to assign to the key
-  - `(RTBC12b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC12c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
-  - `(RTBC12d)` Queues a message constructor on the `RootBatchContext` that, when executed, creates `ObjectMessages` for a `MAP_SET` operation in the same manner as `LiveMap#set` ([RTLM20e](#RTLM20e))
+  - `(RTBC12b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTBC12c)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC12d)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTBC12e)` Queues a message constructor on the `RootBatchContext` that, when executed, creates `ObjectMessages` for a `MAP_SET` operation in the same manner as `LiveMap#set` ([RTLM20e](#RTLM20e))
 - `(RTBC13)` `BatchContext#remove` function. This method is synchronous:
   - `(RTBC13a)` Expects a `key` `String` argument
-  - `(RTBC13b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC13c)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
-  - `(RTBC13d)` Queues a message constructor on the `RootBatchContext` that, when executed, creates an `ObjectMessage` for a `MAP_REMOVE` operation in the same manner as `LiveMap#remove` ([RTLM21e](#RTLM21e))
+  - `(RTBC13b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTBC13c)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC13d)` If the wrapped value is not a `LiveMap`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTBC13e)` Queues a message constructor on the `RootBatchContext` that, when executed, creates an `ObjectMessage` for a `MAP_REMOVE` operation in the same manner as `LiveMap#remove` ([RTLM21e](#RTLM21e))
 - `(RTBC14)` `BatchContext#increment` function. This method is synchronous:
   - `(RTBC14a)` Expects the following arguments:
     - `(RTBC14a1)` `amount` `Number` (optional) - the amount by which to increment the counter value. Defaults to 1
-  - `(RTBC14b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC14c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
-  - `(RTBC14d)` Queues a message constructor on the `RootBatchContext` that, when executed, creates an `ObjectMessage` for a `COUNTER_INC` operation in the same manner as `LiveCounter#increment` ([RTLC12](#RTLC12))
+  - `(RTBC14b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTBC14c)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC14d)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTBC14e)` Queues a message constructor on the `RootBatchContext` that, when executed, creates an `ObjectMessage` for a `COUNTER_INC` operation in the same manner as `LiveCounter#increment` ([RTLC12](#RTLC12))
 - `(RTBC15)` `BatchContext#decrement` function. This method is synchronous:
   - `(RTBC15a)` Expects the following arguments:
     - `(RTBC15a1)` `amount` `Number` (optional) - the amount by which to decrement the counter value. Defaults to 1
-  - `(RTBC15b)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
-  - `(RTBC15c)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
-  - `(RTBC15d)` Delegates to `BatchContext#increment` ([RTBC14](#RTBC14)) with the negated `amount`
+  - `(RTBC15b)` Checks the write API preconditions per [RTO26](#RTO26)
+  - `(RTBC15c)` If the batch is closed, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40000
+  - `(RTBC15d)` If the wrapped value is not a `LiveCounter`, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 92007
+  - `(RTBC15e)` Delegates to `BatchContext#increment` ([RTBC14](#RTBC14)) with the negated `amount`
 - `(RTBC16)` Internal `RootBatchContext` - manages the lifecycle and message queue for a batch operation:
   - `(RTBC16a)` Maintains an internal `wrappedInstances` map that memoizes `BatchContext` wrappers by `objectId`
   - `(RTBC16b)` Maintains an internal `queuedMessageConstructors` list of deferred message constructor functions. Some `ObjectMessages` require asynchronous I/O during construction (e.g. generating an `objectId` for nested value types), so message constructors are queued during synchronous batch method calls and executed on flush
