@@ -939,7 +939,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 ### RealtimeObject {#realtime-objects}
 
-Reserved for `RealtimeObject` feature specification, see [objects-features](../objects-features). Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`
+Reserved for `RealtimeObject` feature specification, see [objects-features](../objects-features). Reserved spec points: `RTO`, `RTLO`, `RTLC`, `RTLM`, `RTPO`, `RTINS`, `RTLCV`, `RTLMV`
 
 ### RealtimeAnnotations {#realtime-annotations}
 
@@ -1331,13 +1331,13 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OOP4g)` The size is the sum of the sizes of the map create, `mapSet`, `mapRemove`, counter create, and `counterInc` components
   - `(OOP4h)` The size of the map create component is:
     - `(OOP4h1)` If `mapCreate` is present, it is equal to the size of `mapCreate` calculated per [MCR3](#MCR3)
-    - `(OOP4h2)` Else if `mapCreateWithObjectId` is present, it is equal to the size of the `MapCreate` retained in [RTO11f18](objects-features#RTO11f18), calculated per [MCR3](#MCR3)
+    - `(OOP4h2)` Else if `mapCreateWithObjectId` is present, it is equal to the size of the `MapCreate` retained in [RTLMV4j5](objects-features#RTLMV4j5), calculated per [MCR3](#MCR3)
     - `(OOP4h3)` Otherwise it is zero
   - `(OOP4i)` The size of the `mapSet` property is calculated per [MST3](#MST3)
   - `(OOP4j)` The size of the `mapRemove` property is calculated per [MRM3](#MRM3)
   - `(OOP4k)` The size of the counter create component is:
     - `(OOP4k1)` If `counterCreate` is present, it is equal to the size of `counterCreate` calculated per [CCR3](#CCR3)
-    - `(OOP4k2)` Else if `counterCreateWithObjectId` is present, it is equal to the size of the `CounterCreate` retained in [RTO12f16](objects-features#RTO12f16), calculated per [CCR3](#CCR3)
+    - `(OOP4k2)` Else if `counterCreateWithObjectId` is present, it is equal to the size of the `CounterCreate` retained in [RTLCV4g5](objects-features#RTLCV4g5), calculated per [CCR3](#CCR3)
     - `(OOP4k3)` Otherwise it is zero
   - `(OOP4l)` The size of the `counterInc` property is calculated per [CIN3](#CIN3)
   - `(OOP4f)` The size of a `null` or omitted property is zero
@@ -1869,6 +1869,13 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(REX2b)` `type` - The type of reference, user defined
     - `(REX2b1)` Should be written in reverse domain name notation
     - `(REX2b2)` Types beginning with `com.ably.` are reserved
+
+#### Subscription
+
+- `(SUB1)` A `Subscription` represents a registration for receiving events from a subscribe operation
+- `(SUB2)` The `Subscription` object has the following method:
+  - `(SUB2a)` `unsubscribe` - deregisters the listener that was registered by the corresponding `subscribe` call. Once `unsubscribe` is called, the listener must not be called for any subsequent events
+  - `(SUB2b)` Calling `unsubscribe` more than once is a no-op
 
 ### Option types {#options}
 
@@ -2923,6 +2930,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       clientId: string? // TM2s3
       description: string? // TM2s4
       metadata: Dict<string, string>? //TM2s5
+
+    interface Subscription: // SUB*
+      unsubscribe() // SUB2a
 
 ## Old specs
 
