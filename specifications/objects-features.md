@@ -19,7 +19,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO23a)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
   - `(RTO23b)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
-  - `(RTO23d)` Returns a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2)) set to an empty list and `root` ([RTPO2b](#RTPO2)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
+  - `(RTO23d)` Returns a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2a)) set to an empty list and `root` ([RTPO2b](#RTPO2b)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
 - `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
   - `(RTO11a)` This clause has been replaced by [RTLMV3](#RTLMV3).
     - `(RTO11a1)` This clause has been replaced by [RTLMV3](#RTLMV3).
@@ -307,7 +307,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
         - `(RTO24b2a1)` The first (most-preferred) candidate is `pathToThis` itself
         - `(RTO24b2a2)` If the `LiveObjectUpdate` is a `LiveMapUpdate`, then for each key in `LiveMapUpdate.update`, append a further candidate consisting of `pathToThis` extended by that key
       - `(RTO24b2b)` For each registered subscription, find the first `eventPath` in `candidatePaths` that the subscription covers per [RTO24c1](#RTO24c1). If no such `eventPath` exists, do nothing for this subscription. Otherwise, call the subscription's listener exactly once with a `PathObjectSubscriptionEvent` that has:
-        - `(RTO24b2b1)` `object` - a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2)) set to `eventPath` and `root` ([RTPO2b](#RTPO2)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
+        - `(RTO24b2b1)` `object` - a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2a)) set to `eventPath` and `root` ([RTPO2b](#RTPO2b)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
         - `(RTO24b2b2)` `message` - if `LiveObjectUpdate.objectMessage` is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` derived from `LiveObjectUpdate.objectMessage` per [PAOM3](#PAOM3); otherwise omitted
       - `(RTO24b2c)` If a listener throws an error, the error must be caught and logged without affecting the dispatch to other subscriptions, nor to other `pathToThis` iterations
   - `(RTO24c)` Subscription coverage:
