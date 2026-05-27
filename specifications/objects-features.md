@@ -333,7 +333,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO3d1)` Set to `false` when the `LiveObject` is initialized
   - `(RTLO3e)` protected `tombstonedAt` (optional) Time - a timestamp indicating when this object was tombstoned. This property is nullable, and specification points that manipulate this value maintain the invariant that it is non-null if and only if `isTombstone` is `true`
     - `(RTLO3e1)` Set to undefined/null when the `LiveObject` is initialized
-  - `(RTLO3f)` protected `parentReferences` `Dict<String, Set<String>>` - tracks which `LiveMap`s in the local `ObjectsPool` currently reference this `LiveObject`, and at which keys they do so. The mapping is keyed by the parent `LiveMap`'s `objectId`, with each value being the set of keys at which that `LiveMap` references this `LiveObject`. Used by `getFullPaths` ([RTLO4f](#RTLO4f)) to determine every path the object currently occupies in the LiveObjects tree
+  - `(RTLO3f)` protected `parentReferences` `Dict<String, Set<String>>` - tracks which `LiveMap`s in the local `ObjectsPool` currently reference this `LiveObject`, and at which keys they do so. The mapping is keyed by the parent `LiveMap`'s `objectId`, with each value being the set of keys at which that `LiveMap` references this `LiveObject`. Used by `getFullPaths` ([RTLO4f](#RTLO4f)) to determine every path the object currently occupies in the LiveObjects graph
     - `(RTLO3f1)` This mapping is keyed by `objectId` for consistency with the rest of the LiveObjects spec, where references between objects are stored as `objectId`s and resolved via the `ObjectsPool` on demand. Implementations may store a direct reference to the parent `LiveMap` instead — for example to avoid an `ObjectsPool` lookup at each step of `getFullPaths` ([RTLO4f](#RTLO4f)) traversal — provided the observable behaviour is unchanged. Such implementations should be aware that this may introduce reference cycles between `LiveMap`s, and must ensure this does not cause memory leaks
     - `(RTLO3f2)` Set to an empty map when the `LiveObject` is initialized
 - `(RTLO4)` `LiveObject` methods:
@@ -867,16 +867,16 @@ A `LiveMapValueType` is an immutable blueprint for creating a new `LiveMap` obje
 
 ### PathObject
 
-A `PathObject` is a lazy, path-based reference into the LiveObjects tree. It stores a path (as an ordered list of string segments) from the root `LiveMap` and resolves it at the time each method is called. This means a `PathObject` survives object replacements: if the object at a given path changes (e.g. via a `MAP_SET` operation), the same `PathObject` will resolve to the new object on subsequent calls.
+A `PathObject` is a lazy, path-based reference into the LiveObjects graph. It stores a path (as an ordered list of string segments) from the root `LiveMap` and resolves it at the time each method is called. This means a `PathObject` survives object replacements: if the object at a given path changes (e.g. via a `MAP_SET` operation), the same `PathObject` will resolve to the new object on subsequent calls.
 
 A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which returns a `PathObject` rooted at the channel's root `LiveMap` with an empty path. Further `PathObjects` are obtained by navigating with `PathObject#get` or `PathObject#at`.
 
-- `(RTPO1)` The `PathObject` class provides a path-based view over the LiveObjects tree
+- `(RTPO1)` The `PathObject` class provides a path-based view over the LiveObjects graph
   - `(RTPO1a)` A specific SDK implementation may choose to expose a subset of the methods available on the `PathObject` class based on the expected type at the path. For example, when the user provides a type structure as a generic type parameter to `RealtimeObject#get`, the SDK may use type-specific class names (e.g. `LiveMapPathObject`, `LiveCounterPathObject`, `PrimitivePathObject`) that only expose the methods applicable to that type. The specification describes the general `PathObject` class with the full set of methods
 - `(RTPO2)` `PathObject` has the following internal properties:
-  - `(RTPO2a)` `path` - an ordered list of string segments representing the path from the root `LiveMap` to this position in the tree
+  - `(RTPO2a)` `path` - an ordered list of string segments representing the path from the root `LiveMap` to this position in the graph
   - `(RTPO2b)` `root` - a reference to the root `LiveMap` instance from the internal `ObjectsPool`
-- `(RTPO3)` Internal path resolution procedure - resolves the stored `path` against the LiveObjects tree:
+- `(RTPO3)` Internal path resolution procedure - resolves the stored `path` against the LiveObjects graph:
   - `(RTPO3a)` Starting from `root`, walk through the path segments in order. For each segment:
     - `(RTPO3a1)` The current object must be a `LiveMap`. If it is not, the resolution has failed
     - `(RTPO3a2)` Look up the segment as a key in the current `LiveMap` using `LiveMap#get` ([RTLM5](#RTLM5)). If the result is undefined/null, the resolution has failed
@@ -986,7 +986,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
     - `(RTPO19a2)` `options` `PathObjectSubscriptionOptions` (optional) - subscription options
   - `(RTPO19b)` Checks the access API preconditions per [RTO25](#RTO25)
   - `(RTPO19c)` `PathObjectSubscriptionOptions` has the following properties:
-    - `(RTPO19c1)` `depth` `Number` (optional) - controls how many levels deep in the subtree changes trigger the listener. Defaults to undefined/null. The `depth` value is interpreted by the subscription coverage rule in [RTO24c1](#RTO24c1); see [RTO24c2](#RTO24c2) for worked examples
+    - `(RTPO19c1)` `depth` `Number` (optional) - controls how many levels of path nesting below the subscription path trigger the listener. Defaults to undefined/null. The `depth` value is interpreted by the subscription coverage rule in [RTO24c1](#RTO24c1); see [RTO24c2](#RTO24c2) for worked examples
       - `(RTPO19c1a)` If `depth` is provided and is not a positive integer, the library must throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003
   - `(RTPO19d)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTPO19e)` The listener receives a `PathObjectSubscriptionEvent` object with:
@@ -997,7 +997,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
 
 ### Instance
 
-An `Instance` holds a direct reference to a specific resolved `LiveObject` or primitive value. Unlike `PathObject` which is path-addressed and re-resolves on each call, `Instance` is identity-addressed: it follows the specific object it was created with, regardless of where that object sits in the tree.
+An `Instance` holds a direct reference to a specific resolved `LiveObject` or primitive value. Unlike `PathObject` which is path-addressed and re-resolves on each call, `Instance` is identity-addressed: it follows the specific object it was created with, regardless of where that object sits in the graph.
 
 - `(RTINS1)` The `Instance` class provides a direct-reference view of a `LiveObject` or primitive value
   - `(RTINS1a)` A specific SDK implementation may choose to expose a subset of the methods available on the `Instance` class based on the known underlying type. For example, the SDK may use type-specific class names (e.g. `LiveMapInstance`, `LiveCounterInstance`, `PrimitiveInstance`) that only expose the methods applicable to the wrapped type. The specification describes the general `Instance` class with the full set of methods
@@ -1074,7 +1074,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
     - `(RTINS16e1)` `object` - an `Instance` wrapping the underlying `LiveObject`
     - `(RTINS16e2)` `message` `PublicAPI::ObjectMessage` (optional) - if `LiveObjectUpdate.objectMessage` from the underlying `LiveObject#subscribe` notification is populated and its `operation` field is populated, a `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) derived from it per [PAOM3](#PAOM3); otherwise omitted
   - `(RTINS16f)` Returns a [`Subscription`](../features#SUB1) object
-  - `(RTINS16g)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the tree
+  - `(RTINS16g)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the graph
   - `(RTINS16h)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
 
 ### PublicAPI::ObjectMessage
