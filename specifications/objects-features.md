@@ -17,7 +17,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO1d)` This clause has been replaced by [RTO23d](#RTO23d).
 - `(RTO23)` `RealtimeObject#get` function:
   - `(RTO23a)` Requires the `OBJECT_SUBSCRIBE` channel mode to be granted per [RTO2](#RTO2)
-  - `(RTO23b)` If the channel is in the `DETACHED` or `FAILED` state, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 90001
+  - `(RTO23b)` This clause has been replaced by [RTO23e](#RTO23e)
+  - `(RTO23e)` Perform the *ensure-active-channel* procedure ([RTL33](../features#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
   - `(RTO23d)` Returns a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2a)) set to an empty list and `root` ([RTPO2b](#RTPO2b)) set to the `LiveMap` with id `root` from the internal `ObjectsPool`
 - `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
