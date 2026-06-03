@@ -820,6 +820,11 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL32e)` Any params provided in the third argument must be sent in the `TR4q` `ProtocolMessage.params` field, as a `Dict<String, String>` (that is, with the values of the provided dict stringified per `RTC1f`)
   - `(RTL32c)` The SDK must not mutate the user-supplied `Message` object.
   - `(RTL32d)` On success, returns an `UpdateDeleteResult` object containing the version serial of the published update, obtained from the first element of the `serials` array of the [TR4s](#TR4s) `res` field of the `ACK`. Indicates an error if the operation was not successful.
+- `(RTL33)` *Ensure-active-channel* internal procedure. When invoked, the SDK must inspect the current state of the `RealtimeChannel` (see [RTL2](#RTL2)) and proceed as follows:
+  - `(RTL33a)` If the channel is in the `ATTACHED` or `SUSPENDED` state, the procedure completes immediately without performing any attach.
+  - `(RTL33b)` If the channel is in the `INITIALIZED`, `DETACHED`, `DETACHING`, or `ATTACHING` state, perform an implicit attach per [RTL4](#RTL4) and wait for it to complete
+    - `(RTL33b1)` If the implicit attach fails, the procedure must reject with the same `ErrorInfo` that caused the attach to fail
+  - `(RTL33c)` If the channel is in the `FAILED` state, the procedure must throw an `ErrorInfo` with `statusCode` 400 and `code` 90001, indicating that the channel operation failed due to the current channel state
 
 ### RealtimePresence {#realtime-presence}
 
@@ -913,8 +918,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP10e)` In all other ways, this method is identical to `RealtimePresence#enter` and should have matching tests
 - `(RTP11)` `RealtimePresence#get` function:
   - `(RTP11a)` Returns the list of current members on the channel in a callback. By default, will wait for the `SYNC` to be completed, see [RTP11c1](#RTP11c1)
-  - `(RTP11b)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in or enters the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
+  - `(RTP11b)` This clause has been replaced by [RTP11e](#RTP11e)
   - `(RTP11d)` If the `RealtimeChannel` is in the `SUSPENDED` state then the `get` function will by default, or if `waitForSync` is set to `true`, result in an error with `code` `91005` and a `message` stating that the presence state is out of sync due to the channel being in a `SUSPENDED` state. If however the `get` function is called with `waitForSync` set to `false`, then it immediately returns the members currently stored in the `PresenceMap` giving developers access to the members that were present at the time the channel became `SUSPENDED`
+  - `(RTP11e)` If the channel is in any state other than `SUSPENDED` (which is handled by [RTP11d](#RTP11d)), perform the *ensure-active-channel* procedure ([RTL33](#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
   - `(RTP11c)` An optional set of params can be provided:
     - `(RTP11c1)` `waitForSync` (default `true`). When `true`, method will wait until `SYNC` is complete before returning a list of members. When `false`, known set of presence members is returned immediately, which may be incomplete if the `SYNC` is not finished
     - `(RTP11c2)` `clientId` filters members by the provided `clientId`
