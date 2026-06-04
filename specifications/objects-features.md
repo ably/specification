@@ -145,7 +145,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO4a)` If the `HAS_OBJECTS` flag is 1, the server will shortly perform an `OBJECT_SYNC` sequence as described in [RTO5](#RTO5). Note that this does not imply that objects are definitely present on the channel, only that there may be; the `OBJECT_SYNC` message may be empty
   - `(RTO4b)` If the `HAS_OBJECTS` flag is 0 or there is no `flags` field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
     - `(RTO4b1)` All objects except the one with id `root` must be removed from the internal `ObjectsPool`
-    - `(RTO4b2)` The data for the `LiveMap` with id `root` must be set to the value described in [RTLM4c](#RTLM4c). Note that the client SDK must not create a new `LiveMap` instance with id `root`; it must only clear the internal data of the existing `LiveMap` with id `root`
+    - `(RTO4b2)` The data for the `LiveMap` with id `root` must be reset per [RTLM26](#RTLM26). Note that the client SDK must not create a new `LiveMap` instance with id `root`; it must only clear the internal data of the existing `LiveMap` with id `root`
       - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `LiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`
     - `(RTO4b3)` The `SyncObjectsPool` must be cleared
     - `(RTO4b5)` This clause has been replaced by [RTO4d](#RTO4d)
@@ -391,7 +391,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLO4e9)` If the `LiveObject` is a `LiveMap`, then before `LiveMap.data` is reset per [RTLO4e4](#RTLO4e4), for each `ObjectsMapEntry` in `LiveMap.data`:
       - `(RTLO4e9a)` If `ObjectsMapEntry.data.objectId` is populated, fetch the object with this `objectId` from the `ObjectsPool`
       - `(RTLO4e9b)` If the [`RTLO4e9a`](#RTLO4e9a) fetch returned an object, call its [`RTLO4h`](#RTLO4h) `removeParentReference(parent, key)` method, passing this `LiveMap` as `parent` and the iterated entry's key as `key`
-    - `(RTLO4e4)` Set the `data` attribute of the `LiveObject` to the value described in [RTLC4b](#RTLC4b) or [RTLM4c](#RTLM4c), depending on the object type
+    - `(RTLO4e4)` Reset the data of the `LiveObject` per [RTLM26](#RTLM26) or [RTLC17](#RTLC17), depending on the object type
     - `(RTLO4e5)` Compute a `LiveObjectUpdate` representing the data change resulting from this `LiveObject` being tombstoned, by calculating the diff between the `data` value from before [RTLO4e4](#RTLO4e4) was applied (as `previousData`) and the current `data` value (as `newData`), per [RTLC14](#RTLC14) or [RTLM22](#RTLM22), depending on the object type
     - `(RTLO4e6)` Set `LiveObjectUpdate.tombstone` to `true` on the object computed in [RTLO4e5](#RTLO4e5)
     - `(RTLO4e7)` Set `LiveObjectUpdate.objectMessage` on the object computed in [RTLO4e5](#RTLO4e5) to the `ObjectMessage` argument
@@ -419,6 +419,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 - `(RTLC4)` A new empty `LiveCounter` can be created with the following values:
   - `(RTLC4a)` `objectId` is passed into the constructor and set upon creation
   - `(RTLC4b)` `data` is set to 0
+- `(RTLC17)` The data of a `LiveCounter` can be reset to that of a new empty `LiveCounter` as follows:
+  - `(RTLC17a)` Set `data` to the value described in [RTLC4b](#RTLC4b)
 - `(RTLC11)` Data updates for a `LiveCounter` are emitted using the `LiveCounterUpdate` object:
   - `(RTLC11a)` `LiveCounterUpdate` extends `LiveObjectUpdate`
   - `(RTLC11b)` `LiveCounterUpdate.update` has the following properties:
@@ -533,6 +535,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM4b)` `semantics` may be passed into the constructor and set upon creation; if not provided, it defaults to [`ObjectsMapSemantics.LWW`](../features#OMP2)
   - `(RTLM4c)` `data` is set to an empty map
   - `(RTLM4d)` `clearTimeserial` is set to `null`
+- `(RTLM26)` The data of a `LiveMap` can be reset to that of a new empty `LiveMap` as follows:
+  - `(RTLM26a)` Set `data` to the value described in [RTLM4c](#RTLM4c)
+  - `(RTLM26b)` Set `clearTimeserial` to the value described in [RTLM4d](#RTLM4d)
 - `(RTLM18)` Data updates for a `LiveMap` are emitted using the `LiveMapUpdate` object:
   - `(RTLM18a)` `LiveMapUpdate` extends `LiveObjectUpdate`
   - `(RTLM18b)` `LiveMapUpdate.update` is of type `Dict<String, 'updated' | 'removed'>` - a map of `LiveMap` keys that were either updated or removed, with the corresponding value indicating the type of change for each key
