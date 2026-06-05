@@ -5,6 +5,13 @@ Spec points: `RTO4`, `RTO5`, `RTO17`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 Verify the sync sequence against the real server: attach with HAS_OBJECTS,
@@ -47,7 +54,7 @@ processes OBJECT_SYNC messages, then transitions to SYNCED. get() waits for SYNC
 ```pseudo
 channel_name = "objects-sync-" + random_id()
 
-client = Realtime(options: { key: api_key })
+client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
@@ -82,8 +89,8 @@ client.close()
 ```pseudo
 channel_name = "objects-two-sync-" + random_id()
 
-client_a = Realtime(options: { key: api_key })
-client_b = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -130,7 +137,7 @@ is re-populated from the server.
 ```pseudo
 channel_name = "objects-reattach-" + random_id()
 
-client = Realtime(options: { key: api_key })
+client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
@@ -176,7 +183,7 @@ sends HAS_OBJECTS, sync completes, root is an empty LiveMap.
 ```pseudo
 channel_name = "objects-subscribe-only-" + random_id()
 
-client = Realtime(options: { key: api_key })
+client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 

@@ -5,6 +5,13 @@ Spec points: `RTO23`, `RTPO15`, `RTPO17`
 ## Test Type
 Integration test against Ably sandbox
 
+## Protocol Variants
+json, msgpack
+
+Each test in this file runs once per protocol variant. The `PROTOCOL` variable
+is set to `"json"` or `"msgpack"` for the current run. Client options should set
+`useBinaryProtocol: PROTOCOL == "msgpack"`.
+
 ## Purpose
 
 End-to-end lifecycle: connect, sync, create objects via PathObject, mutate, and
@@ -47,8 +54,8 @@ propagates via the server and a second client sees the updated value.
 ```pseudo
 channel_name = "objects-lifecycle-" + random_id()
 
-client_a = Realtime(options: { key: api_key })
-client_b = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -98,8 +105,8 @@ on the server. Second client syncs and reads the counter value.
 ```pseudo
 channel_name = "objects-counter-create-" + random_id()
 
-client_a = Realtime(options: { key: api_key })
-client_b = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -145,8 +152,8 @@ The server applies the increment and propagates the updated value.
 ```pseudo
 channel_name = "objects-increment-" + random_id()
 
-client_a = Realtime(options: { key: api_key })
-client_b = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -197,8 +204,8 @@ Second client can navigate into the nested map.
 ```pseudo
 channel_name = "objects-map-create-" + random_id()
 
-client_a = Realtime(options: { key: api_key })
-client_b = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -247,7 +254,7 @@ after the sync sequence completes.
 ```pseudo
 channel_name = "objects-get-root-" + random_id()
 
-client = Realtime(options: { key: api_key })
+client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
@@ -298,7 +305,7 @@ provision_objects_via_rest(api_key, channel_name, [
 
 ### Test Steps
 ```pseudo
-client = Realtime(options: { key: api_key })
+client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 

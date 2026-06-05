@@ -295,6 +295,10 @@ The following integration test specs are annotated with `## Protocol Variants`:
 - `realtime/integration/mutable_messages_test.md`
 - `realtime/integration/delta_decoding_test.md`
 
+**LiveObjects:**
+- `objects/integration/objects_lifecycle_test.md`
+- `objects/integration/objects_sync_test.md`
+
 ## Writing Proxy Tests
 
 The proxy mediates between the SDK and the real Ably server. It is not a mock server. Tests should be written to rely on actual server responses as much as possible, with the proxy intervening only where necessary to create the specific fault or error condition under test.
