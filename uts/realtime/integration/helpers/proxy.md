@@ -202,6 +202,9 @@ ASSERT attach_frames.length == 1
 | MESSAGE | 15 | Both |
 | SYNC | 16 | Server → Client |
 | AUTH | 17 | Client → Server |
+| OBJECT | 19 | Both |
+| OBJECT_SYNC | 20 | Server → Client |
+| ANNOTATION | 21 | Both |
 
 ## SDK ClientOptions for Proxy Tests
 
