@@ -165,11 +165,9 @@ mock_ws.send_to_client(build_object_message("test", [
 ]))
 poll_until(updates.length >= 1, timeout: 5s)
 
+# Serial "02" passes the newness check (RTLO4a6); the zero increment is the noop
 mock_ws.send_to_client(build_object_message("test", [
-  ObjectMessage(
-    serial: "01", siteCode: "remote",
-    operation: { action: "COUNTER_INC", objectId: "counter:score@1000", counterInc: {} }
-  )
+  build_counter_inc("counter:score@1000", 0, "02", "remote")
 ]))
 ```
 
@@ -234,16 +232,16 @@ ASSERT updates.length == 1
 
 ---
 
-## RTLO4b4c3c - tombstone update deregisters all LiveObject#subscribe listeners
+## RTLO4b4c3c - tombstone update deregisters all Instance#subscribe listeners
 
 **Test ID**: `objects/unit/RTLO4b4c3c/tombstone-deregisters-listeners-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTLO4b4c3c | If LiveObjectUpdate.tombstone is true, deregister all LiveObject#subscribe listeners |
+| RTLO4b4c3c | If LiveObjectUpdate.tombstone is true, deregister all listeners |
 | RTLO4b4c3a | Listeners are called with the tombstone update itself before deregistration |
 
-Tests that when a tombstone update is emitted, all registered listeners are called with the tombstone update, but subsequent updates do not fire any listener because they have been deregistered.
+Tests that when a tombstone update is emitted, all registered listeners are called with the update, but subsequent updates do not fire any listener because they have been deregistered. Tested through Instance#subscribe (RTINS16); the tombstone is identified by `message.operation.action == "OBJECT_DELETE"`.
 
 ### Setup
 ```pseudo
@@ -257,7 +255,7 @@ instance.subscribe((event) => updates_b.append(event))
 
 ### Test Steps
 ```pseudo
-# Send an OBJECT_DELETE which causes a tombstone LiveObjectUpdate
+# Send an OBJECT_DELETE which causes a tombstone
 mock_ws.send_to_client(build_object_message("test", [
   build_object_delete("counter:score@1000", "50", "remote")
 ]))
@@ -265,9 +263,9 @@ poll_until(updates_a.length >= 1, timeout: 5s)
 
 # Both listeners should have received the tombstone update
 ASSERT updates_a.length == 1
-ASSERT updates_a[0].tombstone == true
+ASSERT updates_a[0].message.operation.action == "OBJECT_DELETE"
 ASSERT updates_b.length == 1
-ASSERT updates_b[0].tombstone == true
+ASSERT updates_b[0].message.operation.action == "OBJECT_DELETE"
 
 # Send another update — listeners should have been deregistered by tombstone
 mock_ws.send_to_client(build_object_message("test", [
@@ -283,15 +281,16 @@ ASSERT updates_b.length == 1
 
 ---
 
-## RTLO4b4d - LiveObjectUpdate.objectMessage is populated from source ObjectMessage
+## RTLO4b4d - InstanceSubscriptionEvent.message is populated from source ObjectMessage
 
 **Test ID**: `objects/unit/RTLO4b4d/update-has-object-message-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTLO4b4d | LiveObjectUpdate.objectMessage is the source ObjectMessage that caused the update |
+| RTLO4b4d | The update carries the source ObjectMessage |
+| RTINS16e | InstanceSubscriptionEvent.message is a PublicAPI::ObjectMessage |
 
-Tests that when an update is triggered by an incoming ObjectMessage, the `LiveObjectUpdate.objectMessage` field is populated with that source ObjectMessage.
+Tests that when an update is triggered by an incoming ObjectMessage, the `InstanceSubscriptionEvent.message` field is populated with the public ObjectMessage. Tested through Instance#subscribe (RTINS16).
 
 ### Setup
 ```pseudo
@@ -312,24 +311,24 @@ poll_until(updates.length >= 1, timeout: 5s)
 ### Assertions
 ```pseudo
 ASSERT updates.length == 1
-ASSERT updates[0].objectMessage IS NOT null
-ASSERT updates[0].objectMessage.serial == "99"
-ASSERT updates[0].objectMessage.siteCode == "remote"
-ASSERT updates[0].objectMessage.operation.action == "COUNTER_INC"
-ASSERT updates[0].objectMessage.operation.objectId == "counter:score@1000"
+ASSERT updates[0].message IS NOT null
+ASSERT updates[0].message.serial == "99"
+ASSERT updates[0].message.siteCode == "remote"
+ASSERT updates[0].message.operation.action == "COUNTER_INC"
+ASSERT updates[0].message.operation.objectId == "counter:score@1000"
 ```
 
 ---
 
-## RTLO4b4e - LiveObjectUpdate.tombstone is true for tombstone updates
+## RTLO4b4e - tombstone update identified by OBJECT_DELETE action
 
 **Test ID**: `objects/unit/RTLO4b4e/tombstone-flag-true-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTLO4b4e | LiveObjectUpdate.tombstone indicates the update was emitted as a result of tombstoning |
+| RTLO4b4e | Tombstone update emitted when LiveObject is tombstoned |
 
-Tests that when a `LiveObject` is tombstoned (e.g. via OBJECT_DELETE), the emitted `LiveObjectUpdate` has `tombstone == true`.
+Tests that when a `LiveObject` is tombstoned (e.g. via OBJECT_DELETE), the emitted event carries an OBJECT_DELETE operation. Tested through Instance#subscribe (RTINS16).
 
 ### Setup
 ```pseudo
@@ -350,18 +349,18 @@ poll_until(updates.length >= 1, timeout: 5s)
 ### Assertions
 ```pseudo
 ASSERT updates.length == 1
-ASSERT updates[0].tombstone == true
+ASSERT updates[0].message.operation.action == "OBJECT_DELETE"
 ```
 
 ---
 
-## RTLO4b4e - LiveObjectUpdate.tombstone is false for normal updates
+## RTLO4b4e - normal update carries non-tombstone action
 
 **Test ID**: `objects/unit/RTLO4b4e/tombstone-flag-false-0`
 
-**Spec requirement:** LiveObjectUpdate.tombstone defaults to false if not explicitly set.
+**Spec requirement:** Normal (non-tombstone) updates carry a regular operation action.
 
-Tests that for a normal (non-tombstone) update, `LiveObjectUpdate.tombstone` is `false`.
+Tests that for a normal update, the event carries a COUNTER_INC action (not OBJECT_DELETE). Tested through Instance#subscribe (RTINS16).
 
 ### Setup
 ```pseudo
@@ -382,5 +381,5 @@ poll_until(updates.length >= 1, timeout: 5s)
 ### Assertions
 ```pseudo
 ASSERT updates.length == 1
-ASSERT updates[0].tombstone == false
+ASSERT updates[0].message.operation.action == "COUNTER_INC"
 ```
