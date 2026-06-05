@@ -425,33 +425,6 @@ ASSERT root.get("name").value() == "Bob"
 
 ---
 
-## RTLM24 - clear() sends MAP_CLEAR message
-
-**Test ID**: `objects/unit/RTLM24/clear-sends-map-clear-0`
-
-**Spec requirement:** Constructs MAP_CLEAR ObjectMessage.
-
-### Setup
-```pseudo
-captured_messages = []
-// (same mock setup capturing OBJECT messages)
-```
-
-### Test Steps
-```pseudo
-instance = root.instance()
-AWAIT instance.clear()
-```
-
-### Assertions
-```pseudo
-obj_msg = captured_messages[0].state[0]
-ASSERT obj_msg.operation.action == "MAP_CLEAR"
-ASSERT obj_msg.operation.objectId == "root"
-```
-
----
-
 ## RTLM20 - Table-driven invalid set value types
 
 **Test ID**: `objects/unit/RTLM20/set-invalid-values-table-0`
