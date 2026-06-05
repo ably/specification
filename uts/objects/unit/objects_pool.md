@@ -299,7 +299,8 @@ ASSERT "root" IN pool
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-pool.appliedOnAckSerials = {"serial-1", "serial-2"}
+realtime_object = RealtimeObject(pool: pool)
+realtime_object.appliedOnAckSerials = {"serial-1", "serial-2"}
 pool.processAttached(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
 ))
@@ -317,7 +318,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
 
 ### Assertions
 ```pseudo
-ASSERT pool.appliedOnAckSerials == {}
+ASSERT realtime_object.appliedOnAckSerials == {}
 ```
 
 ---
@@ -334,6 +335,7 @@ ASSERT pool.appliedOnAckSerials == {}
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 pool.processAttached(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
 ))
@@ -349,7 +351,7 @@ pool.processObjectMessage(build_object_message("test", [
 ### Assertions
 ```pseudo
 ASSERT pool.syncState == SYNCING
-ASSERT pool.bufferedObjectOperations.length == 1
+ASSERT realtime_object.bufferedObjectOperations.length == 1
 ASSERT "counter:abc@1000" NOT IN pool
 ```
 
@@ -367,6 +369,7 @@ ASSERT "counter:abc@1000" NOT IN pool
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 pool.processAttached(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
 ))
@@ -393,7 +396,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
 ### Assertions
 ```pseudo
 ASSERT pool["counter:abc@1000"].data == 110
-ASSERT pool.bufferedObjectOperations.length == 0
+ASSERT realtime_object.bufferedObjectOperations.length == 0
 ```
 
 ---
@@ -433,10 +436,11 @@ ASSERT pool.keys().length == 1
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 pool.syncState = SYNCED
 pool["counter:abc@1000"] = LiveCounter(objectId: "counter:abc@1000")
 pool["counter:abc@1000"].data = 10
-pool.appliedOnAckSerials = {"echo-serial-1"}
+realtime_object.appliedOnAckSerials = {"echo-serial-1"}
 ```
 
 ### Test Steps
@@ -453,7 +457,7 @@ pool.processObjectMessage(build_object_message("test", [
 ### Assertions
 ```pseudo
 ASSERT pool["counter:abc@1000"].data == 10
-ASSERT "echo-serial-1" NOT IN pool.appliedOnAckSerials
+ASSERT "echo-serial-1" NOT IN realtime_object.appliedOnAckSerials
 ```
 
 ---
@@ -467,6 +471,7 @@ ASSERT "echo-serial-1" NOT IN pool.appliedOnAckSerials
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 pool.syncState = SYNCED
 pool["counter:abc@1000"] = LiveCounter(objectId: "counter:abc@1000")
 ```
@@ -480,7 +485,7 @@ pool.applyObjectMessages([
 
 ### Assertions
 ```pseudo
-ASSERT "local-serial-1" IN pool.appliedOnAckSerials
+ASSERT "local-serial-1" IN realtime_object.appliedOnAckSerials
 ASSERT pool["counter:abc@1000"].data == 5
 ```
 
@@ -734,6 +739,7 @@ ASSERT pool["counter:abc@1000"].data == 10
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 pool.processAttached(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
 ))
@@ -741,7 +747,7 @@ pool.processAttached(ProtocolMessage(
 pool.processObjectMessage(build_object_message("test", [
   build_counter_inc("counter:abc@1000", 5, "01", "site1")
 ]))
-ASSERT pool.bufferedObjectOperations.length == 1
+ASSERT realtime_object.bufferedObjectOperations.length == 1
 ```
 
 ### Test Steps
@@ -753,7 +759,7 @@ pool.processAttached(ProtocolMessage(
 
 ### Assertions
 ```pseudo
-ASSERT pool.bufferedObjectOperations.length == 0
+ASSERT realtime_object.bufferedObjectOperations.length == 0
 ```
 
 ---
@@ -809,6 +815,7 @@ ASSERT "counter:new@1000" IN pool
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 pool.processAttached(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
 ))
@@ -816,7 +823,7 @@ pool.processAttached(ProtocolMessage(
 pool.processObjectMessage(build_object_message("test", [
   build_counter_inc("counter:abc@1000", 5, "01", "site1")
 ]))
-ASSERT pool.bufferedObjectOperations.length == 1
+ASSERT realtime_object.bufferedObjectOperations.length == 1
 ```
 
 ### Test Steps
@@ -850,6 +857,7 @@ ASSERT pool["counter:abc@1000"].data == 105
 ### Setup
 ```pseudo
 pool = ObjectsPool()
+realtime_object = RealtimeObject(pool: pool)
 ASSERT pool.syncState == INITIALIZED
 ```
 
@@ -862,7 +870,7 @@ pool.processObjectMessage(build_object_message("test", [
 
 ### Assertions
 ```pseudo
-ASSERT pool.bufferedObjectOperations.length == 1
+ASSERT realtime_object.bufferedObjectOperations.length == 1
 ```
 
 ---
