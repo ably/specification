@@ -81,6 +81,11 @@ mock_ws = MockWebSocket(
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:", flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == DETACH:
+      mock_ws.send_to_client(ProtocolMessage(
         action: DETACHED, channel: msg.channel
       ))
   }
@@ -91,14 +96,15 @@ client = Realtime(options: { key: "fake:key", autoConnect: true })
 channel = client.channels.get("test", {
   modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"]
 })
-channel.attach()
+root = AWAIT channel.object.get()
+
+AWAIT channel.detach()
 AWAIT_STATE channel.state == DETACHED
-root_path = channel.object.getRoot()
 ```
 
 ### Test Steps
 ```pseudo
-root_path.subscribe((event) => {}) FAILS WITH error
+root.subscribe((event) => {}) FAILS WITH error
 ```
 
 ### Assertions
