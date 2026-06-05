@@ -79,7 +79,7 @@ root = AWAIT channel.object.get()
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(25)
+AWAIT root.get("score").increment(25)
 ```
 
 ### Assertions
@@ -106,7 +106,7 @@ ASSERT obj_msg.operation.counterInc.number == 25
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(50)
+AWAIT root.get("score").increment(50)
 ```
 
 ### Assertions
@@ -137,7 +137,7 @@ Note: RTLC12b, RTLC12c, and RTLC12d have been replaced by RTO26. The write API p
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment("not_a_number") FAILS WITH error
+AWAIT root.get("score").increment("not_a_number") FAILS WITH error
 ```
 
 ### Assertions
@@ -185,7 +185,7 @@ root = AWAIT channel.object.get()
 
 ### Test Steps
 ```pseudo
-AWAIT root.decrement(15)
+AWAIT root.get("score").decrement(15)
 ```
 
 ### Assertions
@@ -254,6 +254,6 @@ invalid_amounts = [
 ### Test Steps
 ```pseudo
 FOR scenario IN invalid_amounts:
-  AWAIT root.increment(scenario.value) FAILS WITH error
+  AWAIT root.get("score").increment(scenario.value) FAILS WITH error
   ASSERT error.code == 40003
 ```

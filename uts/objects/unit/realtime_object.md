@@ -255,7 +255,7 @@ ASSERT result.serials == ["serial-0"]
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 ```
 
 ### Assertions
@@ -301,7 +301,7 @@ root = AWAIT channel.object.get()
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 ```
 
 ### Assertions
@@ -345,7 +345,7 @@ root = AWAIT channel.object.get()
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 ```
 
 ### Assertions
@@ -373,7 +373,7 @@ mock_ws.send_to_client(ProtocolMessage(
   flags: HAS_OBJECTS
 ))
 
-inc_future = root.increment(10)
+inc_future = root.get("score").increment(10)
 
 mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
 
@@ -405,7 +405,7 @@ mock_ws.send_to_client(ProtocolMessage(
   flags: HAS_OBJECTS
 ))
 
-inc_future = root.increment(10)
+inc_future = root.get("score").increment(10)
 
 mock_ws.send_to_client(ProtocolMessage(
   action: DETACHED, channel: "test",
@@ -1037,7 +1037,7 @@ ASSERT root.get("score").value() == null
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 score_after_apply = root.get("score").value()
 
 mock_ws.send_to_client(build_object_message("test", [
@@ -1071,7 +1071,7 @@ site_serials_before = root.get("score").instance()._liveObject.siteTimeserials
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 site_serials_after = root.get("score").instance()._liveObject.siteTimeserials
 ```
 
@@ -1095,7 +1095,7 @@ ASSERT site_serials_after == site_serials_before
 
 ### Test Steps
 ```pseudo
-inc_future = root.increment(10)
+inc_future = root.get("score").increment(10)
 
 // Send the echo BEFORE the ACK
 mock_ws.send_to_client(build_object_message("test", [
@@ -1128,7 +1128,7 @@ ASSERT root.get("score").value() == 110
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 ASSERT root.get("score").value() == 110
 
 // Trigger re-sync
@@ -1163,7 +1163,7 @@ root.get("score").subscribe((event) => events.append(event))
 
 ### Test Steps
 ```pseudo
-AWAIT root.increment(10)
+AWAIT root.get("score").increment(10)
 ```
 
 ### Assertions
