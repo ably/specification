@@ -365,6 +365,8 @@ AWAIT root.set("key", "value") FAILS WITH error
 
 ```pseudo
 ASSERT error.code == 92008
+ASSERT error.cause IS NOT null
+ASSERT error.cause.code == 90000
 ```
 
 ---
