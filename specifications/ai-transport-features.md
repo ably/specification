@@ -130,6 +130,10 @@ The agent (server-side) session manages the run lifecycle over an Ably channel. 
 
 - `(AIT-ST13)` The SDK must provide an `Invocation` class with a static `fromJSON(data: InvocationData)` factory that wraps the JSON wire body sent from the client to the agent endpoint. `InvocationData` carries `runId`, `clientId`, `sessionName`, optional `messages`, optional `history`, optional `events`, optional `parent`, and optional `forkOf`. Omitted optional fields default to empty arrays / `undefined` on the constructed `Invocation`.
 
+### Presence
+
+- `(AIT-ST14)` The agent session must expose the underlying Ably channel's presence object via a read-only `presence` accessor. The accessor must return the channel's `RealtimePresence` directly, applying no AI-Transport-specific semantics, and must be usable before `connect()` is called.
+
 ## Client Session {#client-session}
 
 The client session manages the client-side conversation lifecycle over an Ably channel. It composes a Tree for branching message history, a StreamRouter for per-run event streams, and a codec decoder for processing incoming Ably messages.
@@ -238,6 +242,10 @@ The client session manages the client-side conversation lifecycle over an Ably c
 ### Channel Health
 
 - `(AIT-CT20)` `send()` must throw with code `ChannelNotReady` (104007) if the channel is not in the ATTACHED or ATTACHING state.
+
+### Presence
+
+- `(AIT-CT21)` The client session must expose the underlying Ably channel's presence object via a read-only `presence` accessor. The accessor must return the channel's `RealtimePresence` directly, applying no AI-Transport-specific semantics, and must be usable before `connect()` is called.
 
 ## Common Error Codes used by AI Transport {#common-error-codes}
 
