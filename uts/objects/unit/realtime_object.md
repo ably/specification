@@ -1063,21 +1063,36 @@ ASSERT score_after_echo == 110
 | RTO20f | Apply with source LOCAL |
 | RTLC7c2 | LOCAL source does not update siteTimeserials |
 
+Verified through observable behaviour: after a local increment (applied via ACK
+with source LOCAL), an inbound COUNTER_INC from the same siteCode and serial as
+the ACK should still apply. If LOCAL had incorrectly written to siteTimeserials,
+the newness check would reject the inbound message as stale.
+
+The mock's ACK serial for the first publish is `"t:1:0"` with siteCode `"test"`
+(from ConnectionDetails). The inbound message reuses that siteCode and serial.
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-site_serials_before = root.get("score").instance()._liveObject.siteTimeserials
 ```
 
 ### Test Steps
 ```pseudo
 AWAIT root.get("score").increment(10)
-site_serials_after = root.get("score").instance()._liveObject.siteTimeserials
+ASSERT root.get("score").value() == 110
+
+# Send inbound COUNTER_INC from siteCode "test" with serial "t:1:0"
+# (same siteCode and serial as the ACK). If LOCAL incorrectly set
+# siteTimeserials["test"] = "t:1:0", this would fail the newness check.
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 10, "t:1:0", "test")
+]))
+poll_until(root.get("score").value() == 120, timeout: 5s)
 ```
 
 ### Assertions
 ```pseudo
-ASSERT site_serials_after == site_serials_before
+ASSERT root.get("score").value() == 120
 ```
 
 ---
