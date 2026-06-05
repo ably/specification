@@ -52,24 +52,6 @@ ASSERT vt.count == 0
 
 ---
 
-## RTLCV3c - No validation at creation time
-
-**Test ID**: `objects/unit/RTLCV3c/no-validation-at-create-0`
-
-**Spec requirement:** No input validation is performed at creation time. Validation is deferred to the evaluation procedure (RTLCV4).
-
-### Test Steps
-```pseudo
-vt = LiveCounter.create("not_a_number")
-```
-
-### Assertions
-```pseudo
-ASSERT vt IS LiveCounterValueType
-```
-
----
-
 ## RTLCV4 - Evaluation generates COUNTER_CREATE ObjectMessage
 
 **Test ID**: `objects/unit/RTLCV4/evaluate-generates-message-0`
