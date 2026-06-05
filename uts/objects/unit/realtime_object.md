@@ -1146,19 +1146,25 @@ ASSERT root.get("score").value() == 110
 AWAIT root.get("score").increment(10)
 ASSERT root.get("score").value() == 110
 
-// Trigger re-sync
+// Trigger re-sync — appliedOnAckSerials should be cleared per RTO5c9
 mock_ws.send_to_client(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync2:cursor", flags: HAS_OBJECTS
 ))
 mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
-
-// After re-sync, the score is back to 100 (from pool state)
 ASSERT root.get("score").value() == 100
+
+// Replay the same serial ("t:1:0") that was used for apply-on-ACK.
+// If appliedOnAckSerials was cleared, this applies normally.
+// If NOT cleared, dedup (RTO9a3) would reject it and score stays 100.
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 10, "t:1:0", "test")
+]))
+poll_until(root.get("score").value() == 110, timeout: 5s)
 ```
 
 ### Assertions
 ```pseudo
-ASSERT root.get("score").value() == 100
+ASSERT root.get("score").value() == 110
 ```
 
 ---
