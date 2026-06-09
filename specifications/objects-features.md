@@ -21,6 +21,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO23e)` Perform the *ensure-active-channel* procedure ([RTL33](../features#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
   - `(RTO23d)` Returns a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2a)) set to an empty list and `root` ([RTPO2b](#RTPO2b)) set to the `InternalLiveMap` with id `root` from the internal `ObjectsPool`
+  - `(RTO23f)` In typed SDKs the returned `PathObject` is of static type `LiveMapPathObject` per [RTTS6d](#RTTS6d).
 - `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
   - `(RTO11a)` This clause has been replaced by [RTLMV3](#RTLMV3).
     - `(RTO11a1)` This clause has been replaced by [RTLMV3](#RTLMV3).
@@ -874,6 +875,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
 
 - `(RTPO1)` The `PathObject` class provides a path-based view over the LiveObjects graph
   - `(RTPO1a)` A specific SDK implementation may choose to expose a subset of the methods available on the `PathObject` class based on the expected type at the path. For example, when the user provides a type structure as a generic type parameter to `RealtimeObject#get`, the SDK may use type-specific class names (e.g. `LiveMapPathObject`, `LiveCounterPathObject`, `PrimitivePathObject`) that only expose the methods applicable to that type. The specification describes the general `PathObject` class with the full set of methods
+  - `(RTPO1b)` Typed SDKs (e.g. Java, Swift, Kotlin) must partition this class as described in [RTTS3](#RTTS3) through [RTTS6](#RTTS6).
 - `(RTPO2)` `PathObject` has the following internal properties:
   - `(RTPO2a)` `path` - an ordered list of string segments representing the path from the root `InternalLiveMap` to this position in the graph
   - `(RTPO2b)` `root` - a reference to the root `InternalLiveMap` instance from the internal `ObjectsPool`
@@ -947,6 +949,7 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO13d)` If the resolved value is an `InternalLiveCounter`, returns its current numeric value (equivalent to `PathObject#value`)
   - `(RTPO13e)` If the resolved value is a primitive, returns the value directly (equivalent to `PathObject#value`)
   - `(RTPO13f)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
+  - `(RTPO13g)` Typed SDKs are not required to implement this method; see [RTTS3f](#RTTS3f).
 - `(RTPO14)` `PathObject#compactJson` function:
   - `(RTPO14a)` Checks the access API preconditions per [RTO25](#RTO25)
   - `(RTPO14b)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)) except for the following differences, which ensure the result is JSON-serializable:
@@ -1002,6 +1005,7 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 
 - `(RTINS1)` The `Instance` class provides a direct-reference view of a `LiveObject` or primitive value
   - `(RTINS1a)` A specific SDK implementation may choose to expose a subset of the methods available on the `Instance` class based on the known underlying type. For example, the SDK may use type-specific class names (e.g. `LiveMapInstance`, `LiveCounterInstance`, `PrimitiveInstance`) that only expose the methods applicable to the wrapped type. The specification describes the general `Instance` class with the full set of methods
+  - `(RTINS1b)` Typed SDKs (e.g. Java, Swift, Kotlin) must partition this class as described in [RTTS7](#RTTS7) through [RTTS10](#RTTS10).
 - `(RTINS2)` `Instance` has the following internal properties:
   - `(RTINS2a)` `value` - a reference to the wrapped `LiveObject` or primitive value
 - `(RTINS3)` `Instance#id` property:
@@ -1037,9 +1041,11 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
 - `(RTINS10)` `Instance#compact` function:
   - `(RTINS10a)` Checks the access API preconditions per [RTO25](#RTO25)
   - `(RTINS10b)` Behaves identically to `PathObject#compact` ([RTPO13](#RTPO13)), but operates on the wrapped value directly instead of resolving a path
+  - `(RTINS10c)` Typed SDKs are not required to implement this method; see [RTTS7d](#RTTS7d).
 - `(RTINS11)` `Instance#compactJson` function:
   - `(RTINS11a)` Checks the access API preconditions per [RTO25](#RTO25)
   - `(RTINS11b)` Behaves identically to `PathObject#compactJson` ([RTPO14](#RTPO14)), but operates on the wrapped value directly instead of resolving a path
+  - `(RTINS11c)` Because an `Instance` is bound to an already-resolved value at construction time, the path-resolution-failure case of [RTPO14](#RTPO14) (inherited via [RTINS11b](#RTINS11b)) cannot arise; this method MUST NOT return null.
 - `(RTINS12)` `Instance#set` function:
   - `(RTINS12a)` Expects the following arguments:
     - `(RTINS12a1)` `key` `String` - the key to set the value for
@@ -1077,6 +1083,81 @@ An `Instance` holds a direct reference to a specific resolved `LiveObject` or pr
   - `(RTINS16f)` Returns a [`Subscription`](../features#SUB1) object
   - `(RTINS16g)` The subscription is identity-based: it follows the specific `LiveObject` instance, regardless of where it sits in the graph
   - `(RTINS16h)` This operation must not have any side effects on `RealtimeObject`, the underlying channel, or their status
+
+### Typed-SDK public API (strongly-typed languages)
+
+This section refines [RTPO1a](#RTPO1a) and [RTINS1a](#RTINS1a) for SDKs whose host language is strongly typed (e.g. Java, Swift, Kotlin). It is normative for those SDKs. SDKs in dynamically-typed languages (e.g. JavaScript) MAY continue to expose the full `PathObject` ([RTPO1](#RTPO1)) and `Instance` ([RTINS1](#RTINS1)) classes unchanged.
+
+Rationale (non-normative): the overwhelming majority of customer use-cases operate on a static domain model; typed SDKs should provide compile-time type-safety for that majority while keeping a dynamic escape hatch via the base classes ([RTTS3](#RTTS3), [RTTS7](#RTTS7)) and the `as*` cast helpers ([RTTS5](#RTTS5), [RTTS9](#RTTS9)).
+
+This section partitions the API surface of `PathObject` and `Instance` across a class hierarchy. It does not redefine per-method semantics; those remain authoritative in [RTPO\*](#RTPO1) and [RTINS\*](#RTINS1).
+
+- `(RTTS1)` Scope
+  - `(RTTS1a)` This section is normative for SDKs whose host language is strongly typed and which expose typed sub-classes per [RTPO1a](#RTPO1a) and [RTINS1a](#RTINS1a). All such SDKs must agree on the partition described here, so that user code is portable between them
+  - `(RTTS1b)` SDKs in dynamically-typed host languages are not required to expose these sub-classes; if they do, they must follow this partition
+- `(RTTS2)` `ValueType` enum - the set of value categories a `PathObject` or `Instance` may wrap. Used by [RTTS4b](#RTTS4b) and [RTTS8a](#RTTS8a)
+  - `(RTTS2a)` The enum has the following members. Names are illustrative; SDKs may use platform-idiomatic casing:
+    - `(RTTS2a1)` `STRING` - corresponds to the `String` primitive
+    - `(RTTS2a2)` `NUMBER` - corresponds to the `Number` primitive
+    - `(RTTS2a3)` `BOOLEAN` - corresponds to the `Boolean` primitive
+    - `(RTTS2a4)` `BINARY` - corresponds to the `Binary` primitive
+    - `(RTTS2a5)` `JSON_OBJECT` - corresponds to the `JsonObject` primitive
+    - `(RTTS2a6)` `JSON_ARRAY` - corresponds to the `JsonArray` primitive
+    - `(RTTS2a7)` `LIVE_MAP` - corresponds to an `InternalLiveMap` ([RTLM1](#RTLM1))
+    - `(RTTS2a8)` `LIVE_COUNTER` - corresponds to an `InternalLiveCounter` ([RTLC1](#RTLC1))
+    - `(RTTS2a9)` `UNKNOWN` - returned by [RTTS4b](#RTTS4b) when path resolution fails or the resolved value has none of the above types. Available on [RTTS8a](#RTTS8a) only as a future-compatibility fallback - an `Instance` is bound to a known value at construction time and so MUST NOT produce `UNKNOWN` in normal operation
+- `(RTTS3)` Typed `PathObject` base class - the typed SDK's public root of the `PathObject` hierarchy. The base class exposes only those methods of [RTPO1](#RTPO1) whose return type and semantics are identical regardless of the resolved underlying type
+  - `(RTTS3a)` Exposes `path` per [RTPO4](#RTPO4)
+  - `(RTTS3b)` Exposes `instance` per [RTPO8](#RTPO8). Sub-classes other than `LiveMapPathObject` ([RTTS6a](#RTTS6a)) and `LiveCounterPathObject` ([RTTS6b](#RTTS6b)) may narrow this further per [RTTS6e](#RTTS6e)
+  - `(RTTS3c)` Exposes `compactJson` per [RTPO14](#RTPO14). Where the host language supports covariant return types, sub-classes MAY narrow the return type (e.g. `JsonObjectPathObject#compactJson` returning the SDK's `JsonObject` rather than its generic JSON element type). Implementations MAY choose not to narrow
+  - `(RTTS3d)` Exposes `subscribe` per [RTPO19](#RTPO19). Typed SDKs MUST deliver the full `PathObjectSubscriptionEvent` payload defined in [RTPO19e](#RTPO19e) to the listener - both the `object` field ([RTPO19e1](#RTPO19e1)) and the optional `message` field ([RTPO19e2](#RTPO19e2)) - so that user code can inspect the `PublicAPI::ObjectMessage` ([PAOM1](#PAOM1)) that triggered the change. Typed SDKs MUST NOT expose a subscription-event type that omits the `message` accessor
+  - `(RTTS3e)` Does not expose `get` ([RTPO5](#RTPO5)), `at` ([RTPO6](#RTPO6)), `value` ([RTPO7](#RTPO7)), `entries` ([RTPO9](#RTPO9)), `keys` ([RTPO10](#RTPO10)), `values` ([RTPO11](#RTPO11)), `size` ([RTPO12](#RTPO12)), `set` ([RTPO15](#RTPO15)), `remove` ([RTPO16](#RTPO16)), `increment` ([RTPO17](#RTPO17)) or `decrement` ([RTPO18](#RTPO18)) on the base class. Those are partitioned onto the sub-classes per [RTTS6](#RTTS6)
+  - `(RTTS3f)` Does not expose `compact` ([RTPO13](#RTPO13)). Typed SDKs are not required to implement `compact`; `compactJson` is sufficient for the static-domain use-cases. This may be revisited in a future spec version
+  - `(RTTS3g)` (non-normative) To traverse from a base `PathObject` reference into a map, callers cast first via `asLiveMap` ([RTTS5a](#RTTS5a)). For example, for a base `PathObject p`, deep navigation `p.asLiveMap().at("a.b.c")` is equivalent to successive `get` calls
+- `(RTTS4)` Typed `PathObject` extension methods - best-effort helpers added by the typed-SDK variant. They have O(n) complexity in the path length because they resolve the path at call time, and are therefore exposed as methods (not properties) even in host languages that distinguish the two
+  - `(RTTS4a)` `exists()` - returns `Boolean` indicating whether a value currently resolves at the stored path. The check is best-effort and evaluates the local object tree at call time; the answer may change between this call and a subsequent operation as remote operations are applied. Useful as a guard before a write whose semantics depend on existence:
+    - `(RTTS4a1)` Checks the access API preconditions per [RTO25](#RTO25)
+    - `(RTTS4a2)` Performs the path resolution procedure ([RTPO3](#RTPO3))
+    - `(RTTS4a3)` Returns `true` if path resolution succeeds; `false` if it fails per [RTPO3c](#RTPO3c)
+  - `(RTTS4b)` `getType()` - returns the `ValueType` ([RTTS2](#RTTS2)) of the value currently resolved at the stored path:
+    - `(RTTS4b1)` Checks the access API preconditions per [RTO25](#RTO25)
+    - `(RTTS4b2)` Performs the path resolution procedure ([RTPO3](#RTPO3))
+    - `(RTTS4b3)` Returns the matching `ValueType` member per [RTTS2a](#RTTS2a). Returns `UNKNOWN` if path resolution fails or the resolved value falls into none of the categories defined in [RTTS2a1](#RTTS2a1) through [RTTS2a8](#RTTS2a8)
+- `(RTTS5)` Typed `PathObject` `as*` cast helpers - best-effort accessors that return a sub-class view of this `PathObject` without performing any validation against current path resolution. The returned wrapper shares this `PathObject`'s `path` ([RTPO2a](#RTPO2a)) and `root` ([RTPO2b](#RTPO2b))
+  - `(RTTS5a)` `asLiveMap()` returns a `LiveMapPathObject` ([RTTS6a](#RTTS6a))
+  - `(RTTS5b)` `asLiveCounter()` returns a `LiveCounterPathObject` ([RTTS6b](#RTTS6b))
+  - `(RTTS5c)` `asNumber()`, `asString()`, `asBoolean()`, `asBinary()`, `asJsonObject()`, `asJsonArray()` each return the corresponding primitive sub-class per [RTTS6c](#RTTS6c)
+  - `(RTTS5d)` These helpers MUST NOT throw based on the current resolved type; they only re-wrap. Operations on the returned wrapper carry their own failure semantics:
+    - `(RTTS5d1)` Read operations (`value`, `instance`, `entries`, `keys`, `values`, `size`, `compactJson`) follow [RTPO3c1](#RTPO3c1) - return null/empty if the resolved type does not match the wrapper's expectation
+    - `(RTTS5d2)` Write and terminal operations (`set`, `remove`, `increment`, `decrement`) follow [RTPO3c2](#RTPO3c2) - throw an `ErrorInfo` with `statusCode` 400 and `code` 92007 if the resolved type does not match
+  - `(RTTS5e)` (non-normative) Callers needing a strict type-check before casting should use [RTTS4b](#RTTS4b) `getType` or [RTTS4a](#RTTS4a) `exists`
+- `(RTTS6)` Typed `PathObject` sub-classes - the partition of methods across the hierarchy. Each sub-class extends [RTTS3](#RTTS3) and therefore inherits `path`, `instance`, `compactJson`, `subscribe`, `exists`, `getType`, and all `as*` helpers
+  - `(RTTS6a)` `LiveMapPathObject` - adds `get` per [RTPO5](#RTPO5), `at` per [RTPO6](#RTPO6), `entries` per [RTPO9](#RTPO9), `keys` per [RTPO10](#RTPO10), `values` per [RTPO11](#RTPO11), `size` per [RTPO12](#RTPO12), `set` per [RTPO15](#RTPO15), `remove` per [RTPO16](#RTPO16). Failure semantics for each method when the path does not resolve to an `InternalLiveMap` are inherited from the referenced `RTPO*` clauses unchanged
+  - `(RTTS6b)` `LiveCounterPathObject` - adds `increment` per [RTPO17](#RTPO17), `decrement` per [RTPO18](#RTPO18), and a `value()` method delegating to [RTPO7](#RTPO7) with the return type narrowed to `Number?` (returns null per [RTPO3c1](#RTPO3c1) / [RTPO7e](#RTPO7e) if the resolved value is not an `InternalLiveCounter`)
+  - `(RTTS6c)` Primitive `PathObject` sub-classes - one per primitive: `NumberPathObject`, `StringPathObject`, `BooleanPathObject`, `BinaryPathObject`, `JsonObjectPathObject`, `JsonArrayPathObject`. Each adds only a `value()` method delegating to [RTPO7](#RTPO7) with the return type narrowed to its corresponding primitive (returning null if the resolved value is not of that primitive type, per [RTPO3c1](#RTPO3c1)). They do not expose `get`, `at`, or any write / iteration methods
+  - `(RTTS6d)` The `PathObject` returned by `RealtimeObject#get` ([RTO23](#RTO23)) MUST be of static type `LiveMapPathObject` in typed SDKs. This is well-defined because [RTO23d](#RTO23d) always returns a `PathObject` rooted at the channel's root `InternalLiveMap` with an empty path
+  - `(RTTS6e)` On all sub-classes other than `LiveMapPathObject` and `LiveCounterPathObject`, calling `instance()` ([RTTS3b](#RTTS3b)) MUST either return null without side-effects (consistent with [RTPO8d](#RTPO8d)) or throw an `ErrorInfo` with `statusCode` 400 and `code` 92007. SDKs should prefer the null behaviour for consistency with [RTPO8d](#RTPO8d); the throwing behaviour is permitted because the typed contract makes it statically obvious that `instance` is meaningless on a primitive view
+  - `(RTTS6f)` (non-normative) Sub-classes MAY share a common abstract intermediate super-class (e.g. `PrimitivePathObject`) for implementation convenience, as long as the public API surface seen by user code matches the partition above
+- `(RTTS7)` Typed `Instance` base class - the typed SDK's public root of the `Instance` hierarchy. The base class exposes only those methods of [RTINS1](#RTINS1) whose return type and semantics are identical regardless of the wrapped underlying type
+  - `(RTTS7a)` Exposes `compactJson` per [RTINS11](#RTINS11). The non-null invariant is universal per [RTINS11c](#RTINS11c); typed SDKs MUST reflect this by giving `Instance#compactJson` a non-nullable return type in the public API. Where the host language additionally supports covariant return types, sub-classes MAY further narrow per [RTTS3c](#RTTS3c) (e.g. `JsonObjectInstance#compactJson` returning the SDK's `JsonObject` type directly); implementations MAY choose not to narrow
+  - `(RTTS7b)` Does NOT expose `subscribe` ([RTINS16](#RTINS16)) on the base class. `subscribe` is partitioned onto `LiveMapInstance` ([RTTS10a](#RTTS10a)) and `LiveCounterInstance` ([RTTS10b](#RTTS10b)) only. Rationale: in a typed SDK every `Instance` reference has a known concrete type (or knowable via [RTTS8a](#RTTS8a) `getType`), and `subscribe` is meaningful only on `LiveObject` instances ([RTINS16c](#RTINS16c) already requires the dynamic-SDK form to throw on primitives). Moving the method off the base turns that limitation into a compile-time contract, matching the official user docs' statement that `subscribe()` is "only available on `LiveMap` and `LiveCounter` instances"
+  - `(RTTS7c)` Does not expose `id` ([RTINS3](#RTINS3)), `value` ([RTINS4](#RTINS4)), `get` ([RTINS5](#RTINS5)), `entries` ([RTINS6](#RTINS6)), `keys` ([RTINS7](#RTINS7)), `values` ([RTINS8](#RTINS8)), `size` ([RTINS9](#RTINS9)), `set` ([RTINS12](#RTINS12)), `remove` ([RTINS13](#RTINS13)), `increment` ([RTINS14](#RTINS14)) or `decrement` ([RTINS15](#RTINS15)) on the base class. Those are partitioned onto the sub-classes per [RTTS10](#RTTS10)
+  - `(RTTS7d)` Does not expose `compact` ([RTINS10](#RTINS10)). See [RTTS3f](#RTTS3f) for rationale
+- `(RTTS8)` Typed `Instance` extension property - best-effort helper introduced by the typed-SDK variant. Unlike [RTTS4](#RTTS4) on `PathObject`, an `Instance` is bound to a resolved value at construction time, so the helper has O(1) complexity and is therefore exposed as a property in host languages that distinguish properties from methods
+  - `(RTTS8a)` `getType` - returns the `ValueType` ([RTTS2](#RTTS2)) of the wrapped value. Returns the matching `ValueType` member per [RTTS2a](#RTTS2a). MUST NOT return `UNKNOWN` in normal operation because an `Instance` is always constructed from a resolved value (see e.g. [RTPO8c](#RTPO8c), [RTINS5c](#RTINS5c)); see [RTTS2a9](#RTTS2a9) for the future-compatibility caveat
+  - `(RTTS8b)` There is no `exists` helper on `Instance`, because an `Instance` is only ever constructed when it wraps a resolved value; the existence question is unambiguous
+- `(RTTS9)` Typed `Instance` `as*` cast helpers - best-effort accessors mirroring [RTTS5](#RTTS5). Exposed as properties in host languages that distinguish properties from methods, since the wrapped value is already resolved
+  - `(RTTS9a)` `asLiveMap` returns a `LiveMapInstance` ([RTTS10a](#RTTS10a))
+  - `(RTTS9b)` `asLiveCounter` returns a `LiveCounterInstance` ([RTTS10b](#RTTS10b))
+  - `(RTTS9c)` `asNumber`, `asString`, `asBoolean`, `asBinary`, `asJsonObject`, `asJsonArray` each return the corresponding primitive sub-class per [RTTS10c](#RTTS10c)
+  - `(RTTS9d)` These helpers MUST NOT throw based on the wrapped type. Operations on the returned wrapper carry their own failure semantics:
+    - `(RTTS9d1)` Read operations follow [RTINS4d](#RTINS4d), [RTINS5d](#RTINS5d), [RTINS6c](#RTINS6c), [RTINS7c](#RTINS7c), [RTINS8c](#RTINS8c), [RTINS9c](#RTINS9c) - return null/empty if the wrapped type does not match
+    - `(RTTS9d2)` Write and terminal operations follow [RTINS12d](#RTINS12d), [RTINS13d](#RTINS13d), [RTINS14d](#RTINS14d), [RTINS15d](#RTINS15d) - throw an `ErrorInfo` with `statusCode` 400 and `code` 92007 if the wrapped type does not match
+- `(RTTS10)` Typed `Instance` sub-classes - the partition of methods across the hierarchy. Each sub-class extends [RTTS7](#RTTS7) and therefore inherits `compactJson`, `getType`, and all `as*` helpers. Note that `subscribe` is NOT inherited from the base - see [RTTS7b](#RTTS7b)
+  - `(RTTS10a)` `LiveMapInstance` - adds `id` per [RTINS3a](#RTINS3a) with the static return type narrowed to non-nullable `String`; `get` per [RTINS5](#RTINS5); `entries` per [RTINS6](#RTINS6); `keys` per [RTINS7](#RTINS7); `values` per [RTINS8](#RTINS8); `size` per [RTINS9](#RTINS9) with the return type narrowed to non-nullable `Number` (since the wrapped value is always an `InternalLiveMap`, [RTINS9c](#RTINS9c) cannot trigger); `set` per [RTINS12](#RTINS12); `remove` per [RTINS13](#RTINS13); `subscribe` per [RTINS16](#RTINS16). Typed SDKs MUST deliver the full `InstanceSubscriptionEvent` payload defined in [RTINS16e](#RTINS16e) to the listener - both the `object` field ([RTINS16e1](#RTINS16e1)) and the optional `message` field ([RTINS16e2](#RTINS16e2)) - and MUST NOT expose a subscription-event type that omits the `message` accessor
+  - `(RTTS10b)` `LiveCounterInstance` - adds `id` per [RTINS3a](#RTINS3a) (narrowed to non-nullable `String`); a `value()` method delegating to [RTINS4](#RTINS4) with the return type narrowed to non-nullable `Number`; `increment` per [RTINS14](#RTINS14); `decrement` per [RTINS15](#RTINS15); `subscribe` per [RTINS16](#RTINS16) with the same `InstanceSubscriptionEvent` payload requirements as [RTTS10a](#RTTS10a)
+  - `(RTTS10c)` Primitive `Instance` sub-classes - one per primitive: `NumberInstance`, `StringInstance`, `BooleanInstance`, `BinaryInstance`, `JsonObjectInstance`, `JsonArrayInstance`. Each adds only a `value()` method delegating to [RTINS4](#RTINS4) with the return type narrowed to non-nullable instance of its corresponding primitive. These sub-classes are read-only - they do not expose `id` (primitive instances have no object id per [RTINS3b](#RTINS3b)), `get`, `set`, `remove`, `increment`, `decrement`, `entries`, `keys`, `values`, `size`, or `subscribe`. The absence of `subscribe` is a compile-time enforcement of the constraint already imposed at runtime by [RTINS16c](#RTINS16c)
+  - `(RTTS10d)` (non-normative) Sub-classes MAY share a common abstract intermediate super-class (e.g. `PrimitiveInstance`) for implementation convenience, as long as the public API surface seen by user code matches the partition above
 
 ### PublicAPI::ObjectMessage
 
@@ -1261,9 +1342,102 @@ Types and their properties/methods are public and exposed to users by default. A
       values() -> Instance[] // RTINS8
       size() -> Number? // RTINS9
       compact() -> Object? // RTINS10
-      compactJson() -> Object? // RTINS11
+      compactJson() -> Object // RTINS11
       set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTINS12
       remove(String key) => io // RTINS13
       increment(Number amount?) => io // RTINS14
       decrement(Number amount?) => io // RTINS15
       subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
+
+    // === Typed-SDK variant (RTTS1-RTTS10) =====================================
+    // Strongly-typed SDKs (Java/Swift/Kotlin) expose the hierarchy below in
+    // place of the monomorphic `class PathObject` / `class Instance` above.
+    // ==========================================================================
+
+    enum ValueType: // RTTS2
+      STRING       // RTTS2a1
+      NUMBER       // RTTS2a2
+      BOOLEAN      // RTTS2a3
+      BINARY       // RTTS2a4
+      JSON_OBJECT  // RTTS2a5
+      JSON_ARRAY   // RTTS2a6
+      LIVE_MAP     // RTTS2a7
+      LIVE_COUNTER // RTTS2a8
+      UNKNOWN      // RTTS2a9
+
+    class PathObject: // RTTS3
+      path() -> String // RTPO4
+      instance() -> Instance? // RTPO8
+      compactJson() -> Object? // RTPO14
+      subscribe((PathObjectSubscriptionEvent) -> listener, PathObjectSubscriptionOptions? options) -> Subscription // RTPO19
+      exists() -> Boolean // RTTS4a
+      getType() -> ValueType // RTTS4b
+      asLiveMap() -> LiveMapPathObject // RTTS5a
+      asLiveCounter() -> LiveCounterPathObject // RTTS5b
+      asNumber() -> NumberPathObject // RTTS5c
+      asString() -> StringPathObject // RTTS5c
+      asBoolean() -> BooleanPathObject // RTTS5c
+      asBinary() -> BinaryPathObject // RTTS5c
+      asJsonObject() -> JsonObjectPathObject // RTTS5c
+      asJsonArray() -> JsonArrayPathObject // RTTS5c
+
+    class LiveMapPathObject extends PathObject: // RTTS6a
+      get(String key) -> PathObject // RTPO5
+      at(String path) -> PathObject // RTPO6
+      entries() -> [String, PathObject][] // RTPO9
+      keys() -> String[] // RTPO10
+      values() -> PathObject[] // RTPO11
+      size() -> Number? // RTPO12
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTPO15
+      remove(String key) => io // RTPO16
+
+    class LiveCounterPathObject extends PathObject: // RTTS6b
+      value() -> Number? // RTPO7
+      increment(Number amount?) => io // RTPO17
+      decrement(Number amount?) => io // RTPO18
+
+    class NumberPathObject     extends PathObject: value() -> Number?     // RTTS6c
+    class StringPathObject     extends PathObject: value() -> String?     // RTTS6c
+    class BooleanPathObject    extends PathObject: value() -> Boolean?    // RTTS6c
+    class BinaryPathObject     extends PathObject: value() -> Binary?     // RTTS6c
+    class JsonObjectPathObject extends PathObject: value() -> JsonObject? // RTTS6c
+    class JsonArrayPathObject  extends PathObject: value() -> JsonArray?  // RTTS6c
+
+    class Instance: // RTTS7
+      compactJson() -> Object // RTINS11 (non-nullable per RTINS11c - universal invariant)
+      getType: ValueType // RTTS8a
+      // Note: subscribe is NOT on base Instance per RTTS7b; partitioned onto
+      // LiveMapInstance / LiveCounterInstance below.
+      asLiveMap: LiveMapInstance // RTTS9a
+      asLiveCounter: LiveCounterInstance // RTTS9b
+      asNumber: NumberInstance // RTTS9c
+      asString: StringInstance // RTTS9c
+      asBoolean: BooleanInstance // RTTS9c
+      asBinary: BinaryInstance // RTTS9c
+      asJsonObject: JsonObjectInstance // RTTS9c
+      asJsonArray: JsonArrayInstance // RTTS9c
+
+    class LiveMapInstance extends Instance: // RTTS10a
+      id: String // RTINS3a (narrowed to non-nullable)
+      get(String key) -> Instance? // RTINS5
+      entries() -> [String, Instance][] // RTINS6
+      keys() -> String[] // RTINS7
+      values() -> Instance[] // RTINS8
+      size() -> Number // RTINS9 (narrowed to non-nullable)
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTINS12
+      remove(String key) => io // RTINS13
+      subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
+
+    class LiveCounterInstance extends Instance: // RTTS10b
+      id: String // RTINS3a (narrowed to non-nullable)
+      value() -> Number // RTINS4 (narrowed to non-nullable)
+      increment(Number amount?) => io // RTINS14
+      decrement(Number amount?) => io // RTINS15
+      subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16
+
+    class NumberInstance     extends Instance: value() -> Number     // RTTS10c
+    class StringInstance     extends Instance: value() -> String     // RTTS10c
+    class BooleanInstance    extends Instance: value() -> Boolean    // RTTS10c
+    class BinaryInstance     extends Instance: value() -> Binary     // RTTS10c
+    class JsonObjectInstance extends Instance: value() -> JsonObject // RTTS10c
+    class JsonArrayInstance  extends Instance: value() -> JsonArray  // RTTS10c
