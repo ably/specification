@@ -134,6 +134,11 @@ The agent (server-side) session manages the run lifecycle over an Ably channel. 
 
 - `(AIT-ST14)` The agent session must expose the underlying Ably channel's presence object via a read-only `presence` accessor. The accessor must return the channel's `RealtimePresence` directly, applying no AI-Transport-specific semantics, and must be usable before `connect()` is called.
 
+### LiveObjects
+
+- `(AIT-ST15)` The agent session must expose the underlying Ably channel's LiveObjects entry point via a read-only `object` accessor. The accessor must return the channel's `RealtimeObject` directly, applying no AI-Transport-specific semantics, and must be usable before `connect()` is called. Operating on it requires the Realtime client to have been constructed with the LiveObjects plugin and the channel to have been attached with the object channel modes (AIT-ST16); when either is absent the underlying SDK throws and the session must not suppress the error.
+- `(AIT-ST16)` The agent session must accept an optional `channelModes` option listing additional Ably channel modes to request on the session's channel (e.g. the object modes required by AIT-ST15). The AI-Transport SDK defines a base set of channel modes equal to the set Ably grants by default when a channel is attached without requesting any modes on the wire — namely `publish`, `subscribe`, `presence`, and `presence_subscribe`. When `channelModes` is provided, the session must request the union of this base set and the supplied modes, deduplicated and in a deterministic order; because the base set equals the default-granted set, requesting additional modes this way does not remove or alter any behaviour the channel would otherwise have. When `channelModes` is omitted, the session must not send any channel modes on the wire, so Ably grants the base set by default and the default attachment behaviour is preserved.
+
 ## Client Session {#client-session}
 
 The client session manages the client-side conversation lifecycle over an Ably channel. It composes a Tree for branching message history, a StreamRouter for per-run event streams, and a codec decoder for processing incoming Ably messages.
@@ -246,6 +251,11 @@ The client session manages the client-side conversation lifecycle over an Ably c
 ### Presence
 
 - `(AIT-CT21)` The client session must expose the underlying Ably channel's presence object via a read-only `presence` accessor. The accessor must return the channel's `RealtimePresence` directly, applying no AI-Transport-specific semantics, and must be usable before `connect()` is called.
+
+### LiveObjects
+
+- `(AIT-CT22)` The client session must expose the underlying Ably channel's LiveObjects entry point via a read-only `object` accessor. The accessor must return the channel's `RealtimeObject` directly, applying no AI-Transport-specific semantics, and must be usable before `connect()` is called. Operating on it requires the Realtime client to have been constructed with the LiveObjects plugin and the channel to have been attached with the object channel modes (AIT-CT23); when either is absent the underlying SDK throws and the session must not suppress the error.
+- `(AIT-CT23)` The client session must accept an optional `channelModes` option listing additional Ably channel modes to request on the session's channel (e.g. the object modes required by AIT-CT22). The AI-Transport SDK defines a base set of channel modes equal to the set Ably grants by default when a channel is attached without requesting any modes on the wire — namely `publish`, `subscribe`, `presence`, and `presence_subscribe`. When `channelModes` is provided, the session must request the union of this base set and the supplied modes, deduplicated and in a deterministic order, and must apply the same resolved modes to every resolution of the channel's options for the channel's lifetime — including any auxiliary consumers such as React channel providers — so that the modes cannot be silently reverted; because the base set equals the default-granted set, requesting additional modes this way does not remove or alter any behaviour the channel would otherwise have. When `channelModes` is omitted, the session must not send any channel modes on the wire, so Ably grants the base set by default and the default attachment behaviour is preserved.
 
 ## Common Error Codes used by AI Transport {#common-error-codes}
 
