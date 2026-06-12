@@ -523,6 +523,8 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 ### InternalLiveMap
 
+Read methods (`InternalLiveMap#get` ([RTLM5](#RTLM5)), `entries` ([RTLM11](#RTLM11)), `values` ([RTLM13](#RTLM13))) return the live graph objects (`InternalLiveMap`, `InternalLiveCounter`) resolved from the internal `ObjectsPool`. Write methods do not accept graph objects: object-valued writes to `InternalLiveMap#set` ([RTLM20](#RTLM20)) take the immutable creation value types `LiveCounter` ([RTLCV1](#RTLCV1)) and `LiveMap` ([RTLMV1](#RTLMV1)), which are evaluated into `*_CREATE` operations at write time ([RTLM20e7g](#RTLM20e7g)). Assigning a reference to an existing graph object is not supported by this API.
+
 - `(RTLM1)` The `InternalLiveMap` extends `LiveObject`
 - `(RTLM2)` Represents the map object type for Object IDs of type `map`
 - `(RTLM3)` Holds a `Dict<String, ObjectsMapEntry>` as a private `data` map
@@ -580,7 +582,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLM20a)` Expects the following arguments:
     - `(RTLM20a1)` `key` `String` - the key to set the value for
     - `(RTLM20a2)` This clause has been replaced by [RTLM20a3](#RTLM20a3).
-    - `(RTLM20a3)` `value` `Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap` - the value to assign to the key
+    - `(RTLM20a3)` `value` `Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap` - the value to assign to the key. `LiveCounter` and `LiveMap` here are the creation value types per [RTLCV1](#RTLCV1) and [RTLMV1](#RTLMV1)
   - `(RTLM20b)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
   - `(RTLM20c)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
   - `(RTLM20d)` This clause has been replaced by [RTO26](#RTO26); the write API preconditions are now checked by callers
@@ -842,6 +844,7 @@ A `LiveMap` is an immutable blueprint for creating a new `InternalLiveMap` objec
   - `(RTLMV4a)` If the internal `entries` is not undefined and (is null or is not of type `Dict`), the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that entries must be a `Dict`
   - `(RTLMV4b)` If any of the keys in the internal `entries` are not of type `String`, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40003, indicating that keys must be `String`
   - `(RTLMV4c)` If any of the values in the internal `entries` are not of an expected type, the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013, indicating that such data type is unsupported
+    - `(RTLMV4c1)` For the avoidance of doubt, live graph objects (`InternalLiveMap` ([RTLM1](#RTLM1)), `InternalLiveCounter` ([RTLC1](#RTLC1))) and the public objects that wrap them (`PathObject` ([RTPO1](#RTPO1)), `Instance` ([RTINS1](#RTINS1))) are not expected types, and per [RTLMV4c](#RTLMV4c) the library should throw an `ErrorInfo` error with `statusCode` 400 and `code` 40013 if one is provided as a value
   - `(RTLMV4d)` Build entries for the `MapCreate` object. For each key-value pair in the internal `entries` (if present), create an `ObjectsMapEntry` for the value:
     - `(RTLMV4d1)` If the value is of type `LiveCounter`, evaluate it per [RTLCV4](#RTLCV4) to generate a `COUNTER_CREATE` `ObjectMessage`. Collect the generated `ObjectMessage` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the `ObjectMessage`
     - `(RTLMV4d2)` If the value is of type `LiveMap`, recursively evaluate it per [RTLMV4](#RTLMV4) to generate an ordered array of `ObjectMessages`. Collect all generated `ObjectMessages` and set `ObjectsMapEntry.data.objectId` to the `objectId` from the final `ObjectMessage` in the array (which is the `MAP_CREATE` for the `InternalLiveMap` whose creation this `LiveMap` represents, per [RTLMV4k](#RTLMV4k); earlier entries create objects nested within it)
@@ -1267,17 +1270,17 @@ Types and their properties/methods are public and exposed to users by default. A
       entries() -> [String, (Boolean | Binary | Number | String | JsonArray | JsonObject | InternalLiveCounter | InternalLiveMap)?][] // RTLM11
       keys() -> String[] // RTLM12
       values() -> (Boolean | Binary | Number | String | JsonArray | JsonObject | InternalLiveCounter | InternalLiveMap)?[] // RTLM13
-      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTLM20
+      set(String key, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap) value) => io // RTLM20; LiveCounter/LiveMap are creation value types (RTLCV1, RTLMV1), not graph objects
       remove(String key) => io // RTLM21
 
     interface LiveMapUpdate extends LiveObjectUpdate: // RTLM18, RTLM18a, internal
       update: Dict<String, 'updated' | 'removed'> // RTLM18b
 
-    class LiveCounter: // RTLCV*
+    class LiveCounter: // RTLCV*; immutable creation value type, evaluated per RTLCV4 - distinct from InternalLiveCounter
       count: Number // RTLCV2a, internal
       static create(Number initialCount?) -> LiveCounter // RTLCV3
 
-    class LiveMap: // RTLMV*
+    class LiveMap: // RTLMV*; immutable creation value type, evaluated per RTLMV4 - distinct from InternalLiveMap
       entries: Dict<String, (Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap)>? // RTLMV2a, internal
       static create(Dict<String, Boolean | Binary | Number | String | JsonArray | JsonObject | LiveCounter | LiveMap> entries?) -> LiveMap // RTLMV3
 
