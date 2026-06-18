@@ -523,8 +523,6 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
 
 ### InternalLiveMap
 
-Read methods (`InternalLiveMap#get` ([RTLM5](#RTLM5)), `entries` ([RTLM11](#RTLM11)), `values` ([RTLM13](#RTLM13))) return the live graph objects (`InternalLiveMap`, `InternalLiveCounter`) resolved from the internal `ObjectsPool`. Write methods do not accept graph objects: object-valued writes to `InternalLiveMap#set` ([RTLM20](#RTLM20)) take the immutable creation value types `LiveCounter` ([RTLCV1](#RTLCV1)) and `LiveMap` ([RTLMV1](#RTLMV1)), which are evaluated into `*_CREATE` operations at write time ([RTLM20e7g](#RTLM20e7g)). Assigning a reference to an existing graph object is not supported by this API.
-
 - `(RTLM1)` The `InternalLiveMap` extends `LiveObject`
 - `(RTLM2)` Represents the map object type for Object IDs of type `map`
 - `(RTLM3)` Holds a `Dict<String, ObjectsMapEntry>` as a private `data` map
