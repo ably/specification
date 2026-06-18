@@ -1141,7 +1141,10 @@ This section partitions the API surface of `PathObject` and `Instance` across a 
   - `(RTTS6e)` On all sub-classes other than `LiveMapPathObject` and `LiveCounterPathObject`, calling `instance()` ([RTTS3b](#RTTS3b)) must either return null without side-effects (consistent with [RTPO8d](#RTPO8d)) or throw an `ErrorInfo` with `statusCode` 400 and `code` 92007. SDKs should prefer the null behaviour for consistency with [RTPO8d](#RTPO8d); the throwing behaviour is permitted because the typed contract makes it statically obvious that `instance` is meaningless on a primitive view
   - `(RTTS6f)` (non-normative) Sub-classes may share a common abstract intermediate super-class (e.g. `PrimitivePathObject`) for implementation convenience, as long as the public API surface seen by user code matches the partition above
 - `(RTTS7)` Typed `Instance` base class - the typed SDK's public root of the `Instance` hierarchy. The base class exposes only those methods of [RTINS1](#RTINS1) whose return type and semantics are identical regardless of the wrapped underlying type
-  - `(RTTS7a)` Exposes `compactJson` per [RTINS11](#RTINS11). The non-null invariant is universal per [RTINS11c](#RTINS11c); typed SDKs must reflect this by giving `Instance#compactJson` a non-nullable return type in the public API. Where the host language additionally supports covariant return types, sub-classes may further narrow per [RTTS3c](#RTTS3c) (e.g. `JsonObjectInstance#compactJson` returning the SDK's `JsonObject` type directly); implementations may choose not to narrow
+  - `(RTTS7a)` Exposes `compactJson` per [RTINS11](#RTINS11). The non-null invariant is universal per [RTINS11c](#RTINS11c); typed SDKs must reflect this by giving `Instance#compactJson` a non-nullable return type in the public API. The base `Instance#compactJson` returns the SDK's generic JSON element type (the common super-type of the narrowed types below). Where the host language additionally supports covariant return types, sub-classes may further narrow per [RTTS3c](#RTTS3c); implementations may choose not to narrow. When an SDK does narrow, the canonical narrowed return type per sub-class is:
+    - `(RTTS7a1)` a JSON object for `LiveMapInstance` ([RTTS10a](#RTTS10a)) and `JsonObjectInstance` ([RTTS10c](#RTTS10c))
+    - `(RTTS7a2)` a JSON array for `JsonArrayInstance` ([RTTS10c](#RTTS10c))
+    - `(RTTS7a3)` a JSON primitive (a scalar JSON value) for `LiveCounterInstance` ([RTTS10b](#RTTS10b)), `NumberInstance`, `StringInstance`, `BooleanInstance` and `BinaryInstance` ([RTTS10c](#RTTS10c))
   - `(RTTS7b)` Does not expose `subscribe` ([RTINS16](#RTINS16)) on the base class. `subscribe` is partitioned onto `LiveMapInstance` ([RTTS10a](#RTTS10a)) and `LiveCounterInstance` ([RTTS10b](#RTTS10b)) only. Rationale (non-normative): in a typed SDK every `Instance` reference has a known concrete type (or knowable via [RTTS8a](#RTTS8a) `getType`), and `subscribe` is meaningful only on `LiveObject` instances ([RTINS16c](#RTINS16c) already requires the dynamic-SDK form to throw on primitives). Moving the method off the base turns that limitation into a compile-time contract
   - `(RTTS7c)` Does not expose `id` ([RTINS3](#RTINS3)), `value` ([RTINS4](#RTINS4)), `get` ([RTINS5](#RTINS5)), `entries` ([RTINS6](#RTINS6)), `keys` ([RTINS7](#RTINS7)), `values` ([RTINS8](#RTINS8)), `size` ([RTINS9](#RTINS9)), `set` ([RTINS12](#RTINS12)), `remove` ([RTINS13](#RTINS13)), `increment` ([RTINS14](#RTINS14)) or `decrement` ([RTINS15](#RTINS15)) on the base class. Those are partitioned onto the sub-classes per [RTTS10](#RTTS10)
   - `(RTTS7d)` Does not expose `compact` ([RTINS10](#RTINS10)). See [RTTS3f](#RTTS3f) for rationale
@@ -1156,9 +1159,9 @@ This section partitions the API surface of `PathObject` and `Instance` across a 
   - `(RTTS9d)` If the wrapped value is not of the requested type, these helpers must fail fast: throw a platform-appropriate unchecked exception indicating the type mismatch (e.g. `IllegalStateException`), or equivalently an `ErrorInfo` with `statusCode` 400 and `code` 92007. This differs from the best-effort `PathObject` casts ([RTTS5d](#RTTS5d)), which never throw on cast, because an `Instance`'s wrapped type is known and fixed at construction time and so a mismatched cast cannot be a transient resolution artefact. A matching cast returns the typed sub-class view; that view therefore always matches the wrapped type, so its own read/write operations cannot fail on a type mismatch
     - `(RTTS9d1)` (non-normative) Callers needing to discriminate the type before casting should use [RTTS8a](#RTTS8a) `getType`
 - `(RTTS10)` Typed `Instance` sub-classes - the partition of methods across the hierarchy. Each sub-class extends [RTTS7](#RTTS7) and therefore inherits `compactJson`, `getType`, and all `as*` helpers. Note that `subscribe` is not inherited from the base - see [RTTS7b](#RTTS7b)
-  - `(RTTS10a)` `LiveMapInstance` - adds `id` per [RTINS3a](#RTINS3a) with the static return type narrowed to non-nullable `String`; `get` per [RTINS5](#RTINS5); `entries` per [RTINS6](#RTINS6); `keys` per [RTINS7](#RTINS7); `values` per [RTINS8](#RTINS8); `size` per [RTINS9](#RTINS9) with the return type narrowed to non-nullable `Number` (since the wrapped value is always an `InternalLiveMap`, [RTINS9c](#RTINS9c) cannot trigger); `set` per [RTINS12](#RTINS12); `remove` per [RTINS13](#RTINS13); `subscribe` per [RTINS16](#RTINS16). Typed SDKs must deliver the full `InstanceSubscriptionEvent` payload defined in [RTINS16e](#RTINS16e) to the listener - both the `object` field ([RTINS16e1](#RTINS16e1)) and the optional `message` field ([RTINS16e2](#RTINS16e2)) - and must not expose a subscription-event type that omits the `message` accessor
-  - `(RTTS10b)` `LiveCounterInstance` - adds `id` per [RTINS3a](#RTINS3a) (narrowed to non-nullable `String`); a `value()` method delegating to [RTINS4](#RTINS4) with the return type narrowed to non-nullable `Number` (which SDKs may narrow further to the host's idiomatic floating-point type, e.g. `Double`, since a counter's value is always a finite floating-point number per [RTLCV4a](#RTLCV4a)); `increment` per [RTINS14](#RTINS14); `decrement` per [RTINS15](#RTINS15); `subscribe` per [RTINS16](#RTINS16) with the same `InstanceSubscriptionEvent` payload requirements as [RTTS10a](#RTTS10a)
-  - `(RTTS10c)` Primitive `Instance` sub-classes - one per primitive: `NumberInstance`, `StringInstance`, `BooleanInstance`, `BinaryInstance`, `JsonObjectInstance`, `JsonArrayInstance`. Each adds only a `value()` method delegating to [RTINS4](#RTINS4) with the return type narrowed to non-nullable instance of its corresponding primitive. These sub-classes are read-only - they do not expose `id` (primitive instances have no object id per [RTINS3b](#RTINS3b)), `get`, `set`, `remove`, `increment`, `decrement`, `entries`, `keys`, `values`, `size`, or `subscribe`. The absence of `subscribe` is a compile-time enforcement of the constraint already imposed at runtime by [RTINS16c](#RTINS16c)
+  - `(RTTS10a)` `LiveMapInstance` - adds `id` per [RTINS3a](#RTINS3a) with the static return type narrowed to non-nullable `String`; `get` per [RTINS5](#RTINS5); `entries` per [RTINS6](#RTINS6); `keys` per [RTINS7](#RTINS7); `values` per [RTINS8](#RTINS8); `size` per [RTINS9](#RTINS9) with the return type narrowed to non-nullable `Number` (since the wrapped value is always an `InternalLiveMap`, [RTINS9c](#RTINS9c) cannot trigger); `set` per [RTINS12](#RTINS12); `remove` per [RTINS13](#RTINS13); `subscribe` per [RTINS16](#RTINS16); and `compactJson` narrowed to a JSON object per [RTTS7a1](#RTTS7a1). Typed SDKs must deliver the full `InstanceSubscriptionEvent` payload defined in [RTINS16e](#RTINS16e) to the listener - both the `object` field ([RTINS16e1](#RTINS16e1)) and the optional `message` field ([RTINS16e2](#RTINS16e2)) - and must not expose a subscription-event type that omits the `message` accessor
+  - `(RTTS10b)` `LiveCounterInstance` - adds `id` per [RTINS3a](#RTINS3a) (narrowed to non-nullable `String`); a `value()` method delegating to [RTINS4](#RTINS4) with the return type narrowed to non-nullable `Number` (which SDKs may narrow further to the host's idiomatic floating-point type, e.g. `Double`, since a counter's value is always a finite floating-point number per [RTLCV4a](#RTLCV4a)); `increment` per [RTINS14](#RTINS14); `decrement` per [RTINS15](#RTINS15); `subscribe` per [RTINS16](#RTINS16) with the same `InstanceSubscriptionEvent` payload requirements as [RTTS10a](#RTTS10a); and `compactJson` narrowed to a JSON primitive per [RTTS7a3](#RTTS7a3)
+  - `(RTTS10c)` Primitive `Instance` sub-classes - one per primitive: `NumberInstance`, `StringInstance`, `BooleanInstance`, `BinaryInstance`, `JsonObjectInstance`, `JsonArrayInstance`. Each adds a `value()` method delegating to [RTINS4](#RTINS4) with the return type narrowed to non-nullable instance of its corresponding primitive, and narrows `compactJson` per [RTTS7a](#RTTS7a): `JsonObjectInstance` to a JSON object ([RTTS7a1](#RTTS7a1)), `JsonArrayInstance` to a JSON array ([RTTS7a2](#RTTS7a2)), and `NumberInstance`/`StringInstance`/`BooleanInstance`/`BinaryInstance` to a JSON primitive ([RTTS7a3](#RTTS7a3)). These sub-classes are read-only - they do not expose `id` (primitive instances have no object id per [RTINS3b](#RTINS3b)), `get`, `set`, `remove`, `increment`, `decrement`, `entries`, `keys`, `values`, `size`, or `subscribe`. The absence of `subscribe` is a compile-time enforcement of the constraint already imposed at runtime by [RTINS16c](#RTINS16c)
   - `(RTTS10d)` (non-normative) Sub-classes may share a common abstract intermediate super-class (e.g. `PrimitiveInstance`) for implementation convenience, as long as the public API surface seen by user code matches the partition above
 
 ### PublicAPI::ObjectMessage
@@ -1406,7 +1409,7 @@ Types and their properties/methods are public and exposed to users by default. A
     class JsonArrayPathObject  extends PathObject: value() -> JsonArray?  // RTTS6c
 
     abstract class Instance: // RTTS7 (abstract / non-instantiable - see RTTS7e)
-      compactJson() -> Object // RTINS11 (non-nullable per RTINS11c - universal invariant)
+      compactJson() -> Object // RTINS11 (non-nullable per RTINS11c; generic JSON element type, sub-classes narrow per RTTS7a)
       getType: ValueType // RTTS8a
       asLiveMap: LiveMapInstance // RTTS9a
       asLiveCounter: LiveCounterInstance // RTTS9b
@@ -1419,6 +1422,7 @@ Types and their properties/methods are public and exposed to users by default. A
 
     class LiveMapInstance extends Instance: // RTTS10a
       id: String // RTINS3a (narrowed to non-nullable)
+      compactJson() -> JsonObject // RTTS7a1 (narrowed)
       get(String key) -> Instance? // RTINS5
       entries() -> [String, Instance][] // RTINS6
       keys() -> String[] // RTINS7
@@ -1430,14 +1434,32 @@ Types and their properties/methods are public and exposed to users by default. A
 
     class LiveCounterInstance extends Instance: // RTTS10b
       id: String // RTINS3a (narrowed to non-nullable)
+      compactJson() -> JsonPrimitive // RTTS7a3 (narrowed)
       value() -> Number // RTINS4 (narrowed to non-nullable)
       increment(Number amount?) => io // RTINS14
       decrement(Number amount?) => io // RTINS15
       subscribe((InstanceSubscriptionEvent) -> listener) -> Subscription // RTINS16, RTTS7b
 
-    class NumberInstance     extends Instance: value() -> Number     // RTTS10c
-    class StringInstance     extends Instance: value() -> String     // RTTS10c
-    class BooleanInstance    extends Instance: value() -> Boolean    // RTTS10c
-    class BinaryInstance     extends Instance: value() -> Binary     // RTTS10c
-    class JsonObjectInstance extends Instance: value() -> JsonObject // RTTS10c
-    class JsonArrayInstance  extends Instance: value() -> JsonArray  // RTTS10c
+    class NumberInstance extends Instance: // RTTS10c
+      value() -> Number
+      compactJson() -> JsonPrimitive // RTTS7a3 (narrowed)
+
+    class StringInstance extends Instance: // RTTS10c
+      value() -> String
+      compactJson() -> JsonPrimitive // RTTS7a3 (narrowed)
+
+    class BooleanInstance extends Instance: // RTTS10c
+      value() -> Boolean
+      compactJson() -> JsonPrimitive // RTTS7a3 (narrowed)
+
+    class BinaryInstance extends Instance: // RTTS10c
+      value() -> Binary
+      compactJson() -> JsonPrimitive // RTTS7a3 (narrowed)
+
+    class JsonObjectInstance extends Instance: // RTTS10c
+      value() -> JsonObject
+      compactJson() -> JsonObject // RTTS7a1 (narrowed)
+
+    class JsonArrayInstance extends Instance: // RTTS10c
+      value() -> JsonArray
+      compactJson() -> JsonArray // RTTS7a2 (narrowed)
