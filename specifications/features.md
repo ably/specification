@@ -1312,6 +1312,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(OOP1)` An `ObjectOperation` describes an operation to be applied to an object on a channel
 - `(OOP2)` `ObjectOperationAction` enum has the following values in order from zero: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`, `MAP_CLEAR`
+  - `(OOP2a)` When decoding, an `action` that does not map to any of the wire-ordered members above must not cause decoding to fail. The client library must instead represent it as an unrecognised action, using whatever representation is idiomatic for the implementation (for example a distinct sentinel value or a nullable field). The client library must never encode or send such an unrecognised action, and must ignore (not apply) any `ObjectOperation` whose `action` is unrecognised
 - `(OOP3)` The attributes available in an `ObjectOperation` are:
   - `(OOP3a)` `action` `ObjectOperationAction` enum - defines the operation to be applied to the object
   - `(OOP3b)` `objectId` string - the object ID of the object on a channel to which the operation should be applied
@@ -1475,6 +1476,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(OMP1)` An `ObjectsMap` object represents a map of key-value pairs
 - `(OMP2)` `ObjectsMapSemantics` enum has the following values in order from zero: `LWW`
+  - `(OMP2a)` When decoding, a `semantics` value that does not map to any of the wire-ordered members above must not cause decoding to fail. The client library must instead represent it as unrecognised semantics, using whatever representation is idiomatic for the implementation (for example a distinct sentinel value or a nullable field), and must never encode or send such an unrecognised value
 - `(OMP3)` The attributes available in an `ObjectsMap` are:
   - `(OMP3a)` `semantics` `ObjectsMapSemantics` enum - the conflict-resolution semantics used by the map object
   - `(OMP3b)` `entries` `Dict<String, ObjectsMapEntry>` - the map entries, indexed by key
@@ -1510,19 +1512,21 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 #### ObjectData
 
 - `(OD1)` An `ObjectData` represents a value in an object on a channel
-- `(OD2)` The attributes available in an `ObjectData` are:
+- `(OD2)` The attributes available in an `ObjectData` are listed below. Of the value fields - `boolean`, `bytes`, `number`, `string` and `json` - at most one must be set at a time:
   - `(OD2a)` `objectId` string - a reference to another object
   - `(OD2b)` `encoding` string - may be set by the client library to indicate that value in `string` field have an encoding
-  - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2e)` `number` number - a primitive number leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2f)` `string` string - a primitive string leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+  - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph
+  - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol
+  - `(OD2e)` `number` number - a primitive number leaf value in the object graph
+  - `(OD2f)` `string` string - a primitive string leaf value in the object graph
+  - `(OD2g)` `json` JsonObject \| JsonArray - a primitive JSON leaf value (an object or array) in the object graph. It is sent to and received from the server as a JSON-encoded string when using the JSON protocol
 - `(OD3)` The size of the `ObjectData` is calculated as follows:
-  - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, and `string` properties
+  - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, `string`, and `json` properties
   - `(OD3b)` If set, the size of a `boolean` property is 1
   - `(OD3c)` If set, the size of a `bytes` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
   - `(OD3d)` If set, the size of a `number` property is 8
   - `(OD3e)` If set, the size of a `string` property is its length
+  - `(OD3g)` If set, the size of a `json` property is the byte length of its JSON-encoded string representation
   - `(OD3f)` The size of a `null` or omitted property is zero
 - `(OD4)` `ObjectData` encoding:
   - `(OD4a)` Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
@@ -2629,6 +2633,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       bytes: Binary? | String? // OD2d
       number: Number? // OD2e
       string: String? // OD2f
+      json: String? // OD2g
 
     class Annotation // TAN*
       +fromEncoded(JsonObject, ChannelOptions?) -> Annotation // TAN3
