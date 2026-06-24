@@ -246,7 +246,7 @@ Only tests on the **data path** need both protocols. These are tests where messa
 
 Tests for **connection lifecycle**, **authentication**, **channel attach/detach**, and other protocol-agnostic behaviours do not need protocol variants. These tests exercise control-plane operations whose correctness does not depend on the wire encoding of message payloads.
 
-**Proxy tests always use JSON.** The proxy only supports text WebSocket frames, so proxy-based tests cannot use msgpack.
+**Proxy tests may use either protocol.** As of [uts-proxy v0.3.0](https://github.com/ably/uts-proxy/releases/tag/v0.3.0), the proxy determines a WebSocket message's encoding from the `format` query parameter — matching the Ably server — instead of from the WebSocket frame type (text vs binary). It can therefore decode and match both JSON and msgpack messages, including SDKs that send JSON payloads over binary frames. Proxy data-path tests should follow the `## Protocol Variants` convention below; pin a test to JSON only when the SDK under test does not implement msgpack.
 
 ### Spec file convention
 
