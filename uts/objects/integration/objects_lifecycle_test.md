@@ -54,8 +54,8 @@ propagates via the server and a second client sees the updated value.
 ```pseudo
 channel_name = "objects-lifecycle-" + random_id()
 
-client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
-client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -105,8 +105,8 @@ on the server. Second client syncs and reads the counter value.
 ```pseudo
 channel_name = "objects-counter-create-" + random_id()
 
-client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
-client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -152,8 +152,8 @@ The server applies the increment and propagates the updated value.
 ```pseudo
 channel_name = "objects-increment-" + random_id()
 
-client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
-client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -204,8 +204,8 @@ Second client can navigate into the nested map.
 ```pseudo
 channel_name = "objects-map-create-" + random_id()
 
-client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
-client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -254,7 +254,7 @@ after the sync sequence completes.
 ```pseudo
 channel_name = "objects-get-root-" + random_id()
 
-client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
@@ -302,7 +302,7 @@ provision_objects_via_rest(api_key, channel_name, [
 
 ### Test Steps
 ```pseudo
-client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 

@@ -54,7 +54,7 @@ processes OBJECT_SYNC messages, then transitions to SYNCED. get() waits for SYNC
 ```pseudo
 channel_name = "objects-sync-" + random_id()
 
-client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
@@ -89,8 +89,8 @@ client.close()
 ```pseudo
 channel_name = "objects-two-sync-" + random_id()
 
-client_a = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
-client_b = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
+client_b = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
@@ -137,7 +137,7 @@ is re-populated from the server.
 ```pseudo
 channel_name = "objects-reattach-" + random_id()
 
-client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
@@ -183,7 +183,7 @@ sends HAS_OBJECTS, sync completes, root is an empty LiveMap.
 ```pseudo
 channel_name = "objects-subscribe-only-" + random_id()
 
-client = Realtime(options: { key: api_key, useBinaryProtocol: PROTOCOL == "msgpack" })
+client = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false, useBinaryProtocol: PROTOCOL == "msgpack" })
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
 
