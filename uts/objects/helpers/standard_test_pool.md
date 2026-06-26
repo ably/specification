@@ -363,7 +363,7 @@ The objects REST API uses the **V2 format** (per the LiveObjects OpenAPI specifi
 ```pseudo
 provision_objects_via_rest(api_key, channel_name, operations):
   # operations: a single operation object, or an array of operation objects (batch)
-  POST https://sandbox-rest.ably.io/channels/{encode_uri_component(channel_name)}/object
+  POST https://sandbox.realtime.ably-nonprod.net/channels/{encode_uri_component(channel_name)}/object
     WITH Authorization: Basic {base64(api_key)}
     WITH Content-Type: application/json
     WITH body: operations
