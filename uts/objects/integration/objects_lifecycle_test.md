@@ -294,11 +294,8 @@ channel_name = "objects-rest-provision-" + random_id()
 // Provision data via REST before any realtime client connects
 provision_objects_via_rest(api_key, channel_name, [
   {
-    operation: {
-      action: "MAP_SET",
-      objectId: "root",
-      mapSet: { key: "provisioned", value: { string: "from_rest" } }
-    }
+    mapSet: { key: "provisioned", value: { string: "from_rest" } },
+    objectId: "root"
   }
 ])
 ```
