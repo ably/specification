@@ -149,7 +149,7 @@ The mutations should be buffered and applied after the sync completes.
 channel_name = "objects-buffer-resync-" + random_id()
 
 // Client A: direct connection (no proxy), publishes mutations
-client_a = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false })
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
   WITH timeout: 15 seconds
@@ -391,7 +391,7 @@ sync completes.
 channel_name = "objects-publish-during-sync-" + random_id()
 
 // Client A: direct, no proxy
-client_a = Realtime(options: { key: api_key })
+client_a = Realtime(options: { key: api_key, endpoint: "nonprod:sandbox", autoConnect: false })
 client_a.connect()
 AWAIT_STATE client_a.connection.state == CONNECTED
   WITH timeout: 15 seconds

@@ -358,10 +358,25 @@ setup_synced_channel_no_ack(channel_name):
 
 For integration tests that need pre-existing object state before the test client connects, use the REST API to establish fixtures.
 
+The objects REST API uses the **V2 format** (per the LiveObjects OpenAPI specification). A request publishes a single operation, or a batch of operations as a JSON array — there is **no** `{ "messages": [...] }` envelope. Each operation names its type via a payload key (`mapSet`, `mapRemove`, `mapCreate`, `counterInc`, `counterCreate`) and targets an object by `objectId` **or** `path`. Note the endpoint path is singular (`/object`).
+
 ```pseudo
 provision_objects_via_rest(api_key, channel_name, operations):
-  POST https://sandbox-rest.ably.io/channels/{encode_uri_component(channel_name)}/objects
+  # operations: a single operation object, or an array of operation objects (batch)
+  POST https://sandbox.realtime.ably-nonprod.net/channels/{encode_uri_component(channel_name)}/object
     WITH Authorization: Basic {base64(api_key)}
     WITH Content-Type: application/json
-    WITH body: { "messages": operations }
+    WITH body: operations
 ```
+
+Operation shapes (target by `objectId` or `path`; an optional `id` on any operation is an idempotency key):
+
+```pseudo
+{ mapSet:        { key: "<key>", value: <value> },                          objectId|path: "<target>" }
+{ mapRemove:     { key: "<key>" },                                          objectId|path: "<target>" }
+{ mapCreate:     { semantics: 0, entries: { "<key>": { data: <value> } } } [, objectId|path: "<target>"] }  # semantics 0 = LWW
+{ counterCreate: { count: <number> }                                       [, objectId|path: "<target>"] }
+{ counterInc:    { number: <number> },                                      objectId|path: "<target>" }      # negative number = decrement
+```
+
+where `<value>` is a primitive value object: `{ string: "..." }`, `{ number: ... }`, `{ boolean: ... }`, `{ bytes: "<base64>" }`, or a reference `{ objectId: "..." }` (`string`/`bytes` may also carry an optional `encoding`).
