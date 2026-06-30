@@ -413,7 +413,7 @@ source_operation = {
     objectId: "map:derived@3000",
     semantics: "LWW",
     entries: { "x": { data: { number: 10 } } },
-    _derivedFrom: derived_map_create
+    derivedFrom: derived_map_create  // retained MapCreate per RTLMV4j5 (local-only; not a wire field name)
   }
 }
 ```
@@ -455,7 +455,7 @@ source_operation = {
   counterCreateWithObjectId: {
     objectId: "counter:derived@3000",
     count: 100,
-    _derivedFrom: derived_counter_create
+    derivedFrom: derived_counter_create  // retained CounterCreate per RTLCV4g5 (local-only; not a wire field name)
   }
 }
 ```

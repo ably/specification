@@ -21,7 +21,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel`, `setup_synced_ch
 
 | Spec | Requirement |
 |------|-------------|
-| RTO23d | Returns PathObject with path set to empty list and root set to root LiveMap |
+| RTO23d | Returns PathObject with path set to empty list and root set to root InternalLiveMap |
 
 ### Setup
 ```pseudo
@@ -75,15 +75,19 @@ ASSERT error.code == 40024
 
 ---
 
-## RTO23b - get() throws on DETACHED channel
+## RTO23e - get() re-attaches a DETACHED channel (ensure-active-channel)
 
-**Test ID**: `objects/unit/RTO23b/get-throws-detached-0`
+**Test ID**: `objects/unit/RTO23e/get-reattaches-detached-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTO23b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
+| RTO23e | Performs the ensure-active-channel procedure (RTL33) on the underlying RealtimeChannel; if it fails, get() rejects with that ErrorInfo |
+| RTL33b | A DETACHED channel is implicitly (re-)attached and get() waits for it to complete |
 
-Tests that get() on a DETACHED channel throws 90001 per the RTO25 access API preconditions.
+Tests that get() on a DETACHED channel no longer throws 90001 — per RTO23e it runs ensure-active-channel
+(RTL33), which for a DETACHED channel performs an implicit attach (RTL33b); once the channel re-attaches and
+re-syncs, get() resolves with the root PathObject. (Contrast RTO25b, where the *access* APIs — value/keys/
+subscribe — still throw 90001 on DETACHED/FAILED; see the RTO25b sections below.)
 
 ### Setup
 ```pseudo
@@ -118,13 +122,15 @@ AWAIT channel.object.get()
 AWAIT channel.detach()
 AWAIT_STATE channel.state == DETACHED
 
-AWAIT channel.object.get() FAILS WITH error
+// get() on a DETACHED channel triggers ensure-active-channel (RTL33b) -> implicit re-attach -> resolves
+root = AWAIT channel.object.get()
 ```
 
 ### Assertions
 ```pseudo
-ASSERT error.code == 90001
-ASSERT error.statusCode == 400
+ASSERT root IS PathObject
+ASSERT root.path == []
+ASSERT channel.state == ATTACHED
 ```
 
 ---
@@ -375,6 +381,11 @@ mock_ws.send_to_client(ProtocolMessage(
 
 inc_future = root.get("score").increment(10)
 
+# Per RTO20e the write must WAIT for the sync to reach SYNCED: while still
+# SYNCING the increment must not have applied yet.
+ASSERT inc_future IS NOT complete
+ASSERT root.get("score").value() == 100
+
 mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
 
 AWAIT inc_future
@@ -387,9 +398,9 @@ ASSERT root.get("score").value() == 110
 
 ---
 
-## RTO20e1 - publishAndApply fails when channel enters FAILED during sync wait
+## RTO20e1 - publishAndApply fails when channel enters DETACHED during sync wait
 
-**Test ID**: `objects/unit/RTO20e1/fails-on-channel-failed-0`
+**Test ID**: `objects/unit/RTO20e1/fails-on-channel-detached-0`
 
 **Spec requirement:** If channel enters DETACHED/SUSPENDED/FAILED while waiting, fail with 92008.
 
@@ -586,6 +597,57 @@ ASSERT error.code == 40024
 
 ---
 
+## RTO23e - get() on a FAILED channel rejects with 90001 (ensure-active-channel)
+
+**Test ID**: `objects/unit/RTO23e/get-rejects-failed-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO23e | Performs ensure-active-channel (RTL33) on the underlying RealtimeChannel; if it fails, get() rejects with that ErrorInfo |
+| RTL33c | A FAILED channel causes ensure-active-channel to throw ErrorInfo with statusCode 400 and code 90001 |
+
+Tests that get() on a FAILED channel rejects with 90001 — per RTO23e, ensure-active-channel (RTL33) is run, and
+for a FAILED channel RTL33c throws 90001. (The 90001 assertion is unchanged from the old RTO25b framing; only the
+governing clause moved from RTO25b to RTO23e/RTL33c, since get() is gated by RTO23e, not the access-API RTO25.)
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ERROR, channel: msg.channel,
+        error: { code: 90000, statusCode: 400, message: "Channel error" }
+      ))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
+```
+
+### Test Steps
+```pseudo
+// Trigger attach which will fail, putting channel into FAILED state
+channel.attach()
+AWAIT_STATE channel.state == FAILED
+
+AWAIT channel.object.get() FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 90001
+ASSERT error.statusCode == 400
+```
+
+---
+
 ## RTO25a - Access API precondition requires OBJECT_SUBSCRIBE mode
 
 **Test ID**: `objects/unit/RTO25a/access-requires-subscribe-mode-0`
@@ -594,7 +656,7 @@ ASSERT error.code == 40024
 |------|-------------|
 | RTO25a | Require OBJECT_SUBSCRIBE channel mode per RTO2 |
 
-Tests that a read operation (e.g. PathObject value()) without OBJECT_SUBSCRIBE mode throws error 40024.
+Tests that the access path requires OBJECT_SUBSCRIBE — without it, obtaining/using the objects API throws 40024.
 
 ### Setup
 ```pseudo
@@ -641,42 +703,25 @@ ASSERT error.statusCode == 400
 |------|-------------|
 | RTO25b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
 
-Tests that calling get() on a DETACHED channel throws 90001.
+Tests that an access method (`keys()`) on a DETACHED channel throws 90001. The `root` PathObject is obtained
+while the channel is ATTACHED (with OBJECT_SUBSCRIBE granted); the channel is then detached, and the subsequent
+read trips the RTO25b state precondition. (Contrast `get()`, which re-attaches per RTO23e.)
 
 ### Setup
 ```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
-    })
-  ),
-  onMessageFromClient: (msg) => {
-    IF msg.action == ATTACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
-        flags: HAS_OBJECTS
-      ))
-      mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
-    ELSE IF msg.action == DETACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: DETACHED, channel: msg.channel
-      ))
-  }
-)
-install_mock(mock_ws)
-client = Realtime(options: { key: "fake:key" })
-channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 ```
 
 ### Test Steps
 ```pseudo
-// Attach, sync, then detach to get channel into DETACHED state
-AWAIT channel.object.get()
-AWAIT channel.detach()
+// Detach the channel after sync
+mock_ws.send_to_client(ProtocolMessage(
+  action: DETACHED, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel detached" }
+))
 AWAIT_STATE channel.state == DETACHED
 
-AWAIT channel.object.get() FAILS WITH error
+root.keys() FAILS WITH error
 ```
 
 ### Assertions
@@ -695,36 +740,24 @@ ASSERT error.statusCode == 400
 |------|-------------|
 | RTO25b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
 
-Tests that calling get() on a FAILED channel throws 90001.
+Tests that an access method (`keys()`) on a FAILED channel throws 90001. `root` is obtained while ATTACHED, the
+channel is then forced to FAILED, and the subsequent read trips the RTO25b state precondition.
 
 ### Setup
 ```pseudo
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
-    })
-  ),
-  onMessageFromClient: (msg) => {
-    IF msg.action == ATTACH:
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ERROR, channel: msg.channel,
-        error: { code: 90000, statusCode: 400, message: "Channel error" }
-      ))
-  }
-)
-install_mock(mock_ws)
-client = Realtime(options: { key: "fake:key" })
-channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE"] })
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 ```
 
 ### Test Steps
 ```pseudo
-// Trigger attach which will fail, putting channel into FAILED state
-channel.attach()
+// Force channel to FAILED state
+mock_ws.send_to_client(ProtocolMessage(
+  action: ERROR, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel error" }
+))
 AWAIT_STATE channel.state == FAILED
 
-AWAIT channel.object.get() FAILS WITH error
+root.keys() FAILS WITH error
 ```
 
 ### Assertions
@@ -925,9 +958,11 @@ score_path.subscribe((event) => events_score.append(event))
 
 ### Test Steps
 ```pseudo
-// Trigger an update on the score counter
+// Trigger an update on the score counter. siteCode "remote" is absent from the pool's
+// siteTimeserials ({"aaa":"t:0"}), so the op passes the newness check (RTLO4a) — "aaa" with an
+// "s:N" serial would be stale ("s" < "t") and the op would be silently dropped, hanging the poll.
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 5, "s:1", "aaa")
+  build_counter_inc("counter:score@1000", 5, "s:1", "remote")
 ]))
 
 poll_until(events_score.length >= 1, timeout: 5s)
@@ -959,7 +994,8 @@ Tests that a subscription with a depth constraint only receives events within th
 shallow_events = []
 deep_events = []
 
-// Subscribe at root with depth 1 — covers root and immediate children only
+// Subscribe at root with depth 1 — per RTO24c2b this covers ONLY root's own path ([]),
+// NOT its children (a child like ["score"] is relativeDepth 1-0+1 = 2 > 1).
 root.subscribe({ depth: 1 }, (event) => shallow_events.append(event))
 
 // Subscribe at root with no depth limit — covers everything
@@ -968,22 +1004,29 @@ root.subscribe((event) => deep_events.append(event))
 
 ### Test Steps
 ```pseudo
-// Update a direct child of root (path ["score"]) — depth 1 from root
+// Update root itself (a MAP_SET on root — candidate path [] is covered by depth 1).
+// siteCode "remote" is absent from the pool's siteTimeserials ({"aaa":"t:0"}), so the op passes the
+// newness check (RTLO4a / _canApplyOperation) — using "aaa" with an "s:N" serial would be stale ("s" < "t").
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 5, "s:1", "aaa")
+  build_map_set("root", "name", { string: "Bob" }, "s:1", "remote")
 ]))
 poll_until(deep_events.length >= 1, timeout: 5s)
 
-// Update a nested object (path ["profile", "nested_counter"]) — depth 2 from root
+// Update a child of root (path ["score"], relativeDepth 2) — NOT covered by depth 1, covered by deep.
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:nested@1000", 1, "s:2", "aaa")
+  build_counter_inc("counter:score@1000", 5, "s:2", "remote")
 ]))
 poll_until(deep_events.length >= 2, timeout: 5s)
+
+// Negative-assertion quiescence: the shallow listener fired exactly once on the FIRST dispatch
+// (the root self-update at []) and must NOT fire on the second (child ["score"]) dispatch. The deep
+// listener is the control that fires on both; poll the shallow listener too so its count isn't racing.
+poll_until(shallow_events.length >= 1, timeout: 5s)
 ```
 
 ### Assertions
 ```pseudo
-// Shallow subscription (depth 1) only sees the direct child update
+// Shallow subscription (depth 1) only sees the root self-update, not the child update
 ASSERT shallow_events.length == 1
 
 // Deep subscription (no depth limit) sees both updates
@@ -1061,15 +1104,16 @@ ASSERT score_after_echo == 110
 | Spec | Requirement |
 |------|-------------|
 | RTO20f | Apply with source LOCAL |
-| RTLC7c2 | LOCAL source does not update siteTimeserials |
+| RTLC7c | siteTimeserials written only for CHANNEL source (verified via the source=LOCAL complement) |
 
 Verified through observable behaviour: after a local increment (applied via ACK
 with source LOCAL), an inbound COUNTER_INC from the same siteCode and serial as
 the ACK should still apply. If LOCAL had incorrectly written to siteTimeserials,
 the newness check would reject the inbound message as stale.
 
-The mock's ACK serial for the first publish is `"t:1:0"` with siteCode `"test"`
-(from ConnectionDetails). The inbound message reuses that siteCode and serial.
+The mock's ACK serial for the first publish is `ack_serial(0, 0)` (= "ack-0:0")
+with siteCode `SITE_CODE` (= "test-site", from ConnectionDetails). The inbound
+message reuses that siteCode and serial.
 
 ### Setup
 ```pseudo
@@ -1081,11 +1125,11 @@ The mock's ACK serial for the first publish is `"t:1:0"` with siteCode `"test"`
 AWAIT root.get("score").increment(10)
 ASSERT root.get("score").value() == 110
 
-# Send inbound COUNTER_INC from siteCode "test" with serial "t:1:0"
+# Send inbound COUNTER_INC from siteCode SITE_CODE with serial ack_serial(0, 0)
 # (same siteCode and serial as the ACK). If LOCAL incorrectly set
-# siteTimeserials["test"] = "t:1:0", this would fail the newness check.
+# siteTimeserials[SITE_CODE] = ack_serial(0, 0), this would fail the newness check.
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 10, "t:1:0", "test")
+  build_counter_inc("counter:score@1000", 10, ack_serial(0, 0), SITE_CODE)
 ]))
 poll_until(root.get("score").value() == 120, timeout: 5s)
 ```
@@ -1153,11 +1197,11 @@ mock_ws.send_to_client(ProtocolMessage(
 mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
 ASSERT root.get("score").value() == 100
 
-// Replay the same serial ("t:1:0") that was used for apply-on-ACK.
+// Replay the same serial (ack_serial(0, 0)) that was used for apply-on-ACK.
 // If appliedOnAckSerials was cleared, this applies normally.
 // If NOT cleared, dedup (RTO9a3) would reject it and score stays 100.
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 10, "t:1:0", "test")
+  build_counter_inc("counter:score@1000", 10, ack_serial(0, 0), SITE_CODE)
 ]))
 poll_until(root.get("score").value() == 110, timeout: 5s)
 ```
@@ -1328,6 +1372,37 @@ ASSERT root.get("score").value() == null
 scenarios = [
   {
     name: "initial attach",
+    // Fixture requirement: a genuine FIRST attach can only be observed on a
+    // fresh, NON-synced channel with the SYNCING/SYNCED listeners registered
+    // BEFORE attach(). setup_synced_channel() returns an already-ATTACHED+SYNCED
+    // channel, so attach() would be a no-op and the first transitions would have
+    // already fired before any listener could be attached. This scenario therefore
+    // provides its own setup that builds an unattached channel and wires the
+    // listeners up front; the shared loop honours scenario.setup when present.
+    setup: () => {
+      mock_ws = MockWebSocket(
+        onConnectionAttempt: (conn) => conn.respond_with_success(
+          ProtocolMessage(action: CONNECTED, connectionDetails: {
+            connectionId: "conn-1", connectionKey: "conn-key-1",
+            siteCode: SITE_CODE, objectsGCGracePeriod: 86400000
+          })
+        ),
+        onMessageFromClient: (msg) => {
+          IF msg.action == ATTACH:
+            mock_ws.send_to_client(ProtocolMessage(
+              action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+              flags: HAS_OBJECTS
+            ))
+            mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
+        }
+      )
+      install_mock(mock_ws)
+      client = Realtime(options: { key: "fake:key", autoConnect: true })
+      channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+      // NOTE: channel is NOT yet attached/synced here — listeners must be wired
+      // by the loop before scenario.trigger() calls attach().
+      RETURN { client, channel, mock_ws }
+    },
     trigger: () => {
       channel.attach()
     },
@@ -1361,12 +1436,20 @@ scenarios = [
         action: ATTACHED, channel: "test", channelSerial: "sync4:", flags: 0
       ))
     },
-    expected_events: ["SYNCED"]
+    // RTO4c transitions the (currently SYNCED) sync state to SYNCING for ANY ATTACHED → emits SYNCING;
+    // RTO4b (no HAS_OBJECTS) then completes the sync immediately via RTO4b4 → emits SYNCED.
+    expected_events: ["SYNCING", "SYNCED"]
   }
 ]
 
 FOR scenario IN scenarios:
-  { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+  // Scenarios that need a fresh (non-synced) fixture provide their own setup so
+  // listeners can be registered BEFORE the first attach; the rest reuse the
+  // standard already-synced channel and register listeners after setup.
+  IF scenario.setup IS PRESENT:
+    { client, channel, mock_ws } = scenario.setup()
+  ELSE:
+    { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
   events = []
   channel.object.on(SYNCING, () => events.append("SYNCING"))
   channel.object.on(SYNCED, () => events.append("SYNCED"))

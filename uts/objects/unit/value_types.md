@@ -7,7 +7,7 @@ Unit test — pure construction and evaluation, no mocks required.
 
 ## Purpose
 
-Tests `LiveCounterValueType` and `LiveMapValueType` — immutable blueprints created via `LiveCounter.create()` and `LiveMap.create()` static factories. When evaluated by a mutation method, they generate `ObjectMessages` with v6 wire format fields (`counterCreateWithObjectId`, `mapCreateWithObjectId`).
+Tests `LiveCounter` and `LiveMap` — immutable blueprints created via `LiveCounter.create()` and `LiveMap.create()` static factories. When evaluated by a mutation method, they generate `ObjectMessages` with v6 wire format fields (`counterCreateWithObjectId`, `mapCreateWithObjectId`).
 
 ---
 
@@ -18,7 +18,7 @@ Tests `LiveCounterValueType` and `LiveMapValueType` — immutable blueprints cre
 | Spec | Requirement |
 |------|-------------|
 | RTLCV3a1 | Accepts optional initialCount |
-| RTLCV3b | Returns LiveCounterValueType with internal count |
+| RTLCV3b | Returns LiveCounter with internal count |
 | RTLCV3d | Returned value is immutable |
 
 ### Test Steps
@@ -28,7 +28,7 @@ vt = LiveCounter.create(42)
 
 ### Assertions
 ```pseudo
-ASSERT vt IS LiveCounterValueType
+ASSERT vt IS LiveCounter
 ASSERT vt.count == 42
 ```
 
@@ -155,7 +155,7 @@ ASSERT msg.operation.counterCreate.count == 0
 | Spec | Requirement |
 |------|-------------|
 | RTLMV3a1 | Accepts optional entries dict |
-| RTLMV3b | Returns LiveMapValueType with internal entries |
+| RTLMV3b | Returns LiveMap with internal entries |
 | RTLMV3d | Returned value is immutable |
 
 ### Test Steps
@@ -168,7 +168,7 @@ vt = LiveMap.create({
 
 ### Assertions
 ```pseudo
-ASSERT vt IS LiveMapValueType
+ASSERT vt IS LiveMap
 ASSERT vt.entries["name"] == "Alice"
 ASSERT vt.entries["age"] == 30
 ```
@@ -188,7 +188,7 @@ vt = LiveMap.create()
 
 ### Assertions
 ```pseudo
-ASSERT vt IS LiveMapValueType
+ASSERT vt IS LiveMap
 ```
 
 ---
@@ -291,8 +291,8 @@ ASSERT entries["json_obj"].data.json == { "key": "value" }
 
 | Spec | Requirement |
 |------|-------------|
-| RTLMV4d1 | LiveCounterValueType evaluated, ObjectMessage collected, objectId set |
-| RTLMV4d2 | LiveMapValueType recursively evaluated, all ObjectMessages collected |
+| RTLMV4d1 | LiveCounter evaluated, ObjectMessage collected, objectId set |
+| RTLMV4d2 | LiveMap recursively evaluated, all ObjectMessages collected |
 | RTLMV4k | Return depth-first order: inner creates before outer |
 
 ### Test Steps

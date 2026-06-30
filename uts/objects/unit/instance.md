@@ -47,9 +47,9 @@ ASSERT map_inst.id() == "map:profile@1000"
 | Spec | Requirement |
 |------|-------------|
 | RTINS4a | Checks access API preconditions per RTO25 |
-| RTINS4b | LiveCounter -> delegates to LiveCounter#value |
+| RTINS4b | InternalLiveCounter -> delegates to InternalLiveCounter#value |
 | RTINS4c | Primitive -> returns value directly |
-| RTINS4d | LiveMap -> null |
+| RTINS4d | InternalLiveMap -> null |
 
 ### Setup
 ```pseudo
@@ -74,8 +74,8 @@ ASSERT map_inst.value() == null
 | Spec | Requirement |
 |------|-------------|
 | RTINS5b | Checks access API preconditions per RTO25 |
-| RTINS5c | LiveMap -> look up key, wrap result in Instance |
-| RTINS5d | Non-LiveMap -> null |
+| RTINS5c | InternalLiveMap -> look up key, wrap result in Instance |
+| RTINS5d | Non-InternalLiveMap -> null |
 
 ### Setup
 ```pseudo
@@ -105,8 +105,8 @@ ASSERT null_inst == null
 | Spec | Requirement |
 |------|-------------|
 | RTINS6a | Checks access API preconditions per RTO25 |
-| RTINS6b | LiveMap -> array of [key, Instance] pairs |
-| RTINS6c | Non-LiveMap -> empty array |
+| RTINS6b | InternalLiveMap -> array of [key, Instance] pairs |
+| RTINS6c | Non-InternalLiveMap -> empty array |
 
 ### Setup
 ```pseudo
@@ -137,8 +137,8 @@ ASSERT entries["name"].value() == "Alice"
 | Spec | Requirement |
 |------|-------------|
 | RTINS9a | Checks access API preconditions per RTO25 |
-| RTINS9b | LiveMap -> non-tombstoned entry count |
-| RTINS9c | Non-LiveMap -> null |
+| RTINS9b | InternalLiveMap -> non-tombstoned entry count |
+| RTINS9c | Non-InternalLiveMap -> null |
 
 ### Setup
 ```pseudo
@@ -185,15 +185,15 @@ ASSERT result["profile"]["email"] == "alice@example.com"
 
 ---
 
-## RTINS12 - set() delegates to LiveMap#set
+## RTINS12 - set() delegates to InternalLiveMap#set
 
 **Test ID**: `objects/unit/RTINS12/set-delegates-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTINS12b | Checks write API preconditions per RTO26 |
-| RTINS12c | LiveMap -> delegate to LiveMap#set |
-| RTINS12d | Non-LiveMap -> throw 92007 |
+| RTINS12c | InternalLiveMap -> delegate to InternalLiveMap#set |
+| RTINS12d | Non-InternalLiveMap -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -213,11 +213,11 @@ ASSERT root.get("name").value() == "Bob"
 
 ---
 
-## RTINS12d - set() on non-LiveMap throws 92007
+## RTINS12d - set() on non-InternalLiveMap throws 92007
 
 **Test ID**: `objects/unit/RTINS12d/set-non-map-throws-0`
 
-**Spec requirement:** If the wrapped value is not a LiveMap, throw ErrorInfo with code 92007.
+**Spec requirement:** If the wrapped value is not a InternalLiveMap, throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo
@@ -237,15 +237,15 @@ ASSERT error.code == 92007
 
 ---
 
-## RTINS13 - remove() delegates to LiveMap#remove
+## RTINS13 - remove() delegates to InternalLiveMap#remove
 
 **Test ID**: `objects/unit/RTINS13/remove-delegates-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTINS13b | Checks write API preconditions per RTO26 |
-| RTINS13c | LiveMap -> delegate to LiveMap#remove |
-| RTINS13d | Non-LiveMap -> throw 92007 |
+| RTINS13c | InternalLiveMap -> delegate to InternalLiveMap#remove |
+| RTINS13d | Non-InternalLiveMap -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -265,15 +265,15 @@ ASSERT root.get("name").value() == null
 
 ---
 
-## RTINS14 - increment() delegates to LiveCounter#increment
+## RTINS14 - increment() delegates to InternalLiveCounter#increment
 
 **Test ID**: `objects/unit/RTINS14/increment-delegates-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTINS14b | Checks write API preconditions per RTO26 |
-| RTINS14c | LiveCounter -> delegate to increment |
-| RTINS14d | Non-LiveCounter -> throw 92007 |
+| RTINS14c | InternalLiveCounter -> delegate to increment |
+| RTINS14d | Non-InternalLiveCounter -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -293,11 +293,11 @@ ASSERT root.get("score").value() == 125
 
 ---
 
-## RTINS14d - increment() on non-LiveCounter throws 92007
+## RTINS14d - increment() on non-InternalLiveCounter throws 92007
 
 **Test ID**: `objects/unit/RTINS14d/increment-non-counter-throws-0`
 
-**Spec requirement:** If the wrapped value is not a LiveCounter, throw ErrorInfo with code 92007.
+**Spec requirement:** If the wrapped value is not a InternalLiveCounter, throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo
@@ -317,15 +317,15 @@ ASSERT error.code == 92007
 
 ---
 
-## RTINS15 - decrement() delegates to LiveCounter#decrement
+## RTINS15 - decrement() delegates to InternalLiveCounter#decrement
 
 **Test ID**: `objects/unit/RTINS15/decrement-delegates-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTINS15b | Checks write API preconditions per RTO26 |
-| RTINS15c | LiveCounter -> delegate to decrement |
-| RTINS15d | Non-LiveCounter -> throw 92007 |
+| RTINS15c | InternalLiveCounter -> delegate to decrement |
+| RTINS15d | Non-InternalLiveCounter -> throw 92007 |
 
 ### Setup
 ```pseudo
@@ -508,6 +508,12 @@ counter_inst = root.get("score").instance()
 events = []
 sub = counter_inst.subscribe((event) => events.append(event))
 sub.unsubscribe()
+
+# Quiescence control: a second, still-subscribed listener on the same
+# counter instance that WILL fire on the same dispatch as the send below.
+# See helpers/standard_test_pool.md "Negative-assertion quiescence".
+control_events = []
+counter_inst.subscribe((event) => control_events.append(event))
 ```
 
 ### Test Steps
@@ -519,6 +525,11 @@ mock_ws.send_to_client(build_object_message("test", [
 
 ### Assertions
 ```pseudo
+# Negative-assertion quiescence (helpers/standard_test_pool.md): await the
+# control listener so that once it has been delivered, the unsubscribed
+# listener would also have fired had it remained subscribed; THEN assert
+# the unsubscribed listener's count is unchanged.
+poll_until(control_events.length >= 1, timeout: 5s)
 ASSERT events.length == 0
 ```
 
@@ -553,7 +564,13 @@ poll_until(events.length >= 1, timeout: 5s)
 ### Assertions
 ```pseudo
 ASSERT events.length >= 1
-ASSERT counter_inst.id() == "counter:score@1000"
+# RTINS16e1: the delivered event carries the Instance wrapping the
+# LiveObject that fired. Assert against the DELIVERED EVENT's object id
+# (not the pre-existing counter_inst handle, whose id is already
+# "counter:score@1000" at subscribe time and so would pass even if the
+# listener fired for the wrong object after the score key was repointed).
+ASSERT events[0].object IS Instance
+ASSERT events[0].object.id() == "counter:score@1000"
 ```
 
 ---

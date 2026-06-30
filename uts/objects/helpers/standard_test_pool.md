@@ -7,7 +7,7 @@ Shared fixtures, protocol message builders, and synced-channel setup pattern for
 The standard test pool defines a fixed LiveObjects tree used across test files. All object IDs use short synthetic values for clarity (real servers validate the hash format, but unit tests construct objects directly).
 
 ```
-root (LiveMap, objectId: "root", semantics: LWW)
+root (InternalLiveMap, objectId: "root", semantics: LWW)
   +-- "name" -> string "Alice"
   +-- "age" -> number 30
   +-- "active" -> boolean true
@@ -16,16 +16,16 @@ root (LiveMap, objectId: "root", semantics: LWW)
   +-- "data" -> json {"tags": ["a", "b"]}
   +-- "avatar" -> bytes base64("AQID") (raw bytes: [1, 2, 3])
 
-counter:score@1000 (LiveCounter, data: 100)
+counter:score@1000 (InternalLiveCounter, data: 100)
 
-map:profile@1000 (LiveMap, semantics: LWW)
+map:profile@1000 (InternalLiveMap, semantics: LWW)
   +-- "email" -> string "alice@example.com"
   +-- "nested_counter" -> objectId "counter:nested@1000"
   +-- "prefs" -> objectId "map:prefs@1000"
 
-counter:nested@1000 (LiveCounter, data: 5)
+counter:nested@1000 (InternalLiveCounter, data: 5)
 
-map:prefs@1000 (LiveMap, semantics: LWW)
+map:prefs@1000 (InternalLiveMap, semantics: LWW)
   +-- "theme" -> string "dark"
 ```
 
@@ -103,6 +103,22 @@ STANDARD_POOL_OBJECTS = [
 ---
 
 ## Builder Functions
+
+### Canonical Constants
+
+The standard synced-channel harness uses a fixed siteCode and a fixed ACK-serial
+scheme. These are exposed so tests can reference them rather than hardcoding
+literals:
+
+```pseudo
+SITE_CODE = "test-site"   # the harness ConnectionDetails siteCode
+
+ack_serial(msgSerial, i) => "ack-" + msgSerial + ":" + i
+  # the first publish's first op = ack_serial(0, 0) == "ack-0:0"
+```
+
+Replay tests that must reuse the apply-on-ACK serial/siteCode MUST reference
+these (e.g. `ack_serial(0, 0)` / `SITE_CODE`), never hardcode a literal.
 
 ### Protocol Message Builders
 
@@ -265,7 +281,7 @@ build_public_object_message(objectMessage, channelName):
 
 Used by all mock WebSocket test files. Creates a connected client with a synced channel containing the standard test pool.
 
-After the OBJECT_SYNC sequence completes, the SDK rebuilds parentReferences per RTO5c10: reset all LiveObject parentReferences to empty (RTLO3f2), then iterate all LiveMap entries calling addParentReference (RTLO4g) for each entry whose value is a LiveObject. See "Expected parentReferences after sync" above for the resulting state.
+After the OBJECT_SYNC sequence completes, the SDK rebuilds parentReferences per RTO5c10: reset all LiveObject parentReferences to empty (RTLO3f2), then iterate all InternalLiveMap entries calling addParentReference (RTLO4g) for each entry whose value is a LiveObject. See "Expected parentReferences after sync" above for the resulting state.
 
 ```pseudo
 setup_synced_channel(channel_name):
@@ -274,7 +290,7 @@ setup_synced_channel(channel_name):
       ProtocolMessage(action: CONNECTED, connectionDetails: {
         connectionId: "conn-1",
         connectionKey: "conn-key-1",
-        siteCode: "test-site",
+        siteCode: SITE_CODE,
         objectsGCGracePeriod: 86400000
       })
     ),
@@ -292,7 +308,7 @@ setup_synced_channel(channel_name):
       ELSE IF msg.action == OBJECT:
         serials = []
         FOR i IN 0..msg.state.length - 1:
-          serials.append("ack-" + msg.msgSerial + ":" + i)
+          serials.append(ack_serial(msg.msgSerial, i))
         mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
     }
   )
@@ -321,7 +337,7 @@ setup_synced_channel_no_ack(channel_name):
       ProtocolMessage(action: CONNECTED, connectionDetails: {
         connectionId: "conn-1",
         connectionKey: "conn-key-1",
-        siteCode: "test-site",
+        siteCode: SITE_CODE,
         objectsGCGracePeriod: 86400000
       })
     ),
@@ -354,11 +370,40 @@ setup_synced_channel_no_ack(channel_name):
 
 ---
 
+## Negative-assertion quiescence
+
+Subscription tests that assert a listener did NOT fire (or that a count is
+unchanged) after an async send cannot simply check the count immediately: the
+absence of a callback is not observable by waiting an arbitrary amount of time.
+Instead, drive a positive signal through the same dispatch and AWAIT it, so that
+once the control signal is delivered any expected callback would also have run;
+THEN assert the count under test is unchanged.
+
+The control signal is either a second listener that WILL fire on the same
+dispatch, or a follow-up observable message sent after the message under test.
+
+```pseudo
+assert_unchanged_after_quiescence(count_under_test, control):
+  before = count_under_test()
+  # control is a listener (or follow-up message) that WILL fire on the same
+  # dispatch as the message under test
+  AWAIT control.delivered()
+  ASSERT count_under_test() == before
+```
+
+For multi-listener cases, AWAIT all involved listeners before asserting any count.
+
+---
+
 ## REST Fixture Provisioning
 
 For integration tests that need pre-existing object state before the test client connects, use the REST API to establish fixtures.
 
 The objects REST API uses the **V2 format** (per the LiveObjects OpenAPI specification). A request publishes a single operation, or a batch of operations as a JSON array — there is **no** `{ "messages": [...] }` envelope. Each operation names its type via a payload key (`mapSet`, `mapRemove`, `mapCreate`, `counterInc`, `counterCreate`) and targets an object by `objectId` **or** `path`. Note the endpoint path is singular (`/object`).
+
+Target cardinality per op-class: mutate ops (`mapSet`, `mapRemove`, `counterInc`) MUST target exactly one of `objectId`/`path` (never both, never neither); create ops (`mapCreate`, `counterCreate`) MAY target zero-or-one (never both — a create with no target makes a standalone object).
+
+If an SDK uses a REST client object to perform provisioning, it must be closed after use (clients are typically AutoCloseable / hold HTTP resources).
 
 ```pseudo
 provision_objects_via_rest(api_key, channel_name, operations):

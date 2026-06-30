@@ -1,4 +1,4 @@
-# LiveCounter Tests
+# InternalLiveCounter Tests
 
 Spec points: `RTLC1`, `RTLC3`, `RTLC4`, `RTLC6`, `RTLC7`, `RTLC8`, `RTLC9`, `RTLC14`, `RTLC16`, `RTLO3`, `RTLO4a`, `RTLO4b4d`, `RTLO4b4e`, `RTLO4e`, `RTLO5`, `RTLO6`
 
@@ -7,9 +7,9 @@ Unit test — pure data structure, no mocks required.
 
 ## Purpose
 
-Tests the `LiveCounter` CRDT data structure. LiveCounter holds a 64-bit float and supports increment operations, create operations (initial value merge), data replacement during sync, tombstoning, and serial-based newness checks.
+Tests the `InternalLiveCounter` CRDT data structure. InternalLiveCounter holds a 64-bit float and supports increment operations, create operations (initial value merge), data replacement during sync, tombstoning, and serial-based newness checks.
 
-Tests operate directly on LiveCounter by calling `applyOperation()` and `replaceData()` with constructed messages. No channel or connection infrastructure is needed.
+Tests operate directly on InternalLiveCounter by calling `applyOperation()` and `replaceData()` with constructed messages. No channel or connection infrastructure is needed.
 
 ## Shared Helpers
 
@@ -17,15 +17,15 @@ See `helpers/standard_test_pool.md` for `build_counter_inc`, `build_counter_crea
 
 ---
 
-## RTLC4 - Zero-value LiveCounter
+## RTLC4 - Zero-value InternalLiveCounter
 
 **Test ID**: `objects/unit/RTLC4/zero-value-0`
 
-**Spec requirement:** The zero-value LiveCounter has data set to 0, empty siteTimeserials, createOperationIsMerged false, isTombstone false.
+**Spec requirement:** The zero-value InternalLiveCounter has data set to 0, empty siteTimeserials, createOperationIsMerged false, isTombstone false.
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Assertions
@@ -51,7 +51,7 @@ ASSERT counter.siteTimeserials == {}
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -78,7 +78,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 10
 counter.siteTimeserials = { "site1": "00" }
 ```
@@ -106,7 +106,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 10
 ```
 
@@ -140,7 +140,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -170,7 +170,7 @@ ASSERT counter.data == 25
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -197,7 +197,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 42
 counter.createOperationIsMerged = true
 counter.siteTimeserials = { "site1": "00" }
@@ -225,7 +225,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -253,7 +253,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -281,7 +281,7 @@ ASSERT counter.data == 5
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.siteTimeserials = { "site1": "05" }
 counter.data = 10
 ```
@@ -308,7 +308,7 @@ ASSERT counter.data == 10
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.siteTimeserials = { "site1": "05" }
 counter.data = 10
 ```
@@ -335,7 +335,7 @@ ASSERT counter.data == 10
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -372,7 +372,7 @@ ASSERT result2 == false
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -396,7 +396,7 @@ ASSERT counter.siteTimeserials["site1"] == "01"
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -421,7 +421,7 @@ ASSERT counter.data == 5
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -454,7 +454,7 @@ ASSERT result == true
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 42
 counter.siteTimeserials = { "site1": "00" }
 ```
@@ -485,7 +485,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.isTombstone = true
 counter.tombstonedAt = 1700000000000
 ```
@@ -514,7 +514,7 @@ ASSERT counter.data == 0
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -540,7 +540,7 @@ ASSERT counter.tombstonedAt == 1700000050000
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 before_time = current_time()
 ```
 
@@ -567,7 +567,7 @@ ASSERT counter.tombstonedAt <= after_time
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -601,7 +601,7 @@ ASSERT counter.data == 0
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 10
 counter.createOperationIsMerged = true
 counter.siteTimeserials = { "site1": "00" }
@@ -637,7 +637,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -667,7 +667,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.isTombstone = true
 counter.tombstonedAt = 1700000000000
 counter.data = 0
@@ -702,7 +702,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 30
 ```
 
@@ -734,7 +734,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 42
 ```
 
@@ -763,7 +763,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 counter.data = 20
 ```
 
@@ -791,7 +791,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -828,7 +828,7 @@ ASSERT counter.createOperationIsMerged == true
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:test@2000")
+counter = InternalLiveCounter(objectId: "counter:test@2000")
 ```
 
 ### Assertions

@@ -177,7 +177,7 @@ client.close()
 **Test ID**: `objects/integration/RTO4/attach-subscribe-only-0`
 
 **Spec requirement:** Channel attached with only OBJECT_SUBSCRIBE mode. Server
-sends HAS_OBJECTS, sync completes, root is an empty LiveMap.
+sends HAS_OBJECTS, sync completes, root is an empty InternalLiveMap.
 
 ### Setup
 ```pseudo

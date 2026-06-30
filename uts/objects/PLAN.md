@@ -10,9 +10,9 @@ All new test files go in `specification/uts/objects/`.
 
 ## Spec Architecture Summary
 
-**Internal (not user-facing):** LiveObject, LiveCounter (CRDT counter), LiveMap (LWW map), ObjectsPool (sync state machine), RealtimeObject (channel orchestrator with publishAndApply)
+**Internal (not user-facing):** LiveObject, InternalLiveCounter (CRDT counter), InternalLiveMap (LWW map), ObjectsPool (sync state machine), RealtimeObject (channel orchestrator with publishAndApply)
 
-**Public (user-facing):** PathObject (lazy path reference), Instance (identity-bound reference), LiveCounterValueType/LiveMapValueType (creation descriptors via static `create()` factories), PublicAPI::ObjectMessage/ObjectOperation (user-facing event metadata)
+**Public (user-facing):** PathObject (lazy path reference), Instance (identity-bound reference), LiveCounter/LiveMap (creation descriptors via static `create()` factories), PublicAPI::ObjectMessage/ObjectOperation (user-facing event metadata)
 
 **Wire protocol v6:** `counterInc.number`, `mapSet.{key,value}`, `mapRemove.key`, `mapCreate.{semantics,entries}`, `counterCreateWithObjectId.{nonce,initialValue}`, `mapCreateWithObjectId.{nonce,initialValue}`
 
@@ -30,8 +30,8 @@ All new test files go in `specification/uts/objects/`.
 ### Pure Unit Tests (no mocks)
 | File | Spec Points | ~Tests |
 |------|-------------|--------|
-| `unit/live_counter.md` | RTLC1-4, RTLC6-9, RTLC14, RTLC16, RTLO3-6, RTLO4b4d-e | ~23 |
-| `unit/live_map.md` | RTLM1-9, RTLM14-16, RTLM18-19, RTLM22-25, RTLO3-6, RTLO4g-h, RTLO4e9 | ~38 |
+| `unit/internal_live_counter.md` | RTLC1-4, RTLC6-9, RTLC14, RTLC16, RTLO3-6, RTLO4b4d-e | ~23 |
+| `unit/internal_live_map.md` | RTLM1-9, RTLM14-16, RTLM18-19, RTLM22-25, RTLO3-6, RTLO4g-h, RTLO4e9 | ~38 |
 | `unit/objects_pool.md` | RTO3-9, RTO5c10 | ~28 |
 | `unit/object_id.md` | RTO14 | ~5 |
 | `unit/value_types.md` | RTLCV1-4, RTLMV1-4 (evaluation generates ObjectMessages with v6 wire format) | ~19 |
@@ -42,8 +42,8 @@ All new test files go in `specification/uts/objects/`.
 | File | Spec Points | ~Tests |
 |------|-------------|--------|
 | `unit/realtime_object.md` | RTO2, RTO10, RTO15-20, RTO22-26 (sync events, publish, publishAndApply, GC, RTO24/25/26 preconditions) | ~36 |
-| `unit/live_counter_api.md` | RTLC5, RTLC11-13 (value, increment, decrement through channel) | ~13 |
-| `unit/live_map_api.md` | RTLM5, RTLM10-13, RTLM20-21, RTLM24, RTLCV4, RTLMV4 (reads + mutations, value type evaluation) | ~20 |
+| `unit/internal_live_counter_api.md` | RTLC5, RTLC11-13 (value, increment, decrement through channel) | ~13 |
+| `unit/internal_live_map_api.md` | RTLM5, RTLM10-13, RTLM20-21, RTLM24, RTLCV4, RTLMV4 (reads + mutations, value type evaluation) | ~20 |
 | `unit/live_object_subscribe.md` | RTLO4b, RTLO4b4c3, RTLO4b4d-e, RTLO4b7 (subscribe, dispatch chain, tombstone cleanup, Subscription) | ~11 |
 | `unit/path_object.md` | RTPO1-14, RTO25 (navigation, value, instance, entries, compact, compactJson, access preconditions) | ~27 |
 | `unit/path_object_mutations.md` | RTPO15-18, RTPO3c2, RTO26 (set, remove, increment, decrement, write preconditions) | ~14 |
@@ -73,7 +73,7 @@ All new test files go in `specification/uts/objects/`.
 
 **Standard test tree:**
 ```
-root (LiveMap, objectId: "root")
+root (InternalLiveMap, objectId: "root")
   +-- "name" -> string "Alice"
   +-- "age" -> number 30
   +-- "active" -> boolean true
@@ -82,16 +82,16 @@ root (LiveMap, objectId: "root")
   +-- "data" -> json {"tags": ["a", "b"]}
   +-- "avatar" -> bytes base64("AQID") (raw bytes: [1, 2, 3])
 
-counter:score@1000 (LiveCounter, data: 100)
+counter:score@1000 (InternalLiveCounter, data: 100)
 
-map:profile@1000 (LiveMap)
+map:profile@1000 (InternalLiveMap)
   +-- "email" -> string "alice@example.com"
   +-- "nested_counter" -> objectId "counter:nested@1000"
   +-- "prefs" -> objectId "map:prefs@1000"
 
-counter:nested@1000 (LiveCounter, data: 5)
+counter:nested@1000 (InternalLiveCounter, data: 5)
 
-map:prefs@1000 (LiveMap)
+map:prefs@1000 (InternalLiveMap)
   +-- "theme" -> string "dark"
 ```
 
@@ -131,7 +131,8 @@ setup_synced_channel(channel_name):
         ))
       ELSE IF msg.action == OBJECT:
         // Auto-ACK with generated serials
-        serials = msg.state.map((_, i) => "ack-serial-" + i)
+        // canonical ack-serial form defined as ack_serial in helpers/standard_test_pool.md
+        serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
         mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
     }
   )
@@ -146,9 +147,9 @@ setup_synced_channel(channel_name):
 
 ## Pure Unit Test Design
 
-### `unit/live_counter.md` -- CRDT Counter Data Structure
+### `unit/internal_live_counter.md` -- CRDT Counter Data Structure
 
-Directly construct `LiveCounter`, call `applyOperation()` and `replaceData()`, assert internal state.
+Directly construct `InternalLiveCounter`, call `applyOperation()` and `replaceData()`, assert internal state.
 
 **Key test groups:**
 1. **Zero value (RTLC4):** data=0, siteTimeserials={}, createOperationIsMerged=false, isTombstone=false
@@ -161,7 +162,7 @@ Directly construct `LiveCounter`, call `applyOperation()` and `replaceData()`, a
 8. **replaceData (RTLC6):** full replacement; tombstone handling; createOp merge; diff calculation
 9. **tombstonedAt (RTLO6):** from serialTimestamp if present, else local clock
 
-### `unit/live_map.md` -- LWW Map Data Structure
+### `unit/internal_live_map.md` -- LWW Map Data Structure
 
 Same pattern. Key additional concerns:
 
@@ -179,7 +180,7 @@ Same pattern. Key additional concerns:
 
 Directly construct ObjectsPool, call `processAttached()`, `processObjectSync()`, `processObjectMessage()`.
 
-1. **Initialization (RTO3):** root LiveMap always present
+1. **Initialization (RTO3):** root InternalLiveMap always present
 2. **ATTACHED handling (RTO4):** HAS_OBJECTS -> SYNCING; no flag -> clear pool + immediate SYNCED
 3. **OBJECT_SYNC sequence (RTO5/RTO5f):** accumulate in SyncObjectsPool; partial merge (RTO5f2a); cursor parsing; new sequence discards old (RTO5a2)
 4. **Sync completion (RTO5c):** replace existing (RTO5c1a), create new (RTO5c1b), remove absent (RTO5c2), emit updates (RTO5c7), apply buffered ops (RTO5c6), clear appliedOnAckSerials (RTO5c9), transition to SYNCED (RTO5c8)
@@ -197,20 +198,20 @@ Pure function tests:
 4. Deterministic: same inputs -> same objectId
 5. Different nonce -> different objectId
 
-### `unit/value_types.md` -- LiveCounterValueType / LiveMapValueType
+### `unit/value_types.md` -- LiveCounter / LiveMap
 
 Tests the static `create()` factories and evaluation procedure.
 
-**LiveCounterValueType (RTLCV1-4):**
-1. `LiveCounter.create(42)` -> immutable LiveCounterValueType with count=42
+**LiveCounter (RTLCV1-4):**
+1. `LiveCounter.create(42)` -> immutable LiveCounter with count=42
 2. `LiveCounter.create()` -> count defaults to 0
 3. Evaluation: validates count, builds CounterCreate, generates objectId, returns ObjectMessage with `counterCreateWithObjectId.{nonce, initialValue}`
 4. Non-number count throws 40003 during evaluation
 
-**LiveMapValueType (RTLMV1-4):**
-1. `LiveMap.create({entries})` -> immutable LiveMapValueType
+**LiveMap (RTLMV1-4):**
+1. `LiveMap.create({entries})` -> immutable LiveMap
 2. Evaluation: validates keys/values, builds entries, generates objectId, returns ObjectMessage with `mapCreateWithObjectId.{nonce, initialValue}`
-3. Nested value types: LiveMapValueType containing LiveCounterValueType -> depth-first ObjectMessage array (inner creates before outer)
+3. Nested value types: LiveMap containing LiveCounter -> depth-first ObjectMessage array (inner creates before outer)
 4. Retains local MapCreate/CounterCreate alongside wire format (RTLMV4j5/RTLCV4g5)
 
 ---
@@ -222,7 +223,7 @@ Tests the static `create()` factories and evaluation procedure.
 Uses `setup_synced_channel()` from helper.
 
 **Key tests:**
-- **RTO23:** get() requires OBJECT_SUBSCRIBE, throws on DETACHED/FAILED, waits for SYNCED, returns PathObject
+- **RTO23:** get() requires OBJECT_SUBSCRIBE (RTO23a), performs ensure-active-channel (RTO23e/RTL33 — re-attaches if DETACHED, rejects 90001 only if FAILED), waits for SYNCED (RTO23c), returns PathObject (RTO23d)
 - **RTO2:** channel mode enforcement (granted vs requested modes)
 - **RTO15/RTO15h:** publish sends OBJECT PM, returns PublishResult from ACK res array
 - **RTO20:** publishAndApply: publishes, constructs synthetic messages with siteCode from ConnectionDetails, applies with source=LOCAL, adds to appliedOnAckSerials
@@ -236,13 +237,13 @@ Uses `setup_synced_channel()` from helper.
 
 - **RTPO4:** path() string representation with dot escaping
 - **RTPO5/RTPO6:** get(key) / at("a.b.c") -- pure navigation, no resolution
-- **RTPO7:** value() -- counter returns number, primitive returns value, LiveMap returns null, unresolvable returns null
+- **RTPO7:** value() -- counter returns number, primitive returns value, InternalLiveMap returns null, unresolvable returns null
 - **RTPO8:** instance() -- LiveObject returns Instance, primitive returns null
-- **RTPO9-11:** entries/keys/values -- yields [key, PathObject] pairs for LiveMap entries
+- **RTPO9-11:** entries/keys/values -- yields [key, PathObject] pairs for InternalLiveMap entries
 - **RTPO12:** size() -- non-tombstoned entry count
 - **RTPO13:** compact() -- recursive, cycle detection with shared object references
 - **RTPO14:** compactJson() -- binary as base64, cycles as {objectId: ...}
-- **RTPO3:** path resolution (RTPO3a): walk segments through LiveMaps; fail if intermediate not LiveMap
+- **RTPO3:** path resolution (RTPO3a): walk segments through InternalLiveMaps; fail if intermediate not InternalLiveMap
 
 ### `unit/path_object_mutations.md` -- Write Operations
 
@@ -250,7 +251,7 @@ Uses `setup_synced_channel()` from helper.
 - **RTPO16:** remove() -- constructs MAP_REMOVE ObjectMessage
 - **RTPO17:** increment(n) -- constructs COUNTER_INC ObjectMessage
 - **RTPO18:** decrement(n) -- delegates to increment(-n)
-- **RTPO3c2:** mutation on unresolvable path throws 92007
+- **RTPO3c2:** mutation on unresolvable path throws 92005
 
 ### `unit/path_object_subscribe.md` -- Path-Based Subscriptions
 
@@ -269,28 +270,28 @@ Uses `setup_synced_channel()` from helper.
 
 - **RTINS1:** id property returns objectId
 - **RTINS2:** value() -- counter returns number, map returns null
-- **RTINS3-5:** get(key), entries(), keys(), values() -- delegate to underlying LiveMap
+- **RTINS3-5:** get(key), entries(), keys(), values() -- delegate to underlying InternalLiveMap
 - **RTINS6:** size() -- non-tombstoned entry count
 - **RTINS7:** compact() -- recursive with cycle detection
 - **RTINS8:** compactJson()
 - **RTINS9-12:** set, remove, increment, decrement -- construct ObjectMessages, call publishAndApply
 - **RTINS13-16:** subscribe/unsubscribe with depth filtering
-- **RTINS17:** instance follows identity not path -- object replacement at path doesn't affect Instance
-- **RTINS18:** operations on tombstoned Instance throw error
+- **RTINS16g:** instance follows identity not path -- object replacement at path doesn't affect Instance
+- **(no spec ID -- tombstoned-Instance behaviour is unspecified in objects-features.md):** operations on tombstoned Instance throw error
 
-### `unit/live_counter_api.md` -- Counter Through Channel
+### `unit/internal_live_counter_api.md` -- Counter Through Channel
 
 - **RTLC5:** value property returns current data
 - **RTLC11/RTLC12:** increment/decrement construct correct v6 wire ObjectMessage
 - **RTLC12d:** echoMessages=false skips publishAndApply, uses publish
 - **RTLC13:** increment with non-number throws 40003
 
-### `unit/live_map_api.md` -- Map Through Channel
+### `unit/internal_live_map_api.md` -- Map Through Channel
 
 - **RTLM5:** get(key) returns resolved value
 - **RTLM10/RTLM11:** entries/keys/values iterate non-tombstoned entries
 - **RTLM12/RTLM13:** set/remove construct correct v6 wire ObjectMessages
-- **RTLM20:** set with LiveCounterValueType/LiveMapValueType evaluates value type
+- **RTLM20:** set with LiveCounter/LiveMap evaluates value type
 - **RTLM20d/RTLM21d:** echoMessages=false uses publish instead of publishAndApply
 - **RTLM24:** clear constructs MAP_CLEAR ObjectMessage
 
@@ -307,7 +308,7 @@ Uses `setup_synced_channel()` from helper.
 - **RTLO3f:** parentReferences initialized to empty Dict<String, Set<String>>
 - **RTLO4g/RTLO4h:** addParentReference/removeParentReference methods
 - **RTLO4f:** getFullPaths — DFS traversal of inverse parentReferences graph, simple paths only
-- **RTO5c10:** post-sync parentReferences rebuild from LiveMap entries
+- **RTO5c10:** post-sync parentReferences rebuild from InternalLiveMap entries
 
 ### `unit/public_object_message.md` -- User-Facing Event Types
 
@@ -330,8 +331,9 @@ The RTO20 publishAndApply flow:
 onMessageFromClient: (msg) => {
   IF msg.action == OBJECT:
     serials = []
+    // canonical ack-serial form defined as ack_serial in helpers/standard_test_pool.md
     FOR i IN 0..msg.state.length-1:
-      serials.append("ack-" + msg.msgSerial + "-" + i)
+      serials.append("ack-" + msg.msgSerial + ":" + i)
     mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
 }
 ```
@@ -349,14 +351,14 @@ onMessageFromClient: (msg) => {
 1. `helpers/standard_test_pool.md`
 2. `unit/parent_references.md` -- foundational for graph tracking
 3. `unit/public_object_message.md` -- standalone type construction
-4. `unit/live_counter.md` -- no dependencies
-5. `unit/live_map.md` -- no dependencies
+4. `unit/internal_live_counter.md` -- no dependencies
+5. `unit/internal_live_map.md` -- no dependencies
 6. `unit/object_id.md` -- no dependencies
-7. `unit/objects_pool.md` -- uses LiveCounter/LiveMap concepts
+7. `unit/objects_pool.md` -- uses InternalLiveCounter/InternalLiveMap concepts
 8. `unit/value_types.md` -- uses objectId generation
 9. `unit/realtime_object.md` -- uses helper, tests orchestration
-10. `unit/live_counter_api.md` -- uses helper
-11. `unit/live_map_api.md` -- uses helper
+10. `unit/internal_live_counter_api.md` -- uses helper
+11. `unit/internal_live_map_api.md` -- uses helper
 12. `unit/live_object_subscribe.md` -- uses helper
 13. `unit/path_object.md` -- uses helper
 14. `unit/instance.md` -- uses helper
@@ -378,7 +380,7 @@ onMessageFromClient: (msg) => {
 | No REST test files | objects-features.md has no REST API spec points; REST used only for integration fixture provisioning |
 | `echoMessages` check moved to RTO26 | RTO26c checks echoMessages=false; callers (PathObject/Instance) enforce via RTO26 |
 | Batch API deferred | Not included in current spec revision (a397e34); may be added in a future spec update |
-| LiveObject/LiveMap/LiveCounter marked internal but still unit-tested | Direct testing of CRDT logic is essential; public API tests can't cover all edge cases |
+| LiveObject/InternalLiveMap/InternalLiveCounter marked internal but still unit-tested | Direct testing of CRDT logic is essential; public API tests can't cover all edge cases |
 | Test IDs use `objects/unit/` prefix | Matches directory structure, not nested under `realtime/` |
 | Behavioral GC testing tiered by clock control | Unit tier verifies the timer-based sweep with fake timers + ADVANCE_TIME; the integration tier verifies observable consequences only (value becomes undefined/null, object recreatable) since integration tests run on wall-clock time |
 | Table-driven tests for input validation | Use FOR loops over scenario arrays (like ably-js forScenarios) to test all invalid/valid type combinations |

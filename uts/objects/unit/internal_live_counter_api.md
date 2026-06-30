@@ -1,4 +1,4 @@
-# LiveCounter API Tests
+# InternalLiveCounter API Tests
 
 Spec points: `RTLC5`, `RTLC11`–`RTLC13`
 
@@ -23,7 +23,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 |------|-------------|
 | RTLC5c | Returns current data value |
 
-Note: RTLC5a and RTLC5b have been replaced by RTO25. The access API preconditions (OBJECT_SUBSCRIBE mode check and channel state check) are now the caller's responsibility and are tested separately in `objects/unit/rto25_access_preconditions.md`.
+Note: RTLC5a and RTLC5b have been replaced by RTO25. The access API preconditions (OBJECT_SUBSCRIBE mode check and channel state check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO25a/RTO25b sections).
 
 ### Setup
 ```pseudo
@@ -120,7 +120,7 @@ ASSERT root.get("score").value() == 150
 
 **Test ID**: `objects/unit/RTLC12b/increment-requires-publish-0`
 
-Note: RTLC12b, RTLC12c, and RTLC12d have been replaced by RTO26. The write API preconditions (OBJECT_PUBLISH mode check, channel state check, and echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/rto26_write_preconditions.md`.
+Note: RTLC12b, RTLC12c, and RTLC12d have been replaced by RTO26. The write API preconditions (OBJECT_PUBLISH mode check, channel state check, and echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO26a/RTO26b/RTO26c sections).
 
 ---
 

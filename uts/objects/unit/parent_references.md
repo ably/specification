@@ -9,9 +9,9 @@ Unit test — pure data structure, no mocks required.
 
 Tests the `parentReferences` tracking on `LiveObject`, the `addParentReference` and `removeParentReference` methods, the `getFullPaths` graph traversal, and the post-sync rebuild of parentReferences by the ObjectsPool.
 
-`parentReferences` is a `Dict<String, Set<String>>` keyed by parent LiveMap objectId, with each value being the set of keys at which that LiveMap references this LiveObject. These references allow `getFullPaths` to determine every key-path from root to a given object in the LiveObjects graph.
+`parentReferences` is a `Dict<String, Set<String>>` keyed by parent InternalLiveMap objectId, with each value being the set of keys at which that InternalLiveMap references this LiveObject. These references allow `getFullPaths` to determine every key-path from root to a given object in the LiveObjects graph.
 
-Tests operate directly on LiveObject/LiveCounter/LiveMap instances and on ObjectsPool for the post-sync rebuild tests.
+Tests operate directly on LiveObject/InternalLiveCounter/InternalLiveMap instances and on ObjectsPool for the post-sync rebuild tests.
 
 ## Shared Helpers
 
@@ -19,7 +19,7 @@ See `helpers/standard_test_pool.md` for builder functions and STANDARD_POOL_OBJE
 
 ---
 
-## RTLO3f2 - parentReferences initialized to empty map on LiveCounter
+## RTLO3f2 - parentReferences initialized to empty map on InternalLiveCounter
 
 **Test ID**: `objects/unit/RTLO3f2/init-empty-counter-0`
 
@@ -27,7 +27,7 @@ See `helpers/standard_test_pool.md` for builder functions and STANDARD_POOL_OBJE
 
 ### Setup
 ```pseudo
-counter = LiveCounter(objectId: "counter:abc@1000")
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Assertions
@@ -37,7 +37,7 @@ ASSERT counter.parentReferences == {}
 
 ---
 
-## RTLO3f2 - parentReferences initialized to empty map on LiveMap
+## RTLO3f2 - parentReferences initialized to empty map on InternalLiveMap
 
 **Test ID**: `objects/unit/RTLO3f2/init-empty-map-0`
 
@@ -45,7 +45,7 @@ ASSERT counter.parentReferences == {}
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "map:abc@1000", semantics: "LWW")
+map = InternalLiveMap(objectId: "map:abc@1000", semantics: "LWW")
 ```
 
 ### Assertions
@@ -65,8 +65,8 @@ ASSERT map.parentReferences == {}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent = LiveMap(objectId: "map:parent@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent = InternalLiveMap(objectId: "map:parent@1000", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -92,8 +92,8 @@ ASSERT child.parentReferences["map:parent@1000"] == {"score"}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent = LiveMap(objectId: "map:parent@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent = InternalLiveMap(objectId: "map:parent@1000", semantics: "LWW")
 child.parentReferences = { "map:parent@1000": {"score"} }
 ```
 
@@ -113,13 +113,13 @@ ASSERT child.parentReferences["map:parent@1000"] == {"score", "points"}
 
 **Test ID**: `objects/unit/RTLO4g/different-parent-separate-entry-0`
 
-**Spec requirement:** Each parent LiveMap gets its own entry in parentReferences.
+**Spec requirement:** Each parent InternalLiveMap gets its own entry in parentReferences.
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent_a = LiveMap(objectId: "map:a@1000", semantics: "LWW")
-parent_b = LiveMap(objectId: "map:b@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent_a = InternalLiveMap(objectId: "map:a@1000", semantics: "LWW")
+parent_b = InternalLiveMap(objectId: "map:b@1000", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -144,9 +144,9 @@ ASSERT child.parentReferences["map:b@1000"] == {"y"}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent_a = LiveMap(objectId: "map:a@1000", semantics: "LWW")
-parent_b = LiveMap(objectId: "map:b@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent_a = InternalLiveMap(objectId: "map:a@1000", semantics: "LWW")
+parent_b = InternalLiveMap(objectId: "map:b@1000", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -173,8 +173,8 @@ ASSERT child.parentReferences["map:b@1000"] == {"p", "q"}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent = LiveMap(objectId: "map:parent@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent = InternalLiveMap(objectId: "map:parent@1000", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -199,8 +199,8 @@ ASSERT child.parentReferences == {}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent = LiveMap(objectId: "map:parent@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent = InternalLiveMap(objectId: "map:parent@1000", semantics: "LWW")
 child.parentReferences = { "map:parent@1000": {"score", "points"} }
 ```
 
@@ -227,8 +227,8 @@ ASSERT child.parentReferences["map:parent@1000"] == {"points"}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent = LiveMap(objectId: "map:parent@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent = InternalLiveMap(objectId: "map:parent@1000", semantics: "LWW")
 child.parentReferences = { "map:parent@1000": {"score"} }
 ```
 
@@ -253,8 +253,8 @@ ASSERT child.parentReferences == {}
 
 ### Setup
 ```pseudo
-child = LiveCounter(objectId: "counter:child@1000")
-parent = LiveMap(objectId: "map:parent@1000", semantics: "LWW")
+child = InternalLiveCounter(objectId: "counter:child@1000")
+parent = InternalLiveMap(objectId: "map:parent@1000", semantics: "LWW")
 child.parentReferences = { "map:parent@1000": {"score"} }
 ```
 
@@ -307,7 +307,7 @@ Tests that a LiveObject referenced directly from root at key "score" returns [["
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-counter = LiveCounter(objectId: "counter:score@1000")
+counter = InternalLiveCounter(objectId: "counter:score@1000")
 pool["counter:score@1000"] = counter
 
 root = pool["root"]
@@ -336,15 +336,15 @@ Tests the path root --"profile"--> map:profile --"prefs"--> map:prefs --"theme_c
 pool = ObjectsPool()
 root = pool["root"]
 
-profile = LiveMap(objectId: "map:profile@1000", semantics: "LWW")
+profile = InternalLiveMap(objectId: "map:profile@1000", semantics: "LWW")
 pool["map:profile@1000"] = profile
 profile.addParentReference(root, "profile")
 
-prefs = LiveMap(objectId: "map:prefs@1000", semantics: "LWW")
+prefs = InternalLiveMap(objectId: "map:prefs@1000", semantics: "LWW")
 pool["map:prefs@1000"] = prefs
 prefs.addParentReference(profile, "prefs")
 
-theme_counter = LiveCounter(objectId: "counter:theme@1000")
+theme_counter = InternalLiveCounter(objectId: "counter:theme@1000")
 pool["counter:theme@1000"] = theme_counter
 theme_counter.addParentReference(prefs, "theme_counter")
 ```
@@ -374,15 +374,15 @@ Tests a diamond: root --"a"--> map:A --"x"--> counter:leaf, and root --"b"--> ma
 pool = ObjectsPool()
 root = pool["root"]
 
-map_a = LiveMap(objectId: "map:a@1000", semantics: "LWW")
+map_a = InternalLiveMap(objectId: "map:a@1000", semantics: "LWW")
 pool["map:a@1000"] = map_a
 map_a.addParentReference(root, "a")
 
-map_b = LiveMap(objectId: "map:b@1000", semantics: "LWW")
+map_b = InternalLiveMap(objectId: "map:b@1000", semantics: "LWW")
 pool["map:b@1000"] = map_b
 map_b.addParentReference(root, "b")
 
-leaf = LiveCounter(objectId: "counter:leaf@1000")
+leaf = InternalLiveCounter(objectId: "counter:leaf@1000")
 pool["counter:leaf@1000"] = leaf
 leaf.addParentReference(map_a, "x")
 leaf.addParentReference(map_b, "y")
@@ -414,7 +414,7 @@ Tests that when a parent map references the same child at two different keys, tw
 pool = ObjectsPool()
 root = pool["root"]
 
-child = LiveCounter(objectId: "counter:child@1000")
+child = InternalLiveCounter(objectId: "counter:child@1000")
 pool["counter:child@1000"] = child
 child.addParentReference(root, "primary")
 child.addParentReference(root, "alias")
@@ -440,7 +440,7 @@ ASSERT paths CONTAINS ["alias"]
 ```pseudo
 pool = ObjectsPool()
 
-orphan = LiveCounter(objectId: "counter:orphan@1000")
+orphan = InternalLiveCounter(objectId: "counter:orphan@1000")
 pool["counter:orphan@1000"] = orphan
 ```
 
@@ -468,11 +468,11 @@ Tests that a cycle in parentReferences does not cause infinite traversal. Graph:
 pool = ObjectsPool()
 root = pool["root"]
 
-map_a = LiveMap(objectId: "map:a@1000", semantics: "LWW")
+map_a = InternalLiveMap(objectId: "map:a@1000", semantics: "LWW")
 pool["map:a@1000"] = map_a
 map_a.addParentReference(root, "a")
 
-map_b = LiveMap(objectId: "map:b@1000", semantics: "LWW")
+map_b = InternalLiveMap(objectId: "map:b@1000", semantics: "LWW")
 pool["map:b@1000"] = map_b
 map_b.addParentReference(map_a, "b")
 
@@ -508,19 +508,19 @@ Tests a graph where root has two branches that converge on a deeply nested objec
 pool = ObjectsPool()
 root = pool["root"]
 
-map_l = LiveMap(objectId: "map:l@1000", semantics: "LWW")
+map_l = InternalLiveMap(objectId: "map:l@1000", semantics: "LWW")
 pool["map:l@1000"] = map_l
 map_l.addParentReference(root, "left")
 
-map_r = LiveMap(objectId: "map:r@1000", semantics: "LWW")
+map_r = InternalLiveMap(objectId: "map:r@1000", semantics: "LWW")
 pool["map:r@1000"] = map_r
 map_r.addParentReference(root, "right")
 
-map_m = LiveMap(objectId: "map:m@1000", semantics: "LWW")
+map_m = InternalLiveMap(objectId: "map:m@1000", semantics: "LWW")
 pool["map:m@1000"] = map_m
 map_m.addParentReference(map_l, "mid")
 
-target = LiveCounter(objectId: "counter:t@1000")
+target = InternalLiveCounter(objectId: "counter:t@1000")
 pool["counter:t@1000"] = target
 target.addParentReference(map_m, "target")
 target.addParentReference(map_r, "target")
@@ -536,16 +536,16 @@ ASSERT paths CONTAINS ["right", "target"]
 
 ---
 
-## RTO5c10 - Post-sync rebuild populates parentReferences from LiveMap entries
+## RTO5c10 - Post-sync rebuild populates parentReferences from InternalLiveMap entries
 
 **Test ID**: `objects/unit/RTO5c10/rebuild-from-sync-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTO5c10a | For each LiveObject in the ObjectsPool, reset parentReferences to empty map |
-| RTO5c10b | For each LiveMap, iterate entries; for each entry whose value is a LiveObject, call addParentReference on that LiveObject |
+| RTO5c10b | For each InternalLiveMap, iterate entries; for each entry whose value is a LiveObject, call addParentReference on that LiveObject |
 
-Tests that after a sync completes, parentReferences are rebuilt from the LiveMap entries received during sync.
+Tests that after a sync completes, parentReferences are rebuilt from the InternalLiveMap entries received during sync.
 
 ### Setup
 ```pseudo
@@ -621,7 +621,7 @@ ASSERT nested.getFullPaths() CONTAINS ["profile", "nested"]
 | Spec | Requirement |
 |------|-------------|
 | RTO5c10a | For each LiveObject, reset parentReferences to the initial value (empty map) |
-| RTO5c10b | Then rebuild from current LiveMap entries |
+| RTO5c10b | Then rebuild from current InternalLiveMap entries |
 
 Tests that parentReferences from a previous sync are cleared and rebuilt from the new sync data, even when objects are reused across syncs.
 
@@ -692,7 +692,7 @@ ASSERT paths.length == 1
 
 **Test ID**: `objects/unit/RTO5c10/unreferenced-empty-refs-0`
 
-**Spec requirement:** Objects that exist in the pool but are not referenced by any LiveMap entry have empty parentReferences after rebuild.
+**Spec requirement:** Objects that exist in the pool but are not referenced by any InternalLiveMap entry have empty parentReferences after rebuild.
 
 ### Setup
 ```pseudo
@@ -725,7 +725,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
 ```pseudo
 ASSERT pool.syncState == SYNCED
 
-# The counter exists in the pool but no LiveMap entry points to it
+# The counter exists in the pool but no InternalLiveMap entry points to it
 orphan = pool["counter:orphan@1000"]
 ASSERT orphan.parentReferences == {}
 

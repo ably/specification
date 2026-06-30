@@ -170,6 +170,11 @@ ASSERT error.code == 40003
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 events = []
 root.subscribe((event) => events.append(event), { depth: 1 })
+// Quiescence control: an unlimited-depth root listener that DOES cover the out-of-scope child path,
+// so it fires on the send below and gives us a delivery to await (Negative-assertion quiescence,
+// helpers/standard_test_pool.md).
+control = []
+root.subscribe((event) => control.append(event))
 ```
 
 ### Test Steps
@@ -179,9 +184,13 @@ mock_ws.send_to_client(build_object_message("test", [
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
+control_before = control.length
 mock_ws.send_to_client(build_object_message("test", [
   build_counter_inc("counter:score@1000", 7, "100", "remote")
 ]))
+// Negative-assertion quiescence: the unlimited-depth control covers ["score"], so await its delivery
+// for this dispatch, THEN assert the depth-1 listener did NOT fire on the out-of-scope child update.
+poll_until(control.length > control_before, timeout: 5s)
 ```
 
 ### Assertions
@@ -202,23 +211,36 @@ ASSERT events.length == 1
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 events = []
 root.subscribe((event) => events.append(event), { depth: 2 })
+// Quiescence control: an unlimited-depth root listener that covers the out-of-scope grandchild path,
+// so it fires on the send below (Negative-assertion quiescence, helpers/standard_test_pool.md).
+control = []
+root.subscribe((event) => control.append(event))
 ```
 
 ### Test Steps
 ```pseudo
+// Self event (root map update) — candidate [] is covered at depth 2.
 mock_ws.send_to_client(build_object_message("test", [
   build_map_set("root", "name", { string: "Bob" }, "99", "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
+// Child event (root["score"] counter) — candidate ["score"], relativeDepth 1-0+1 = 2 <= 2, covered.
 mock_ws.send_to_client(build_object_message("test", [
   build_counter_inc("counter:score@1000", 7, "100", "remote")
 ]))
 poll_until(events.length >= 2, timeout: 5s)
 
+// Grandchild event (root["profile"]["nested_counter"] counter) — candidate ["profile","nested_counter"],
+// relativeDepth 2-0+1 = 3 > 2, NOT covered. A COUNTER_INC yields ONLY this single candidate (no key
+// candidate), unlike a MAP_SET on a child map which would also emit the covered parent-map path (RTO24b2a1).
+control_before = control.length
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("map:profile@1000", "email", { string: "bob@example.com" }, "101", "remote")
+  build_counter_inc("counter:nested@1000", 1, "101", "remote")
 ]))
+// Negative-assertion quiescence: the unlimited-depth control covers ["profile","nested_counter"], so await
+// its delivery for this dispatch, THEN assert the depth-2 listener did NOT fire on the grandchild update.
+poll_until(control.length > control_before, timeout: 5s)
 ```
 
 ### Assertions
@@ -277,6 +299,10 @@ ASSERT events.length >= 3
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 events = []
 sub = root.get("score").subscribe((event) => events.append(event))
+// Quiescence control: a separate, still-subscribed listener on the same (live) object that WILL fire
+// on the send below, giving a delivery to await (Negative-assertion quiescence, helpers/standard_test_pool.md).
+control = []
+root.get("score").subscribe((event) => control.append(event))
 ```
 
 ### Test Steps
@@ -287,6 +313,9 @@ sub.unsubscribe()
 mock_ws.send_to_client(build_object_message("test", [
   build_counter_inc("counter:score@1000", 7, "99", "remote")
 ]))
+// Negative-assertion quiescence: the separate control listener (still subscribed) fires on this
+// dispatch; await it, THEN assert the unsubscribed listener did not fire.
+poll_until(control.length >= 1, timeout: 5s)
 ```
 
 ### Assertions
@@ -575,32 +604,48 @@ ASSERT events.length >= 2
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+// Seed a grandchild OBJECT under profile.prefs (path ["profile","prefs","deep"]) so the grandchild
+// stimulus below can be a COUNTER_INC yielding ONLY that single depth-3 candidate. Sent BEFORE
+// subscribing, so it does not fire the listener under test. (RTO6 zero-value-creates counter:deep@3000.)
+mock_ws.send_to_client(build_object_message("test", [
+  build_map_set("map:prefs@1000", "deep", { objectId: "counter:deep@3000" }, "50", "remote")
+]))
 events = []
 // Subscribe at "profile" with depth 2:
-// self (profile) -> eventPath=["profile"], subPath=["profile"], 1 - 1 + 1 = 1 <= 2 yes
-// child (profile.email) -> eventPath=["profile","email"], subPath=["profile"], 2 - 1 + 1 = 2 <= 2 yes
-// grandchild (profile.prefs.theme) -> eventPath=["profile","prefs","theme"], subPath=["profile"], 3 - 1 + 1 = 3 > 2 no
+// self (profile)          -> eventPath=["profile"],                  1 - 1 + 1 = 1 <= 2  yes
+// child (profile.nested)  -> eventPath=["profile","nested_counter"], 2 - 1 + 1 = 2 <= 2  yes
+// grandchild (prefs.deep) -> eventPath=["profile","prefs","deep"],   3 - 1 + 1 = 3 > 2   no
 root.get("profile").subscribe((event) => events.append(event), { depth: 2 })
+// Quiescence control: an unlimited-depth root listener that covers the out-of-scope grandchild path,
+// so it fires on the grandchild send below (Negative-assertion quiescence, helpers/standard_test_pool.md).
+control = []
+root.subscribe((event) => control.append(event))
 ```
 
 ### Test Steps
 ```pseudo
-// Self event (profile map update)
+// Self event (profile map update) — first covered candidate is ["profile"].
 mock_ws.send_to_client(build_object_message("test", [
   build_map_set("map:profile@1000", "email", { string: "bob@example.com" }, "99", "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
-// Child event (nested counter)
+// Child event (nested counter at ["profile","nested_counter"], relativeDepth 2) — covered.
 mock_ws.send_to_client(build_object_message("test", [
   build_counter_inc("counter:nested@1000", 3, "100", "remote")
 ]))
 poll_until(events.length >= 2, timeout: 5s)
 
-// Grandchild event (prefs.theme) — should NOT be received
+// Grandchild event (counter:deep at ["profile","prefs","deep"], relativeDepth 3) — should NOT be received.
+// A COUNTER_INC yields ONLY this single depth-3 candidate (no shallower covered candidate, unlike a
+// MAP_SET on map:prefs which would also emit the covered ["profile","prefs"] path per RTO24b2a1).
+control_before = control.length
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("map:prefs@1000", "theme", { string: "light" }, "101", "remote")
+  build_counter_inc("counter:deep@3000", 1, "101", "remote")
 ]))
+// Negative-assertion quiescence: the unlimited-depth control covers ["profile","prefs","deep"], so
+// await its delivery for this dispatch, THEN assert the depth-2 listener did NOT fire on the grandchild.
+poll_until(control.length > control_before, timeout: 5s)
 ```
 
 ### Assertions
@@ -626,6 +671,11 @@ Tests that a subscription at one path does not receive events for a sibling path
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 profile_events = []
 root.get("profile").subscribe((event) => profile_events.append(event))
+// Control listener at root: fires on both out-of-scope sends below, providing a
+// delivery to await on the same dispatch (Negative-assertion quiescence,
+// helpers/standard_test_pool.md) before asserting profile_events is unchanged.
+control_events = []
+root.subscribe((event) => control_events.append(event))
 ```
 
 ### Test Steps
@@ -639,6 +689,9 @@ mock_ws.send_to_client(build_object_message("test", [
 mock_ws.send_to_client(build_object_message("test", [
   build_map_set("root", "name", { string: "Bob" }, "100", "remote")
 ]))
+// QUIESCENCE: await the control listener (fires for both sends) so that any
+// profile_events callback would also have run before we assert it is unchanged.
+poll_until(control_events.length >= 2, timeout: 5s)
 ```
 
 ### Assertions
@@ -795,10 +848,21 @@ mock_ws.send_to_client(build_object_message("test", [
   build_map_set("root", "score", { objectId: "counter:new@2000" }, "99", "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
+
+// QUIESCENCE: a second, single-candidate dispatch acts as the control delivery
+// (Negative-assertion quiescence, helpers/standard_test_pool.md). Awaiting it
+// guarantees any spurious second callback from the first (multi-candidate)
+// dispatch would already have run, so events.length == 2 confirms the first
+// dispatch fired exactly once.
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:new@2000", 1, "100", "remote")
+]))
+poll_until(events.length >= 2, timeout: 5s)
 ```
 
 ### Assertions
 ```pseudo
-// Exactly one event per dispatch, even though multiple candidates match
-ASSERT events.length == 1
+// Exactly one event per dispatch, even though multiple candidates match:
+// one from the multi-candidate MAP_SET + one from the control increment.
+ASSERT events.length == 2
 ```

@@ -1,4 +1,4 @@
-# LiveMap Tests
+# InternalLiveMap Tests
 
 Spec points: `RTLM1`–`RTLM9`, `RTLM14`–`RTLM16`, `RTLM18`–`RTLM19`, `RTLM22`–`RTLM25`, `RTLO3`, `RTLO4a`, `RTLO4e`, `RTLO4g`, `RTLO4h`, `RTLO5`, `RTLO6`
 
@@ -7,9 +7,9 @@ Unit test — pure data structure, no mocks required.
 
 ## Purpose
 
-Tests the `LiveMap` LWW-map CRDT data structure. LiveMap holds a dictionary of `ObjectsMapEntry` values with entry-level last-write-wins semantics, supports set/remove/clear operations, create operations (initial entries merge), data replacement during sync, tombstoning, GC of tombstoned entries, diff calculation, and parentReferences maintenance.
+Tests the `InternalLiveMap` LWW-map CRDT data structure. InternalLiveMap holds a dictionary of `ObjectsMapEntry` values with entry-level last-write-wins semantics, supports set/remove/clear operations, create operations (initial entries merge), data replacement during sync, tombstoning, GC of tombstoned entries, diff calculation, and parentReferences maintenance.
 
-Tests operate directly on LiveMap by calling `applyOperation()` and `replaceData()` with constructed messages.
+Tests operate directly on InternalLiveMap by calling `applyOperation()` and `replaceData()` with constructed messages.
 
 ## Shared Helpers
 
@@ -17,18 +17,18 @@ See `helpers/standard_test_pool.md` for builder functions.
 
 ---
 
-## RTLM4 - Zero-value LiveMap
+## RTLM4 - Zero-value InternalLiveMap
 
 **Test ID**: `objects/unit/RTLM4/zero-value-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTLM4 | Zero-value LiveMap has empty data map and null clearTimeserial |
+| RTLM4 | Zero-value InternalLiveMap has empty data map and null clearTimeserial |
 | RTLM25 | clearTimeserial initially null |
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 ```
 
 ### Assertions
@@ -53,7 +53,7 @@ ASSERT map.siteTimeserials == {}
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -86,7 +86,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
 }
@@ -119,7 +119,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "05", tombstone: false }
 }
@@ -147,7 +147,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "05", tombstone: false }
 }
@@ -175,7 +175,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "", tombstone: false }
 }
@@ -190,7 +190,11 @@ update = map.applyOperation(msg, source: CHANNEL)
 ### Assertions
 ```pseudo
 ASSERT map.data["name"].data == { string: "Alice" }
-ASSERT update.noop == true
+# The op's ObjectMessage.serial is empty, so the OBJECT-level gate (RTLO4a3, via canApplyOperation)
+# rejects it before the entry-level RTLM9b comparison, and applyOperation returns false (RTLM15b).
+# (NOTE: RTLM9b's "both serials empty" case is thus unreachable via applyOperation — a spec layering
+# tension worth raising upstream; the observable result here is a plain false, not a noop update.)
+ASSERT update == false
 ```
 
 ---
@@ -203,7 +207,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: null, tombstone: false }
 }
@@ -232,7 +236,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.clearTimeserial = "05"
 ```
 
@@ -259,12 +263,12 @@ ASSERT update.noop == true
 | RTLM7g | If MapSet.value.objectId is non-empty, create zero-value LiveObject |
 | RTLM7g1 | Create via RTO6 |
 
-This test requires an ObjectsPool to be passed alongside the LiveMap. The LiveMap creates a zero-value object in the pool when it encounters an objectId reference.
+This test requires an ObjectsPool to be passed alongside the InternalLiveMap. The InternalLiveMap creates a zero-value object in the pool when it encounters an objectId reference.
 
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 ```
 
 ### Test Steps
@@ -276,7 +280,7 @@ map.applyOperation(msg, source: CHANNEL)
 ### Assertions
 ```pseudo
 ASSERT "counter:new@2000" IN pool
-ASSERT pool["counter:new@2000"] IS LiveCounter
+ASSERT pool["counter:new@2000"] IS InternalLiveCounter
 ASSERT pool["counter:new@2000"].data == 0
 ```
 
@@ -296,7 +300,7 @@ ASSERT pool["counter:new@2000"].data == 0
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
 }
@@ -333,7 +337,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -360,7 +364,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.clearTimeserial = "05"
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "04", tombstone: false }
@@ -394,7 +398,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "old":  { data: { string: "old" },  timeserial: "02", tombstone: false },
   "new":  { data: { string: "new" },  timeserial: "06", tombstone: false },
@@ -412,9 +416,11 @@ update = map.applyOperation(msg, source: CHANNEL)
 ```pseudo
 ASSERT map.clearTimeserial == "04"
 ASSERT "old" NOT IN map.data
-ASSERT "same" NOT IN map.data
+# RTLM24e1: an entry is removed only if the clear serial is lexicographically GREATER than the entry's
+# timeserial. "same" has timeserial "04" == the clear serial "04" (not greater), so it is KEPT.
+ASSERT "same" IN map.data
 ASSERT "new" IN map.data
-ASSERT update.update == { "old": "removed", "same": "removed" }
+ASSERT update.update == { "old": "removed" }
 ASSERT update.objectMessage == msg
 ```
 
@@ -428,7 +434,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.clearTimeserial = "10"
 ```
 
@@ -460,7 +466,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "map:test@1000", semantics: "LWW")
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -494,7 +500,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "map:test@1000", semantics: "LWW")
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW")
 map.createOperationIsMerged = true
 map.siteTimeserials = { "site1": "00" }
 ```
@@ -524,7 +530,7 @@ ASSERT update.noop == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -548,7 +554,7 @@ ASSERT map.siteTimeserials["site1"] == "01"
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.isTombstone = true
 ```
 
@@ -580,7 +586,7 @@ ASSERT map.data == {}
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false },
   "age":  { data: { number: 30 },      timeserial: "01", tombstone: false }
@@ -617,11 +623,11 @@ ASSERT update.objectMessage == msg
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-tombstoned_counter = LiveCounter(objectId: "counter:dead@1000")
+tombstoned_counter = InternalLiveCounter(objectId: "counter:dead@1000")
 tombstoned_counter.isTombstone = true
 pool["counter:dead@1000"] = tombstoned_counter
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "alive":     { data: { string: "ok" },                         timeserial: "01", tombstone: false },
   "dead_entry": { data: null,                                     timeserial: "01", tombstone: true },
@@ -652,7 +658,7 @@ ASSERT isTombstoned(map.data["dead_ref"]) == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "old": { data: { string: "old" }, timeserial: "01", tombstone: false }
 }
@@ -694,7 +700,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -725,7 +731,7 @@ ASSERT map.data["dead"].tombstonedAt == 1700000050000
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "map:test@1000", semantics: "LWW")
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -771,7 +777,7 @@ ASSERT map.createOperationIsMerged == true
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
 }
@@ -805,7 +811,7 @@ ASSERT update.objectMessage == state_msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 grace_period = 86400000
 now = 1700100000000
 
@@ -860,7 +866,7 @@ newData = {
 
 ### Test Steps
 ```pseudo
-update = LiveMap.diff(previousData, newData)
+update = InternalLiveMap.diff(previousData, newData)
 ```
 
 ### Assertions
@@ -883,7 +889,7 @@ ASSERT "now_dead" NOT IN update.update
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 ```
 
 ### Test Steps
@@ -910,7 +916,7 @@ ASSERT result == false
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.clearTimeserial = "05"
 map.data = {
   "x": { data: { number: 1 }, timeserial: "03", tombstone: false }
@@ -947,11 +953,11 @@ ASSERT "y" IN map.data
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-tombstoned_counter = LiveCounter(objectId: "counter:dead@1000")
+tombstoned_counter = InternalLiveCounter(objectId: "counter:dead@1000")
 tombstoned_counter.isTombstone = true
 pool["counter:dead@1000"] = tombstoned_counter
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "ref": { data: { objectId: "counter:dead@1000" }, timeserial: "01", tombstone: false }
 }
@@ -981,7 +987,7 @@ ASSERT map.get("ref") == null
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "name": { data: null, timeserial: "01", tombstone: true, tombstonedAt: 1700000000000 }
 }
@@ -1012,7 +1018,7 @@ ASSERT update.objectMessage == msg
 
 ### Setup
 ```pseudo
-map = LiveMap(objectId: "root", semantics: "LWW")
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
   "before":  { data: { string: "a" }, timeserial: "03", tombstone: false },
   "after":   { data: { string: "b" }, timeserial: "07", tombstone: false },
@@ -1054,12 +1060,12 @@ Tests that when MAP_SET overwrites an entry whose value is a LiveObject with a n
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-old_counter = LiveCounter(objectId: "counter:old@1000")
-new_counter = LiveCounter(objectId: "counter:new@2000")
+old_counter = InternalLiveCounter(objectId: "counter:old@1000")
+new_counter = InternalLiveCounter(objectId: "counter:new@2000")
 pool["counter:old@1000"] = old_counter
 pool["counter:new@2000"] = new_counter
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "ref": { data: { objectId: "counter:old@1000" }, timeserial: "01", tombstone: false }
 }
@@ -1100,10 +1106,10 @@ Tests that when MAP_SET creates a new entry whose value is a LiveObject, addPare
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-child_counter = LiveCounter(objectId: "counter:child@1000")
+child_counter = InternalLiveCounter(objectId: "counter:child@1000")
 pool["counter:child@1000"] = child_counter
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 ```
 
 ### Test Steps
@@ -1131,10 +1137,10 @@ ASSERT update.objectMessage == msg
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-old_counter = LiveCounter(objectId: "counter:old@1000")
+old_counter = InternalLiveCounter(objectId: "counter:old@1000")
 pool["counter:old@1000"] = old_counter
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "ref": { data: { objectId: "counter:old@1000" }, timeserial: "01", tombstone: false }
 }
@@ -1173,10 +1179,10 @@ Tests that when MAP_REMOVE tombstones an entry whose value is a LiveObject, remo
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-child_counter = LiveCounter(objectId: "counter:child@1000")
+child_counter = InternalLiveCounter(objectId: "counter:child@1000")
 pool["counter:child@1000"] = child_counter
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "score": { data: { objectId: "counter:child@1000" }, timeserial: "01", tombstone: false }
 }
@@ -1209,7 +1215,7 @@ ASSERT update.objectMessage == msg
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
 }
@@ -1245,12 +1251,12 @@ Tests that when MAP_CLEAR removes entries that reference LiveObjects, removePare
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-counter_a = LiveCounter(objectId: "counter:a@1000")
-counter_b = LiveCounter(objectId: "counter:b@1000")
+counter_a = InternalLiveCounter(objectId: "counter:a@1000")
+counter_b = InternalLiveCounter(objectId: "counter:b@1000")
 pool["counter:a@1000"] = counter_a
 pool["counter:b@1000"] = counter_b
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "ref_a":     { data: { objectId: "counter:a@1000" }, timeserial: "02", tombstone: false },
   "ref_b":     { data: { objectId: "counter:b@1000" }, timeserial: "02", tombstone: false },
@@ -1283,7 +1289,7 @@ ASSERT update.objectMessage == msg
 
 ---
 
-## RTLO4e9 - parentReferences: tombstone LiveMap removes parent references for all entries
+## RTLO4e9 - parentReferences: tombstone InternalLiveMap removes parent references for all entries
 
 **Test ID**: `objects/unit/RTLO4e9/tombstone-map-parent-refs-0`
 
@@ -1292,17 +1298,17 @@ ASSERT update.objectMessage == msg
 | RTLO4e9a | Before clearing data, for each entry check if it has objectId |
 | RTLO4e9b | If entry references a LiveObject, call removeParentReference on the child |
 
-Tests that when a LiveMap is tombstoned (via OBJECT_DELETE), removeParentReference is called for each entry that references a LiveObject before the data is cleared.
+Tests that when a InternalLiveMap is tombstoned (via OBJECT_DELETE), removeParentReference is called for each entry that references a LiveObject before the data is cleared.
 
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-child_counter = LiveCounter(objectId: "counter:child@1000")
-child_map = LiveMap(objectId: "map:child@1000", semantics: "LWW")
+child_counter = InternalLiveCounter(objectId: "counter:child@1000")
+child_map = InternalLiveMap(objectId: "map:child@1000", semantics: "LWW")
 pool["counter:child@1000"] = child_counter
 pool["map:child@1000"] = child_map
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "counter_ref": { data: { objectId: "counter:child@1000" }, timeserial: "01", tombstone: false },
   "map_ref":     { data: { objectId: "map:child@1000" },     timeserial: "01", tombstone: false },
@@ -1347,12 +1353,12 @@ Tests that both removeParentReference and addParentReference are called in the c
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-old_map = LiveMap(objectId: "map:old@1000", semantics: "LWW")
-new_map = LiveMap(objectId: "map:new@2000", semantics: "LWW")
+old_map = InternalLiveMap(objectId: "map:old@1000", semantics: "LWW")
+new_map = InternalLiveMap(objectId: "map:new@2000", semantics: "LWW")
 pool["map:old@1000"] = old_map
 pool["map:new@2000"] = new_map
 
-map = LiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
 map.data = {
   "child": { data: { objectId: "map:old@1000" }, timeserial: "01", tombstone: false }
 }
