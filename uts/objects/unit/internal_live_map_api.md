@@ -1,4 +1,4 @@
-# LiveMap API Tests
+# InternalLiveMap API Tests
 
 Spec points: `RTLM5`, `RTLM10`–`RTLM13`, `RTLM20`–`RTLM21`, `RTLM24`, `RTLMV4`, `RTLCV4`
 
@@ -15,7 +15,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 
 ---
 
-## RTLM5 - get() returns resolved value from LiveMap
+## RTLM5 - get() returns resolved value from InternalLiveMap
 
 **Test ID**: `objects/unit/RTLM5/get-string-value-0`
 
@@ -23,7 +23,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 |------|-------------|
 | RTLM5d2 | Returns value at key, resolved per RTLM5d2 |
 
-Note: RTLM5b and RTLM5c have been replaced by RTO25. The access API preconditions (OBJECT_SUBSCRIBE mode check and channel state check) are now the caller's responsibility and are tested separately in `objects/unit/rto25_access_preconditions.md`.
+Note: RTLM5b and RTLM5c have been replaced by RTO25. The access API preconditions (OBJECT_SUBSCRIBE mode check and channel state check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO25a/RTO25b sections).
 
 ### Setup
 ```pseudo
@@ -61,7 +61,7 @@ ASSERT root.get("nonexistent").value() == null
 
 **Test ID**: `objects/unit/RTLM5/get-objectid-reference-0`
 
-**Spec requirement:** If data.objectId exists, resolve from pool. Return LiveCounter/LiveMap.
+**Spec requirement:** If data.objectId exists, resolve from pool. Return InternalLiveCounter/InternalLiveMap.
 
 ### Setup
 ```pseudo
@@ -84,7 +84,7 @@ ASSERT root.get("profile").get("email").value() == "alice@example.com"
 |------|-------------|
 | RTLM10d | Returns number of non-tombstoned entries |
 
-Note: RTLM10b and RTLM10c have been replaced by RTO25. The access API preconditions are now the caller's responsibility and are tested separately in `objects/unit/rto25_access_preconditions.md`.
+Note: RTLM10b and RTLM10c have been replaced by RTO25. The access API preconditions are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO25a/RTO25b sections).
 
 ### Setup
 ```pseudo
@@ -106,7 +106,7 @@ ASSERT root.size() == 7
 |------|-------------|
 | RTLM11d | Returns non-tombstoned key-value pairs |
 
-Note: RTLM11b and RTLM11c have been replaced by RTO25. The access API preconditions are now the caller's responsibility and are tested separately in `objects/unit/rto25_access_preconditions.md`.
+Note: RTLM11b and RTLM11c have been replaced by RTO25. The access API preconditions are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO25a/RTO25b sections).
 
 ### Setup
 ```pseudo
@@ -162,15 +162,15 @@ ASSERT "name" IN keys
 
 | Spec | Requirement |
 |------|-------------|
-| RTLM20a3 | value parameter accepts Boolean, Binary, Number, String, JsonArray, JsonObject, LiveCounterValueType, or LiveMapValueType |
+| RTLM20a3 | value parameter accepts Boolean, Binary, Number, String, JsonArray, JsonObject, LiveCounter, or LiveMap |
 | RTLM20e1 | Validates key and value per RTLMV4b and RTLMV4c |
 | RTLM20e2 | action set to MAP_SET |
-| RTLM20e3 | objectId set to LiveMap's objectId |
+| RTLM20e3 | objectId set to InternalLiveMap's objectId |
 | RTLM20e6 | mapSet.key set |
 | RTLM20e7c | mapSet.value.string for string value |
 | RTLM20h2 | For non-value-type values, MAP_SET ObjectMessage is passed as single element |
 
-Note: RTLM20b, RTLM20c, and RTLM20d have been replaced by RTO26. The write API preconditions (OBJECT_PUBLISH mode check, channel state check, and echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/rto26_write_preconditions.md`.
+Note: RTLM20b, RTLM20c, and RTLM20d have been replaced by RTO26. The write API preconditions (OBJECT_PUBLISH mode check, channel state check, and echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO26a/RTO26b/RTO26c sections).
 
 ### Setup
 ```pseudo
@@ -249,13 +249,13 @@ ASSERT captured_messages[2].state[0].operation.mapSet.value.json == {"nested": t
 
 ---
 
-## RTLM20e7g - set() with LiveCounterValueType generates COUNTER_CREATE + MAP_SET
+## RTLM20e7g - set() with LiveCounter generates COUNTER_CREATE + MAP_SET
 
 **Test ID**: `objects/unit/RTLM20e7g/set-counter-value-type-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTLM20e7g1 | Evaluate LiveCounterValueType per RTLCV4 to generate COUNTER_CREATE ObjectMessage |
+| RTLM20e7g1 | Evaluate LiveCounter per RTLCV4 to generate COUNTER_CREATE ObjectMessage |
 | RTLM20e7g2 | Set mapSet.value.objectId to the objectId from the generated ObjectMessage |
 | RTLM20h1 | Array contains *_CREATE ObjectMessages followed by MAP_SET ObjectMessage |
 
@@ -283,13 +283,13 @@ ASSERT state[1].operation.mapSet.value.objectId == state[0].operation.objectId
 
 ---
 
-## RTLM20e7g - set() with LiveMapValueType generates nested CREATE messages + MAP_SET
+## RTLM20e7g - set() with LiveMap generates nested CREATE messages + MAP_SET
 
 **Test ID**: `objects/unit/RTLM20e7g/set-map-value-type-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTLM20e7g1 | Evaluate LiveMapValueType per RTLMV4 to generate ordered list of ObjectMessages |
+| RTLM20e7g1 | Evaluate LiveMap per RTLMV4 to generate ordered list of ObjectMessages |
 | RTLM20e7g2 | Set mapSet.value.objectId to the objectId from the final ObjectMessage in the list |
 | RTLM20h1 | Array contains *_CREATE ObjectMessages followed by MAP_SET ObjectMessage |
 
@@ -318,17 +318,17 @@ ASSERT state[1].operation.mapSet.value.objectId == state[0].operation.objectId
 
 ---
 
-## RTLM20h1 - set() with nested LiveMapValueType containing LiveCounterValueType
+## RTLM20h1 - set() with nested LiveMap containing LiveCounter
 
 **Test ID**: `objects/unit/RTLM20h1/set-nested-value-types-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTLM20h1 | Array contains all *_CREATE ObjectMessages followed by MAP_SET |
-| RTLMV4d1 | Nested LiveCounterValueType is evaluated per RTLCV4 |
-| RTLMV4d2 | Nested LiveMapValueType is recursively evaluated per RTLMV4 |
+| RTLMV4d1 | Nested LiveCounter is evaluated per RTLCV4 |
+| RTLMV4d2 | Nested LiveMap is recursively evaluated per RTLMV4 |
 
-Tests that when a LiveMapValueType contains a nested LiveCounterValueType, all CREATE messages appear before the MAP_SET in depth-first order.
+Tests that when a LiveMap contains a nested LiveCounter, all CREATE messages appear before the MAP_SET in depth-first order.
 
 ### Setup
 ```pseudo
@@ -371,7 +371,7 @@ ASSERT state[2].operation.mapSet.value.objectId == state[1].operation.objectId
 | RTLM21e2 | action set to MAP_REMOVE |
 | RTLM21e5 | mapRemove.key set |
 
-Note: RTLM21b, RTLM21c, and RTLM21d have been replaced by RTO26. The write API preconditions are now the caller's responsibility and are tested separately in `objects/unit/rto26_write_preconditions.md`.
+Note: RTLM21b, RTLM21c, and RTLM21d have been replaced by RTO26. The write API preconditions are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO26a/RTO26b/RTO26c sections).
 
 ### Setup
 ```pseudo
@@ -398,7 +398,7 @@ ASSERT obj_msg.operation.mapRemove.key == "name"
 
 **Test ID**: `objects/unit/RTLM20d/echo-messages-false-0`
 
-Note: RTLM20d and RTLM21d have been replaced by RTO26. The write API preconditions (including the echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/rto26_write_preconditions.md`.
+Note: RTLM20d and RTLM21d have been replaced by RTO26. The write API preconditions (including the echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO26a/RTO26b/RTO26c sections).
 
 ---
 

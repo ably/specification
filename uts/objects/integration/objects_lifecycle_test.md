@@ -47,7 +47,7 @@ AFTER ALL TESTS:
 
 **Test ID**: `objects/integration/RTO23-RTPO15/set-primitive-propagates-0`
 
-**Spec requirement:** PathObject#set delegates to LiveMap#set. The mutation
+**Spec requirement:** PathObject#set delegates to InternalLiveMap#set. The mutation
 propagates via the server and a second client sees the updated value.
 
 ### Setup
@@ -94,11 +94,11 @@ client_b.close()
 
 ---
 
-## RTPO15 - Set with LiveCounterValueType, second client reads counter
+## RTPO15 - Set with LiveCounter, second client reads counter
 
 **Test ID**: `objects/integration/RTPO15/set-counter-value-type-0`
 
-**Spec requirement:** PathObject#set with LiveCounterValueType creates a new counter
+**Spec requirement:** PathObject#set with LiveCounter creates a new counter
 on the server. Second client syncs and reads the counter value.
 
 ### Setup
@@ -145,7 +145,7 @@ client_b.close()
 
 **Test ID**: `objects/integration/RTPO17/increment-propagates-0`
 
-**Spec requirement:** PathObject#increment delegates to LiveCounter#increment.
+**Spec requirement:** PathObject#increment delegates to InternalLiveCounter#increment.
 The server applies the increment and propagates the updated value.
 
 ### Setup
@@ -193,11 +193,11 @@ client_b.close()
 
 ---
 
-## RTPO15 - Set with LiveMapValueType, second client reads nested map
+## RTPO15 - Set with LiveMap, second client reads nested map
 
 **Test ID**: `objects/integration/RTPO15/set-map-value-type-0`
 
-**Spec requirement:** PathObject#set with LiveMapValueType creates a nested map.
+**Spec requirement:** PathObject#set with LiveMap creates a nested map.
 Second client can navigate into the nested map.
 
 ### Setup

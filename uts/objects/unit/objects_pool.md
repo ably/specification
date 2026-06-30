@@ -17,15 +17,15 @@ See `helpers/standard_test_pool.md` for builder functions and STANDARD_POOL_OBJE
 
 ---
 
-## RTO3 - ObjectsPool initialization with root LiveMap
+## RTO3 - ObjectsPool initialization with root InternalLiveMap
 
 **Test ID**: `objects/unit/RTO3/pool-init-root-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTO3a | ObjectsPool is Dict<String, LiveObject> |
-| RTO3b | Must always contain a LiveMap with id "root" |
-| RTO3b1 | On initialization, create zero-value LiveMap with objectId "root" |
+| RTO3b | Must always contain a InternalLiveMap with id "root" |
+| RTO3b1 | On initialization, create zero-value InternalLiveMap with objectId "root" |
 
 ### Setup
 ```pseudo
@@ -35,7 +35,7 @@ pool = ObjectsPool()
 ### Assertions
 ```pseudo
 ASSERT "root" IN pool
-ASSERT pool["root"] IS LiveMap
+ASSERT pool["root"] IS InternalLiveMap
 ASSERT pool["root"].data == {}
 ASSERT pool["root"].objectId == "root"
 ```
@@ -81,14 +81,14 @@ ASSERT pool.syncState == SYNCING
 | Spec | Requirement |
 |------|-------------|
 | RTO4b1 | Remove all objects except root |
-| RTO4b2 | Clear root LiveMap data to zero-value |
+| RTO4b2 | Clear root InternalLiveMap data to zero-value |
 | RTO4b2a | Emit LiveMapUpdate for root with removed entries, without populating objectMessage |
 | RTO4b4 | Perform sync completion actions |
 
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-pool["counter:abc@1000"] = LiveCounter(objectId: "counter:abc@1000")
+pool["counter:abc@1000"] = InternalLiveCounter(objectId: "counter:abc@1000")
 pool["root"].data = {
   "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
 }
@@ -265,7 +265,7 @@ ASSERT pool["root"].data["age"].data == { number: 30 }
 ### Setup
 ```pseudo
 pool = ObjectsPool()
-pool["counter:old@1000"] = LiveCounter(objectId: "counter:old@1000")
+pool["counter:old@1000"] = InternalLiveCounter(objectId: "counter:old@1000")
 pool["counter:old@1000"].data = 99
 pool.processAttached(ProtocolMessage(
   action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
@@ -438,7 +438,7 @@ ASSERT pool.keys().length == 1
 pool = ObjectsPool()
 realtime_object = RealtimeObject(pool: pool)
 pool.syncState = SYNCED
-pool["counter:abc@1000"] = LiveCounter(objectId: "counter:abc@1000")
+pool["counter:abc@1000"] = InternalLiveCounter(objectId: "counter:abc@1000")
 pool["counter:abc@1000"].data = 10
 realtime_object.appliedOnAckSerials = {"echo-serial-1"}
 ```
@@ -473,7 +473,7 @@ ASSERT "echo-serial-1" NOT IN realtime_object.appliedOnAckSerials
 pool = ObjectsPool()
 realtime_object = RealtimeObject(pool: pool)
 pool.syncState = SYNCED
-pool["counter:abc@1000"] = LiveCounter(objectId: "counter:abc@1000")
+pool["counter:abc@1000"] = InternalLiveCounter(objectId: "counter:abc@1000")
 ```
 
 ### Test Steps
@@ -527,8 +527,8 @@ ASSERT pool.keys().length == 1
 | Spec | Requirement |
 |------|-------------|
 | RTO6b1 | Parse type from objectId prefix before ":" |
-| RTO6b2 | "map" prefix creates zero-value LiveMap |
-| RTO6b3 | "counter" prefix creates zero-value LiveCounter |
+| RTO6b2 | "map" prefix creates zero-value InternalLiveMap |
+| RTO6b3 | "counter" prefix creates zero-value InternalLiveCounter |
 | RTO6a | Skip if object already exists |
 
 ### Setup
@@ -550,11 +550,11 @@ pool.processObjectMessage(build_object_message("test", [
 ### Assertions
 ```pseudo
 ASSERT "counter:new@2000" IN pool
-ASSERT pool["counter:new@2000"] IS LiveCounter
+ASSERT pool["counter:new@2000"] IS InternalLiveCounter
 ASSERT pool["counter:new@2000"].data == 5
 
 ASSERT "map:new@2000" IN pool
-ASSERT pool["map:new@2000"] IS LiveMap
+ASSERT pool["map:new@2000"] IS InternalLiveMap
 ASSERT pool["map:new@2000"].data["key"].data == { string: "val" }
 ```
 
@@ -928,7 +928,7 @@ ASSERT pool["root"].data["new_key"].data == { string: "new" }
 |------|-------------|
 | RTO5c10 | Rebuild every parentReferences map after sync completion |
 | RTO5c10a | For each LiveObject in ObjectsPool, reset parentReferences to empty map (RTLO3f2) |
-| RTO5c10b | For each LiveMap, iterate entries (RTLM11); for each entry whose value is a LiveObject, call addParentReference(parent, key) per RTLO4g |
+| RTO5c10b | For each InternalLiveMap, iterate entries (RTLM11); for each entry whose value is a LiveObject, call addParentReference(parent, key) per RTLO4g |
 
 Tests that after a normal sync, each LiveObject in the pool has correct parentReferences matching its position in the synced tree.
 
@@ -1000,7 +1000,7 @@ ASSERT pool["counter:nested@1000"].parentReferences == { "map:profile@1000": {"n
 | Spec | Requirement |
 |------|-------------|
 | RTO5c10a | Reset parentReferences to empty map before rebuilding |
-| RTO5c10b | Rebuild from current LiveMap entries after sync completion |
+| RTO5c10b | Rebuild from current InternalLiveMap entries after sync completion |
 
 Tests that after a second sync sequence with a different tree structure, parentReferences are reset then rebuilt to reflect the new tree, not the old one.
 

@@ -15,7 +15,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 
 ---
 
-## RTPO15 - set() delegates to LiveMap#set
+## RTPO15 - set() delegates to InternalLiveMap#set
 
 **Test ID**: `objects/unit/RTPO15/set-delegates-to-map-0`
 
@@ -23,7 +23,7 @@ See `helpers/standard_test_pool.md` for `setup_synced_channel` and builder funct
 |------|-------------|
 | RTPO15b | Checks write API preconditions per RTO26 |
 | RTPO15c | Resolves path, on failure throws RTPO3c2 |
-| RTPO15d | LiveMap -> delegates to LiveMap#set (RTLM20) |
+| RTPO15d | InternalLiveMap -> delegates to InternalLiveMap#set (RTLM20) |
 
 ### Setup
 ```pseudo
@@ -48,7 +48,7 @@ ASSERT root.get("name").value() == "Bob"
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO15a2 | value accepts same types as LiveMap#set (RTLM20): primitives and LiveCounterValueType/LiveMapValueType |
+| RTPO15a2 | value accepts same types as InternalLiveMap#set (RTLM20): primitives and LiveCounter/LiveMap |
 | RTPO15b | Checks write API preconditions per RTO26 |
 
 ### Setup
@@ -68,14 +68,14 @@ ASSERT root.get("profile").get("email").value() == "bob@example.com"
 
 ---
 
-## RTPO15d - set() on non-LiveMap throws 92007
+## RTPO15d - set() on non-InternalLiveMap throws 92007
 
 **Test ID**: `objects/unit/RTPO15d/set-non-map-throws-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO15b | Checks write API preconditions per RTO26 |
-| RTPO15e | Not LiveMap -> throws 92007 |
+| RTPO15e | Not InternalLiveMap -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -94,7 +94,7 @@ ASSERT error.code == 92007
 
 ---
 
-## RTPO16 - remove() delegates to LiveMap#remove
+## RTPO16 - remove() delegates to InternalLiveMap#remove
 
 **Test ID**: `objects/unit/RTPO16/remove-delegates-to-map-0`
 
@@ -102,7 +102,7 @@ ASSERT error.code == 92007
 |------|-------------|
 | RTPO16b | Checks write API preconditions per RTO26 |
 | RTPO16c | Resolves path, on failure throws RTPO3c2 |
-| RTPO16d | LiveMap -> delegates to LiveMap#remove (RTLM21) |
+| RTPO16d | InternalLiveMap -> delegates to InternalLiveMap#remove (RTLM21) |
 
 ### Setup
 ```pseudo
@@ -121,14 +121,14 @@ ASSERT root.get("name").value() == null
 
 ---
 
-## RTPO16d - remove() on non-LiveMap throws 92007
+## RTPO16d - remove() on non-InternalLiveMap throws 92007
 
 **Test ID**: `objects/unit/RTPO16d/remove-non-map-throws-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO16b | Checks write API preconditions per RTO26 |
-| RTPO16e | Not LiveMap -> throws 92007 |
+| RTPO16e | Not InternalLiveMap -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -147,7 +147,7 @@ ASSERT error.code == 92007
 
 ---
 
-## RTPO17 - increment() delegates to LiveCounter#increment
+## RTPO17 - increment() delegates to InternalLiveCounter#increment
 
 **Test ID**: `objects/unit/RTPO17/increment-delegates-to-counter-0`
 
@@ -155,7 +155,7 @@ ASSERT error.code == 92007
 |------|-------------|
 | RTPO17b | Checks write API preconditions per RTO26 |
 | RTPO17c | Resolves path, on failure throws RTPO3c2 |
-| RTPO17d | LiveCounter -> delegates to LiveCounter#increment (RTLC12) |
+| RTPO17d | InternalLiveCounter -> delegates to InternalLiveCounter#increment (RTLC12) |
 
 ### Setup
 ```pseudo
@@ -200,14 +200,14 @@ ASSERT root.get("score").value() == 101
 
 ---
 
-## RTPO17d - increment() on non-LiveCounter throws 92007
+## RTPO17d - increment() on non-InternalLiveCounter throws 92007
 
 **Test ID**: `objects/unit/RTPO17d/increment-non-counter-throws-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO17b | Checks write API preconditions per RTO26 |
-| RTPO17e | Not LiveCounter -> throws 92007 |
+| RTPO17e | Not InternalLiveCounter -> throws 92007 |
 
 ### Setup
 ```pseudo
@@ -226,7 +226,7 @@ ASSERT error.code == 92007
 
 ---
 
-## RTPO18 - decrement() delegates to LiveCounter#decrement
+## RTPO18 - decrement() delegates to InternalLiveCounter#decrement
 
 **Test ID**: `objects/unit/RTPO18/decrement-delegates-to-counter-0`
 
@@ -234,7 +234,7 @@ ASSERT error.code == 92007
 |------|-------------|
 | RTPO18b | Checks write API preconditions per RTO26 |
 | RTPO18c | Resolves path, on failure throws RTPO3c2 |
-| RTPO18d | LiveCounter -> delegates to LiveCounter#decrement (RTLC13) |
+| RTPO18d | InternalLiveCounter -> delegates to InternalLiveCounter#decrement (RTLC13) |
 
 ### Setup
 ```pseudo
@@ -279,14 +279,14 @@ ASSERT root.get("score").value() == 99
 
 ---
 
-## RTPO18d - decrement() on non-LiveCounter throws 92007
+## RTPO18d - decrement() on non-InternalLiveCounter throws 92007
 
 **Test ID**: `objects/unit/RTPO18d/decrement-non-counter-throws-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO18b | Checks write API preconditions per RTO26 |
-| RTPO18e | Not LiveCounter -> throws 92007 |
+| RTPO18e | Not InternalLiveCounter -> throws 92007 |
 
 ### Setup
 ```pseudo

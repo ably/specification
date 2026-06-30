@@ -170,7 +170,7 @@ ASSERT po.path() == "a\\.b.c"
 | Spec | Requirement |
 |------|-------------|
 | RTPO7a | Checks access API preconditions per RTO25 |
-| RTPO7c | LiveCounter -> delegates to LiveCounter#value |
+| RTPO7c | InternalLiveCounter -> delegates to InternalLiveCounter#value |
 
 ### Setup
 ```pseudo
@@ -207,14 +207,14 @@ ASSERT root.get("active").value() == true
 
 ---
 
-## RTPO7d - value() returns null for LiveMap
+## RTPO7d - value() returns null for InternalLiveMap
 
 **Test ID**: `objects/unit/RTPO7d/value-livemap-null-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO7a | Checks access API preconditions per RTO25 |
-| RTPO7e | LiveMap -> returns null |
+| RTPO7e | InternalLiveMap -> returns null |
 
 ### Setup
 ```pseudo
@@ -304,8 +304,8 @@ ASSERT root.get("name").instance() == null
 | Spec | Requirement |
 |------|-------------|
 | RTPO9a | Checks access API preconditions per RTO25 |
-| RTPO9c | Uses LiveMap#keys (RTLM12) to get keys, returns array of [key, PathObject] pairs |
-| RTPO9d | Only non-tombstoned entries (tombstoned excluded by LiveMap#keys) |
+| RTPO9c | Uses InternalLiveMap#keys (RTLM12) to get keys, returns array of [key, PathObject] pairs |
+| RTPO9d | Only non-tombstoned entries (tombstoned excluded by InternalLiveMap#keys) |
 
 ### Setup
 ```pseudo
@@ -328,14 +328,14 @@ ASSERT entries.length == 7
 
 ---
 
-## RTPO9d - entries() returns empty array for non-LiveMap
+## RTPO9d - entries() returns empty array for non-InternalLiveMap
 
 **Test ID**: `objects/unit/RTPO9d/entries-non-map-empty-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO9a | Checks access API preconditions per RTO25 |
-| RTPO9d | Not LiveMap or resolution failure -> returns empty array |
+| RTPO9d | Not InternalLiveMap or resolution failure -> returns empty array |
 
 ### Setup
 ```pseudo
@@ -361,7 +361,7 @@ ASSERT entries.length == 0
 | Spec | Requirement |
 |------|-------------|
 | RTPO10a | Checks access API preconditions per RTO25 |
-| RTPO10c | LiveMap -> delegates to LiveMap#keys (RTLM12) |
+| RTPO10c | InternalLiveMap -> delegates to InternalLiveMap#keys (RTLM12) |
 
 ### Setup
 ```pseudo
@@ -384,14 +384,14 @@ ASSERT "score" IN keys
 
 ---
 
-## RTPO10d - keys() returns empty array for non-LiveMap
+## RTPO10d - keys() returns empty array for non-InternalLiveMap
 
 **Test ID**: `objects/unit/RTPO10d/keys-non-map-empty-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO10a | Checks access API preconditions per RTO25 |
-| RTPO10d | Not LiveMap or resolution failure -> returns empty array |
+| RTPO10d | Not InternalLiveMap or resolution failure -> returns empty array |
 
 ### Setup
 ```pseudo
@@ -418,7 +418,7 @@ ASSERT keys.length == 0
 | Spec | Requirement |
 |------|-------------|
 | RTPO11a | Checks access API preconditions per RTO25 |
-| RTPO11c | LiveMap -> uses LiveMap#keys (RTLM12) and returns array of PathObjects |
+| RTPO11c | InternalLiveMap -> uses InternalLiveMap#keys (RTLM12) and returns array of PathObjects |
 
 ### Setup
 ```pseudo
@@ -445,14 +445,14 @@ ASSERT paths["score"] == true
 
 ---
 
-## RTPO11d - values() returns empty array for non-LiveMap
+## RTPO11d - values() returns empty array for non-InternalLiveMap
 
 **Test ID**: `objects/unit/RTPO11d/values-non-map-empty-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO11a | Checks access API preconditions per RTO25 |
-| RTPO11d | Not LiveMap or resolution failure -> returns empty array |
+| RTPO11d | Not InternalLiveMap or resolution failure -> returns empty array |
 
 ### Setup
 ```pseudo
@@ -479,7 +479,7 @@ ASSERT vals.length == 0
 | Spec | Requirement |
 |------|-------------|
 | RTPO12a | Checks access API preconditions per RTO25 |
-| RTPO12c | LiveMap -> delegates to LiveMap#size (RTLM10) |
+| RTPO12c | InternalLiveMap -> delegates to InternalLiveMap#size (RTLM10) |
 
 ### Setup
 ```pseudo
@@ -494,14 +494,14 @@ ASSERT root.get("profile").size() == 3
 
 ---
 
-## RTPO12c - size() returns null for non-LiveMap
+## RTPO12c - size() returns null for non-InternalLiveMap
 
 **Test ID**: `objects/unit/RTPO12c/size-non-map-null-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO12a | Checks access API preconditions per RTO25 |
-| RTPO12d | Not LiveMap or resolution failure -> returns null |
+| RTPO12d | Not InternalLiveMap or resolution failure -> returns null |
 
 ### Setup
 ```pseudo
@@ -516,7 +516,7 @@ ASSERT root.get("name").size() == null
 
 ---
 
-## RTPO13 - compact() recursively compacts LiveMap tree
+## RTPO13 - compact() recursively compacts InternalLiveMap tree
 
 **Test ID**: `objects/unit/RTPO13/compact-recursive-0`
 
@@ -524,8 +524,8 @@ ASSERT root.get("name").size() == null
 |------|-------------|
 | RTPO13a | Checks access API preconditions per RTO25 |
 | RTPO13c1 | Each entry included, tombstoned excluded |
-| RTPO13c2 | Nested LiveMap recursively compacted |
-| RTPO13c3 | Nested LiveCounter resolved to number |
+| RTPO13c2 | Nested InternalLiveMap recursively compacted |
+| RTPO13c3 | Nested InternalLiveCounter resolved to number |
 | RTPO13c4 | Primitives as-is |
 
 ### Setup
@@ -553,9 +553,9 @@ ASSERT result["profile"]["prefs"]["theme"] == "dark"
 
 ---
 
-## RTPO13b5 - compact() handles cycles via shared reference
+## RTPO13c5 - compact() handles cycles via shared reference
 
-**Test ID**: `objects/unit/RTPO13b5/compact-cycle-detection-0`
+**Test ID**: `objects/unit/RTPO13c5/compact-cycle-detection-0`
 
 | Spec | Requirement |
 |------|-------------|
@@ -583,14 +583,14 @@ ASSERT result["prefs"]["back_ref"] IS result
 
 ---
 
-## RTPO13c - compact() returns number for LiveCounter
+## RTPO13c - compact() returns number for InternalLiveCounter
 
 **Test ID**: `objects/unit/RTPO13c/compact-counter-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO13a | Checks access API preconditions per RTO25 |
-| RTPO13d | LiveCounter -> returns numeric value |
+| RTPO13d | InternalLiveCounter -> returns numeric value |
 
 ### Setup
 ```pseudo
@@ -657,11 +657,11 @@ ASSERT root.get("profile").get("prefs").get("theme").value() == "dark"
 
 ---
 
-## RTPO3a1 - Resolution fails if intermediate is not LiveMap
+## RTPO3a1 - Resolution fails if intermediate is not InternalLiveMap
 
 **Test ID**: `objects/unit/RTPO3a1/intermediate-not-map-0`
 
-**Spec requirement:** Current object must be a LiveMap. If not, resolution fails.
+**Spec requirement:** Current object must be a InternalLiveMap. If not, resolution fails.
 
 ### Setup
 ```pseudo
