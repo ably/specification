@@ -19,7 +19,7 @@ Not every situation has an existing implementation. Tests may be written ahead o
 
 ### 1. Translate the UTS spec faithfully
 
-Write the test as closely as possible to the UTS spec. The UTS spec defines what to test — don't second-guess it, optimise it, or skip steps on a first pass.
+Write the test as closely as possible to the UTS spec. The UTS spec defines what to test — don't second-guess it, optimise it, or skip steps on a first pass. In particular, translation is purely mechanical. Spec-correctness is checked later, during evaluation (section 2a).
 
 - **Match the spec's structure**: one test per spec point, same assertions, same setup
 - **Use the spec's naming**: test names must include the spec point (e.g. `RSL1a - publish sends POST to correct path`)
@@ -73,11 +73,18 @@ A test failure has exactly three possible causes. Work through them in order:
 
 #### 2a. Is the UTS spec wrong?
 
-Compare the UTS spec's claim against the Ably features spec (`specification/specifications/features.md`). The features spec is the ultimate authority. If the UTS spec contradicts it:
+Compare the UTS spec's claim against the relevant Ably **features spec** — the ultimate authority. Every spec lives under the repo's [`specifications/`](https://github.com/ably/specification/tree/main/specifications) directory; the raw, fetchable base is `https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/`. Fetch the one for the module under test:
 
-- Fix the test to match the features spec
-- Add a comment explaining the UTS spec error
-- Record the error in the **UTS Spec Errors** section of the deviations file
+- Core / Realtime / REST — [`features.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/features.md)
+- LiveObjects (`objects`) — [`objects-features.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/objects-features.md)
+- Chat — [`chat-features.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/chat-features.md)
+
+Related authorities in the **same** `specifications/` directory back specific areas — e.g. [`protocol.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/protocol.md) (wire protocol) and [`encryption.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/encryption.md) — fetch them too when a test touches that area.
+
+A UTS spec can be wrong two ways: it **contradicts the features spec**, or it is **internally inconsistent** (e.g. a replayed serial that doesn't match the value its own harness produces, or a test title that names a state its body never injects). Either way the **spec is the source of truth and must be fixed there** — do **not** silently rewrite the test to match the features spec and move on. Quietly "fixing the test" hides the spec bug, leaves the spec wrong for every other SDK to re-hit, and defeats the point of a single source of truth. Instead:
+
+- Record the error in the **UTS Spec Errors** section of the deviations file, with the spec id, what the features spec says, and what the UTS spec gets wrong.
+- Make the generated test **fail fast** (see "Spec-error fail-fast" under section 3, Test patterns for a diagnosed failure) so the defect is impossible to miss and the spec gets fixed early, at source.
 
 Examples:
 - UTS spec claimed RSA4b means "clientId triggers token auth" — actual RSA4b is about token renewal on error
@@ -102,9 +109,9 @@ If the UTS spec is correct per the features spec, and the test accurately transl
 - Document exactly what the spec requires vs what the SDK does
 - Record it in the deviations file
 
-### 3. Deviation test patterns
+### 3. Test patterns for a diagnosed failure
 
-There are two patterns for deviation tests. Both should write the **spec-correct assertions** in the test body — the test should fail when run, proving the deviation exists.
+Once you've diagnosed a failure (section 2), there are three patterns. Two are for an **SDK deviation** (section 2c): **env-gated skip** keeps the spec-correct assertion but skips it unless explicitly enabled, and **adapted assertion** asserts the SDK's actual behaviour with the spec expectation in a comment. The third, **spec-error fail-fast**, is for a **UTS spec error** (section 2a): the spec itself is wrong, so there are no spec-correct assertions to write — the test fails fast and points at the fix instead. (A translation bug, section 2b, isn't a pattern — you just fix the test.)
 
 **Env-gated skip** (preferred) — the test contains the correct spec assertion but is skipped by default. An environment variable enables it on demand:
 ```
@@ -134,6 +141,17 @@ it("RSC1b - no credentials raises error", function() {
 ```
 Use this pattern when the SDK does *something* (just not the right thing) and you want to assert on the actual behaviour to prevent regressions. These tests pass in normal runs.
 
+**Spec-error fail-fast** — for a **UTS spec error** (section 2a), *not* an SDK deviation. An SDK deviation is a permanent fact, so its test stays green (env-gated) or asserts actual behaviour. A spec error is a bug in the source of truth that is fixable, so the opposite applies: the test must **fail immediately** with a message pointing to the deviations entry, forcing the spec to be corrected first rather than papered over:
+```
+it("RTLC7c2 - LOCAL source does not write siteTimeserials", function() {
+  // SPEC ERROR RTLC7c2: replayed ACK serial "t:1:0" contradicts the harness ("ack-0:0").
+  // Fix the UTS spec first — see deviations.md (UTS Spec Errors).
+  throw new Error("UTS spec error RTLC7c2 — fix the spec first; see deviations.md")
+})
+```
+
+**Resolution — fix the spec, then re-translate.** This test is a placeholder that blocks on the source of truth: it stays red until the **UTS spec** is corrected (the source file under `<module>/...`, against the features spec). Once the spec is fixed, regenerate the test from the corrected spec — the fail-fast placeholder is replaced by a normal test (which passes, or becomes an SDK deviation per section 2c if the SDK then diverges), and the **UTS Spec Errors** entry is closed out. Do **not** "resolve" it by rewriting the test to match the broken spec or the SDK — that re-buries the bug the placeholder exists to surface.
+
 **Avoid the accommodate-both pattern.** Tests that accept either the spec behaviour or the SDK behaviour (e.g. try/catch that passes regardless of which path is taken) provide no signal — they pass whether the SDK is compliant or not. Every test should either assert spec behaviour (and fail if non-compliant) or assert the SDK's actual behaviour (and document the deviation). Never both.
 
 ### 4. Decision tree
@@ -141,9 +159,10 @@ Use this pattern when the SDK does *something* (just not the right thing) and yo
 ```
 Test fails
   |
-  +-- Does UTS spec match features spec?
+  +-- Does UTS spec match features spec? (and is it internally consistent?)
   |     |
-  |     NO --> Fix test, record UTS spec error in deviations file
+  |     NO --> UTS SPEC ERROR: fix the spec at source, not the test.
+  |     |        Record in deviations (UTS Spec Errors) + emit a fail-fast test pointing there.
   |     |
   |     YES
   |       |
@@ -166,7 +185,8 @@ When evaluating against an existing implementation, maintain a deviations file (
 4. **Root cause** (if known) — file, function, mechanism
 5. **Test impact** — which test(s) are affected and how they were adapted
 
-Deviations are grouped into three sections:
+Deviations are grouped into four sections:
+- **UTS Spec Errors** — the UTS spec itself is wrong (contradicts the features spec, or is internally inconsistent). The test **fails fast** pointing here (see "Spec-error fail-fast"); the fix belongs in the spec, not the SDK. Unlike the categories below, this is not an SDK problem.
 - **Failing Tests** — SDK non-compliance where the spec-correct test is present but skipped (env-gated). These are the primary output — each maps to a potential issue to file.
 - **Adapted Tests** — SDK non-compliance where the test was adapted to assert actual behaviour. The test passes but documents a genuine deviation.
 - **Mock Infrastructure Limitations** — tests that can't be implemented due to missing mock capabilities (e.g. msgpack support). These are skipped stubs, not SDK deviations.
