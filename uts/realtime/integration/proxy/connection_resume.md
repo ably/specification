@@ -815,7 +815,7 @@ session = create_proxy_session(
     },
     {
       "match": { "type": "ws_connect", "count": 2 },
-      "action": { "type": "refuse" },
+      "action": { "type": "refuse_connection" },
       "times": 1,
       "comment": "RTN15g: Refuse 2nd ws_connect — keeps client disconnected until TTL expires and SUSPENDED fires"
     }

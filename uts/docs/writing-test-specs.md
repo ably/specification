@@ -587,6 +587,10 @@ This means implementations should:
 - Otherwise wait for state change events with timeout
 - Fail if timeout expires
 
+In **integration and proxy** specs these timeouts are **wall-clock time** (the test waits on a
+real server — see the *Timeout Strategy* section in `docs/integration-testing.md`); in unit specs they may be
+realised with fake/virtual timers.
+
 ## Timer Mocking
 
 Tests verifying timeout behavior should use timer mocking where practical to avoid slow tests.
