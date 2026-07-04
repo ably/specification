@@ -242,5 +242,5 @@ ClientOptions(
 8. Each test file provisions a sandbox app in `BEFORE ALL TESTS` and cleans up in `AFTER ALL TESTS`
 9. Each test creates its own proxy session and cleans it up after
 10. All `WITH timeout` / `poll_until` / `WAIT` durations are **wall-clock (real) time** — see
-    the *Integration timeouts are wall-clock* section in `docs/writing-derived-tests.md` for
+    the *Integration timeouts are wall-clock* section in `writing-derived-tests.md` for
     the virtual-time trap in derived tests

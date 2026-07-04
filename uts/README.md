@@ -28,14 +28,13 @@ uts/
 │   │   ├── connection/                # RTN — connection management
 │   │   └── presence/                  # RTP — realtime presence
 │   └── integration/                   # Realtime integration tests
-│       ├── helpers/
-│       │   └── proxy.md               # Proxy infrastructure spec
 │       ├── proxy/                     # Proxy-based fault injection tests
 │       └── *.md                       # Direct sandbox tests
 ├── docs/                              # Guides and reference
 │   ├── writing-test-specs.md          # How to write UTS specs
 │   ├── writing-derived-tests.md       # How to translate specs into SDK tests
 │   ├── integration-testing.md         # Integration testing policy
+│   ├── proxy.md                       # Proxy infrastructure spec (cross-module)
 │   └── completion-status.md           # Spec coverage matrix
 └── README.md                          # This file
 ```
@@ -101,4 +100,4 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 The programmable proxy for integration testing lives in a separate repository: [ably/uts-proxy](https://github.com/ably/uts-proxy). It sits between the SDK and the Ably sandbox, transparently forwarding traffic while allowing rule-based fault injection.
 
-See `realtime/integration/helpers/proxy.md` for the proxy infrastructure specification used by test specs in this repository.
+See `docs/proxy.md` for the proxy infrastructure specification used by test specs in this repository.

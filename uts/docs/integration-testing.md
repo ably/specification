@@ -99,8 +99,6 @@ realtime/
     presence/
       presence_lifecycle_test.md
       ...
-    helpers/
-      proxy.md                             # Proxy infrastructure spec
     proxy/                                 # Proxy-based tests (sandbox + proxy)
       connection_open_failures.md
       connection_resume.md
@@ -151,7 +149,7 @@ AFTER ALL TESTS:
 
 ### Proxy Setup (integration-proxy only)
 
-Proxy tests additionally set up a proxy session per test or group of tests. See `realtime/integration/helpers/proxy.md` for the proxy infrastructure API.
+Proxy tests additionally set up a proxy session per test or group of tests. See `docs/proxy.md` for the proxy infrastructure API.
 
 ```pseudo
 BEFORE EACH TEST:

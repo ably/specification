@@ -8,7 +8,7 @@ Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
 
-See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure specification.
+See `docs/proxy.md` for the full proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 
@@ -62,7 +62,7 @@ AFTER EACH TEST:
 | OBJECT_SYNC | 20 |
 
 > Rule `match.action` values are **strings**; objects actions must use numeric strings
-> (e.g. `"20"`) — see the *Match Conditions* section in `realtime/integration/helpers/proxy.md`.
+> (e.g. `"20"`) — see the *Match Conditions* section in `docs/proxy.md`.
 
 ---
 
