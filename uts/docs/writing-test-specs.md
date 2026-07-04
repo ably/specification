@@ -21,7 +21,7 @@ This guide provides comprehensive guidance for writing portable test specificati
 - Run against Ably Sandbox through a programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy))
 - Proxy transparently forwards traffic but can inject faults via rules
 - Use for testing fault behaviour: connection failures, token renewal under errors, heartbeat starvation, channel error injection
-- See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec
+- See `docs/proxy.md` for the full proxy infrastructure spec
 
 ## Test IDs
 
@@ -296,7 +296,7 @@ mock_ws.active_connection.simulate_disconnect()
 
 ## Proxy Integration Tests
 
-For detailed proxy infrastructure documentation, see `realtime/integration/helpers/proxy.md`.
+For detailed proxy infrastructure documentation, see `docs/proxy.md`.
 
 ### When to Use Proxy Tests
 
@@ -317,7 +317,7 @@ Spec points: `RTN14a`, `RTN14b`, ...
 Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
-See `realtime/integration/helpers/proxy.md` for proxy infrastructure specification.
+See `docs/proxy.md` for proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 - `realtime/unit/connection/connection_failures_test.md` — RTN15a, RTN15b
@@ -1029,8 +1029,6 @@ realtime/
       connection_open_failures_test.md
       ...
   integration/
-    helpers/
-      proxy.md                # Proxy infrastructure spec
     proxy/
       connection_open_failures.md   # RTN14 tests via proxy
       connection_resume.md          # RTN15 tests via proxy

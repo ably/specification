@@ -6,7 +6,7 @@ Spec points: `RTN15a`, `RTN15b`, `RTN15c6`, `RTN15c7`, `RTN15g`, `RTN15g2`, `RTN
 
 Proxy integration test against Ably Sandbox endpoint.
 
-Uses the programmable proxy (`uts/test/proxy/`) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure details.
+Uses the programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy)) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/docs/proxy.md` for proxy infrastructure details.
 
 Corresponding unit tests: `uts/test/realtime/unit/connection/connection_failures_test.md`, `uts/test/realtime/unit/connection/connection_recovery_test.md`
 
