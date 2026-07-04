@@ -8,7 +8,7 @@ Proxy integration test against Ably Sandbox endpoint.
 
 Uses the programmable proxy (`uts/test/proxy/`) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure details.
 
-Corresponding unit tests: `uts/test/realtime/unit/connection/connection_failures_test.md`, `uts/test/realtime/unit/connection/connection_recovery_test.md`
+Corresponding unit tests: `uts/realtime/unit/connection/connection_failures_test.md`, `uts/realtime/unit/connection/connection_recovery_test.md`
 
 ## Sandbox Setup
 

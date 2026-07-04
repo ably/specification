@@ -12,7 +12,7 @@ See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastr
 
 ## Related Unit Tests
 
-See `uts/test/realtime/unit/connection/connection_open_failures_test.md` for the corresponding unit tests that verify the same spec points with mocked WebSocket.
+See `uts/realtime/unit/connection/connection_open_failures_test.md` for the corresponding unit tests that verify the same spec points with mocked WebSocket.
 
 ## Sandbox Setup
 

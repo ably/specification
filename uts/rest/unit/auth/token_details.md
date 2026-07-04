@@ -15,7 +15,7 @@ Unit test with mocked HTTP client and/or mocked authCallback
 
 ## Mock HTTP Infrastructure
 
-See `uts/test/rest/unit/rest_client.md` for the full Mock HTTP Infrastructure specification.
+See `uts/rest/unit/rest_client.md` for the full Mock HTTP Infrastructure specification.
 
 ---
 

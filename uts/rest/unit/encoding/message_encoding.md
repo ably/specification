@@ -7,7 +7,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-These tests use the mock HTTP infrastructure described in `/Users/paddy/data/worknew/dev/dart-experiments/uts/test/rest/unit/rest_client.md`.
+These tests use the mock HTTP infrastructure described in `/Users/paddy/data/worknew/dev/dart-experiments/uts/rest/unit/rest_client.md`.
 
 The mock supports:
 - Intercepting HTTP requests and capturing details (URL, headers, method, body)

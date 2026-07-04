@@ -7,7 +7,7 @@ Unit test with mocked WebSocket
 
 ## Mock WebSocket Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 
 ---
 
@@ -238,7 +238,7 @@ CLOSE_CLIENT(client)
 
 **Spec requirement:** RTAN1b — Has the same connection and channel state conditions as message publishing, see RTL6c.
 
-Tests that annotation publish fails in FAILED and SUSPENDED channel states, matching the behaviour tested in `uts/test/realtime/unit/channels/channel_publish.md` (RTL6c4). The same connection and channel state preconditions apply.
+Tests that annotation publish fails in FAILED and SUSPENDED channel states, matching the behaviour tested in `uts/realtime/unit/channels/channel_publish.md` (RTL6c4). The same connection and channel state preconditions apply.
 
 ### Setup
 ```pseudo
@@ -460,7 +460,7 @@ CLOSE_CLIENT(client)
 
 **Spec requirement:** RTAN3a — Is identical to `RestAnnotations#get`.
 
-`RealtimeAnnotations#get` uses the same underlying REST endpoint as `RestAnnotations#get`. The tests in `uts/test/rest/unit/channel/annotations.md` (covering RSAN3) should be used to verify that all the same behaviour, parameters, and return types apply when called on a `RealtimeChannel` instance.
+`RealtimeAnnotations#get` uses the same underlying REST endpoint as `RestAnnotations#get`. The tests in `uts/rest/unit/channel/annotations.md` (covering RSAN3) should be used to verify that all the same behaviour, parameters, and return types apply when called on a `RealtimeChannel` instance.
 
 ---
 
