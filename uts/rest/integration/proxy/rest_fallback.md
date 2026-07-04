@@ -13,7 +13,7 @@ See `uts/realtime/integration/helpers/proxy.md` for the full proxy infrastructur
 ## Corresponding Unit Tests
 
 - `uts/rest/unit/fallback.md` -- RSC15l/RSC15l4 (unit test verifies fallback logic with mocked HTTP)
-- `uts/rest/unit/publish.md` -- RSL1k (unit test verifies idempotent publish logic with mocked HTTP)
+- `uts/rest/unit/channel/idempotency.md` -- RSL1k (unit test verifies idempotent publish logic with mocked HTTP)
 
 ## Purpose
 

@@ -72,7 +72,7 @@ The same test cases apply:
 
 The Realtime client has the same error handling as the REST client for invalid credentials.
 
-**See:** `uts/test/realtime/unit/client/client_options.md` - RSC1b
+**See:** `uts/rest/unit/auth/auth_scheme.md` - RSC1b
 
 Error code 40106 should be raised when no valid credentials are provided.
 
