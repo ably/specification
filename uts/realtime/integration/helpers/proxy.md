@@ -112,6 +112,14 @@ Rules are evaluated in order. First matching rule wins. Unmatched traffic passes
 
 **`count`**: 1-based occurrence counter. `count: 2` matches only the 2nd occurrence.
 
+**`action`** (frame matches): must be a **string** — either a protocol action *name*
+(e.g. `"ATTACHED"`) or a *numeric string* (e.g. `"20"`). A JSON number is rejected at
+session creation with HTTP 400 (`cannot unmarshal number into Go struct field
+MatchConfig.match.action of type string`). Note: uts-proxy v0.3.0 resolves action
+*names* only up to `AUTH` (17) — an unresolvable name (e.g. `"OBJECT_SYNC"`) makes the
+rule silently never match, so use numeric strings for `OBJECT` (`"19"`),
+`OBJECT_SYNC` (`"20"`) and `ANNOTATION` (`"21"`) until the proxy's name table is extended.
+
 ### Actions
 
 ```json
@@ -233,3 +241,6 @@ ClientOptions(
 7. Timeouts are generous (10-30s) since real network is involved
 8. Each test file provisions a sandbox app in `BEFORE ALL TESTS` and cleans up in `AFTER ALL TESTS`
 9. Each test creates its own proxy session and cleans it up after
+10. All `WITH timeout` / `poll_until` / `WAIT` durations are **wall-clock (real) time** — see
+    the *Integration timeouts are wall-clock* section in `docs/writing-derived-tests.md` for
+    the virtual-time trap in derived tests

@@ -61,7 +61,7 @@ All new test files go in `specification/uts/objects/`.
 ### Proxy Integration Tests
 | File | Spec Points | ~Tests |
 |------|-------------|--------|
-| `integration/proxy/objects_faults.md` | RTO5a2, RTO7, RTO8, RTO17, RTO20e (sync interruption, mutation buffering during re-sync, server-initiated detach, publish failure on FAILED channel, publish during delayed sync) | ~5 |
+| `integration/proxy/objects_faults.md` | RTO5a2, RTO7, RTO8, RTO17, RTO20e (sync interruption, mutation buffering during re-sync, server-initiated detach, in-flight publish failing when channel enters FAILED during sync wait, publish during delayed sync) | ~5 |
 
 **Totals: ~20 files, ~310 tests**
 

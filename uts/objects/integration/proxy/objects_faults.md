@@ -1,6 +1,6 @@
 # Objects Proxy Integration Tests
 
-Spec points: `RTO5a2`, `RTO7`, `RTO8`, `RTO17`, `RTO20e`
+Spec points: `RTO5a2`, `RTO7`, `RTO8`, `RTO17`, `RTO20e`, `RTO20e1`
 
 ## Test Type
 
@@ -13,7 +13,9 @@ See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure sp
 ## Corresponding Unit Tests
 
 - `objects/unit/objects_pool.md` — RTO5a2 (new sync discards old), RTO7/RTO8 (buffering during SYNCING)
-- `objects/unit/realtime_object.md` — RTO17 (sync state events), RTO20e (publishAndApply waits for SYNCED/fails on FAILED)
+- `objects/unit/realtime_object.md` — RTO17 (sync state events), RTO20e (publishAndApply waits
+  for SYNCED), RTO20e1 (in-flight operation fails with 92008 when the channel leaves the
+  attached state during the sync wait)
 
 ## Sandbox Setup
 
@@ -39,10 +41,11 @@ AFTER ALL TESTS:
 
 ```pseudo
 AFTER EACH TEST:
-  IF client IS NOT null AND client.connection.state IN [connected, connecting, disconnected]:
-    client.connection.close()
-    AWAIT_STATE client.connection.state == ConnectionState.closed
-      WITH timeout: 10 seconds
+  FOR EACH client created by the test (client / client_a / client_b):
+    IF client.connection.state IN [connected, connecting, disconnected]:
+      client.connection.close()
+      AWAIT_STATE client.connection.state == ConnectionState.closed
+        WITH timeout: 10 seconds
   IF session IS NOT null:
     session.close()
 ```
@@ -51,10 +54,15 @@ AFTER EACH TEST:
 
 | Name | Number |
 |------|--------|
+| ACK | 1 |
+| ERROR | 9 |
 | ATTACHED | 11 |
 | DETACHED | 13 |
 | OBJECT | 19 |
 | OBJECT_SYNC | 20 |
+
+> Rule `match.action` values are **strings**; objects actions must use numeric strings
+> (e.g. `"20"`) — see the *Match Conditions* section in `realtime/integration/helpers/proxy.md`.
 
 ---
 
@@ -82,7 +90,7 @@ session = create_proxy_session(
   endpoint: "nonprod:sandbox",
 
   rules: [{
-    "match": { "type": "ws_frame_to_client", "action": 20 },
+    "match": { "type": "ws_frame_to_client", "action": "20" },
     "action": { "type": "disconnect" },
     "times": 1,
     "comment": "RTO5a2: Disconnect after first OBJECT_SYNC to interrupt sync"
@@ -156,6 +164,7 @@ AWAIT_STATE client_a.connection.state == CONNECTED
 
 channel_a = client_a.channels.get(channel_name, { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
 root_a = AWAIT channel_a.object.get()
+  WITH timeout: 15 seconds
 
 // Set initial data
 AWAIT root_a.set("key1", "initial")
@@ -305,11 +314,19 @@ ASSERT root.get("before_detach").value() == "hello"
 
 | Spec | Requirement |
 |------|-------------|
-| RTO20e | publishAndApply waits for SYNCED; fails with 92008 if channel enters DETACHED/SUSPENDED/FAILED |
+| RTO20e | publishAndApply waits for the sync state to transition to SYNCED before applying locally |
+| RTO20e1 | If the channel enters DETACHED/SUSPENDED/FAILED while waiting, the operation fails with 92008, statusCode 400, cause = channel errorReason |
 
-Client sets up a channel with objects, then the proxy injects a channel ERROR
-to transition to FAILED. A PathObject mutation (which uses publishAndApply
-internally) should fail with error 92008.
+The client syncs a channel, is forced back into SYNCING, and issues a mutation
+*while* SYNCING — the publish and its ACK complete against the real server, then
+publishAndApply parks in the RTO20e wait for SYNCED. The proxy then injects a
+channel ERROR so the channel enters FAILED whilst the operation is waiting; the
+pending mutation must fail with error 92008 (RTO20e1).
+
+> Note: the mutation must be in flight *before* the channel fails. A mutation issued on a
+> channel already in DETACHED/FAILED/SUSPENDED fails the RTO26b write precondition with 90001
+> and never reaches publishAndApply — that is different behaviour, not this test. The unit-tier
+> test `objects/unit/RTO20e1/fails-on-channel-failed-0` uses the same sequence.
 
 ### Setup
 
@@ -344,7 +361,31 @@ AWAIT_STATE client.connection.state == CONNECTED
 root = AWAIT channel.object.get()
   WITH timeout: 15 seconds
 
-// Inject channel ERROR to transition to FAILED
+// Force the objects back into SYNCING: inject an ATTACHED (action 11) carrying the
+// HAS_OBJECTS flag (bit 7, i.e. flags: 128). RTO4c starts a new sync sequence on every
+// ATTACHED protocol message; the server never sent this ATTACHED, so no OBJECT_SYNC
+// follows and the objects remain SYNCING. The channel itself stays ATTACHED.
+session.trigger_action({
+  type: "inject_to_client",
+  message: { action: 11, channel: channel_name, flags: 128 }
+})
+
+// Mutate WHILE SYNCING: the channel is ATTACHED so the write preconditions (RTO26)
+// pass and the publish + ACK complete against the real server; publishAndApply then
+// waits for a SYNCED that will never arrive (RTO20e). Do not await yet.
+pending = root.set("key", "value")
+
+// Ensure the operation is in the RTO20e sync-wait, not still publishing: wait until
+// the proxy log shows the server's ACK (action 1) for the OBJECT publish, then allow
+// a brief real-time yield for the client to move the ACKed operation into the wait.
+// (There is no observable client state between "ACK processed" and "parked in the
+// sync-wait" to poll on, so a small fixed yield is required — the deriving SDK may
+// substitute an equivalent scheduler yield.)
+poll_until(session.get_log() CONTAINS event WHERE type == "ws_frame"
+  AND direction == "server_to_client" AND message.action == 1, timeout: 10s)
+WAIT 500ms  // real (wall-clock) time
+
+// The channel enters FAILED whilst the operation waits for SYNCED (RTO20e1)
 session.trigger_action({
   type: "inject_to_client",
   message: {
@@ -357,14 +398,16 @@ session.trigger_action({
 AWAIT_STATE channel.state == ChannelState.failed
   WITH timeout: 15 seconds
 
-// Attempt a mutation — should fail since channel is FAILED
-AWAIT root.set("key", "value") FAILS WITH error
+AWAIT pending FAILS WITH error
+  WITH timeout: 15 seconds
 ```
 
 ### Assertions
 
 ```pseudo
 ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+// RTO20e1: cause is set to RealtimeChannel.errorReason — the injected channel ERROR
 ASSERT error.cause IS NOT null
 ASSERT error.cause.code == 90000
 ```
@@ -398,6 +441,7 @@ AWAIT_STATE client_a.connection.state == CONNECTED
 
 channel_a = client_a.channels.get(channel_name, { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
 root_a = AWAIT channel_a.object.get()
+  WITH timeout: 15 seconds
 
 // Set up initial data
 AWAIT root_a.set("existing", "before")
@@ -407,7 +451,7 @@ session = create_proxy_session(
   endpoint: "nonprod:sandbox",
 
   rules: [{
-    "match": { "type": "ws_frame_to_client", "action": 20 },
+    "match": { "type": "ws_frame_to_client", "action": "20" },
     "action": { "type": "delay", "delayMs": 3000 },
     "times": 1,
     "comment": "Delay first OBJECT_SYNC to keep B in SYNCING state"

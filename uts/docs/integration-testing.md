@@ -227,6 +227,12 @@ Guidelines:
 
 The goal is: every await in the test is bounded, and the suite timeout is generous enough that it only fires if something truly unexpected happens. When a test fails, the error should say *what* timed out, not just "suite timeout exceeded."
 
+**All timeouts are wall-clock time.** Every `WITH timeout`, `poll_until` and `WAIT` in an
+integration spec measures real elapsed time — the test is waiting on a real server over a real
+network. Derived tests in frameworks that virtualise time by default must run these waits
+against the real clock; see the *Integration timeouts are wall-clock* section in
+`writing-derived-tests.md` for the failure mode and recommended helpers.
+
 ### Avoiding Flaky Tests
 
 - Use polling with timeouts instead of fixed waits (see `README.md` polling conventions)

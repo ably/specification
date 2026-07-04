@@ -268,6 +268,27 @@ const timer = setTimeout(() => reject(new Error('Timed out')), 5000);
 connection.once('connected', () => { clearTimeout(timer); resolve(); });
 ```
 
+### Integration timeouts are wall-clock (beware virtual-time frameworks)
+
+The rule above is inverted for **integration and proxy tests**: every `WITH timeout`,
+`poll_until` and `WAIT` in an integration spec is **wall-clock (real) time**, because the test
+is waiting on a real server or proxy over a real network.
+
+This is a trap in test frameworks that virtualise time by default. For example,
+kotlinx-coroutines' `runTest` runs the test body on a virtual clock: a bare `withTimeout(15s)`
+wrapping a real network await measures *virtual* time, which fast-forwards the moment the test
+coroutine idles — the timeout fires almost instantly, long before the server can respond, with
+a misleading "Timed out after 15s" error. The same applies to a bare `delay()`, which skips
+instead of waiting.
+
+Derived integration tests in such frameworks must run their waits against the real clock —
+e.g. dispatch onto a real-thread dispatcher before applying the timeout
+(`withContext(Dispatchers.Default.limitedParallelism(1)) { withTimeout(...) { ... } }` in
+Kotlin), or use the framework's escape hatch for real time. Define shared helpers
+(`awaitState`, `pollUntil`, `withRealTimeout`, ...) that encapsulate this once, and use them for
+every wait in integration test bodies. Unit tests are unaffected — there, fake/virtual timers
+remain the preferred mechanism.
+
 ### Cleanup with afterEach
 
 Always restore mocks in `afterEach`, not just at the end of each test. If a test throws before its cleanup code, the next test inherits dirty state. Use the SDK's mock restoration mechanism (e.g. `restoreAll()`) in an `afterEach` hook.
