@@ -56,7 +56,7 @@ All new test files go in `specification/uts/objects/`.
 | `integration/objects_lifecycle_test.md` | RTO23, RTPO15, RTPO17 (create objects, mutate via PathObject, read back, REST provisioning) | ~6 |
 | `integration/objects_sync_test.md` | RTO4, RTO5, RTO17 (attach, sync sequence, re-attach) | ~4 |
 | ~~`integration/objects_batch_test.md`~~ | ~~Batch API not in current spec revision~~ | — |
-| `integration/objects_gc_test.md` | RTO10, RTLM19 (behavioral GC verification with ADVANCE_TIME) | ~2 |
+| `integration/objects_gc_test.md` | RTO10, RTLM19 (observable tombstone semantics: undefined/null reads, re-create with new objectId; the timer-based GC sweep is unit-tier) | ~2 |
 
 ### Proxy Integration Tests
 | File | Spec Points | ~Tests |
@@ -380,6 +380,6 @@ onMessageFromClient: (msg) => {
 | Batch API deferred | Not included in current spec revision (a397e34); may be added in a future spec update |
 | LiveObject/LiveMap/LiveCounter marked internal but still unit-tested | Direct testing of CRDT logic is essential; public API tests can't cover all edge cases |
 | Test IDs use `objects/unit/` prefix | Matches directory structure, not nested under `realtime/` |
-| Behavioral GC testing via ADVANCE_TIME | Verify GC through observable consequences (value becomes null, object recreatable) rather than internal pool state inspection |
+| Behavioral GC testing tiered by clock control | Unit tier verifies the timer-based sweep with fake timers + ADVANCE_TIME; the integration tier verifies observable consequences only (value becomes undefined/null, object recreatable) since integration tests run on wall-clock time |
 | Table-driven tests for input validation | Use FOR loops over scenario arrays (like ably-js forScenarios) to test all invalid/valid type combinations |
 | Bytes data type coverage | Standard test pool includes "avatar" bytes entry; compact/compactJson/value tests verify base64 encoding |

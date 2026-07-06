@@ -172,7 +172,7 @@ client.close()
 
 ---
 
-## RTO4 - Attach without OBJECT_SUBSCRIBE still resolves get() with empty pool
+## RTO4 - Attach without OBJECT_PUBLISH still resolves get() with empty pool
 
 **Test ID**: `objects/integration/RTO4/attach-subscribe-only-0`
 
