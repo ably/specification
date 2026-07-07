@@ -52,6 +52,25 @@ ASSERT vt.count == 0
 
 ---
 
+## RTLCV3c - No validation at creation time
+
+**Test ID**: `objects/unit/RTLCV3c/no-validation-at-create-0`
+
+**Spec requirement:** No input validation is performed at creation time; invalid
+input is only rejected when the blueprint is evaluated (RTLCV4a).
+
+### Test Steps
+```pseudo
+vt = LiveCounter.create("not_a_number")
+```
+
+### Assertions
+```pseudo
+ASSERT vt IS LiveCounter  // does not throw
+```
+
+---
+
 ## RTLCV4 - Evaluation generates COUNTER_CREATE ObjectMessage
 
 **Test ID**: `objects/unit/RTLCV4/evaluate-generates-message-0`

@@ -132,7 +132,7 @@ setup_synced_channel(channel_name):
       ELSE IF msg.action == OBJECT:
         // Auto-ACK with generated serials
         // canonical ack-serial form defined as ack_serial in helpers/standard_test_pool.md
-        serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+        serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
         mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
     }
   )
@@ -333,7 +333,7 @@ onMessageFromClient: (msg) => {
     serials = []
     // canonical ack-serial form defined as ack_serial in helpers/standard_test_pool.md
     FOR i IN 0..msg.state.length-1:
-      serials.append("ack-" + msg.msgSerial + ":" + i)
+      serials.append(ack_serial(msg.msgSerial, i))
     mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
 }
 ```

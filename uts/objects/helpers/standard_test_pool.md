@@ -113,8 +113,11 @@ literals:
 ```pseudo
 SITE_CODE = "test-site"   # the harness ConnectionDetails siteCode
 
-ack_serial(msgSerial, i) => "ack-" + msgSerial + ":" + i
-  # the first publish's first op = ack_serial(0, 0) == "ack-0:0"
+ack_serial(msgSerial, i) => "t:" + (msgSerial + 1) + ":" + i
+  # the first publish's first op = ack_serial(0, 0) == "t:1:0"
+  # NOTE: the value must sort AFTER the standard pool's "t:0" entry timeserials
+  # under the string LWW comparison (RTLM9) — otherwise locally applied
+  # MAP_SETs on existing pool entries would be rejected as stale.
 ```
 
 Replay tests that must reuse the apply-on-ACK serial/siteCode MUST reference
