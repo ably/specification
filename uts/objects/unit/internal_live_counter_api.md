@@ -67,7 +67,7 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
     ELSE IF msg.action == OBJECT:
       captured_messages.append(msg)
-      serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+      serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
       mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
   }
 )
@@ -117,8 +117,6 @@ ASSERT root.get("score").value() == 150
 ---
 
 ## RTLC12b/c/d - increment write preconditions (replaced by RTO26)
-
-**Test ID**: `objects/unit/RTLC12b/increment-requires-publish-0`
 
 Note: RTLC12b, RTLC12c, and RTLC12d have been replaced by RTO26. The write API preconditions (OBJECT_PUBLISH mode check, channel state check, and echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO26a/RTO26b/RTO26c sections).
 
@@ -173,7 +171,7 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
     ELSE IF msg.action == OBJECT:
       captured_messages.append(msg)
-      serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+      serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
       mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
   }
 )

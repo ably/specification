@@ -190,7 +190,7 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
     ELSE IF msg.action == OBJECT:
       captured_messages.append(msg)
-      serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+      serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
       mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
   }
 )
@@ -396,8 +396,6 @@ ASSERT obj_msg.operation.mapRemove.key == "name"
 
 ## RTLM20d/RTLM21d - set()/remove() write preconditions (replaced by RTO26)
 
-**Test ID**: `objects/unit/RTLM20d/echo-messages-false-0`
-
 Note: RTLM20d and RTLM21d have been replaced by RTO26. The write API preconditions (including the echoMessages check) are now the caller's responsibility and are tested separately in `objects/unit/realtime_object.md` (RTO26a/RTO26b/RTO26c sections).
 
 ---
@@ -480,7 +478,7 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
     ELSE IF msg.action == OBJECT:
       captured_messages.append(msg)
-      serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+      serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
       mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
   }
 )

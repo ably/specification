@@ -959,10 +959,10 @@ score_path.subscribe((event) => events_score.append(event))
 ### Test Steps
 ```pseudo
 // Trigger an update on the score counter. siteCode "remote" is absent from the pool's
-// siteTimeserials ({"aaa":"t:0"}), so the op passes the newness check (RTLO4a) — "aaa" with an
-// "s:N" serial would be stale ("s" < "t") and the op would be silently dropped, hanging the poll.
+// siteTimeserials ({"aaa":"t:0"}), so the op passes the newness check (RTLO4a) regardless of serial ordering.
+// The "t:N" serials also sort after the pool entry timeserials ("t:0") for the entry-level LWW check (RTLM9).
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 5, "s:1", "remote")
+  build_counter_inc("counter:score@1000", 5, "t:1", "remote")
 ]))
 
 poll_until(events_score.length >= 1, timeout: 5s)
@@ -1006,15 +1006,16 @@ root.subscribe((event) => deep_events.append(event))
 ```pseudo
 // Update root itself (a MAP_SET on root — candidate path [] is covered by depth 1).
 // siteCode "remote" is absent from the pool's siteTimeserials ({"aaa":"t:0"}), so the op passes the
-// newness check (RTLO4a / _canApplyOperation) — using "aaa" with an "s:N" serial would be stale ("s" < "t").
+// newness check (RTLO4a / _canApplyOperation); the "t:N" serials also sort after the pool entry
+// timeserials ("t:0") for the entry-level LWW check (RTLM9).
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "s:1", "remote")
+  build_map_set("root", "name", { string: "Bob" }, "t:1", "remote")
 ]))
 poll_until(deep_events.length >= 1, timeout: 5s)
 
 // Update a child of root (path ["score"], relativeDepth 2) — NOT covered by depth 1, covered by deep.
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 5, "s:2", "remote")
+  build_counter_inc("counter:score@1000", 5, "t:2", "remote")
 ]))
 poll_until(deep_events.length >= 2, timeout: 5s)
 
@@ -1084,7 +1085,7 @@ AWAIT root.get("score").increment(10)
 score_after_apply = root.get("score").value()
 
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 10, "ack-0:0", "test-site")
+  build_counter_inc("counter:score@1000", 10, ack_serial(0, 0), "test-site")
 ]))
 score_after_echo = root.get("score").value()
 ```
@@ -1111,7 +1112,7 @@ with source LOCAL), an inbound COUNTER_INC from the same siteCode and serial as
 the ACK should still apply. If LOCAL had incorrectly written to siteTimeserials,
 the newness check would reject the inbound message as stale.
 
-The mock's ACK serial for the first publish is `ack_serial(0, 0)` (= "ack-0:0")
+The mock's ACK serial for the first publish is `ack_serial(0, 0)` (= "t:1:0")
 with siteCode `SITE_CODE` (= "test-site", from ConnectionDetails). The inbound
 message reuses that siteCode and serial.
 
@@ -1158,11 +1159,11 @@ inc_future = root.get("score").increment(10)
 
 // Send the echo BEFORE the ACK
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 10, "ack-0:0", "test-site")
+  build_counter_inc("counter:score@1000", 10, ack_serial(0, 0), "test-site")
 ]))
 
 // Now send the ACK
-mock_ws.send_to_client(build_ack_message(0, ["ack-0:0"]))
+mock_ws.send_to_client(build_ack_message(0, [ack_serial(0, 0)]))
 
 AWAIT inc_future
 ```
@@ -1262,7 +1263,7 @@ mock_ws = MockWebSocket(
       ))
       mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
     ELSE IF msg.action == OBJECT:
-      serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+      serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
       mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
   }
 )
@@ -1334,7 +1335,7 @@ mock_ws = MockWebSocket(
       ))
       mock_ws.send_to_client(build_object_sync_message(msg.channel, "sync1:", STANDARD_POOL_OBJECTS))
     ELSE IF msg.action == OBJECT:
-      serials = msg.state.map((_, i) => "ack-" + msg.msgSerial + ":" + i)
+      serials = msg.state.map((_, i) => ack_serial(msg.msgSerial, i))
       mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
   }
 )
