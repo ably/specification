@@ -100,4 +100,4 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 The programmable proxy for integration testing lives in a separate repository: [ably/uts-proxy](https://github.com/ably/uts-proxy). It sits between the SDK and the Ably sandbox, transparently forwarding traffic while allowing rule-based fault injection.
 
-See `docs/proxy.md` for the proxy infrastructure specification used by test specs in this repository.
+See `uts/docs/proxy.md` for the proxy infrastructure specification used by test specs in this repository.
