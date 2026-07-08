@@ -12,9 +12,9 @@ See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastr
 
 ## Corresponding Unit Tests
 
-- `uts/test/rest/unit/auth/token_renewal.md` -- RSC10 (unit test verifies token renewal logic with mocked HTTP)
-- `uts/test/rest/unit/fallback.md` -- RSC15m/REC2c2 (unit test verifies fallback/error handling with mocked HTTP)
-- `uts/test/realtime/unit/channels/channel_publish.md` -- RTL6 (unit test verifies publish request formation)
+- `uts/rest/unit/auth/token_renewal.md` -- RSC10 (unit test verifies token renewal logic with mocked HTTP)
+- `uts/rest/unit/fallback.md` -- RSC15m/REC2c2 (unit test verifies fallback/error handling with mocked HTTP)
+- `uts/realtime/unit/channels/channel_publish.md` -- RTL6 (unit test verifies publish request formation)
 
 ## Sandbox Setup
 

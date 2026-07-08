@@ -16,7 +16,7 @@ Unit test with mocked HTTP client
 | RTL10a | Supports all the same params as `RestChannel#history` |
 | RTL10c | Returns a `PaginatedResult` page containing the first page of messages |
 
-`RealtimeChannel#history` uses the same underlying REST endpoint as `RestChannel#history`. The tests in `uts/test/rest/unit/channel/history.md` (covering RSL2) should be used to verify that all the same behaviour, parameters, and return types apply when called on a `RealtimeChannel` instance.
+`RealtimeChannel#history` uses the same underlying REST endpoint as `RestChannel#history`. The tests in `uts/rest/unit/channel/history.md` (covering RSL2) should be used to verify that all the same behaviour, parameters, and return types apply when called on a `RealtimeChannel` instance.
 
 ---
 
