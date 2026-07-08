@@ -149,7 +149,7 @@ AFTER ALL TESTS:
 
 ### Proxy Setup (integration-proxy only)
 
-Proxy tests additionally set up a proxy session per test or group of tests. See `docs/proxy.md` for the proxy infrastructure API.
+Proxy tests additionally set up a proxy session per test or group of tests. See `uts/docs/proxy.md` for the proxy infrastructure API.
 
 ```pseudo
 BEFORE EACH TEST:
