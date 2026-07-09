@@ -180,7 +180,7 @@ root.subscribe((event) => control.append(event))
 ### Test Steps
 ```pseudo
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
@@ -221,7 +221,7 @@ root.subscribe((event) => control.append(event))
 ```pseudo
 // Self event (root map update) — candidate [] is covered at depth 2.
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
@@ -266,7 +266,7 @@ root.subscribe((event) => events.append(event))
 ### Test Steps
 ```pseudo
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
@@ -276,7 +276,7 @@ mock_ws.send_to_client(build_object_message("test", [
 poll_until(events.length >= 2, timeout: 5s)
 
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("map:prefs@1000", "theme", { string: "light" }, "101", "remote")
+  build_map_set("map:prefs@1000", "theme", { string: "light" }, remote_serial(1), "remote")
 ]))
 poll_until(events.length >= 3, timeout: 5s)
 ```
@@ -423,7 +423,7 @@ mock_ws.send_to_client(ProtocolMessage(
   channelSerial: "sync2:",
   state: [
     build_object_state("counter:score@1000", {"aaa": "t:1"}, {
-      counter: { count: 200 },
+      counter: { count: 0 },
       createOp: { counterCreate: { count: 200 } }
     })
   ]
@@ -457,7 +457,7 @@ root.get("score").subscribe((event) => events.append(event))
 ```pseudo
 // Replace the counter at "score" with a new counter
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "score", { objectId: "counter:new@2000" }, "99", "remote")
+  build_map_set("root", "score", { objectId: "counter:new@2000" }, remote_serial(0), "remote")
 ]))
 
 // Increment the NEW counter at "score"
@@ -519,7 +519,7 @@ root.get("name").subscribe((event) => events.append(event))
 ### Test Steps
 ```pseudo
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 ```
@@ -576,7 +576,7 @@ root.get("profile").subscribe((event) => events.append(event))
 ### Test Steps
 ```pseudo
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("map:profile@1000", "email", { string: "bob@example.com" }, "99", "remote")
+  build_map_set("map:profile@1000", "email", { string: "bob@example.com" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
@@ -626,7 +626,7 @@ root.subscribe((event) => control.append(event))
 ```pseudo
 // Self event (profile map update) — first covered candidate is ["profile"].
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("map:profile@1000", "email", { string: "bob@example.com" }, "99", "remote")
+  build_map_set("map:profile@1000", "email", { string: "bob@example.com" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 
@@ -687,7 +687,7 @@ mock_ws.send_to_client(build_object_message("test", [
 
 // Change at "name" — "profile" is not a prefix of "name"
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "100", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 // QUIESCENCE: await the control listener (fires for both sends) so that any
 // profile_events callback would also have run before we assert it is unchanged.
@@ -730,7 +730,7 @@ root.subscribe((event) => root_events.append(event))
 //   2. [] + "score" = ["score"] (from the map update key)
 // Both subscriptions should fire
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "score", { objectId: "counter:new@2000" }, "99", "remote")
+  build_map_set("root", "score", { objectId: "counter:new@2000" }, remote_serial(0), "remote")
 ]))
 poll_until(score_events.length >= 1, timeout: 5s)
 poll_until(root_events.length >= 1, timeout: 5s)
@@ -762,7 +762,7 @@ root.subscribe((event) => events.append(event))
 ### Test Steps
 ```pseudo
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 ```
@@ -845,7 +845,7 @@ root.subscribe((event) => events.append(event))
 // Root subscription covers both, but should fire exactly once with
 // the first candidate (pathToThis = [])
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "score", { objectId: "counter:new@2000" }, "99", "remote")
+  build_map_set("root", "score", { objectId: "counter:new@2000" }, remote_serial(0), "remote")
 ]))
 poll_until(events.length >= 1, timeout: 5s)
 

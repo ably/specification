@@ -29,8 +29,8 @@ map:prefs@1000 (InternalLiveMap, semantics: LWW)
   +-- "theme" -> string "dark"
 ```
 
-All map entries have timeserial `"t:0"` and `tombstone: false` unless otherwise noted.
-All objects have `siteTimeserials: { "aaa": "t:0" }` and `createOperationIsMerged: true` unless otherwise noted.
+All map entries have timeserial `POOL_SERIAL` (= `"t:0"`, see Canonical Constants) and `tombstone: false` unless otherwise noted.
+All objects have `siteTimeserials: { "aaa": POOL_SERIAL }` and `createOperationIsMerged: true` unless otherwise noted.
 
 ### Expected parentReferences after sync
 
@@ -70,7 +70,13 @@ STANDARD_POOL_OBJECTS = [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:score@1000", {"aaa": "t:0"}, {
-    counter: { count: 100 },
+    # `counter.count` is the total of increments applied AFTER creation (0 here);
+    # `createOp.counterCreate.count` carries the initial value. Applying this state
+    # materialises data = count + createOp.count = 0 + 100 = 100 (RTLC6c sets data to
+    # `count`, then RTLC6d/RTLC16a ADDS the createOp count), with
+    # createOperationIsMerged = true. Do NOT set count = 100 as well — that would
+    # double-count to 200 and contradict the `data: 100` tree above and every consumer.
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 100 } }
   }),
   build_object_state("map:profile@1000", {"aaa": "t:0"}, {
@@ -85,7 +91,9 @@ STANDARD_POOL_OBJECTS = [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:nested@1000", {"aaa": "t:0"}, {
-    counter: { count: 5 },
+    # As above: count = 0 (no post-create increments), createOp carries the initial
+    # value. Materialises data = 0 + 5 = 5 with createOperationIsMerged = true.
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 5 } }
   }),
   build_object_state("map:prefs@1000", {"aaa": "t:0"}, {
@@ -106,22 +114,51 @@ STANDARD_POOL_OBJECTS = [
 
 ### Canonical Constants
 
-The standard synced-channel harness uses a fixed siteCode and a fixed ACK-serial
-scheme. These are exposed so tests can reference them rather than hardcoding
-literals:
+The standard synced-channel harness uses a fixed siteCode and a fixed serial scheme.
+These are exposed so tests reference them by name rather than hardcoding literals whose
+LWW ordering is easy to get wrong. All serials are compared lexicographically as strings
+(RTLM9e), and every one below is defined RELATIVE to the pool baseline `POOL_SERIAL`.
 
 ```pseudo
 SITE_CODE = "test-site"   # the harness ConnectionDetails siteCode
 
+# --- Pool baseline -----------------------------------------------------------------------
+# The timeserial every standard-pool entry and object is seeded with (see
+# STANDARD_POOL_OBJECTS). Every synthetic serial below is chosen relative to this value.
+# (The pool tree spells it out literally as "t:0" for readability; synthetic serials in the
+#  individual tests reference it via the helpers below so the ordering intent is explicit.)
+POOL_SERIAL = "t:0"
+
+# --- Local apply-on-ACK serial -----------------------------------------------------------
+# The serial the harness assigns to a LOCALLY-published operation when it is applied on its
+# ACK; its site is SITE_CODE (the connection's own site).
 ack_serial(msgSerial, i) => "t:" + (msgSerial + 1) + ":" + i
-  # the first publish's first op = ack_serial(0, 0) == "t:1:0"
-  # NOTE: the value must sort AFTER the standard pool's "t:0" entry timeserials
-  # under the string LWW comparison (RTLM9) — otherwise locally applied
-  # MAP_SETs on existing pool entries would be rejected as stale.
+  # first publish's first op = ack_serial(0, 0) == "t:1:0".
+  # Sorts AFTER POOL_SERIAL, so a locally-applied MAP_SET on an existing pool entry wins LWW.
+  # These values are recorded in appliedOnAckSerials (RTO9a2a4) and de-duplicated on echo
+  # (RTO9a3) — do NOT reuse one as an inbound serial you expect to apply (it will be deduped).
+
+# --- Remote inbound "winning" serial -----------------------------------------------------
+# For a REMOTE inbound MAP_SET / MAP_REMOVE on an EXISTING pool entry (siteCode "remote"):
+# the serial must sort AFTER POOL_SERIAL to win the per-entry LWW comparison (RTLM9e). A bare
+# number like "99" sorts BEFORE "t:0" ('9' < 't') and would be rejected as stale, silently
+# defeating the test. 0-based: remote_serial(0) == "t:1", remote_serial(1) == "t:2", …
+#   (Counter increments and other object-level ops from a fresh siteCode compare per-site, not
+#    per-entry, so they apply regardless of serial value and need NOT use this helper.)
+remote_serial(i) => "t:" + (i + 1)
+
+# --- "Loses to the ACK serial" probe -----------------------------------------------------
+# A serial that is NOT an ack_serial (so it escapes the RTO9a3 apply-on-ACK echo dedup) yet
+# sorts BELOW the first ack_serial (ack_serial(0,0) == "t:1:0"), while still after POOL_SERIAL.
+# Used by RTO20f to prove a LOCAL apply-on-ACK left siteTimeserials untouched (RTLC7c): had the
+# LOCAL apply wrongly recorded siteTimeserials[SITE_CODE] = "t:1:0", this lower serial would be
+# rejected by the per-site newness check. 0-based: below_ack_serial(9) == "t:0:9".
+below_ack_serial(i) => "t:0:" + i
 ```
 
-Replay tests that must reuse the apply-on-ACK serial/siteCode MUST reference
-these (e.g. `ack_serial(0, 0)` / `SITE_CODE`), never hardcode a literal.
+Replay tests that reuse the apply-on-ACK serial/siteCode MUST reference these (e.g.
+`ack_serial(0, 0)` / `SITE_CODE`); tests sending a synthetic inbound serial MUST use
+`remote_serial(i)` / `below_ack_serial(i)` rather than hardcoding a literal.
 
 ### Protocol Message Builders
 
