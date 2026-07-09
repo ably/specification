@@ -1009,7 +1009,7 @@ root.subscribe((event) => deep_events.append(event))
 // newness check (RTLO4a / _canApplyOperation); the "t:N" serials also sort after the pool entry
 // timeserials ("t:0") for the entry-level LWW check (RTLM9).
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "t:1", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(deep_events.length >= 1, timeout: 5s)
 
@@ -1108,13 +1108,20 @@ ASSERT score_after_echo == 110
 | RTLC7c | siteTimeserials written only for CHANNEL source (verified via the source=LOCAL complement) |
 
 Verified through observable behaviour: after a local increment (applied via ACK
-with source LOCAL), an inbound COUNTER_INC from the same siteCode and serial as
-the ACK should still apply. If LOCAL had incorrectly written to siteTimeserials,
-the newness check would reject the inbound message as stale.
+with source LOCAL), an inbound COUNTER_INC from the same siteCode as the ACK — but
+carrying a DIFFERENT serial that sorts at-or-below the ACK serial — should still
+apply. If LOCAL had incorrectly written the ACK serial to siteTimeserials, the
+per-site newness check would reject this inbound message as stale.
 
-The mock's ACK serial for the first publish is `ack_serial(0, 0)` (= "t:1:0")
-with siteCode `SITE_CODE` (= "test-site", from ConnectionDetails). The inbound
-message reuses that siteCode and serial.
+The mock's ACK serial for the first publish is `ack_serial(0, 0)` (= "t:1:0") with
+siteCode `SITE_CODE` (= "test-site", from ConnectionDetails). The inbound message
+reuses that siteCode but carries serial `"t:0:9"`. This serial is deliberately NOT
+`ack_serial(0, 0)`: reusing the ACK serial would make RTO9a3 (apply-on-ACK echo
+dedup) discard the message before any newness check runs, so the test could never
+observe the siteTimeserials behaviour it is verifying. `"t:0:9"` is not in
+`appliedOnAckSerials` (so it is not deduped) yet sorts BELOW `"t:1:0"`, so it will
+be rejected by the newness check iff LOCAL wrongly recorded
+`siteTimeserials[SITE_CODE] = "t:1:0"`.
 
 ### Setup
 ```pseudo
@@ -1126,11 +1133,13 @@ message reuses that siteCode and serial.
 AWAIT root.get("score").increment(10)
 ASSERT root.get("score").value() == 110
 
-# Send inbound COUNTER_INC from siteCode SITE_CODE with serial ack_serial(0, 0)
-# (same siteCode and serial as the ACK). If LOCAL incorrectly set
-# siteTimeserials[SITE_CODE] = ack_serial(0, 0), this would fail the newness check.
+# Send inbound COUNTER_INC from siteCode SITE_CODE with serial "t:0:9": a serial that
+# is NOT the apply-on-ACK serial (so RTO9a3 echo dedup does not discard it) yet sorts
+# below "t:1:0". If LOCAL incorrectly set siteTimeserials[SITE_CODE] = "t:1:0", this
+# fails the newness check and value stays 110; if LOCAL correctly left siteTimeserials
+# untouched, SITE_CODE has no entry and the op applies, reaching 120.
 mock_ws.send_to_client(build_object_message("test", [
-  build_counter_inc("counter:score@1000", 10, ack_serial(0, 0), SITE_CODE)
+  build_counter_inc("counter:score@1000", 10, below_ack_serial(9), SITE_CODE)
 ]))
 poll_until(root.get("score").value() == 120, timeout: 5s)
 ```

@@ -149,7 +149,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:abc@1000", {"aaa": "t:0"}, {
-    counter: { count: 42 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 42 } }
   })
 ]))
@@ -387,7 +387,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:abc@1000", {"aaa": "t:0"}, {
-    counter: { count: 100 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 100 } }
   })
 ]))
@@ -834,7 +834,7 @@ pool.processObjectSync(build_object_sync_message("test", "seq2:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:abc@1000", {"aaa": "t:0"}, {
-    counter: { count: 100 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 100 } }
   })
 ]))
@@ -955,7 +955,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:score@1000", {"aaa": "t:0"}, {
-    counter: { count: 100 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 100 } }
   }),
   build_object_state("map:profile@1000", {"aaa": "t:0"}, {
@@ -968,7 +968,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:nested@1000", {"aaa": "t:0"}, {
-    counter: { count: 5 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 5 } }
   })
 ]))
@@ -1023,7 +1023,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:abc@1000", {"aaa": "t:0"}, {
-    counter: { count: 10 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 10 } }
   })
 ]))
@@ -1058,7 +1058,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync2:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:abc@1000", {"aaa": "t:1"}, {
-    counter: { count: 20 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 20 } }
   })
 ]))
@@ -1110,7 +1110,7 @@ pool.processObjectSync(build_object_sync_message("test", "sync1:", [
     createOp: { mapCreate: { semantics: "LWW", entries: {} } }
   }),
   build_object_state("counter:child@1000", {"aaa": "t:0"}, {
-    counter: { count: 1 },
+    counter: { count: 0 },
     createOp: { counterCreate: { count: 1 } }
   })
 ]))

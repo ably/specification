@@ -247,7 +247,7 @@ instance.subscribe((event) => updates.append(event))
 ### Test Steps
 ```pseudo
 mock_ws.send_to_client(build_object_message("test", [
-  build_map_set("root", "name", { string: "Bob" }, "99", "remote")
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(0), "remote")
 ]))
 poll_until(updates.length >= 1, timeout: 5s)
 ```
