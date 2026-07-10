@@ -47,7 +47,8 @@ ASSERT root.path == []
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(
     ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
     })
   ),
   onMessageFromClient: (msg) => {
@@ -94,7 +95,8 @@ subscribe — still throw 90001 on DETACHED/FAILED; see the RTO25b sections belo
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(
     ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
     })
   ),
   onMessageFromClient: (msg) => {
@@ -615,7 +617,8 @@ governing clause moved from RTO25b to RTO23e/RTL33c, since get() is gated by RTO
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(
     ProtocolMessage(action: CONNECTED, connectionDetails: {
-      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site"
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
     })
   ),
   onMessageFromClient: (msg) => {

@@ -1,6 +1,6 @@
 # InternalLiveMap API Tests
 
-Spec points: `RTLM5`, `RTLM10`–`RTLM13`, `RTLM20`–`RTLM21`, `RTLM24`, `RTLMV4`, `RTLCV4`
+Spec points: `RTLM5`, `RTLM10`–`RTLM12`, `RTLM20`–`RTLM21`, `RTLMV4`, `RTLCV4`
 
 ## Test Type
 Unit test with mocked WebSocket client

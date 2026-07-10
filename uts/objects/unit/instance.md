@@ -217,7 +217,7 @@ ASSERT root.get("name").value() == "Bob"
 
 **Test ID**: `objects/unit/RTINS12d/set-non-map-throws-0`
 
-**Spec requirement:** If the wrapped value is not a InternalLiveMap, throw ErrorInfo with code 92007.
+**Spec requirement:** If the wrapped value is not an InternalLiveMap, throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo
@@ -297,7 +297,7 @@ ASSERT root.get("score").value() == 125
 
 **Test ID**: `objects/unit/RTINS14d/increment-non-counter-throws-0`
 
-**Spec requirement:** If the wrapped value is not a InternalLiveCounter, throw ErrorInfo with code 92007.
+**Spec requirement:** If the wrapped value is not an InternalLiveCounter, throw ErrorInfo with code 92007.
 
 ### Setup
 ```pseudo

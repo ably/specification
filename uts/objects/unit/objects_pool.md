@@ -24,7 +24,7 @@ See `helpers/standard_test_pool.md` for builder functions and STANDARD_POOL_OBJE
 | Spec | Requirement |
 |------|-------------|
 | RTO3a | ObjectsPool is Dict<String, LiveObject> |
-| RTO3b | Must always contain a InternalLiveMap with id "root" |
+| RTO3b | Must always contain an InternalLiveMap with id "root" |
 | RTO3b1 | On initialization, create zero-value InternalLiveMap with objectId "root" |
 
 ### Setup

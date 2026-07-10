@@ -635,13 +635,13 @@ ASSERT result["prefs"]["back_ref"] == { "objectId": "map:profile@1000" }
 
 ---
 
-## RTPO3 - Path resolution walks through LiveMaps
+## RTPO3 - Path resolution walks through InternalLiveMaps
 
 **Test ID**: `objects/unit/RTPO3/path-resolution-walk-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTPO3a | Walk segments through LiveMaps |
+| RTPO3a | Walk segments through InternalLiveMaps |
 | RTPO3b | Empty path resolves to root |
 
 ### Setup
@@ -661,7 +661,7 @@ ASSERT root.get("profile").get("prefs").get("theme").value() == "dark"
 
 **Test ID**: `objects/unit/RTPO3a1/intermediate-not-map-0`
 
-**Spec requirement:** Current object must be a InternalLiveMap. If not, resolution fails.
+**Spec requirement:** Current object must be an InternalLiveMap. If not, resolution fails.
 
 ### Setup
 ```pseudo
