@@ -1298,7 +1298,7 @@ ASSERT update.objectMessage == msg
 | RTLO4e9a | Before clearing data, for each entry check if it has objectId |
 | RTLO4e9b | If entry references a LiveObject, call removeParentReference on the child |
 
-Tests that when a InternalLiveMap is tombstoned (via OBJECT_DELETE), removeParentReference is called for each entry that references a LiveObject before the data is cleared.
+Tests that when an InternalLiveMap is tombstoned (via OBJECT_DELETE), removeParentReference is called for each entry that references a LiveObject before the data is cleared.
 
 ### Setup
 ```pseudo

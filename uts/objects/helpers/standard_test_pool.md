@@ -283,7 +283,7 @@ build_object_state(objectId, siteTimeserials, opts):
     state.tombstone = opts.tombstone
   IF opts.createOp IS NOT null:
     // A createOp is a full ObjectOperation whose `action` and `objectId` are mandatory (OOP2)
-    // and validated by SDKs before merging (e.g. a LiveCounter rejects a createOp whose
+    // and validated by SDKs before merging (e.g. an InternalLiveCounter rejects a createOp whose
     // objectId differs from its own or whose action is not COUNTER_CREATE). Fixtures may use
     // the terse form `createOp: { counterCreate: {...} }`; the builder fills in the missing
     // mandatory fields so the state is wire-valid.
@@ -449,7 +449,7 @@ For multi-listener cases, AWAIT all involved listeners before asserting any coun
 
 For integration tests that need pre-existing object state before the test client connects, use the REST API to establish fixtures.
 
-The objects REST API uses the **V2 format** (per the LiveObjects OpenAPI specification). A request publishes a single operation, or a batch of operations as a JSON array — there is **no** `{ "messages": [...] }` envelope. Each operation names its type via a payload key (`mapSet`, `mapRemove`, `mapCreate`, `counterInc`, `counterCreate`) and targets an object by `objectId` **or** `path`. Note the endpoint path is singular (`/object`).
+The objects REST API uses the **V2 format** (per the LiveObjects OpenAPI specification; see the [LiveObjects REST API docs](https://ably.com/docs/liveobjects/rest-api-usage) built from it). A request publishes a single operation, or a batch of operations as a JSON array — there is **no** `{ "messages": [...] }` envelope. Each operation names its type via a payload key (`mapSet`, `mapRemove`, `mapCreate`, `counterInc`, `counterCreate`) and targets an object by `objectId` **or** `path`. Note the endpoint path is singular (`/object`).
 
 Target cardinality per op-class: mutate ops (`mapSet`, `mapRemove`, `counterInc`) MUST target exactly one of `objectId`/`path` (never both, never neither); create ops (`mapCreate`, `counterCreate`) MAY target zero-or-one (never both — a create with no target makes a standalone object).
 
