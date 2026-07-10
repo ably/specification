@@ -276,14 +276,16 @@ ASSERT map_inst.id() == "map:profile@1000"
 
 ---
 
-## RTPO8c - instance() returns null for primitive
+## RTPO8f - instance() returns Instance for primitive
 
-**Test ID**: `objects/unit/RTPO8c/instance-primitive-null-0`
+**Test ID**: `objects/unit/RTPO8f/instance-primitive-wrapped-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTPO8a | Checks access API preconditions per RTO25 |
-| RTPO8d | Primitive -> returns null |
+| RTPO8f | Primitive -> Instance wrapping the primitive value |
+| RTINS3b | Primitive Instance has no object id |
+| RTINS4c | Instance#value returns the primitive value directly |
 
 ### Setup
 ```pseudo
@@ -292,7 +294,10 @@ ASSERT map_inst.id() == "map:profile@1000"
 
 ### Assertions
 ```pseudo
-ASSERT root.get("name").instance() == null
+name_inst = root.get("name").instance()
+ASSERT name_inst IS Instance
+ASSERT name_inst.id() == null
+ASSERT name_inst.value() == "Alice"
 ```
 
 ---
