@@ -282,7 +282,17 @@ build_object_state(objectId, siteTimeserials, opts):
   IF opts.tombstone IS NOT null:
     state.tombstone = opts.tombstone
   IF opts.createOp IS NOT null:
-    state.createOp = opts.createOp
+    // A createOp is a full ObjectOperation whose `action` and `objectId` are mandatory (OOP2)
+    // and validated by SDKs before merging (e.g. a LiveCounter rejects a createOp whose
+    // objectId differs from its own or whose action is not COUNTER_CREATE). Fixtures may use
+    // the terse form `createOp: { counterCreate: {...} }`; the builder fills in the missing
+    // mandatory fields so the state is wire-valid.
+    createOp = opts.createOp
+    IF createOp.objectId IS null:
+      createOp.objectId = objectId
+    IF createOp.action IS null:
+      createOp.action = COUNTER_CREATE IF createOp.counterCreate IS NOT null ELSE MAP_CREATE
+    state.createOp = createOp
   RETURN ObjectMessage(object: state)
 ```
 

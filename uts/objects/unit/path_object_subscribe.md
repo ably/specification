@@ -412,11 +412,13 @@ root.subscribe((event) => events.append(event))
 
 ### Test Steps
 ```pseudo
-// Send a MAP_SET on the root that replaces "score" with a new objectId,
-// which triggers a subscription event on root.
-// Then send an OBJECT_SYNC that changes counter:score@1000's state
-// without an operation field — this triggers an update via replaceData
-// which has no objectMessage.operation
+// Send an OBJECT_SYNC that changes counter:score@1000's state (100 -> 200) via replaceData
+// (RTLC6) — a sync-triggered update, so its objectMessage has no `operation` field.
+// The sync intentionally omits `root`: per RTO5c2a the root object must never be removed from
+// the pool (RTO3b), so root is retained and still references "score" — counter:score therefore
+// stays reachable and its sync-triggered update dispatches to the root subscription (message
+// omitted). (This also exercises RTO5c2a: a compliant SDK must not GC root just because a
+// completed sync omitted it.)
 mock_ws.send_to_client(ProtocolMessage(
   action: OBJECT_SYNC,
   channel: "test",
