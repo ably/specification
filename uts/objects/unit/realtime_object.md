@@ -1169,6 +1169,11 @@ ASSERT root.get("score").value() == 120
 ```pseudo
 inc_future = root.get("score").increment(10)
 
+// Wait for the publish to reach the transport before injecting the echo/ACK. On SDKs where
+// the publish is dispatched asynchronously, an ACK that arrives while no message is pending
+// on the connection is discarded, and inc_future would never complete.
+poll_until(mock_ws.events.filter(e => e.type == MESSAGE_FROM_CLIENT AND e.data.action == OBJECT).length >= 1, timeout: 5s)
+
 // Send the echo BEFORE the ACK
 mock_ws.send_to_client(build_object_message("test", [
   build_counter_inc("counter:score@1000", 10, ack_serial(0, 0), "test-site")
