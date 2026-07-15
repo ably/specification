@@ -759,6 +759,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL7h)` If the `attachOnSubscribe` channel option is `false`, then the behaviour depends on the public API that a given SDK uses to communicate the result of an [`RTL7g`](#RTL7g) implicit attach:
     - If the SDK's API accepts an optional callback to communicate the result of an [`RTL7g`](#RTL7g) implicit attach, then it is a programmer error to provide such a callback when the `attachOnSubscribe` channel option is `false`. This programmer error should be handled in an idiomatic fashion; if this means that the `#subscribe` call should throw an error, then this error should be an `ErrorInfo` with `statusCode` 400 and `code` 40000.
     - If the SDK's API communicates the result of an "`RTL7g`"#RTL7g implicit attach in some other fashion (for example by returning a `ChannelStateChange?`), then, when the `attachOnSubscribe` channel option is `false`, `#subscribe` should respond in the same way as it would if an "`RTL7g`"#RTL7g implicit attach had been performed on an already-`ATTACHED` channel (for example by returning a `null` state change).
+  - `(RTL7i)` If, at the completion of the [`RTL7g`](#RTL7g) implicit attach (or immediately, if the channel was already `ATTACHED`), the channel is in the `ATTACHED` state, the [`RTL4m`](#RTL4m) channel modes must be checked for the presence of the `SUBSCRIBE` mode. (Note: the set being checked is the mode set actually granted by the server, not the set of modes requested by the user per [`TB2d`](#TB2d).) If the mode is missing, the server will never deliver messages to this client, so:
+    - `(RTL7i1)` If `strictMode` ([`TO3r`](#TO3r)) is `true`, the `subscribe` call must fail with an `ErrorInfo` with `code` `90009` and `statusCode` `400`, with a `message` indicating that the channel is attached without the `subscribe` mode and so the server will not deliver messages to the listener. Consistent with [`RTL7g`](#RTL7g), the listener remains registered despite the failure
+    - `(RTL7i2)` If `strictMode` is `false`, the `subscribe` call must complete as it would have before this check existed, and the library should log a warning per [`TO3r2`](#TO3r2). The library should not emit this log on every `subscribe` call; emitting it at most once per attachment is sufficient
+    - `(RTL7i3)` This check does not apply if the channel is not in the `ATTACHED` state (for example, when `attachOnSubscribe` is `false` and the channel has not been attached)
   - `(RTL7d)` Messages delivered are automatically decoded based on the `encoding` attribute; see `RestChannel` encoding features in [RSL6](#RSL6). Tests should exist to publish and subscribe to encoded messages using the fixture test data referenced in [RSL5c](#RSL5c).
   - `(RTL7e)` This clause has been deleted (redundant to [RSL6b](#RSL6b)).
   - `(RTL7f)` A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor
@@ -922,6 +926,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP11b)` This clause has been replaced by [RTP11e](#RTP11e)
   - `(RTP11d)` If the `RealtimeChannel` is in the `SUSPENDED` state then the `get` function will by default, or if `waitForSync` is set to `true`, result in an error with `code` `91005` and a `message` stating that the presence state is out of sync due to the channel being in a `SUSPENDED` state. If however the `get` function is called with `waitForSync` set to `false`, then it immediately returns the members currently stored in the `PresenceMap` giving developers access to the members that were present at the time the channel became `SUSPENDED`
   - `(RTP11e)` If the channel is in any state other than `SUSPENDED` (which is handled by [RTP11d](#RTP11d)), perform the *ensure-active-channel* procedure ([RTL33](#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
+  - `(RTP11f)` If the [`RTP11e`](#RTP11e) procedure completes successfully and the channel is in the `ATTACHED` state, the [`RTL4m`](#RTL4m) channel modes must be checked for the presence of the `PRESENCE_SUBSCRIBE` mode. (Note: the set being checked is the mode set actually granted by the server, not the set of modes requested by the user per [`TB2d`](#TB2d).) If the mode is missing, the server has not been delivering presence events to this client and the `PresenceMap` cannot reflect the channel's members, so:
+    - `(RTP11f1)` If `strictMode` ([`TO3r`](#TO3r)) is `true`, the `get` call must fail with an `ErrorInfo` with `code` `91008` and `statusCode` `400`, with a `message` indicating that the channel is attached without the `presence_subscribe` mode and so the members of the channel have not been delivered to this client
+    - `(RTP11f2)` If `strictMode` is `false`, the `get` call must proceed per [RTP11a](#RTP11a) (in practice returning an empty or incomplete list), and the library should log a warning per [`TO3r2`](#TO3r2)
   - `(RTP11c)` An optional set of params can be provided:
     - `(RTP11c1)` `waitForSync` (default `true`). When `true`, method will wait until `SYNC` is complete before returning a list of members. When `false`, known set of presence members is returned immediately, which may be incomplete if the `SYNC` is not finished
     - `(RTP11c2)` `clientId` filters members by the provided `clientId`
@@ -1950,6 +1957,9 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
   - `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
   - `(TO3q)` `transportParams` \[String: Stringifiable\]? - defaults to null. Described in [RTC1f](#RTC1f)
+  - `(TO3r)` `strictMode` boolean - defaults to `false`. Controls the behaviour of certain operations that, for historical reasons, complete successfully even though the client is in a state in which the operation cannot have its intended effect, such as operations gated on a granted channel mode (see [`RTL7i`](#RTL7i), [`RTP11f`](#RTP11f)). It is intended that a future major version of the specification will adopt the strict behaviour by default
+    - `(TO3r1)` When `strictMode` is `true`, each such operation must fail with the `ErrorInfo` defined by the relevant spec item, rather than completing with its legacy silent result
+    - `(TO3r2)` When `strictMode` is `false`, each such operation must complete with its legacy silent result, and the library should log the failure at `ERROR` level, including the `message` of the `ErrorInfo` defined by the relevant spec item and an indication that setting `strictMode` to `true` will cause the operation to fail with that error
 
 #### TokenParams {#token-params}
 
@@ -2178,6 +2188,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       useBinaryProtocol: Bool default true // TO3f
       transportParams: [String: Stringifiable]? // TO3q, RTC1f
       addRequestIds: Bool default false // TO3p
+      strictMode: Bool default false // TO3r
       // configurable retry and failure defaults
       disconnectedRetryTimeout: Duration default 15s // TO3l1
       suspendedRetryTimeout: Duration default 30s // RTN14e, TO3l2
