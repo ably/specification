@@ -197,8 +197,6 @@ ASSERT root.path == []
 | RTO15e1 | action set to OBJECT |
 | RTO15e2 | channel set to channel name |
 | RTO15e3 | state set to encoded ObjectMessages |
-| RTO15h | Returns PublishResult from ACK |
-
 ### Setup
 ```pseudo
 captured_messages = []
@@ -224,14 +222,15 @@ mock_ws = MockWebSocket(
 install_mock(mock_ws)
 client = Realtime(options: { key: "fake:key" })
 channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
-AWAIT channel.object.get()
+root = AWAIT channel.object.get()
 ```
 
 ### Test Steps
 ```pseudo
-result = AWAIT channel.object.publish([
-  build_counter_inc("counter:score@1000", 5, null, null)
-])
+# Drive the internal publish (RTO15) through a public mutation — RTO15 is an internal
+# function; its PublishResult is consumed internally by RTO20 (apply-on-ACK), which the
+# neighbouring RTO20 tests cover. Only the observable wire behaviour is asserted here.
+AWAIT root.get("score").increment(5)
 ```
 
 ### Assertions
@@ -240,7 +239,6 @@ ASSERT captured_messages.length == 1
 ASSERT captured_messages[0].action == OBJECT
 ASSERT captured_messages[0].channel == "test"
 ASSERT captured_messages[0].state.length == 1
-ASSERT result.serials == ["serial-0"]
 ```
 
 ---
@@ -406,6 +404,11 @@ ASSERT root.get("score").value() == 110
 
 **Spec requirement:** If channel enters DETACHED/SUSPENDED/FAILED while waiting, fail with 92008.
 
+The channel is detached **client-side** while the operation waits for SYNCED — an unsolicited
+server DETACHED would trigger an immediate re-attach (RTL13a) in a compliant SDK, so the channel
+would never observably stay DETACHED. A solicited `channel.detach()` does not trigger RTL13a; the
+shared mock answers the outbound DETACH with DETACHED.
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
@@ -420,9 +423,51 @@ mock_ws.send_to_client(ProtocolMessage(
 
 inc_future = root.get("score").increment(10)
 
+# The publish and its ACK complete against the mock; publishAndApply parks in the
+# RTO20e wait for SYNCED. A client-side detach then moves the channel to DETACHED.
+AWAIT channel.detach()
+
+AWAIT inc_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+```
+
+---
+
+## RTO20e1 - publishAndApply fails when channel enters FAILED during sync wait
+
+**Test ID**: `objects/unit/RTO20e1/fails-on-channel-failed-0`
+
+**Spec requirement:** If channel enters DETACHED/SUSPENDED/FAILED while waiting, fail with 92008.
+
+An injected channel ERROR puts the channel into FAILED while the operation waits for SYNCED —
+the same sequence as the ERROR-based proxy-tier test
+(`objects/proxy/RTO20e/publish-fails-on-channel-failed-0`). Together with the DETACHED test above
+this covers the reachable channel states of the RTO20e1 clause; SUSPENDED is a connection-level
+state and is out of scope for a channel-level unit mock.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
 mock_ws.send_to_client(ProtocolMessage(
-  action: DETACHED, channel: "test",
-  error: { code: 90000, statusCode: 400, message: "Channel detached" }
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+inc_future = root.get("score").increment(10)
+
+# The publish and its ACK complete against the mock; publishAndApply parks in the
+# RTO20e wait for SYNCED. Then the channel ERROR moves the channel to FAILED.
+mock_ws.send_to_client(ProtocolMessage(
+  action: ERROR, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel failed" }
 ))
 
 AWAIT inc_future FAILS WITH error
@@ -707,8 +752,12 @@ ASSERT error.statusCode == 400
 | RTO25b | If channel is DETACHED or FAILED, throw ErrorInfo with statusCode 400 and code 90001 |
 
 Tests that an access method (`keys()`) on a DETACHED channel throws 90001. The `root` PathObject is obtained
-while the channel is ATTACHED (with OBJECT_SUBSCRIBE granted); the channel is then detached, and the subsequent
-read trips the RTO25b state precondition. (Contrast `get()`, which re-attaches per RTO23e.)
+while the channel is ATTACHED (with OBJECT_SUBSCRIBE granted); the channel is then detached **client-side**,
+and the subsequent read trips the RTO25b state precondition. (Contrast `get()`, which re-attaches per RTO23e.)
+
+A client-side `channel.detach()` is used rather than injecting a server DETACHED, because an unsolicited
+DETACHED triggers an immediate re-attach (RTL13a) in a compliant SDK — the channel never observably stays
+DETACHED. The shared mock answers the outbound DETACH with DETACHED.
 
 ### Setup
 ```pseudo
@@ -717,11 +766,8 @@ read trips the RTO25b state precondition. (Contrast `get()`, which re-attaches p
 
 ### Test Steps
 ```pseudo
-// Detach the channel after sync
-mock_ws.send_to_client(ProtocolMessage(
-  action: DETACHED, channel: "test",
-  error: { code: 90000, statusCode: 400, message: "Channel detached" }
-))
+// Detach the channel client-side after sync
+AWAIT channel.detach()
 AWAIT_STATE channel.state == DETACHED
 
 root.keys() FAILS WITH error
@@ -827,7 +873,10 @@ ASSERT error.statusCode == 400
 |------|-------------|
 | RTO26b | If channel is DETACHED, FAILED, or SUSPENDED, throw ErrorInfo with statusCode 400 and code 90001 |
 
-Tests that a write operation on a DETACHED channel throws 90001.
+Tests that a write operation on a DETACHED channel throws 90001. The channel is detached
+**client-side** — an unsolicited server DETACHED triggers an immediate re-attach (RTL13a) in a
+compliant SDK, so the channel never observably stays DETACHED. The shared mock answers the
+outbound DETACH with DETACHED.
 
 ### Setup
 ```pseudo
@@ -836,11 +885,8 @@ Tests that a write operation on a DETACHED channel throws 90001.
 
 ### Test Steps
 ```pseudo
-// Detach the channel after sync
-mock_ws.send_to_client(ProtocolMessage(
-  action: DETACHED, channel: "test",
-  error: { code: 90000, statusCode: 400, message: "Channel detached" }
-))
+// Detach the channel client-side after sync
+AWAIT channel.detach()
 AWAIT_STATE channel.state == DETACHED
 
 AWAIT root.set("name", "Bob") FAILS WITH error
@@ -999,7 +1045,7 @@ deep_events = []
 
 // Subscribe at root with depth 1 — per RTO24c2b this covers ONLY root's own path ([]),
 // NOT its children (a child like ["score"] is relativeDepth 1-0+1 = 2 > 1).
-root.subscribe({ depth: 1 }, (event) => shallow_events.append(event))
+root.subscribe((event) => shallow_events.append(event), { depth: 1 })
 
 // Subscribe at root with no depth limit — covers everything
 root.subscribe((event) => deep_events.append(event))

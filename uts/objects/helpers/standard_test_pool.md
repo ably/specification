@@ -360,6 +360,11 @@ setup_synced_channel(channel_name):
         FOR i IN 0..msg.state.length - 1:
           serials.append(ack_serial(msg.msgSerial, i))
         mock_ws.send_to_client(build_ack_message(msg.msgSerial, serials))
+      ELSE IF msg.action == DETACH:
+        mock_ws.send_to_client(ProtocolMessage(
+          action: DETACHED,
+          channel: msg.channel
+        ))
     }
   )
   install_mock(mock_ws)
@@ -401,6 +406,11 @@ setup_synced_channel_no_ack(channel_name):
         ))
         mock_ws.send_to_client(build_object_sync_message(
           msg.channel, "sync1:", STANDARD_POOL_OBJECTS
+        ))
+      ELSE IF msg.action == DETACH:
+        mock_ws.send_to_client(ProtocolMessage(
+          action: DETACHED,
+          channel: msg.channel
         ))
     }
   )
