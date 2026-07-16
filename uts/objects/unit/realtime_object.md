@@ -239,6 +239,10 @@ ASSERT captured_messages.length == 1
 ASSERT captured_messages[0].action == OBJECT
 ASSERT captured_messages[0].channel == "test"
 ASSERT captured_messages[0].state.length == 1
+# RTO15e3 - the state entry is the encoded ObjectMessage for the driven mutation
+ASSERT captured_messages[0].state[0].operation.action == COUNTER_INC
+ASSERT captured_messages[0].state[0].operation.objectId == "counter:score@1000"
+ASSERT captured_messages[0].state[0].operation.counterInc.number == 5
 ```
 
 ---
@@ -424,7 +428,10 @@ mock_ws.send_to_client(ProtocolMessage(
 inc_future = root.get("score").increment(10)
 
 # The publish and its ACK complete against the mock; publishAndApply parks in the
-# RTO20e wait for SYNCED. A client-side detach then moves the channel to DETACHED.
+# RTO20e wait for SYNCED
+ASSERT inc_future IS NOT complete
+
+# A client-side detach then moves the channel to DETACHED
 AWAIT channel.detach()
 
 AWAIT inc_future FAILS WITH error
@@ -464,7 +471,10 @@ mock_ws.send_to_client(ProtocolMessage(
 inc_future = root.get("score").increment(10)
 
 # The publish and its ACK complete against the mock; publishAndApply parks in the
-# RTO20e wait for SYNCED. Then the channel ERROR moves the channel to FAILED.
+# RTO20e wait for SYNCED
+ASSERT inc_future IS NOT complete
+
+# Then the channel ERROR moves the channel to FAILED
 mock_ws.send_to_client(ProtocolMessage(
   action: ERROR, channel: "test",
   error: { code: 90000, statusCode: 400, message: "Channel failed" }
