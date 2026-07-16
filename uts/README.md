@@ -87,6 +87,20 @@ ASSERT error.code == 40160
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
+Pseudocode maps to language idioms rather than prescribing exact syntax:
+
+- **Absent values**: `== null` means the language-appropriate "absent" value — `undefined` in
+  JavaScript, `null` in Java/Kotlin/Swift. Assertions like `ASSERT x.value() == null` are
+  satisfied by `undefined` in SDKs where that is the idiomatic absent value.
+- **Property access**: member access written as a call (e.g. `instance.id()`) is satisfied by a
+  property or getter (`instance.id`) where the SDK's feature spec defines the member as a
+  property (e.g. `Instance#id`, RTINS3).
+- **Language-inapplicable inputs**: a test input that cannot be constructed in a given language
+  (e.g. a non-string map key in JavaScript, where object keys are always coerced to strings; or a
+  `null` argument where the SDK's signature makes null indistinguishable from "omitted") makes
+  that test — or that table row — not applicable to that SDK. Such omissions are sanctioned and
+  should be noted in the derived test file rather than counted as coverage gaps.
+
 See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudocode reference, mock patterns, and conventions.
 
 ## Guides

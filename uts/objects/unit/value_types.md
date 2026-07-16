@@ -371,6 +371,11 @@ ASSERT error.code == 40003
 
 **Spec requirement:** If any key is not String, throw 40003 (RTLMV4b).
 
+This test applies only to languages where a non-string map key can be constructed. In
+JavaScript/TypeScript object keys are always coerced to strings (`{ 123: "value" }` is
+`{ "123": "value" }`), so the invalid input cannot reach the validation — the test is not
+applicable there. See the pseudocode conventions in `uts/README.md`.
+
 ### Test Steps
 ```pseudo
 vt = LiveMap.create({ 123: "value" })

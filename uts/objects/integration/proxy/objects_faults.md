@@ -326,7 +326,8 @@ pending mutation must fail with error 92008 (RTO20e1).
 > Note: the mutation must be in flight *before* the channel fails. A mutation issued on a
 > channel already in DETACHED/FAILED/SUSPENDED fails the RTO26b write precondition with 90001
 > and never reaches publishAndApply — that is different behaviour, not this test. The unit-tier
-> test `objects/unit/RTO20e1/fails-on-channel-failed-0` uses the same sequence.
+> test `objects/unit/RTO20e1/fails-on-channel-failed-0` uses the same ERROR-based sequence
+> against a mock transport.
 
 ### Setup
 

@@ -233,12 +233,17 @@ ASSERT updates[0].message.operation.counterInc.number == 7
 
 **Spec requirement:** If amount is null, not Number, not finite, or NaN, throw 40003.
 
+The `null` row applies only where `null` is passable and distinguishable from an omitted
+argument (e.g. a boxed `Integer` in Java). In SDKs whose signature makes null equivalent to
+"omitted" (e.g. `increment(amount?: number)` in JavaScript, where a nullish amount takes the
+default of 1), the row is not applicable — see the pseudocode conventions in `uts/README.md`.
+
 ### Setup
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 
 invalid_amounts = [
-  { value: null,        label: "null" },
+  { value: null,        label: "null" },  # language-applicability: see note above
   { value: NaN,         label: "NaN" },
   { value: Infinity,    label: "Infinity" },
   { value: -Infinity,   label: "-Infinity" },
