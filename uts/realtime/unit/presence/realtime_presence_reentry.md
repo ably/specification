@@ -160,10 +160,11 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Use a non-wildcard clientId that has enterClient permission.
-# Note: Some SDKs reject wildcard clientId "*" at the ClientOptions level.
-# Use a concrete clientId and rely on server-side permission for enterClient.
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "admin", autoConnect: false))
+# Unidentified client (key auth, no clientId): permitted to act on behalf of
+# any clientId via enterClient. (RSA7c reserves "*" as a ClientOptions#clientId
+# value, and per RTP15f an identified client cannot enterClient a different
+# clientId.)
+client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
 
