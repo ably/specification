@@ -371,7 +371,7 @@ Tests that when the source ObjectOperation has a `mapCreate` field, the PublicAP
 source_operation = {
   action: "MAP_CREATE",
   objectId: "map:new@2000",
-  mapCreate: { semantics: "lww", entries: { "key1": { data: { string: "val1" } } } }
+  mapCreate: { semantics: "LWW", entries: { "key1": { data: { string: "val1" } } } }
 }
 ```
 
@@ -385,7 +385,7 @@ public_op = PublicObjectOperation.fromObjectOperation(source_operation)
 ASSERT public_op.action == "MAP_CREATE"
 ASSERT public_op.objectId == "map:new@2000"
 ASSERT public_op.mapCreate IS NOT null
-ASSERT public_op.mapCreate.semantics == "lww"
+ASSERT public_op.mapCreate.semantics == "LWW"
 ASSERT public_op.mapCreate.entries["key1"].data.string == "val1"
 ASSERT public_op.counterCreate == null
 ```
@@ -404,14 +404,14 @@ Tests that when the source ObjectOperation has `mapCreateWithObjectId` but not `
 
 ### Setup
 ```pseudo
-derived_map_create = { semantics: "lww", entries: { "x": { data: { number: 10 } } } }
+derived_map_create = { semantics: "LWW", entries: { "x": { data: { number: 10 } } } }
 
 source_operation = {
   action: "MAP_CREATE",
   objectId: "map:derived@3000",
   mapCreateWithObjectId: {
     objectId: "map:derived@3000",
-    semantics: "lww",
+    semantics: "LWW",
     entries: { "x": { data: { number: 10 } } },
     derivedFrom: derived_map_create  // retained MapCreate per RTLMV4j5 (local-only; not a wire field name)
   }
@@ -428,7 +428,7 @@ public_op = PublicObjectOperation.fromObjectOperation(source_operation)
 ASSERT public_op.action == "MAP_CREATE"
 ASSERT public_op.objectId == "map:derived@3000"
 ASSERT public_op.mapCreate IS NOT null
-ASSERT public_op.mapCreate.semantics == "lww"
+ASSERT public_op.mapCreate.semantics == "LWW"
 ASSERT public_op.mapCreate.entries["x"].data.number == 10
 ASSERT public_op.counterCreate == null
 ```
