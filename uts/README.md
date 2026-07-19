@@ -95,6 +95,10 @@ Pseudocode maps to language idioms rather than prescribing exact syntax:
 - **Property access**: member access written as a call (e.g. `instance.id()`) is satisfied by a
   property or getter (`instance.id`) where the SDK's feature spec defines the member as a
   property (e.g. `Instance#id`, RTINS3).
+- **Enum values**: a symbolic enum value in pseudo-code (e.g. `"LWW"` for
+  `ObjectsMapSemantics.LWW`, wire-encoded as an integer per OMP2) is satisfied by the SDK's
+  idiomatic public rendering of that enum member — the enum member itself in typed SDKs
+  (`MapSemantics.LWW` in ably-java), or a string-literal union value in ably-js (`'lww'`).
 - **Language-inapplicable inputs**: a test input that cannot be constructed in a given language
   (e.g. a non-string map key in JavaScript, where object keys are always coerced to strings; or a
   `null` argument where the SDK's signature makes null indistinguishable from "omitted") makes

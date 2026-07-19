@@ -468,10 +468,15 @@ If an SDK uses a REST client object to perform provisioning, it must be closed a
 ```pseudo
 provision_objects_via_rest(api_key, channel_name, operations):
   # operations: a single operation object, or an array of operation objects (batch)
-  POST https://sandbox.realtime.ably-nonprod.net/channels/{encode_uri_component(channel_name)}/object
+  response = POST https://sandbox.realtime.ably-nonprod.net/channels/{encode_uri_component(channel_name)}/object
     WITH Authorization: Basic {base64(api_key)}
     WITH Content-Type: application/json
     WITH body: operations
+  # Response contract: the body is a single result object, or a JSON array of result objects
+  # (one per batch entry); each result carries an `objectIds` string array naming the objects
+  # the operation created or updated. The helper returns them flattened, in request order, so
+  # derived tests can target follow-up operations by `objectId`.
+  RETURN [objectId FOR result IN as_list(parse_json(response.body)) FOR objectId IN result.objectIds]
 ```
 
 Operation shapes (target by `objectId` or `path`; an optional `id` on any operation is an idempotency key):
