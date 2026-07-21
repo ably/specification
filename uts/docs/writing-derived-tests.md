@@ -39,6 +39,8 @@ UTS specs use generic pseudocode. You need to map this onto the SDK's actual API
 | `enable_fake_timers()` | Timer control mechanism |
 | `ADVANCE_TIME(ms)` | Fake timer tick method |
 | `AWAIT_STATE(connection, "connected")` | State waiting helper |
+| `poll_until(condition, ...)` | Shared polling helper (wall-clock deadline — see below) |
+| `poll_until_success(condition)` | Error-tolerant polling helper (see the pseudocode conventions in `uts/README.md`) |
 
 Check the SDK's existing test infrastructure and conventions before writing anything. Reuse existing helpers, mock classes, and patterns.
 
@@ -271,7 +273,7 @@ These casts are an SDK wart, not a test problem — apply them as needed and mov
 Unit tests must not use real timers (`setTimeout`, `setInterval`, `sleep`, `delay`) to wait for asynchronous events. Real timers make tests slow, flaky, and prevent the process from exiting cleanly.
 
 - **For time-dependent SDK behaviour** (timeouts, retries, heartbeats): use fake timers that replace the SDK's timer API and can be advanced deterministically.
-- **For waiting on async event delivery** (mock message propagation, promise settlement): yield to the event loop with a zero-delay mechanism like `setImmediate`, `process.nextTick`, or equivalent. Define a `flushAsync()` helper and use it everywhere instead of `setTimeout(resolve, N)`.
+- **For waiting on async event delivery** (mock message propagation, promise settlement): yield to the event loop with a zero-delay mechanism like `setImmediate`, `process.nextTick`, or equivalent. Define a `flushAsync()` helper and use it everywhere instead of `setTimeout(resolve, N)`. This is the rendering of the spec's `process_pending_events()` convention (see `uts/README.md`).
 - **For "prove a negative" assertions** (confirming something did NOT happen): a single event-loop yield is sufficient — if the event hasn't fired after one pass through the macrotask queue, it won't fire from the current stimulus.
 
 The only acceptable use of a real timer is a **safety timeout on test execution** — a long deadline (e.g. 5 seconds) that fails the test if an expected event never arrives, preventing the test from hanging indefinitely. This is a test-level safeguard, not a delay mechanism.
@@ -287,6 +289,49 @@ await flushAsync();
 const timer = setTimeout(() => reject(new Error('Timed out')), 5000);
 connection.once('connected', () => { clearTimeout(timer); resolve(); });
 ```
+
+**Fake time and poll deadlines collide.** A safety timeout or a `poll_until` helper whose
+deadline reads a clock the test's fake timers stub will never expire. This is easy to hit,
+because mainstream fake-timer tools fake the wall clock by default (Jest's modern fake timers
+and sinon's `useFakeTimers` both mock `Date`): a deadline computed from `Date.now()` freezes
+while fake time is installed, so the poll spins until the runner's own timeout kills it with a
+generic error instead of the poll's informative one. Two remedies, in order of preference:
+
+1. **Restructure the test so the wall clock never needs stubbing**: backdate a fixture
+   timestamp past the period under test instead of advancing a fake "now". For example,
+   ably-js's derived RTO10/RTO10b1 GC tests render the spec's `ADVANCE_TIME`
+   (`objects/unit/realtime_object.md`) by stamping the tombstone's `serialTimestamp` in the
+   past (RTLO6a makes it `tombstonedAt`), so the object is already GC-eligible under the real
+   clock and nothing is stubbed.
+2. **Have the polling helper's deadline read a monotonic clock** that time stubbing cannot
+   touch: `performance.now()` in JavaScript, `System.nanoTime()` on the JVM.
+
+A *synchronous* stub window is exempt: stubbing the clock around a single non-awaiting call and
+restoring it in a `finally` never overlaps a poll, so the trap cannot fire. Sometimes it is the
+only option — the SDK reads the clock internally and the spec fixture is a fixed epoch, as in
+RTLM19's GC-boundary test — and it should then be recorded as a deviation in the test file
+header.
+
+### Integration timeouts are wall-clock (beware virtual-time frameworks)
+
+The rule above is inverted for **integration and proxy tests**: every `WITH timeout`,
+`poll_until` and `WAIT` in an integration spec is **wall-clock (real) time**, because the test
+is waiting on a real server or proxy over a real network.
+
+This is a trap in test frameworks that virtualise time by default. For example,
+kotlinx-coroutines' `runTest` runs the test body on a virtual clock: a bare `withTimeout(15s)`
+wrapping a real network await measures *virtual* time, which fast-forwards the moment the test
+coroutine idles — the timeout fires almost instantly, long before the server can respond, with
+a misleading "Timed out after 15s" error. The same applies to a bare `delay()`, which skips
+instead of waiting.
+
+Derived integration tests in such frameworks must run their waits against the real clock —
+e.g. dispatch onto a real-thread dispatcher before applying the timeout
+(`withContext(Dispatchers.Default.limitedParallelism(1)) { withTimeout(...) { ... } }` in
+Kotlin), or use the framework's escape hatch for real time. Define shared helpers
+(`awaitState`, `pollUntil`, `withRealTimeout`, ...) that encapsulate this once, and use them for
+every wait in integration test bodies. Unit tests are unaffected — there, fake/virtual timers
+remain the preferred mechanism.
 
 ### Cleanup with afterEach
 

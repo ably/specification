@@ -6,7 +6,7 @@ Spec points: `RTN22`, `RTC8a`
 
 Proxy integration test against Ably Sandbox endpoint.
 
-Uses the programmable proxy (`uts/test/proxy/`) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure details.
+Uses the programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy)) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/docs/proxy.md` for proxy infrastructure details.
 
 Corresponding unit tests:
 - `uts/realtime/unit/connection/server_initiated_reauth_test.md` (RTN22, RTN22a)
@@ -31,16 +31,6 @@ AFTER ALL TESTS:
     WITH Authorization: Basic {api_key}
 ```
 
-## Port Allocation
-
-Each test allocates a unique proxy port to avoid conflicts:
-
-```pseudo
-BEFORE ALL TESTS:
-  port_base = allocate_port_range(count: 1)
-  # Tests use port_base + 0
-```
-
 ---
 
 ## Test 26: RTN22/RTC8a -- Server-initiated re-authentication
@@ -63,7 +53,6 @@ Tests that when the proxy injects a server-initiated AUTH ProtocolMessage (actio
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 0,
   rules: []
 )
 ```
@@ -83,7 +72,7 @@ auth_callback = FUNCTION(params, callback):
 client = Realtime(options: ClientOptions(
   authCallback: auth_callback,
   endpoint: "localhost",
-  port: port_base + 0,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false

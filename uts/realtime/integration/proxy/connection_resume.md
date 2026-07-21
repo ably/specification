@@ -6,7 +6,7 @@ Spec points: `RTN15a`, `RTN15b`, `RTN15c6`, `RTN15c7`, `RTN15g`, `RTN15g2`, `RTN
 
 Proxy integration test against Ably Sandbox endpoint.
 
-Uses the programmable proxy (`uts/test/proxy/`) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/test/realtime/integration/helpers/proxy.md` for proxy infrastructure details.
+Uses the programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy)) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/docs/proxy.md` for proxy infrastructure details.
 
 Corresponding unit tests: `uts/realtime/unit/connection/connection_failures_test.md`, `uts/realtime/unit/connection/connection_recovery_test.md`
 
@@ -26,16 +26,6 @@ AFTER ALL TESTS:
   # Clean up test app
   DELETE https://sandbox.realtime.ably-nonprod.net/apps/{app_id}
     WITH Authorization: Basic {api_key}
-```
-
-## Port Allocation
-
-Each test allocates a unique proxy port to avoid conflicts:
-
-```pseudo
-BEFORE ALL TESTS:
-  port_base = allocate_port_range(count: 11)
-  # Tests use port_base + 0 through port_base + 10
 ```
 
 ---
@@ -59,7 +49,6 @@ Tests that an unexpected transport disconnect causes the SDK to reconnect and at
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 0,
   rules: [
     {
       match: { type: "delay_after_ws_connect", delayMs: 1000 },
@@ -79,7 +68,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 0,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -163,7 +152,6 @@ frame) after a 1-second delay.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 0,
   rules: [
     {
       match: { type: "delay_after_ws_connect", delayMs: 1000 },
@@ -211,7 +199,6 @@ Tests that after an unexpected disconnect and successful resume, the connection 
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 1,
   rules: [
     {
       match: { type: "delay_after_ws_connect", delayMs: 1000 },
@@ -231,7 +218,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 1,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -309,7 +296,6 @@ Tests that when a resume fails (simulated by the proxy replacing the server's se
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 2,
   rules: [
     {
       match: { type: "delay_after_ws_connect", delayMs: 1000 },
@@ -358,7 +344,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 2,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -442,7 +428,6 @@ Tests that when the proxy injects a DISCONNECTED message with a token error (cod
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 3,
   rules: [
     {
       "match": { "type": "delay_after_ws_connect", "delayMs": 1000 },
@@ -479,7 +464,7 @@ token_string = token_details.token
 client = Realtime(options: ClientOptions(
   token: token_string,
   endpoint: "localhost",
-  port: port_base + 3,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -553,7 +538,6 @@ Tests that when the proxy injects a DISCONNECTED message with a non-token error 
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 4,
   rules: [
     {
       "match": { "type": "delay_after_ws_connect", "delayMs": 1000 },
@@ -583,7 +567,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 4,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -669,7 +653,6 @@ Tests that a connection-level ERROR ProtocolMessage (no channel field) causes th
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 5,
   rules: []
 )
 ```
@@ -682,7 +665,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 5,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -799,7 +782,6 @@ Tests that when the client has been disconnected for longer than connectionState
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 6,
   rules: [
     {
       "match": { "type": "ws_frame_to_client", "action": "CONNECTED", "count": 1 },
@@ -833,7 +815,7 @@ session = create_proxy_session(
     },
     {
       "match": { "type": "ws_connect", "count": 2 },
-      "action": { "type": "refuse" },
+      "action": { "type": "refuse_connection" },
       "times": 1,
       "comment": "RTN15g: Refuse 2nd ws_connect — keeps client disconnected until TTL expires and SUSPENDED fires"
     }
@@ -849,7 +831,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 6,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false,
@@ -932,7 +914,6 @@ Tests that a message awaiting ACK on the old transport is resent after reconnect
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 7,
   rules: [
     {
       "match": { "type": "ws_frame_to_client", "action": "ACK" },
@@ -954,7 +935,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 7,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -1067,7 +1048,6 @@ Use a direct proxy session (passthrough, no rules) to connect to the sandbox, at
 ```pseudo
 session_1 = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 8,
   rules: []
 )
 
@@ -1076,7 +1056,7 @@ client_1 = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 8,
+  port: session_1.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false
@@ -1090,7 +1070,6 @@ A second proxy session is used so we can inspect the `recover` query parameter i
 ```pseudo
 session_2 = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 9,
   rules: []
 )
 ```
@@ -1140,7 +1119,7 @@ client_2 = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 9,
+  port: session_2.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false,
@@ -1206,7 +1185,6 @@ Tests that when a recovery attempt fails (the server responds with a new connect
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: port_base + 10,
   rules: [
     {
       "match": { "type": "ws_frame_to_client", "action": "CONNECTED", "count": 1 },
@@ -1257,7 +1235,7 @@ client = Realtime(options: ClientOptions(
     RETURN generate_jwt(keyName: key_name, keySecret: key_secret)
   },
   endpoint: "localhost",
-  port: port_base + 10,
+  port: session.proxy_port,
   tls: false,
   useBinaryProtocol: false,
   autoConnect: false,

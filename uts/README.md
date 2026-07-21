@@ -28,14 +28,13 @@ uts/
 │   │   ├── connection/                # RTN — connection management
 │   │   └── presence/                  # RTP — realtime presence
 │   └── integration/                   # Realtime integration tests
-│       ├── helpers/
-│       │   └── proxy.md               # Proxy infrastructure spec
 │       ├── proxy/                     # Proxy-based fault injection tests
 │       └── *.md                       # Direct sandbox tests
 ├── docs/                              # Guides and reference
 │   ├── writing-test-specs.md          # How to write UTS specs
 │   ├── writing-derived-tests.md       # How to translate specs into SDK tests
 │   ├── integration-testing.md         # Integration testing policy
+│   ├── proxy.md                       # Proxy infrastructure spec (cross-module)
 │   └── completion-status.md           # Spec coverage matrix
 └── README.md                          # This file
 ```
@@ -88,6 +87,43 @@ ASSERT error.code == 40160
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
+Pseudocode maps to language idioms rather than prescribing exact syntax:
+
+- **Absent values**: `== null` means the language-appropriate "absent" value — `undefined` in
+  JavaScript, `null` in Java/Kotlin/Swift. Assertions like `ASSERT x.value() == null` are
+  satisfied by `undefined` in SDKs where that is the idiomatic absent value.
+- **Property access**: member access written as a call (e.g. `instance.id()`) is satisfied by a
+  property or getter (`instance.id`) where the SDK's feature spec defines the member as a
+  property (e.g. `Instance#id`, RTINS3).
+- **Enum values**: a symbolic enum value in pseudo-code (e.g. `"LWW"` for
+  `ObjectsMapSemantics.LWW`, wire-encoded as an integer per OMP2) is satisfied by the SDK's
+  idiomatic public rendering of that enum member — the enum member itself in typed SDKs
+  (`MapSemantics.LWW` in ably-java), or a string-literal union value in ably-js (`'lww'`).
+- **`poll_until_success(condition)`**: a `poll_until` (interval 500ms, timeout 10s) that keeps
+  polling until the condition succeeds — returns a truthy result without raising. Any error raised by
+  the condition — not-found for a not-yet-visible write, or a transient service/network error —
+  means "keep polling" rather than failure; if the timeout expires, the most recent error is
+  raised so the failure stays diagnosable (a plain timeout error if the condition never raised).
+  Use only where an error genuinely means "not ready yet", e.g. reads of the eventually-consistent
+  message store (`getMessage`, `getMessageVersions`, `annotations.get`), or LiveObjects value
+  reads polled across a fault-injection/recovery window, where the channel is transiently
+  DETACHED and reads raise by design; where an error should fail the test, use `poll_until`.
+  Implementations typically provide this as a shared helper wrapping their `poll_until`
+  (e.g. `pollUntilSuccess` in ably-js); the reference definition lives in
+  [docs/writing-test-specs.md](docs/writing-test-specs.md).
+- **`process_pending_events()`**: let the client finish processing all asynchronous work that
+  is already queued (mock events, promise continuations) before the test continues — used at
+  unit tier before asserting, especially for negative assertions ("nothing happened"). Involves
+  no real delay and is never rendered as a timed sleep; implementations define a shared helper
+  using the platform's zero-delay yield (e.g. `flushAsync()` awaiting a `setImmediate` in
+  ably-js, or `runCurrent()` on a kotlinx-coroutines test scheduler) — see the timer guidance
+  in [docs/writing-derived-tests.md](docs/writing-derived-tests.md).
+- **Language-inapplicable inputs**: a test input that cannot be constructed in a given language
+  (e.g. a non-string map key in JavaScript, where object keys are always coerced to strings; or a
+  `null` argument where the SDK's signature makes null indistinguishable from "omitted") makes
+  that test — or that table row — not applicable to that SDK. Such omissions are sanctioned and
+  should be noted in the derived test file rather than counted as coverage gaps.
+
 See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudocode reference, mock patterns, and conventions.
 
 ## Guides
@@ -101,4 +137,4 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 The programmable proxy for integration testing lives in a separate repository: [ably/uts-proxy](https://github.com/ably/uts-proxy). It sits between the SDK and the Ably sandbox, transparently forwarding traffic while allowing rule-based fault injection.
 
-See `realtime/integration/helpers/proxy.md` for the proxy infrastructure specification used by test specs in this repository.
+See `uts/docs/proxy.md` for the proxy infrastructure specification used by test specs in this repository.

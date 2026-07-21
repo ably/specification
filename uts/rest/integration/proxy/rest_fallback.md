@@ -8,7 +8,7 @@ Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
 
-See `uts/realtime/integration/helpers/proxy.md` for the full proxy infrastructure specification.
+See `uts/docs/proxy.md` for the full proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 
@@ -100,7 +100,7 @@ a fallback host (also routed through the proxy) and succeeds.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/time" },
     "action": {
@@ -160,7 +160,7 @@ fallback host.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/time" },
     "action": {
@@ -273,7 +273,7 @@ on the retry.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/time" },
     "action": {
@@ -328,7 +328,7 @@ are configured, so the error propagates directly to the caller.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/time" },
     "action": {
@@ -382,7 +382,7 @@ non-parseable body while still returning valid JSON.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/time" },
     "action": {
@@ -435,7 +435,7 @@ should trigger fallback; 4xx errors indicate a client-side problem.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/time" },
     "action": {
@@ -502,7 +502,7 @@ on the library-generated message `id`.
 ```pseudo
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "method": "POST", "pathContains": "/channels/" },
     "action": {

@@ -8,7 +8,7 @@ Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
 
-See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastructure specification.
+See `uts/docs/proxy.md` for the full proxy infrastructure specification.
 
 ## Related Unit Tests
 
@@ -66,7 +66,7 @@ Tests that when the server responds with a fatal ERROR (non-token error code) du
 # Create proxy session that replaces the first CONNECTED with a fatal ERROR
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
     "action": {
@@ -151,7 +151,7 @@ auth_callback_count = 0
 # Create proxy session that injects token error on first CONNECTED only
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
     "action": {
@@ -246,7 +246,7 @@ Tests that when the first WebSocket connection is refused at the transport level
 # Create proxy session that refuses the first WebSocket connection
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_connect", "count": 1 },
     "action": { "type": "refuse_connection" },
@@ -325,7 +325,7 @@ Tests that when the server responds with a connection-level ERROR (no channel fi
 # Create proxy session that replaces the first CONNECTED with a server ERROR
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
     "action": {
@@ -408,7 +408,7 @@ Tests that when the server accepts the WebSocket but never sends a CONNECTED mes
 # Create proxy session that suppresses all CONNECTED messages
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "ws_frame_to_client", "action": "CONNECTED" },
     "action": { "type": "suppress" },

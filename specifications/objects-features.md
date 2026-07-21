@@ -913,7 +913,8 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO8a)` Checks the access API preconditions per [RTO25](#RTO25)
   - `(RTPO8b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
   - `(RTPO8c)` If the resolved value is a `LiveObject` (i.e. an `InternalLiveMap` or `InternalLiveCounter`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping that `LiveObject`
-  - `(RTPO8d)` If the resolved value is a primitive, returns undefined/null
+  - `(RTPO8d)` This clause has been replaced by [RTPO8f](#RTPO8f).
+  - `(RTPO8f)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping the primitive value
   - `(RTPO8e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO9)` `PathObject#entries` function:
   - `(RTPO9a)` Checks the access API preconditions per [RTO25](#RTO25)

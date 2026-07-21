@@ -99,8 +99,6 @@ realtime/
     presence/
       presence_lifecycle_test.md
       ...
-    helpers/
-      proxy.md                             # Proxy infrastructure spec
     proxy/                                 # Proxy-based tests (sandbox + proxy)
       connection_open_failures.md
       connection_resume.md
@@ -151,13 +149,12 @@ AFTER ALL TESTS:
 
 ### Proxy Setup (integration-proxy only)
 
-Proxy tests additionally set up a proxy session per test or group of tests. See `realtime/integration/helpers/proxy.md` for the proxy infrastructure API.
+Proxy tests additionally set up a proxy session per test or group of tests. See `uts/docs/proxy.md` for the proxy infrastructure API.
 
 ```pseudo
 BEFORE EACH TEST:
   session = create_proxy_session(
     endpoint: "nonprod:sandbox",
-    port: allocated_port,
     rules: [ ...initial rules... ]
   )
 
@@ -228,6 +225,12 @@ Guidelines:
 
 The goal is: every await in the test is bounded, and the suite timeout is generous enough that it only fires if something truly unexpected happens. When a test fails, the error should say *what* timed out, not just "suite timeout exceeded."
 
+**All timeouts are wall-clock time.** Every `WITH timeout`, `poll_until` and `WAIT` in an
+integration spec measures real elapsed time — the test is waiting on a real server over a real
+network. Derived tests in frameworks that virtualise time by default must run these waits
+against the real clock; see the *Integration timeouts are wall-clock* section in
+`writing-derived-tests.md` for the failure mode and recommended helpers.
+
 ### Avoiding Flaky Tests
 
 - Use polling with timeouts instead of fixed waits (see `README.md` polling conventions)
@@ -295,6 +298,10 @@ The following integration test specs are annotated with `## Protocol Variants`:
 - `realtime/integration/presence_lifecycle_test.md`
 - `realtime/integration/mutable_messages_test.md`
 - `realtime/integration/delta_decoding_test.md`
+
+**LiveObjects:**
+- `objects/integration/objects_lifecycle_test.md`
+- `objects/integration/objects_sync_test.md`
 
 ## Writing Proxy Tests
 
