@@ -111,12 +111,13 @@ Pseudocode maps to language idioms rather than prescribing exact syntax:
   Implementations typically provide this as a shared helper wrapping their `poll_until`
   (e.g. `pollUntilSuccess` in ably-js); the reference definition lives in
   [docs/writing-test-specs.md](docs/writing-test-specs.md).
-- **`flush_async()`**: drain pending event-loop work (microtasks and zero-delay callbacks)
-  without any real delay — used at unit tier to let mock events propagate before asserting,
-  especially for negative assertions ("nothing happened"). Never rendered as a timed sleep;
-  implementations define a shared helper (e.g. `flushAsync()` in ably-js, awaiting a
-  `setImmediate`) — see the timer guidance in
-  [docs/writing-derived-tests.md](docs/writing-derived-tests.md).
+- **`process_pending_events()`**: let the client finish processing all asynchronous work that
+  is already queued (mock events, promise continuations) before the test continues — used at
+  unit tier before asserting, especially for negative assertions ("nothing happened"). Involves
+  no real delay and is never rendered as a timed sleep; implementations define a shared helper
+  using the platform's zero-delay yield (e.g. `flushAsync()` awaiting a `setImmediate` in
+  ably-js, or `runCurrent()` on a kotlinx-coroutines test scheduler) — see the timer guidance
+  in [docs/writing-derived-tests.md](docs/writing-derived-tests.md).
 - **Language-inapplicable inputs**: a test input that cannot be constructed in a given language
   (e.g. a non-string map key in JavaScript, where object keys are always coerced to strings; or a
   `null` argument where the SDK's signature makes null indistinguishable from "omitted") makes

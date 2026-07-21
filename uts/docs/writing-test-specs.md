@@ -752,7 +752,7 @@ ADVANCE_TIME(3000)
 AWAIT_STATE state == disconnected
 ```
 
-Reference definition of `poll_until` (a shared helper in each SDK's test harness). Specs call it
+Reference definition of `poll_until` (a shared helper in each SDK's test suite). Specs call it
 with either a bare condition expression (re-evaluated each iteration until true) or a producer
 function whose first truthy result is returned:
 
@@ -768,9 +768,19 @@ FUNCTION poll_until(condition, interval: 500ms, timeout: 10s):
     WAIT interval
 ```
 
-At integration tier the deadline and interval are wall-clock time; unit-tier harnesses may
-realise the interval as event-loop turns instead of real sleeps (see *Integration timeouts are
+At integration tier the deadline and interval are wall-clock time; unit-tier implementations
+may realise the interval as event-loop turns instead of real sleeps (see *Integration timeouts are
 wall-clock* in `writing-derived-tests.md` for the traps on both sides).
+
+For a **negative assertion** at unit tier — proving something did *not* happen — there is
+nothing to poll for: use `process_pending_events()` (see the pseudocode conventions in
+`uts/README.md`) to let already-queued events settle, then assert. Never a fixed `WAIT`.
+
+```pseudo
+# Good - negative assertion: settle pending events, then assert nothing happened
+process_pending_events()
+ASSERT mock_ws.connect_attempts.length == 0
+```
 
 **A `poll_until` fails immediately if its condition raises an error.** For reads that are expected
 to fail until the service catches up — reads of the eventually-consistent message store
