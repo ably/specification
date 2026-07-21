@@ -687,8 +687,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL3a)` If the connection state enters the `FAILED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `FAILED` and set the `RealtimeChannel#errorReason`
   - `(RTL3b)` If the connection state enters the `CLOSED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `DETACHED`
   - `(RTL3c)` If the connection state enters the `SUSPENDED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `SUSPENDED`
-  - `(RTL3d)` If the connection state enters the `CONNECTED` state, any channels in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states should be transitioned to `ATTACHING` (other than ones already in that state), and initiate an `RTL4c` attach sequence. (If the attach operation times out and the channel was previously `SUSPENDED`, it should return to the `SUSPENDED` state, see [RTL4f](#RTL4f)). The connection should also process any messages that had been queued per `RTL6c2` (it should do this immediately, without waiting for the attach operations to finish).
+  - `(RTL3d)` If the connection state enters the `CONNECTED` state, any channels in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states should be transitioned to `ATTACHING` (other than ones already in that state), and initiate an `RTL4c` attach sequence. (If the attach operation times out and the channel was previously `SUSPENDED`, it should return to the `SUSPENDED` state, see [RTL4f](#RTL4f)). The connection should also process any messages that had been queued per `RTL6c2` (it should do this immediately, without waiting for the attach operations to finish, other than the presence messages described in [`RTL3d2`](#RTL3d2)).
     - `(RTL3d1)` The `RTL3d` channel state transitions must be applied before the `CONNECTED` connection state change is emitted to external listeners.
+    - `(RTL3d2)` When processing the messages that had been queued per [`RTL6c2`](#RTL6c2), any presence messages for a channel that `RTL3d` is (re-)attaching must not be sent immediately; they should instead be queued at the channel level (per [`RTP16b`](#RTP16b)).
 - `(RTL11)` If a channel enters the `DETACHED`, `SUSPENDED` or `FAILED` state, then all presence actions that are still queued for send on that channel per [RTP16b](#RTP16b) should be deleted from the queue, and any callback passed to the corresponding presence method invocation should be called with an `ErrorInfo` indicating the failure
   - `(RTL11a)` For clarity, any messages awaiting an `ACK` or `NACK` are unaffected by channel state changes i.e. a channel that becomes detached following an explicit request to detach may still receive an `ACK` or `NACK` for messages published on that channel later
 - `(RTL4)` `RealtimeChannel#attach` function:
@@ -758,6 +759,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL7h)` If the `attachOnSubscribe` channel option is `false`, then the behaviour depends on the public API that a given SDK uses to communicate the result of an [`RTL7g`](#RTL7g) implicit attach:
     - If the SDK's API accepts an optional callback to communicate the result of an [`RTL7g`](#RTL7g) implicit attach, then it is a programmer error to provide such a callback when the `attachOnSubscribe` channel option is `false`. This programmer error should be handled in an idiomatic fashion; if this means that the `#subscribe` call should throw an error, then this error should be an `ErrorInfo` with `statusCode` 400 and `code` 40000.
     - If the SDK's API communicates the result of an "`RTL7g`"#RTL7g implicit attach in some other fashion (for example by returning a `ChannelStateChange?`), then, when the `attachOnSubscribe` channel option is `false`, `#subscribe` should respond in the same way as it would if an "`RTL7g`"#RTL7g implicit attach had been performed on an already-`ATTACHED` channel (for example by returning a `null` state change).
+  - `(RTL7i)` If, at the completion of the [`RTL7g`](#RTL7g) implicit attach (or immediately, if the channel was already `ATTACHED`), the channel is in the `ATTACHED` state, the [`RTL4m`](#RTL4m) channel modes must be checked for the presence of the `SUBSCRIBE` mode. (Note: the set being checked is the mode set actually granted by the server, not the set of modes requested by the user per [`TB2d`](#TB2d).) If the mode is missing, the server will never deliver messages to this client, so:
+    - `(RTL7i1)` If `strictMode` ([`TO3r`](#TO3r)) is `true`, the `subscribe` call must fail with an `ErrorInfo` with `code` `90009` and `statusCode` `400`, with a `message` indicating that the channel is attached without the `subscribe` mode and so the server will not deliver messages to the listener. Consistent with [`RTL7g`](#RTL7g), the listener remains registered despite the failure
+    - `(RTL7i2)` If `strictMode` is `false`, the `subscribe` call must complete as it would have before this check existed, and the library should log a warning per [`TO3r2`](#TO3r2). The library should not emit this log on every `subscribe` call; emitting it at most once per attachment is sufficient
+    - `(RTL7i3)` This check does not apply if the channel is not in the `ATTACHED` state (for example, when `attachOnSubscribe` is `false` and the channel has not been attached)
   - `(RTL7d)` Messages delivered are automatically decoded based on the `encoding` attribute; see `RestChannel` encoding features in [RSL6](#RSL6). Tests should exist to publish and subscribe to encoded messages using the fixture test data referenced in [RSL5c](#RSL5c).
   - `(RTL7e)` This clause has been deleted (redundant to [RSL6b](#RSL6b)).
   - `(RTL7f)` A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor
@@ -820,6 +825,11 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL32e)` Any params provided in the third argument must be sent in the `TR4q` `ProtocolMessage.params` field, as a `Dict<String, String>` (that is, with the values of the provided dict stringified per `RTC1f`)
   - `(RTL32c)` The SDK must not mutate the user-supplied `Message` object.
   - `(RTL32d)` On success, returns an `UpdateDeleteResult` object containing the version serial of the published update, obtained from the first element of the `serials` array of the [TR4s](#TR4s) `res` field of the `ACK`. Indicates an error if the operation was not successful.
+- `(RTL33)` *Ensure-active-channel* internal procedure. When invoked, the SDK must inspect the current state of the `RealtimeChannel` (see [RTL2](#RTL2)) and proceed as follows:
+  - `(RTL33a)` If the channel is in the `ATTACHED` or `SUSPENDED` state, the procedure completes immediately without performing any attach.
+  - `(RTL33b)` If the channel is in the `INITIALIZED`, `DETACHED`, `DETACHING`, or `ATTACHING` state, perform an implicit attach per [RTL4](#RTL4) and wait for it to complete
+    - `(RTL33b1)` If the implicit attach fails, the procedure must reject with the same `ErrorInfo` that caused the attach to fail
+  - `(RTL33c)` If the channel is in the `FAILED` state, the procedure must throw an `ErrorInfo` with `statusCode` 400 and `code` 90001, indicating that the channel operation failed due to the current channel state
 
 ### RealtimePresence {#realtime-presence}
 
@@ -913,8 +923,12 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP10e)` In all other ways, this method is identical to `RealtimePresence#enter` and should have matching tests
 - `(RTP11)` `RealtimePresence#get` function:
   - `(RTP11a)` Returns the list of current members on the channel in a callback. By default, will wait for the `SYNC` to be completed, see [RTP11c1](#RTP11c1)
-  - `(RTP11b)` Implicitly attaches the `RealtimeChannel` if the channel is in the `INITIALIZED` state. However, if the channel is in or enters the `DETACHED` or `FAILED` state before the operation succeeds, it will result in an error
+  - `(RTP11b)` This clause has been replaced by [RTP11e](#RTP11e)
   - `(RTP11d)` If the `RealtimeChannel` is in the `SUSPENDED` state then the `get` function will by default, or if `waitForSync` is set to `true`, result in an error with `code` `91005` and a `message` stating that the presence state is out of sync due to the channel being in a `SUSPENDED` state. If however the `get` function is called with `waitForSync` set to `false`, then it immediately returns the members currently stored in the `PresenceMap` giving developers access to the members that were present at the time the channel became `SUSPENDED`
+  - `(RTP11e)` If the channel is in any state other than `SUSPENDED` (which is handled by [RTP11d](#RTP11d)), perform the *ensure-active-channel* procedure ([RTL33](#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
+  - `(RTP11f)` If the [`RTP11e`](#RTP11e) procedure completes successfully and the channel is in the `ATTACHED` state, the [`RTL4m`](#RTL4m) channel modes must be checked for the presence of the `PRESENCE_SUBSCRIBE` mode. (Note: the set being checked is the mode set actually granted by the server, not the set of modes requested by the user per [`TB2d`](#TB2d).) If the mode is missing, the server has not been delivering presence events to this client and the `PresenceMap` cannot reflect the channel's members, so:
+    - `(RTP11f1)` If `strictMode` ([`TO3r`](#TO3r)) is `true`, the `get` call must fail with an `ErrorInfo` with `code` `91008` and `statusCode` `400`, with a `message` indicating that the channel is attached without the `presence_subscribe` mode and so the members of the channel have not been delivered to this client
+    - `(RTP11f2)` If `strictMode` is `false`, the `get` call must proceed per [RTP11a](#RTP11a) (in practice returning an empty or incomplete list), and the library should log a warning per [`TO3r2`](#TO3r2)
   - `(RTP11c)` An optional set of params can be provided:
     - `(RTP11c1)` `waitForSync` (default `true`). When `true`, method will wait until `SYNC` is complete before returning a list of members. When `false`, known set of presence members is returned immediately, which may be incomplete if the `SYNC` is not finished
     - `(RTP11c2)` `clientId` filters members by the provided `clientId`
@@ -1305,6 +1319,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(OOP1)` An `ObjectOperation` describes an operation to be applied to an object on a channel
 - `(OOP2)` `ObjectOperationAction` enum has the following values in order from zero: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`, `MAP_CLEAR`
+  - `(OOP2a)` When decoding, an `action` that does not map to any of the wire-ordered members above must not cause decoding to fail. The client library must instead represent it as an unrecognised action, using whatever representation is idiomatic for the implementation (for example a distinct sentinel value or a nullable field). The client library must never encode or send such an unrecognised action, and must ignore (not apply) any `ObjectOperation` whose `action` is unrecognised
 - `(OOP3)` The attributes available in an `ObjectOperation` are:
   - `(OOP3a)` `action` `ObjectOperationAction` enum - defines the operation to be applied to the object
   - `(OOP3b)` `objectId` string - the object ID of the object on a channel to which the operation should be applied
@@ -1468,6 +1483,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(OMP1)` An `ObjectsMap` object represents a map of key-value pairs
 - `(OMP2)` `ObjectsMapSemantics` enum has the following values in order from zero: `LWW`
+  - `(OMP2a)` When decoding, a `semantics` value that does not map to any of the wire-ordered members above must not cause decoding to fail. The client library must instead represent it as unrecognised semantics, using whatever representation is idiomatic for the implementation (for example a distinct sentinel value or a nullable field), and must never encode or send such an unrecognised value
 - `(OMP3)` The attributes available in an `ObjectsMap` are:
   - `(OMP3a)` `semantics` `ObjectsMapSemantics` enum - the conflict-resolution semantics used by the map object
   - `(OMP3b)` `entries` `Dict<String, ObjectsMapEntry>` - the map entries, indexed by key
@@ -1503,19 +1519,21 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 #### ObjectData
 
 - `(OD1)` An `ObjectData` represents a value in an object on a channel
-- `(OD2)` The attributes available in an `ObjectData` are:
+- `(OD2)` The attributes available in an `ObjectData` are listed below. Of the value fields - `boolean`, `bytes`, `number`, `string` and `json` - at most one must be set at a time:
   - `(OD2a)` `objectId` string - a reference to another object
   - `(OD2b)` `encoding` string - may be set by the client library to indicate that value in `string` field have an encoding
-  - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2e)` `number` number - a primitive number leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2f)` `string` string - a primitive string leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+  - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph
+  - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol
+  - `(OD2e)` `number` number - a primitive number leaf value in the object graph
+  - `(OD2f)` `string` string - a primitive string leaf value in the object graph
+  - `(OD2g)` `json` JsonObject \| JsonArray - a primitive JSON leaf value (an object or array) in the object graph. It is sent to and received from the server as a JSON-encoded string when using the JSON protocol
 - `(OD3)` The size of the `ObjectData` is calculated as follows:
-  - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, and `string` properties
+  - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, `string`, and `json` properties
   - `(OD3b)` If set, the size of a `boolean` property is 1
   - `(OD3c)` If set, the size of a `bytes` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
   - `(OD3d)` If set, the size of a `number` property is 8
   - `(OD3e)` If set, the size of a `string` property is its length
+  - `(OD3g)` If set, the size of a `json` property is the byte length of its JSON-encoded string representation
   - `(OD3f)` The size of a `null` or omitted property is zero
 - `(OD4)` `ObjectData` encoding:
   - `(OD4a)` Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
@@ -1939,6 +1957,9 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
   - `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
   - `(TO3q)` `transportParams` \[String: Stringifiable\]? - defaults to null. Described in [RTC1f](#RTC1f)
+  - `(TO3r)` `strictMode` boolean - defaults to `false`. Controls the behaviour of certain operations that, for historical reasons, complete successfully even though the client is in a state in which the operation cannot have its intended effect, such as operations gated on a granted channel mode (see [`RTL7i`](#RTL7i), [`RTP11f`](#RTP11f)). It is intended that a future major version of the specification will adopt the strict behaviour by default
+    - `(TO3r1)` When `strictMode` is `true`, each such operation must fail with the `ErrorInfo` defined by the relevant spec item, rather than completing with its legacy silent result
+    - `(TO3r2)` When `strictMode` is `false`, each such operation must complete with its legacy silent result, and the library should log the failure at `ERROR` level, including the `message` of the `ErrorInfo` defined by the relevant spec item and an indication that setting `strictMode` to `true` will cause the operation to fail with that error
 
 #### TokenParams {#token-params}
 
@@ -2167,6 +2188,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       useBinaryProtocol: Bool default true // TO3f
       transportParams: [String: Stringifiable]? // TO3q, RTC1f
       addRequestIds: Bool default false // TO3p
+      strictMode: Bool default false // TO3r
       // configurable retry and failure defaults
       disconnectedRetryTimeout: Duration default 15s // TO3l1
       suspendedRetryTimeout: Duration default 30s // RTN14e, TO3l2
@@ -2622,6 +2644,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       bytes: Binary? | String? // OD2d
       number: Number? // OD2e
       string: String? // OD2f
+      json: String? // OD2g
 
     class Annotation // TAN*
       +fromEncoded(JsonObject, ChannelOptions?) -> Annotation // TAN3

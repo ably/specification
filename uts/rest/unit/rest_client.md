@@ -7,7 +7,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-See `uts/test/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
+See `uts/rest/unit/helpers/mock_http.md` for the full Mock HTTP Infrastructure specification.
 
 ---
 
@@ -587,4 +587,4 @@ ASSERT result IS valid
 
 ## Test Infrastructure Notes
 
-See `uts/test/rest/unit/helpers/mock_http.md` for mock installation, test isolation, and timer mocking guidance.
+See `uts/rest/unit/helpers/mock_http.md` for mock installation, test isolation, and timer mocking guidance.

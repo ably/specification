@@ -7,7 +7,7 @@ Unit test with mocked WebSocket client
 
 ## Mock WebSocket Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 
 ## Platform Network Connectivity Listener
 

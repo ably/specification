@@ -9,9 +9,9 @@ Proxy integration test against Ably Sandbox endpoint.
 Uses the programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy)) to inject transport-level faults while the SDK communicates with the real Ably backend. See `uts/docs/proxy.md` for proxy infrastructure details.
 
 Corresponding unit tests:
-- `uts/test/realtime/unit/connection/server_initiated_reauth_test.md` (RTN22, RTN22a)
-- `uts/test/realtime/unit/auth/realtime_authorize.md` (RTC8a, RTC8a1)
-- `uts/test/realtime/unit/auth/connection_auth_test.md` (RSA4c3 covers RTN22 reauth failure while CONNECTED)
+- `uts/realtime/unit/connection/server_initiated_reauth_test.md` (RTN22, RTN22a)
+- `uts/realtime/unit/auth/realtime_authorize.md` (RTC8a, RTC8a1)
+- `uts/realtime/unit/auth/connection_auth_test.md` (RSA4c3 covers RTN22 reauth failure while CONNECTED)
 
 ## Sandbox Setup
 

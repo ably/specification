@@ -12,10 +12,10 @@ See `uts/docs/proxy.md` for the full proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 
-- `uts/test/realtime/unit/channels/channel_attach.md` -- RTL4f (attach timeout)
-- `uts/test/realtime/unit/channels/channel_detach.md` -- RTL5f (detach timeout)
-- `uts/test/realtime/unit/channels/channel_server_initiated_detach.md` -- RTL13a (unsolicited DETACHED triggers reattach)
-- `uts/test/realtime/unit/channels/channel_error.md` -- RTL14 (channel ERROR transitions to FAILED)
+- `uts/realtime/unit/channels/channel_attach.md` -- RTL4f (attach timeout)
+- `uts/realtime/unit/channels/channel_detach.md` -- RTL5f (detach timeout)
+- `uts/realtime/unit/channels/channel_server_initiated_detach.md` -- RTL13a (unsolicited DETACHED triggers reattach)
+- `uts/realtime/unit/channels/channel_error.md` -- RTL14 (channel ERROR transitions to FAILED)
 
 ## Sandbox Setup
 
