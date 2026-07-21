@@ -110,7 +110,7 @@ AWAIT root_a.set("key1", "value1")
 
 // Client B attaches and syncs — should see the data
 root_b = AWAIT channel_b.object.get()
-poll_until(root_b.get("key1").value() == "value1", timeout: 10s)
+poll_until(root_b.get("key1").value() == "value1")
 ```
 
 ### Assertions
@@ -157,7 +157,7 @@ AWAIT channel.attach()
 
 // Re-sync should restore data
 root = AWAIT channel.object.get()
-poll_until(root.get("before_detach").value() == "hello", timeout: 10s)
+poll_until(root.get("before_detach").value() == "hello")
 ```
 
 ### Assertions

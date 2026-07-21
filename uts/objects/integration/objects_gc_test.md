@@ -88,7 +88,7 @@ root = AWAIT channel.object.get()
 ```pseudo
 // Create a counter
 AWAIT root.set("counter", LiveCounter.create(42))
-poll_until(root.get("counter").value() == 42, timeout: 10s)
+poll_until(root.get("counter").value() == 42)
 
 counter_id = root.get("counter").instance().id
 
@@ -96,11 +96,11 @@ counter_id = root.get("counter").instance().id
 AWAIT root.remove("counter")
 
 // RTLM5d2h: tombstoned entries read back as undefined/null
-poll_until(root.get("counter").value() == null, timeout: 10s)
+poll_until(root.get("counter").value() == null)
 
 // Create a new counter at the same key
 AWAIT root.set("counter", LiveCounter.create(99))
-poll_until(root.get("counter").value() == 99, timeout: 10s)
+poll_until(root.get("counter").value() == 99)
 ```
 
 ### Assertions
@@ -143,16 +143,16 @@ root = AWAIT channel.object.get()
 ```pseudo
 // Set then remove a key
 AWAIT root.set("ephemeral", "temporary")
-poll_until(root.get("ephemeral").value() == "temporary", timeout: 10s)
+poll_until(root.get("ephemeral").value() == "temporary")
 
 AWAIT root.remove("ephemeral")
 
 // RTLM5d2h: tombstoned entries read back as undefined/null
-poll_until(root.get("ephemeral").value() == null, timeout: 10s)
+poll_until(root.get("ephemeral").value() == null)
 
 // Set the same key again
 AWAIT root.set("ephemeral", "revived")
-poll_until(root.get("ephemeral").value() == "revived", timeout: 10s)
+poll_until(root.get("ephemeral").value() == "revived")
 ```
 
 ### Assertions

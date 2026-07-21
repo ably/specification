@@ -1110,8 +1110,9 @@ ASSERT deep_events.length >= 2
 enable_fake_timers()
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
 
+// Tombstone stamped "now": only the ADVANCE_TIME below makes it GC-eligible
 mock_ws.send_to_client(build_object_message("test", [
-  build_object_delete("counter:score@1000", "99", "site1", 1000)
+  build_object_delete("counter:score@1000", "99", "site1", now())
 ]))
 ```
 
@@ -1417,8 +1418,11 @@ client = Realtime(options: { key: "fake:key" })
 channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
 root = AWAIT channel.object.get()
 
+// Tombstone stamped "now": after ADVANCE_TIME(6000) it is eligible under the
+// 5000ms server-provided grace but NOT under the 24h default, so this test fails
+// if the implementation ignores ConnectionDetails.objectsGCGracePeriod
 mock_ws.send_to_client(build_object_message("test", [
-  build_object_delete("counter:score@1000", "99", "site1", 1000)
+  build_object_delete("counter:score@1000", "99", "site1", now())
 ]))
 ```
 

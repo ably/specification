@@ -752,6 +752,67 @@ ADVANCE_TIME(3000)
 AWAIT_STATE state == disconnected
 ```
 
+Reference definition of `poll_until` (a shared helper in each SDK's test harness). Specs call it
+with either a bare condition expression (re-evaluated each iteration until true) or a producer
+function whose first truthy result is returned:
+
+```pseudo
+FUNCTION poll_until(condition, interval: 500ms, timeout: 10s):
+  deadline = now() + timeout
+  WHILE true:
+    result = AWAIT condition()   # an error raised here aborts the poll immediately
+    IF result:                   # truthy: condition met / value produced
+      RETURN result
+    IF now() >= deadline:
+      RAISE TimeoutError("poll_until timed out after " + timeout)
+    WAIT interval
+```
+
+At integration tier the deadline and interval are wall-clock time; unit-tier harnesses may
+realise the interval as event-loop turns instead of real sleeps (see *Integration timeouts are
+wall-clock* in `writing-derived-tests.md` for the traps on both sides).
+
+**A `poll_until` fails immediately if its condition raises an error.** For reads that are expected
+to fail until the service catches up — reads of the eventually-consistent message store
+(`getMessage`, `getMessageVersions`, `annotations.get`) throw not-found until a just-written
+message becomes visible, and LiveObjects value reads raise while a fault-injection test's
+channel is transiently DETACHED mid-recovery — use `poll_until_success` instead: any error raised by the condition
+means "keep polling", and if the timeout expires the most recent error is raised so the failure
+stays diagnosable. The convention is also summarised in the pseudocode conventions in `uts/README.md`.
+
+```pseudo
+# Good - store read polled through its expected not-found errors
+msg = poll_until_success(
+  condition: FUNCTION() =>
+    m = AWAIT channel.getMessage(serial)
+    IF m.action == MessageAction.MESSAGE_UPDATE:
+      RETURN m
+    RETURN null
+)
+```
+
+Reference definition (implement once as a shared helper, typically wrapping `poll_until`):
+
+```pseudo
+FUNCTION poll_until_success(condition, interval: 500ms, timeout: 10s):
+  last_error = null
+  deadline = now() + timeout
+  WHILE true:
+    TRY:
+      result = AWAIT condition()
+      IF result:               # truthy: condition met / value produced
+        RETURN result
+    CATCH error:
+      last_error = error   # any error means "not ready yet" - keep polling
+    IF now() >= deadline:
+      # raise the most recent error so the failure stays diagnosable;
+      # a plain timeout error only if the condition never raised
+      IF last_error != null:
+        RAISE last_error
+      RAISE TimeoutError("poll_until_success timed out after " + timeout)
+    WAIT interval
+```
+
 ### Verifying Transient States (Record-and-Verify Pattern)
 
 **When testing disconnect/reconnect behavior, always use the record-and-verify pattern.** Do not use intermediate `AWAIT_STATE` calls to observe transient states like DISCONNECTED or SUSPENDED mid-test. The Ably spec mandates immediate reconnection on unexpected disconnect (RTN15a), which means transient states pass too quickly to be reliably observed between test steps.

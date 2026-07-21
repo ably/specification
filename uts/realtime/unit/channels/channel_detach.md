@@ -717,8 +717,8 @@ mock_ws.send_to_client(ProtocolMessage(
   channel: channel_name
 ))
 
-# Wait for client to respond
-WAIT 100ms
+# Let the client process the inbound message (see flush_async in uts/README.md)
+flush_async()
 ```
 
 ### Assertions

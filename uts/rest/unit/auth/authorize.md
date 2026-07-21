@@ -127,14 +127,14 @@ mock_auth_callback = (params) => {
   callback_invocations.append(params)
   RETURN TokenDetails(
     token: "token-" + str(callback_invocations.length),
-    expires: now() + 1000  # Very short expiry for testing
+    expires: now() + 3600000
   )
 }
 
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, { "channelId": "test", "status": { "isActive": true } })
+    req.respond_with(200, [])
   }
 )
 install_mock(mock_http)
@@ -149,15 +149,16 @@ AWAIT client.auth.authorize(
   tokenParams: TokenParams(clientId: "saved-client", ttl: 3600000)
 )
 
-# Wait for token to expire
-WAIT 1500 milliseconds
-
-# Force re-auth via request - should reuse saved params
-AWAIT client.channels.get("test").status()
+# Second authorize without explicit params — RSA10a: authorize() always requests
+# a new token, so the callback runs again and must receive the saved params.
+# (Deterministic: no short-expiry token or real-time wait needed.)
+AWAIT client.auth.authorize()
 ```
 
 ### Assertions
 ```pseudo
+ASSERT callback_invocations.length == 2
+
 # Second callback should have received the saved params
 ASSERT callback_invocations[1].clientId == "saved-client"
 ASSERT callback_invocations[1].ttl == 3600000
