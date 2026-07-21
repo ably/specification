@@ -319,9 +319,9 @@ client = Realtime(options: ClientOptions(
 ASSERT client.connection.state == ConnectionState.initialized
 ASSERT mock_ws.connect_attempts.length == 0
 
-# Should remain in initialized state until explicit connect: drain pending
-# async work instead of sleeping (see flush_async in uts/README.md)
-flush_async()
+# Should remain in initialized state until explicit connect: let pending async
+# work settle instead of sleeping (see process_pending_events in uts/README.md)
+process_pending_events()
 ASSERT client.connection.state == ConnectionState.initialized
 ASSERT mock_ws.connect_attempts.length == 0
 CLOSE_CLIENT(client)
