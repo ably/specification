@@ -142,7 +142,7 @@ FOR i IN 1..3:
 history = poll_until(
   condition: FUNCTION() =>
     result = AWAIT channel.history()
-    RETURN result.items.length > 0,
+    RETURN result IF result.items.length > 0 ELSE null,
   interval: 500ms,
   timeout: 10s
 )

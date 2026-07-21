@@ -99,6 +99,24 @@ Pseudocode maps to language idioms rather than prescribing exact syntax:
   `ObjectsMapSemantics.LWW`, wire-encoded as an integer per OMP2) is satisfied by the SDK's
   idiomatic public rendering of that enum member — the enum member itself in typed SDKs
   (`MapSemantics.LWW` in ably-java), or a string-literal union value in ably-js (`'lww'`).
+- **`poll_until_success(condition)`**: a `poll_until` (interval 500ms, timeout 10s) that keeps
+  polling until the condition succeeds — returns a truthy result without raising. Any error raised by
+  the condition — not-found for a not-yet-visible write, or a transient service/network error —
+  means "keep polling" rather than failure; if the timeout expires, the most recent error is
+  raised so the failure stays diagnosable (a plain timeout error if the condition never raised).
+  Use only where an error genuinely means "not ready yet", e.g. reads of the eventually-consistent
+  message store (`getMessage`, `getMessageVersions`, `annotations.get`), or LiveObjects value
+  reads polled across a fault-injection/recovery window, where the channel is transiently
+  DETACHED and reads raise by design; where an error should fail the test, use `poll_until`.
+  Implementations typically provide this as a shared helper wrapping their `poll_until`
+  (e.g. `pollUntilSuccess` in ably-js); the reference definition lives in
+  [docs/writing-test-specs.md](docs/writing-test-specs.md).
+- **`flush_async()`**: drain pending event-loop work (microtasks and zero-delay callbacks)
+  without any real delay — used at unit tier to let mock events propagate before asserting,
+  especially for negative assertions ("nothing happened"). Never rendered as a timed sleep;
+  implementations define a shared helper (e.g. `flushAsync()` in ably-js, awaiting a
+  `setImmediate`) — see the timer guidance in
+  [docs/writing-derived-tests.md](docs/writing-derived-tests.md).
 - **Language-inapplicable inputs**: a test input that cannot be constructed in a given language
   (e.g. a non-string map key in JavaScript, where object keys are always coerced to strings; or a
   `null` argument where the SDK's signature makes null indistinguishable from "omitted") makes

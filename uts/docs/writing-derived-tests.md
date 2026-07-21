@@ -39,6 +39,8 @@ UTS specs use generic pseudocode. You need to map this onto the SDK's actual API
 | `enable_fake_timers()` | Timer control mechanism |
 | `ADVANCE_TIME(ms)` | Fake timer tick method |
 | `AWAIT_STATE(connection, "connected")` | State waiting helper |
+| `poll_until(condition, ...)` | Shared polling helper (wall-clock deadline — see below) |
+| `poll_until_success(condition)` | Error-tolerant polling helper (see the pseudocode conventions in `uts/README.md`) |
 
 Check the SDK's existing test infrastructure and conventions before writing anything. Reuse existing helpers, mock classes, and patterns.
 
@@ -288,6 +290,15 @@ Kotlin), or use the framework's escape hatch for real time. Define shared helper
 (`awaitState`, `pollUntil`, `withRealTimeout`, ...) that encapsulate this once, and use them for
 every wait in integration test bodies. Unit tests are unaffected — there, fake/virtual timers
 remain the preferred mechanism.
+
+The same trap exists at unit tier in the other direction: a harness `poll_until` whose deadline
+reads a clock the test itself stubs will never expire. For example, a deadline computed from
+`Date.now()` freezes in a JavaScript test that stubs `Date.now` for fake-time advancement — the
+poll spins until the runner's own timeout kills it with a generic error instead of the poll's
+informative one. Two remedies: restructure the test so the wall clock never needs stubbing
+(preferred — e.g. backdate a fixture timestamp past the period under test instead of advancing
+a fake "now"), or have harness deadlines read a monotonic clock that test-level time stubbing
+cannot touch (`performance.now()` in JavaScript, `System.nanoTime()` on the JVM).
 
 ### Cleanup with afterEach
 

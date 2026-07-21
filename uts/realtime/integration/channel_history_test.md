@@ -87,7 +87,7 @@ AWAIT pub_channel.publish(name: "event3", data: "data3")
 history = poll_until(
   condition: FUNCTION() =>
     result = AWAIT sub_channel.history()
-    RETURN result.items.length == 3,
+    RETURN result IF result.items.length == 3 ELSE null,
   interval: 500ms,
   timeout: 10s
 )

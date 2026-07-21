@@ -245,7 +245,7 @@ rest_channel = client.channels.get(channel_name)
 history = poll_until(
   condition: FUNCTION() =>
     result = AWAIT rest_channel.presence.history()
-    RETURN result.items.length >= 3,
+    RETURN result IF result.items.length >= 3 ELSE null,
   interval: 500ms,
   timeout: 10s
 )
@@ -514,7 +514,7 @@ rest_channel = client.channels.get(channel_name)
 history = poll_until(
   condition: FUNCTION() =>
     result = AWAIT rest_channel.presence.history()
-    RETURN result.items.length >= 1,
+    RETURN result IF result.items.length >= 1 ELSE null,
   interval: 500ms,
   timeout: 10s
 )

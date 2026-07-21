@@ -198,7 +198,7 @@ AWAIT_STATE client_b.connection.state == CONNECTED
 
 root_b = AWAIT channel_b.object.get()
   WITH timeout: 15 seconds
-poll_until(root_b.get("key1").value() == "initial", timeout: 10s)
+poll_until_success(root_b.get("key1").value() == "initial")
 
 // Disconnect client B
 session.trigger_action({ type: "disconnect" })
@@ -214,7 +214,7 @@ AWAIT_STATE client_b.connection.state == CONNECTED
 
 root_b = AWAIT channel_b.object.get()
   WITH timeout: 15 seconds
-poll_until(root_b.get("key1").value() == "updated_during_disconnect", timeout: 15s)
+poll_until_success(root_b.get("key1").value() == "updated_during_disconnect", timeout: 15s)
 ```
 
 ### Assertions
@@ -297,7 +297,7 @@ AWAIT_STATE channel.state == ChannelState.attached
 // Re-sync should restore data
 root = AWAIT channel.object.get()
   WITH timeout: 15 seconds
-poll_until(root.get("before_detach").value() == "hello", timeout: 15s)
+poll_until_success(root.get("before_detach").value() == "hello", timeout: 15s)
 ```
 
 ### Assertions
@@ -488,7 +488,7 @@ root_b = AWAIT channel_b.object.get()
   WITH timeout: 30 seconds
 
 // The mutation from A should be visible (either in sync data or buffered OBJECT)
-poll_until(root_b.get("existing").value() == "after", timeout: 15s)
+poll_until_success(root_b.get("existing").value() == "after", timeout: 15s)
 ```
 
 ### Assertions

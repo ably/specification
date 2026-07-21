@@ -78,7 +78,7 @@ AWAIT root_a.set("greeting", "hello")
 // Client B subscribes and waits for the update
 events_b = []
 root_b.subscribe((event) => events_b.append(event))
-poll_until(root_b.get("greeting").value() == "hello", timeout: 10s)
+poll_until(root_b.get("greeting").value() == "hello")
 ```
 
 ### Assertions
@@ -124,7 +124,7 @@ root_b = AWAIT channel_b.object.get()
 ### Test Steps
 ```pseudo
 AWAIT root_a.set("my_counter", LiveCounter.create(42))
-poll_until(root_b.get("my_counter").value() == 42, timeout: 10s)
+poll_until(root_b.get("my_counter").value() == 42)
 ```
 
 ### Assertions
@@ -172,11 +172,11 @@ root_b = AWAIT channel_b.object.get()
 ```pseudo
 // Create a counter first
 AWAIT root_a.set("hits", LiveCounter.create(0))
-poll_until(root_b.get("hits").value() == 0, timeout: 10s)
+poll_until(root_b.get("hits").value() == 0)
 
 // Increment it
 AWAIT root_a.get("hits").increment(10)
-poll_until(root_b.get("hits").value() == 10, timeout: 10s)
+poll_until(root_b.get("hits").value() == 10)
 ```
 
 ### Assertions
@@ -226,7 +226,7 @@ AWAIT root_a.set("settings", LiveMap.create({
   "theme": "dark",
   "fontSize": 14
 }))
-poll_until(root_b.get("settings").get("theme").value() == "dark", timeout: 10s)
+poll_until(root_b.get("settings").get("theme").value() == "dark")
 ```
 
 ### Assertions
