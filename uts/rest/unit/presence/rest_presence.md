@@ -1221,8 +1221,10 @@ channel_name = "test-RSP5g-${random_id()}"
 captured_requests = []
 cipher_key = base64_decode("WUP6u0K7MXI5Zeo0VppPwg==")
 
-# Encrypted data for {"secret":"data"}
-encrypted_data = "HO4cYSP8LybPYBPZPHQOtuD53yrD3YV3NBoTEYBh4U0="
+# Canonical ably-common fixture (test-resources/crypto-data-128.json):
+# the encryption of the JSON object {"example":{"json":"Object"}} under the
+# key above. 48 bytes: 16-byte IV followed by two ciphertext blocks.
+encrypted_data = "HO4cYSP8LybPYBPZPHQOtuD53yrD3YV3NBoTEYBh4U0N1QXHbtkfsDfTspKeLQFt"
 
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
@@ -1254,7 +1256,8 @@ result = AWAIT channel.presence.get()
 ### Assertions
 ```pseudo
 ASSERT result.items[0].data IS Object/Map
-# Decryption applied based on cipher+aes-128-cbc encoding
+# Decryption applied based on cipher+aes-128-cbc encoding, then JSON decoding
+ASSERT result.items[0].data["example"]["json"] == "Object"
 ```
 
 ---
