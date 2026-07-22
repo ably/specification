@@ -174,14 +174,14 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN5 | Concurrency test (50+ clients) | |
 | RTN6 | Successful connection definition | Information only|
 | RTN7 | ACK and NACK handling (RTN7a–RTN7e) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN7a, RTN7b (via RTL6j tests), RTN7d, RTN7e |
-| RTN8 | Connection#id attribute (RTN8a–RTN8c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
-| RTN9 | Connection#key attribute (RTN9a–RTN9c) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
+| RTN8 | Connection#id attribute (RTN8a–RTN8d) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
+| RTN9 | Connection#key attribute (RTN9a–RTN9d) | Yes — `realtime/unit/connection/connection_id_key_test.md` |
 | RTN11 | Connect function (RTN11a–RTN11f) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN11; `realtime/unit/connection/error_reason_test.md` covers RTN11d |
 | RTN12 | Close function (RTN12a–RTN12f) | Partial — `realtime/integration/connection_lifecycle_test.md` covers RTN12, RTN12a |
 | RTN13 | Ping function (RTN13a–RTN13e) | Yes — `realtime/unit/connection/connection_ping_test.md` |
-| RTN14 | Connection opening failures (RTN14a–RTN14g) | Yes — `realtime/unit/connection/connection_open_failures_test.md`; `realtime/integration/connection/connection_failures_test.md` covers RTN14a, RTN14g; `realtime/integration/auth/token_renewal_test.md` covers RTN14b; `realtime/integration/proxy/connection_open_failures.md` covers RTN14a–RTN14d, RTN14g |
-| RTN15 | Connection failures when CONNECTED (RTN15a–RTN15j) | Yes — `realtime/unit/connection/connection_failures_test.md`; `realtime/integration/proxy/connection_resume.md` covers RTN15a, RTN15b, RTN15c6, RTN15c7, RTN15g, RTN15g2, RTN15h1, RTN15h3, RTN15j |
-| RTN16 | Connection recovery (RTN16a–RTN16m1) | Yes — `realtime/unit/connection/connection_recovery_test.md` covers RTN16d, RTN16f, RTN16f1, RTN16g, RTN16g1, RTN16g2, RTN16i, RTN16j, RTN16k, RTN16l; `realtime/integration/proxy/connection_resume.md` covers RTN16d, RTN16l; `realtime/unit/connection/error_reason_test.md` covers RTN16e |
+| RTN14 | Connection opening failures (RTN14a–RTN14h) | Yes — `realtime/unit/connection/connection_open_failures_test.md`; `realtime/integration/connection/connection_failures_test.md` covers RTN14a, RTN14g; `realtime/integration/auth/token_renewal_test.md` covers RTN14b; `realtime/integration/proxy/connection_open_failures.md` covers RTN14a–RTN14d, RTN14g; `realtime/unit/connection/connection_failures_test.md` and `realtime/integration/proxy/connection_resume.md` cover RTN14h |
+| RTN15 | Connection failures when CONNECTED (RTN15a–RTN15j) | Yes — `realtime/unit/connection/connection_failures_test.md`; `realtime/integration/proxy/connection_resume.md` covers RTN15a, RTN15b, RTN15c6, RTN15c7, RTN15h1, RTN15h3, RTN15j |
+| RTN16 | Connection recovery (RTN16a–RTN16m1) | Yes — `realtime/unit/connection/connection_recovery_test.md` covers RTN16d, RTN16f, RTN16f1, RTN16g, RTN16g1, RTN16g3, RTN16i, RTN16j, RTN16k, RTN16l; `realtime/integration/proxy/connection_resume.md` covers RTN16d, RTN16l; `realtime/unit/connection/error_reason_test.md` covers RTN16e |
 | RTN17 | Domain selection and fallback (RTN17a–RTN17j) | Yes — `realtime/unit/connection/fallback_hosts_test.md` |
 | RTN19 | Transport state side effects (RTN19a–RTN19b) | Yes — `realtime/unit/channels/channel_publish.md` covers RTN19a, RTN19a2, RTN19b; `realtime/integration/proxy/connection_resume.md` covers RTN19a, RTN19a2 |
 | RTN20 | OS network change handling (RTN20a–RTN20c) | Yes — `realtime/unit/connection/network_change_test.md` |
@@ -221,7 +221,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL12 | Additional ATTACHED message handling | Yes — `realtime/unit/channels/channel_additional_attached.md`; `realtime/integration/proxy/channel_faults.md` covers RTL12 |
 | RTL13 | Server-initiated DETACHED handling (RTL13a–RTL13c) | Yes — `realtime/unit/channels/channel_server_initiated_detach.md` |
 | RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md`; `realtime/integration/channels/channel_attach_test.md` covers RTL14; `realtime/integration/proxy/channel_faults.md` covers RTL14 |
-| RTL15 | Channel#properties attribute (RTL15a–RTL15b1) | Yes — `realtime/unit/channels/channel_properties.md` |
+| RTL15 | Channel#properties attribute (RTL15a–RTL15b2) | Yes — `realtime/unit/channels/channel_properties.md` |
 | RTL16 | SetOptions function (RTL16a) | Yes — `realtime/unit/channels/channel_options.md` |
 | RTL17 | No messages outside ATTACHED state | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL18 | Vcdiff decoding failure recovery (RTL18a–RTL18c) | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
@@ -398,7 +398,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN15a | Unexpected disconnect triggers resume | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15b/c6 | Resume preserves connectionId | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15c7 | Failed resume gets new connectionId | Yes — `realtime/integration/proxy/connection_resume.md` |
-| RTN15g/g2 | connectionStateTtl expiry clears resume state | Yes — `realtime/integration/proxy/connection_resume.md` |
+| RTN14h | Reconnection still resumes after connectionStateTtl expiry | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15h1 | DISCONNECTED with token error, non-renewable → FAILED | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15h3 | DISCONNECTED with non-token error → reconnect | Yes — `realtime/integration/proxy/connection_resume.md` |
 | RTN15j | Fatal ERROR on established connection | Yes — `realtime/integration/proxy/connection_resume.md` |

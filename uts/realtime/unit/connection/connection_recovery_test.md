@@ -1,6 +1,6 @@
 # Connection Recovery Tests (RTN16)
 
-Spec points: `RTN16d`, `RTN16f`, `RTN16f1`, `RTN16g`, `RTN16g1`, `RTN16g2`, `RTN16i`, `RTN16j`, `RTN16k`, `RTN16l`
+Spec points: `RTN16d`, `RTN16f`, `RTN16f1`, `RTN16g`, `RTN16g1`, `RTN16g2`, `RTN16g3`, `RTN16i`, `RTN16j`, `RTN16k`, `RTN16l`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -119,13 +119,13 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTN16g2 - createRecoveryKey returns null in inactive states and before first connect
+## RTN16g3 - createRecoveryKey returns null in inactive states and before first connect
 
-**Test ID**: `realtime/unit/RTN16g2/recovery-key-null-inactive-0`
+**Test ID**: `realtime/unit/RTN16g3/recovery-key-null-inactive-0`
 
-**Spec requirement:** `createRecoveryKey()` should return null when the SDK is in the CLOSED, CLOSING, FAILED, or SUSPENDED states, or when it does not have a connectionKey (e.g. before first connect).
+**Spec requirement:** `createRecoveryKey()` should return null when the SDK is in the CLOSED, CLOSING, or FAILED states, or when it does not have a connectionKey (e.g. before first connect). As of specification version 6.1.0 (RTN16g3, replacing RTN16g2) the connectionKey is retained through the SUSPENDED state (RTN8d/RTN9d), since the client always attempts to resume on reconnecting; the connection therefore remains recoverable while suspended and `createRecoveryKey()` returns a valid key rather than null.
 
-Tests that `createRecoveryKey()` returns null in all the specified states.
+Tests that `createRecoveryKey()` returns null in the terminal/pre-connect states, and a valid key in the SUSPENDED state.
 
 ### Setup
 
@@ -180,7 +180,8 @@ ASSERT client.connection.createRecoveryKey() IS null
 
 ```pseudo
 # All null cases verified inline above.
-# For FAILED and SUSPENDED states, create separate clients to test:
+# For the FAILED state (null) and the SUSPENDED state (retained key), create
+# separate clients to test:
 
 # --- Test FAILED state ---
 mock_ws_failed = MockWebSocket(
@@ -260,7 +261,9 @@ LOOP up to 10 times:
     BREAK
 
 AWAIT_STATE client_suspended.connection.state == ConnectionState.suspended
-ASSERT client_suspended.connection.createRecoveryKey() IS null
+# RTN8d/RTN9d: connectionKey is retained, so the connection is still
+# recoverable while suspended and createRecoveryKey() returns a key.
+ASSERT client_suspended.connection.createRecoveryKey() IS NOT null
 
 CLOSE_CLIENT(client_suspended)
 ```

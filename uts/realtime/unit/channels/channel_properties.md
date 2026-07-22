@@ -1,6 +1,6 @@
 # Channel Properties Tests
 
-Spec points: `RTL15`, `RTL15a`, `RTL15b`, `RTL15b1`
+Spec points: `RTL15`, `RTL15a`, `RTL15b`, `RTL15b1`, `RTL15b2`
 
 ## Test Type
 Unit test with mocked WebSocket
@@ -384,7 +384,7 @@ AWAIT_STATE channel.state == ChannelState.attached
 ```pseudo
 # channelSerial should be from the new ATTACHED, not from DETACHED
 # The DETACHED action should not have updated channelSerial
-# (RTL15b1 clears it on DETACHED/SUSPENDED/FAILED, then ATTACHED sets it fresh)
+# (RTL15b2 clears it on DETACHED/FAILED, then ATTACHED sets it fresh)
 ASSERT attach_count == 2
 ASSERT channel.properties.channelSerial == "serial-001"
 CLOSE_CLIENT(client)
@@ -392,15 +392,15 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL15b1 - channelSerial cleared on DETACHED state
+## RTL15b2 - channelSerial cleared on DETACHED state
 
-**Test ID**: `realtime/unit/RTL15b1/serial-cleared-detached-0`
+**Test ID**: `realtime/unit/RTL15b2/serial-cleared-detached-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTL15b1 | If the channel enters the DETACHED, SUSPENDED, or FAILED state, it must clear its channelSerial |
+| RTL15b2 | If the channel enters the DETACHED or FAILED state, it must clear its channelSerial (unlike previous spec versions, it must not clear it when entering SUSPENDED) |
 
-Tests that `channelSerial` is cleared when the channel transitions to DETACHED.
+Tests that `channelSerial` is cleared when the channel transitions to DETACHED. (As of specification version 6.1.0, RTL15b1 has been replaced by RTL15b2.)
 
 ### Setup
 ```pseudo
@@ -451,17 +451,19 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL15b1 - channelSerial cleared on SUSPENDED state
+## RTL15b2 - channelSerial retained in SUSPENDED state
 
-**Test ID**: `realtime/unit/RTL15b1/serial-cleared-suspended-1`
+**Test ID**: `realtime/unit/RTL15b2/serial-retained-suspended-1`
 
-**Spec requirement:** If the channel enters the SUSPENDED state, it must clear its `channelSerial`.
+**Spec requirement:** If the channel enters the SUSPENDED state, it must NOT clear its `channelSerial`.
 
-Tests that `channelSerial` is cleared when the channel transitions to SUSPENDED (e.g. due to attach timeout).
+As of specification version 6.1.0 (RTL15b2, replacing RTL15b1) the channelSerial is cleared only when entering DETACHED or FAILED. It is retained through SUSPENDED, so that it can be included on the subsequent ATTACH (RTL4c1) for the server's continuity decision.
+
+Tests that `channelSerial` is retained when the channel transitions to SUSPENDED (e.g. due to attach timeout).
 
 ### Setup
 ```pseudo
-channel_name = "test-RTL15b1-suspended-${random_id()}"
+channel_name = "test-RTL15b2-suspended-${random_id()}"
 attach_count = 0
 
 mock_ws = MockWebSocket(
@@ -514,23 +516,24 @@ AWAIT_STATE channel.state == ChannelState.suspended
 ### Assertions
 ```pseudo
 ASSERT channel.state == ChannelState.suspended
-ASSERT channel.properties.channelSerial IS null
+# RTL15b2: channelSerial is retained through SUSPENDED, not cleared
+ASSERT channel.properties.channelSerial == "serial-001"
 CLOSE_CLIENT(client)
 ```
 
 ---
 
-## RTL15b1 - channelSerial cleared on FAILED state
+## RTL15b2 - channelSerial cleared on FAILED state
 
-**Test ID**: `realtime/unit/RTL15b1/serial-cleared-failed-2`
+**Test ID**: `realtime/unit/RTL15b2/serial-cleared-failed-2`
 
 **Spec requirement:** If the channel enters the FAILED state, it must clear its `channelSerial`.
 
-Tests that `channelSerial` is cleared when the channel transitions to FAILED (e.g. due to channel ERROR).
+Tests that `channelSerial` is cleared when the channel transitions to FAILED (e.g. due to channel ERROR). (As of specification version 6.1.0, RTL15b1 has been replaced by RTL15b2.)
 
 ### Setup
 ```pseudo
-channel_name = "test-RTL15b1-failed-${random_id()}"
+channel_name = "test-RTL15b2-failed-${random_id()}"
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),

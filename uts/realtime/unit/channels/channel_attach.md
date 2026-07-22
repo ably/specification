@@ -644,7 +644,7 @@ CLOSE_CLIENT(client)
 
 **Spec requirement:** The ATTACH ProtocolMessage channelSerial field must be set to the RTL15b channelSerial. If the RTL15b channelSerial is not set, the field may be set to null or omitted.
 
-Tests that channelSerial is included in ATTACH message when available. Uses setOptions (RTL16a) to trigger a reattach without going through DETACHED state, since RTL15b1 clears channelSerial on DETACHED.
+Tests that channelSerial is included in ATTACH message when available. Uses setOptions (RTL16a) to trigger a reattach without going through DETACHED state, since RTL15b2 clears channelSerial on DETACHED.
 
 ### Setup
 ```pseudo
@@ -678,7 +678,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 
 # Trigger reattach via setOptions (RTL16a) — does NOT go through DETACHED,
-# so channelSerial is preserved (RTL15b1 only clears on DETACHED/SUSPENDED/FAILED)
+# so channelSerial is preserved (RTL15b2 only clears on DETACHED/FAILED)
 AWAIT channel.setOptions(ChannelOptions(modes: [subscribe]))
 ```
 
@@ -902,13 +902,13 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL4j - ATTACH_RESUME flag set for reattach
+## RTL4j - ATTACH_RESUME flag no longer set
 
-**Test ID**: `realtime/unit/RTL4j/attach-resume-flag-0`
+**Test ID**: `realtime/unit/RTL4j/attach-resume-flag-not-set-0`
 
-**Spec requirement:** If the attach is not a clean attach, the library should set the ATTACH_RESUME flag in the ATTACH message. Per RTL4j1, `attachResume` is cleared when the channel enters DETACHING or FAILED, so a detach+reattach IS a clean attach and should NOT have ATTACH_RESUME. A reattach while still attached (e.g. via setOptions) is NOT a clean attach and SHOULD have ATTACH_RESUME.
+**Spec requirement:** As of specification version 6.1.0, RTL4j has been deleted: the server now makes the resumability decision, so the client need not set the (deprecated) ATTACH_RESUME flag (TR3f) on any ATTACH, including reattaches of a previously-attached channel.
 
-Tests that ATTACH_RESUME flag is set on reattach while attached, but not on a clean attach.
+Tests that the ATTACH_RESUME flag is set on neither a clean attach nor a reattach while attached.
 
 ### Setup
 ```pseudo
@@ -947,9 +947,8 @@ AWAIT channel.setOptions(params: {rewind: "1"})
 ### Assertions
 ```pseudo
 ASSERT length(captured_attach_messages) == 2
-# First attach should NOT have ATTACH_RESUME flag
+# Neither ATTACH should have the ATTACH_RESUME flag set
 ASSERT (captured_attach_messages[0].flags AND 32) == 0  # ATTACH_RESUME = 32
-# Second attach (reattach while attached) SHOULD have ATTACH_RESUME flag
-ASSERT (captured_attach_messages[1].flags AND 32) != 0  # ATTACH_RESUME = 32
+ASSERT (captured_attach_messages[1].flags AND 32) == 0  # ATTACH_RESUME = 32
 CLOSE_CLIENT(client)
 ```
