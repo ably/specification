@@ -584,12 +584,53 @@ ASSERT map.data == {}
 | RTLO4e6 | Set tombstone flag on the update |
 | RTLO4e7 | Set objectMessage on the update |
 
+Uses a non-root map: an `OBJECT_DELETE` targeting `root` is rejected per RTLO4e10
+(see `objects/unit/RTLO4e10/object-delete-root-noop-0`).
+
+### Setup
+```pseudo
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW")
+map.data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false },
+  "age":  { data: { number: 30 },      timeserial: "01", tombstone: false }
+}
+map.siteTimeserials = { "site1": "00" }
+```
+
+### Test Steps
+```pseudo
+msg = build_object_delete("map:test@1000", "01", "site1", 1700000000000)
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.isTombstone == true
+ASSERT map.data == {}
+ASSERT update.update == { "name": "removed", "age": "removed" }
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == msg
+```
+
+---
+
+## RTLO4e10 - OBJECT_DELETE targeting root is rejected
+
+**Test ID**: `objects/unit/RTLO4e10/object-delete-root-noop-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4e10 | Tombstoning root logs a warning and returns a noop update |
+| RTO3b | ObjectsPool must always contain the root object |
+
+The realtime system never publishes an `OBJECT_DELETE` targeting `root` (RTLO4e); if
+one is received it indicates a faulty message and must not tombstone the root object.
+
 ### Setup
 ```pseudo
 map = InternalLiveMap(objectId: "root", semantics: "LWW")
 map.data = {
-  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false },
-  "age":  { data: { number: 30 },      timeserial: "01", tombstone: false }
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
 }
 map.siteTimeserials = { "site1": "00" }
 ```
@@ -602,11 +643,9 @@ update = map.applyOperation(msg, source: CHANNEL)
 
 ### Assertions
 ```pseudo
-ASSERT map.isTombstone == true
-ASSERT map.data == {}
-ASSERT update.update == { "name": "removed", "age": "removed" }
-ASSERT update.tombstone == true
-ASSERT update.objectMessage == msg
+ASSERT map.isTombstone == false
+ASSERT map.data["name"].data.string == "Alice"  // data untouched
+ASSERT update.noop == true
 ```
 
 ---
@@ -775,6 +814,50 @@ ASSERT map.createOperationIsMerged == true
 | RTLO4e6 | Tombstone flag set on the update |
 | RTLO4e7 | objectMessage set on the update |
 
+Uses a non-root map: tombstoning `root` is rejected per RTLO4e10
+(see `objects/unit/RTLO4e10/replace-data-tombstone-root-noop-0`).
+
+### Setup
+```pseudo
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW")
+map.data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
+}
+```
+
+### Test Steps
+```pseudo
+state_msg = build_object_state("map:test@1000", {"site1": "01"}, {
+  map: { semantics: "LWW", entries: {} },
+  tombstone: true
+})
+update = map.replaceData(state_msg)
+```
+
+### Assertions
+```pseudo
+ASSERT map.isTombstone == true
+ASSERT map.data == {}
+ASSERT update.update == { "name": "removed" }
+ASSERT update.tombstone == true
+ASSERT update.objectMessage == state_msg
+```
+
+---
+
+## RTLO4e10 - replaceData with tombstone flag targeting root is rejected
+
+**Test ID**: `objects/unit/RTLO4e10/replace-data-tombstone-root-noop-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLM6f | ObjectState.tombstone true routes to LiveObject.tombstone |
+| RTLO4e10 | Tombstoning root logs a warning and returns a noop update |
+
+The sync path (RTLM6f) reaches the same `LiveObject.tombstone` method as
+OBJECT_DELETE, so an `ObjectState` with `tombstone: true` for `root` must be
+rejected the same way.
+
 ### Setup
 ```pseudo
 map = InternalLiveMap(objectId: "root", semantics: "LWW")
@@ -794,11 +877,9 @@ update = map.replaceData(state_msg)
 
 ### Assertions
 ```pseudo
-ASSERT map.isTombstone == true
-ASSERT map.data == {}
-ASSERT update.update == { "name": "removed" }
-ASSERT update.tombstone == true
-ASSERT update.objectMessage == state_msg
+ASSERT map.isTombstone == false
+ASSERT map.data["name"].data.string == "Alice"  // data untouched
+ASSERT update.noop == true
 ```
 
 ---
@@ -1300,6 +1381,9 @@ ASSERT update.objectMessage == msg
 
 Tests that when an InternalLiveMap is tombstoned (via OBJECT_DELETE), removeParentReference is called for each entry that references a LiveObject before the data is cleared.
 
+Uses a non-root map: tombstoning `root` is rejected per RTLO4e10
+(see `objects/unit/RTLO4e10/object-delete-root-noop-0`).
+
 ### Setup
 ```pseudo
 pool = ObjectsPool()
@@ -1308,20 +1392,20 @@ child_map = InternalLiveMap(objectId: "map:child@1000", semantics: "LWW")
 pool["counter:child@1000"] = child_counter
 pool["map:child@1000"] = child_map
 
-map = InternalLiveMap(objectId: "root", semantics: "LWW", pool: pool)
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW", pool: pool)
 map.data = {
   "counter_ref": { data: { objectId: "counter:child@1000" }, timeserial: "01", tombstone: false },
   "map_ref":     { data: { objectId: "map:child@1000" },     timeserial: "01", tombstone: false },
   "name":        { data: { string: "Alice" },                 timeserial: "01", tombstone: false }
 }
 map.siteTimeserials = { "site1": "00" }
-child_counter.parentReferences = { "root": {"counter_ref"} }
-child_map.parentReferences = { "root": {"map_ref"} }
+child_counter.parentReferences = { "map:test@1000": {"counter_ref"} }
+child_map.parentReferences = { "map:test@1000": {"map_ref"} }
 ```
 
 ### Test Steps
 ```pseudo
-msg = build_object_delete("root", "01", "site1", 1700000000000)
+msg = build_object_delete("map:test@1000", "01", "site1", 1700000000000)
 update = map.applyOperation(msg, source: CHANNEL)
 ```
 
@@ -1330,8 +1414,8 @@ update = map.applyOperation(msg, source: CHANNEL)
 ASSERT map.isTombstone == true
 ASSERT map.data == {}
 // removeParentReference was called on both children
-ASSERT "root" NOT IN child_counter.parentReferences OR "counter_ref" NOT IN child_counter.parentReferences["root"]
-ASSERT "root" NOT IN child_map.parentReferences OR "map_ref" NOT IN child_map.parentReferences["root"]
+ASSERT "map:test@1000" NOT IN child_counter.parentReferences OR "counter_ref" NOT IN child_counter.parentReferences["map:test@1000"]
+ASSERT "map:test@1000" NOT IN child_map.parentReferences OR "map_ref" NOT IN child_map.parentReferences["map:test@1000"]
 ASSERT update.update == { "counter_ref": "removed", "map_ref": "removed", "name": "removed" }
 ASSERT update.tombstone == true
 ASSERT update.objectMessage == msg
