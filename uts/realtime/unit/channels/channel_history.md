@@ -22,7 +22,7 @@ Unit test with mocked HTTP client
 
 ## RTL10b - untilAttach parameter
 
-**Spec requirement:** Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an UPDATE indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` assigned to the channel in the ATTACHED ProtocolMessage (see RTL15a). If the `untilAttach` param is specified when the channel is not attached, it results in an error.
+**Spec requirement:** Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an UPDATE indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` (see RTL15c). If the `untilAttach` param is specified when the channel is not attached, it results in an error.
 
 ### RTL10b - untilAttach adds fromSerial query parameter
 
