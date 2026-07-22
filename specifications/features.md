@@ -1059,6 +1059,12 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(RSH1c3)` `#save(pushChannelSubscription)` issues a `POST` request to [/push/channelSubscriptions](/api/rest-api#post-channel-subscription) using the `PushChannelSubscription` object (and optionally a JSON-encodable object) argument. If the client has been [activated as a push target device](#activation-state-machine), and the specified `PushChannelSubscription` contains a `deviceId` matching that of the present client, then this request must include [push device authentication](#push-device-authentication). A test should exist for a successful save, a successful subsequent save with an update, and a failed save operation
     - `(RSH1c4)` `#remove(push_channel_subscription)` issues a `DELETE` request to [/push/channelSubscriptions](/api/rest-api#delete-channel-subscription) and deletes the channel subscription using the attributes as params to the `DELETE` request. If the client has been [activated as a push target device](#activation-state-machine), and the specified `PushChannelSubscription` contains a `deviceId` matching that of the present client, then this request must include [push device authentication](#push-device-authentication). A test should exist that deletes a `clientId` and `deviceId` channel subscription separately and both succeed, and then also deletes a subscription that does not exist but still succeeds
     - `(RSH1c5)` `#removeWhere(params)` issues a `DELETE` request to [/push/channelSubscriptions](/api/rest-api#delete-channel-subscription) and deletes the matching channel subscriptions provided in `params`. A test should exist that deletes channel subscriptions by `clientId` and by `deviceId` separately, then additionally issues a delete for subscriptions with no matching params and checks the operation still succeeds.
+  - `(RSH1d)` `#createApnsBroadcast(options)` issues a `POST` request to `/push/apnsBroadcastChannels` with a body containing the `messageStoragePolicy` (either `0` or `1`), and returns the created broadcast as `{ id, apnsChannelId }`. This creates an APNs broadcast channel for use with an iOS Live Activity.
+  - `(RSH1e)` `#liveActivity` provides access to the admin `PushLiveActivity` object, which controls the lifecycle of an iOS Live Activity over an APNs broadcast channel created with `#createApnsBroadcast`. It provides the following methods:
+    - `(RSH1e1)` `#start(params)` issues a `POST` request to `/push/apnsBroadcastChannels/:apnsBroadcast/start` with a body carrying the `apns` payload together with the recipient, which is either a list of `channels` or a single `deviceId`. Optional APNs delivery `headers` (such as `apns-priority` and `apns-expiration`), when supplied, are included in the request body under a `headers` key alongside `apns`.
+      - `(RSH1e1a)` The `recipient` must specify exactly one of `channels` (a non-empty list) or `deviceId`. If neither is provided, or both are provided, the request is rejected before any HTTP request is made with an error with code `40000` and status code `400`.
+    - `(RSH1e2)` `#update(params)` issues a `POST` request to `/push/apnsBroadcastChannels/:apnsBroadcast/broadcast` with a body carrying the `apns` payload. Optional APNs delivery `headers` (such as `apns-priority` and `apns-expiration`), when supplied, are included in the request body under a `headers` key alongside `apns`.
+    - `(RSH1e3)` `#end(params)` issues a `POST` request to `/push/apnsBroadcastChannels/:apnsBroadcast/end` with a body carrying the `apns` payload. Optional APNs delivery `headers` (such as `apns-priority` and `apns-expiration`), when supplied, are included in the request body under a `headers` key alongside `apns`.
 - `(RSH2)` The following should only apply to platforms that support receiving push notifications:
   - `(RSH2a)` `Push#activate` sends a `CalledActivate` event to [the state machine](#RSH3).
   - `(RSH2b)` `Push#deactivate` sends a `CalledDeactivate` event to [the state machine](#RSH3).
@@ -2796,6 +2802,8 @@ Each type, method, and attribute is labelled with the name of one or more clause
       publish(recipient: JsonObject, data: JsonObject) => io // RSH1a
       deviceRegistrations: PushDeviceRegistrations // RSH1b
       channelSubscriptions: PushChannelSubscriptions // RSH1c
+      createApnsBroadcast(options: PushApnsBroadcastOptions) => io PushApnsBroadcast // RSH1d
+      liveActivity: PushLiveActivity // RSH1e
 
     class PushDeviceRegistrations: // RSH1b
       get(deviceId: String) => io DeviceDetails // RSH1b1
@@ -2810,6 +2818,11 @@ Each type, method, and attribute is labelled with the name of one or more clause
       save(PushChannelSubscription) => io PushChannelSubscription // RSH1c3
       remove(PushChannelSubscription) => io // RSH1c4
       removeWhere(params: Dict<String, String>) => io // RSH1c5
+
+    class PushLiveActivity: // RSH1e
+      start(params: PushLiveActivityStartParams) => io // RSH1e1
+      update(params: PushLiveActivityUpdateParams) => io // RSH1e2
+      end(params: PushLiveActivityEndParams) => io // RSH1e3
 
     enum DevicePlatform: // PCD6
       "android"
@@ -2832,6 +2845,33 @@ Each type, method, and attribute is labelled with the name of one or more clause
       deviceId: String? // PCS2
       clientId: String? // PCS3
       channel: String // PCS4
+
+    class PushApnsBroadcastOptions: // RSH1d
+      messageStoragePolicy: Int // 0 or 1
+
+    class PushApnsBroadcast: // RSH1d
+      id: String
+      apnsChannelId: String
+
+    class PushLiveActivityStartParams: // RSH1e1
+      recipient: PushLiveActivityRecipient
+      apnsBroadcast: String
+      apns: JsonObject
+      headers: Dict<String, String>?
+
+    class PushLiveActivityRecipient: // RSH1e1
+      channels: List<String>? // either channels or deviceId
+      deviceId: String? // either channels or deviceId
+
+    class PushLiveActivityUpdateParams: // RSH1e2
+      apnsBroadcast: String
+      apns: JsonObject
+      headers: Dict<String, String>?
+
+    class PushLiveActivityEndParams: // RSH1e3
+      apnsBroadcast: String
+      apns: JsonObject
+      headers: Dict<String, String>?
 
     class ErrorInfo: // TI*
       code: Int // TI1
