@@ -230,6 +230,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO10c1)` For each `LiveObject` in the `ObjectsPool`:
       - `(RTO10c1a)` Check if the `LiveObject` needs to release any resources, see [RTLM19](#RTLM19)
       - `(RTO10c1b)` If `LiveObject.isTombstone` is `true`, and the difference between the current time and `LiveObject.tombstonedAt` is greater than or equal to the [grace period](#RTO10b), remove the object from the `ObjectsPool` and release resources for the corresponding object entity to allow it to be garbage collected
+        - `(RTO10c1b1)` The object with ID `root` must not be removed from `ObjectsPool`, as per [RTO3b](#RTO3b). Note that the `root` object can never become tombstoned per [RTLO4e10](#RTLO4e10), so this exclusion acts as an additional safeguard for the [RTO3b](#RTO3b) invariant
 - `(RTO13)` This clause has been deleted (redundant to [RTO11f15](#RTO11f15) and [RTO12f13](#RTO12f13)) as of specification version 6.0.0.
   - `(RTO13a)` This clause has been deleted as of specification version 6.0.0.
     - `(RTO13a1)` This clause has been deleted as of specification version 6.0.0.
@@ -383,6 +384,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLO4e)` protected `tombstone` - a convenience method used to tombstone this `LiveObject`. The realtime system reserves the right to tombstone an object (i.e. mark it for deletion from the objects pool) by publishing an `OBJECT_DELETE` operation at any time if the object is orphaned (not a descendant of the root object) or remains uninitialized (no `*_CREATE` operation has been received) for an extended period. Only the realtime system may publish an `OBJECT_DELETE` operation; clients must never send it. This method describes the steps the client library must take when it needs to tombstone an object locally. Eventually, tombstoned objects will be garbage collected following the procedure described in [RTO10](#RTO10)
     - `(RTLO4e1)` Expects the following arguments:
       - `(RTLO4e1a)` `ObjectMessage`
+    - `(RTLO4e10)` If `LiveObject.objectId` is `root`, log a warning indicating that an attempt was made to tombstone the `root` object, and return a `LiveObjectUpdate` with `LiveObjectUpdate.noop` set to `true` without performing any of the subsequent steps in this clause. The `root` object must always exist in the `ObjectsPool` per [RTO3b](#RTO3b); it is never orphaned or uninitialized, so the realtime system never publishes an `OBJECT_DELETE` operation or an `ObjectState` with `tombstone` set to `true` targeting it — receiving one indicates a faulty message
     - `(RTLO4e2)` Set `LiveObject.isTombstone` to `true`
     - `(RTLO4e3)` Set `LiveObject.tombstonedAt` to the value calculated per [RTLO6](#RTLO6), using `ObjectMessage.serialTimestamp`
       - `(RTLO4e3a)` This clause has been replaced by [RTLO6a](#RTLO6a)

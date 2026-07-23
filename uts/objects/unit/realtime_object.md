@@ -1128,6 +1128,58 @@ ASSERT root.get("score").value() == null
 
 ---
 
+## RTO10c1b1 - GC never removes the root object
+
+**Test ID**: `objects/unit/RTO10c1b1/gc-root-never-removed-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4e10 | OBJECT_DELETE targeting root is rejected with a warning |
+| RTO10c1b1 | The root object is never removed from the pool by GC |
+| RTO3b | ObjectsPool must always contain the root object |
+
+The realtime system never publishes an `OBJECT_DELETE` targeting `root`; receiving
+one indicates a faulty message. It must not tombstone the root object (RTLO4e10),
+and even after the GC grace period elapses the root object must remain in the pool
+and stay functional (RTO10c1b1, safeguarding RTO3b).
+
+Note: this test verifies the composed behaviour. The RTO10c1b1 branch in isolation
+(a tombstoned root surviving the GC sweep) is deliberately not exercised: RTLO4e10
+makes that state unreachable in a conforming implementation, so the GC-side
+exclusion is defense-in-depth verified by its spec tag rather than by fabricating
+an impossible state.
+
+### Setup
+```pseudo
+enable_fake_timers()
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+
+// Rogue OBJECT_DELETE targeting the root object: rejected per RTLO4e10
+mock_ws.send_to_client(build_object_message("test", [
+  build_object_delete("root", remote_serial(0), "remote", now())
+]))
+```
+
+### Test Steps
+```pseudo
+ASSERT root.get("name").value() == "Alice"  // root not tombstoned, data untouched
+
+ADVANCE_TIME(86400000 + 300000)
+
+// root must still be live: a subsequent operation still applies to the same
+// root object the client holds
+mock_ws.send_to_client(build_object_message("test", [
+  build_map_set("root", "name", { string: "Bob" }, remote_serial(1), "remote")
+]))
+```
+
+### Assertions
+```pseudo
+ASSERT root.get("name").value() == "Bob"
+```
+
+---
+
 ## RTO20 - Echo deduplication via appliedOnAckSerials
 
 **Test ID**: `objects/unit/RTO20/echo-dedup-0`
