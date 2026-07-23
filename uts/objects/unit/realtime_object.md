@@ -1143,6 +1143,12 @@ one indicates a faulty message. It must not tombstone the root object (RTLO4e10)
 and even after the GC grace period elapses the root object must remain in the pool
 and stay functional (RTO10c1b1, safeguarding RTO3b).
 
+Note: this test verifies the composed behaviour. The RTO10c1b1 branch in isolation
+(a tombstoned root surviving the GC sweep) is deliberately not exercised: RTLO4e10
+makes that state unreachable in a conforming implementation, so the GC-side
+exclusion is defense-in-depth verified by its spec tag rather than by fabricating
+an impossible state.
+
 ### Setup
 ```pseudo
 enable_fake_timers()
