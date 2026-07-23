@@ -1,6 +1,6 @@
 # Channel Properties Tests
 
-Spec points: `RTL15`, `RTL15a`, `RTL15b`, `RTL15b1`
+Spec points: `RTL15`, `RTL15b`, `RTL15b1`, `RTL15c`
 
 ## Test Type
 Unit test with mocked WebSocket
@@ -11,20 +11,20 @@ See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket In
 
 ---
 
-## RTL15a - attachSerial is updated from ATTACHED message
+## RTL15c - attachSerial is updated from non-resumed ATTACHED message
 
-**Test ID**: `realtime/unit/RTL15a/attach-serial-from-attached-0`
+**Test ID**: `realtime/unit/RTL15c/attach-serial-from-attached-0`
 
 | Spec | Requirement |
 |------|-------------|
 | RTL15 | `RealtimeChannel#properties` is a `ChannelProperties` object with `attachSerial` and `channelSerial` |
-| RTL15a | `attachSerial` is unset when instantiated, and updated with the `channelSerial` from each ATTACHED ProtocolMessage received |
+| RTL15c | `attachSerial` is unset when instantiated, and updated with the `channelSerial` from each ATTACHED ProtocolMessage received whose `resumed` attribute is false |
 
-Tests that the channel's `attachSerial` property is initially unset, is set from the `channelSerial` field of the ATTACHED response, and is updated on subsequent ATTACHED messages (e.g. after reattach).
+Tests that the channel's `attachSerial` property is initially unset, is set from the `channelSerial` field of the ATTACHED response, and is updated on subsequent non-resumed ATTACHED messages (e.g. after reattach).
 
 ### Setup
 ```pseudo
-channel_name = "test-RTL15a-${random_id()}"
+channel_name = "test-RTL15c-${random_id()}"
 attach_count = 0
 
 mock_ws = MockWebSocket(
@@ -32,6 +32,7 @@ mock_ws = MockWebSocket(
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       attach_count++
+      # No RESUMED flag, so resumed is false
       mock_ws.send_to_client(ProtocolMessage(
         action: ATTACHED,
         channel: msg.channel,
@@ -81,17 +82,17 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTL15a - attachSerial updated on server-initiated reattach
+## RTL15c - attachSerial updated on server-initiated non-resumed reattach
 
-**Test ID**: `realtime/unit/RTL15a/attach-serial-server-reattach-1`
+**Test ID**: `realtime/unit/RTL15c/attach-serial-server-reattach-1`
 
-**Spec requirement:** `attachSerial` is updated with the `channelSerial` from each ATTACHED ProtocolMessage received.
+**Spec requirement:** `attachSerial` is updated with the `channelSerial` from each ATTACHED ProtocolMessage received whose `resumed` attribute is false.
 
-Tests that when the server sends an unsolicited ATTACHED message (e.g. RTL2g update), the `attachSerial` is updated.
+Tests that when the server sends an unsolicited ATTACHED message without the RESUMED flag (e.g. RTL12 update indicating loss of continuity), the `attachSerial` is updated.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTL15a-update-${random_id()}"
+channel_name = "test-RTL15c-update-${random_id()}"
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
@@ -121,7 +122,7 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 ASSERT channel.properties.attachSerial == "initial-serial"
 
-# Server sends unsolicited ATTACHED (e.g. RTL2g update)
+# Server sends unsolicited ATTACHED without the RESUMED flag (e.g. RTL12 update)
 mock_ws.active_connection.send_to_client(ProtocolMessage(
   action: ATTACHED,
   channel: channel_name,
@@ -133,6 +134,69 @@ AWAIT_STATE channel.properties.attachSerial == "updated-serial"
 ### Assertions
 ```pseudo
 ASSERT channel.properties.attachSerial == "updated-serial"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTL15c - attachSerial not updated from resumed ATTACHED message
+
+**Test ID**: `realtime/unit/RTL15c/attach-serial-not-updated-resumed-2`
+
+**Spec requirement:** `attachSerial` is updated with the `channelSerial` from each ATTACHED ProtocolMessage received whose `resumed` attribute is false — so an ATTACHED message with the RESUMED flag set must leave `attachSerial` unchanged.
+
+Tests that when the server sends an unsolicited ATTACHED message with the RESUMED flag (indicating a successful resume with no loss of continuity), the `attachSerial` is not updated. Uses the RTL15b `channelSerial` update (which happens regardless of the RESUMED flag) to detect that the message has been processed.
+
+### Setup
+```pseudo
+channel_name = "test-RTL15c-resumed-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel,
+        channelSerial: "initial-serial"
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+AWAIT channel.attach()
+ASSERT channel.properties.attachSerial == "initial-serial"
+
+# Server sends unsolicited ATTACHED WITH the RESUMED flag
+# (successful resume, no loss of continuity)
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: ATTACHED,
+  channel: channel_name,
+  channelSerial: "resumed-serial",
+  flags: RESUMED
+))
+
+# channelSerial is updated per RTL15b regardless of the RESUMED flag,
+# confirming the message has been processed
+AWAIT_STATE channel.properties.channelSerial == "resumed-serial"
+```
+
+### Assertions
+```pseudo
+# attachSerial must be unchanged, since the ATTACHED message had resumed=true
+ASSERT channel.properties.attachSerial == "initial-serial"
 CLOSE_CLIENT(client)
 ```
 
