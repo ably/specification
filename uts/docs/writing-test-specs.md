@@ -508,6 +508,73 @@ Tests that all REST requests include the `Ably-Agent` header with correct format
 
 ## Pseudocode Conventions
 
+### Identifier Naming
+
+Every identifier in pseudocode is either **spec surface** (an SDK/spec name, cases 1–2 below) or
+**test harness** (scaffolding, case 3), and its **casing is the visual signal** of which. Getting this
+right keeps the spec surface greppable straight back to the specification and keeps test scaffolding
+visually distinct from it.
+
+**1. Spec surface — mirror the specification's own names exactly.** Anything that names an SDK type,
+field, property, or method that a feature specification (`features.md`, `objects-features.md`, …)
+already defines must use the **identical name and casing** the spec uses:
+
+- **Types / concepts → `PascalCase`**: `ObjectsPool`, `SyncObjectsPool`, `InternalLiveMap`,
+  `InternalLiveCounter`, `Connection`.
+- **Fields / properties → `camelCase`**: `bufferedObjectOperations`, `appliedOnAckSerials`,
+  `clearTimeserial`, `siteTimeserials`, `createOperationIsMerged`.
+- **Methods → the spec's member, written as a call**: the spec's `Type#method` form (e.g.
+  `InternalLiveMap#set`, `RealtimeObject#on`) is written `object.method(...)`; bare method names
+  (`applyOperation`, `replaceData`) match the spec verbatim.
+
+Do not rename, abbreviate, or re-case a spec identifier — a reader must be able to grep it out of the
+specification unchanged.
+
+**2. Behaviour the specification describes but does not name.** Some clauses describe an action without
+giving it a method name (e.g. RTO4: *"when a channel `ATTACHED` `ProtocolMessage` is received, the
+client library must …"* — no method is named). When a white-box test needs to invoke that behaviour
+directly, coin a name **in the specification's own style — `camelCase`, never `snake_case`** — and use
+it consistently across the suite. Established coinages: `processAttached`, `processObjectSync`,
+`processObjectMessage`, `syncState`, `processChannelState`. These are UTS conventions rather than spec
+names, but they read as though the spec could have named them.
+
+**3. Test-harness constructs → `snake_case`.** Everything that is scaffolding rather than SDK/spec
+surface — fixtures, mocks, builders, polling/flush helpers — is `snake_case`, so it is instantly
+distinguishable from the spec surface: `setup_synced_channel`, `mock_ws`, `send_to_client`,
+`build_object_message`, `build_counter_inc`, `install_mock`, `respond_with_success`, `poll_until`,
+`process_pending_events`, `encode_uri_component`.
+
+**Internal (white-box) access** uses the spec's internal name, `camelCase`d: the internal `ObjectsPool`
+(RTO3) is reached as `object.objectsPool`; internal fields keep their spec names
+(`bufferedObjectOperations`, `appliedOnAckSerials`). How each SDK exposes these is covered in the
+derived-test mapping docs.
+
+**Wire and enum values follow the protocol/spec — not these two buckets.** Identifiers that name
+wire-format data or enum members come from `protocol.md` / `features.md` and are matched verbatim; they
+are **not** harness, even when `snake_case`:
+
+- **Wire fields & query parameters** — mostly `camelCase` (`channelSerial`, `connectionId`,
+  `msgSerial`), with a few `snake_case` (the `request_id` query parameter, RSC7c).
+- **Enum members** — the spec's enum casing, typically `SCREAMING_SNAKE_CASE`
+  (the `ChannelMode.PRESENCE_SUBSCRIBE` enum member / `TR3` flag, also written `presence_subscribe` in
+  some prose; `SYNCED`; `DETACHED`). Render these per the *Enum values* note in the UTS README.
+
+**File names are not identifiers.** Spec *files* are `snake_case` `.md` (`objects_pool.md`,
+`realtime_object.md`); this is unrelated to symbol casing. The `ObjectsPool` type stays `PascalCase`
+even though it is documented in `objects_pool.md`.
+
+```pseudo
+# GOOD — spec surface mirrors the spec; harness is snake_case
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")  # harness → snake_case
+pool = channel.object.objectsPool                                        # ObjectsPool (RTO3) → camelCase accessor
+update = counter.applyOperation(msg, source: CHANNEL)                    # spec method, verbatim
+ASSERT counter.bufferedObjectOperations.length == 0                      # spec field, verbatim
+
+# BAD — spec surface in snake_case: looks like harness, no longer greps back to the spec
+pool = channel.object.objects_pool
+update = counter.apply_operation(msg)
+```
+
 ### URI Path Component Encoding
 
 Use `encode_uri_component()` for any variable path segment or query parameter in URL assertions. This is defined in the UTS README. Always use exact equality (`==`) for path assertions, not `CONTAINS`.

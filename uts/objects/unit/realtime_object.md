@@ -1,6 +1,6 @@
 # RealtimeObject Tests
 
-Spec points: `RTO2`, `RTO10`, `RTO15`, `RTO17`–`RTO20`, `RTO22`–`RTO26`
+Spec points: `RTO2`, `RTO10`, `RTO15`, `RTO17`–`RTO20`, `RTO22`–`RTO27`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -1545,17 +1545,9 @@ scenarios = [
     },
     expected_events: ["SYNCING", "SYNCED"]
   },
-  // NOTE: there is intentionally NO "re-attach after detach" scenario here. At the objects layer,
-  // a detach emits no sync events (the detached/failed handler clears objects data WITHOUT
-  // emitting), and the re-attach drives the SAME onAttached -> new-sync path (RTO4c) as the
-  // "re-sync on new ATTACHED" scenario below — so it is redundant for a sync-EVENT test. It is also
-  // not portably expressible: in some SDKs an unsolicited server DETACHED transitions the channel to
-  // SUSPENDED (not DETACHED), so the fixture cannot be written identically everywhere.
-  //
-  // A SEPARATE behaviour lives near here: on a channel DETACHED/FAILED the objects data is cleared
-  // (no events emitted), while SUSPENDED retains it. This is normative (RTO27) and is covered by the
-  // RTO27 white-box test at the end of this file (it drives the internal channel-state handler directly
-  // and inspects the pool, since the behaviour is not reachable black-box). See objects_pool.md.
+  // No "re-attach after detach" scenario, deliberately: it is redundant with "re-sync on new
+  // ATTACHED" below (same onAttached -> new-sync path, RTO4c), and not portably expressible — an
+  // unsolicited server DETACHED transitions to SUSPENDED (not DETACHED) in some SDKs.
   {
     name: "re-sync on new ATTACHED",
     trigger: () => {
@@ -1611,16 +1603,16 @@ without emitting update events (RTO27a); on `SUSPENDED`, the data is retained (R
 and inspects the internal `ObjectsPool`. A direct call is required because the behaviour is not
 reachable black-box: access after `DETACHED`/`FAILED` throws (RTO25b), and `SUSPENDED` is a
 connection-level state that a channel-level mock cannot drive. The abstract symbols map as follows:
-- `channel.object.handle_channel_state(state)` → the SDK's channel-state handler (ably-js
+- `channel.object.processChannelState(state)` → the SDK's channel-state handler (ably-js
   `RealtimeObject.actOnChannelState(state)`, ably-java `DefaultRealtimeObject.handleStateChange(state, false)`).
-- `channel.object.objects_pool` → the internal `ObjectsPool` (ably-js `_objectsPool`, ably-java `objectsPool`).
+- `channel.object.objectsPool` → the internal `ObjectsPool` (RTO3) (ably-js `_objectsPool`, ably-java `objectsPool`).
 
 ### RTO27a - DETACHED / FAILED clears data without emitting update events
 
 ```pseudo
 FOR state IN [DETACHED, FAILED]:
   { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-  pool = channel.object.objects_pool          # internal ObjectsPool (RTO3)
+  pool = channel.object.objectsPool          # internal ObjectsPool (RTO3)
 
   # sanity: STANDARD_POOL_OBJECTS has been materialised
   ASSERT "name" IN pool["root"].data
@@ -1630,7 +1622,7 @@ FOR state IN [DETACHED, FAILED]:
   updates = []
   pool["root"].subscribe((update) => updates.append(update))
 
-  channel.object.handle_channel_state(state)  # internal channel-state handler (RTO27)
+  channel.object.processChannelState(state)  # internal channel-state handler (RTO27)
 
   # RTO27a1: every object's data is cleared; the objects themselves remain in the pool
   ASSERT pool["root"].data == {}
@@ -1643,9 +1635,9 @@ FOR state IN [DETACHED, FAILED]:
 
 ```pseudo
 { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-pool = channel.object.objects_pool
+pool = channel.object.objectsPool
 
-channel.object.handle_channel_state(SUSPENDED)   # RTO27b: no-op for objects data
+channel.object.processChannelState(SUSPENDED)   # RTO27b: no-op for objects data
 
 # RTO27b: data retained unchanged
 ASSERT "name" IN pool["root"].data

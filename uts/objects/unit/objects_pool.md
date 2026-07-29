@@ -119,18 +119,6 @@ ASSERT updates[0].objectMessage IS null
 
 ---
 
-> **NOTE — channel DETACHED/FAILED clears objects data (normative: [RTO27](../../../specifications/objects-features.md#RTO27)).**
-> On a channel transition to DETACHED or FAILED the objects data is cleared **without emitting update
-> events** (RTO27a); a SUSPENDED channel **retains** its data (RTO27b) (ably-js
-> `RealtimeObject.actOnChannelState` → `objectsPool.clearObjectsData(false)`; ably-java
-> `DefaultRealtimeObject.handleStateChange`). This is exercised **white-box** by the **RTO27** test in
-> `realtime_object.md`: it drives the internal channel-state handler directly and inspects the internal
-> `ObjectsPool`, because the behaviour is not reachable black-box (access after DETACHED throws per
-> RTO25b, and SUSPENDED is a connection-level state a channel-level mock cannot drive). SDKs may
-> additionally pin it in a local test (ably-java: `DefaultRealtimeObjectChannelStateTest`).
-
----
-
 ## RTO5 - OBJECT_SYNC complete sequence
 
 **Test ID**: `objects/unit/RTO5/sync-complete-sequence-0`
