@@ -574,6 +574,11 @@ ASSERT result["profile"]["prefs"]["theme"] == "dark"
 mock_ws.send_to_client(build_object_message("test", [
   build_map_set("map:prefs@1000", "back_ref", { objectId: "map:profile@1000" }, "99", "remote")
 ]))
+
+# Quiescence barrier for a POSITIVE read-after-send: SDKs may apply inbound OBJECT messages
+# asynchronously, so wait until the MAP_SET has been applied before reading. (The spec's
+# read-after-send conventions otherwise cover only negative assertions.)
+poll_until("back_ref" IN root.get("profile").get("prefs").keys(), timeout: 5s)
 ```
 
 ### Test Steps
@@ -626,6 +631,11 @@ ASSERT root.get("score").compact() == 100
 mock_ws.send_to_client(build_object_message("test", [
   build_map_set("map:prefs@1000", "back_ref", { objectId: "map:profile@1000" }, "99", "remote")
 ]))
+
+# Quiescence barrier for a POSITIVE read-after-send: SDKs may apply inbound OBJECT messages
+# asynchronously, so wait until the MAP_SET has been applied before reading. (The spec's
+# read-after-send conventions otherwise cover only negative assertions.)
+poll_until("back_ref" IN root.get("profile").get("prefs").keys(), timeout: 5s)
 ```
 
 ### Test Steps

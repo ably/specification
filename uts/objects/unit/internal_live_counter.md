@@ -11,6 +11,15 @@ Tests the `InternalLiveCounter` CRDT data structure. InternalLiveCounter holds a
 
 Tests operate directly on InternalLiveCounter by calling `applyOperation()` and `replaceData()` with constructed messages. No channel or connection infrastructure is needed.
 
+> **SDK portability note — op-path update return value.** Several tests below assert on the
+> `LiveCounterUpdate` **returned by `applyOperation(msg, source)`** (`noop`, `update.amount`,
+> `tombstone`, `objectMessage`). This models SDKs whose operation application returns the update
+> synchronously. An SDK whose operation path returns only a success/failure boolean and instead
+> delivers the update via the object's subscription/emit path (e.g. a statically-typed SDK — see
+> `objects-features.md` RTTS) may satisfy the same requirement by asserting the **emitted update
+> event** and/or the **resulting object state** — these are equivalent observables of the same
+> `LiveCounterUpdate`. The sync path (`replaceData()`) returns the update in all SDKs.
+
 ## Shared Helpers
 
 See `helpers/standard_test_pool.md` for `build_counter_inc`, `build_counter_create`, `build_object_delete`, `build_object_state`.

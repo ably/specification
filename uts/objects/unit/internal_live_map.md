@@ -11,6 +11,16 @@ Tests the `InternalLiveMap` LWW-map CRDT data structure. InternalLiveMap holds a
 
 Tests operate directly on InternalLiveMap by calling `applyOperation()` and `replaceData()` with constructed messages.
 
+> **SDK portability note — op-path update return value.** Several tests below assert on the
+> `LiveMapUpdate` **returned by `applyOperation(msg, source)`** (`noop`, the per-key `update` diff
+> such as `{ "name": "updated"/"removed" }`, `tombstone`, `objectMessage`). This models SDKs whose
+> operation application returns the update synchronously. An SDK whose operation path returns only a
+> success/failure boolean and instead delivers the update via the object's subscription/emit path
+> (e.g. a statically-typed SDK — see `objects-features.md` RTTS) may satisfy the same requirement by
+> asserting the **emitted update event** and/or the **resulting map state** — these are equivalent
+> observables of the same `LiveMapUpdate`. The sync path (`replaceData()`) returns the update in all
+> SDKs.
+
 ## Shared Helpers
 
 See `helpers/standard_test_pool.md` for builder functions.

@@ -545,35 +545,25 @@ ASSERT events CONTAINS_IN_ORDER ["SYNCING", "SYNCED"]
 
 ---
 
-## RTO18d - Duplicate listener registered twice fires twice
+## RTO18d - Duplicate listener registration — REMOVED (platform-idiomatic, not universally testable)
 
-**Test ID**: `objects/unit/RTO18d/duplicate-listener-0`
+The former test `objects/unit/RTO18d/duplicate-listener-0` (registering the same listener twice →
+invoked twice) has been **removed** from the UTS suite: the behaviour is contingent on each SDK's
+listener-registration idiom, so it cannot pass identically across SDKs (the UTS contract).
 
-**Spec requirement:** If same listener registered twice, it is invoked twice per event.
+Registering the **same listener reference** twice for the same event diverges by design across SDKs
+(verified in source):
+- **ably-js:** `on` does a plain `listeners.push(listener)` with no identity check → fires **twice**
+  (matches RTE4 / RTO18d).
+- **ably-cocoa:** `on:` mints a fresh `ARTEventListener` per call; the "AsSet" dedup is pointer-identity
+  on that wrapper (the block is never the key) → fires **twice**.
+- **ably-java:** `on(event, Listener)` keys the registry by the listener *instance* → de-duplicates →
+  fires **once** (a deliberate, SDK-wide choice its `EventEmitter` documents as a spec deviation).
 
-### Setup
-```pseudo
-{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
-call_count = 0
-listener = () => { call_count++ }
-channel.object.on(SYNCED, listener)
-channel.object.on(SYNCED, listener)
-```
-
-### Test Steps
-```pseudo
-mock_ws.send_to_client(ProtocolMessage(
-  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor", flags: HAS_OBJECTS
-))
-mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
-
-poll_until(call_count >= 2, timeout: 5s)
-```
-
-### Assertions
-```pseudo
-ASSERT call_count == 2
-```
+This is a design choice, not a language limitation — the same reference is detectable in all three
+languages; js/cocoa append, java dedupes. Because the SDKs genuinely diverge, the assertion can't hold
+identically everywhere. See the RTO18d editor's note in `objects-features.md`; an SDK that wants to pin
+its own behaviour should do so in an SDK-local (non-UTS) test.
 
 ---
 
@@ -1538,17 +1528,18 @@ scenarios = [
     },
     expected_events: ["SYNCING", "SYNCED"]
   },
-  {
-    name: "re-attach after detach",
-    trigger: () => {
-      mock_ws.send_to_client(ProtocolMessage(action: DETACHED, channel: "test"))
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ATTACHED, channel: "test", channelSerial: "sync2:cursor", flags: HAS_OBJECTS
-      ))
-      mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
-    },
-    expected_events: ["SYNCING", "SYNCED"]
-  },
+  // NOTE: there is intentionally NO "re-attach after detach" scenario here. At the objects layer,
+  // a detach emits no sync events (the detached/failed handler clears objects data WITHOUT
+  // emitting), and the re-attach drives the SAME onAttached -> new-sync path (RTO4c) as the
+  // "re-sync on new ATTACHED" scenario below — so it is redundant for a sync-EVENT test. It is also
+  // not portably expressible: in some SDKs an unsolicited server DETACHED transitions the channel to
+  // SUSPENDED (not DETACHED), so the fixture cannot be written identically everywhere.
+  //
+  // A SEPARATE, SDK-internal behaviour lives near here: on a channel DETACHED/FAILED the objects data
+  // is cleared (no events emitted), while SUSPENDED retains it. It is deliberately NOT a UTS test (no
+  // normative RTO point; not observable through the public API — access on DETACHED throws per RTO25b,
+  // and re-sync replaces the pool regardless), so each SDK guards it with an SDK-local test. See the
+  // NOTE in objects_pool.md.
   {
     name: "re-sync on new ATTACHED",
     trigger: () => {

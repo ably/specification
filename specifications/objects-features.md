@@ -292,6 +292,31 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO18b2)` `SYNCED`: Indicates that the [RTO17](#RTO17) sync state has transitioned to `SYNCED`
   - `(RTO18c)` Registers the provided listener for the specified event
   - `(RTO18d)` If `on` is called more than once with the same listener and event, the listener is added multiple times to the listener registry. As such, if the same listener is registered twice and an event is emitted once, the listener will be invoked twice
+    > **EDITOR'S NOTE — SDKs diverge on this by design; it is not universally testable.** RTO18d
+    > restates the general `EventEmitter#on` contract **RTE4** (`features.md`, mirrored in
+    > `api-docstrings.md`). Registering the **same listener reference** twice for the same event is
+    > handled differently across Ably's own SDKs (verified in source):
+    > - **ably-js** (`eventemitter.ts`): `on` does a plain `listeners.push(listener)` with **no
+    >   identity check** → **fires twice** (matches RTE4/RTO18d).
+    > - **ably-cocoa** (`ARTEventEmitter.m`): `on:` mints a *fresh* `ARTEventListener` wrapping the
+    >   block on every call, and the registry's "AsSet" dedup is pointer-identity on that wrapper (the
+    >   block itself is never the key), so two calls never collide → **fires twice**.
+    > - **ably-java** (`EventEmitter.java`): `on(event, Listener)` does `filters.put(listener, …)` into
+    >   a map keyed by the listener *instance* (and the all-events `on(Listener)` is `contains`-guarded)
+    >   → **de-duplicates → fires once**. ably-java's own Javadoc flags this as a deliberate, SDK-wide
+    >   deviation from RTE4 — for a state-change listener it avoids the double-side-effect footgun the
+    >   WHATWG DOM `addEventListener` also avoids by de-duplicating.
+    >
+    > This is a **design choice, not a language limitation**: the test passes the *same reference*, and
+    > reference identity is available in every one of these languages (JS `===`, ObjC pointer, Java
+    > identity) — js/cocoa simply choose to append, java chooses to dedupe. Because the SDKs genuinely
+    > diverge, the assertion cannot hold identically everywhere, so the corresponding UTS test
+    > (`RTO18d/duplicate-listener-0`) has been **removed** from the objects UTS suite. RTE4's "fires
+    > twice" is retained as the reference behaviour; SDKs that de-duplicate document it locally
+    > (ably-java tracks it in its `deviations.md`), and any SDK may pin its own behaviour in an
+    > SDK-local (non-UTS) test.
+    > Any move to make this *uniform* would be an ecosystem-wide RTE4 change (redefining `off`'s
+    > remove-one-vs-all semantics and closure identity) — out of scope here.
   - `(RTO18e)` When an event is emitted, all registered listeners for that event must be called with no arguments
   - `(RTO18f)` The client library may return a subscription object (or the idiomatic equivalent for the language) as a result of this operation:
     - `(RTO18f1)` The subscription object includes an `off` function

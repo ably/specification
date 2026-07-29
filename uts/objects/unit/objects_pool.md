@@ -119,6 +119,24 @@ ASSERT updates[0].objectMessage IS null
 
 ---
 
+> **NOTE — channel DETACHED/FAILED clears objects data (SDK-internal; intentionally not a UTS test).**
+> When the channel transitions to DETACHED or FAILED, the objects data is cleared **without emitting
+> update events** (the current data is unknown in those states); a SUSPENDED channel **retains** its
+> data. This is implemented in both reference SDKs (ably-js `RealtimeObject.actOnChannelState` →
+> `objectsPool.clearObjectsData(false)` + clear SyncObjectsPool; ably-java
+> `DefaultRealtimeObject.handleStateChange`), but it is **deliberately not a shared UTS requirement**:
+> it has no normative `RTO` point, and it is not observable through the public API — access on a
+> DETACHED channel throws (RTO25b), and on re-attach the RTO5c sync **replaces** the pool regardless of
+> whether detach cleared it, so an SDK that skipped the clear would still be observably correct. It is a
+> defensive internal cleanup, so each SDK guards it with its own **SDK-local** test rather than a UTS
+> spec test. ably-java pins it in `DefaultRealtimeObjectChannelStateTest` (asserts the pool is cleared
+> after DETACHED/FAILED and retained after SUSPENDED, driving `handleStateChange` and inspecting the
+> pool directly); other SDKs may add an equivalent local test (e.g. ably-js in
+> `test/realtime/liveobjects.test.js`). Referenced from the "no re-attach-after-detach scenario" note
+> in `realtime_object.md`.
+
+---
+
 ## RTO5 - OBJECT_SYNC complete sequence
 
 **Test ID**: `objects/unit/RTO5/sync-complete-sequence-0`
