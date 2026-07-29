@@ -545,25 +545,42 @@ ASSERT events CONTAINS_IN_ORDER ["SYNCING", "SYNCED"]
 
 ---
 
-## RTO18d - Duplicate listener registration — REMOVED (platform-idiomatic, not universally testable)
+## RTO18d - Duplicate listener registered twice fires twice
 
-The former test `objects/unit/RTO18d/duplicate-listener-0` (registering the same listener twice →
-invoked twice) has been **removed** from the UTS suite: the behaviour is contingent on each SDK's
-listener-registration idiom, so it cannot pass identically across SDKs (the UTS contract).
+**Test ID**: `objects/unit/RTO18d/duplicate-listener-0`
 
-Registering the **same listener reference** twice for the same event diverges by design across SDKs
-(verified in source):
-- **ably-js:** `on` does a plain `listeners.push(listener)` with no identity check → fires **twice**
-  (matches RTE4 / RTO18d).
-- **ably-cocoa:** `on:` mints a fresh `ARTEventListener` per call; the "AsSet" dedup is pointer-identity
-  on that wrapper (the block is never the key) → fires **twice**.
-- **ably-java:** `on(event, Listener)` keys the registry by the listener *instance* → de-duplicates →
-  fires **once** (a deliberate, SDK-wide choice its `EventEmitter` documents as a spec deviation).
+**Spec requirement:** If same listener registered twice, it is invoked twice per event.
 
-This is a design choice, not a language limitation — the same reference is detectable in all three
-languages; js/cocoa append, java dedupes. Because the SDKs genuinely diverge, the assertion can't hold
-identically everywhere. See the RTO18d editor's note in `objects-features.md`; an SDK that wants to pin
-its own behaviour should do so in an SDK-local (non-UTS) test.
+> **OPTIONAL for SDKs that de-duplicate listeners by instance.** RTO18d restates the general
+> `EventEmitter#on` contract (RTE4): registering the same listener reference twice adds it twice, so it
+> fires twice. Some SDKs deliberately de-duplicate listeners keyed by instance (e.g. ably-java's
+> `EventEmitter` documents this as an SDK-wide deviation from RTE4). Such an SDK may instead assert
+> `call_count == 1` here — or skip this test — and pin its own behaviour; the assertion below is the
+> RTE4 reference behaviour.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+call_count = 0
+listener = () => { call_count++ }
+channel.object.on(SYNCED, listener)
+channel.object.on(SYNCED, listener)
+```
+
+### Test Steps
+```pseudo
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor", flags: HAS_OBJECTS
+))
+mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
+
+poll_until(call_count >= 2, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+ASSERT call_count == 2
+```
 
 ---
 
@@ -1535,11 +1552,10 @@ scenarios = [
   // not portably expressible: in some SDKs an unsolicited server DETACHED transitions the channel to
   // SUSPENDED (not DETACHED), so the fixture cannot be written identically everywhere.
   //
-  // A SEPARATE, SDK-internal behaviour lives near here: on a channel DETACHED/FAILED the objects data
-  // is cleared (no events emitted), while SUSPENDED retains it. It is deliberately NOT a UTS test (no
-  // normative RTO point; not observable through the public API — access on DETACHED throws per RTO25b,
-  // and re-sync replaces the pool regardless), so each SDK guards it with an SDK-local test. See the
-  // NOTE in objects_pool.md.
+  // A SEPARATE behaviour lives near here: on a channel DETACHED/FAILED the objects data is cleared
+  // (no events emitted), while SUSPENDED retains it. This is normative (RTO27) and is covered by the
+  // RTO27 white-box test at the end of this file (it drives the internal channel-state handler directly
+  // and inspects the pool, since the behaviour is not reachable black-box). See objects_pool.md.
   {
     name: "re-sync on new ATTACHED",
     trigger: () => {
@@ -1579,4 +1595,59 @@ FOR scenario IN scenarios:
   poll_until(events.length >= scenario.expected_events.length, timeout: 5s)
 
   ASSERT events == scenario.expected_events
+```
+
+---
+
+## RTO27 - Objects data lifecycle on channel state transitions
+
+**Test ID**: `objects/unit/RTO27/channel-state-data-lifecycle-0`
+
+**Spec requirement:** On a channel transition to `DETACHED`/`FAILED`, every object's data is cleared
+without emitting update events (RTO27a); on `SUSPENDED`, the data is retained (RTO27b).
+
+**White-box test.** Like the `internal_live_counter` / `internal_live_map` tests (which call
+`applyOperation` directly), this drives the RealtimeObject's internal channel-state handler directly
+and inspects the internal `ObjectsPool`. A direct call is required because the behaviour is not
+reachable black-box: access after `DETACHED`/`FAILED` throws (RTO25b), and `SUSPENDED` is a
+connection-level state that a channel-level mock cannot drive. The abstract symbols map as follows:
+- `channel.object.handle_channel_state(state)` → the SDK's channel-state handler (ably-js
+  `RealtimeObject.actOnChannelState(state)`, ably-java `DefaultRealtimeObject.handleStateChange(state, false)`).
+- `channel.object.objects_pool` → the internal `ObjectsPool` (ably-js `_objectsPool`, ably-java `objectsPool`).
+
+### RTO27a - DETACHED / FAILED clears data without emitting update events
+
+```pseudo
+FOR state IN [DETACHED, FAILED]:
+  { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+  pool = channel.object.objects_pool          # internal ObjectsPool (RTO3)
+
+  # sanity: STANDARD_POOL_OBJECTS has been materialised
+  ASSERT "name" IN pool["root"].data
+  ASSERT pool["counter:score@1000"].value == 100
+
+  # RTO27a1: no update events must be emitted during the clear
+  updates = []
+  pool["root"].subscribe((update) => updates.append(update))
+
+  channel.object.handle_channel_state(state)  # internal channel-state handler (RTO27)
+
+  # RTO27a1: every object's data is cleared; the objects themselves remain in the pool
+  ASSERT pool["root"].data == {}
+  ASSERT "counter:score@1000" IN pool
+  ASSERT pool["counter:score@1000"].value == 0
+  ASSERT updates.length == 0
+```
+
+### RTO27b - SUSPENDED retains data
+
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+pool = channel.object.objects_pool
+
+channel.object.handle_channel_state(SUSPENDED)   # RTO27b: no-op for objects data
+
+# RTO27b: data retained unchanged
+ASSERT "name" IN pool["root"].data
+ASSERT pool["counter:score@1000"].value == 100
 ```

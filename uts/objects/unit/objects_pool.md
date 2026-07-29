@@ -119,21 +119,15 @@ ASSERT updates[0].objectMessage IS null
 
 ---
 
-> **NOTE — channel DETACHED/FAILED clears objects data (SDK-internal; intentionally not a UTS test).**
-> When the channel transitions to DETACHED or FAILED, the objects data is cleared **without emitting
-> update events** (the current data is unknown in those states); a SUSPENDED channel **retains** its
-> data. This is implemented in both reference SDKs (ably-js `RealtimeObject.actOnChannelState` →
-> `objectsPool.clearObjectsData(false)` + clear SyncObjectsPool; ably-java
-> `DefaultRealtimeObject.handleStateChange`), but it is **deliberately not a shared UTS requirement**:
-> it has no normative `RTO` point, and it is not observable through the public API — access on a
-> DETACHED channel throws (RTO25b), and on re-attach the RTO5c sync **replaces** the pool regardless of
-> whether detach cleared it, so an SDK that skipped the clear would still be observably correct. It is a
-> defensive internal cleanup, so each SDK guards it with its own **SDK-local** test rather than a UTS
-> spec test. ably-java pins it in `DefaultRealtimeObjectChannelStateTest` (asserts the pool is cleared
-> after DETACHED/FAILED and retained after SUSPENDED, driving `handleStateChange` and inspecting the
-> pool directly); other SDKs may add an equivalent local test (e.g. ably-js in
-> `test/realtime/liveobjects.test.js`). Referenced from the "no re-attach-after-detach scenario" note
-> in `realtime_object.md`.
+> **NOTE — channel DETACHED/FAILED clears objects data (normative: [RTO27](../../../specifications/objects-features.md#RTO27)).**
+> On a channel transition to DETACHED or FAILED the objects data is cleared **without emitting update
+> events** (RTO27a); a SUSPENDED channel **retains** its data (RTO27b) (ably-js
+> `RealtimeObject.actOnChannelState` → `objectsPool.clearObjectsData(false)`; ably-java
+> `DefaultRealtimeObject.handleStateChange`). This is exercised **white-box** by the **RTO27** test in
+> `realtime_object.md`: it drives the internal channel-state handler directly and inspects the internal
+> `ObjectsPool`, because the behaviour is not reachable black-box (access after DETACHED throws per
+> RTO25b, and SUSPENDED is a connection-level state a channel-level mock cannot drive). SDKs may
+> additionally pin it in a local test (ably-java: `DefaultRealtimeObjectChannelStateTest`).
 
 ---
 
