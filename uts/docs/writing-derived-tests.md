@@ -186,11 +186,8 @@ When evaluating against an existing implementation, maintain a deviations file (
 3. **What the SDK does** — concrete observable behaviour
 4. **Root cause** (if known) — file, function, mechanism
 5. **Test impact** — which test(s) are affected and how each was handled (env-gated skip, adapted assertion, fail-fast, or skipped stub)
-
-Also record, on any deviation whose disposition or outcome isn't already obvious:
-
-6. **Status** — *open bug* (to be fixed) vs *intentional / SDK-wide deviation* (and why it won't be), so it's clear whether an issue should be filed
-7. **Resolution** — the outcome once the deviation is resolved by analysis or a spec change (e.g. reclassified as a cross-SDK design divergence, or a spec point revised upstream); omit until there is one
+6. **Status** *(for an SDK deviation)* — *open bug* (to be fixed) vs *intentional / SDK-wide deviation* (and why it won't be), so it's clear whether an issue should be filed
+7. **Resolution** *(once resolved)* — the outcome after the deviation is resolved by analysis or a spec change (e.g. reclassified as a cross-SDK design divergence, or a spec point revised upstream); omit until there is one
 
 Where a suite has recurring *internal-shape* differences (see **Adapted Tests** below), define a short **shape-deviation vocabulary** once — e.g. `S-1…S-n`, as the objects unit suite does in its mapping reference — and cite the tag from each affected entry rather than re-explaining the same structural difference per test.
 

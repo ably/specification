@@ -1614,9 +1614,10 @@ FOR state IN [DETACHED, FAILED]:
   { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
   pool = channel.object.objectsPool          # internal ObjectsPool (RTO3)
 
-  # sanity: STANDARD_POOL_OBJECTS has been materialised
+  # sanity: STANDARD_POOL_OBJECTS has been materialised — root map, a counter, and a NESTED map
   ASSERT "name" IN pool["root"].data
   ASSERT pool["counter:score@1000"].value == 100
+  ASSERT "email" IN pool["map:profile@1000"].data
 
   # RTO27a1: no update events must be emitted during the clear
   updates = []
@@ -1624,10 +1625,14 @@ FOR state IN [DETACHED, FAILED]:
 
   channel.object.processChannelState(state)  # internal channel-state handler (RTO27)
 
-  # RTO27a1: every object's data is cleared; the objects themselves remain in the pool
+  # RTO27a1: EVERY object's data is cleared — root map, the counter, AND the nested map. The nested
+  # map is checked independently (via the pool, not via root navigation) so a nested-object
+  # regression cannot be hidden by the root clear. The objects themselves remain in the pool.
   ASSERT pool["root"].data == {}
   ASSERT "counter:score@1000" IN pool
   ASSERT pool["counter:score@1000"].value == 0
+  ASSERT "map:profile@1000" IN pool
+  ASSERT pool["map:profile@1000"].data == {}
   ASSERT updates.length == 0
 ```
 
@@ -1639,7 +1644,8 @@ pool = channel.object.objectsPool
 
 channel.object.processChannelState(SUSPENDED)   # RTO27b: no-op for objects data
 
-# RTO27b: data retained unchanged
+# RTO27b: data retained unchanged — root, the counter, and the nested map
 ASSERT "name" IN pool["root"].data
 ASSERT pool["counter:score@1000"].value == 100
+ASSERT "email" IN pool["map:profile@1000"].data
 ```
