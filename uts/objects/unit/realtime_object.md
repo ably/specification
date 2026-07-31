@@ -1,6 +1,6 @@
 # RealtimeObject Tests
 
-Spec points: `RTO2`, `RTO10`, `RTO15`, `RTO17`–`RTO20`, `RTO22`–`RTO26`
+Spec points: `RTO2`, `RTO10`, `RTO15`, `RTO17`–`RTO20`, `RTO22`–`RTO27`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -550,6 +550,13 @@ ASSERT events CONTAINS_IN_ORDER ["SYNCING", "SYNCED"]
 **Test ID**: `objects/unit/RTO18d/duplicate-listener-0`
 
 **Spec requirement:** If same listener registered twice, it is invoked twice per event.
+
+> **OPTIONAL for SDKs that de-duplicate listeners by instance.** RTO18d restates the general
+> `EventEmitter#on` contract (RTE4): registering the same listener reference twice adds it twice, so it
+> fires twice. Some SDKs deliberately de-duplicate listeners keyed by instance (e.g. ably-java's
+> `EventEmitter` documents this as an SDK-wide deviation from RTE4). Such an SDK may instead assert
+> `call_count == 1` here — or skip this test — and pin its own behaviour; the assertion below is the
+> RTE4 reference behaviour.
 
 ### Setup
 ```pseudo
@@ -1538,17 +1545,9 @@ scenarios = [
     },
     expected_events: ["SYNCING", "SYNCED"]
   },
-  {
-    name: "re-attach after detach",
-    trigger: () => {
-      mock_ws.send_to_client(ProtocolMessage(action: DETACHED, channel: "test"))
-      mock_ws.send_to_client(ProtocolMessage(
-        action: ATTACHED, channel: "test", channelSerial: "sync2:cursor", flags: HAS_OBJECTS
-      ))
-      mock_ws.send_to_client(build_object_sync_message("test", "sync2:", STANDARD_POOL_OBJECTS))
-    },
-    expected_events: ["SYNCING", "SYNCED"]
-  },
+  // No "re-attach after detach" scenario, deliberately: it is redundant with "re-sync on new
+  // ATTACHED" below (same onAttached -> new-sync path, RTO4c), and not portably expressible — an
+  // unsolicited server DETACHED transitions to SUSPENDED (not DETACHED) in some SDKs.
   {
     name: "re-sync on new ATTACHED",
     trigger: () => {
@@ -1588,4 +1587,65 @@ FOR scenario IN scenarios:
   poll_until(events.length >= scenario.expected_events.length, timeout: 5s)
 
   ASSERT events == scenario.expected_events
+```
+
+---
+
+## RTO27 - Objects data lifecycle on channel state transitions
+
+**Test ID**: `objects/unit/RTO27/channel-state-data-lifecycle-0`
+
+**Spec requirement:** On a channel transition to `DETACHED`/`FAILED`, every object's data is cleared
+without emitting update events (RTO27a); on `SUSPENDED`, the data is retained (RTO27b).
+
+**White-box test.** Like the `internal_live_counter` / `internal_live_map` tests (which call
+`applyOperation` directly), this drives the RealtimeObject's internal channel-state handler directly
+and inspects the internal `ObjectsPool`. A direct call is required because the behaviour is not
+reachable black-box: access after `DETACHED`/`FAILED` throws (RTO25b), and `SUSPENDED` is a
+connection-level state that a channel-level mock cannot drive. The abstract symbols map as follows:
+- `channel.object.processChannelState(state)` → the SDK's channel-state handler (ably-js
+  `RealtimeObject.actOnChannelState(state)`, ably-java `DefaultRealtimeObject.handleStateChange(state, false)`).
+- `channel.object.objectsPool` → the internal `ObjectsPool` (RTO3) (ably-js `_objectsPool`, ably-java `objectsPool`).
+
+### RTO27a - DETACHED / FAILED clears data without emitting update events
+
+```pseudo
+FOR state IN [DETACHED, FAILED]:
+  { client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+  pool = channel.object.objectsPool          # internal ObjectsPool (RTO3)
+
+  # sanity: STANDARD_POOL_OBJECTS has been materialised — root map, a counter, and a NESTED map
+  ASSERT "name" IN pool["root"].data
+  ASSERT pool["counter:score@1000"].value == 100
+  ASSERT "email" IN pool["map:profile@1000"].data
+
+  # RTO27a1: no update events must be emitted during the clear
+  updates = []
+  pool["root"].subscribe((update) => updates.append(update))
+
+  channel.object.processChannelState(state)  # internal channel-state handler (RTO27)
+
+  # RTO27a1: EVERY object's data is cleared — root map, the counter, AND the nested map. The nested
+  # map is checked independently (via the pool, not via root navigation) so a nested-object
+  # regression cannot be hidden by the root clear. The objects themselves remain in the pool.
+  ASSERT pool["root"].data == {}
+  ASSERT "counter:score@1000" IN pool
+  ASSERT pool["counter:score@1000"].value == 0
+  ASSERT "map:profile@1000" IN pool
+  ASSERT pool["map:profile@1000"].data == {}
+  ASSERT updates.length == 0
+```
+
+### RTO27b - SUSPENDED retains data
+
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+pool = channel.object.objectsPool
+
+channel.object.processChannelState(SUSPENDED)   # RTO27b: no-op for objects data
+
+# RTO27b: data retained unchanged — root, the counter, and the nested map
+ASSERT "name" IN pool["root"].data
+ASSERT pool["counter:score@1000"].value == 100
+ASSERT "email" IN pool["map:profile@1000"].data
 ```

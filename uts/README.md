@@ -87,6 +87,14 @@ ASSERT error.code == 40160
 AWAIT_STATE client.connection.state == ConnectionState.connected
 ```
 
+**Identifier naming.** Identifiers that name SDK/spec surface mirror the specification's own names and
+casing — `PascalCase` types (`ObjectsPool`), `camelCase` fields and methods (`bufferedObjectOperations`,
+`applyOperation`) — so they grep straight back to the spec. Behaviours the spec describes but does not
+name get a `camelCase` coinage in the same style (`processAttached`, `processChannelState`), never
+`snake_case`. `snake_case` is reserved for test-harness constructs (`setup_synced_channel`, `mock_ws`,
+`send_to_client`, `build_*`, `poll_until`). Spec *file* names are `snake_case` (`objects_pool.md`) —
+unrelated to symbol casing. Full rules: [docs/writing-test-specs.md](docs/writing-test-specs.md#identifier-naming).
+
 Pseudocode maps to language idioms rather than prescribing exact syntax:
 
 - **Absent values**: `== null` means the language-appropriate "absent" value — `undefined` in

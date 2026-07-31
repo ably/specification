@@ -237,6 +237,11 @@ The `null` row applies only where `null` is passable and distinguishable from an
 argument (e.g. a boxed `Integer` in Java). In SDKs whose signature makes null equivalent to
 "omitted" (e.g. `increment(amount?: number)` in JavaScript, where a nullish amount takes the
 default of 1), the row is not applicable — see the pseudocode conventions in `uts/README.md`.
+Such SDKs should instead pin the default directly via the omitted-argument call — `increment()`
+succeeds and increments by the default of 1 (and, where the language treats `null` and the
+absent value as equivalently nullish, `increment(null)` behaves identically) — so a later
+signature or coalescing change surfaces as a conscious decision, without implying `null` is a
+valid amount.
 
 ### Setup
 ```pseudo
