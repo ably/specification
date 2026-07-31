@@ -139,7 +139,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO3a)` `ObjectsPool` is a `Dict<String, LiveObject>` - a map of `LiveObject`s keyed by [`objectId`](../features#OST2a) string
   - `(RTO3b)` It must always contain an `InternalLiveMap` object with id `root`
     - `(RTO3b1)` Upon initialization of the `ObjectsPool`, create a new `InternalLiveMap` per [RTLM4](#RTLM4) with `objectId` set to `root` and add it to the `ObjectsPool`
-- `(RTO4)` When a channel `ATTACHED` `ProtocolMessage` is received, the client library must perform the following actions in order. The `ProtocolMessage` may contain a `HAS_OBJECTS` bit flag (see [TR3](../features#TR3)); note that some of the following actions are conditional on this flag.
+- `(RTO4)` When a channel `ATTACHED` `ProtocolMessage` is received, the client library must perform the following actions in order. The `ProtocolMessage` may contain a `HAS_OBJECTS` bit flag (see [TR3](../features#TR3)); note that some of the following actions are conditional on this flag. For transitions to channel states other than `ATTACHED`, see [RTO27](#RTO27).
   - `(RTO4c)` The [RTO17](#RTO17) sync state must transition to `SYNCING` if not already `SYNCING`
   - `(RTO4d)` The `bufferedObjectOperations` list must be cleared without applying any buffered operations
   - `(RTO4a)` If the `HAS_OBJECTS` flag is 1, the server will shortly perform an `OBJECT_SYNC` sequence as described in [RTO5](#RTO5). Note that this does not imply that objects are definitely present on the channel, only that there may be; the `OBJECT_SYNC` message may be empty
@@ -192,11 +192,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5c5)` The `bufferedObjectOperations` list must be cleared
     - `(RTO5c9)` The `appliedOnAckSerials` set ([RTO7b](#RTO7b)) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the `appliedOnAckSerials` no longer accurately describes which operations have been applied to the channel's LiveObjects data
     - `(RTO5c8)` The [RTO17](#RTO17) sync state must transition to `SYNCED`
-- `(RTO27)` When the channel transitions to a state other than `ATTACHED`, the client library must manage the stored objects data as follows (for the effect of these transitions on an in-progress `publishAndApply`, see [RTO20e1](#RTO20e1)):
+- `(RTO27)` When the channel transitions to a state other than `ATTACHED`, the client library must manage the stored objects data as follows (the `ATTACHED` transition is handled by [RTO4](#RTO4); for the effect of these transitions on an in-progress `publishAndApply`, see [RTO20e1](#RTO20e1)):
   - `(RTO27a)` When the channel transitions to the `DETACHED` or `FAILED` state, the current state of the objects data can no longer be known, so the client library must:
     - `(RTO27a1)` For every object in the internal `ObjectsPool`, clear its internal data, resetting it to the zero value for its type (an empty map, or a counter with value `0`), without emitting any `LiveObjectUpdate` events. The objects themselves remain in the `ObjectsPool`; only their data is cleared
     - `(RTO27a2)` The `SyncObjectsPool` must be cleared
-  - `(RTO27b)` When the channel transitions to the `SUSPENDED` state, the client library must retain the stored objects data unchanged, since the connection may still recover and the retained data remains a valid best-effort local copy
+  - `(RTO27b)` When the channel transitions to any other state (for example `SUSPENDED`, `INITIALIZED`, `ATTACHING`, or `DETACHING`), the client library must retain the stored objects data unchanged. In the `SUSPENDED` case in particular, the connection may still recover and the retained data remains a valid best-effort local copy
 - `(RTO6)` Certain object operations may require creating a new object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
   - `(RTO6a)` If an object with `objectId` exists in `ObjectsPool`, do not create a new object
   - `(RTO6b)` The expected type of the object can be inferred from the provided `objectId`:
