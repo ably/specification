@@ -16,13 +16,13 @@ Unit test with mocked HTTP client
 | RTL10a | Supports all the same params as `RestChannel#history` |
 | RTL10c | Returns a `PaginatedResult` page containing the first page of messages |
 
-`RealtimeChannel#history` uses the same underlying REST endpoint as `RestChannel#history`. The tests in `uts/test/rest/unit/channel/history.md` (covering RSL2) should be used to verify that all the same behaviour, parameters, and return types apply when called on a `RealtimeChannel` instance.
+`RealtimeChannel#history` uses the same underlying REST endpoint as `RestChannel#history`. The tests in `uts/rest/unit/channel/history.md` (covering RSL2) should be used to verify that all the same behaviour, parameters, and return types apply when called on a `RealtimeChannel` instance.
 
 ---
 
 ## RTL10b - untilAttach parameter
 
-**Spec requirement:** Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an UPDATE indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` assigned to the channel in the ATTACHED ProtocolMessage (see RTL15a). If the `untilAttach` param is specified when the channel is not attached, it results in an error.
+**Spec requirement:** Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an UPDATE indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` (see RTL15c). If the `untilAttach` param is specified when the channel is not attached, it results in an error.
 
 ### RTL10b - untilAttach adds fromSerial query parameter
 

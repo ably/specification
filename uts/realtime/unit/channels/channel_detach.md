@@ -7,7 +7,7 @@ Unit test with mocked WebSocket
 
 ## Mock WebSocket Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 
 ---
 
@@ -717,8 +717,8 @@ mock_ws.send_to_client(ProtocolMessage(
   channel: channel_name
 ))
 
-# Wait for client to respond
-WAIT 100ms
+# Let the client process the inbound message (see process_pending_events in uts/README.md)
+process_pending_events()
 ```
 
 ### Assertions

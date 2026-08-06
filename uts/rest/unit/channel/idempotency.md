@@ -7,7 +7,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-These tests use the mock HTTP infrastructure defined in `/Users/paddy/data/worknew/dev/dart-experiments/uts/test/rest/unit/rest_client.md`.
+These tests use the mock HTTP infrastructure defined in `/Users/paddy/data/worknew/dev/dart-experiments/uts/rest/unit/rest_client.md`.
 
 The mock must support:
 - Handler-based configuration with `onConnectionAttempt` and `onRequest` callbacks

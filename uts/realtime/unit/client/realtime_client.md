@@ -43,7 +43,7 @@ This means: if the state is already `connecting`, proceed immediately; otherwise
 
 ## Mock WebSocket Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 
 ---
 
@@ -72,7 +72,7 @@ The same test cases apply:
 
 The Realtime client has the same error handling as the REST client for invalid credentials.
 
-**See:** `uts/test/realtime/unit/client/client_options.md` - RSC1b
+**See:** `uts/rest/unit/auth/auth_scheme.md` - RSC1b
 
 Error code 40106 should be raised when no valid credentials are provided.
 
@@ -319,8 +319,9 @@ client = Realtime(options: ClientOptions(
 ASSERT client.connection.state == ConnectionState.initialized
 ASSERT mock_ws.connect_attempts.length == 0
 
-# Should remain in initialized state until explicit connect
-WAIT 100ms
+# Should remain in initialized state until explicit connect: let pending async
+# work settle instead of sleeping (see process_pending_events in uts/README.md)
+process_pending_events()
 ASSERT client.connection.state == ConnectionState.initialized
 ASSERT mock_ws.connect_attempts.length == 0
 CLOSE_CLIENT(client)
@@ -613,11 +614,11 @@ The following options are shared with the REST client and should behave identica
 | `token` / `tokenDetails` | RSC1c | `uts/test/realtime/unit/client/client_options.md` |
 | `authCallback` / `authUrl` | RSA8 | `unit/auth/auth_callback.md` |
 | `clientId` | RSA7, RSC17 | `unit/auth/client_id.md` |
-| `tls` | RSC18 | `uts/test/rest/unit/rest_client.md` |
+| `tls` | RSC18 | `uts/rest/unit/rest_client.md` |
 | `environment` / `endpoint` | RSC15e, REC1 | `unit/client/fallback.md` |
 | `restHost` / `realtimeHost` | RSC12, TO3k2, TO3k3 | `unit/client/fallback.md` |
 | `fallbackHosts` | RSC15 | `unit/client/fallback.md` |
-| `useBinaryProtocol` | RSC8, TO3f | `uts/test/rest/unit/rest_client.md` |
+| `useBinaryProtocol` | RSC8, TO3f | `uts/rest/unit/rest_client.md` |
 | `logLevel` / `logHandler` | TO3b, TO3c | (not yet specified) |
 
 ### Realtime-Specific Verification for Shared Options
@@ -715,7 +716,7 @@ CLOSE_CLIENT(client)
 
 ## Test Infrastructure Notes
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for mock installation, test isolation, and timer mocking guidance.
+See `uts/realtime/unit/helpers/mock_websocket.md` for mock installation, test isolation, and timer mocking guidance.
 
 ### Channel Naming
 

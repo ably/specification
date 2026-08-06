@@ -140,7 +140,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO3a)` `ObjectsPool` is a `Dict<String, LiveObject>` - a map of `LiveObject`s keyed by [`objectId`](../features#OST2a) string
   - `(RTO3b)` It must always contain an `InternalLiveMap` object with id `root`
     - `(RTO3b1)` Upon initialization of the `ObjectsPool`, create a new `InternalLiveMap` per [RTLM4](#RTLM4) with `objectId` set to `root` and add it to the `ObjectsPool`
-- `(RTO4)` When a channel `ATTACHED` `ProtocolMessage` is received, the client library must perform the following actions in order. The `ProtocolMessage` may contain a `HAS_OBJECTS` bit flag (see [TR3](../features#TR3)); note that some of the following actions are conditional on this flag.
+- `(RTO4)` When a channel `ATTACHED` `ProtocolMessage` is received, the client library must perform the following actions in order. The `ProtocolMessage` may contain a `HAS_OBJECTS` bit flag (see [TR3](../features#TR3)); note that some of the following actions are conditional on this flag. For transitions to channel states other than `ATTACHED`, see [RTO27](#RTO27).
   - `(RTO4c)` The [RTO17](#RTO17) sync state must transition to `SYNCING` if not already `SYNCING`
   - `(RTO4d)` The `bufferedObjectOperations` list must be cleared without applying any buffered operations
   - `(RTO4a)` If the `HAS_OBJECTS` flag is 1, the server will shortly perform an `OBJECT_SYNC` sequence as described in [RTO5](#RTO5). Note that this does not imply that objects are definitely present on the channel, only that there may be; the `OBJECT_SYNC` message may be empty
@@ -193,6 +193,11 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5c5)` The `bufferedObjectOperations` list must be cleared
     - `(RTO5c9)` The `appliedOnAckSerials` set ([RTO7b](#RTO7b)) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the `appliedOnAckSerials` no longer accurately describes which operations have been applied to the channel's LiveObjects data
     - `(RTO5c8)` The [RTO17](#RTO17) sync state must transition to `SYNCED`
+- `(RTO27)` When the channel transitions to a state other than `ATTACHED`, the client library must manage the stored objects data as follows (the `ATTACHED` transition is handled by [RTO4](#RTO4); for the effect of these transitions on an in-progress `publishAndApply`, see [RTO20e1](#RTO20e1)):
+  - `(RTO27a)` When the channel transitions to the `DETACHED` or `FAILED` state, the current state of the objects data can no longer be known, so the client library must:
+    - `(RTO27a1)` For every object in the internal `ObjectsPool`, clear its internal data, resetting it to the zero value for its type (an empty map, or a counter with value `0`), without emitting any `LiveObjectUpdate` events. The objects themselves remain in the `ObjectsPool`; only their data is cleared
+    - `(RTO27a2)` The `SyncObjectsPool` must be cleared
+  - `(RTO27b)` When the channel transitions to any other state (for example `SUSPENDED`, `INITIALIZED`, `ATTACHING`, or `DETACHING`), the client library must retain the stored objects data unchanged. In the `SUSPENDED` case in particular, the connection may still recover and the retained data remains a valid best-effort local copy
 - `(RTO6)` Certain object operations may require creating a new object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
   - `(RTO6a)` If an object with `objectId` exists in `ObjectsPool`, do not create a new object
   - `(RTO6b)` The expected type of the object can be inferred from the provided `objectId`:
@@ -231,6 +236,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO10c1)` For each `LiveObject` in the `ObjectsPool`:
       - `(RTO10c1a)` Check if the `LiveObject` needs to release any resources, see [RTLM19](#RTLM19)
       - `(RTO10c1b)` If `LiveObject.isTombstone` is `true`, and the difference between the current time and `LiveObject.tombstonedAt` is greater than or equal to the [grace period](#RTO10b), remove the object from the `ObjectsPool` and release resources for the corresponding object entity to allow it to be garbage collected
+        - `(RTO10c1b1)` The object with ID `root` must not be removed from `ObjectsPool`, as per [RTO3b](#RTO3b). Note that the `root` object can never become tombstoned per [RTLO4e10](#RTLO4e10), so this exclusion acts as an additional safeguard for the [RTO3b](#RTO3b) invariant
 - `(RTO13)` This clause has been deleted (redundant to [RTO11f15](#RTO11f15) and [RTO12f13](#RTO12f13)) as of specification version 6.0.0.
   - `(RTO13a)` This clause has been deleted as of specification version 6.0.0.
     - `(RTO13a1)` This clause has been deleted as of specification version 6.0.0.
@@ -384,6 +390,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTLO4e)` protected `tombstone` - a convenience method used to tombstone this `LiveObject`. The realtime system reserves the right to tombstone an object (i.e. mark it for deletion from the objects pool) by publishing an `OBJECT_DELETE` operation at any time if the object is orphaned (not a descendant of the root object) or remains uninitialized (no `*_CREATE` operation has been received) for an extended period. Only the realtime system may publish an `OBJECT_DELETE` operation; clients must never send it. This method describes the steps the client library must take when it needs to tombstone an object locally. Eventually, tombstoned objects will be garbage collected following the procedure described in [RTO10](#RTO10)
     - `(RTLO4e1)` Expects the following arguments:
       - `(RTLO4e1a)` `ObjectMessage`
+    - `(RTLO4e10)` If `LiveObject.objectId` is `root`, log a warning indicating that an attempt was made to tombstone the `root` object, and return a `LiveObjectUpdate` with `LiveObjectUpdate.noop` set to `true` without performing any of the subsequent steps in this clause. The `root` object must always exist in the `ObjectsPool` per [RTO3b](#RTO3b); it is never orphaned or uninitialized, so the realtime system never publishes an `OBJECT_DELETE` operation or an `ObjectState` with `tombstone` set to `true` targeting it — receiving one indicates a faulty message
     - `(RTLO4e2)` Set `LiveObject.isTombstone` to `true`
     - `(RTLO4e3)` Set `LiveObject.tombstonedAt` to the value calculated per [RTLO6](#RTLO6), using `ObjectMessage.serialTimestamp`
       - `(RTLO4e3a)` This clause has been replaced by [RTLO6a](#RTLO6a)
@@ -916,7 +923,8 @@ A `PathObject` is obtained from `RealtimeObject#get` ([RTO23](#RTO23)), which re
   - `(RTPO8a)` Checks the access API preconditions per [RTO25](#RTO25)
   - `(RTPO8b)` Resolves the path using the path resolution procedure ([RTPO3](#RTPO3))
   - `(RTPO8c)` If the resolved value is a `LiveObject` (i.e. an `InternalLiveMap` or `InternalLiveCounter`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping that `LiveObject`
-  - `(RTPO8d)` If the resolved value is a primitive, returns undefined/null
+  - `(RTPO8d)` This clause has been replaced by [RTPO8f](#RTPO8f).
+  - `(RTPO8f)` If the resolved value is a primitive (`Boolean`, `Binary`, `Number`, `String`, `JsonArray`, `JsonObject`), returns a new `Instance` ([RTINS1](#RTINS1)) wrapping the primitive value
   - `(RTPO8e)` If path resolution fails, returns undefined/null per [RTPO3c1](#RTPO3c1)
 - `(RTPO9)` `PathObject#entries` function:
   - `(RTPO9a)` Checks the access API preconditions per [RTO25](#RTO25)

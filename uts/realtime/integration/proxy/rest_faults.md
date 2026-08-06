@@ -8,13 +8,13 @@ Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
 
-See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastructure specification.
+See `uts/docs/proxy.md` for the full proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 
-- `uts/test/rest/unit/auth/token_renewal.md` -- RSC10 (unit test verifies token renewal logic with mocked HTTP)
-- `uts/test/rest/unit/fallback.md` -- RSC15m/REC2c2 (unit test verifies fallback/error handling with mocked HTTP)
-- `uts/test/realtime/unit/channels/channel_publish.md` -- RTL6 (unit test verifies publish request formation)
+- `uts/rest/unit/auth/token_renewal.md` -- RSC10 (unit test verifies token renewal logic with mocked HTTP)
+- `uts/rest/unit/fallback.md` -- RSC15m/REC2c2 (unit test verifies fallback/error handling with mocked HTTP)
+- `uts/realtime/unit/channels/channel_publish.md` -- RTL6 (unit test verifies publish request formation)
 
 ## Sandbox Setup
 
@@ -89,7 +89,7 @@ auth_callback_count = 0
 # Create proxy session that returns 401 on the first channel request
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/channels/" },
     "action": {
@@ -175,7 +175,7 @@ Tests that when a REST request receives an HTTP 503 (Service Unavailable) and th
 # Create proxy session that returns 503 on the first channel request
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: [{
     "match": { "type": "http_request", "pathContains": "/channels/" },
     "action": {
@@ -251,7 +251,7 @@ Tests that the proxy transparently forwards both WebSocket and HTTP traffic with
 # Create proxy session with no rules (pure passthrough)
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
-  port: allocated_port,
+
   rules: []
 )
 

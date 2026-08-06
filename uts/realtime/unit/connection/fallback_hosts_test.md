@@ -7,8 +7,8 @@ Unit test with mocked WebSocket client and HTTP client
 
 ## Mock Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
-See `uts/test/rest/unit/helpers/mock_http.md` for Mock HTTP Client specification.
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `uts/rest/unit/helpers/mock_http.md` for Mock HTTP Client specification.
 
 ---
 

@@ -544,11 +544,13 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN8)` `Connection#id` attribute:
   - `(RTN8a)` Is unset until connected
   - `(RTN8b)` Is a unique string provided by Ably. You should have a test to ensure multiple connected clients have unique connection IDs
-  - `(RTN8c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
+  - `(RTN8c)` This clause has been replaced by [`RTN8d`](#RTN8d) as of specification version 6.1.0.
+  - `(RTN8d)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, or `FAILED` states.
 - `(RTN9)` `Connection#key` attribute:
   - `(RTN9a)` Is unset until connected
   - `(RTN9b)` Is a unique private connection key provided by Ably that is used to reconnect and retain connection state following an unexpected disconnection. You should have a test to ensure multiple connected clients have unique connection keys
-  - `(RTN9c)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, `FAILED`, or `SUSPENDED` states
+  - `(RTN9c)` This clause has been replaced by [`RTN9d`](#RTN9d) as of specification version 6.1.0.
+  - `(RTN9d)` Is `Null` when the SDK is in the `CLOSED`, `CLOSING`, or `FAILED` states.
 - `(RTN10)` This clause has been deleted. It was valid up to and including specification version `1.2`.
 - `(RTN11)` `Connection#connect` function:
   - `(RTN11a)` This clause has been replaced by `"RTN11e"`:#RTN11e and `"RTN11f`":#RTN11f as of specification version 4.0.0.
@@ -577,6 +579,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN14d)` If a connection attempt fails for any recoverable reason (i.e. a network failure, a timeout such as [RTN14c](#RTN14c), or a disconnected response, other than a token failure [RTN14b](#RTN14b)), the `Connection#state` will transition to `DISCONNECTED`, the `Connection#errorReason` will be updated, a `ConnectionStateChange` with the `reason` will be emitted, and new connection attempts will periodically be made until the maximum time in that state threshold is reached. The `retryIn` attribute of the `ConnectionStateChange` object will contain the time in milliseconds until the next connection attempt. `retryIn` should be calculated as described in [`RTB1`](#RTB1). Each time a new connection attempt is made the state will transition to `CONNECTING` and then to `CONNECTED` if successful, or `DISCONNECTED` if unsuccessful and the [default `connectionStateTtl`](#defaults) has not been exceeded. Fallback hosts are used for new connection attempts in accordance with [RTN17](#RTN17).
   - `(RTN14e)` Once the connection state has been in the `DISCONNECTED` state for more than the [default `connectionStateTtl`](#defaults), the state will change to `SUSPENDED` and be emitted with the `reason`, and the `Connection#errorReason` will be updated. In this state, a new connection attempt will be made periodically as specified within `suspendedRetryTimeout` of `ClientOptions`
   - `(RTN14f)` The connection will remain in the `SUSPENDED` state indefinitely, whilst periodically attempting to reestablish a connection
+  - `(RTN14h)` Reconnection attempts in this state should continue to attempt to resume, regardless of how long it has been since the client was last connected.
 - `(RTN15)` `Connection` failures once `CONNECTED`:
   - `(RTN15h)` If a `DISCONNECTED` message is received from Ably, then that transport will subsequently be closed by Ably
     - `(RTN15h1)` If the `DISCONNECTED` message contains a token error (`statusCode` value of 401 and error `code` value in the range `40140 <= code < 40150`) and the library does not have a means to renew the token, the connection will transition to the `FAILED` state and the `Connection#errorReason` will be set
@@ -586,10 +589,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN15j)` If an `ERROR` `ProtocolMessage` with an empty `channel` attribute is received, this indicates a fatal error in the connection. The server will close the transport immediately after. The client should transition to the `FAILED` state triggering all attached channels to transition to the `FAILED` state as well. Additionally the `Connection#errorReason` should be set with the error received from Ably
   - `(RTN15i)` This clause has been replaced by [`RTN15j`](#RTN15j) as of specification version 4.0.0.
   - `(RTN15a)` If a transport is disconnected unexpectedly (without having received a `DISCONNECTED` or `ERROR` protocol message), it should respond as if it had received a non-token `DISCONNECTED` (following `RTN15h3`).
-  - `(RTN15g)` Connection state is only maintained server-side for a brief period, given by the `connectionStateTtl` in the `connectionDetails`, see [CD2f](#CD2f). If a client has been disconnected for longer than the `connectionStateTtl`, it should not attempt to resume. Instead, it should clear the local connection state, and any connection attempts should be made as for a fresh connection
-    - `(RTN15g1)` This check should be made before each connection attempt. It is generally not sufficient to merely clear the connection state when moving to `SUSPENDED` state (though that may be done too), since the device may have been sleeping / suspended, in which case it may have been many hours since it was last actually connected, even though, having been in the `CONNECTED` state when it was put to sleep, it has only moved out of that state very recently (after waking up and noticing it's no longer connected)
-    - `(RTN15g2)` Another consequence of that is that the measure of whether the client been disconnected for too long (for the purpose of this check) cannot just be whether the client left the `CONNECTED` state more than `connectionStateTtl` ago. Instead, it should be whether the difference between the current time and the last activity time is greater than the sum of the `connectionStateTtl` and the `maxIdleInterval`, where the last activity time is the time of the last known actual sign of activity from Ably per [RTN23a](#RTN23a)
-    - `(RTN15g3)` When a connection attempt succeeds after the connection state has been cleared in this way, channels that were previously `ATTACHED`, `ATTACHING`, or `SUSPENDED` must be automatically reattached, just as if the connection was a resume attempt which failed per [RTN15c7](#RTN15c7)
+  - `(RTN15g)` This clause has been replaced by [`RTN14h`](#RTN14h) as of specification version 6.1.0.
+    - `(RTN15g1)` This clause has been deleted as of specification version 6.1.0.
+    - `(RTN15g2)` This clause has been deleted as of specification version 6.1.0.
+    - `(RTN15g3)` This clause has been deleted as of specification version 6.1.0.
   - `(RTN15b)` In order for a connection to be resumed and connection state to be recovered, the client must have received a `CONNECTED` ProtocolMessage which will include a private connection key. To resume that connection, the library reconnects to the [websocket](https://ably.com/topic/websockets) endpoint with an additional querystring param:
     - `(RTN15b1)` `resume` is the `ProtocolMessage#connectionKey` from the most recent `CONNECTED` `ProtocolMessage` received
     - `(RTN15b2)` This clause has been deleted. It was valid up to and including specification version `1.2`.
@@ -687,8 +690,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL3a)` If the connection state enters the `FAILED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `FAILED` and set the `RealtimeChannel#errorReason`
   - `(RTL3b)` If the connection state enters the `CLOSED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `DETACHED`
   - `(RTL3c)` If the connection state enters the `SUSPENDED` state, then an `ATTACHING` or `ATTACHED` channel state will transition to `SUSPENDED`
-  - `(RTL3d)` If the connection state enters the `CONNECTED` state, any channels in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states should be transitioned to `ATTACHING` (other than ones already in that state), and initiate an `RTL4c` attach sequence. (If the attach operation times out and the channel was previously `SUSPENDED`, it should return to the `SUSPENDED` state, see [RTL4f](#RTL4f)). The connection should also process any messages that had been queued per `RTL6c2` (it should do this immediately, without waiting for the attach operations to finish).
+  - `(RTL3d)` If the connection state enters the `CONNECTED` state, any channels in the `ATTACHING`, `ATTACHED`, or `SUSPENDED` states should be transitioned to `ATTACHING` (other than ones already in that state), and initiate an `RTL4c` attach sequence. (If the attach operation times out and the channel was previously `SUSPENDED`, it should return to the `SUSPENDED` state, see [RTL4f](#RTL4f)). The connection should also process any messages that had been queued per `RTL6c2` (it should do this immediately, without waiting for the attach operations to finish, other than the presence messages described in [`RTL3d2`](#RTL3d2)).
     - `(RTL3d1)` The `RTL3d` channel state transitions must be applied before the `CONNECTED` connection state change is emitted to external listeners.
+    - `(RTL3d2)` When processing the messages that had been queued per [`RTL6c2`](#RTL6c2), any presence messages for a channel that `RTL3d` is (re-)attaching must not be sent immediately; they should instead be queued at the channel level (per [`RTP16b`](#RTP16b)).
 - `(RTL11)` If a channel enters the `DETACHED`, `SUSPENDED` or `FAILED` state, then all presence actions that are still queued for send on that channel per [RTP16b](#RTP16b) should be deleted from the queue, and any callback passed to the corresponding presence method invocation should be called with an `ErrorInfo` indicating the failure
   - `(RTL11a)` For clarity, any messages awaiting an `ACK` or `NACK` are unaffected by channel state changes i.e. a channel that becomes detached following an explicit request to detach may still receive an `ACK` or `NACK` for messages published on that channel later
 - `(RTL4)` `RealtimeChannel#attach` function:
@@ -703,9 +707,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL4d)` A callback (or other language-idiomatic equivalent) can be provided that is called when the channel next moves to one of `ATTACHED`, `DETACHED`, `SUSPENDED`, or `FAILED` states. In the case of `ATTACHED` the callback is called with no argument. In all other cases it is called with an `ErrorInfo` corresponding to the `ChannelStateChange.reason` of the state change (or a fallback if there is no `reason`) to indicate that the attach has failed. (Note: when combined with RTL4f, this means that if the connection is `CONNECTED`, the callback is guaranteed to be called within `realtimeRequestTimeout` of the `attach()` call)
     - `(RTL4d1)` Optionally, upon success, the callback may be invoked with the `ChannelStateChange` object once the channel is attached. If the channel is already attached, it should be invoked with `null`.
   - `(RTL4e)` This clause has been deleted (redundant to [`RTL14`](#RTL14)).
-  - `(RTL4j)` If the attach is not a clean attach (defined in `RTL4j1`), for example an automatic reattach triggered by [`RTN15c3`](#RTN15c3) or [`RTL13a`](#RTL13a) (non-exhaustive), the library should set the [`ATTACH_RESUME`](#TR3f) flag in the `ATTACH` message
-    - `(RTL4j1)` A 'clean attach' is an attach attempt where the channel has either not previously been attached or has been explicitly detached since the last time it was attached. Note that this is not purely a function of the immediate previous channel state. An example implementation would be to set the flag from an `attachResume` private boolean variable on the channel, that starts out set to `false`, is set to `true` when the channel moves to the `ATTACHED` state, and set to `false` when the channel moves to the `DETACHING` or `FAILED` states.
-    - `(RTL4j2)` The client library can test that the flag is being correctly encoded (and that `RTL4k` channel params are correctly included) by publishing a message on a channel, then having another two clients attach to that channel both specifying a `rewind` channel param of `"1"`, one of which has the `ATTACH_RESUME` flag forcibly set, other doesn't. The client without the flag set should receive the previously-published message once the attach succeeds; the one with that flag set should not
+  - `(RTL4j)` This clause has been deleted as of specification version 6.1.0. (That means that SDKs need not set `ATTACH_RESUME` any more).
+    - `(RTL4j1)` This clause has been deleted as of specification version 6.1.0.
+    - `(RTL4j2)` This clause has been deleted as of specification version 6.1.0.
   - `(RTL4k)` If the user has specified a non-empty `params` object in the `ChannelOptions` ([`TB2c`](#TB2c)), it must be included in a `params` field of the `ATTACH` `ProtocolMessage`
     - `(RTL4k1)` If any channel parameters are requested (which may be through the `params` field of the `ATTACH` message or some other way opaque to the client library), the `ATTACHED` (and any subsequent `ATTACHED` s) will include a `params` property (also a `Dict<String, String>`) containing the subset of those params that the server has recognised and validated. This should be exposed as a read-only `params` field of the `RealtimeChannel` (or a `getParams()` method where that is more idiomatic). An `ATTACHED` message with no `params` property must be treated as equivalent to a `params` of `{}` (that is, `RealtimeChannel.params` should be set to the empty dict)
   - `(RTL4l)` If the user has specified a `modes` array in the `ChannelOptions` ([`TB2d`](#TB2d)), it must be encoded as a bitfield per [`TR3`](#TR3) and set as the `flags` field of the `ATTACH` `ProtocolMessage`. (For the avoidance of doubt, when multiple different spec items require flags to be set in the `ATTACH`, the final `flags` field should be the bitwise OR of them all)
@@ -758,6 +762,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL7h)` If the `attachOnSubscribe` channel option is `false`, then the behaviour depends on the public API that a given SDK uses to communicate the result of an [`RTL7g`](#RTL7g) implicit attach:
     - If the SDK's API accepts an optional callback to communicate the result of an [`RTL7g`](#RTL7g) implicit attach, then it is a programmer error to provide such a callback when the `attachOnSubscribe` channel option is `false`. This programmer error should be handled in an idiomatic fashion; if this means that the `#subscribe` call should throw an error, then this error should be an `ErrorInfo` with `statusCode` 400 and `code` 40000.
     - If the SDK's API communicates the result of an "`RTL7g`"#RTL7g implicit attach in some other fashion (for example by returning a `ChannelStateChange?`), then, when the `attachOnSubscribe` channel option is `false`, `#subscribe` should respond in the same way as it would if an "`RTL7g`"#RTL7g implicit attach had been performed on an already-`ATTACHED` channel (for example by returning a `null` state change).
+  - `(RTL7i)` If, at the completion of the [`RTL7g`](#RTL7g) implicit attach (or immediately, if the channel was already `ATTACHED`), the channel is in the `ATTACHED` state, the [`RTL4m`](#RTL4m) channel modes must be checked for the presence of the `SUBSCRIBE` mode. (Note: the set being checked is the mode set actually granted by the server, not the set of modes requested by the user per [`TB2d`](#TB2d).) If the mode is missing, the server will never deliver messages to this client, so:
+    - `(RTL7i1)` If `strictMode` ([`TO3r`](#TO3r)) is `true`, the `subscribe` call must fail with an `ErrorInfo` with `code` `90009` and `statusCode` `400`, with a `message` indicating that the channel is attached without the `subscribe` mode and so the server will not deliver messages to the listener. Consistent with [`RTL7g`](#RTL7g), the listener remains registered despite the failure
+    - `(RTL7i2)` If `strictMode` is `false`, the `subscribe` call must complete as it would have before this check existed, and the library should log a warning per [`TO3r2`](#TO3r2). The library should not emit this log on every `subscribe` call; emitting it at most once per attachment is sufficient
+    - `(RTL7i3)` This check does not apply if the channel is not in the `ATTACHED` state (for example, when `attachOnSubscribe` is `false` and the channel has not been attached)
   - `(RTL7d)` Messages delivered are automatically decoded based on the `encoding` attribute; see `RestChannel` encoding features in [RSL6](#RSL6). Tests should exist to publish and subscribe to encoded messages using the fixture test data referenced in [RSL5c](#RSL5c).
   - `(RTL7e)` This clause has been deleted (redundant to [RSL6b](#RSL6b)).
   - `(RTL7f)` A test should exist ensuring published messages are not echoed back to the subscriber when `echoMessages` is set to false in the `RealtimeClient` library constructor
@@ -772,14 +780,16 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTL27b)` It is a programmer error to access this property without first providing the `LiveObjects` plugin ([PC5](#PC5)) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an `ErrorInfo` with `statusCode` 400 and `code` 40019.
 - `(RTL10)` `RealtimeChannel#history` function:
   - `(RTL10a)` Supports all the same params as `RestChannel#history`
-  - `(RTL10b)` Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an `UPDATE` indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` assigned to the channel in the `ATTACHED` `ProtocolMessage` (see [RTL15a](#RTL15a)). If the `untilAttach` param is specified when the channel is not attached, it results in an error
+  - `(RTL10b)` Additionally supports the param `untilAttach`, which if true, will only retrieve messages prior to the moment that the channel was attached or emitted an `UPDATE` indicating loss of continuity. This bound is specified by passing the querystring param `fromSerial` with the `RealtimeChannel#properties.attachSerial` (see [RTL15c](#RTL15c)). If the `untilAttach` param is specified when the channel is not attached, it results in an error
   - `(RTL10c)` Returns a `PaginatedResult` page containing the first page of messages in the `PaginatedResult#items` attribute returned from the history request
   - `(RTL10d)` A test should exist that publishes messages from one client, and upon confirmation of message delivery, a history request should be made on another client to ensure all messages are available
 - `(RTL12)` An attached channel may receive an additional `ATTACHED` `ProtocolMessage` from Ably at any point. (This is typically triggered following a transport being resumed to indicate a partial loss of message continuity on that channel, in which case the `ProtocolMessage` will have a `resumed` flag set to false). If and only if the `resumed` flag is false, this should result in the channel emitting an `UPDATE` event with a `ChannelStateChange` object. The `ChannelStateChange` object should have both `previous` and `current` attributes set to `attached`, the `reason` attribute set to to the `error` member of the `ATTACHED` `ProtocolMessage` (if any), and the `resumed` attribute set per the `RESUMED` bitflag of the `ATTACHED` `ProtocolMessage`. (Note that `UPDATE` should be the only event emitted: in particular, the library must not emit an `ATTACHED` event if the channel was already attached, see `RTL2g`).
 - `(RTL15)` `RealtimeChannel#properties` attribute is a `ChannelProperties` object representing properties of the channel state. `properties` is a publicly accessible member of the channel, but it is an experimental and unstable API. It has the following attributes:
-  - `(RTL15a)` `attachSerial` is unset when the channel is instantiated, and is updated with the `channelSerial` from each `ATTACHED` `ProtocolMessage` received from Ably with a matching `channel` attribute. The `attachSerial` value is used for `untilAttach` queries, see [RTL10b](#RTL10b)
+  - `(RTL15a)` This clause has been replaced by [`RTL15c`](#RTL15c) as of specification version 6.1.1.
+  - `(RTL15c)` `attachSerial` is unset when the channel is instantiated, and is updated with the `channelSerial` from each `ATTACHED` `ProtocolMessage` received from Ably with a matching `channel` attribute whose [RTL2f](#RTL2f) `resumed` attribute is `false`. The `attachSerial` value is used for `untilAttach` queries, see [RTL10b](#RTL10b)
   - `(RTL15b)` `channelSerial` is updated whenever a `ProtocolMessage` with either `MESSAGE`, `PRESENCE`, `ANNOTATION`, `OBJECT`, or `ATTACHED` actions is received on a channel, and is set to the `TR4c` `channelSerial` of that `ProtocolMessage`, if and only if that field (`ProtocolMessage.channelSerial`) is populated.
-    - `(RTL15b1)` If the channel enters the `DETACHED`, `SUSPENDED`, or `FAILED` state, it must clear its `channelSerial`.
+    - `(RTL15b1)` This clause has been replaced by [`RTL15b2`](#RTL15b2) as of specification version 6.1.0.
+    - `(RTL15b2)` If the channel enters the `DETACHED` or `FAILED` state, it must clear its `channelSerial`. (Unlike previous spec versions, it must not clear it when entering the `SUSPENDED` state).
 - `(RTL13)` If the channel receives a server initiated `DETACHED` message when it is in the `ATTACHING`, `ATTACHED` or `SUSPENDED` state (i.e. the client has not explicitly requested a detach putting the channel into the `DETACHING` state), then the following applies:
   - `(RTL13a)` If the channel is in the `ATTACHED` or `SUSPENDED` states, an attempt to reattach the channel should be made immediately by sending a new `ATTACH` message and the channel should transition to the `ATTACHING` state with the error emitted in the `ChannelStateChange` event.
   - `(RTL13b)` If the attempt to re-attach fails, or if the channel was already in the `ATTACHING` state, the channel will transition to the `SUSPENDED` state and the error will be emitted in the `ChannelStateChange` event. An attempt to re-attach the channel automatically will then be made after the period defined by [`RTB1`](#RTB1). When re-attaching the channel, the channel will transition to the `ATTACHING` state. If that request to attach fails i.e. it times out or a `DETACHED` message is received, then the process described here in `RTL13b` will be repeated, indefinitely
@@ -921,6 +931,9 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTP11b)` This clause has been replaced by [RTP11e](#RTP11e)
   - `(RTP11d)` If the `RealtimeChannel` is in the `SUSPENDED` state then the `get` function will by default, or if `waitForSync` is set to `true`, result in an error with `code` `91005` and a `message` stating that the presence state is out of sync due to the channel being in a `SUSPENDED` state. If however the `get` function is called with `waitForSync` set to `false`, then it immediately returns the members currently stored in the `PresenceMap` giving developers access to the members that were present at the time the channel became `SUSPENDED`
   - `(RTP11e)` If the channel is in any state other than `SUSPENDED` (which is handled by [RTP11d](#RTP11d)), perform the *ensure-active-channel* procedure ([RTL33](#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
+  - `(RTP11f)` If the [`RTP11e`](#RTP11e) procedure completes successfully and the channel is in the `ATTACHED` state, the [`RTL4m`](#RTL4m) channel modes must be checked for the presence of the `PRESENCE_SUBSCRIBE` mode. (Note: the set being checked is the mode set actually granted by the server, not the set of modes requested by the user per [`TB2d`](#TB2d).) If the mode is missing, the server has not been delivering presence events to this client and the `PresenceMap` cannot reflect the channel's members, so:
+    - `(RTP11f1)` If `strictMode` ([`TO3r`](#TO3r)) is `true`, the `get` call must fail with an `ErrorInfo` with `code` `91008` and `statusCode` `400`, with a `message` indicating that the channel is attached without the `presence_subscribe` mode and so the members of the channel have not been delivered to this client
+    - `(RTP11f2)` If `strictMode` is `false`, the `get` call must proceed per [RTP11a](#RTP11a) (in practice returning an empty or incomplete list), and the library should log a warning per [`TO3r2`](#TO3r2)
   - `(RTP11c)` An optional set of params can be provided:
     - `(RTP11c1)` `waitForSync` (default `true`). When `true`, method will wait until `SYNC` is complete before returning a list of members. When `false`, known set of presence members is returned immediately, which may be incomplete if the `SYNC` is not finished
     - `(RTP11c2)` `clientId` filters members by the provided `clientId`
@@ -1311,6 +1324,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(OOP1)` An `ObjectOperation` describes an operation to be applied to an object on a channel
 - `(OOP2)` `ObjectOperationAction` enum has the following values in order from zero: `MAP_CREATE`, `MAP_SET`, `MAP_REMOVE`, `COUNTER_CREATE`, `COUNTER_INC`, `OBJECT_DELETE`, `MAP_CLEAR`
+  - `(OOP2a)` When decoding, an `action` that does not map to any of the wire-ordered members above must not cause decoding to fail. The client library must instead represent it as an unrecognised action, using whatever representation is idiomatic for the implementation (for example a distinct sentinel value or a nullable field). The client library must never encode or send such an unrecognised action, and must ignore (not apply) any `ObjectOperation` whose `action` is unrecognised
 - `(OOP3)` The attributes available in an `ObjectOperation` are:
   - `(OOP3a)` `action` `ObjectOperationAction` enum - defines the operation to be applied to the object
   - `(OOP3b)` `objectId` string - the object ID of the object on a channel to which the operation should be applied
@@ -1474,6 +1488,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 
 - `(OMP1)` An `ObjectsMap` object represents a map of key-value pairs
 - `(OMP2)` `ObjectsMapSemantics` enum has the following values in order from zero: `LWW`
+  - `(OMP2a)` When decoding, a `semantics` value that does not map to any of the wire-ordered members above must not cause decoding to fail. The client library must instead represent it as unrecognised semantics, using whatever representation is idiomatic for the implementation (for example a distinct sentinel value or a nullable field), and must never encode or send such an unrecognised value
 - `(OMP3)` The attributes available in an `ObjectsMap` are:
   - `(OMP3a)` `semantics` `ObjectsMapSemantics` enum - the conflict-resolution semantics used by the map object
   - `(OMP3b)` `entries` `Dict<String, ObjectsMapEntry>` - the map entries, indexed by key
@@ -1509,19 +1524,21 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 #### ObjectData
 
 - `(OD1)` An `ObjectData` represents a value in an object on a channel
-- `(OD2)` The attributes available in an `ObjectData` are:
+- `(OD2)` The attributes available in an `ObjectData` are listed below. Of the value fields - `boolean`, `bytes`, `number`, `string` and `json` - at most one must be set at a time:
   - `(OD2a)` `objectId` string - a reference to another object
   - `(OD2b)` `encoding` string - may be set by the client library to indicate that value in `string` field have an encoding
-  - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2e)` `number` number - a primitive number leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
-  - `(OD2f)` `string` string - a primitive string leaf value in the object graph. Only one of the value fields - `boolean`, `bytes`, `number` or `string` - must be set at a time
+  - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph
+  - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol
+  - `(OD2e)` `number` number - a primitive number leaf value in the object graph
+  - `(OD2f)` `string` string - a primitive string leaf value in the object graph
+  - `(OD2g)` `json` JsonObject \| JsonArray - a primitive JSON leaf value (an object or array) in the object graph. It is sent to and received from the server as a JSON-encoded string when using the JSON protocol
 - `(OD3)` The size of the `ObjectData` is calculated as follows:
-  - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, and `string` properties
+  - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, `string`, and `json` properties
   - `(OD3b)` If set, the size of a `boolean` property is 1
   - `(OD3c)` If set, the size of a `bytes` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
   - `(OD3d)` If set, the size of a `number` property is 8
   - `(OD3e)` If set, the size of a `string` property is its length
+  - `(OD3g)` If set, the size of a `json` property is the byte length of its JSON-encoded string representation
   - `(OD3f)` The size of a `null` or omitted property is zero
 - `(OD4)` `ObjectData` encoding:
   - `(OD4a)` Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
@@ -1576,7 +1593,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(TR3b)` 1: `HAS_BACKLOG`
   - `(TR3c)` 2: `RESUMED`
   - `(TR3e)` 4: `TRANSIENT`
-  - `(TR3f)` 5: `ATTACH_RESUME`
+  - `(TR3f)` 5: `ATTACH_RESUME` (deprecated): As of specification version 6.1.0 the library need no longer set this flag.
   - `(TR3h)` 7: `HAS_OBJECTS`
   - `(TR3q)` 16: `PRESENCE`
   - `(TR3r)` 17: `PUBLISH`
@@ -1744,7 +1761,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     h4. ChannelProperties
 - `(CP1)` properties of a channel and its state
 - `(CP2)` The attributes of `ChannelProperties` consist of:
-  - `(CP2a)` `attachSerial` string - contains the `channelSerial` that the current attachment started at, set per [RTL15a](#RTL15a)
+  - `(CP2a)` `attachSerial` string - contains the `channelSerial` that the current attachment started at, set per [RTL15c](#RTL15c)
   - `(CP2b)` `channelSerial` string - contains the last `channelSerial` received on the channel, set per [RTL15b](#RTL15b)
 
 #### ChannelDetails
@@ -1945,6 +1962,9 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
   - `(TO3p)` `addRequestIds` boolean - defaults to false. If true, `RSC7c` applies
   - `(TO3q)` `transportParams` \[String: Stringifiable\]? - defaults to null. Described in [RTC1f](#RTC1f)
+  - `(TO3r)` `strictMode` boolean - defaults to `false`. Controls the behaviour of certain operations that, for historical reasons, complete successfully even though the client is in a state in which the operation cannot have its intended effect, such as operations gated on a granted channel mode (see [`RTL7i`](#RTL7i), [`RTP11f`](#RTP11f)). It is intended that a future major version of the specification will adopt the strict behaviour by default
+    - `(TO3r1)` When `strictMode` is `true`, each such operation must fail with the `ErrorInfo` defined by the relevant spec item, rather than completing with its legacy silent result
+    - `(TO3r2)` When `strictMode` is `false`, each such operation must complete with its legacy silent result, and the library should log the failure at `ERROR` level, including the `message` of the `ErrorInfo` defined by the relevant spec item and an indication that setting `strictMode` to `true` will cause the operation to fail with that error
 
 #### TokenParams {#token-params}
 
@@ -2058,7 +2078,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 The following default values are configured for the client library:
 
 - `(DF1)` Realtime defaults:
-  - `(DF1a)` `connectionStateTtl` integer - default 120s. The duration that Ably will persist the connection state when a Realtime client is abruptly disconnected. When the client is in the `DISCONNECTED` state, once this TTL has passed, the client should transition the state to the `SUSPENDED` state signifying that the state is now lost i.e. channels need to be re-attached manually. Note that this default is overriden by `connectionStateTtl`, if specified in the `ConnectionDetails` of the `CONNECTED` `ProtocolMessage`
+  - `(DF1a)` `connectionStateTtl` integer - default 120s. When the client is in the `DISCONNECTED` state, once this TTL has passed, the client should transition the state to the `SUSPENDED` state (see [`RTN14e`](#RTN14e)). Note that this default is overriden by `connectionStateTtl`, if specified in the `ConnectionDetails` of the `CONNECTED` `ProtocolMessage`. (The client no longer uses this value to decide whether to attempt a resume: it always attempts a resume on reconnecting and lets the server decide whether continuity can be preserved).
   - `(DF1b)` This clause has been replaced by [TO3l11](#TO3l11).
 
 ## Interface Definition {#idl}
@@ -2173,6 +2193,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       useBinaryProtocol: Bool default true // TO3f
       transportParams: [String: Stringifiable]? // TO3q, RTC1f
       addRequestIds: Bool default false // TO3p
+      strictMode: Bool default false // TO3r
       // configurable retry and failure defaults
       disconnectedRetryTimeout: Duration default 15s // TO3l1
       suspendedRetryTimeout: Duration default 30s // RTN14e, TO3l2
@@ -2628,6 +2649,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       bytes: Binary? | String? // OD2d
       number: Number? // OD2e
       string: String? // OD2f
+      json: String? // OD2g
 
     class Annotation // TAN*
       +fromEncoded(JsonObject, ChannelOptions?) -> Annotation // TAN3

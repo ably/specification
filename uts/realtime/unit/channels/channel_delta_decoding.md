@@ -7,11 +7,11 @@ Unit test with mocked WebSocket
 
 ## Mock WebSocket Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 
 ## Mock VCDiff Infrastructure
 
-See `uts/test/realtime/unit/helpers/mock_vcdiff.md` for the full Mock VCDiff Infrastructure specification.
+See `uts/realtime/unit/helpers/mock_vcdiff.md` for the full Mock VCDiff Infrastructure specification.
 
 > **Transport encoding note:** On JSON transport (the default for unit tests),
 > binary vcdiff delta payloads cannot be transmitted as raw bytes — they must be

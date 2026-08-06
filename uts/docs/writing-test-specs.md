@@ -21,7 +21,7 @@ This guide provides comprehensive guidance for writing portable test specificati
 - Run against Ably Sandbox through a programmable proxy ([ably/uts-proxy](https://github.com/ably/uts-proxy))
 - Proxy transparently forwards traffic but can inject faults via rules
 - Use for testing fault behaviour: connection failures, token renewal under errors, heartbeat starvation, channel error injection
-- See `realtime/integration/helpers/proxy.md` for the full proxy infrastructure spec
+- See `uts/docs/proxy.md` for the full proxy infrastructure spec
 
 ## Test IDs
 
@@ -296,7 +296,7 @@ mock_ws.active_connection.simulate_disconnect()
 
 ## Proxy Integration Tests
 
-For detailed proxy infrastructure documentation, see `realtime/integration/helpers/proxy.md`.
+For detailed proxy infrastructure documentation, see `uts/docs/proxy.md`.
 
 ### When to Use Proxy Tests
 
@@ -317,7 +317,7 @@ Spec points: `RTN14a`, `RTN14b`, ...
 Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
-See `realtime/integration/helpers/proxy.md` for proxy infrastructure specification.
+See `uts/docs/proxy.md` for proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 - `realtime/unit/connection/connection_failures_test.md` — RTN15a, RTN15b
@@ -344,7 +344,6 @@ Tests that [behaviour] when the proxy injects [fault].
 ```pseudo
 session = create_proxy_session(
   target: TargetConfig(realtimeHost: "sandbox.realtime.ably-nonprod.net", restHost: "sandbox.realtime.ably-nonprod.net"),
-  port: allocated_port,
   rules: [{
     "match": { ... },
     "action": { ... },
@@ -509,6 +508,73 @@ Tests that all REST requests include the `Ably-Agent` header with correct format
 
 ## Pseudocode Conventions
 
+### Identifier Naming
+
+Every identifier in pseudocode is either **spec surface** (an SDK/spec name, cases 1–2 below) or
+**test harness** (scaffolding, case 3), and its **casing is the visual signal** of which. Getting this
+right keeps the spec surface greppable straight back to the specification and keeps test scaffolding
+visually distinct from it.
+
+**1. Spec surface — mirror the specification's own names exactly.** Anything that names an SDK type,
+field, property, or method that a feature specification (`features.md`, `objects-features.md`, …)
+already defines must use the **identical name and casing** the spec uses:
+
+- **Types / concepts → `PascalCase`**: `ObjectsPool`, `SyncObjectsPool`, `InternalLiveMap`,
+  `InternalLiveCounter`, `Connection`.
+- **Fields / properties → `camelCase`**: `bufferedObjectOperations`, `appliedOnAckSerials`,
+  `clearTimeserial`, `siteTimeserials`, `createOperationIsMerged`.
+- **Methods → the spec's member, written as a call**: the spec's `Type#method` form (e.g.
+  `InternalLiveMap#set`, `RealtimeObject#on`) is written `object.method(...)`; bare method names
+  (`applyOperation`, `replaceData`) match the spec verbatim.
+
+Do not rename, abbreviate, or re-case a spec identifier — a reader must be able to grep it out of the
+specification unchanged.
+
+**2. Behaviour the specification describes but does not name.** Some clauses describe an action without
+giving it a method name (e.g. RTO4: *"when a channel `ATTACHED` `ProtocolMessage` is received, the
+client library must …"* — no method is named). When a white-box test needs to invoke that behaviour
+directly, coin a name **in the specification's own style — `camelCase`, never `snake_case`** — and use
+it consistently across the suite. Established coinages: `processAttached`, `processObjectSync`,
+`processObjectMessage`, `syncState`, `processChannelState`. These are UTS conventions rather than spec
+names, but they read as though the spec could have named them.
+
+**3. Test-harness constructs → `snake_case`.** Everything that is scaffolding rather than SDK/spec
+surface — fixtures, mocks, builders, polling/flush helpers — is `snake_case`, so it is instantly
+distinguishable from the spec surface: `setup_synced_channel`, `mock_ws`, `send_to_client`,
+`build_object_message`, `build_counter_inc`, `install_mock`, `respond_with_success`, `poll_until`,
+`process_pending_events`, `encode_uri_component`.
+
+**Internal (white-box) access** uses the spec's internal name, `camelCase`d: the internal `ObjectsPool`
+(RTO3) is reached as `object.objectsPool`; internal fields keep their spec names
+(`bufferedObjectOperations`, `appliedOnAckSerials`). How each SDK exposes these is covered in the
+derived-test mapping docs.
+
+**Wire and enum values follow the protocol/spec — not these two buckets.** Identifiers that name
+wire-format data or enum members come from `protocol.md` / `features.md` and are matched verbatim; they
+are **not** harness, even when `snake_case`:
+
+- **Wire fields & query parameters** — mostly `camelCase` (`channelSerial`, `connectionId`,
+  `msgSerial`), with a few `snake_case` (the `request_id` query parameter, RSC7c).
+- **Enum members** — the spec's enum casing, typically `SCREAMING_SNAKE_CASE`
+  (the `ChannelMode.PRESENCE_SUBSCRIBE` enum member / `TR3` flag, also written `presence_subscribe` in
+  some prose; `SYNCED`; `DETACHED`). Render these per the *Enum values* note in the UTS README.
+
+**File names are not identifiers.** Spec *files* are `snake_case` `.md` (`objects_pool.md`,
+`realtime_object.md`); this is unrelated to symbol casing. The `ObjectsPool` type stays `PascalCase`
+even though it is documented in `objects_pool.md`.
+
+```pseudo
+# GOOD — spec surface mirrors the spec; harness is snake_case
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")  # harness → snake_case
+pool = channel.object.objectsPool                                        # ObjectsPool (RTO3) → camelCase accessor
+update = counter.applyOperation(msg, source: CHANNEL)                    # spec method, verbatim
+ASSERT counter.bufferedObjectOperations.length == 0                      # spec field, verbatim
+
+# BAD — spec surface in snake_case: looks like harness, no longer greps back to the spec
+pool = channel.object.objects_pool
+update = counter.apply_operation(msg)
+```
+
 ### URI Path Component Encoding
 
 Use `encode_uri_component()` for any variable path segment or query parameter in URL assertions. This is defined in the UTS README. Always use exact equality (`==`) for path assertions, not `CONTAINS`.
@@ -587,6 +653,10 @@ This means implementations should:
 - Check if condition is already true -> proceed
 - Otherwise wait for state change events with timeout
 - Fail if timeout expires
+
+In **integration and proxy** specs these timeouts are **wall-clock time** (the test waits on a
+real server — see the *Timeout Strategy* section in `docs/integration-testing.md`); in unit specs they may be
+realised with fake/virtual timers.
 
 ## Timer Mocking
 
@@ -747,6 +817,77 @@ poll_until(
 # Good - advance time and wait for state
 ADVANCE_TIME(3000)
 AWAIT_STATE state == disconnected
+```
+
+Reference definition of `poll_until` (a shared helper in each SDK's test suite). Specs call it
+with either a bare condition expression (re-evaluated each iteration until true) or a producer
+function whose first truthy result is returned:
+
+```pseudo
+FUNCTION poll_until(condition, interval: 500ms, timeout: 10s):
+  deadline = now() + timeout
+  WHILE true:
+    result = AWAIT condition()   # an error raised here aborts the poll immediately
+    IF result:                   # truthy: condition met / value produced
+      RETURN result
+    IF now() >= deadline:
+      RAISE TimeoutError("poll_until timed out after " + timeout)
+    WAIT interval
+```
+
+At integration tier the deadline and interval are wall-clock time; unit-tier implementations
+may realise the interval as event-loop turns instead of real sleeps (see *Integration timeouts are
+wall-clock* in `writing-derived-tests.md` for the traps on both sides).
+
+For a **negative assertion** at unit tier — proving something did *not* happen — there is
+nothing to poll for: use `process_pending_events()` (see the pseudocode conventions in
+`uts/README.md`) to let already-queued events settle, then assert. Never a fixed `WAIT`.
+
+```pseudo
+# Good - negative assertion: settle pending events, then assert nothing happened
+process_pending_events()
+ASSERT mock_ws.connect_attempts.length == 0
+```
+
+**A `poll_until` fails immediately if its condition raises an error.** For reads that are expected
+to fail until the service catches up — reads of the eventually-consistent message store
+(`getMessage`, `getMessageVersions`, `annotations.get`) throw not-found until a just-written
+message becomes visible, and LiveObjects value reads raise while a fault-injection test's
+channel is transiently DETACHED mid-recovery — use `poll_until_success` instead: any error raised by the condition
+means "keep polling", and if the timeout expires the most recent error is raised so the failure
+stays diagnosable. The convention is also summarised in the pseudocode conventions in `uts/README.md`.
+
+```pseudo
+# Good - store read polled through its expected not-found errors
+msg = poll_until_success(
+  condition: FUNCTION() =>
+    m = AWAIT channel.getMessage(serial)
+    IF m.action == MessageAction.MESSAGE_UPDATE:
+      RETURN m
+    RETURN null
+)
+```
+
+Reference definition (implement once as a shared helper, typically wrapping `poll_until`):
+
+```pseudo
+FUNCTION poll_until_success(condition, interval: 500ms, timeout: 10s):
+  last_error = null
+  deadline = now() + timeout
+  WHILE true:
+    TRY:
+      result = AWAIT condition()
+      IF result:               # truthy: condition met / value produced
+        RETURN result
+    CATCH error:
+      last_error = error   # any error means "not ready yet" - keep polling
+    IF now() >= deadline:
+      # raise the most recent error so the failure stays diagnosable;
+      # a plain timeout error only if the condition never raised
+      IF last_error != null:
+        RAISE last_error
+      RAISE TimeoutError("poll_until_success timed out after " + timeout)
+    WAIT interval
 ```
 
 ### Verifying Transient States (Record-and-Verify Pattern)
@@ -1026,8 +1167,6 @@ realtime/
       connection_open_failures_test.md
       ...
   integration/
-    helpers/
-      proxy.md                # Proxy infrastructure spec
     proxy/
       connection_open_failures.md   # RTN14 tests via proxy
       connection_resume.md          # RTN15 tests via proxy

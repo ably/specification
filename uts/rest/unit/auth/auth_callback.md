@@ -7,7 +7,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-See `uts/test/rest/unit/rest_client.md` for the full Mock HTTP Infrastructure specification. These tests use the same `MockHttpClient` interface with `PendingConnection` and `PendingRequest`.
+See `uts/rest/unit/rest_client.md` for the full Mock HTTP Infrastructure specification. These tests use the same `MockHttpClient` interface with `PendingConnection` and `PendingRequest`.
 
 ## Purpose
 

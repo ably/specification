@@ -8,11 +8,11 @@ Proxy integration test against Ably Sandbox endpoint
 
 ## Proxy Infrastructure
 
-See `uts/test/realtime/integration/helpers/proxy.md` for the full proxy infrastructure specification.
+See `uts/docs/proxy.md` for the full proxy infrastructure specification.
 
 ## Corresponding Unit Tests
 
-- `uts/test/realtime/unit/presence/realtime_presence_reentry.md` -- RTP17i (automatic re-entry on ATTACHED non-RESUMED), RTP17g (re-entry publishes ENTER with stored clientId and data)
+- `uts/realtime/unit/presence/realtime_presence_reentry.md` -- RTP17i (automatic re-entry on ATTACHED non-RESUMED), RTP17g (re-entry publishes ENTER with stored clientId and data)
 
 ## Sandbox Setup
 

@@ -528,14 +528,26 @@ AWAIT channel.updateMessage(
   operation: MessageOperation(description: "second edit")
 )
 
-# Wait for propagation before HTTP-based reads
-wait_for_propagation(2 seconds)
+# The message store is eventually consistent: poll until the second update is
+# visible rather than sleeping a fixed interval before the HTTP-based reads (a
+# found message may still be a stale version). poll_until_success treats any
+# read error as "keep polling" - see the pseudocode conventions in uts/README.md.
+msg = poll_until_success(
+  condition: FUNCTION() =>
+    m = AWAIT channel.getMessage(serial)
+    IF m.action == MessageAction.MESSAGE_UPDATE AND m.data == "v3":
+      RETURN m
+    RETURN null
+)
 
-# getMessage — should return latest version
-msg = AWAIT channel.getMessage(serial)
-
-# getMessageVersions — should return version history
-versions = AWAIT channel.getMessageVersions(serial)
+# getMessageVersions — poll until the full version history is visible
+versions = poll_until_success(
+  condition: FUNCTION() =>
+    result = AWAIT channel.getMessageVersions(serial)
+    IF result.items.length >= 3:
+      RETURN result
+    RETURN null
+)
 ```
 
 ### Assertions

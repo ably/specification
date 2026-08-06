@@ -497,6 +497,7 @@ Tests that cached fallback host is cleared after `fallbackRetryTimeout`.
 
 ### Setup
 ```pseudo
+enable_fake_timers()
 mock_http = MockHttpClient()
 mock_http.queue_response_for_host("main.realtime.ably.net", 500, { "error": {} })
 mock_http.queue_response_for_host("main.a.fallback.ably-realtime.com", 200, { "time": 1000 })
@@ -514,8 +515,8 @@ client = Rest(options: ClientOptions(
 # First request triggers fallback
 AWAIT client.time()
 
-# Wait for timeout to expire
-WAIT 150 milliseconds
+# Advance fake time past fallbackRetryTimeout
+ADVANCE_TIME(150)
 
 # Next request should try primary again
 AWAIT client.time()
@@ -541,6 +542,7 @@ Tests that a request that completes successfully against a fallback *after* `fal
 
 ### Setup
 ```pseudo
+enable_fake_timers()
 mock_http = MockHttpClient()
 
 # Request handler: primary fails on first attempt, all others succeed.
@@ -578,8 +580,8 @@ AWAIT client.time()
 # Request 3: goes to cached fallback, but we hold the response
 request_future = client.time()   # starts but does not complete
 
-# Advance time past fallbackRetryTimeout so the cache expires
-WAIT 150 milliseconds
+# Advance fake time past fallbackRetryTimeout so the cache expires
+ADVANCE_TIME(150)
 
 # Request 4: cache expired → should try primary again
 AWAIT client.time()

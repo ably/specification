@@ -7,7 +7,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-These tests use the mock HTTP infrastructure defined in `uts/test/rest/unit/helpers/mock_http.md`.
+These tests use the mock HTTP infrastructure defined in `uts/rest/unit/helpers/mock_http.md`.
 
 ---
 

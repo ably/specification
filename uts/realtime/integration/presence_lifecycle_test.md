@@ -88,10 +88,13 @@ channel_a = client_a.channels.get(channel_name)
 channel_b = client_b.channels.get(channel_name)
 AWAIT channel_b.attach()
 
-# Subscribe on client B before client A enters
-received_enters = []
-channel_b.presence.subscribe(action: ENTER, (event) => {
-  received_enters.append(event)
+# Subscribe on client B before client A enters. Members are counted by clientId from
+# both ENTER and PRESENT events: if client B's connection drops mid-test, members it
+# missed arrive via the presence re-sync as PRESENT events rather than ENTER, and an
+# ENTER-only count would undercount forever.
+entered_client_ids = SET()
+channel_b.presence.subscribe(action: [ENTER, PRESENT], (event) => {
+  entered_client_ids.add(event.clientId)
 })
 
 # Attach client A (after B is attached and subscribed)
@@ -103,9 +106,9 @@ FOR i IN 0..member_count-1:
   futures.append(channel_a.presence.enterClient("user-${i}", data: "data-${i}"))
 AWAIT_ALL futures
 
-# Wait for client B to receive all ENTER events
+# Wait for client B to observe all members entering
 poll_until(
-  condition: FUNCTION() => received_enters.length >= member_count,
+  condition: FUNCTION() => entered_client_ids.size >= member_count,
   interval: 200ms,
   timeout: 15s
 )
@@ -116,8 +119,8 @@ members = AWAIT channel_b.presence.get()
 
 ### Assertions
 ```pseudo
-# Client B received all ENTER events via subscribe
-ASSERT received_enters.length == member_count
+# Client B observed every member entering via subscribe
+ASSERT entered_client_ids.size == member_count
 
 # All members present via get()
 ASSERT members.length == member_count

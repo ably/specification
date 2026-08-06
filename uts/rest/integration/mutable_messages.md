@@ -39,6 +39,7 @@ AFTER ALL TESTS:
 - All clients use `useBinaryProtocol: PROTOCOL == "msgpack"` (see Protocol Variants)
 - All clients use `endpoint: "nonprod:sandbox"`
 - All channel names use the `mutable:` namespace prefix — the test app setup configures the `mutable` namespace with `mutableMessages: true`, which is required for getMessage, updateMessage, deleteMessage, appendMessage, and annotations
+- The message store is eventually consistent: a just-written message (or version/annotation) may not be visible yet, and serial-scoped reads throw not-found until it is. Every store read below is therefore polled via `poll_until_success` (see the pseudocode conventions in `uts/README.md`), which treats any read error as "keep polling" rather than failure, raising the most recent one if the timeout expires.
 
 ### Annotation HTTP Body Format
 
@@ -130,8 +131,9 @@ channel = client.channels.get(channel_name)
 publish_result = AWAIT channel.publish(name: "test-event", data: "hello world")
 serial = publish_result.serials[0]
 
-# Retrieve the message by serial
-msg = AWAIT channel.getMessage(serial)
+# Retrieve the message by serial (polled: getMessage throws not-found until the
+# just-published message is visible in the eventually-consistent store)
+msg = poll_until_success(condition: FUNCTION() => AWAIT channel.getMessage(serial))
 ```
 
 ### Assertions
@@ -186,12 +188,12 @@ ASSERT update_result.versionSerial IS String
 ASSERT update_result.versionSerial.length > 0
 
 # Verify via getMessage — poll until the update is visible
-updated_msg = poll_until(
+updated_msg = poll_until_success(
   condition: FUNCTION() =>
     msg = AWAIT channel.getMessage(serial)
-    RETURN msg.action == MessageAction.MESSAGE_UPDATE,
-  interval: 500ms,
-  timeout: 10s
+    IF msg.action == MessageAction.MESSAGE_UPDATE:
+      RETURN msg
+    RETURN null
 )
 ASSERT updated_msg.name == "updated"
 ASSERT updated_msg.data == "updated-data"
@@ -239,12 +241,12 @@ ASSERT delete_result.versionSerial IS String
 ASSERT delete_result.versionSerial.length > 0
 
 # Verify via getMessage — poll until the delete is visible
-deleted_msg = poll_until(
+deleted_msg = poll_until_success(
   condition: FUNCTION() =>
     msg = AWAIT channel.getMessage(serial)
-    RETURN msg.action == MessageAction.MESSAGE_DELETE,
-  interval: 500ms,
-  timeout: 10s
+    IF msg.action == MessageAction.MESSAGE_DELETE:
+      RETURN msg
+    RETURN null
 )
 ASSERT deleted_msg.action == MessageAction.MESSAGE_DELETE
 ```
@@ -287,12 +289,12 @@ AWAIT channel.updateMessage(
 )
 
 # Poll version history until all versions appear
-versions = poll_until(
+versions = poll_until_success(
   condition: FUNCTION() =>
     result = AWAIT channel.getMessageVersions(serial)
-    RETURN result.items.length >= 3,
-  interval: 500ms,
-  timeout: 10s
+    IF result.items.length >= 3:
+      RETURN result
+    RETURN null
 )
 ```
 
@@ -386,12 +388,12 @@ AWAIT channel.annotations.publish(serial, Annotation(
 ))
 
 # Verify annotation exists — poll until it appears
-annotations = poll_until(
+annotations = poll_until_success(
   condition: FUNCTION() =>
     result = AWAIT channel.annotations.get(serial)
-    RETURN result.items.length >= 1,
-  interval: 500ms,
-  timeout: 10s
+    IF result.items.length >= 1:
+      RETURN result
+    RETURN null
 )
 ASSERT annotations.items.length >= 1
 
@@ -448,12 +450,12 @@ AWAIT channel.annotations.publish(serial, Annotation(
 ))
 
 # Retrieve annotations — poll until both appear
-result = poll_until(
+result = poll_until_success(
   condition: FUNCTION() =>
     r = AWAIT channel.annotations.get(serial)
-    RETURN r.items.length >= 2,
-  interval: 500ms,
-  timeout: 10s
+    IF r.items.length >= 2:
+      RETURN r
+    RETURN null
 )
 ```
 

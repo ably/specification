@@ -221,7 +221,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL12 | Additional ATTACHED message handling | Yes — `realtime/unit/channels/channel_additional_attached.md`; `realtime/integration/proxy/channel_faults.md` covers RTL12 |
 | RTL13 | Server-initiated DETACHED handling (RTL13a–RTL13c) | Yes — `realtime/unit/channels/channel_server_initiated_detach.md` |
 | RTL14 | ERROR message handling | Yes — `realtime/unit/channels/channel_error.md`; `realtime/integration/channels/channel_attach_test.md` covers RTL14; `realtime/integration/proxy/channel_faults.md` covers RTL14 |
-| RTL15 | Channel#properties attribute (RTL15a–RTL15b1) | Yes — `realtime/unit/channels/channel_properties.md` |
+| RTL15 | Channel#properties attribute (RTL15b–RTL15c) | Yes — `realtime/unit/channels/channel_properties.md` |
 | RTL16 | SetOptions function (RTL16a) | Yes — `realtime/unit/channels/channel_options.md` |
 | RTL17 | No messages outside ATTACHED state | Yes — `realtime/unit/channels/channel_subscribe.md` |
 | RTL18 | Vcdiff decoding failure recovery (RTL18a–RTL18c) | Yes — `realtime/unit/channels/channel_delta_decoding.md`, `realtime/integration/delta_decoding_test.md` |
