@@ -1464,3 +1464,173 @@ Types and their properties/methods are public and exposed to users by default. A
     class JsonArrayInstance extends Instance: // RTTS10c
       value() -> JsonArray
       compactJson() -> JsonArray // RTTS7a2 (narrowed)
+
+### Swift-specific IDL (informative)
+
+This subsection is **informative and non-normative**. Statically-typed SDKs follow the RTTS partition ([RTTS3](#RTTS3) through [RTTS10](#RTTS10)); the shipped Swift SDK (`AblyLiveObjects`) satisfies the RTTS *semantics* but expresses them through platform-idiomatic constructs that deviate from the *letter* of the partition in the enumerated places below. It is recorded here so that cross-SDK readers and test authors know the exact Swift surface. The portability intent of [RTTS1a](#RTTS1a) is that user code be portable *between statically-typed SDKs that agree on the partition*; Swift trades that letter-for-letter portability for compile-time type-safety (exhaustive enum discrimination, non-optional typed properties, typed `throws`), in the same spirit as the non-normative rationale under [RTTS1](#RTTS1). Every member below is verifiable against the shipped source under `LiveObjects/Sources/AblyLiveObjects/Path Based API/Public/`.
+
+The Swift surface (all top-level declarations carry an availability annotation, and closure-taking members carry the `@escaping`/`@Sendable` and `@discardableResult` attributes — both the annotation and these attributes are omitted here for brevity; read ops are `throws(ARTErrorInfo)` per [RTO25](#RTO25); mutating ops are `async throws(ARTErrorInfo)`; JSON is the native `JSONValue`):
+
+    // === Swift-specific variant (informative) =================================
+    // Shipped AblyLiveObjects public surface. Deviations from the RTTS partition
+    // are enumerated in the table below. `throws(ARTErrorInfo)` = typed throws;
+    // `any P` = an existential of protocol P; convenience/extension members are
+    // noted inline in comments rather than repeated as separate declarations.
+    // ==========================================================================
+
+    enum ValueType: Sendable, Equatable // RTTS2 (lowerCamelCase, 9 cases)
+      case string       // RTTS2a1
+      case number       // RTTS2a2
+      case boolean      // RTTS2a3
+      case binary       // RTTS2a4
+      case jsonObject   // RTTS2a5
+      case jsonArray    // RTTS2a6
+      case liveMap      // RTTS2a7
+      case liveCounter  // RTTS2a8
+      case unknown      // RTTS2a9
+
+    enum Primitive: Sendable, Equatable // Swift-only; collapses the 6 RTTS6c / RTTS10c primitives
+      case string(String)
+      case number(Double)
+      case bool(Bool)
+      case data(Data)
+      case jsonArray([JSONValue])
+      case jsonObject([String: JSONValue])
+      // + stringValue / numberValue / boolValue / dataValue / jsonArrayValue / jsonObjectValue getters
+
+    protocol PathObject: Sendable // RTTS3
+      var path: String { get } // RTPO4
+      func instance() throws(ARTErrorInfo) -> Instance? // RTPO8
+      func compactJson() throws(ARTErrorInfo) -> JSONValue? // RTPO14, RTTS3c (nullable; base-only, NOT narrowed)
+      func subscribe(options: PathObjectSubscriptionOptions?, listener: PathObjectSubscriptionCallback) throws(ARTErrorInfo) -> any Subscription // RTPO19
+      func exists() throws(ARTErrorInfo) -> Bool // RTTS4a
+      func type() throws(ARTErrorInfo) -> ValueType? // RTTS4b (named `type`, NOT `getType`)
+      func asLiveMap() -> any LiveMapPathObject // RTTS5a
+      func asLiveCounter() -> any LiveCounterPathObject // RTTS5b
+      func asPrimitive() -> any PrimitivePathObject // RTTS5c (single cast; collapses asNumber/asString/asBoolean/asBinary/asJsonObject/asJsonArray)
+      // extension: subscribe(listener:) options-less convenience; events(options:) -> AsyncStream<PathObjectSubscriptionEvent> // RTPO19 (also on LiveMapInstance/LiveCounterInstance; Swift-additive - terminating the stream auto-calls the underlying Subscription's unsubscribe() per SUB2a; no spec point mandates it)
+
+    protocol LiveMapPathObject: PathObject // RTTS6a
+      func get(key: String) -> any PathObject // RTPO5
+      func at(path: String) -> any PathObject // RTPO6
+      func entries() throws(ARTErrorInfo) -> [(key: String, value: any PathObject)] // RTPO9
+      func keys() throws(ARTErrorInfo) -> [String] // RTPO10
+      func values() throws(ARTErrorInfo) -> [any PathObject] // RTPO11
+      func size() throws(ARTErrorInfo) -> Int? // RTPO12
+      func set(key: String, value: LiveMapValue) async throws(ARTErrorInfo) // RTPO15
+      func remove(key: String) async throws(ARTErrorInfo) // RTPO16
+
+    protocol LiveCounterPathObject: PathObject // RTTS6b
+      func value() throws(ARTErrorInfo) -> Double? // RTTS6b (counter-filtered: nil unless the resolved value is a counter)
+      func increment(amount: Double) async throws(ARTErrorInfo) // RTPO17 (+ increment() convenience)
+      func decrement(amount: Double) async throws(ARTErrorInfo) // RTPO18 (+ decrement() convenience)
+
+    protocol PrimitivePathObject: PathObject // RTTS6c (collapsed)
+      func value() throws(ARTErrorInfo) -> Primitive? // RTTS6c, RTTS6g (nil unless a primitive; NOT filtered to one exact primitive type - see deviation 12)
+
+    enum Instance: Sendable // RTTS7 + RTTS9 (abstract base + 8 throwing casts replaced by an enum)
+      case liveMap(any LiveMapInstance)
+      case liveCounter(any LiveCounterInstance)
+      case primitive(any PrimitiveInstance)
+      var type: ValueType { get } // RTTS8 (convenience kept alongside exhaustive `switch`; O(1))
+      func compactJson() throws(ARTErrorInfo) -> JSONValue // RTINS11, RTINS11c (non-null), RTTS7a (NOT narrowed)
+
+    protocol LiveMapInstance: Sendable // RTTS10a
+      var id: String { get } // RTINS3a (non-nullable)
+      func get(key: String) throws(ARTErrorInfo) -> Instance? // RTINS5
+      func entries() throws(ARTErrorInfo) -> [(key: String, value: Instance)] // RTINS6
+      func keys() throws(ARTErrorInfo) -> [String] // RTINS7
+      func values() throws(ARTErrorInfo) -> [Instance] // RTINS8
+      var size: Int { get throws(ARTErrorInfo) } // RTINS9, RTTS10a (throwing property; non-optional)
+      func set(key: String, value: LiveMapValue) async throws(ARTErrorInfo) // RTINS12
+      func remove(key: String) async throws(ARTErrorInfo) // RTINS13
+      func subscribe(listener: InstanceSubscriptionCallback) throws(ARTErrorInfo) -> any Subscription // RTINS16 (+ events())
+      func compactJson() throws(ARTErrorInfo) -> JSONValue // RTINS11 (NOT narrowed to a JSON object; cf RTTS7a1)
+
+    protocol LiveCounterInstance: Sendable // RTTS10b
+      var id: String { get } // RTINS3a (non-nullable)
+      var value: Double { get throws(ARTErrorInfo) } // RTINS4, RTTS10b (throwing property; non-optional)
+      func increment(amount: Double) async throws(ARTErrorInfo) // RTINS14 (+ increment() convenience)
+      func decrement(amount: Double) async throws(ARTErrorInfo) // RTINS15 (+ decrement() convenience)
+      func subscribe(listener: InstanceSubscriptionCallback) throws(ARTErrorInfo) -> any Subscription // RTINS16 (+ events())
+      func compactJson() throws(ARTErrorInfo) -> JSONValue // RTINS11 (NOT narrowed to a JSON primitive; cf RTTS7a3)
+
+    protocol PrimitiveInstance: Sendable // RTTS10c (collapsed; read-only, no id/subscribe)
+      var value: Primitive { get throws(ARTErrorInfo) } // RTINS4, RTTS10c (non-optional)
+      var type: ValueType { get } // RTTS8 (O(1))
+      func compactJson() throws(ARTErrorInfo) -> JSONValue // RTINS11 (NOT narrowed; cf RTTS7a)
+
+    protocol RealtimeObject: Sendable // RTO
+      func get() async throws(ARTErrorInfo) -> any LiveMapPathObject // RTO23, RTTS6d
+      func on(event: ObjectsEvent, callback: () -> Void) -> any StatusSubscription // RTO18 (zero-arg callback)
+      // channel entry point: ARTRealtimeChannel.object -> any RealtimeObject // RTL27
+
+    enum ObjectsEvent: Sendable // RTO18b
+      case syncing  // RTO18b1
+      case synced   // RTO18b2
+
+    protocol Subscription: Sendable // SUB
+      func unsubscribe() // SUB2a, SUB2b
+
+    protocol StatusSubscription: Sendable // RTO18f
+      func off() // RTO18f1 (per-token removal; there is no offAll())
+
+    struct PathObjectSubscriptionEvent: Sendable // RTPO19e
+      let object: any PathObject   // RTPO19e1
+      let message: ObjectMessage?  // RTPO19e2 (stays Optional)
+
+    struct PathObjectSubscriptionOptions: Sendable // RTPO19c
+      let depth: Int?  // RTPO19c1 (init(depth:) is non-throwing; depth<=0 (40003, RTPO19c1a) validated in subscribe, not here)
+
+    typealias PathObjectSubscriptionCallback = @Sendable (PathObjectSubscriptionEvent) -> Void // RTPO19a1 (non-throwing)
+
+    struct InstanceSubscriptionEvent: Sendable // RTINS16e
+      let object: Instance         // RTINS16e1
+      let message: ObjectMessage?  // RTINS16e2
+
+    typealias InstanceSubscriptionCallback = @Sendable (InstanceSubscriptionEvent) -> Void // RTINS16a1 (non-throwing)
+
+    // Write-side value types referenced by set(key:value:) above. Swift replaces the language-agnostic
+    // set-value union (Boolean|Binary|Number|String|JsonArray|JsonObject|LiveCounter|LiveMap - RTLM20 /
+    // RTPO15 / RTINS12) with the LiveMapValue enum, and reuses the shared LiveMap/LiveCounter creation
+    // value types (RTLMV* / RTLCV*). ObjectMessage (see PathObjectSubscriptionEvent.message) is the shared
+    // PublicAPI::ObjectMessage type, not repeated here.
+    enum LiveMapValue: Sendable, Equatable
+      case primitive(Primitive)
+      case liveMap(LiveMap)
+      case liveCounter(LiveCounter)
+      // + ExpressibleBy{String,Integer,Float,Boolean,Array,Dictionary}Literal (with JSONValue's own literal
+      //   conformances), so set(key:value:) accepts "x" / 1 / true / ["k": "v"] directly
+      // + primitiveValue / liveMapValue / liveCounterValue (+ 6 primitive) convenience getters
+
+    struct LiveMap: Sendable, Equatable // RTLMV* blueprint (inert; live map created on set, not a graph object)
+      static func create(entries: [String: LiveMapValue]) -> LiveMap // RTLMV3
+      static func create() -> LiveMap                                 // RTLMV3 (empty; Swift no-arg overload of the optional-arg factory)
+
+    struct LiveCounter: Sendable, Equatable // RTLCV* blueprint (inert; live counter created on set, not a graph object)
+      static func create(initialCount: Double) -> LiveCounter // RTLCV3
+      static func create() -> LiveCounter                     // RTLCV3 (initial 0; Swift no-arg overload)
+
+    // JSONValue: native indirect enum (.object/.array/.string/.number/.bool/.null); Sendable, Equatable,
+    // ExpressibleBy*Literal. The native JSON type returned/accepted everywhere JSON travels (compactJson,
+    // ObjectMessage.extras, primitive JSON values) - replaces the generic JSON element type (deviation 8)
+
+Deviations of the shipped Swift surface from the RTTS partition. Each row is verifiable against the source files referenced above:
+
+| # | RTTS point | Swift deviation | Description / rationale |
+|---|---|---|---|
+| 1 | [RTTS7](#RTTS7), [RTTS9](#RTTS9) (and [RTTS8](#RTTS8)) | `enum Instance { .liveMap / .liveCounter / .primitive }` with `switch` discrimination replaces the abstract base class plus the 8 throwing `as*` casts | Discrimination is compile-time-exhaustive, so there is no undefined type-mismatch path (the [RTTS9d](#RTTS9d) 92007 throw is unrepresentable). The [RTTS8](#RTTS8) `type` is kept as an O(1) convenience `var type: ValueType` that coexists with the `switch` |
+| 2 | [RTTS5c](#RTTS5c), [RTTS6c](#RTTS6c) / [RTTS9c](#RTTS9c), [RTTS10c](#RTTS10c) | A single `asPrimitive() -> any PrimitivePathObject` + `PrimitivePathObject`, and a single `PrimitiveInstance`, replace the 6 primitive casts and the 6 primitive sub-classes; both front one `Primitive` enum | The six spec primitive categories become cases of the `Primitive` enum that the caller pattern-matches. Smaller, Swift-idiomatic surface; the 6 `asNumber/asString/...` casts and the `NumberPathObject`/`NumberInstance`/... sub-classes do not exist |
+| 3 | [RTTS4b](#RTTS4b), [RTTS8a](#RTTS8a) | `type()` (method on `PathObject`) / `type` (property on `Instance`, `PrimitiveInstance`) instead of `getType` | Swift API Design Guidelines: a `getX` accessor becomes `x`. `PathObject.type()` is a method (O(path length) resolution per call); `Instance.type` is a property (O(1)) |
+| 4 | [RTO25](#RTO25) (all `PathObject`/`Instance` reads) | All read operations are uniformly `throws(ARTErrorInfo)` | Uniform typed-throws surface for the RTO25 access-preconditions, broader than the spec's per-method choice (Java leaves most reads unchecked) |
+| 5 | [RTPO15](#RTPO15)-[RTPO18](#RTPO18) / [RTINS12](#RTINS12)-[RTINS15](#RTINS15) (`=> io`) | Blocking + `*Async` callback pairs collapse to a single `async throws(ARTErrorInfo)` method | One structured-concurrency suspension model; no callback variants |
+| 6 | [RTPO19](#RTPO19) / [RTINS16](#RTINS16) | Listener interfaces become closure `typealias`es (`PathObjectSubscriptionCallback`, `InstanceSubscriptionCallback`) plus additional `AsyncStream`-returning `events()` accessors | Swift closure + `AsyncSequence` idiom; `events()` is an additive convenience layered on `subscribe` |
+| 7 | [RTO18](#RTO18), [RTO18f](#RTO18f) | Status callback is zero-arg `() -> Void`; deregistration is per-token `StatusSubscription.off()`; there is no `offAll()` and no listener-identity `off(listener)` | The event is known at registration (`on(event:)`), so it need not be passed to the callback; subscription-token removal is the Swift idiom |
+| 8 | [RTPO14](#RTPO14) / [RTINS11](#RTINS11) / [RTTS7a](#RTTS7a) | Native `JSONValue` replaces the generic/gson JSON element type everywhere JSON is returned or accepted (`compactJson`, `ObjectMessage.extras`, primitive JSON values) | No third-party type dependency in the public surface |
+| 9 | [RTPO19c1a](#RTPO19c1a) | `depth <= 0` (40003) is validated inside `subscribe(options:listener:)`, not in the `PathObjectSubscriptionOptions` initializer, which is non-throwing | The shipped `init(depth:)` is frozen non-throwing; the check moves to the subscribe call site |
+| 10 | [RTO24b2c](#RTO24b2c) | Subscription callbacks are non-throwing (`PathObjectSubscriptionCallback` / `InstanceSubscriptionCallback` cannot `throw`) | The "a listener throws -> it is caught and the other listeners still receive the event" contract has no Swift surface; independent-listener delivery is provided, but a listener cannot signal failure back |
+| 11 | [RTTS7a](#RTTS7a), [RTTS7a1](#RTTS7a1)-[RTTS7a3](#RTTS7a3) | The `Instance` sub-classes do **not** narrow `compactJson`; every `compactJson` (base enum, `LiveMapInstance`, `LiveCounterInstance`, `PrimitiveInstance`) returns `JSONValue` (non-optional) | Explicitly permitted: [RTTS7a](#RTTS7a) says implementations "may choose not to narrow". Swift uses one JSON type throughout rather than the canonical `JsonObject`/`JsonArray`/`JsonPrimitive` narrowings. (Relevant to recent commits `c0c80d2b`/`9d4ad947`, which added those narrowings to the language-agnostic IDL) |
+| 12 | [RTTS6c](#RTTS6c), [RTTS6g](#RTTS6g) | `PrimitivePathObject.value() -> Primitive?` returns **any** resolved primitive, filtered only at the primitive-vs-`LiveObject` boundary; it is NOT filtered to one exact primitive type as the six [RTTS6c](#RTTS6c) sub-classes are. `LiveCounterPathObject.value() -> Double?` does match [RTTS6b](#RTTS6b) (counter-filtered) | Consequence of the primitive collapse (deviation 2): per-primitive-type filtering ([RTTS6c](#RTTS6c)) is performed by the caller via the `Primitive` enum. The [RTTS6g](#RTTS6g) "never returns a `LiveObject`'s value" property is preserved (a counter/map resolves to `nil`); the finer per-primitive filtering is not. (Relevant to recent commits `7592b8e1`/`9d4ad947`, which defined the filtered-`value()` semantics) |
+| 13 | [RTTS6e](#RTTS6e) (and base [RTPO8d](#RTPO8d)) | `instance()` lives on the base `PathObject` and is inherited unchanged by `PrimitivePathObject`; on a primitive view it returns the resolved `Instance` (a `.primitive` case) rather than applying the RTTS6e narrowing (return `nil`, or throw `92007`, on a non-map/non-counter view) | RTTS6e (consistent with [RTPO8d](#RTPO8d)) requires the primitive path view's `instance()` to return null or throw `92007`. Because the six primitive sub-classes are collapsed into one that shares `DefaultPathObject.instance()` (deviation 2) and reads are uniform (deviation 4), the primitive view resolves and wraps the value like any other view (a `.primitive` `Instance` for a primitive), following [RTPO8c](#RTPO8c) uniformly rather than the [RTPO8d](#RTPO8d) primitive-returns-null branch. Verifiable in `DefaultPathObject.instance()` and `DefaultPrimitivePathObject` |
+
+> Not reproduced above (Swift conforms to the spec as written, so no deviation row): the base `PathObject` exposes no `value()` ([RTTS3e](#RTTS3e)) - callers use the typed `asPrimitive().value()` / `asLiveCounter().value()` route; `compact` is not implemented ([RTTS3f](#RTTS3f) / [RTTS7d](#RTTS7d) already make it optional, `compactJson` only); and the typed `PathObject` sub-classes do not narrow `compactJson` ([RTTS3c](#RTTS3c)), which Swift satisfies with a single nullable `compactJson() -> JSONValue?` on the base protocol (recent commit `9d4ad947`); the `Instance` base `enum` exposes no `subscribe`, which is partitioned onto `LiveMapInstance` / `LiveCounterInstance` only ([RTTS7b](#RTTS7b)); and there is no `exists` helper on `Instance` ([RTTS8b](#RTTS8b)), since an `Instance` always wraps an already-resolved value.
