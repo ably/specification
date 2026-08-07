@@ -1066,6 +1066,10 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(RSH2c)` (Moved to [`RSH8g`](#RSH8g) ).
   - `(RSH2d)` (Moved to [`RSH8h`](#RSH8h) ).
   - `(RSH2e)` (Moved to [`RSH8i`](#RSH8i) ).
+  - `(RSH2f)` On platforms where changes to the push transport details are delivered to the application rather than to the library (eg an FCM registration token refresh observed by the application, or an ActivityKit token update), `Push#updateToken(token: PushDeviceToken)` (see [`PDT1`](#PDT1)) provides the means for the application to deliver the new details to the library:
+    - `(RSH2f1)` The provided token is validated: it must carry a supported `transportType` and a non-empty `token`. An invalid token is rejected with an error with code `40000` and status code 400, without any effect on the `LocalDevice` or the Activation State Machine.
+    - `(RSH2f2)` `updateToken` requires that the device has completed activation, ie that the `LocalDevice` has a `deviceIdentityToken`; otherwise it is rejected with an error with code `40000`, without any effect. (The error should direct the caller to `Push#activate`.)
+    - `(RSH2f3)` The new details are applied to the `LocalDevice` push `recipient` (for an `apns` token, to the token slot indicated by its `apnsTokenType`, per [`PCP3a`](#PCP3a)) and persisted, and a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3) per [`RSH8g`](#RSH8g). The ensuing registration sync proceeds per [`RSH3d3`](#RSH3d3).
 
 ### Activation State Machine
 
@@ -1081,7 +1085,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
       - `(RSH3a2a)` If the local device has `deviceIdentityToken`, performs a validation of the local DeviceDetails via the following steps. [`RSH3a2b`](#RSH3a2b) onwards then don't apply.
         - `(RSH3a2a1)` Checks the compatibilty of the present client with the existing registration: if the `LocalDevice` has a non-empty `clientId`, and the present identified client has a different (non-null) `clientId`, then a `SyncRegistrationFailed` event should be fired containing an error with `code` 61002, and skips to [`RSH3a2a4`](#RSH3a2a4).
         - `(RSH3a2a2)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails`.
-        - `(RSH3a2a3)` Otherwise, makes an asynchronous HTTP PUT request to `/push/deviceRegistrations/:deviceId` using the local `DeviceDetails` with the push details as body. When the registration validation request is complete, a `RegistrationSynced` or `SyncRegistrationFailed` event should be fired.
+        - `(RSH3a2a3)` Otherwise, performs the registration sync described in [`RSH3d3b`](#RSH3d3b): an asynchronous HTTP PATCH request to `/push/deviceRegistrations/:deviceId` carrying the complete `push.recipient`. (A library may equivalently perform the sync as an HTTP PUT request to the same path using the full local `DeviceDetails` with the push details as body; this is a permitted legacy equivalent, as implemented by some existing libraries.) When the registration validation request is complete, a `RegistrationSynced` or `SyncRegistrationFailed` event should be fired.
         - `(RSH3a2a4)` Transitions to `WaitingForRegistrationSync`.
       - `(RSH3a2b)` If the local device does not have `id` or `deviceSecret`, both are generated locally. The `id` must be a unique identifier (e.g. UUID, GUID). The `deviceSecret` must be created using secure random data with sufficient entropy to generate a digest of at least 32 bytes (eg using sha256) and encoding that digest with base64. The local `DeviceDetails` is updated with the resulting `deviceId` and `deviceSecret`. (Note: a previous statement about what to do if the `id` or `deviceSecret` are lost has been removed since it was redundant to [`RSH8j`](#RSH8j).)
       - `(RSH3a2c)` If the local device has the necessary push details (registration token, etc.), sends a `GotPushDeviceDetails` event.
@@ -1125,7 +1129,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
       - `(RSH3d2d)` Transitions to `WaitingForDeregistration`.
     - `(RSH3d3)` On event `GotPushDeviceDetails` (note that this will only happen on platforms whose push device details, after first set, can change, e. g. FCM's registration token refresh):
       - `(RSH3d3a)` If a custom `registerCallback` was provided to `Push#activate`, pass it the local `DeviceDetails` updated with the push details.
-      - `(RSH3d3b)` Otherwise, make an asynchronous PATCH HTTP request to [/push/deviceRegistrations/:deviceId](/rest-api/#update-device-registration) using the local `DeviceDetails` 's push details as body (but only the changed fields, as described in [the REST endpoint documentation](/rest-api/#update-device-registration)). This operation requires [push device authentication](#push-device-authentication).
+      - `(RSH3d3b)` Otherwise, make an asynchronous PATCH HTTP request to [/push/deviceRegistrations/:deviceId](/rest-api/#update-device-registration) with the changed fields as body, as described in [the REST endpoint documentation](/rest-api/#update-device-registration). When the push details have changed, the body carries the complete `push.recipient` — including any unchanged token variants, per [`RSH8l2`](#RSH8l2) — together with any other `LocalDevice` attribute that has changed (eg a `clientId` newly set per [`RSH8d`](#RSH8d)). This operation requires [push device authentication](#push-device-authentication). This PATCH is the canonical registration sync: [`RSH3a2a3`](#RSH3a2a3) and [`RSH3f1`](#RSH3f1) perform the same operation.
       - `(RSH3d3c)` Either way, when the registration is done, a `RegistrationSynced` or `SyncRegistrationFailed` event should be fired.
       - `(RSH3d3d)` Transitions to `WaitingForRegistrationSync`.
   - `(RSH3e)` State `WaitingForRegistrationSync`:
@@ -1196,11 +1200,16 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(RSH8c)` Following successful registration of a `LocalDevice`, following the procedure in [`RSH3c2a`](#RSH3c2a), the now known `deviceIdentityToken` is set and persisted.
   - `(RSH8d)` If the `LocalDevice` is created by an unidentified client (see [`RSA7`](#RSA7) ) and therefore has no `clientId` set, but the client subsequently becomes identified (as a result of [`RSA7b2`](#RSA7b2) or [`RSA7b3`](#RSA7b3) ), then the `LocalDevice` `clientId` is set and persisted.
   - `(RSH8e)` If the `LocalDevice` `clientId` becomes set as a result of [`RSH8d`](#RSH8d), and the `LocalDevice` is already registered (ie the `deviceIdentityToken` is set), and the ActivationStateMachine is in any state other than `NotActivated`, then a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3) once the effects of [`RSH8d`](#RSH8d) are visible, ie. once `LocalDevice` `clientId` is set.
-  - `(RSH8f)` If the `LocalDevice` is created by an unidentified client (see [`RSA7`](#RSA7) ) and therefore has no `clientId` set, but on receipt of a registration response (see [`RSH3c2`](#RSH3c2) ) the registered device has a non-empty `clientId`, then the `LocalDevice` `clientId` is set with that `clientId`.
+  - `(RSH8f)` If the `LocalDevice` is created by an unidentified client (see [`RSA7`](#RSA7) ) and therefore has no `clientId` set, but on receipt of a registration response (see [`RSH3c2`](#RSH3c2) ) or a registration-sync response (see [`RSH3d3b`](#RSH3d3b), [`RSH3a2a3`](#RSH3a2a3)) the registered device has a non-empty `clientId`, then the `LocalDevice` `clientId` is set with that `clientId`. (Non-normative: this relies on the sync response returning the updated `DeviceDetails`, which the REST endpoint provides for both the PATCH and legacy PUT forms.)
   - `(RSH8g)` Whenever any change arises of the push transport details for local device (eg an FCM registration token update triggered by the platform), a `GotPushDeviceDetails` event is sent to [the state machine](#RSH3).
   - `(RSH8h)` If an attempt to obtain the push transport details for local device (eg an FCM registration token) fails, a `GettingPushDeviceDetailsFailed` event containing the indicated error is sent to [the state machine](#RSH3).
   - `(RSH8i)` Each time the library is instantiated, if the LocalDevice has push device details (eg an APNS deviceToken), and if the platform supports it, it must verify the validity of those details (eg by requesting a token from the platform and comparing that with the already-known token). If as a result there are updated details, then an update to the Ably server is triggered by sending a `GotPushDeviceDetails` event to [the state machine](#RSH3).
   - `(RSH8j)` This clause has been replaced by [`RSH8a1`](#RSH8a1).
+  - `(RSH8l)` In platforms supporting multiple push transport token variants (eg the APNs `default`, `location` and `pushToStart` tokens), the local device's push transport details comprise the set of registered token variants, represented in the `recipient` per [`PCP3a`](#PCP3a):
+    - `(RSH8l1)` Each registered variant is a `recipient`-related attribute for the purposes of [`RSH8a`](#RSH8a): all registered variants are persisted, and loaded as part of the `LocalDevice` state.
+    - `(RSH8l2)` The registration, update or removal of any single variant constitutes a change of the push transport details for the local device: [`RSH8g`](#RSH8g) applies, and the ensuing sync (per [`RSH3d3`](#RSH3d3)) carries the complete updated `recipient` in its changed fields, ie including the unchanged variants.
+    - `(RSH8l3)` The verification described in [`RSH8i`](#RSH8i) applies to each registered variant independently, to the extent that the platform supports verifying tokens of that variant.
+    - `(RSH8l4)` (Non-normative:) Per-instance tokens — such as the per-activity update tokens of iOS Live Activities — are deliberately not represented in the `LocalDevice`: their lifetime is that of an activity instance, not the device. Live Activity updates are instead delivered over APNs broadcast channels (see [`RSH1e`](#RSH1e)), for which only the device-scoped `pushToStart` token needs registering.
 
 ## Types
 
@@ -2058,7 +2067,15 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(PCP1)` details of the push registration for a given device, consisting of the following attributes:
 - `(PCP2)` errorReason ErrorInfo - (optional) any error information associated with the registration
 - `(PCP3)` recipient - a map of string key/value pairs containing details of the push transport and address
+  - `(PCP3a)` For an APNs recipient, in addition to (or instead of) the `deviceToken` attribute, the recipient may contain an `apnsDeviceTokens` attribute: a map from token slot name to device token, carrying the device's APNs token of each registered variant. The well-known slot names are `default` (equivalent to the `deviceToken` attribute; if both are present they must carry the same value), `location` (a location push token), and `pushToStart` (a Live Activity push-to-start token). Slot names are extensible: libraries must treat slot names opaquely, preserving unknown slots when serializing, persisting or syncing the recipient. (Note: this makes the recipient a nested structure, notwithstanding the "string key/value pairs" description in [`PCP3`](#PCP3).)
 - `(PCP4)` state - the state of the push registration, one of `Active`, `Failing`, `Failed`
+
+#### PushDeviceToken
+
+- `(PDT1)` A `PushDeviceToken` represents a single push transport token being delivered to the library by the application (see [`RSH2f`](#RSH2f)), consisting of the following attributes:
+- `(PDT2)` transportType string - the push transport the token belongs to, one of `fcm`, `apns` or `web`
+- `(PDT3)` token string - the token value
+- `(PDT4)` apnsTokenType string? - for `apns` tokens only: the token slot the token belongs to, per [`PCP3a`](#PCP3a); when absent, defaults to `default`
 
 ### Client library introspection {#introspection}
 
@@ -2792,6 +2809,14 @@ Each type, method, and attribute is labelled with the name of one or more clause
       deactivate(
         deregisterCallback: ((ErrorInfo?, deviceId: String?) -> io)?
       ) => io ErrorInfo? // RSH2b
+      // Only on platforms where changes to the push transport details are
+      // delivered to the application rather than to the library:
+      updateToken(token: PushDeviceToken) => io // RSH2f
+
+    class PushDeviceToken: // PDT1
+      transportType: String // PDT2
+      token: String // PDT3
+      apnsTokenType: String? // PDT4
 
     class PushAdmin: // RSH1
       publish(recipient: JsonObject, data: JsonObject) => io // RSH1a
