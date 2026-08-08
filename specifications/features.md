@@ -1166,7 +1166,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 ### Push device authentication
 
 - `(RSH6)` In platforms that support receiving push notifications, and have undergone push registration, are capable of authenticating themselves to the Ably server in order that certain push admin operations can be authorized.
-  - `(RSH6a)` If a device has completed activation and has a `deviceIdentityToken` then push device authentication is performed for a request by adding an `X-Ably-DeviceToken` request header whose value is the `deviceIdentityToken`. This header has always been `X-Ably-DeviceToken`, but has previously been mistakenly documented as `X-Ably-DeviceIdentityToken` in the hope of renaming it to avoid confusion with APNs device token. It was never renamed.
+  - `(RSH6a)` If a device has completed activation and has a `deviceIdentityToken` then push device authentication is performed for a request by adding an `X-Ably-DeviceToken` request header whose value is the `deviceIdentityToken` — the raw token value, not base64-encoded. (Non-normative: some libraries have historically base64-encoded the header value, which the service tolerates, but this is not conformant.) This header has always been `X-Ably-DeviceToken`, but has previously been mistakenly documented as `X-Ably-DeviceIdentityToken` in the hope of renaming it to avoid confusion with APNs device token. It was never renamed.
   - `(RSH6b)` If a device has not completed but has a `deviceSecret` then push device authentication is performed for a request by adding an `X-Ably-DeviceSecret` request header whose value is the `deviceSecret`.
 
 ### Push channels
