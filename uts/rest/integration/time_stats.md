@@ -131,3 +131,88 @@ result = AWAIT client.stats(
 ASSERT result IS PaginatedResult
 ASSERT result.items.length <= 5
 ```
+
+---
+
+## RSC6 - stats() returns the flattened entries API
+
+**Test ID**: `rest/integration/RSC6/stats-flattened-entries-2`
+
+**Spec requirement:** RSC6, TS12 - a `Stats` datapoint exposes the flattened
+API: `intervalId` (TS12a), `unit` (TS12c), `entries` (TS12r), `schema` (TS12s),
+and `appId` (TS12t). `entries` is a flat map keyed by dotted metric path.
+
+Known statistics are injected via the sandbox stats-injection endpoint (G3),
+then read back and asserted against the flattened shape. This guards against a
+client silently falling back to the deprecated deeply-nested Stats structure:
+such a client would deserialize the response into empty/absent `entries` and
+fail these assertions.
+
+> **Note on the injection shape.** The `POST /stats` body uses the *ingestion*
+> form — deeply nested per-type (`inbound.realtime.messages.count`, ...) — which
+> is distinct from the flattened `entries` form returned by a read. On read-back
+> the ingested `inbound`/`outbound`/`all` groups appear under a `messages.`
+> prefix, e.g. ingested `inbound.realtime.messages.count` is read back as the
+> entry key `messages.inbound.realtime.messages.count`. The `X-Ably-Version: 6`
+> header is required both to inject and, on read, to receive the flattened API.
+
+### Setup
+```pseudo
+# A dedicated app is not required: the chosen interval is in the previous year,
+# so it is complete (never "in progress") and untouched by other tests' traffic.
+year = current_utc_year() - 1
+
+# Ingestion-shape fixtures for three consecutive minute intervals.
+fixtures = [
+  { intervalId: "{year}-02-03:15:03",
+    inbound:  { realtime: { messages: { count: 50, data: 5000 } } },
+    outbound: { realtime: { messages: { count: 20, data: 2000 } } } },
+  { intervalId: "{year}-02-03:15:04",
+    inbound:  { realtime: { messages: { count: 60, data: 6000 } } },
+    outbound: { realtime: { messages: { count: 10, data: 1000 } } } },
+  { intervalId: "{year}-02-03:15:05",
+    inbound:  { realtime: { messages: { count: 70, data: 7000 } } },
+    outbound: { realtime: { messages: { count: 40, data: 4000 } } } },
+]
+
+# Inject via the authenticated stats endpoint (G3).
+POST https://sandbox.realtime.ably-nonprod.net/stats
+  WITH Authorization: Basic {api_key}
+  WITH header X-Ably-Version: 6
+  WITH body from fixtures
+
+client = Rest(options: ClientOptions(
+  key: api_key,
+  endpoint: "nonprod:sandbox"
+))
+```
+
+### Test Steps
+```pseudo
+# Injected stats can lag briefly; poll until all three intervals appear
+# (deadline ~30s).
+REPEAT UNTIL result.items.length == 3 OR deadline_reached:
+  result = AWAIT client.stats(
+    start: "{year}-02-03:15:03",
+    end: "{year}-02-03:15:05",
+    direction: "forwards"
+  )
+```
+
+### Assertions
+```pseudo
+ASSERT result.items.length == 3
+
+FOR i, item IN result.items:
+  ASSERT item.intervalId == "{year}-02-03:15:0{i + 3}"
+  ASSERT item.unit == "minute"                    # TS12c
+  ASSERT item.schema IS String                    # TS12s
+  ASSERT item.appId IS String                     # TS12t
+  ASSERT item.intervalTime() IS DateTime          # TS12p (parsed from intervalId)
+
+# entries (TS12r) is a flat dotted-path map; sum across the three intervals.
+inbound  = SUM(item.entries["messages.inbound.realtime.messages.count"]  FOR item IN result.items)
+outbound = SUM(item.entries["messages.outbound.realtime.messages.count"] FOR item IN result.items)
+ASSERT inbound  == 50 + 60 + 70
+ASSERT outbound == 20 + 10 + 40
+```
