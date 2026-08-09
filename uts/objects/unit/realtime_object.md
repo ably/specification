@@ -188,6 +188,143 @@ ASSERT root.path == []
 
 ---
 
+## RTO23c1 - get() fails when channel enters DETACHED during sync wait
+
+**Test ID**: `objects/unit/RTO23c1/fails-on-channel-detached-0`
+
+**Spec requirement:** If the channel enters `DETACHED`/`SUSPENDED`/`FAILED` while `get` waits for the
+sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with
+`code` `92008` and `statusCode` `400`.
+
+This is the get()-side counterpart of RTO20e1 (which covers the same wait-failure for
+`publishAndApply`). The channel is detached **client-side** while `get` waits for SYNCED — an
+unsolicited server DETACHED would trigger an immediate re-attach (RTL13a) in a compliant SDK, so the
+channel would never observably stay DETACHED. A solicited `channel.detach()` does not trigger RTL13a;
+the shared mock answers the outbound DETACH with DETACHED.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a fresh get() must wait (RTO23c)
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+get_future = channel.object.get()
+
+# While still SYNCING the get() cannot complete — it parks in the RTO23c wait for SYNCED
+ASSERT get_future IS NOT complete
+
+# A client-side detach then moves the channel to DETACHED
+AWAIT channel.detach()
+
+AWAIT get_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO23c1 - get() fails when channel enters SUSPENDED during sync wait
+
+**Test ID**: `objects/unit/RTO23c1/fails-on-channel-suspended-0`
+
+**Spec requirement:** If the channel enters `DETACHED`/`SUSPENDED`/`FAILED` while `get` waits for the
+sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with
+`code` `92008` and `statusCode` `400`.
+
+SUSPENDED is a connection-level state that a channel-level mock cannot drive, so — exactly as the RTO27
+tests do — this case drives the RealtimeObject's internal channel-state handler directly via
+`channel.object.processChannelState(SUSPENDED)` (ably-js `RealtimeObject.actOnChannelState`, ably-java
+`DefaultRealtimeObject.handleStateChange(state, false)`). RTO27b retains objects *data* on SUSPENDED,
+but RTO23c1 must still fail any in-flight `get` sync wait.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a fresh get() must wait (RTO23c)
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+get_future = channel.object.get()
+ASSERT get_future IS NOT complete
+
+# The mock cannot drive SUSPENDED; drive the channel-state handler directly (as RTO27 does)
+channel.object.processChannelState(SUSPENDED)
+
+AWAIT get_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO23c1 - get() fails with cause when channel enters FAILED during sync wait
+
+**Test ID**: `objects/unit/RTO23c1/fails-on-channel-failed-0`
+
+**Spec requirement:** If the channel enters `DETACHED`/`SUSPENDED`/`FAILED` while `get` waits for the
+sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with
+`code` `92008`, `statusCode` `400`, and `cause` set to the `RealtimeChannel.errorReason` when it is set.
+
+Mirrors the RTO20e1 FAILED case (an injected channel ERROR moves the channel to FAILED while `get`
+waits for SYNCED) and additionally asserts the `cause`: RTO23c1 requires `cause` to be set to the
+channel's `errorReason` when present, which here is the injected FAILED error.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a fresh get() must wait (RTO23c)
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+get_future = channel.object.get()
+ASSERT get_future IS NOT complete
+
+# A channel ERROR moves the channel to FAILED and sets its errorReason
+mock_ws.send_to_client(ProtocolMessage(
+  action: ERROR, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel failed" }
+))
+
+AWAIT get_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+# RTO23c1 - cause is set to the channel's errorReason (the injected FAILED error)
+ASSERT error.cause.code == 90000
+```
+
+---
+
 ## RTO15 - publish sends OBJECT ProtocolMessage
 
 **Test ID**: `objects/unit/RTO15/publish-sends-object-pm-0`

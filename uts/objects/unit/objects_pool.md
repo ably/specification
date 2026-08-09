@@ -206,6 +206,74 @@ ASSERT "counter:new@1000" IN pool
 
 ---
 
+## RTO5a5 - OBJECT_SYNC with no channelSerial is a single-message sync
+
+**Test ID**: `objects/unit/RTO5a5/absent-channel-serial-0`
+
+**Spec requirement:** An `OBJECT_SYNC` may be sent with no `channelSerial` attribute. In this case the
+sync data is entirely contained within the single `ProtocolMessage`: the objects are applied and the
+sync sequence completes (`SYNCED`) without waiting for a cursor-empty `channelSerial` (RTO5a4). This is
+the baseline that the RTO5a6 malformed-channelSerial case defers to.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+```
+
+### Test Steps
+```pseudo
+# No channelSerial: the whole sync is contained in this one message (RTO5a5)
+pool.processObjectSync(build_object_sync_message("test", null, [
+  build_object_state("counter:new@1000", {"aaa": "t:0"}, { counter: { count: 99 } })
+]))
+```
+
+### Assertions
+```pseudo
+ASSERT pool.syncState == SYNCED
+ASSERT "counter:new@1000" IN pool
+```
+
+---
+
+## RTO5a6 - Malformed channelSerial is treated as absent
+
+**Test ID**: `objects/unit/RTO5a6/malformed-channel-serial-treated-as-absent-0`
+
+**Spec requirement:** If the `channelSerial` is present but malformed --- it does not contain the `:`
+separator required by RTO5a1 and so cannot be split into a `<sequence id>` and a `<cursor value>` ---
+the `OBJECT_SYNC` must be handled as if the `channelSerial` were absent per RTO5a5 (data applied, sync
+completes `SYNCED`), and a warning should be logged. This must stay distinct from the RTO5a5 baseline.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+```
+
+### Test Steps
+```pseudo
+# "malformedserialnocolon" has no ':' separator, so it cannot be parsed per RTO5a1; RTO5a6
+# requires handling it as if the channelSerial were absent (RTO5a5).
+pool.processObjectSync(build_object_sync_message("test", "malformedserialnocolon", [
+  build_object_state("counter:new@1000", {"aaa": "t:0"}, { counter: { count: 99 } })
+]))
+```
+
+### Assertions
+```pseudo
+# Treated as absent (RTO5a5): the message was applied and the sync ended.
+ASSERT pool.syncState == SYNCED
+ASSERT "counter:new@1000" IN pool
+```
+
+---
+
 ## RTO5f2a - Partial object state merge for maps
 
 **Test ID**: `objects/unit/RTO5f2a/partial-map-merge-0`
