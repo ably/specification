@@ -119,6 +119,70 @@ ASSERT updates[0].objectMessage IS null
 
 ---
 
+## RTO4b2a - ATTACHED without HAS_OBJECTS on an already-empty root emits no update
+
+**Test ID**: `objects/unit/RTO4b2a/reset-of-empty-root-emits-no-update-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO4b1 | Remove all objects except root |
+| RTO4b2a | If no keys were removed (root already empty), the update has no changed keys and is a no-op (RTLM22c/RTLO4b4b), so nothing is emitted |
+| RTLM22c | An empty map diff collapses to a no-op |
+
+Complements `objects/unit/RTO4b/attached-no-objects-synced-0` (which resets a populated root and
+emits a `removed` update). Here the root `InternalLiveMap` is already empty, so the RTO4b2 reset
+removes no keys: the resulting `LiveMapUpdate` has no changed keys and, per RTLM22c/RTLO4b4b, is a
+no-op that must not be delivered to `root` subscribers.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool["counter:abc@1000"] = InternalLiveCounter(objectId: "counter:abc@1000")
+# root is already empty (zero-value InternalLiveMap per RTLM4c)
+pool["root"].data = {}
+```
+
+### Test Steps
+```pseudo
+updates = []
+pool["root"].subscribe((update) => updates.append(update))
+
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED,
+  channel: "test",
+  flags: 0
+))
+```
+
+### Assertions
+```pseudo
+ASSERT pool.syncState == SYNCED
+ASSERT "counter:abc@1000" NOT IN pool     # RTO4b1: non-root objects are still removed
+ASSERT "root" IN pool
+ASSERT pool["root"].data == {}
+# RTO4b2a: no keys were removed, so the empty update collapses to a no-op and is not delivered
+ASSERT updates.length == 0
+```
+
+### Liveness control
+```pseudo
+# Prove the subscription wiring is live: a reset that DOES remove a key still emits, so the
+# updates.length == 0 above reflects the empty-root collapse and not a dead subscription. This
+# mirrors `objects/unit/RTO4b/attached-no-objects-synced-0`. (Emission at the ObjectsPool tier is
+# synchronous — see that case — so no polling is required.)
+pool2 = ObjectsPool()
+pool2["root"].data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
+}
+control = []
+pool2["root"].subscribe((update) => control.append(update))
+pool2.processAttached(ProtocolMessage(action: ATTACHED, channel: "test", flags: 0))
+ASSERT control.length >= 1
+ASSERT control[0].update == { "name": "removed" }
+```
+
+---
+
 ## RTO5 - OBJECT_SYNC complete sequence
 
 **Test ID**: `objects/unit/RTO5/sync-complete-sequence-0`

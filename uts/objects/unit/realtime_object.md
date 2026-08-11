@@ -502,6 +502,61 @@ ASSERT root.get("score").value() == 100
 
 ---
 
+## RTO20d4 - Empty synthetic list skips the RTO20e sync wait
+
+**Test ID**: `objects/unit/RTO20d4/empty-synthetic-list-skips-sync-wait-0`
+
+**Spec requirement:** When every serial from the `PublishResult` is `null` and thus skipped per RTO20d1, the resulting list of synthetic `ObjectMessages` is empty; there is nothing to apply locally, so `publishAndApply` completes successfully without performing the RTO20e wait. Positive-assertion design: the channel is deliberately moved to `SYNCING` (where a normal write would park in the RTO20e wait, per the RTO20e case) and no sync-completing message is ever delivered — so the operation future resolving at all proves the RTO20e wait was skipped. Nothing is applied locally, so the local value is unchanged.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message("test", "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == OBJECT:
+      mock_ws.send_to_client(build_ack_message(msg.msgSerial, [null]))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+root = AWAIT channel.object.get()
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a normal publishAndApply would park in
+# the RTO20e wait for SYNCED (cf. the RTO20e waits-for-synced case).
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+# The OBJECT publish is ACKed with an all-null serial list, so per RTO20d1 every synthetic
+# ObjectMessage is skipped and the synthetic list is empty. No sync-completing message is
+# ever sent: if the RTO20e wait were performed this future would never resolve.
+AWAIT root.get("score").increment(10)
+```
+
+### Assertions
+```pseudo
+# Resolution despite the channel never reaching SYNCED proves the RTO20e wait was skipped.
+ASSERT root.get("score").value() == 100
+```
+
+---
+
 ## RTO20e - publishAndApply waits for SYNCED during SYNCING
 
 **Test ID**: `objects/unit/RTO20e/waits-for-synced-0`
