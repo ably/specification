@@ -1242,10 +1242,10 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(TM3)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `Message`-like object (or array of such objects), and optionally a `channelOptions`, and return a `Message` (or array of such `Messages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves.
 - `(TM6)` The size of the `Message` for [TO3l8](#TO3l8) is calculated as follows:
   - `(TM6a)` The size is the sum of the sizes of the `name`, `data`, `clientId`, and `extras` properties
-  - `(TM6b)` The size of an `Object` or `Array` `data` property is its string length after being JSON-stringified
+  - `(TM6b)` The size of an `Object` or `Array` `data` property is its string length (the number of UTF-16 code units) after being JSON-stringified
   - `(TM6c)` The size of a `binary` `data` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
-  - `(TM6f)` The size of a `string` `data` property is its length
-  - `(TM6d)` The size of the `extras` property is the string length of its JSON representation
+  - `(TM6f)` The size of a `string` `data` property is its UTF-8 byte length
+  - `(TM6d)` The size of the `extras` property is the string length (the number of UTF-16 code units) of its JSON representation
   - `(TM6e)` The size of a `null` or omitted property is zero
 - `(TM7)` The SDK may expose a series of functions (static factory methods on a Message or otherwise, wherever is language idiomatic; for some languages this might just be types that can be used for type assertions, etc), that take a deserialized `JsonObject`, one of the aggregated summaries for a particular annotation type (that is, a value from the `TM2q` `summary` `Dict`), and outputs a strongly-typed summary entry, for ease of use by the end user (particularly in languages where manipulating plain objects is difficult).
   - `(TM7a)` The SDK must not try to do this conversion automatically (either by parsing the annotation type or dynamically detecting the structure). This is so that, when the server adds new annotation types that the SDK does not yet know about, when we later add support for those new types to the SDK, that does not result in a a breaking API change for the SDK.
@@ -1314,8 +1314,8 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OM3a)` The size is the sum of the sizes of the `clientId`, `operation`, `object`, and `extras` properties
   - `(OM3b)` The size of the `operation` property is calculated per [OOP4](#OOP4)
   - `(OM3c)` The size of the `object` property is calculated per [OST3](#OST3)
-  - `(OM3d)` The size of the `extras` property is the string length of its JSON representation
-  - `(OM3f)` The size of the `clientId` property is its string length
+  - `(OM3d)` The size of the `extras` property is the string length (the number of UTF-16 code units) of its JSON representation
+  - `(OM3f)` The size of the `clientId` property is its UTF-8 byte length
   - `(OM3e)` The size of a `null` or omitted property is zero
 - `(OM4)` For `ObjectMessage` encoding see `ObjectData` [OD4](#OD4) encoding
 - `(OM5)` For `ObjectMessage` decoding see `ObjectData` [OD5](#OD5) decoding
@@ -1396,7 +1396,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(MCR2b)` `entries` `Dict<String, ObjectsMapEntry>` - the map entries, indexed by key
 - `(MCR3)` The size of the `MapCreate` is calculated as follows:
   - `(MCR3a)` The size is the sum of the sizes of all map entries in `entries` property
-    - `(MCR3a1)` Includes the size of the `String` key for the map entry, calculated as its length
+    - `(MCR3a1)` Includes the size of the `String` key for the map entry, calculated as its UTF-8 byte length
     - `(MCR3a2)` Includes the size of the `ObjectsMapEntry` object for the map entry, calculated per [OME3](#OME3)
   - `(MCR3b)` The size of a `null` or omitted property is zero
 
@@ -1409,7 +1409,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(MST3)` The size of the `MapSet` is calculated as follows:
   - `(MST3a)` The size is the sum of the sizes of the `key` and `value` properties
   - `(MST3b)` The size of the `value` property is calculated per [OD3](#OD3)
-  - `(MST3c)` The size of the `key` property is its string length
+  - `(MST3c)` The size of the `key` property is its UTF-8 byte length
   - `(MST3d)` The size of a `null` or omitted property is zero
 
 #### MapRemove
@@ -1418,7 +1418,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(MRM2)` The attributes available in a `MapRemove` are:
   - `(MRM2a)` `key` string - the key to remove
 - `(MRM3)` The size of the `MapRemove` is calculated as follows:
-  - `(MRM3a)` The size is the string length of the `key` property
+  - `(MRM3a)` The size is the UTF-8 byte length of the `key` property
   - `(MRM3b)` The size of a `null` or omitted property is zero
 
 #### CounterCreate
@@ -1495,7 +1495,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OMP3c)` `clearTimeserial` string - the [serial](#OM2h) value of the last `MAP_CLEAR` operation applied to the map. If no `MAP_CLEAR` has been applied, this field is omitted
 - `(OMP4)` The size of the `ObjectsMap` is calculated as follows:
   - `(OMP4a)` The size is the sum of the sizes of all map entries in `entries` property
-    - `(OMP4a1)` Includes the size of the `String` key for the map entry, calculated as its length
+    - `(OMP4a1)` Includes the size of the `String` key for the map entry, calculated as its UTF-8 byte length
     - `(OMP4a2)` Includes the size of the `ObjectsMapEntry` object for the map entry, calculated per [OME3](#OME3)
   - `(OMP4b)` The size of a `null` or omitted property is zero
 
@@ -1537,8 +1537,8 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OD3b)` If set, the size of a `boolean` property is 1
   - `(OD3c)` If set, the size of a `bytes` property is its size in bytes (of the actual binary, not the base64 representation, regardless of whether the binary protocol is in use)
   - `(OD3d)` If set, the size of a `number` property is 8
-  - `(OD3e)` If set, the size of a `string` property is its length
-  - `(OD3g)` If set, the size of a `json` property is the byte length of its JSON-encoded string representation
+  - `(OD3e)` If set, the size of a `string` property is its UTF-8 byte length
+  - `(OD3g)` If set, the size of a `json` property is the UTF-8 byte length of its JSON-encoded string representation
   - `(OD3f)` The size of a `null` or omitted property is zero
 - `(OD4)` `ObjectData` encoding:
   - `(OD4a)` Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
@@ -1956,7 +1956,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
       - `(TO3l8c)` This clause has been replaced by [TM6c](#TM6c)
       - `(TO3l8d)` This clause has been replaced by [TM6d](#TM6d)
       - `(TO3l8e)` This clause has been replaced by [TM6e](#TM6e)
-      - `(TO3l8f)` The size is defined as the sum of all message sizes being published, calculated based on [TM6](#TM6), [TP5](#TP5) and [OM3](#OM3)
+      - `(TO3l8f)` The size is defined as the sum of all message sizes being published, calculated based on [TM6](#TM6), [TP5](#TP5) and [OM3](#OM3). Unless a clause explicitly states otherwise, string sizes in message-size accounting are measured as their UTF-8 byte length (this includes the `json` `ObjectData` payload, [OD3g](#OD3g)). The only exceptions are the `extras` property ([TM6d](#TM6d)/[OM3d](#OM3d)) and an `Object` or `Array` `data` property ([TM6b](#TM6b)), whose JSON representations are instead measured by string length (the number of UTF-16 code units), matching the service's published accounting for `extras`
     - `(TO3l9)` `maxFrameSize` integer - default 524288 (512KiB). The maximum size of a single POST body or [WebSocket](https://ably.com/topic/websockets) frame. This is mostly only relevant for \`RestClient#request\` (e.g. for batch publishes), since publishes will hit the `maxMessageSize` limit before this
     - `(TO3l10)` `fallbackRetryTimeout` integer - default 600000 (10 minutes). (After a failed request to the default endpoint, followed by a successful request to a fallback endpoint), the period in milliseconds before HTTP requests are retried against the default endpoint
   - `(TO3o)` `plugins` `Dict<PluginType:Plugin>` A map between a `PluginType` and a `Plugin` object. The client library might downcast a `Plugin` to particular plugin type.
