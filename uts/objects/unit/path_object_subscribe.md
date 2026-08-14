@@ -466,7 +466,7 @@ mock_ws.send_to_client(build_object_message("test", [
 mock_ws.send_to_client(build_object_message("test", [
   build_counter_inc("counter:new@2000", 10, "100", "remote")
 ]))
-poll_until(events.length >= 1, timeout: 5s)
+poll_until(events.length >= 2, timeout: 5s)
 ```
 
 ### Assertions
@@ -477,6 +477,13 @@ FOR event IN events:
   IF event.object.path() == "score":
     found_new = true
 ASSERT found_new == true
+// The second dispatch is the increment on the NEW counter — this is what proves the subscription
+// followed the path to the replacement object rather than staying bound to the old identity
+// (the MAP_SET dispatch alone would already satisfy found_new above)
+ASSERT events.length == 2
+ASSERT events[1].object.path() == "score"
+ASSERT events[1].message.operation.action == "COUNTER_INC"
+ASSERT events[1].message.operation.objectId == "counter:new@2000"
 ```
 
 ---

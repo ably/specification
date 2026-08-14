@@ -37,9 +37,13 @@ objectId = generateObjectId(
 ASSERT objectId STARTS WITH "counter:"
 ASSERT objectId CONTAINS "@1700000000000"
 parts = objectId.split(":")
+# assert the shape before indexing, so a malformed id fails the test rather than
+# trapping/throwing on an out-of-range index (relevant for statically-typed SDKs)
+ASSERT parts.length == 2
 type_part = parts[0]
 rest = parts[1]
 hash_and_ts = rest.split("@")
+ASSERT hash_and_ts.length == 2
 hash_part = hash_and_ts[0]
 ts_part = hash_and_ts[1]
 ASSERT type_part == "counter"
@@ -148,7 +152,13 @@ objectId = generateObjectId(
   nonce: "test-nonce-12345678",
   timestamp: 1700000000000
 )
-hash_part = objectId.split(":")[1].split("@")[0]
+parts = objectId.split(":")
+# assert the shape before indexing, so a malformed id fails the test rather than
+# trapping/throwing on an out-of-range index (relevant for statically-typed SDKs)
+ASSERT parts.length == 2
+hash_and_ts = parts[1].split("@")
+ASSERT hash_and_ts.length == 2
+hash_part = hash_and_ts[0]
 ```
 
 ### Assertions
