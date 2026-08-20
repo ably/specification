@@ -45,7 +45,7 @@ AFTER EACH TEST:
     IF client.connection.state IN [connected, connecting, disconnected]:
       client.connection.close()
       AWAIT_STATE client.connection.state == ConnectionState.closed
-        WITH timeout: 10 seconds
+        WITH timeout: 15 seconds
   IF session IS NOT null:
     session.close()
 ```

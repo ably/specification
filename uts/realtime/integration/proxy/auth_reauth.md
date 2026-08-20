@@ -133,14 +133,24 @@ non_connected_changes = state_changes.filter(
 )
 ASSERT non_connected_changes.length == 0
 
-# Proxy log shows the SDK sent an AUTH frame (action 17) from client to server
-log = AWAIT session.getLog()
-client_auth_frames = log.filter(
-  e => e.type == "ws_frame"
-    AND e.direction == "client_to_server"
-    AND (e.message.action == 17 OR e.message.action == "AUTH")
-    AND e.message.auth IS NOT null
+# Proxy log shows the SDK sent an AUTH frame (action 17) from client to server.
+# Polled: the AUTH frame is emitted after the auth callback returns and any token
+# round-trip completes, so it may reach the proxy log after the callback-count
+# check above has already passed — a single snapshot can observe 0 frames.
+client_auth_frames = poll_until(
+  condition: FUNCTION() =>
+    log = AWAIT session.getLog()
+    frames = log.filter(
+      e => e.type == "ws_frame"
+        AND e.direction == "client_to_server"
+        AND (e.message.action == 17 OR e.message.action == "AUTH")
+        AND e.message.auth IS NOT null
+    )
+    RETURN frames IF frames.length >= 1 ELSE null,
+  interval: 500ms,
+  timeout: 15s
 )
+
 ASSERT client_auth_frames.length >= 1
 ```
 
@@ -149,7 +159,7 @@ ASSERT client_auth_frames.length >= 1
 ```pseudo
 client.connection.close()
 AWAIT_STATE client.connection.state == ConnectionState.closed
-  WITH timeout: 10s
+  WITH timeout: 15s
 session.close()
 ```
 
@@ -185,7 +195,7 @@ AFTER EACH TEST:
   IF client IS NOT null AND client.connection.state IN [connected, connecting, disconnected]:
     client.connection.close()
     AWAIT_STATE client.connection.state == ConnectionState.closed
-      WITH timeout: 10s
+      WITH timeout: 15s
   IF session IS NOT null:
     session.close()
 ```
