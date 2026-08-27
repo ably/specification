@@ -147,7 +147,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO4b)` If the `HAS_OBJECTS` flag is 0 or there is no `flags` field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
     - `(RTO4b1)` All objects except the one with id `root` must be removed from the internal `ObjectsPool`
     - `(RTO4b2)` The data for the `InternalLiveMap` with id `root` must be set to the value described in [RTLM4c](#RTLM4c). Note that the client SDK must not create a new `InternalLiveMap` instance with id `root`; it must only clear the internal data of the existing `InternalLiveMap` with id `root`
-      - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `InternalLiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`
+      - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `InternalLiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`. Only the keys of non-tombstoned entries are reported as `removed`, consistent with the non-tombstoned-visibility rule in [RTLM22b](#RTLM22b): entries that were already tombstoned were not part of the user-visible map data, so their removal is not reported. If no keys were removed (that is, the `root` map was already empty), the computed `LiveMapUpdate.update` contains no changed keys and is therefore a no-op per [RTLM22c](#RTLM22c) ([RTLO4b4b](#RTLO4b4b)), so no update is emitted.
     - `(RTO4b3)` The `SyncObjectsPool` must be cleared
     - `(RTO4b5)` This clause has been replaced by [RTO4d](#RTO4d)
     - `(RTO4b4)` Perform the actions for objects sync completion as described in [RTO5c](#RTO5c)
@@ -529,7 +529,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLC14a1)` `previousData` `Number` - the previous `data` value
     - `(RTLC14a2)` `newData` `Number` - the new `data` value
   - `(RTLC14b)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `newData - previousData`
-  - `(RTLC14c)` As an exception to [RTLC14b](#RTLC14b): if `newData` equals `previousData` (that is, the computed delta is `0`), the counter data did not change, so instead of returning an update return a `LiveCounterUpdate` marked as a no-op per [RTLO4b4b](#RTLO4b4b)
+  - `(RTLC14c)` As an exception to [RTLC14b](#RTLC14b): if `newData` equals `previousData` (that is, the computed delta is `0`), the counter data did not change, so instead of returning an update return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true` ([RTLO4b4b](#RTLO4b4b)), as in [RTLC9h](#RTLC9h). This exception must not be applied when the diff is computed for a tombstone per [RTLO4e5](#RTLO4e5): the resulting tombstone update ([RTLO4b4e](#RTLO4b4e)) must not be marked as a no-op, so that it is still delivered — driving the [RTLO4b4c3c](#RTLO4b4c3c) listener teardown — even when the counter data was already `0`.
 
 ### InternalLiveMap
 
@@ -805,7 +805,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM22b1)` For each key that exists in the non-tombstoned entries of `previousData` but does not exist in the non-tombstoned entries of `newData`, add the key to `LiveMapUpdate.update` with the value `removed`
     - `(RTLM22b2)` For each key that exists in the non-tombstoned entries of `newData` but does not exist in the non-tombstoned entries of `previousData`, add the key to `LiveMapUpdate.update` with the value `updated`
     - `(RTLM22b3)` For each key that exists in the non-tombstoned entries of both `previousData` and `newData`, perform a deep comparison of the `data` attributes from `previousData` and `newData`. If the data values differ, add the key to `LiveMapUpdate.update` with the value `updated`
-  - `(RTLM22c)` As an exception to [RTLM22b](#RTLM22b): if the `LiveMapUpdate.update` computed in [RTLM22b](#RTLM22b) contains no changed keys (it is empty), no map key actually changed, so instead of returning an update return a `LiveMapUpdate` marked as a no-op per [RTLO4b4b](#RTLO4b4b)
+  - `(RTLM22c)` As an exception to [RTLM22b](#RTLM22b): if the `LiveMapUpdate.update` computed in [RTLM22b](#RTLM22b) contains no changed keys (it is empty), no map key actually changed, so instead of returning an update return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true` ([RTLO4b4b](#RTLO4b4b)), as in [RTLM16b](#RTLM16b). This exception must not be applied when the diff is computed for a tombstone per [RTLO4e5](#RTLO4e5): the resulting tombstone update ([RTLO4b4e](#RTLO4b4e)) must not be marked as a no-op, so that it is still delivered — driving the [RTLO4b4c3c](#RTLO4b4c3c) listener teardown — even when the map already had no non-tombstoned entries.
 
 ### LiveCounter
 

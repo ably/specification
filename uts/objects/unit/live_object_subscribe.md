@@ -324,6 +324,86 @@ ASSERT updates_b.length == 1
 
 ---
 
+## RTLO4b4c3c - tombstone update on an already-zero counter still fires listeners then deregisters
+
+**Test ID**: `objects/unit/RTLO4b4c3c/tombstone-zero-value-counter-tears-down-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4b4c3c | If LiveObjectUpdate.tombstone is true, deregister all listeners |
+| RTLO4b4c3a | Listeners are called with the tombstone update itself before deregistration |
+| RTLC14c | The zero-delta tombstone update is NOT a no-op, so it is still delivered |
+
+Complements `objects/unit/RTLO4b4c3c/tombstone-deregisters-listeners-0` (which tombstones a
+populated counter). Here the counter is first driven down to `0`, so tombstoning it produces a
+zero-delta diff. Per the RTLC14c tombstone carve-out this update is NOT a no-op: contrast
+`objects/unit/RTLO4b4c1/noop-no-trigger-0`, where a genuine noop does not fire the listener at
+all. The listeners still fire with the tombstone update and are then deregistered per
+RTLO4b4c3c. Tested through Instance#subscribe (RTINS16); the tombstone is identified by
+`message.operation.action == "OBJECT_DELETE"`.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+updates_a = []
+updates_b = []
+control = []
+instance = root.get("score").instance()
+
+# Drive the counter (100 in the standard pool) down to 0 BEFORE registering the listeners under
+# test, so they observe only the tombstone. poll_until(value() == 0) is the quiescence barrier that
+# the increment has been applied before we subscribe, so the "-100" update is not seen by them.
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", -100, "40", "remote")
+]))
+poll_until(root.get("score").value() == 0, timeout: 5s)
+
+instance.subscribe((event) => updates_a.append(event))
+instance.subscribe((event) => updates_b.append(event))
+```
+
+### Test Steps
+```pseudo
+# OBJECT_DELETE tombstones the already-zero counter (zero-delta diff, RTLC14c → NOT a no-op)
+mock_ws.send_to_client(build_object_message("test", [
+  build_object_delete("counter:score@1000", "50", "remote")
+]))
+# Per the Negative-assertion quiescence pattern (helpers/standard_test_pool.md): AWAIT ALL involved
+# listeners on this dispatch before asserting either count.
+poll_until(updates_a.length >= 1, timeout: 5s)
+poll_until(updates_b.length >= 1, timeout: 5s)
+
+# Both listeners received the tombstone update even though the counter data did not change (0 → 0)
+ASSERT updates_a.length == 1
+ASSERT updates_a[0].message.operation.action == "OBJECT_DELETE"
+ASSERT updates_b.length == 1
+ASSERT updates_b[0].message.operation.action == "OBJECT_DELETE"
+
+# Prove deregistration. As in the populated teardown case, a tombstoned object ignores further ops
+# (RTLC7e), so neither the deregistered listeners nor a fresh listener on counter:score@1000 could
+# ever fire — use a SEPARATE LIVE object (map:profile@1000) as the quiescence barrier. Messages are
+# processed in order, so once the control fires, the follow-up "51" has also been processed.
+control_inst = root.get("profile").instance()
+control_inst.subscribe((event) => control.append(event))
+mock_ws.send_to_client(build_object_message("test", [
+  build_counter_inc("counter:score@1000", 3, "51", "remote")
+]))
+mock_ws.send_to_client(build_object_message("test", [
+  build_map_set("map:profile@1000", "quiescence_probe", { string: "x" }, "52", "remote")
+]))
+poll_until(control.length >= 1, timeout: 5s)
+```
+
+### Assertions
+```pseudo
+# Control delivered, so any still-registered original listener would also have run: the tombstone
+# deregistered them per RTLO4b4c3c.
+ASSERT updates_a.length == 1
+ASSERT updates_b.length == 1
+```
+
+---
+
 ## RTLO4b4d - InstanceSubscriptionEvent.message is populated from source ObjectMessage
 
 **Test ID**: `objects/unit/RTLO4b4d/update-has-object-message-0`
