@@ -217,6 +217,9 @@ mock_ws.send_to_client(ProtocolMessage(
 
 get_future = channel.object.get()
 
+# Let get() park in the RTO23c sync wait before the channel-state change (see process_pending_events in uts/README.md)
+process_pending_events()
+
 # While still SYNCING the get() cannot complete — it parks in the RTO23c wait for SYNCED
 ASSERT get_future IS NOT complete
 
@@ -262,6 +265,9 @@ mock_ws.send_to_client(ProtocolMessage(
 ))
 
 get_future = channel.object.get()
+
+# Let get() park in the RTO23c sync wait before the channel-state change (see process_pending_events in uts/README.md)
+process_pending_events()
 ASSERT get_future IS NOT complete
 
 # The mock cannot drive SUSPENDED; drive the channel-state handler directly (as RTO27 does)
@@ -304,6 +310,9 @@ mock_ws.send_to_client(ProtocolMessage(
 ))
 
 get_future = channel.object.get()
+
+# Let get() park in the RTO23c sync wait before the channel-state change (see process_pending_events in uts/README.md)
+process_pending_events()
 ASSERT get_future IS NOT complete
 
 # A channel ERROR moves the channel to FAILED and sets its errorReason
@@ -677,6 +686,9 @@ inc_future = root.get("score").increment(10)
 
 # The publish and its ACK complete against the mock; publishAndApply parks in the
 # RTO20e wait for SYNCED
+
+# Let it settle in the RTO20e wait before the channel-state change (see process_pending_events in uts/README.md)
+process_pending_events()
 ASSERT inc_future IS NOT complete
 
 # A client-side detach then moves the channel to DETACHED
@@ -720,6 +732,9 @@ inc_future = root.get("score").increment(10)
 
 # The publish and its ACK complete against the mock; publishAndApply parks in the
 # RTO20e wait for SYNCED
+
+# Let it settle in the RTO20e wait before the channel-state change (see process_pending_events in uts/README.md)
+process_pending_events()
 ASSERT inc_future IS NOT complete
 
 # Then the channel ERROR moves the channel to FAILED
