@@ -225,3 +225,5 @@ Tests that verify timeout behavior should use timer mocking where practical to a
    ```
 
 4. **Actual delays** - Last resort if mocking unavailable
+
+The fake-time guarantee, the hard-gate-vs-advisory latitude, and the authoring rule against asserting the absence of timer-driven behavior before `ADVANCE_TIME` are specified normatively in `mock_websocket.md` §"Fake-time semantics" and apply equally to HTTP timeout tests.
