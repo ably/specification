@@ -188,6 +188,143 @@ ASSERT root.path == []
 
 ---
 
+## RTO23c1 - get() fails when channel enters DETACHED during sync wait
+
+**Test ID**: `objects/unit/RTO23c1/fails-on-channel-detached-0`
+
+**Spec requirement:** If the channel enters `DETACHED`/`SUSPENDED`/`FAILED` while `get` waits for the
+sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with
+`code` `92008` and `statusCode` `400`.
+
+This is the get()-side counterpart of RTO20e1 (which covers the same wait-failure for
+`publishAndApply`). The channel is detached **client-side** while `get` waits for SYNCED — an
+unsolicited server DETACHED would trigger an immediate re-attach (RTL13a) in a compliant SDK, so the
+channel would never observably stay DETACHED. A solicited `channel.detach()` does not trigger RTL13a;
+the shared mock answers the outbound DETACH with DETACHED.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a fresh get() must wait (RTO23c)
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+get_future = channel.object.get()
+
+# While still SYNCING the get() cannot complete — it parks in the RTO23c wait for SYNCED
+ASSERT get_future IS NOT complete
+
+# A client-side detach then moves the channel to DETACHED
+AWAIT channel.detach()
+
+AWAIT get_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO23c1 - get() fails when channel enters SUSPENDED during sync wait
+
+**Test ID**: `objects/unit/RTO23c1/fails-on-channel-suspended-0`
+
+**Spec requirement:** If the channel enters `DETACHED`/`SUSPENDED`/`FAILED` while `get` waits for the
+sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with
+`code` `92008` and `statusCode` `400`.
+
+SUSPENDED is a connection-level state that a channel-level mock cannot drive, so — exactly as the RTO27
+tests do — this case drives the RealtimeObject's internal channel-state handler directly via
+`channel.object.processChannelState(SUSPENDED)` (ably-js `RealtimeObject.actOnChannelState`, ably-java
+`DefaultRealtimeObject.handleStateChange(state, false)`). RTO27b retains objects *data* on SUSPENDED,
+but RTO23c1 must still fail any in-flight `get` sync wait.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a fresh get() must wait (RTO23c)
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+get_future = channel.object.get()
+ASSERT get_future IS NOT complete
+
+# The mock cannot drive SUSPENDED; drive the channel-state handler directly (as RTO27 does)
+channel.object.processChannelState(SUSPENDED)
+
+AWAIT get_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+```
+
+---
+
+## RTO23c1 - get() fails with cause when channel enters FAILED during sync wait
+
+**Test ID**: `objects/unit/RTO23c1/fails-on-channel-failed-0`
+
+**Spec requirement:** If the channel enters `DETACHED`/`SUSPENDED`/`FAILED` while `get` waits for the
+sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with
+`code` `92008`, `statusCode` `400`, and `cause` set to the `RealtimeChannel.errorReason` when it is set.
+
+Mirrors the RTO20e1 FAILED case (an injected channel ERROR moves the channel to FAILED while `get`
+waits for SYNCED) and additionally asserts the `cause`: RTO23c1 requires `cause` to be set to the
+channel's `errorReason` when present, which here is the injected FAILED error.
+
+### Setup
+```pseudo
+{ client, channel, root, mock_ws } = AWAIT setup_synced_channel("test")
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a fresh get() must wait (RTO23c)
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+get_future = channel.object.get()
+ASSERT get_future IS NOT complete
+
+# A channel ERROR moves the channel to FAILED and sets its errorReason
+mock_ws.send_to_client(ProtocolMessage(
+  action: ERROR, channel: "test",
+  error: { code: 90000, statusCode: 400, message: "Channel failed" }
+))
+
+AWAIT get_future FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 92008
+ASSERT error.statusCode == 400
+# RTO23c1 - cause is set to the channel's errorReason (the injected FAILED error)
+ASSERT error.cause.code == 90000
+```
+
+---
+
 ## RTO15 - publish sends OBJECT ProtocolMessage
 
 **Test ID**: `objects/unit/RTO15/publish-sends-object-pm-0`
@@ -361,6 +498,117 @@ AWAIT root.get("score").increment(10)
 ### Assertions
 ```pseudo
 ASSERT root.get("score").value() == 100
+```
+
+---
+
+## RTO20d4 - Empty synthetic list skips the RTO20e sync wait
+
+**Test ID**: `objects/unit/RTO20d4/empty-synthetic-list-skips-sync-wait-0`
+
+**Spec requirement:** When every serial from the `PublishResult` is `null` and thus skipped per RTO20d1, the resulting list of synthetic `ObjectMessages` is empty; there is nothing to apply locally, so `publishAndApply` completes successfully without performing the RTO20e wait. Positive-assertion design: the channel is deliberately moved to `SYNCING` (where a normal write would park in the RTO20e wait, per the RTO20e case) and no sync-completing message is ever delivered — so the operation future resolving at all proves the RTO20e wait was skipped. Nothing is applied locally, so the local value is unchanged.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message("test", "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == OBJECT:
+      mock_ws.send_to_client(build_ack_message(msg.msgSerial, [null]))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+root = AWAIT channel.object.get()
+```
+
+### Test Steps
+```pseudo
+# Move the objects sync state back to SYNCING so a normal publishAndApply would park in
+# the RTO20e wait for SYNCED (cf. the RTO20e waits-for-synced case).
+mock_ws.send_to_client(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync2:cursor",
+  flags: HAS_OBJECTS
+))
+
+# The OBJECT publish is ACKed with an all-null serial list, so per RTO20d1 every synthetic
+# ObjectMessage is skipped and the synthetic list is empty. No sync-completing message is
+# ever sent: if the RTO20e wait were performed this future would never resolve.
+AWAIT root.get("score").increment(10)
+```
+
+### Assertions
+```pseudo
+# Resolution despite the channel never reaching SYNCED proves the RTO20e wait was skipped.
+ASSERT root.get("score").value() == 100
+```
+
+---
+
+## RTO20d4 - Mixed null/non-null serials still applies the non-null operation
+
+**Test ID**: `objects/unit/RTO20d4/mixed-null-serials-applies-non-null-0`
+
+**Spec requirement:** The RTO20d4 emptiness check runs once, *after* the iteration over all `ObjectMessages` in the provided argument is complete — not per-iteration. With a serial list such as `[null, <valid>]`, the first iteration is skipped per RTO20d1 (leaving the synthetic list momentarily empty), but iteration must continue and synthesize the second, valid operation; the emptiness check then sees a non-empty list and `publishAndApply` applies it (it does not complete early). A `root.set(key, LiveCounter.create(...))` publishes two `ObjectMessages` per RTLM20h1 — `[COUNTER_CREATE, MAP_SET]` — so ACKing with `[null, ack_serial(msg.msgSerial, 1)]` skips the CREATE and applies the `MAP_SET` on `root`. The channel is kept SYNCED so the RTO20e wait is not a factor (the list is non-empty, so RTO20d4's early completion does not apply and the normal RTO20e path runs). The CREATE being skipped means the new counter is never added to the pool, so the `"child"` entry is a dangling reference and `root.get("child")` is undefined per RTLM5d2f1; the positive proof that the second (index-1) operation was applied is that `"child"` is present among the map's keys (RTLM11d3a/RTLM12) and the map size grew.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message("test", "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == OBJECT:
+      # The set() publishes two ObjectMessages: [COUNTER_CREATE, MAP_SET] (RTLM20h1).
+      # ACK the first with a null serial (skipped per RTO20d1) and the second with a
+      # valid serial (applied). If RTO20d4 were evaluated per-iteration, publishAndApply
+      # would complete after the first (null) message and never synthesize/apply the second.
+      mock_ws.send_to_client(build_ack_message(msg.msgSerial, [null, ack_serial(msg.msgSerial, 1)]))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+root = AWAIT channel.object.get()
+# Channel is SYNCED after the OBJECT_SYNC above; the RTO20e wait is a no-op.
+```
+
+### Test Steps
+```pseudo
+# Two-message publish (RTLM20h1). The publish resolves only if the loop completed and the
+# non-empty list was applied — i.e. RTO20d4 did NOT complete early after the null first serial.
+AWAIT root.set("child", LiveCounter.create(0))
+```
+
+### Assertions
+```pseudo
+# The MAP_SET (index 1, valid serial) WAS applied: the "child" key is now present in root.
+# (Its value resolves to undefined per RTLM5d2f1 because the COUNTER_CREATE at index 0 was
+#  intentionally skipped and the counter is not in the pool — expected; the key's presence is
+#  the positive proof the second operation applied.)
+ASSERT Array.from(root.keys()) CONTAINS "child"
+ASSERT root.size() == 8   # 7 standard-pool entries + the applied "child" entry
 ```
 
 ---

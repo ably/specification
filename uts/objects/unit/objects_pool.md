@@ -119,6 +119,70 @@ ASSERT updates[0].objectMessage IS null
 
 ---
 
+## RTO4b2a - ATTACHED without HAS_OBJECTS on an already-empty root emits no update
+
+**Test ID**: `objects/unit/RTO4b2a/reset-of-empty-root-emits-no-update-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTO4b1 | Remove all objects except root |
+| RTO4b2a | If no keys were removed (root already empty), the update has no changed keys and is a no-op (RTLM22c/RTLO4b4b), so nothing is emitted |
+| RTLM22c | An empty map diff collapses to a no-op |
+
+Complements `objects/unit/RTO4b/attached-no-objects-synced-0` (which resets a populated root and
+emits a `removed` update). Here the root `InternalLiveMap` is already empty, so the RTO4b2 reset
+removes no keys: the resulting `LiveMapUpdate` has no changed keys and, per RTLM22c/RTLO4b4b, is a
+no-op that must not be delivered to `root` subscribers.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool["counter:abc@1000"] = InternalLiveCounter(objectId: "counter:abc@1000")
+# root is already empty (zero-value InternalLiveMap per RTLM4c)
+pool["root"].data = {}
+```
+
+### Test Steps
+```pseudo
+updates = []
+pool["root"].subscribe((update) => updates.append(update))
+
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED,
+  channel: "test",
+  flags: 0
+))
+```
+
+### Assertions
+```pseudo
+ASSERT pool.syncState == SYNCED
+ASSERT "counter:abc@1000" NOT IN pool     # RTO4b1: non-root objects are still removed
+ASSERT "root" IN pool
+ASSERT pool["root"].data == {}
+# RTO4b2a: no keys were removed, so the empty update collapses to a no-op and is not delivered
+ASSERT updates.length == 0
+```
+
+### Liveness control
+```pseudo
+# Prove the subscription wiring is live: a reset that DOES remove a key still emits, so the
+# updates.length == 0 above reflects the empty-root collapse and not a dead subscription. This
+# mirrors `objects/unit/RTO4b/attached-no-objects-synced-0`. (Emission at the ObjectsPool tier is
+# synchronous — see that case — so no polling is required.)
+pool2 = ObjectsPool()
+pool2["root"].data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: false }
+}
+control = []
+pool2["root"].subscribe((update) => control.append(update))
+pool2.processAttached(ProtocolMessage(action: ATTACHED, channel: "test", flags: 0))
+ASSERT control.length >= 1
+ASSERT control[0].update == { "name": "removed" }
+```
+
+---
+
 ## RTO5 - OBJECT_SYNC complete sequence
 
 **Test ID**: `objects/unit/RTO5/sync-complete-sequence-0`
@@ -201,6 +265,74 @@ pool.processObjectSync(build_object_sync_message("test", "seq2:", [
 ```pseudo
 ASSERT pool.syncState == SYNCED
 ASSERT "counter:old@1000" NOT IN pool
+ASSERT "counter:new@1000" IN pool
+```
+
+---
+
+## RTO5a5 - OBJECT_SYNC with no channelSerial is a single-message sync
+
+**Test ID**: `objects/unit/RTO5a5/absent-channel-serial-0`
+
+**Spec requirement:** An `OBJECT_SYNC` may be sent with no `channelSerial` attribute. In this case the
+sync data is entirely contained within the single `ProtocolMessage`: the objects are applied and the
+sync sequence completes (`SYNCED`) without waiting for a cursor-empty `channelSerial` (RTO5a4). This is
+the baseline that the RTO5a6 malformed-channelSerial case defers to.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+```
+
+### Test Steps
+```pseudo
+# No channelSerial: the whole sync is contained in this one message (RTO5a5)
+pool.processObjectSync(build_object_sync_message("test", null, [
+  build_object_state("counter:new@1000", {"aaa": "t:0"}, { counter: { count: 99 } })
+]))
+```
+
+### Assertions
+```pseudo
+ASSERT pool.syncState == SYNCED
+ASSERT "counter:new@1000" IN pool
+```
+
+---
+
+## RTO5a6 - Malformed channelSerial is treated as absent
+
+**Test ID**: `objects/unit/RTO5a6/malformed-channel-serial-treated-as-absent-0`
+
+**Spec requirement:** If the `channelSerial` is present but malformed --- it does not contain the `:`
+separator required by RTO5a1 and so cannot be split into a `<sequence id>` and a `<cursor value>` ---
+the `OBJECT_SYNC` must be handled as if the `channelSerial` were absent per RTO5a5 (data applied, sync
+completes `SYNCED`), and a warning should be logged. This must stay distinct from the RTO5a5 baseline.
+
+### Setup
+```pseudo
+pool = ObjectsPool()
+pool.processAttached(ProtocolMessage(
+  action: ATTACHED, channel: "test", channelSerial: "sync1:cursor", flags: HAS_OBJECTS
+))
+```
+
+### Test Steps
+```pseudo
+# "malformedserialnocolon" has no ':' separator, so it cannot be parsed per RTO5a1; RTO5a6
+# requires handling it as if the channelSerial were absent (RTO5a5).
+pool.processObjectSync(build_object_sync_message("test", "malformedserialnocolon", [
+  build_object_state("counter:new@1000", {"aaa": "t:0"}, { counter: { count: 99 } })
+]))
+```
+
+### Assertions
+```pseudo
+# Treated as absent (RTO5a5): the message was applied and the sync ended.
+ASSERT pool.syncState == SYNCED
 ASSERT "counter:new@1000" IN pool
 ```
 

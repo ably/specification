@@ -477,6 +477,47 @@ ASSERT update.objectMessage == msg
 
 ---
 
+## RTLO5, RTLO4e5 - OBJECT_DELETE on an already-zero counter still emits a non-noop tombstone update
+
+**Test ID**: `objects/unit/RTLO5/tombstone-zero-value-counter-emits-update-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4e5 | Compute the tombstone diff per RTLC14 |
+| RTLC14c | The zero-delta noop exception must NOT be applied for a tombstone diff; the update is delivered to drive the RTLO4b4c3c listener teardown |
+| RTLO4e6 | Set tombstone flag on the update |
+| RTLO4e7 | Set objectMessage on the update |
+
+Complements `objects/unit/RTLO5/object-delete-tombstones-0` (which tombstones a populated
+counter). Here the counter data is already `0`, so the tombstone diff (`previousData` `0`,
+`newData` `0`) is a zero delta. Per the RTLC14c tombstone carve-out this update must NOT be
+marked as a no-op — it must still be delivered so the RTLO4b4c3c listener teardown runs.
+
+### Setup
+```pseudo
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
+counter.data = 0
+counter.siteTimeserials = { "site1": "00" }
+```
+
+### Test Steps
+```pseudo
+msg = build_object_delete("counter:abc@1000", "01", "site1", 1700000000000)
+update = counter.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT counter.isTombstone == true
+ASSERT counter.data == 0
+ASSERT update.noop == false
+ASSERT update.tombstone == true
+ASSERT update.update.amount == 0
+ASSERT update.objectMessage == msg
+```
+
+---
+
 ## RTLC7e - Operations on tombstoned counter are rejected
 
 **Test ID**: `objects/unit/RTLC7e/tombstoned-reject-ops-0`
@@ -779,6 +820,34 @@ update = counter.replaceData(state_msg)
 ```pseudo
 ASSERT update.update.amount == 55
 ASSERT update.objectMessage == state_msg
+```
+
+---
+
+## RTLC14c - Zero-delta diff is a no-op
+
+**Test ID**: `objects/unit/RTLC14c/zero-delta-diff-is-noop-0`
+
+**Spec requirement:** As an exception to RTLC14b, when `newData` equals `previousData` the computed delta is `0`, so the diff returns a `LiveCounterUpdate` marked as a no-op per RTLO4b4b. A no-op update is never delivered to subscribers (RTLO4b4c1), so at the internal tier the flake-free proxy for "no event fires" is asserting `update.noop == true`.
+
+### Setup
+```pseudo
+counter = InternalLiveCounter(objectId: "counter:abc@1000")
+counter.data = 100
+```
+
+### Test Steps
+```pseudo
+state_msg = build_object_state("counter:abc@1000", {"site1": "01"}, {
+  counter: { count: 100 }
+})
+update = counter.replaceData(state_msg)
+```
+
+### Assertions
+```pseudo
+ASSERT update.noop == true
+ASSERT counter.data == 100
 ```
 
 ---

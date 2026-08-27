@@ -20,6 +20,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO23b)` This clause has been replaced by [RTO23e](#RTO23e)
   - `(RTO23e)` Perform the *ensure-active-channel* procedure ([RTL33](../features#RTL33)) on the underlying `RealtimeChannel`. If the procedure fails, the `get` function must reject with the same `ErrorInfo` that caused the procedure to fail
   - `(RTO23c)` If the [RTO17](#RTO17) sync state is not `SYNCED`, waits for the sync state to transition to `SYNCED`
+    - `(RTO23c1)` If the channel enters the `DETACHED`, `SUSPENDED`, or `FAILED` state while waiting for the sync state to transition to `SYNCED`, the `get` operation must fail with an `ErrorInfo` error with `code` `92008`, a `statusCode` of `400`, a `message` stating that the object could not be retrieved due to the channel entering the respective state whilst waiting for objects sync to complete, and `cause` set to the `RealtimeChannel.errorReason` if it is set. This applies regardless of the state the channel transitioned from (for example, a channel that enters `FAILED` from `SUSPENDED` must also fail the waiting `get` operation), and mirrors [RTO20e1](#RTO20e1), the equivalent failure for `publishAndApply`
   - `(RTO23d)` Returns a new `PathObject` ([RTPO1](#RTPO1)) with `path` ([RTPO2a](#RTPO2a)) set to an empty list and `root` ([RTPO2b](#RTPO2b)) set to the `InternalLiveMap` with id `root` from the internal `ObjectsPool`
 - `(RTO11)` This clause has been replaced by [RTLMV3](#RTLMV3).
   - `(RTO11a)` This clause has been replaced by [RTLMV3](#RTLMV3).
@@ -146,7 +147,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RTO4b)` If the `HAS_OBJECTS` flag is 0 or there is no `flags` field, the sync sequence must be considered complete immediately, and the client library must perform the following actions in order:
     - `(RTO4b1)` All objects except the one with id `root` must be removed from the internal `ObjectsPool`
     - `(RTO4b2)` The data for the `InternalLiveMap` with id `root` must be set to the value described in [RTLM4c](#RTLM4c). Note that the client SDK must not create a new `InternalLiveMap` instance with id `root`; it must only clear the internal data of the existing `InternalLiveMap` with id `root`
-      - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `InternalLiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`
+      - `(RTO4b2a)` Emit a `LiveMapUpdate` object for the `InternalLiveMap` with ID `root`, with `LiveMapUpdate.update` consisting of entries for the keys that were removed, each set to `removed`, and without populating `LiveMapUpdate.objectMessage`. Only the keys of non-tombstoned entries are reported as `removed`, consistent with the non-tombstoned-visibility rule in [RTLM22b](#RTLM22b): entries that were already tombstoned were not part of the user-visible map data, so their removal is not reported. If no keys were removed (that is, the `root` map was already empty), the computed `LiveMapUpdate.update` contains no changed keys and is therefore a no-op per [RTLM22c](#RTLM22c) ([RTLO4b4b](#RTLO4b4b)), so per [RTLO4b4c1](#RTLO4b4c1) it is not delivered to subscribers.
     - `(RTO4b3)` The `SyncObjectsPool` must be cleared
     - `(RTO4b5)` This clause has been replaced by [RTO4d](#RTO4d)
     - `(RTO4b4)` Perform the actions for objects sync completion as described in [RTO5c](#RTO5c)
@@ -161,6 +162,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5a3)` If the sequence id matches the previously received sequence id, the client library should continue the sync process
     - `(RTO5a4)` The objects sync sequence for that sequence identifier is considered complete once the cursor is empty; that is when the `channelSerial` looks like `<sequence id>:`
     - `(RTO5a5)` An `OBJECT_SYNC` may also be sent with no `channelSerial` attribute. In this case, the sync data is entirely contained within the `ProtocolMessage`
+    - `(RTO5a6)` If the `channelSerial` is present but malformed --- that is, it does not contain the `:` separator required by [RTO5a1](#RTO5a1) and so cannot be split into a `<sequence id>` and a `<cursor value>` --- the client library must handle the `OBJECT_SYNC` as if the `channelSerial` were absent per [RTO5a5](#RTO5a5), and should log a warning
   - `(RTO5b)` This clause has been replaced by [RTO5f](#RTO5f)
   - `(RTO5f)` During the sync sequence, `ObjectMessages` from incoming `OBJECT_SYNC` `ProtocolMessages` must be temporarily stored in the internal `SyncObjectsPool`, keyed by `ObjectMessage.object.objectId`. The `SyncObjectsPool` stores one `ObjectMessage` per `objectId`, which may represent merged state from multiple incoming messages. For each `ObjectMessage` in the incoming `OBJECT_SYNC` `ProtocolMessage`, let `ObjectState` be `ObjectMessage.object`:
     - `(RTO5f3)` If neither `ObjectState.map` nor `ObjectState.counter` is present on the incoming message, log a warning that a state message with an unsupported object type was received and skip the incoming message
@@ -192,9 +194,9 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTO5c5)` The `bufferedObjectOperations` list must be cleared
     - `(RTO5c9)` The `appliedOnAckSerials` set ([RTO7b](#RTO7b)) must be cleared. A state sync causes the channel's LiveObjects data to be replaced, so after a state sync the `appliedOnAckSerials` no longer accurately describes which operations have been applied to the channel's LiveObjects data
     - `(RTO5c8)` The [RTO17](#RTO17) sync state must transition to `SYNCED`
-- `(RTO27)` When the channel transitions to a state other than `ATTACHED`, the client library must manage the stored objects data as follows (the `ATTACHED` transition is handled by [RTO4](#RTO4); for the effect of these transitions on an in-progress `publishAndApply`, see [RTO20e1](#RTO20e1)):
+- `(RTO27)` When the channel transitions to a state other than `ATTACHED`, the client library must manage the stored objects data as follows (the `ATTACHED` transition is handled by [RTO4](#RTO4); for the effect of these transitions on an in-progress `publishAndApply` or `get`, see [RTO20e1](#RTO20e1) and [RTO23c1](#RTO23c1)):
   - `(RTO27a)` When the channel transitions to the `DETACHED` or `FAILED` state, the current state of the objects data can no longer be known, so the client library must:
-    - `(RTO27a1)` For every object in the internal `ObjectsPool`, clear its internal data, resetting it to the zero value for its type (an empty map, or a counter with value `0`), without emitting any `LiveObjectUpdate` events. The objects themselves remain in the `ObjectsPool`; only their data is cleared
+    - `(RTO27a1)` For every object in the internal `ObjectsPool`, clear its internal data, resetting it to that of a new empty object of its type (an empty map per [RTLM4c](#RTLM4c), or a counter with `data` `0` per [RTLC4b](#RTLC4b)), without emitting any `LiveObjectUpdate` events. The objects themselves remain in the `ObjectsPool`; only their data is cleared
     - `(RTO27a2)` The `SyncObjectsPool` must be cleared
   - `(RTO27b)` When the channel transitions to any other state (for example `SUSPENDED`, `INITIALIZED`, `ATTACHING`, or `DETACHING`), the client library must retain the stored objects data unchanged. In the `SUSPENDED` case in particular, the connection may still recover and the retained data remains a valid best-effort local copy
 - `(RTO6)` Certain object operations may require creating a new object if one does not already exist in the internal `ObjectsPool` for the given `objectId`. This can be done as follows:
@@ -277,6 +279,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
       - `(RTO20d2a)` `ObjectMessage.serial` to the serial from the `PublishResult`
       - `(RTO20d2b)` `ObjectMessage.siteCode` to the [CD2j](../features#CD2j) `ConnectionDetails.siteCode`
     - `(RTO20d3)` Add the synthetic `ObjectMessage` to the list
+    - `(RTO20d4)` Once the iteration over all `ObjectMessages` in the provided argument is complete, if the resulting list of synthetic `ObjectMessages` is empty (for example because every serial from the `PublishResult` was `null` and thus skipped per [RTO20d1](#RTO20d1)), there is nothing to apply locally, so the `publishAndApply` operation completes successfully without performing the [RTO20e](#RTO20e) wait
   - `(RTO20e)` If the [RTO17](#RTO17) sync state is not `SYNCED`, wait for the sync state to transition to `SYNCED`
     - `(RTO20e1)` If the channel enters the `DETACHED`, `SUSPENDED`, or `FAILED` state while waiting for the sync state to transition to `SYNCED`, the `publishAndApply` operation must fail with an `ErrorInfo` error with `code` `92008`, a `statusCode` of `400`, a `message` stating that the operation could not be applied locally due to the channel entering the respective state whilst waiting for objects sync to complete, and `cause` set to the `RealtimeChannel.errorReason` if it is set
   - `(RTO20f)` Apply the synthetic `ObjectMessages` as described in [RTO9](#RTO9), passing `source` as `LOCAL`
@@ -526,6 +529,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLC14a1)` `previousData` `Number` - the previous `data` value
     - `(RTLC14a2)` `newData` `Number` - the new `data` value
   - `(RTLC14b)` Return a `LiveCounterUpdate` object with `LiveCounterUpdate.update.amount` set to `newData - previousData`
+  - `(RTLC14c)` As an exception to [RTLC14b](#RTLC14b): if `newData` equals `previousData` (that is, the computed delta is `0`), the counter data did not change, so instead of returning an update return a `LiveCounterUpdate` object with `LiveCounterUpdate.noop` set to `true` ([RTLO4b4b](#RTLO4b4b)), as in [RTLC9h](#RTLC9h). This exception must not be applied when the diff is computed for a tombstone per [RTLO4e5](#RTLO4e5): the resulting tombstone update ([RTLO4b4e](#RTLO4b4e)) must not be marked as a no-op, so that it is still delivered — driving the [RTLO4b4c3c](#RTLO4b4c3c) listener teardown — even when the counter data was already `0`.
 
 ### InternalLiveMap
 
@@ -801,6 +805,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
     - `(RTLM22b1)` For each key that exists in the non-tombstoned entries of `previousData` but does not exist in the non-tombstoned entries of `newData`, add the key to `LiveMapUpdate.update` with the value `removed`
     - `(RTLM22b2)` For each key that exists in the non-tombstoned entries of `newData` but does not exist in the non-tombstoned entries of `previousData`, add the key to `LiveMapUpdate.update` with the value `updated`
     - `(RTLM22b3)` For each key that exists in the non-tombstoned entries of both `previousData` and `newData`, perform a deep comparison of the `data` attributes from `previousData` and `newData`. If the data values differ, add the key to `LiveMapUpdate.update` with the value `updated`
+  - `(RTLM22c)` As an exception to [RTLM22b](#RTLM22b): if the `LiveMapUpdate.update` computed in [RTLM22b](#RTLM22b) contains no changed keys (it is empty), no map key actually changed, so instead of returning an update return a `LiveMapUpdate` object with `LiveMapUpdate.noop` set to `true` ([RTLO4b4b](#RTLO4b4b)), as in [RTLM16b](#RTLM16b). This exception must not be applied when the diff is computed for a tombstone per [RTLO4e5](#RTLO4e5): the resulting tombstone update ([RTLO4b4e](#RTLO4b4e)) must not be marked as a no-op, so that it is still delivered — driving the [RTLO4b4c3c](#RTLO4b4c3c) listener teardown — even when the map already had no non-tombstoned entries.
 
 ### LiveCounter
 

@@ -614,6 +614,54 @@ ASSERT update.objectMessage == msg
 
 ---
 
+## RTLO5, RTLO4e5 - OBJECT_DELETE on a map with no non-tombstoned entries still emits a non-noop tombstone update
+
+**Test ID**: `objects/unit/RTLO5/tombstone-empty-map-emits-update-0`
+
+| Spec | Requirement |
+|------|-------------|
+| RTLO4e5 | Compute the tombstone diff per RTLM22 |
+| RTLM22c | The empty-diff noop exception must NOT be applied for a tombstone diff; the update is delivered to drive the RTLO4b4c3c listener teardown |
+| RTLO4e6 | Set tombstone flag on the update |
+| RTLO4e7 | Set objectMessage on the update |
+
+Complements `objects/unit/RTLO5/object-delete-tombstones-map-0` (which tombstones a map with
+live entries). Here every entry is already tombstoned, so the map has no non-tombstoned entries
+and the tombstone diff (per RTLM22b, which considers only non-tombstoned entries) contains no
+changed keys. Per the RTLM22c tombstone carve-out this empty update must NOT be marked as a
+no-op — it must still be delivered so the RTLO4b4c3c listener teardown runs.
+
+Uses a non-root map: an `OBJECT_DELETE` targeting `root` is rejected per RTLO4e10
+(see `objects/unit/RTLO4e10/object-delete-root-noop-0`).
+
+### Setup
+```pseudo
+map = InternalLiveMap(objectId: "map:test@1000", semantics: "LWW")
+map.data = {
+  "name": { data: { string: "Alice" }, timeserial: "01", tombstone: true, tombstonedAt: 1600000000000 },
+  "age":  { data: { number: 30 },      timeserial: "01", tombstone: true, tombstonedAt: 1600000000000 }
+}
+map.siteTimeserials = { "site1": "00" }
+```
+
+### Test Steps
+```pseudo
+msg = build_object_delete("map:test@1000", "01", "site1", 1700000000000)
+update = map.applyOperation(msg, source: CHANNEL)
+```
+
+### Assertions
+```pseudo
+ASSERT map.isTombstone == true
+ASSERT map.data == {}
+ASSERT update.noop == false
+ASSERT update.tombstone == true
+ASSERT update.update == {}
+ASSERT update.objectMessage == msg
+```
+
+---
+
 ## RTLO4e10 - OBJECT_DELETE targeting root is rejected
 
 **Test ID**: `objects/unit/RTLO4e10/object-delete-root-noop-0`
@@ -958,6 +1006,41 @@ ASSERT update.update["changed"] == "updated"
 ASSERT "unchanged" NOT IN update.update
 ASSERT "was_dead" NOT IN update.update
 ASSERT "now_dead" NOT IN update.update
+```
+
+---
+
+## RTLM22c - Empty diff is a no-op
+
+**Test ID**: `objects/unit/RTLM22c/empty-diff-is-noop-0`
+
+**Spec requirement:** As an exception to RTLM22b, when the computed `LiveMapUpdate.update` contains no changed keys the diff returns a `LiveMapUpdate` marked as a no-op per RTLO4b4b. A no-op update is never delivered to subscribers (RTLO4b4c1), so at the internal tier the flake-free proxy for "no event fires" is asserting `update.noop == true`. Here the map's non-tombstoned entries before and after `replaceData` are identical under the RTLM22b comparison rules (same key `name`, same `data`; only `timeserial` differs, which is not compared), so no key changed.
+
+### Setup
+```pseudo
+map = InternalLiveMap(objectId: "root", semantics: "LWW")
+map.data = {
+  "name": { data: { string: "alice" }, timeserial: "01", tombstone: false }
+}
+```
+
+### Test Steps
+```pseudo
+state_msg = build_object_state("root", {"site1": "02"}, {
+  map: {
+    semantics: "LWW",
+    entries: {
+      "name": { data: { string: "alice" }, timeserial: "02", tombstone: false }
+    }
+  }
+})
+update = map.replaceData(state_msg)
+```
+
+### Assertions
+```pseudo
+ASSERT update.noop == true
+ASSERT map.data["name"].data == { string: "alice" }
 ```
 
 ---
