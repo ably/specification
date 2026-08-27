@@ -557,6 +557,62 @@ ASSERT root.get("score").value() == 100
 
 ---
 
+## RTO20d4 - Mixed null/non-null serials still applies the non-null operation
+
+**Test ID**: `objects/unit/RTO20d4/mixed-null-serials-applies-non-null-0`
+
+**Spec requirement:** The RTO20d4 emptiness check runs once, *after* the iteration over all `ObjectMessages` in the provided argument is complete — not per-iteration. With a serial list such as `[null, <valid>]`, the first iteration is skipped per RTO20d1 (leaving the synthetic list momentarily empty), but iteration must continue and synthesize the second, valid operation; the emptiness check then sees a non-empty list and `publishAndApply` applies it (it does not complete early). A `root.set(key, LiveCounter.create(...))` publishes two `ObjectMessages` per RTLM20h1 — `[COUNTER_CREATE, MAP_SET]` — so ACKing with `[null, ack_serial(msg.msgSerial, 1)]` skips the CREATE and applies the `MAP_SET` on `root`. The channel is kept SYNCED so the RTO20e wait is not a factor (the list is non-empty, so RTO20d4's early completion does not apply and the normal RTO20e path runs). The CREATE being skipped means the new counter is never added to the pool, so the `"child"` entry is a dangling reference and `root.get("child")` is undefined per RTLM5d2f1; the positive proof that the second (index-1) operation was applied is that `"child"` is present among the map's keys (RTLM11d3a/RTLM12) and the map size grew.
+
+### Setup
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(
+    ProtocolMessage(action: CONNECTED, connectionDetails: {
+      connectionId: "conn-1", connectionKey: "key-1", siteCode: "test-site",
+      objectsGCGracePeriod: 86400000
+    })
+  ),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED, channel: msg.channel, channelSerial: "sync1:",
+        flags: HAS_OBJECTS
+      ))
+      mock_ws.send_to_client(build_object_sync_message("test", "sync1:", STANDARD_POOL_OBJECTS))
+    ELSE IF msg.action == OBJECT:
+      # The set() publishes two ObjectMessages: [COUNTER_CREATE, MAP_SET] (RTLM20h1).
+      # ACK the first with a null serial (skipped per RTO20d1) and the second with a
+      # valid serial (applied). If RTO20d4 were evaluated per-iteration, publishAndApply
+      # would complete after the first (null) message and never synthesize/apply the second.
+      mock_ws.send_to_client(build_ack_message(msg.msgSerial, [null, ack_serial(msg.msgSerial, 1)]))
+  }
+)
+install_mock(mock_ws)
+client = Realtime(options: { key: "fake:key" })
+channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+root = AWAIT channel.object.get()
+# Channel is SYNCED after the OBJECT_SYNC above; the RTO20e wait is a no-op.
+```
+
+### Test Steps
+```pseudo
+# Two-message publish (RTLM20h1). The publish resolves only if the loop completed and the
+# non-empty list was applied — i.e. RTO20d4 did NOT complete early after the null first serial.
+AWAIT root.set("child", LiveCounter.create(0))
+```
+
+### Assertions
+```pseudo
+# The MAP_SET (index 1, valid serial) WAS applied: the "child" key is now present in root.
+# (Its value resolves to undefined per RTLM5d2f1 because the COUNTER_CREATE at index 0 was
+#  intentionally skipped and the counter is not in the pool — expected; the key's presence is
+#  the positive proof the second operation applied.)
+ASSERT Array.from(root.keys()) CONTAINS "child"
+ASSERT root.size() == 8   # 7 standard-pool entries + the applied "child" entry
+```
+
+---
+
 ## RTO20e - publishAndApply waits for SYNCED during SYNCING
 
 **Test ID**: `objects/unit/RTO20e/waits-for-synced-0`
