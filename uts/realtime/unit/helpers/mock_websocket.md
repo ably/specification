@@ -73,7 +73,7 @@ interface PendingConnection:
   timestamp: Time
 
   # Methods for test code to respond to the connection attempt
-  respond_with_success(connected_message: ProtocolMessage)
+  respond_with_success(connected_message?: ProtocolMessage)  # With a message: opens the socket, then delivers CONNECTED. Without: opens the socket only.
   respond_with_refused()  # Connection refused at network level
   respond_with_timeout()  # Connection times out (unresponsive)
   respond_with_dns_error()  # DNS resolution fails
@@ -302,7 +302,7 @@ AFTER EACH TEST:
 
 ## Timer Mocking
 
-Tests that verify timeout behavior should use timer mocking where practical. See the Timer Mocking section below.
+Tests that verify timeout behavior should use timer mocking where practical, rather than real delays.
 
 **Pseudocode convention:**
 
@@ -315,7 +315,7 @@ client.connect()
 # Advance time to trigger timeout
 ADVANCE_TIME(15000)  # Advance 15 seconds instantly
 
-# Assert timeout behavior
+# Assert timeout behavior (positive: the timeout has now fired)
 ASSERT client.connection.state == ConnectionState.disconnected
 ```
 
@@ -324,6 +324,58 @@ ASSERT client.connection.state == ConnectionState.disconnected
 - **Preferred**: Mock/fake the timer/clock mechanism (e.g., `jest.advanceTimersByTime()` in JavaScript)
 - **Alternative**: Use dependency injection of clock/timer abstractions
 - **Fallback**: Use actual time delays with short timeout values
+
+### Fake-time semantics (normative)
+
+`ADVANCE_TIME(ms)` is the single knob tests use to drive time-dependent behavior. Its guaranteed
+contract is:
+
+> **Guarantee.** After `ADVANCE_TIME(ms)` returns, virtual time has advanced by `ms`, and every unit of
+> scheduled work whose due time is at or before the new virtual time has been run to quiescence
+> (including work scheduled by that work, provided it too is due within the advanced interval).
+
+This is the only timing behavior tests may rely on. A test that has advanced past a timeout MAY assert
+that the timeout's effect has occurred (a *positive* assertion) and, after owning the resulting event,
+inspect the outcome.
+
+#### Hard gate vs. advisory (implementation latitude)
+
+Implementations differ in whether scheduled work can *also* fire without an `ADVANCE_TIME` call:
+
+- **Hard gate (RECOMMENDED).** Virtual time is the only clock the SDK's timers observe; nothing
+  timer-driven runs until `ADVANCE_TIME` moves virtual time to or past its due point.
+- **Advisory (PERMITTED where forced by the threading model).** Where the SDK blocks in a real, timed
+  wait that the mock clock cannot fully intercept (e.g. a monitor `wait(timeout)`), `ADVANCE_TIME`
+  *accelerates* the wait — due work fires immediately on advance — but the same work will *also* fire
+  once `timeout` ms of real time elapse, even without an advance.
+
+An implementation MUST document which model it provides. An advisory implementation still honors the
+Guarantee above; it merely offers a weaker exclusion (it does not guarantee the *absence* of firing
+before advance).
+
+#### Authoring rule (normative for spec tests)
+
+Because an advisory implementation cannot guarantee that timer-driven work has *not yet* run, spec
+tests MUST NOT assert the **absence** of timer-driven behavior before the corresponding `ADVANCE_TIME`.
+Such negative "nothing has happened yet" assertions are valid only under a hard gate and are therefore
+non-portable.
+
+- **Disallowed** (negative, pre-advance):
+  ```pseudo
+  ADVANCE_TIME(2000)                     # less than the timeout
+  ASSERT connection_attempt_count == 1   # "no reconnection yet" — NOT PORTABLE
+  ADVANCE_TIME(2100)                     # now cross the timeout
+  ```
+- **Allowed** (cross the boundary, then own the resulting event; assert the positive outcome):
+  ```pseudo
+  ADVANCE_TIME(4100)                     # cross the timeout
+  AWAIT_STATE client.connection.state == ConnectionState.disconnected
+  ASSERT connection_attempt_count == 2
+  ```
+
+To confirm an event has *not yet* fired at a boundary, restructure the test so the boundary is observed
+through an event you can await (advance exactly to the boundary and await the resulting state change),
+rather than sampling a counter between advances.
 
 ## Async Behavior and Event Loop Considerations
 
