@@ -297,7 +297,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RSH1 | Push#admin object (RSH1a–RSH1c5) | Yes — `rest/unit/push/push_admin_publish.md` (RSH1, RSH1a), `rest/unit/push/push_device_registrations.md` (RSH1b1–RSH1b5), `rest/unit/push/push_channel_subscriptions.md` (RSH1c1–RSH1c5), `rest/integration/push_admin.md` (RSH1a–RSH1c5) |
+| RSH1 | Push#admin object (RSH1a–RSH1e3) | Yes — `rest/unit/push/push_admin_publish.md` (RSH1, RSH1a), `rest/unit/push/push_device_registrations.md` (RSH1b1–RSH1b5), `rest/unit/push/push_channel_subscriptions.md` (RSH1c1–RSH1c5), `rest/unit/push/push_admin_apns_broadcast.md` (RSH1d), `rest/unit/push/push_admin_live_activity.md` (RSH1e1–RSH1e3), `rest/integration/push_admin.md` (RSH1a–RSH1c5) |
 | RSH2 | Platform-specific push operations (RSH2a–RSH2e) | |
 | RSH3 | Activation state machine (RSH3a–RSH3g3) | |
 | RSH4–RSH5 | Event queueing and sequential handling | |
