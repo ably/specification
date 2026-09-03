@@ -1,6 +1,6 @@
 # Connection ID and Key Tests
 
-Spec points: `RTN8`, `RTN8a`, `RTN8b`, `RTN8c`, `RTN9`, `RTN9a`, `RTN9b`, `RTN9c`
+Spec points: `RTN8`, `RTN8a`, `RTN8b`, `RTN8c`, `RTN8d`, `RTN9`, `RTN9a`, `RTN9b`, `RTN9c`, `RTN9d`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -213,15 +213,15 @@ CLOSE_CLIENT(client2)
 
 ---
 
-## RTN8c - Connection ID is null in terminal/non-connected states
+## RTN8d - Connection ID is null in terminal/non-connected states
 
-**Test ID**: `realtime/unit/RTN8c/id-null-after-closed-0`
+**Test ID**: `realtime/unit/RTN8d/id-null-after-closed-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTN8c | Is null when the SDK is in CLOSED, CLOSING, FAILED, or SUSPENDED states |
+| RTN8d | Is null when the SDK is in the CLOSED, CLOSING, or FAILED states |
 
-Tests that `connection.id` is cleared when the connection enters CLOSED or FAILED states.
+Tests that `connection.id` is cleared when the connection enters CLOSED or FAILED states. (As of specification version 6.1.0, RTN8c has been replaced by RTN8d: the id is no longer cleared in the SUSPENDED state.)
 
 ### Setup
 ```pseudo
@@ -257,15 +257,15 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTN9c - Connection key is null in terminal/non-connected states
+## RTN9d - Connection key is null in terminal/non-connected states
 
-**Test ID**: `realtime/unit/RTN9c/key-null-after-closed-0`
+**Test ID**: `realtime/unit/RTN9d/key-null-after-closed-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTN9c | Is null when the SDK is in CLOSED, CLOSING, FAILED, or SUSPENDED states |
+| RTN9d | Is null when the SDK is in the CLOSED, CLOSING, or FAILED states |
 
-Tests that `connection.key` is cleared when the connection enters CLOSED or FAILED states.
+Tests that `connection.key` is cleared when the connection enters CLOSED or FAILED states. (As of specification version 6.1.0, RTN9c has been replaced by RTN9d: the key is no longer cleared in the SUSPENDED state.)
 
 ### Setup
 ```pseudo
@@ -301,9 +301,9 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTN8c, RTN9c - ID and key null after FAILED
+## RTN8d, RTN9d - ID and key null after FAILED
 
-**Test ID**: `realtime/unit/RTN8c/id-key-null-after-failed-1`
+**Test ID**: `realtime/unit/RTN8d/id-key-null-after-failed-1`
 
 **Spec requirement:** Connection ID and key are null in FAILED state.
 
@@ -342,20 +342,34 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTN8c, RTN9c - ID and key null after SUSPENDED
+## RTN8d, RTN9d - ID and key retained in SUSPENDED
 
-**Test ID**: `realtime/unit/RTN8c/id-key-null-after-suspended-2`
+**Test ID**: `realtime/unit/RTN8d/id-key-retained-in-suspended-2`
 
-**Spec requirement:** Connection ID and key are null in SUSPENDED state.
+**Spec requirement:** Connection ID and key are retained in the SUSPENDED state.
 
-Tests that both `connection.id` and `connection.key` are null when the connection transitions to SUSPENDED.
+As of specification version 6.1.0 (RTN8d/RTN9d, replacing RTN8c/RTN9c) the connection id and key are cleared only in the terminal states (CLOSED, CLOSING, FAILED). They are retained through SUSPENDED, since the client always attempts to resume on reconnecting (RTN14h) and lets the server decide whether continuity can be preserved.
+
+Tests that both `connection.id` and `connection.key` are retained when the connection transitions to SUSPENDED.
 
 ### Setup
 ```pseudo
 enable_fake_timers()
 
+# Connect successfully on the first attempt, then refuse all reconnection
+# attempts so the connection ends up suspended.
+attempt = 0
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_refused()
+  onConnectionAttempt: (conn) => {
+    IF attempt == 0 THEN
+      conn.respond_with_success(
+        CONNECTED_MESSAGE(connectionId: "conn-id-1", connectionKey: "conn-key-1")
+      )
+    ELSE
+      conn.respond_with_refused()
+    END
+    attempt = attempt + 1
+  }
 )
 install_mock(mock_ws)
 
@@ -371,6 +385,12 @@ client = Realtime(options: ClientOptions(
 ### Test Steps
 ```pseudo
 client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+ASSERT client.connection.id == "conn-id-1"
+ASSERT client.connection.key == "conn-key-1"
+
+# Drop the transport; subsequent attempts are refused, moving to DISCONNECTED
+mock_ws.active_connection.simulate_disconnect()
 AWAIT_STATE client.connection.state == ConnectionState.disconnected
 
 # Advance past connectionStateTtl to reach SUSPENDED
@@ -380,7 +400,8 @@ AWAIT_STATE client.connection.state == ConnectionState.suspended
 
 ### Assertions
 ```pseudo
-ASSERT client.connection.id IS null
-ASSERT client.connection.key IS null
+# RTN8d, RTN9d: id and key are retained, not cleared
+ASSERT client.connection.id == "conn-id-1"
+ASSERT client.connection.key == "conn-key-1"
 CLOSE_CLIENT(client)
 ```

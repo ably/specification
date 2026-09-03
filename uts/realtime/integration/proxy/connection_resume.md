@@ -1,6 +1,6 @@
 # Connection Resume and Recovery Proxy Integration Tests (RTN15, RTN16)
 
-Spec points: `RTN15a`, `RTN15b`, `RTN15c6`, `RTN15c7`, `RTN15g`, `RTN15g2`, `RTN15h1`, `RTN15h3`, `RTN15j`, `RTN16d`, `RTN16l`, `RTN19a`, `RTN19a2`
+Spec points: `RTN14h`, `RTN15a`, `RTN15b`, `RTN15c6`, `RTN15c7`, `RTN15h1`, `RTN15h3`, `RTN15j`, `RTN16d`, `RTN16l`, `RTN19a`, `RTN19a2`
 
 ## Test Type
 
@@ -759,18 +759,17 @@ session.close()
 
 ---
 
-## Test 22: RTN15g/g2 - connectionStateTtl expiry clears resume state
+## Test 22: RTN14h - reconnection still resumes after connectionStateTtl expiry
 
-**Test ID**: `realtime/proxy/RTN15g/ttl-expiry-clears-resume-0`
+**Test ID**: `realtime/proxy/RTN14h/resume-after-ttl-expiry-0`
 
 | Spec | Requirement |
 |------|-------------|
-| RTN15g | If disconnected for longer than connectionStateTtl, do not attempt resume; connect as a fresh connection |
-| RTN15g2 | The staleness measure is whether the time since last activity exceeds connectionStateTtl + maxIdleInterval |
+| RTN14h | Reconnection attempts in the SUSPENDED state should continue to attempt to resume, regardless of how long it has been since the client was last connected |
 
-Tests that when the client has been disconnected for longer than connectionStateTtl + maxIdleInterval, the SDK does not attempt to resume. Instead it makes a fresh connection, resulting in a new connectionId.
+As of specification version 6.1.0 this replaces RTN15g (deleted). The client no longer clears its connection state based on how long it has been disconnected: it always attempts to resume and lets the server decide whether continuity can be preserved. This test verifies that the reconnection attempt made after the connectionStateTtl has expired and the connection has become SUSPENDED still carries the `resume` query param. (The real server will typically have discarded the connection state by then, so the resume fails server-side and the client ends up with a new connectionId — but the client still attempts the resume.)
 
-**Unit test counterpart:** `connection_failures_test.md` > RTN15g
+**Unit test counterpart:** `connection_failures_test.md` > RTN14h
 
 ### Setup
 
@@ -805,19 +804,19 @@ session = create_proxy_session(
         }
       },
       "times": 1,
-      "comment": "RTN15g: Replace 1st CONNECTED to set short connectionStateTtl (2s) and known connectionId"
+      "comment": "RTN14h: Replace 1st CONNECTED to set short connectionStateTtl (2s) and known connectionId"
     },
     {
       "match": { "type": "delay_after_ws_connect", "delayMs": 1000 },
       "action": { "type": "close" },
       "times": 1,
-      "comment": "RTN15g: Close connection after 1s — client enters DISCONNECTED with 2s TTL"
+      "comment": "RTN14h: Close connection after 1s — client enters DISCONNECTED with 2s TTL"
     },
     {
       "match": { "type": "ws_connect", "count": 2 },
       "action": { "type": "refuse_connection" },
       "times": 1,
-      "comment": "RTN15g: Refuse 2nd ws_connect — keeps client disconnected until TTL expires and SUSPENDED fires"
+      "comment": "RTN14h: Refuse 2nd ws_connect — keeps client disconnected until TTL expires and SUSPENDED fires"
     }
   ]
 )
@@ -853,8 +852,9 @@ ASSERT client.connection.id == "proxy-ttl-test-id"
 # T=1s: proxy closes connection -> DISCONNECTED
 # T=1-3s: retry attempt is refused -> stays DISCONNECTED
 # T=3s: connectionStateTtl(2s) expires -> SUSPENDED
-# T=4s: suspendedRetryTimeout(1s) fires -> fresh ws_connect (no resume)
-# -> CONNECTED with new connectionId from real server
+# T=4s: suspendedRetryTimeout(1s) fires -> ws_connect that still attempts a
+#       resume (RTN14h); the server has discarded the state, so it responds
+#       with a new connectionId -> CONNECTED
 
 AWAIT_STATE client.connection.state == ConnectionState.suspended
   WITH timeout: 15s
@@ -867,7 +867,8 @@ AWAIT_STATE client.connection.state == ConnectionState.connected
 ### Assertions
 
 ```pseudo
-# RTN15g: Connection ID changed (fresh connection, not resumed)
+# The server discarded the connection state, so the resume failed server-side
+# and the connection ID changed.
 ASSERT client.connection.id != "proxy-ttl-test-id"
 
 # Verify the proxy log shows at least 3 ws_connects
@@ -878,9 +879,10 @@ ASSERT ws_connects.length >= 3
 # First ws_connect: initial — no resume
 ASSERT ws_connects[0].queryParams["resume"] IS null
 
-# Last ws_connect: fresh connection after TTL expiry — no resume
+# RTN14h: the reconnection made after the TTL expired and the connection became
+# suspended still attempts a resume, so it carries the resume query param.
 last_ws_connect = ws_connects[ws_connects.length - 1]
-ASSERT last_ws_connect.queryParams["resume"] IS null
+ASSERT last_ws_connect.queryParams["resume"] IS NOT null
 ```
 
 ### Cleanup
