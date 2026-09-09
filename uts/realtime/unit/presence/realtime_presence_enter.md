@@ -12,12 +12,15 @@ and `leaveClient` functions. These methods send PRESENCE ProtocolMessages to the
 and handle ACK/NACK responses. Tests cover protocol message format, implicit channel
 attach, connection state conditions, and error cases.
 
-**Note on wildcard clientId:** Several tests use `clientId: "*"` (wildcard) which is
-the Ably convention for clients permitted to act on behalf of any clientId via
-`enterClient`/`updateClient`/`leaveClient`. Some SDKs may reject `"*"` at the
-`ClientOptions` construction level. In such cases, adapt these tests to use a
-concrete clientId (e.g., `"admin"`) and skip the client-side `enterClient` clientId
-mismatch check (RTP15f), or configure the mock to accept any clientId.
+**Note on acting on behalf of other clients:** Tests that use
+`enterClient`/`updateClient`/`leaveClient` for arbitrary clientIds use an
+*unidentified* client (key auth with no `clientId`), which is permitted to act
+on behalf of any clientId. Per RSA7c, `"*"` is a reserved value for
+`ClientOptions#clientId` and must be rejected at construction time — the
+wildcard-clientId state referenced by RTP8j arises only from token auth with a
+wildcard (`clientId: "*"`) token. Per RTP15f, an *identified* client calling
+`enterClient` with a different clientId results in an error (client-side or via
+server NACK).
 
 ---
 
@@ -280,9 +283,6 @@ CLOSE_CLIENT(client)
 
 ### Setup
 
-Note: Some SDKs may reject wildcard clientId `"*"` at the `ClientOptions`
-construction level rather than at `enter()` time. In that case, this test
-validates that the error occurs at `ClientOptions` creation instead.
 ```pseudo
 channel_name = "test-RTP8j-wild-${random_id()}"
 
@@ -295,10 +295,13 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Wildcard clientId
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Wildcard clientId via a wildcard token. RSA7c reserves "*" as a
+# ClientOptions#clientId value (construction must reject it), so the RTP8j
+# wildcard state arises from token auth with a token whose clientId is "*".
+client = Realtime(options: ClientOptions(
+  tokenDetails: TokenDetails(token: "wildcard-token", expires: now() + 3600000, clientId: "*"),
+  autoConnect: false
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -542,9 +545,10 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Unidentified client (key auth, no clientId): permitted to act on behalf of
+# any clientId via enterClient/updateClient/leaveClient. (RSA7c reserves "*"
+# as a ClientOptions#clientId value, so it must not be used here.)
+client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
 
@@ -601,9 +605,10 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Unidentified client (key auth, no clientId): permitted to act on behalf of
+# any clientId via enterClient/updateClient/leaveClient. (RSA7c reserves "*"
+# as a ClientOptions#clientId value, so it must not be used here.)
+client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
 
@@ -661,9 +666,10 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Unidentified client (key auth, no clientId): permitted to act on behalf of
+# any clientId via enterClient/updateClient/leaveClient. (RSA7c reserves "*"
+# as a ClientOptions#clientId value, so it must not be used here.)
+client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
 
@@ -931,33 +937,44 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Wildcard clientId to allow both enter() and enterClient() on the same connection.
-# See note in Purpose section about SDK-level wildcard validation.
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
-channel = client.channels.get(channel_name)
+# Two clients: no single clientId permits both operations on a compliant SDK.
+# Per RTP8j, a wildcard (or null) clientId means plain enter() errors
+# immediately; per RTP15f, an identified client's enterClient() with a
+# different clientId indicates an error. So the normally-entered member is an
+# identified client, and the enterClient/leaveClient operations come from a
+# second, unidentified (key-auth) client — mirroring the real-world shape of
+# an end user plus a server-side process acting on behalf of other users.
+client_main = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "main-user", autoConnect: false))
+channel_main = client_main.channels.get(channel_name)
+
+client_ops = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
+channel_ops = client_ops.channels.get(channel_name)
 ```
 
 ### Test Steps
 ```pseudo
-client.connect()
-AWAIT_STATE client.connection.state == ConnectionState.connected
-AWAIT channel.attach()
+client_main.connect()
+AWAIT_STATE client_main.connection.state == ConnectionState.connected
+AWAIT channel_main.attach()
 
-# Normal enter for the wildcard client
-AWAIT channel.presence.enter(data: "main-client")
+client_ops.connect()
+AWAIT_STATE client_ops.connection.state == ConnectionState.connected
+AWAIT channel_ops.attach()
 
-# enterClient for a different user
-AWAIT channel.presence.enterClient("other-user", data: "other-data")
+# Normal enter for the identified main client
+AWAIT channel_main.presence.enter(data: "main-client")
+
+# enterClient for a different user, from the unidentified client
+AWAIT channel_ops.presence.enterClient("other-user", data: "other-data")
 
 # leaveClient for the other user
-AWAIT channel.presence.leaveClient("other-user")
+AWAIT channel_ops.presence.leaveClient("other-user")
 ```
 
 ### Assertions
 ```pseudo
 # Three presence messages sent: enter, enterClient, leaveClient
+# (each operation is awaited, so the capture order is deterministic)
 ASSERT captured_presence.length == 3
 
 # The main client's enter is unaffected by the enterClient/leaveClient calls
@@ -971,7 +988,8 @@ ASSERT captured_presence[1].presence[0].clientId == "other-user"
 ASSERT captured_presence[2].presence[0].action == LEAVE
 ASSERT captured_presence[2].presence[0].clientId == "other-user"
 
-CLOSE_CLIENT(client)
+CLOSE_CLIENT(client_main)
+CLOSE_CLIENT(client_ops)
 ```
 
 ---
@@ -1033,9 +1051,10 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Unidentified client (key auth, no clientId): permitted to act on behalf of
+# any clientId via enterClient/updateClient/leaveClient. (RSA7c reserves "*"
+# as a ClientOptions#clientId value, so it must not be used here.)
+client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel = client.channels.get(channel_name)
 ```
 
@@ -1151,9 +1170,10 @@ mock_ws_b = MockWebSocket(
 install_mock(mock_ws_a, client: "A")
 install_mock(mock_ws_b, client: "B")
 
-# Note: clientId "*" may not be accepted by all SDKs at construction time.
-# See top-level note for alternative auth patterns (e.g., key auth without clientId).
-client_a = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "*", autoConnect: false))
+# Two unidentified clients (key auth, no clientId): permitted to act on behalf
+# of any clientId via enterClient. (RSA7c reserves "*" as a
+# ClientOptions#clientId value, so it must not be used here.)
+client_a = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 client_b = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
 channel_a = client_a.channels.get(channel_name)
 channel_b = client_b.channels.get(channel_name)

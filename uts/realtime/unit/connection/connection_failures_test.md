@@ -77,9 +77,12 @@ AWAIT_STATE client.connection.state == ConnectionState.failed
 # Connection transitioned to FAILED
 ASSERT client.connection.state == ConnectionState.failed
 
-# Error reason is set
+# Error reason is set. Per RSA4a2, the SDK substitutes 40171 ("no means to
+# renew the token") for the server's 40142, having detected it has no way to
+# renew (no key, authCallback or authUrl). Matches the proxy integration spec
+# (connection_resume.md, RTN15h1 note) and error_reason_test.md (RTN25).
 ASSERT client.connection.errorReason IS NOT null
-ASSERT client.connection.errorReason.code == 40142
+ASSERT client.connection.errorReason.code == 40171
 ASSERT client.connection.errorReason.statusCode == 401
 CLOSE_CLIENT(client)
 ```
