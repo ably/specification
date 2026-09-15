@@ -1,6 +1,6 @@
 # Heartbeat Tests (RTN23)
 
-Spec points: `RTN23`, `RTN23a`, `RTN23b`
+Spec points: `RTN23`, `RTN23a`, `RTN23b`, `RTN23c`
 
 ## Test Type
 Unit test with mocked WebSocket client
@@ -19,7 +19,9 @@ RTN23 defines how the client detects connection liveness:
   1. **HEARTBEAT protocol messages** (`heartbeats=true` in connection URL) - for platforms where the WebSocket client does NOT surface ping events
   2. **WebSocket ping frames** (`heartbeats=false` or omitted) - for platforms where the WebSocket client CAN surface ping events
 
-A concrete implementation should implement either RTN23a with HEARTBEAT messages OR RTN23b with ping frames, depending on platform capabilities. The test cases below cover both approaches.
+- **RTN23c**: A third value, `heartbeats=bounce`, asks the server to check liveness at the protocol level using PING messages instead of HEARTBEATs. Clients whose code may be suspended while the transport stays alive (browsers) should send this. Every client, whatever `heartbeats` value it sent, must answer a PING with a PONG on the same transport (RTN23c1), echoing the PING's `id` (RTN23c2).
+
+A concrete implementation should implement either RTN23a with HEARTBEAT messages OR RTN23b with ping frames, depending on platform capabilities (browser implementations additionally send `heartbeats=bounce`, per RTN23c). All implementations must implement RTN23c1. The test cases below cover all of these.
 
 ### Verifying Transient States
 
@@ -1164,6 +1166,286 @@ CLOSE_CLIENT(client)
 
 ---
 
+# RTN23c Tests (heartbeats=bounce and PING/PONG)
+
+The first test applies to platforms where the client library's code may be suspended while the transport itself remains alive and continues to answer transport-level pings (browsers, per RTN23c). Such clients should send `heartbeats=bounce` in the connection URL. The remaining tests apply to **all** platforms: the obligation to answer a PING with a PONG does not depend on the `heartbeats` value the client sent.
+
+---
+
+## RTN23c - Client sends heartbeats=bounce when its code may be suspended independently of the transport
+
+**Test ID**: `realtime/unit/RTN23c/heartbeats-bounce-query-param-0`
+
+**Spec requirement:** A client running in an environment where the transport may keep answering transport-level liveness checks while the client's own code is suspended (e.g. a web browser) should send `heartbeats=bounce`.
+
+Tests that the client requests protocol-level PING/PONG liveness checking. Only applies to browser (or equivalent) builds of an SDK.
+
+### Setup
+
+```pseudo
+captured_url = null
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    captured_url = conn.url
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id",
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+```
+
+### Test Steps
+
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+### Assertions
+
+```pseudo
+ASSERT captured_url.query_params["heartbeats"] == "bounce"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTN23c1 - Client responds to PING with PONG echoing id
+
+**Test ID**: `realtime/unit/RTN23c1/ping-pong-echo-id-0`
+
+**Spec requirement:** On receiving a PING, the client must send a PONG on the same transport (RTN23c1). If the PING has an `id`, the PONG must carry the same `id`; otherwise the PONG must have no `id` (RTN23c2). A PONG does not expect an ACK, so must not have a `msgSerial` (RTN7b).
+
+### Setup
+
+```pseudo
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id",
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+```
+
+### Test Steps
+
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# PING with an id
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: PING,
+  id: "ping-1"
+))
+pong_with_id = AWAIT mock_ws.await_next_message_from_client()
+
+# PING without an id
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: PING
+))
+pong_without_id = AWAIT mock_ws.await_next_message_from_client()
+```
+
+### Assertions
+
+```pseudo
+ASSERT pong_with_id.action == PONG
+ASSERT pong_with_id.id == "ping-1"
+ASSERT pong_with_id.msgSerial IS NULL
+
+ASSERT pong_without_id.action == PONG
+ASSERT pong_without_id.id IS NULL
+ASSERT pong_without_id.msgSerial IS NULL
+
+# A PONG is a bare liveness response; nothing else should be populated
+FOR pong IN [pong_with_id, pong_without_id]:
+  ASSERT pong.channel IS NULL
+  ASSERT pong.messages IS NULL
+  ASSERT pong.presence IS NULL
+
+# The client sent nothing else in response to the PINGs (e.g. no HEARTBEAT)
+client_messages = mock_ws.events.filter(e => e.type == MESSAGE_FROM_CLIENT)
+ASSERT client_messages.length == 2
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTN23c1 - Client responds to PING regardless of heartbeats param
+
+**Test ID**: `realtime/unit/RTN23c1/pong-regardless-of-heartbeats-param-1`
+
+**Spec requirement:** The client must answer a PING with a PONG regardless of the `heartbeats` value it sent when initiating the transport.
+
+Uses `transportParams` (RTC1f1) to override whatever `heartbeats` value the platform sends by default, so that the test exercises a value other than the platform's own.
+
+### Setup
+
+```pseudo
+captured_url = null
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    captured_url = conn.url
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id",
+      connectionKey: "connection-key",
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key",
+        maxIdleInterval: 15000,
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  transportParams: { "heartbeats": "false" },
+  autoConnect: false
+))
+```
+
+### Test Steps
+
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+ASSERT captured_url.query_params["heartbeats"] == "false"
+
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: PING,
+  id: "ping-1"
+))
+pong = AWAIT mock_ws.await_next_message_from_client()
+```
+
+### Assertions
+
+```pseudo
+ASSERT pong.action == PONG
+ASSERT pong.id == "ping-1"
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTN23a - PING message resets idle timer
+
+**Test ID**: `realtime/unit/RTN23a/ping-resets-timer-6`
+
+**Spec requirement:** Any message from the server, including PING messages, resets the idle timer (RTN23a). A client using `heartbeats=bounce` relies on this, since the server sends PINGs rather than HEARTBEATs.
+
+### Setup
+
+```pseudo
+connection_attempt_count = 0
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    conn.respond_with_success(ProtocolMessage(
+      action: CONNECTED,
+      connectionId: "connection-id-" + connection_attempt_count,
+      connectionKey: "connection-key-" + connection_attempt_count,
+      connectionDetails: ConnectionDetails(
+        connectionKey: "connection-key-" + connection_attempt_count,
+        maxIdleInterval: 3000,  # 3 seconds
+        connectionStateTtl: 120000
+      )
+    ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  realtimeRequestTimeout: 1000,  # 1 second
+  disconnectedRetryTimeout: 500,
+  autoConnect: false
+))
+```
+
+### Test Steps
+
+```pseudo
+enable_fake_timers()
+
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+ASSERT connection_attempt_count == 1
+
+# Advance time (not enough to trigger timeout: 3000 + 1000 = 4000ms)
+ADVANCE_TIME(2000)
+# Send PING from server - resets timer
+mock_ws.active_connection.send_to_client(ProtocolMessage(
+  action: PING,
+  id: "ping-1"
+))
+# Advance time again (2000ms since PING, still within threshold)
+ADVANCE_TIME(2000)
+# Connection should still be alive - no reconnection triggered
+ASSERT client.connection.state == ConnectionState.connected
+ASSERT connection_attempt_count == 1
+
+# Advance time past the timeout window (4100ms since last PING)
+ADVANCE_TIME(2100)
+
+# After idle timeout fires, the client enters DISCONNECTED and waits
+# disconnectedRetryTimeout before reconnecting. If using fake timers,
+# ensure time is advanced past both the idle timeout AND the retry delay.
+
+# Wait for reconnection to complete
+AWAIT_STATE client.connection.state == ConnectionState.connected
+```
+
+### Assertions
+
+```pseudo
+# Verify reconnection happened
+ASSERT connection_attempt_count == 2
+
+# Verify the client closed the first WebSocket connection
+client_close_events = mock_ws.events.filter(e => e.type == CLIENT_CLOSE)
+ASSERT client_close_events.length == 1
+CLOSE_CLIENT(client)
+```
+
+---
+
 # Implementation Notes
 
 > **Implementation note:** Some SDKs perform an internet connectivity check (RTN17j)
@@ -1185,6 +1467,13 @@ A concrete SDK implementation should:
    - Send `heartbeats=true` in connection URL
    - Expect HEARTBEAT protocol messages from server
    - Implement RTN23a tests
+
+4. **If the library's code may be suspended while the transport stays alive (browsers)**:
+   - Send `heartbeats=bounce` in connection URL instead of `true` (RTN23c)
+   - Expect PING protocol messages from server; these reset the idle timer like any other message
+   - Implement the RTN23c test
+
+5. **In all cases**: answer PING with PONG (RTN23c1 tests)
 
 ### Platform-Specific Notes
 
