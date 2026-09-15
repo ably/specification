@@ -112,18 +112,27 @@ channel = client.channels.get(channel_name, { modes: ["OBJECT_SUBSCRIBE", "OBJEC
 ### Test Steps
 
 ```pseudo
+// Record connection states BEFORE the disconnect stimulus (channel.attach(), below).
+// DISCONNECTED is transient (RTN15a reconnects immediately); a post-stimulus AWAIT_STATE
+// can miss it, so this listener MUST precede the stimulus — reordering breaks the test.
+// (see docs/writing-test-specs.md, "Verifying Transient States")
+state_changes = []
+client.connection.on((change) => { state_changes.append(change.current) })
+
 client.connect()
 AWAIT_STATE client.connection.state == CONNECTED
   WITH timeout: 15 seconds
 
-// First attach triggers sync; proxy disconnects mid-sync
+// First attach triggers sync; proxy disconnects mid-sync, then the client auto-reconnects.
 channel.attach()
-AWAIT_STATE client.connection.state == DISCONNECTED
-  WITH timeout: 15 seconds
-
-// Client auto-reconnects; re-attach triggers fresh sync
+// Gate on the RECORDED list before the final wait: the drop lands only after the sync frame
+// round-trips, so an immediate AWAIT_STATE CONNECTED would no-op (still connected) and race it.
+poll_until(state_changes CONTAINS DISCONNECTED, timeout: 30s)
+// Final wait targets CONNECTED, a sticky state — safe for AWAIT_STATE.
 AWAIT_STATE client.connection.state == CONNECTED
   WITH timeout: 30 seconds
+// CONTAINS_IN_ORDER is a subsequence match, so the leading initial-connect states are fine.
+ASSERT state_changes CONTAINS_IN_ORDER [DISCONNECTED, CONNECTING, CONNECTED]
 
 // get() waits for SYNCED — will only resolve if re-sync completes
 root = AWAIT channel.object.get()
@@ -200,12 +209,21 @@ root_b = AWAIT channel_b.object.get()
   WITH timeout: 15 seconds
 poll_until_success(root_b.get("key1").value() == "initial")
 
+// Record B's connection states BEFORE the disconnect stimulus (trigger_action, below).
+// DISCONNECTED is transient (RTN15a reconnects immediately); a post-stimulus AWAIT_STATE
+// can miss it, so this listener MUST precede the stimulus — reordering breaks the test.
+// (see docs/writing-test-specs.md, "Verifying Transient States")
+state_changes = []
+client_b.connection.on((change) => { state_changes.append(change.current) })
+
 // Disconnect client B
 session.trigger_action({ type: "disconnect" })
-AWAIT_STATE client_b.connection.state == DISCONNECTED
-  WITH timeout: 15 seconds
+// Mid-test gate: poll the RECORDED list (not AWAIT_STATE on live state, which could miss
+// the transient DISCONNECTED). This blocks A's publish until B has observed the drop.
+poll_until(state_changes CONTAINS DISCONNECTED, timeout: 15s)
 
-// While B is disconnected, A publishes a mutation
+// A publishes while B is down. Best-effort: RTN15a may reconnect/re-sync B before this
+// round-trips (then it tests plain delivery, not RTO7/RTO8); the final poll tolerates both.
 AWAIT root_a.set("key1", "updated_during_disconnect")
 
 // Client B reconnects and re-syncs; the mutation should be visible
