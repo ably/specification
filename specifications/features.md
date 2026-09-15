@@ -2709,6 +2709,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       ACTIVATE // TR2
       OBJECT // TR2
       OBJECT_SYNC // TR2
+      ANNOTATION // TR2
 
     class AuthDetails: // AD*
       accessToken: String // AD2, RTC8a
