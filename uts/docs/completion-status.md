@@ -187,7 +187,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTN20 | OS network change handling (RTN20a–RTN20c) | Yes — `realtime/unit/connection/network_change_test.md` |
 | RTN21 | ConnectionDetails override defaults | Partial — `realtime/unit/connection/update_events_test.md` covers RTN21; `realtime/integration/connection_lifecycle_test.md` covers RTN21 |
 | RTN22 | Re-authentication request handling (RTN22a) | Yes — `realtime/unit/connection/server_initiated_reauth_test.md`; `realtime/integration/proxy/auth_reauth.md` covers RTN22 |
-| RTN23 | Heartbeats (RTN23a–RTN23b) | Yes — `realtime/unit/connection/heartbeat_test.md` |
+| RTN23 | Heartbeats (RTN23a–RTN23c, incl. PING/PONG) | Yes — `realtime/unit/connection/heartbeat_test.md` |
 | RTN24 | UPDATE event on CONNECTED while connected | Yes — `realtime/unit/connection/update_events_test.md` |
 | RTN25 | Connection#errorReason attribute | Yes — `realtime/unit/connection/error_reason_test.md` |
 | RTN26 | Connection#whenState function (RTN26a–RTN26b) | Yes — `realtime/unit/connection/when_state_test.md` |

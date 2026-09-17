@@ -651,7 +651,10 @@ The threading and/or asynchronous model for each realtime library will vary by l
   - `(RTN19b)` If there are any pending channels i.e. in the `ATTACHING` or `DETACHING` state, the respective `ATTACH` or `DETACH` message should be resent to Ably
 - `(RTN23)` Heartbeats
   - `(RTN23a)` If a transport does not receive any indication of activity on a transport for a period greater than the sum of the `maxIdleInterval` (which will be sent in the `connectionDetails` of the most recent `CONNECTED` message received on that transport) and the [`realtimeRequestTimeout`](#TO3l11), that transport should be disconnected. Any message (or non-message indicator, see `RTN23b`) received counts as an indication of activity and should reset the timer, not merely heartbeat messages. However, it must be received (that is, sent from the server to the client); client-sent data does not count.
-  - `(RTN23b)` When initiating a connection, the client may send a `heartbeats` param in the querystring, with value `true` or `false`. If the value is true, the server will use Ably protocol messages (for example, a message with a `HEARTBEAT` action) to satisfy the `maxIdleInterval` requirement. If it is false or unspecified, the server is permitted to use any transport-level mechanism (for example, [websocket](https://ably.com/topic/websockets) ping frames) to satisfy this. So for example, for [websocket transports](https://ably.com/topic/websockets), if the client is able to observe websocket pings, then it should send `heartbeats=false`. If not, it should send `heartbeats=true`.
+  - `(RTN23b)` When initiating a connection, the client may send a `heartbeats` param in the querystring, with value `true`, `false` or `bounce`. If the value is `true`, the server will use Ably protocol messages (for example, a message with a `HEARTBEAT` action) to satisfy the `maxIdleInterval` requirement. If it is `false` or unspecified, the server is permitted to use any transport-level mechanism (for example, [websocket](https://ably.com/topic/websockets) ping frames) to satisfy this. For `bounce`, see [RTN23c](#RTN23c). So for example, for [websocket transports](https://ably.com/topic/websockets), if the client is able to observe websocket pings, then it should send `heartbeats=false`. If not, it should send `heartbeats=true`, unless [RTN23c](#RTN23c) applies.
+  - `(RTN23c)` In an environment where client code execution might be suspended while leaving the transport itself alive (for example, a browser which may freeze a background tab but continue to respond to websocket ping frames on the tab's behalf), the client should specify `heartbeats=bounce`. In this mode, the server will send `PING` `ProtocolMessage`s instead of `HEARTBEAT`s to satisfy the `maxIdleInterval` requirement.
+    - `(RTN23c1)` On receiving a `ProtocolMessage` with action `PING` on a transport, the client must send a `ProtocolMessage` with action `PONG` on that same transport. The client must do this regardless of the value (if any) of the `heartbeats` param that it sent when initiating that transport.
+    - `(RTN23c2)` If the `PING` contains an `id` ([TR4n](#TR4n)), the `PONG` must contain the same `id`. Otherwise, the `PONG` must not contain an `id`.
 - `(RTN24)` A connected client may receive a `CONNECTED` `ProtocolMessage` from Ably at any point (though is typically triggered by a reauth, see `RTC8a`). The `connectionDetails` in the `ProtocolMessage` must override any stored details, see `RTN21`. The `Connection` should emit an `UPDATE` event with a `ConnectionStateChange` object, which should have both `previous` and `current` attributes set to `CONNECTED`, and the `reason` attribute set to to the `error` member of the `CONNECTED` `ProtocolMessage` (if any). (Note that `UPDATE` should be the only event emitted: in particular, the library must not emit an `CONNECTED` event if the client was already connected, see `RTN4h`).
 - `(RTN25)` `Connection#errorReason` attribute is an optional `ErrorInfo` object which is set by the library when an error occurs on the connection, as described by [RSA4c1](#RSA4c1), [RSA4d](#RSA4d), [RTN11d](#RTN11d), [RTN14a](#RTN14a), [RTN14b](#RTN14b), [RTN14e](#RTN14e), [RTN14g](#RTN14g), [RTN15c7](#RTN15c7), [RTN15c4](#RTN15c4), [RTN15d](#RTN15d), [RTN15h](#RTN15h), [RTN15i](#RTN15i), [RTN16e](#RTN16e).
 - `(RTN26)` `Connection#whenState` function:
@@ -1588,7 +1591,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 #### ProtocolMessage
 
 - `(TR1)` A `ProtocolMessage` represents the type used to send and receive messages over the Realtime protocol. A ProtocolMessage always relates either to the connection or to a single channel only, but can contain multiple individual Messages or PresenceMessages.
-- `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`, `ACTIVATE`, `OBJECT`, `OBJECT_SYNC`, `ANNOTATION`
+- `(TR2)` `ProtocolMessage` `Action` enum has the following values in order from zero: `HEARTBEAT`, `ACK`, `NACK`, `CONNECT`, `CONNECTED`, `DISCONNECT`, `DISCONNECTED`, `CLOSE`, `CLOSED`, `ERROR`, `ATTACH`, `ATTACHED`, `DETACH`, `DETACHED`, `PRESENCE`, `MESSAGE`, `SYNC`, `AUTH`, `ACTIVATE`, `OBJECT`, `OBJECT_SYNC`, `ANNOTATION`, `PING`, `PONG`
 - `(TR3)` `ProtocolMessage` `Flag` enum has the following values, where a flag with value `n` is defined to be set if the bitwise AND of the `flags` field with `2ⁿ` is nonzero
   - `(TR3a)` 0: `HAS_PRESENCE`
   - `(TR3b)` 1: `HAS_BACKLOG`
@@ -1756,7 +1759,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(CD2e)` `maxInboundRate` is the maximum allowable number of requests per second from a client or Ably. In the case of a realtime connection, this restriction applies to the number of `ProtocolMessage` objects sent, whereas in the case of REST, it is the total number of REST requests per second
   - `(CD2f)` `connectionStateTtl` is the duration that Ably will persist the connection state when a Realtime client is abruptly disconnected
   - `(CD2g)` `serverId` string is a unique identifier for the front-end server that the client has connected to. This server ID is only used for the purposes of debugging
-  - `(CD2h)` `maxIdleInterval` is the maximum length of time in milliseconds that the server will allow no activity to occur in the server-\>client direction. After such a period of inactivity, the server will send a `HEARTBEAT` or transport-level ping to the client. If the value is 0, the server will allow arbitrarily-long levels of inactivity.
+  - `(CD2h)` `maxIdleInterval` is the maximum length of time in milliseconds that the server will allow no activity to occur in the server-\>client direction. After such a period of inactivity, the server will send a `HEARTBEAT` or `PING` `ProtocolMessage`, or a transport-level ping, to the client (which of these depends on the `heartbeats` param, see [RTN23b](#RTN23b) and [RTN23c](#RTN23c)). If the value is 0, the server will allow arbitrarily-long levels of inactivity.
   - `(CD2i)` `objectsGCGracePeriod` integer - the length of time, in milliseconds, that the client library must wait before releasing resources for tombstoned objects and map entries (see [RTO10](../objects-features#RTO10))
   - `(CD2j)` `siteCode` string - an identifier for the site that the client has connected to\
     h4. ChannelProperties
@@ -2709,6 +2712,9 @@ Each type, method, and attribute is labelled with the name of one or more clause
       ACTIVATE // TR2
       OBJECT // TR2
       OBJECT_SYNC // TR2
+      ANNOTATION // TR2
+      PING // TR2
+      PONG // TR2
 
     class AuthDetails: // AD*
       accessToken: String // AD2, RTC8a

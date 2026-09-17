@@ -123,6 +123,14 @@ Each Protocol Message has an `action` that indicates the nature of the message.
 
 - ANNOTATION (21) := The \`annotations\` field of the Protocol Message has a payload of one or more `Annotation` messages, all associated with a single channel. They may be sent in either direction. The channel associated with these annotations is indicated in the channel field.`<br>`{=html}`<br>`{=html}
 
+<!-- -->
+
+- PING (22) := Sent by either peer to check that the other is alive and able to process Protocol Messages (as opposed to merely having a live transport). The recipient must respond with a `PONG` on the same transport, carrying the same `id` as the `PING` if it has one. The service only sends `PING` messages on connections whose client requested `heartbeats=bounce` when initiating the connection, in which case it closes the transport if it does not receive a `PONG` in time; see [client library spec RTN23c](/client-lib-development-guide/features#RTN23c). Like heartbeats, `PING` messages are not exposed to the client app. No other message fields are populated in a `PING` message.
+
+<!-- -->
+
+- PONG (23) := Sent by either peer in response to a `PING`, with the same `id` as the `PING` if it had one. A `PONG` never elicits a response, and is not exposed to the client app. No other message fields are populated in a `PONG` message.
+
 ## Protocol Message fields
 
 ProtocolMessages are populated with one or more of the following fields.

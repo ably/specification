@@ -191,6 +191,7 @@ mock_ws.active_connection.send_ping_frame()
 **Connection URL query parameter:**
 - If the client sends `heartbeats=true`, it expects HEARTBEAT protocol messages
 - If the client sends `heartbeats=false` (or omits it), the server may use ping frames
+- If the client sends `heartbeats=bounce` (RTN23c), it expects PING protocol messages, which it must answer with PONG (RTN23c1). Browser builds send this.
 - The test should verify which parameter the client sends based on platform capabilities
 
 ## Protocol Message Templates
@@ -225,6 +226,13 @@ ERROR_MESSAGE(code, message) = ProtocolMessage(
 
 HEARTBEAT_MESSAGE = ProtocolMessage(
   action: HEARTBEAT
+)
+
+# Server-initiated liveness check (RTN23c1); the client must reply with
+# ProtocolMessage(action: PONG, id: id)
+PING_MESSAGE(id) = ProtocolMessage(
+  action: PING,
+  id: id
 )
 ```
 
