@@ -1,6 +1,6 @@
 # REST Client Tests
 
-Spec points: `RSC5`, `RSC7`, `RSC7b`, `RSC7c`, `RSC7d`, `RSC7e`, `RSC8`, `RSC8a`, `RSC8b`, `RSC8c`, `RSC8d`, `RSC8e`, `RSC13`, `RSC17`, `RSC18`
+Spec points: `RSC5`, `RSC7`, `RSC7c`, `RSC7d`, `RSC7e`, `RSC8`, `RSC8a`, `RSC8b`, `RSC8c`, `RSC8d`, `RSC8e`, `RSC13`, `RSC17`, `RSC18`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -481,28 +481,6 @@ ASSERT client.clientId == client.auth.clientId
 
 ---
 
-## RSC17 - ClientId Attribute
-
-**Test ID**: `rest/unit/RSC17/client-id-matches-auth-1`
-
-**Spec requirement:** When instantiating a `RestClient`, if a `clientId` attribute is set in `ClientOptions`, then the `Auth#clientId` attribute will contain the provided `clientId`.
-
-### Setup
-```pseudo
-client = Rest(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  clientId: "explicit-client-id"
-))
-```
-
-### Assertions
-```pseudo
-ASSERT client.clientId == "explicit-client-id"
-ASSERT client.clientId == client.auth.clientId
-```
-
----
-
 ## RSC18 - TLS configuration
 
 **Test ID**: `rest/unit/RSC18/tls-controls-protocol-scheme-0`
@@ -547,22 +525,39 @@ FOR EACH test_case IN test_cases:
 
 **Test ID**: `rest/unit/RSC18/basic-auth-over-http-rejected-1`
 
-**Spec requirement:** Basic authentication (API key) must be rejected when `tls` is false. Token authentication is permitted over HTTP. Error code 40103.
+**Spec requirement:** RSC18 / RSA1 — Any attempt to use Basic Auth (API key) over HTTP without TLS must result in an error, as private keys cannot be submitted over an insecure connection. Token authentication is permitted over HTTP.
 
-Tests that Basic authentication is rejected when TLS is disabled.
+Tests that Basic authentication is rejected when TLS is disabled. The spec imposes no timing on when the error surfaces, so the failure is accepted whether it is raised at construction time or when the first request is attempted; the only requirement is that no request reaches the transport carrying the key over plaintext.
 
 ### Setup
 ```pseudo
-# No mock needed - should fail before making request
+mock_http = MockHttpClient()
+mock_http.queue_response(200, { "time": 1234567890000 })
 ```
 
 ### Test Steps
 ```pseudo
-Rest(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  tls: false
-)) FAILS WITH error
-ASSERT error.code == 40103 OR error.message CONTAINS "insecure" OR error.message CONTAINS "TLS"
+error = null
+TRY:
+  client = Rest(options: ClientOptions(
+    key: "appId.keyId:keySecret",
+    tls: false
+  ))
+  # Attempt a request; the client may instead have failed at construction above.
+  AWAIT client.time()
+CATCH e:
+  error = e
+END
+```
+
+### Assertions
+```pseudo
+# An error must have surfaced by the time the request would have been sent.
+ASSERT error IS NOT null
+ASSERT error.message CONTAINS "insecure" OR error.message CONTAINS "TLS"
+
+# No request carrying the key must have reached the transport over plaintext.
+ASSERT mock_http.captured_requests.length == 0
 ```
 
 ### Note
