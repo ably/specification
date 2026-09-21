@@ -1,6 +1,6 @@
 # Error Types Tests
 
-Spec points: `TI1`, `TI2`, `TI3`, `TI4`, `TI5`
+Spec points: `TI1`, `TI2`, `TI4`
 
 ## Test Type
 Unit test - pure type/model validation
@@ -10,19 +10,19 @@ No mocks required - these verify type structure.
 
 ---
 
-## TI1-TI5 - ErrorInfo attributes
+## TI1, TI4 - ErrorInfo attributes
 
 **Test ID**: `rest/unit/TI1/errorinfo-attributes-0`
 
-**Spec requirement:** ErrorInfo type must provide all required attributes according to TI1-TI5 specifications.
+**Spec requirement:** ErrorInfo type must provide all required attributes according to TI1 (and TI4 for `href`).
 
 | Spec | Attribute | Description |
 |------|-----------|-------------|
 | TI1 | code | Ably-specific error code |
-| TI2 | statusCode | HTTP status code |
-| TI3 | message | Human-readable error message |
-| TI4 | href | URL for more information |
-| TI5 | cause | Underlying cause error/exception |
+| TI1 | statusCode | HTTP status code |
+| TI1 | message | Human-readable error message |
+| TI1, TI4 | href | URL for more information |
+| TI1 | cause | Underlying cause error/exception |
 
 Tests that `ErrorInfo` (or `AblyException`) has all required attributes.
 
@@ -31,10 +31,10 @@ Tests that `ErrorInfo` (or `AblyException`) has all required attributes.
 | ID | Spec | Attribute | Type | Description |
 |----|------|-----------|------|-------------|
 | 1 | TI1 | `code` | Integer | Ably-specific error code |
-| 2 | TI2 | `statusCode` | Integer | HTTP status code |
-| 3 | TI3 | `message` | String | Human-readable error message |
-| 4 | TI4 | `href` | String | URL for more information |
-| 5 | TI5 | `cause` | Error/Exception | Underlying cause |
+| 2 | TI1 | `statusCode` | Integer | HTTP status code |
+| 3 | TI1 | `message` | String | Human-readable error message |
+| 4 | TI1, TI4 | `href` | String | URL for more information |
+| 5 | TI1 | `cause` | Error/Exception | Underlying cause |
 
 ### Test Steps
 ```pseudo
@@ -42,11 +42,11 @@ Tests that `ErrorInfo` (or `AblyException`) has all required attributes.
 error = ErrorInfo(code: 40000)
 ASSERT error.code == 40000
 
-# TI2 - statusCode attribute
+# TI1 - statusCode attribute
 error = ErrorInfo(code: 40100, statusCode: 401)
 ASSERT error.statusCode == 401
 
-# TI3 - message attribute
+# TI1 - message attribute
 error = ErrorInfo(
   code: 40000,
   statusCode: 400,
@@ -54,14 +54,14 @@ error = ErrorInfo(
 )
 ASSERT error.message == "Bad request: invalid parameter"
 
-# TI4 - href attribute (optional)
+# TI1, TI4 - href attribute (optional)
 error = ErrorInfo(
   code: 40000,
   href: "https://help.ably.io/error/40000"
 )
 ASSERT error.href == "https://help.ably.io/error/40000"
 
-# TI5 - cause attribute (optional)
+# TI1 - cause attribute (optional)
 original_error = Exception("Network failure")
 error = ErrorInfo(
   code: 50003,
@@ -74,9 +74,9 @@ ASSERT error.cause == original_error
 
 ---
 
-## TI - ErrorInfo from JSON response
+## TI2 - ErrorInfo from JSON response
 
-**Test ID**: `rest/unit/TI/errorinfo-from-json-0`
+**Test ID**: `rest/unit/TI2/errorinfo-from-json-0`
 
 **Spec requirement:** ErrorInfo type must support deserialization from Ably JSON error responses.
 
@@ -136,9 +136,9 @@ IF error.cause IS ErrorInfo:
 
 ---
 
-## TI - AblyException wraps ErrorInfo
+## TI2 - AblyException wraps ErrorInfo
 
-**Test ID**: `rest/unit/TI/ably-exception-wraps-errorinfo-2`
+**Test ID**: `rest/unit/TI2/ably-exception-wraps-errorinfo-2`
 
 **Spec requirement:** AblyException (throwable) must wrap ErrorInfo and expose its attributes.
 
