@@ -135,7 +135,7 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_request = req
-    req.respond_with(200, {"time": 1234567890000})
+    req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -212,7 +212,7 @@ connection.respond_with_success()
 # Wait for and handle request
 request = AWAIT mock_http.await_request()
 ASSERT request.headers["X-Ably-Version"] IS NOT null
-request.respond_with(200, {"time": 1234567890000})
+request.respond_with(200, [1234567890000])
 
 # Complete operation
 result = AWAIT request_future
@@ -1034,7 +1034,7 @@ onRequest: (req) => {
 ```pseudo
 onRequest: (req) => {
   IF req.url.path CONTAINS "/time":
-    req.respond_with(200, {"time": ...})
+    req.respond_with(200, [...])
   ELSE IF req.url.path CONTAINS "/channels":
     req.respond_with(200, [...])
 }
