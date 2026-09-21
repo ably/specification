@@ -562,9 +562,12 @@ mock_http = MockHttpClient(
         headers: { "Content-Type": "application/x-msgpack" }
       )
     ELSE:
-      # Retry succeeds — also returned as msgpack
+      # Retry succeeds — channel status returned as msgpack
       req.respond_with(200,
-        body: msgpack_encode([1234567890000]),
+        body: msgpack_encode({
+          "channelId": "test",
+          "status": {"isActive": true, "occupancy": {"metrics": {"connections": 0}}}
+        }),
         headers: { "Content-Type": "application/x-msgpack" }
       )
   }
@@ -581,7 +584,7 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-result = AWAIT client.time()
+result = AWAIT client.channels.get("test").status()
 ```
 
 ### Assertions
@@ -593,5 +596,5 @@ ASSERT callback_count == 2
 ASSERT request_count == 2
 
 # Result is successful
-ASSERT result == 1234567890000
+ASSERT result IS ChannelDetails
 ```
