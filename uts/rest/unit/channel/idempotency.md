@@ -67,6 +67,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: true
 ))
 channel = client.channels.get(channel_name)
@@ -123,6 +124,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: true
 ))
 channel = client.channels.get(channel_name)
@@ -185,6 +187,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: true
 ))
 channel = client.channels.get(channel_name)
@@ -234,6 +237,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: false
 ))
 channel = client.channels.get(channel_name)
@@ -279,6 +283,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: true  # Even with this enabled
 ))
 channel = client.channels.get(channel_name)
@@ -334,6 +339,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: true
 ))
 channel = client.channels.get(channel_name)
@@ -361,7 +367,7 @@ ASSERT body1["id"] == body2["id"]
 
 **Test ID**: `rest/unit/RSL1k/mixed-ids-in-batch-1`
 
-**Spec requirement:** In a batch publish, messages with client-supplied IDs must be preserved, while messages without IDs receive library-generated IDs using the standard format.
+**Spec requirement:** RSL1k3 - if more than one message is passed to `publish()` and one or more of those messages has a non-empty `id`, then all message ids (present or absent) are preserved on sending the batch. No ids are generated for the id-less messages.
 
 Tests batch publishing with some messages having client IDs and some not.
 
@@ -381,6 +387,7 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   idempotentRestPublishing: true
 ))
 channel = client.channels.get(channel_name)
@@ -405,6 +412,6 @@ body = parse_json(request.body)
 ASSERT body[0]["id"] == "client-id-1"
 ASSERT body[2]["id"] == "client-id-2"
 
-# Library-generated ID for middle message
-ASSERT body[1]["id"] matches pattern "[A-Za-z0-9_-]+:[0-9]+"
+# RSL1k3: an absent id is preserved as absent
+ASSERT "id" NOT IN body[1]
 ```
