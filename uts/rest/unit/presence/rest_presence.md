@@ -432,7 +432,7 @@ mock_http = MockHttpClient(
     captured_requests.push(req)
     req.respond_with(200, [
       { "action": 2, "clientId": "client1", "data": "entered" },
-      { "action": 4, "clientId": "client1", "data": "left" }
+      { "action": 3, "clientId": "client1", "data": "left" }
     ])
   }
 )
@@ -1376,7 +1376,7 @@ mock_http = MockHttpClient(
         headers: { "Link": "</channels/" + channel_name + "/presence/history?page=2>; rel=\"next\"" }
       )
     ELSE:
-      req.respond_with(200, body: [{ "action": 4, "clientId": "c1", "timestamp": 1000 }])
+      req.respond_with(200, body: [{ "action": 3, "clientId": "c1", "timestamp": 1000 }])
   }
 )
 install_mock(mock_http)
@@ -1673,11 +1673,4 @@ ASSERT result.items[3].action == PresenceAction.leave
 ASSERT result.items[4].action == PresenceAction.update
 ```
 
-Note: Action values may vary by SDK. The wire protocol uses:
-- 0 = absent
-- 1 = present
-- 2 = enter
-- 3 = leave (some SDKs use 4)
-- 4 = update (some SDKs use 3)
-
-Verify against your SDK's specific mapping.
+Note: The presence action is encoded on the wire as its enum ordinal, as specified in `specifications/protocol.md` (Presence Message): 0 = absent, 1 = present, 2 = enter, 3 = leave, 4 = update.

@@ -119,7 +119,7 @@ protocol_msg = ProtocolMessage(
   action: PRESENCE,
   connectionId: "proto-conn-1",
   presence: [
-    { "action": "enter", "clientId": "user-1" }
+    { "action": 2, "clientId": "user-1" }
   ]
 )
 
@@ -143,8 +143,8 @@ protocol_msg = ProtocolMessage(
   action: PRESENCE,
   id: "proto-msg-42",
   presence: [
-    { "action": "enter", "clientId": "alice" },
-    { "action": "enter", "clientId": "bob" }
+    { "action": 2, "clientId": "alice" },
+    { "action": 2, "clientId": "bob" }
   ]
 )
 
@@ -168,7 +168,7 @@ protocol_msg = ProtocolMessage(
   action: PRESENCE,
   timestamp: 9999999,
   presence: [
-    { "action": "enter", "clientId": "user-1" }
+    { "action": 2, "clientId": "user-1" }
   ]
 )
 
@@ -188,7 +188,7 @@ ASSERT presence_msg.timestamp == 9999999
 ```pseudo
 json_data = {
   "id": "pm-123",
-  "action": "enter",
+  "action": 2,
   "clientId": "user-1",
   "connectionId": "conn-1",
   "data": "hello",
@@ -228,7 +228,7 @@ ASSERT msg.extras["headers"]["x-key"] == "x-value"
 ```pseudo
 FOR EACH test_case IN test_cases:
   json_data = {
-    "action": "enter",
+    "action": 2,
     "clientId": "user-1",
     "data": test_case.wire_data,
     "encoding": test_case.encoding
@@ -259,7 +259,7 @@ msg = PresenceMessage(
 
 json_data = msg.toJson()
 
-ASSERT json_data["action"] == "enter"
+ASSERT json_data["action"] == 2
 ASSERT json_data["clientId"] == "user-1"
 ASSERT json_data["data"] == "hello"
 ASSERT json_data["extras"]["headers"]["x-key"] == "x-value"
@@ -280,7 +280,7 @@ msg = PresenceMessage(action: ENTER, clientId: "user-1")
 
 json_data = msg.toJson()
 
-ASSERT json_data["action"] == "enter"
+ASSERT json_data["action"] == 2
 ASSERT json_data["clientId"] == "user-1"
 ASSERT "data" NOT IN json_data OR json_data["data"] IS null
 ASSERT "encoding" NOT IN json_data OR json_data["encoding"] IS null
@@ -302,7 +302,7 @@ decoded and decrypted PresenceMessage(s). Behavior is the same as TM3.
 ```pseudo
 # fromEncoded — single message
 raw = {
-  "action": "enter",
+  "action": 2,
   "clientId": "user-1",
   "data": "{\"status\":\"online\"}",
   "encoding": "json"
@@ -317,8 +317,8 @@ ASSERT msg.encoding IS null
 
 # fromEncodedArray — array of messages
 raw_array = [
-  { "action": "enter", "clientId": "alice", "data": "hello" },
-  { "action": "enter", "clientId": "bob", "data": "world" }
+  { "action": 2, "clientId": "alice", "data": "hello" },
+  { "action": 2, "clientId": "bob", "data": "world" }
 ]
 
 messages = PresenceMessage.fromEncodedArray(raw_array)
