@@ -1085,6 +1085,23 @@ Enables the management of device registrations and push notification subscriptio
 || `data` ||| A JSON object containing the push notification payload. |
 | deviceRegistrations: PushDeviceRegistrations ||| RSH1b | A [`PushDeviceRegistrations`]{@link PushDeviceRegistrations} object. |
 | channelSubscriptions: PushChannelSubscriptions ||| RSH1c | A [`PushChannelSubscriptions`]{@link PushChannelSubscriptions} object. |
+| createApnsBroadcast(options: PushApnsBroadcastOptions) => io PushApnsBroadcast ||| RSH1d | Creates an APNs broadcast channel for use with an iOS Live Activity. Call once before starting the Live Activity and persist the returned identifiers for the session. |
+|| `options` ||| An object containing the `message-storage-policy` for the broadcast. |
+|| `returns` ||| The created broadcast, containing its `id` and `apns-channel-id`. |
+| liveActivity: PushLiveActivity ||| RSH1e | A [`PushLiveActivity`]{@link PushLiveActivity} object. |
+
+## class PushLiveActivity
+
+Controls the lifecycle of an iOS Live Activity over an APNs broadcast channel created with [`PushAdmin.createApnsBroadcast`]{@link PushAdmin#createApnsBroadcast}.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| start(params: PushLiveActivityStartParams) => io ||| RSH1e1 | Sends a push-to-start notification to all devices subscribed to the given Ably channels, causing each device to start a new Live Activity. |
+|| `params` ||| An object containing the recipient (either a list of `channels` or a single `device-id`), the broadcast `apns-broadcast` identifier, the `apns` Live Activity start payload, and optional APNs delivery `headers`. |
+| update(params: PushLiveActivityUpdateParams) => io ||| RSH1e2 | Sends a content-state update to all devices with an active Live Activity on the broadcast channel. |
+|| `params` ||| An object containing the broadcast `apns-broadcast` identifier, the `apns` Live Activity update payload, and optional APNs delivery `headers`. |
+| end(params: PushLiveActivityEndParams) => io ||| RSH1e3 | Ends the Live Activity on all subscribed devices and cleans up the APNs channel. |
+|| `params` ||| An object containing the broadcast `apns-broadcast` identifier, the `apns` Live Activity end payload, and optional APNs delivery `headers`. |
 
 ## class JsonObject
 
