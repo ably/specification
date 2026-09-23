@@ -38,8 +38,9 @@ UTS specs use generic pseudocode. You need to map this onto the SDK's actual API
 | `install_mock(mock_http)` | How mocks are injected (DI, platform patching, etc.) |
 | `enable_fake_timers()` | Timer control mechanism |
 | `ADVANCE_TIME(ms)` | Fake timer tick method |
-| `AWAIT_STATE(connection, "connected")` | State waiting helper |
+| `AWAIT_STATE(connection, "connected")` | State waiting helper. Transient states (DISCONNECTED/SUSPENDED after a drop): never await post-stimulus — use the record-and-verify pattern (writing-test-specs.md, "Verifying Transient States"). |
 | `poll_until(condition, ...)` | Shared polling helper (wall-clock deadline — see below) |
+| `state_changes = []` / `events = []` (recording lists) | Event-recording collection for the record-and-verify pattern. Appended from SDK callback threads while `poll_until`/final asserts read it from the test thread — multithreaded SDKs must render it as a thread-safe list. |
 | `poll_until_success(condition)` | Error-tolerant polling helper (see the pseudocode conventions in `uts/README.md`) |
 
 Check the SDK's existing test infrastructure and conventions before writing anything. Reuse existing helpers, mock classes, and patterns.
