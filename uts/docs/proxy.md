@@ -29,7 +29,7 @@ client = Realtime(options: ClientOptions(
   endpoint: "localhost",      # REC1b2: sets both restHost and realtimeHost
   port: session.proxy_port,
   tls: false,
-  useBinaryProtocol: false,  # Required: Dart SDK doesn't implement msgpack
+  useBinaryProtocol: PROTOCOL == "msgpack",  # data-path tests run both protocols; pin to false for SDKs without msgpack
   autoConnect: false
   # Note: explicit hostname endpoint automatically disables fallback hosts (REC2c2)
 ))
@@ -224,7 +224,7 @@ ClientOptions(
   endpoint: "localhost",      # REC1b2: sets both restHost and realtimeHost to "localhost"
   port: proxy_port,           # The proxy session's assigned port
   tls: false,                 # Proxy serves plain HTTP/WS; TLS only upstream
-  useBinaryProtocol: false,   # Required: SDK doesn't implement msgpack
+  useBinaryProtocol: PROTOCOL == "msgpack",  # data-path tests run both protocols (see Protocol Variants in integration-testing.md); pin to false for SDKs without msgpack
   autoConnect: false          # Explicit connect for test control
   # fallbackHosts: not needed — endpoint="localhost" auto-disables fallbacks (REC2c2)
 )
@@ -236,7 +236,7 @@ ClientOptions(
 2. Tests use `create_proxy_session()` with rules, then connect SDK through the proxy
 3. Tests use `AWAIT_STATE` for state assertions and record state changes for sequence verification
 4. Tests verify behaviour via SDK state AND proxy event log where useful
-5. All tests use `useBinaryProtocol: false` (SDK doesn't implement msgpack)
+5. Proxy data-path tests follow the `## Protocol Variants` convention (`useBinaryProtocol: PROTOCOL == "msgpack"`); control-plane tests and SDKs that do not implement msgpack pin to JSON (`useBinaryProtocol: false`). See *Protocol Variants* in `integration-testing.md` — the proxy handles both protocols as of uts-proxy v0.3.0
 6. All tests use `endpoint: "localhost"` which auto-disables fallback hosts (REC2c2)
 7. Timeouts are generous (10-30s) since real network is involved
 8. Each test file provisions a sandbox app in `BEFORE ALL TESTS` and cleans up in `AFTER ALL TESTS`

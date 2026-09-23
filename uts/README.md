@@ -9,7 +9,8 @@ uts/
 ├── rest/
 │   ├── unit/                          # REST unit tests (mocked HTTP)
 │   │   ├── helpers/
-│   │   │   └── mock_http.md           # Mock HTTP infrastructure spec
+│   │   │   ├── mock_http.md           # Mock HTTP infrastructure spec
+│   │   │   └── mock_push_platform.md  # Push platform primitives + mock spec
 │   │   ├── auth/                      # RSA — authentication
 │   │   ├── channel/                   # RSL — channel operations
 │   │   ├── encoding/                  # RSL4/RSL6 — message encoding
@@ -43,13 +44,14 @@ uts/
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| REST unit | 40 | Mocked HTTP client tests |
-| REST integration | 11 | Ably sandbox tests |
+| REST unit | 47 | Mocked HTTP client tests |
+| REST integration (direct) | 12 | Ably sandbox tests |
+| REST integration (proxy) | 2 | Fault injection via Go proxy |
 | Realtime unit | 54 | Mocked WebSocket tests |
 | Realtime integration (direct) | 13 | Direct sandbox tests |
 | Realtime integration (proxy) | 7 | Fault injection via Go proxy |
-| Helper specs | 4 | Mock infrastructure definitions |
-| **Total** | **129** | |
+| Helper specs | 5 | Mock infrastructure definitions |
+| **Total** | **140** | |
 
 ## Three Test Tiers
 
