@@ -1,6 +1,6 @@
 # RealtimeChannel Attach Tests
 
-Spec points: `RTL4`, `RTL4a`, `RTL4b`, `RTL4c`, `RTL4c1`, `RTL4f`, `RTL4g`, `RTL4h`, `RTL4i`, `RTL4j`, `RTL4k`, `RTL4l`, `RTL4m`
+Spec points: `RTL4`, `RTL4a`, `RTL4b`, `RTL4c`, `RTL4c1`, `RTL4f`, `RTL4g`, `RTL4h`, `RTL4i`, `RTL4j`, `RTL4k`, `RTL4l`, `RTL4m`, `RTL4m1`
 
 ## Test Type
 Unit test with mocked WebSocket
@@ -859,9 +859,9 @@ CLOSE_CLIENT(client)
 
 **Test ID**: `realtime/unit/RTL4m/modes-from-attached-0`
 
-**Spec requirement:** On receipt of an ATTACHED, the client library should decode the flags into an array of ChannelModes and expose it as a read-only modes field.
+**Spec requirement:** On receipt of an ATTACHED, the client library should decode the flags into an array of ChannelModes and expose it as a read-only modes field. A flag with more than one ChannelMode name is decoded as the preferred one (RTL4m1).
 
-Tests that modes are decoded from ATTACHED flags.
+Tests that modes are decoded from ATTACHED flags, with the TR3s/TR3u flag decoded as `MESSAGE_SUBSCRIBE` rather than `SUBSCRIBE`.
 
 ### Setup
 ```pseudo
@@ -874,7 +874,7 @@ mock_ws = MockWebSocket(
       mock_ws.send_to_client(ProtocolMessage(
         action: ATTACHED,
         channel: channel_name,
-        flags: 393216  # PUBLISH (131072, TR3r) + SUBSCRIBE (262144, TR3s)
+        flags: 393216  # PUBLISH (131072, TR3r) + MESSAGE_SUBSCRIBE (262144, TR3u)
       ))
   }
 )
@@ -896,7 +896,7 @@ AWAIT channel.attach()
 ```pseudo
 ASSERT channel.modes IS NOT null
 ASSERT ChannelMode.publish IN channel.modes
-ASSERT ChannelMode.subscribe IN channel.modes
+ASSERT ChannelMode.message_subscribe IN channel.modes
 CLOSE_CLIENT(client)
 ```
 
