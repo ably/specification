@@ -632,14 +632,14 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN17)` Domain selection and fallback behaiviour
   - `(RTN17g)` The fallback behavior described by this section, [RTN17](#RTN17), only applies when the set of `fallback domains`, as determined by [`REC2`](#REC2) is not empty. When the set of `fallback domains` is empty, failing HTTP requests that would have [qualified for a retry against a fallback host (see RSC15d)](#RSC15d) will instead result in an error immediately.
   - `(RTN17h)` When the use of fallbacks applies, the set of `fallback domains` is determined by [`REC2`](#REC2).
-  - `(RTN17b)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
-    - `(RTN17b1)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
-    - `(RTN17b2)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
-    - `(RTN17b3)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
+  - `(RTN17b)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
+    - `(RTN17b1)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
+    - `(RTN17b2)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
+    - `(RTN17b3)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
   - `(RTN17i)` By default, every connection attempt is first attempted to the `primary domain` as specified in "`REC1`"#REC1. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed. (That is, `RSC15f` does not apply)
-  - `(RTN17a)` This clause has been replaced by [`RSC17i`](#RSC17i) as of specification version 4.0.0.
+  - `(RTN17a)` This clause has been replaced by [`RTN17i`](#RTN17i) as of specification version 4.0.0.
   - `(RTN17j)` In the case of an error necessitating use of an alternative host (see [RTN17f](#RTN17f)), the `Connection` manager should first check if an internet connection is available by issuing a `GET` request to the `connectivityCheckUrl` as determined via "`REC3`"#REC3. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against `fallback domains` in random order to find an alternative healthy datacenter.
-  - `(RTN17c)` This clause has been replaced by [`RSC17j`](#RSC17j) as of specification version 4.0.0.
+  - `(RTN17c)` This clause has been replaced by [`RTN17j`](#RTN17j) as of specification version 4.0.0.
   - `(RTN17d)` This clause has been replaced by [`RTN17f`](#RTN17f).
   - `(RTN17f)` Errors that necessitate use of an alternative host include any of the failure conditions specified in [`RSC15l`](#RSC15l), and additionally also:
     - `(RTN17f1)` a `DISCONNECTED` response with an `error.statusCode` in the range `500 <= code <= 504`
