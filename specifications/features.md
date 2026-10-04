@@ -136,7 +136,7 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
     - `(RSC15g4)` This clause has been replaced by [`RSC15n`](#RSC15n) as of specification version 4.0.0.
   - `(RSC15h)` This clause has been replaced by [`REC2`](#REC2) as of specification version 4.0.0.
   - `(RSC15i)` This clause has been replaced by [`REC2`](#REC2) as of specification version 4.0.0.
-  - `(RSC15j)` Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to `main.realtime.ably.net` fails and will be retried to `c.ably-realtime.com`, the Host header must be set to `c.ably-realtime.com` in the retried request
+  - `(RSC15j)` Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to `main.realtime.ably.net` fails and will be retried to `main.c.fallback.ably-realtime.com`, the Host header must be set to `main.c.fallback.ably-realtime.com` in the retried request
   - `(RSC15d)` This clause has been replaced by [`RSC15l`](#RSC15l).
   - `(RSC15l)` Errors that necessitate use of an alternative host include any of the following conditions. (Resending requests that have failed for other failure conditions will not fix the problem and will simply increase the load on other datacenters unnecessarily).
     - `(RSC15l1)` host unresolvable or unreachable
