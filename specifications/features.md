@@ -2180,16 +2180,16 @@ Each type, method, and attribute is labelled with the name of one or more clause
       clientId: String? // RSC17, RSA15, TO3a
       defaultTokenParams: TokenParams? // TO3j11
       echoMessages: Bool default true // RTC1a, TO3h
-      environment: String? // RSC15e, TO3k1 (optional, deprecated)
-      endpoint: String? // RSC15e, TO3k8
+      environment: String? // REC1c, TO3k1 (optional, deprecated)
+      endpoint: String? // REC1b, TO3k8
       logHandler: // platform specific - TO3c
       logLevel: // platform specific - TO3b
       logExceptionReportingUrl: String default "[library specific]" // TO3m (deprecated)
       port: Int default 80 // TO3k4
       queueMessages: Bool default true // RTP16b, TO3g
-      restHost: String default "main.realtime.ably.net" // RSC12, TO3k2 (optional, deprecated)
-      realtimeHost: String default "main.realtime.ably.net" // RTC1d, TO3k3 (optional, deprecated)
-      fallbackHosts: String[] default nil // RSC15b, RSC15a, TO3k6
+      restHost: String default "main.realtime.ably.net" // REC1d1, TO3k2 (optional, deprecated)
+      realtimeHost: String default "main.realtime.ably.net" // REC1d2, TO3k3 (optional, deprecated)
+      fallbackHosts: String[] default nil // REC2a, RSC15a, TO3k6
       fallbackHostsUseDefault: Bool default false // TO3k7 (optional, deprecated)
       recover: String? // RTC1c, TO3i
       tls: Bool default true // RSC18, TO3d
