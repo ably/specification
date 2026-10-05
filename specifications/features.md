@@ -126,7 +126,7 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
 - `(RSC15)` Host Fallback
   - `(RSC15m)` The fallback behavior described by this section, [RSC15](#RSC15), only applies when the set of `fallback domains`, as determined by [`REC2`](#REC2) is not empty. When the set of `fallback domains` is empty, failing HTTP requests that would have [qualified for a retry against a fallback host (see RSC15d)](#RSC15d) will instead result in an error immediately.
   - `(RSC15n)` When the use of fallbacks applies, the set of `fallback domains` is determined by [`REC2`](#REC2).
-  - `(RSC15b)` This clause has been replaced by [`RSC15j`](#RSC15j) as of specification version 4.0.0.
+  - `(RSC15b)` This clause has been replaced by [`RSC15m`](#RSC15m) as of specification version 4.0.0.
   - `(RSC15e)` This clause has been replaced by [`RSC25`](#RSC25) as of specification version 4.0.0.
   - `(RSC15a)` In the case of an error necessitating use of an alternative host (see [RSC15d](#RSC15d)), try `fallback domains` in random order, continuing to try further domains if [qualifying errors](#RSC15d) occur, failing when all have been tried or the configured `httpMaxRetryCount` has been reached (see [`TO3l`](#TO3l5)). This ensures that a client library is able to work around routing or other problems for the user's closest datacenter. For example, if a `POST` request to `main.realtime.ably.net` fails because the default endpoint is unreachable or unserviceable, then the `POST` request should be retried again against the fallback hosts in attempt to find an alternate healthy datacenter to service the request
   - `(RSC15g)` This clause has been replaced by [`RSC15n`](#RSC15n) as of specification version 4.0.0.
