@@ -460,7 +460,7 @@ The threading and/or asynchronous model for each realtime library will vary by l
 
 - `(RTC12)` Has the same constructors as `RestClient`, as defined in [RSC1](#RSC1)
 - `(RTC1)` Supports all the same `ClientOptions` as the `RestClient` in addition to:
-  - `(RTC1a)` `echoMessages` boolean is true by default. If false, it prevents messages originating from this connection being echoed back on the same connection; see [RTN2b](#RTN2b).
+  - `(RTC1a)` `echoMessages` boolean is true by default. If false, it prevents messages originating from this connection being echoed back on the same connection; see [RTN2h](#RTN2h).
   - `(RTC1b)` `autoConnect` boolean is true by default. If true, as soon as the client library is instantiated, it will connect to Ably. If false, the client library will wait for an explicit `Connection#connect` to be called before connecting
   - `(RTC1c)` `recover` string, when set, will attempt to recover the connection state of a previous connection
   - `(RTC1d)` This clause has been deleted as of specification version 4.0.0.
@@ -506,7 +506,8 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN1)` `Connection` connects to the Ably service using a [websocket](https://ably.com/topic/websockets) connection. The [ably-js library](https://github.com/ably/ably-js) supports additional transports such as Comet and XHR streaming; however non-browser client libraries typically use only a websocket transport
 - `(RTN2)` The default host used for realtime [websocket](https://ably.com/topic/websockets) connections is the [`REC1`](#REC1) primary domain and the following query string params should be used when opening a new connection:
   - `(RTN2a)` `format` should be `msgpack` (default) or `json`
-  - `(RTN2b)` `echo` should be `true` if the `echoMessages` client option is true; else it should be `false`, which will prevent messages published by the client being echoed back
+  - `(RTN2b)` This clause has been replaced by [`RTN2h`](#RTN2h) as of specification version 4.0.0.
+  - `(RTN2h)` If the `echoMessages` client option is `false` then `echo` should be `false`; this prevents messages published by the client being echoed back
   - `(RTN2d)` `clientId` contains the provided `clientId` option of `ClientOptions`, unless `clientId` is `null`
   - `(RTN2e)` Depending on the authentication scheme, either `accessToken` contains the token string, or `key` contains the API key
   - `(RTN2f)` The API version param `v` must be included in all connections to Ably endpoints. The value to be sent is defined by [`CSV2`](#CSV2).
