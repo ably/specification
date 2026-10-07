@@ -1,11 +1,11 @@
 # RealtimeChannels Collection Tests
 
-Spec points: `RTS1`, `RTS2`, `RTS3a`, `RTS4a`
+Spec points: `RTS1`, `RTS2`, `RTS3a`, `RTS4b`, `RTS4c`, `RTS4d`
 
 ## Test Type
 Unit test - no network calls required
 
-These tests verify the channels collection management functionality. No mock infrastructure is needed as these tests focus on the in-memory collection behavior.
+These tests verify the channels collection management functionality. Most need no mock infrastructure, as they focus on the in-memory collection behavior. The `RTS4c` and `RTS4d` tests that attach a channel use the mock WebSocket described in `uts/realtime/unit/helpers/mock_websocket.md`.
 
 ---
 
@@ -218,58 +218,25 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTS4a - Release detaches and removes channel
+## RTS4b - Release on non-existent channel is no-op
 
-**Test ID**: `realtime/unit/RTS4a/release-removes-channel-0`
+**Test ID**: `realtime/unit/RTS4b/release-nonexistent-noop-0`
 
-**Spec requirement:** Detaches the channel and then releases the channel resource i.e. it's deleted and can then be garbage collected.
-
-Tests that `release()` removes the channel from the collection.
-
-### Setup
-```pseudo
-channel_name = "test-RTS4a-${random_id()}"
-
-client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
-```
-
-### Test Steps
-```pseudo
-# Create a channel
-channel = client.channels.get(channel_name)
-ASSERT client.channels.exists(channel_name) == true
-
-# Release the channel
-AWAIT client.channels.release(channel_name)
-```
-
-### Assertions
-```pseudo
-ASSERT client.channels.exists(channel_name) == false
-CLOSE_CLIENT(client)
-```
-
----
-
-## RTS4a - Release on non-existent channel is no-op
-
-**Test ID**: `realtime/unit/RTS4a/release-nonexistent-noop-1`
-
-**Spec requirement:** Detaches the channel and then releases the channel resource.
+**Spec requirement:** If there is no channel with that name in the collection, `release()` must return without error.
 
 Tests that releasing a channel that doesn't exist completes without error.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTS4a-nonexistent-${random_id()}"
+channel_name = "test-RTS4b-nonexistent-${random_id()}"
 
-client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 ```
 
 ### Test Steps
 ```pseudo
 # Release a channel that was never created
-AWAIT client.channels.release(channel_name)
+client.channels.release(channel_name)
 ```
 
 ### Assertions
@@ -281,40 +248,148 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTS4a - Release calls detach on attached channel
+## RTS4c - Release removes an initialized channel
 
-**Test ID**: `realtime/unit/RTS4a/release-detaches-attached-2`
+**Test ID**: `realtime/unit/RTS4c/release-removes-channel-0`
 
-**Spec requirement:** Detaches the channel and then releases the channel resource.
+**Spec requirement:** If the channel's state is `INITIALIZED`, `DETACHED` or `FAILED`, the SDK must remove the channel from the collection before `release()` returns.
 
-Tests that releasing an attached channel detaches it first.
+Tests that `release()` synchronously removes an `INITIALIZED` channel from the collection.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTS4a-attached-${random_id()}"
+channel_name = "test-RTS4c-${random_id()}"
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 ```
 
 ### Test Steps
 ```pseudo
-# Create and attach a channel
 channel = client.channels.get(channel_name)
-AWAIT channel.attach()
-ASSERT channel.state == ChannelState.attached
+ASSERT channel.state == ChannelState.initialized
+ASSERT client.channels.exists(channel_name) == true
 
-# Capture the state before release
-state_before_release = channel.state
-
-# Release the channel
-AWAIT client.channels.release(channel_name)
+client.channels.release(channel_name)
 ```
 
 ### Assertions
 ```pseudo
-ASSERT state_before_release == ChannelState.attached
 ASSERT client.channels.exists(channel_name) == false
-# Channel should have been detached before removal
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTS4c - Release removes a channel once detached
+
+**Test ID**: `realtime/unit/RTS4c/release-after-detach-1`
+
+**Spec requirement:** If the channel's state is `INITIALIZED`, `DETACHED` or `FAILED`, the SDK must remove the channel from the collection before `release()` returns.
+
+Tests that a channel which has been attached and then detached can be released.
+
+### Setup
+```pseudo
+channel_name = "test-RTS4c-detached-${random_id()}"
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel
+      ))
+    ELSE IF msg.action == DETACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: DETACHED,
+        channel: msg.channel
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+AWAIT channel.attach()
+AWAIT channel.detach()
+ASSERT channel.state == ChannelState.detached
+
+client.channels.release(channel_name)
+```
+
+### Assertions
+```pseudo
+ASSERT client.channels.exists(channel_name) == false
+CLOSE_CLIENT(client)
+```
+
+---
+
+## RTS4d - Release of an attached channel fails
+
+**Test ID**: `realtime/unit/RTS4d/release-attached-fails-0`
+
+**Spec requirement:** If the channel's state is any other state, `release()` must raise an `ErrorInfo` with `code` 90001 and `statusCode` 400. The SDK must not remove the channel from the collection or change its state.
+
+Tests that releasing an `ATTACHED` channel fails, and leaves the channel attached and in the collection.
+
+### Setup
+```pseudo
+channel_name = "test-RTS4d-attached-${random_id()}"
+
+captured_detach_messages = []
+
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == DETACH:
+      captured_detach_messages.append(msg)
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel
+      ))
+  }
+)
+install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false
+))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+AWAIT channel.attach()
+ASSERT channel.state == ChannelState.attached
+
+client.channels.release(channel_name) FAILS WITH error
+```
+
+### Assertions
+```pseudo
+ASSERT error.code == 90001
+ASSERT error.statusCode == 400
+ASSERT channel.state == ChannelState.attached
+ASSERT client.channels.exists(channel_name) == true
+ASSERT client.channels.get(channel_name) IS SAME AS channel
+ASSERT length(captured_detach_messages) == 0
 CLOSE_CLIENT(client)
 ```
 
@@ -341,7 +416,7 @@ client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 channel1 = client.channels.get(channel_name)
 
 # Release it
-AWAIT client.channels.release(channel_name)
+client.channels.release(channel_name)
 
 # Get the same channel name again
 channel2 = client.channels.get(channel_name)
