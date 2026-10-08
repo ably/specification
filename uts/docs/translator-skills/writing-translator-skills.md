@@ -425,7 +425,8 @@ A module notes file should cover:
 A generated test file:
 
 ```
-header: "Derived from uts/<path> at ably/specification@<full-sha>", tier, disclosures
+header: "Derived from uts/<path> at ably/specification@<full-sha>" (plus "(locally modified; blob <hash>)"
+        when 9.1 applies), tier, disclosures
         (harness stand-ins, deviations); integration/proxy: the corresponding unit spec
 imports; suite/class (serialised if hooks are process-global)
 per test: UTS: <id> tag → test attribute → name with spec point →
@@ -777,7 +778,7 @@ Path validation, mapping, spec discovery, naming and faithfulness checking are m
 |---|---|
 | Validate the module | Expand a leading `~`. The parent directory is named `uts` (compare path parts, so it works on Windows); the directory exists; it has `unit/` or `integration/` |
 | Errors | One JSON object with `ok: false`, a code and a `message`. Example codes (ably-cocoa): `NOT_A_UTS_MODULE_PATH`, `DIR_NOT_FOUND`, `NO_TIER_DIRS`, `MAPPING_NOT_FOUND`, `BAD_MAPPING`, `BAD_TARGET_NAME` |
-| Output contract | On success: `{ok: true, sourceModule, mapped, testRoot?, specRepo?, translationNotes, harness, tiers: {unit, integration, proxy: {present, sourceDir, targetDir, <namespace/package>, <build target>, specs: [{file, className, testFile?}]}}}`. `testFile` (the target file name) is required wherever it isn't `<className>.<ext>`, e.g. pytest `test_<stem>.py` with class `Test<Stem>`. `present` says whether the source tier directory exists; `targetDir` is `null` and `mapped` false when the module has no mapping entry. `testRoot` appears when the mapping declares a root. `specRepo` (`{sha, dirty}`, MAY) gives the spec clone's state for the file headers and the report (9.1, 9.4). `harness` (`{root, readme, tiers: {<tier>: {sources, tests}}}`) echoes the mapping's harness entry with paths validated (repo-relative), for the Harness reference and the preflight (3.2, 4 step F). Downstream steps read only these fields |
+| Output contract | On success: `{ok: true, sourceModule, mapped, testRoot?, specRepo?, translationNotes, harness, tiers: {unit, integration, proxy: {present, sourceDir, targetDir, <namespace/package>, <build target>, specs: [{file, className, testFile?}]}}}`. `testFile` (the target file name) is required wherever it isn't `<className>.<ext>`, e.g. pytest `test_<stem>.py` with class `Test<Stem>`. `present` says whether the source tier directory exists; `targetDir` is `null` and `mapped` false when the module has no mapping entry. `testRoot` appears when the mapping declares a root. `specRepo` (`{sha, dirty, dirtyFiles}`, MAY) gives the spec clone's state (`dirtyFiles`: the modified or untracked files under `uts/` and `specifications/`, 9.1) for the file headers and the report (9.1, 9.4). `harness` (`{root, readme, tiers: {<tier>: {sources, tests}}}`) echoes the mapping's harness entry with paths validated (repo-relative), for the Harness reference and the preflight (3.2, 4 step F). Downstream steps read only these fields |
 | Tier detection by path | `unit/**`; `integration/**` excluding `integration/proxy/**`; `integration/proxy/**`. Every tier can have sub-directories (e.g. `realtime/integration/channels/`). Use the path only. (Both existing skills also describe content-based proxy detection in their integration sections; drop it.) |
 | Exclusions | `helpers/` (implement as harness, never translate), `README.md`, `PLAN.md`, `*_SUMMARY.md`. Match them **relative to the tier base**, so an ancestor directory in the checkout path can't trip them. *(New, defensive; nothing matches today:)* also skip any non-spec notes left inside a tier directory |
 | Deterministic naming | Strip a trailing `_test`, convert to the language's convention, add the suffix or prefix the runner needs (`objects_lifecycle_test.md` → Swift `ObjectsLifecycleTests`, Kotlin `ObjectsLifecycleTest`, pytest `test_objects_lifecycle.py` with class `TestObjectsLifecycle`) |
@@ -801,7 +802,7 @@ Path validation, mapping, spec discovery, naming and faithfulness checking are m
 - **Spec side.** A test starts at each `` **Test ID**: `<id>` `` line (the backticks are part of the marker) and ends at the next one. *(New, SHOULD:)* also end it at the next heading at or above the test's own level, so trailing notes or appendix sections aren't attributed to the last test.
 - **Headings.** Section headings are any `#`–`####` line **outside** a fence; inside a fence, `#` starts a pseudocode comment. Combined headings such as `### Test Steps and Assertions` are sections too.
 - **Fences.** Read ` ```pseudo ` fences. You MAY also read untagged fences (four in spec files today, all in file preambles before the first test, plus one each in `objects/PLAN.md` and the `standard_test_pool.md` helper, which aren't translated; so this changes nothing yet; the Swift audit reads `pseudo` only). Skip ` ```json ` and other payload fixtures.
-- **Classification.** Skip blank and comment lines. Tag `ASSERT` / `ASSERT_*` as `assert`; `AWAIT` / `AWAIT_STATE` / `AWAIT_ERROR` / `AWAIT_ALL` / `AWAIT UNTIL` / `EXPECT` and the poll forms `poll_until` / `poll_until_success` / `POLL_UNTIL` / `WAIT_FOR` as `await` (whether or not the line starts with `AWAIT`), so spec polls and the test's poll helpers are counted alike; everything else as `step`. Match the longest keyword first, on both sides (`poll_until_success` before `poll_until`; `pollUntil` before `poll`).
+- **Classification.** Skip blank and comment lines. Tag `ASSERT` / `ASSERT_*` as `assert`, and also *(new; both existing audits tag these as `step` or `await`)* any line containing, outside a trailing comment, `FAILS WITH`, `THROWS`, `EXPECT THROW` or `AWAIT_ERROR`, whether or not it is awaited: the test side counts their native rendering (an expected-failure assertion) as an assertion call, so the spec side must too, or a dropped failure assertion goes unreported and the surplus can mask another dropped `ASSERT`. These failure forms take precedence over the await keywords. Tag `AWAIT` / `AWAIT_STATE` / `AWAIT_ALL` / `AWAIT UNTIL` and the poll forms `poll_until` / `poll_until_success` / `POLL_UNTIL` / `WAIT_FOR` as `await` (whether or not the line starts with `AWAIT`), so spec polls and the test's poll helpers are counted alike; everything else as `step`. Match the longest keyword first, on both sides (`poll_until_success` before `poll_until`; `pollUntil` before `poll`).
 - **Test side.** A test's block runs from its `UTS:` tag to the next tag (or end of file). Helpers placed after the last test are attributed to it, and assertions inside shared helpers are invisible to their callers: keep shared helpers in a separate file or before the first test, and annotate call sites that hide spec assertions.
 
 Only the test-side regexes change per language (tag marker, assertion calls, wait calls, comment syntax); the spec side is the same for every SDK.
@@ -823,7 +824,7 @@ SHOULD, beyond the existing audits:
 The review is static, so it runs in both modes.
 
 - **Coverage:** `missing`, `orphan` and `duplicate` are empty, or each is explained. These, and a positive assertion shortfall, are the hard checks.
-- **Line by line:** every positive assertion shortfall is accounted for by an annotated omission. A negative shortfall (more native assertions than spec `ASSERT`s, e.g. from type or number normalisation) is fine. A multi-line spec construct (a mock definition, a `ClientOptions(...)` block) appears as several `step` lines; reconcile them as one group.
+- **Line by line:** every positive assertion shortfall is accounted for by an annotated omission. A negative shortfall (more native assertions than spec `assert` lines, e.g. from type or number normalisation) is fine. A multi-line spec construct (a mock definition, a `ClientOptions(...)` block) appears as several `step` lines; reconcile them as one group.
 - **Await shortfall is a soft signal.** The wait counter sees only the harness's wait helpers. Continuation-bridged helpers, native `await` on an async SDK API, and fixture builders legitimately replace them, so a positive await shortfall is expected on natively-async modules. Account for each spec `AWAIT` rather than treating the count as a gate.
 - **Setup fidelity:** client options, mock responses, timer use and channel-operation order match the spec.
 - **Wait fidelity:** every wait condition and timeout matches, or carries a `NOTE`/`DEVIATION`.
@@ -846,6 +847,8 @@ Stamp each generated file's header with the spec-repo commit SHA it was derived 
 
 A per-module manifest (spec file → SHA → test file) MAY be kept as well. Link source specs at the pinned SHA, not `blob/main`.
 
+**A SHA identifies only committed content.** If a translated spec file differs from the recorded SHA (`git status --porcelain -- <file>` is non-empty: staged, unstaged or untracked), stop and ask. If the user proceeds, add `(locally modified; blob <git hash-object <file>>)` to that file's header, list the file in the final report, and have re-sync compare the file with that blob rather than with the SHA. Local changes elsewhere in the clone (for example untracked notes outside the tier directories) only need recording, as 9.4 says.
+
 **Record the model.** The run's final report, which is the run record, records the model (name and ID) that generated or regenerated each file ([section 11](#11-final-report-format); part of that MUST format). A header line such as `// Generated with <model ID>` MAY be added as well. It changes whenever a different model regenerates the file, which adds diff noise, so prefer the run record.
 
 ### 9.2 A re-sync mode (SHOULD)
@@ -853,10 +856,10 @@ A per-module manifest (spec file → SHA → test file) MAY be kept as well. Lin
 Neither existing skill has one; both have stale suites as a result. Add a mode (for example `/uts-to-<lang> <module-dir> --resync`) that:
 
 1. Runs the audit over **every** mapped spec in the module, not only the ones selected.
-2. Runs `git diff <recorded-sha>..HEAD -- uts/<module>` to list changed spec files, and re-scans the corpus for constructs the skill can't map (section 6).
-3. Classifies each spec as **new**, **changed** (ID set changed, or pseudocode changed), **unchanged** or **removed**.
+2. Lists changed spec files against each file's recorded state, including uncommitted changes: `git diff --name-status -M <recorded-sha> -- uts/<module>` (the working tree, staged and unstaged, against the SHA; group files by the SHA in their headers), or `git hash-object` for a file stamped with a blob (9.1). Untracked spec files have no committed state: compare one stamped with a blob (9.1) with that blob, and treat one with no test file as **new**; untracked files outside the tier directories are local notes and are ignored. Decide new and removed by comparing the resolver's spec list with the existing test files. Then re-scan the corpus for constructs the skill can't map (section 6).
+3. Classifies each spec as **new**, **changed** (any change to the spec file since its recorded state; report the kind: ID set, pseudocode, fixtures, or other content such as `## Protocol Variants`, `## Test Type` or prose), **unchanged** or **removed**. Review each changed file's diff to decide which tests to regenerate, and say why when a changed file is not regenerated. A spec whose helper specs or the UTS docs it relies on changed is reviewed too ([procedure section 10](uts-to-lang-skill-creator.md#10-maintenance)).
 4. Regenerates the affected tests, **preserving only** DEVIATION gates, adapted assertions, UTS-spec-error fail-fast placeholders (they stay until the spec is fixed; `writing-derived-tests.md` "Resolution") and `deviations.md` entries, and updating those entries.
-5. Updates the SHA in each regenerated file's header (and in the manifest, if kept).
+5. Updates the SHA in each regenerated file's header, and its blob note (9.1): re-stamped if the spec is still locally modified, removed if not (and in the manifest, if kept).
 6. Reports the classification ([section 11](#11-final-report-format)).
 
 Regenerate the whole file when most tests changed; otherwise regenerate only the affected tests. Say which in the report. A re-sync is also needed when the shared harness or module helpers change shape (ably-cocoa reset and regenerated its objects ports after aligning them with `standard_test_pool.md`). After any harness change, re-run every affected tier's smoke tests and self-tests ([2.7](#27-harness-smoke-tests-and-self-tests-must)) first, then regenerate the tests whose rendering depends on the changed helper.
@@ -877,7 +880,7 @@ Pick **one** source for docs and specs, and pin it. This guide recommends **read
 - the UTS docs (`<module-dir>/../docs/writing-derived-tests.md`, `proxy.md`);
 - in evaluate mode, the features specs the decision tree needs (`<module-dir>/../../specifications/features.md`, `objects-features.md`, `protocol.md`), not the GitHub URLs in `writing-derived-tests.md`.
 
-Record the clone's HEAD SHA and whether it is dirty. You MAY warn when the clone is behind `origin/main`.
+Record the clone's HEAD SHA, whether it is dirty and which files are; a translated spec that is locally modified is handled as in 9.1. You MAY warn when the clone is behind `origin/main`.
 
 - *Divergence from `writing-derived-tests.md`* (Phase 2, "2a. Is the UTS spec wrong?", which links the features specs on GitHub `main`): read them from the same clone as the UTS specs instead, because the UTS spec and the features spec it is judged against must come from one revision, and the clone's SHA is recorded in every header and report (9.1). Fetching `main` gives a revision that nothing records.
 - *Divergence (existing skills):* both existing skills fetch `writing-derived-tests.md` from GitHub `main`, and tell the model to "fetch" the features spec with no pinned source, while reading specs from the local clone, so the two can skew.
@@ -905,7 +908,7 @@ The skill's scripts MUST pin UTF-8 and LF when they write tracked files.
 Neither existing skill defines one; define it. The skill MUST end each run with a report like this:
 
 ```
-UTS translation: <module>/<tier> @ ably/specification@<sha> (clone clean|dirty)  (mode: translate-only | evaluate | resync)
+UTS translation: <module>/<tier> @ ably/specification@<sha> (clone clean|dirty: <files>)  (mode: translate-only | evaluate | resync)
 Model: <model name and ID>; sub-agents: <role → model, or none>
 
 | Spec file | Test file | IDs (spec/test) | Audit | Shortfall accounted | Compile | Run | Deviations added |
@@ -913,6 +916,8 @@ Model: <model name and ID>; sub-agents: <role → model, or none>
 | connection_recovery_test.md | ConnectionRecoveryTests.<ext> | 6/6 | clean | 1/1 | ok | 5 pass, 1 gated | Failing Tests: RTN16f |
 
 Skipped specs (and why): …
+Locally modified specs translated (9.1): <spec file> — blob <hash>
+Re-sync classification (9.2): new …; changed (<kind>) …; unchanged …; removed …; changed but not regenerated: <file> — <why>
 Not-applicable omissions (7.4): <id / row> — <reason>
 Missing APIs found in translate-only mode: <id> — <API>
 Mock-capability gaps found in translate-only mode: <id> — <capability>
@@ -950,7 +955,7 @@ From the git histories of both existing skills. Most lessons are already rules i
 
 ## 13. Checklist for a new `uts-to-<lang>` skill
 
-The skill and its harness are one deliverable: the skill isn't done until every MUST item below, harness items included, is met for each tier it supports. An item whose source section is SHOULD (marked here or in the linked section) is met, or its omission is explained (✗ with a reason) in the final report.
+The skill and its harness are one deliverable: the skill isn't done until every MUST item below, harness items included, is met for each tier it supports. An item whose source section is SHOULD (marked here or in the linked section) is met, or its omission is explained (✗ with a reason) in the final report. A MUST item that can't be met yet (for example, the repo owner declines the CI change that would run the harness tests) is also marked ✗ with the reason, and the skill doesn't conform to this guide until it is met.
 
 **Harness**
 

@@ -184,7 +184,7 @@ git -C <spec-clone> status --porcelain -- uts specifications
 git -C <spec-clone> log -1 --format='%H %cd' -- uts/docs/translator-skills
 ```
 
-Record the SHA, whether the clone is clean (and, if not, which files under `uts/` or `specifications/` are modified or untracked), and the guide's last-change commit. You MAY compare with `origin/main` if the user agrees to a `git fetch`; never pull or check out on their behalf. Read every doc and spec from this clone for the whole run. If the clone changes during the run, stop and ask whether to restart from the new SHA.
+Record the SHA, whether the clone is clean (and, if not, which files under `uts/` or `specifications/` are modified or untracked), and the guide's last-change commit. A spec you will translate that is itself modified or untracked is handled as in guide [9.1](writing-translator-skills.md#91-record-what-you-translated-from-must) (stop and ask; if the user proceeds, stamp its blob hash). You MAY compare with `origin/main` if the user agrees to a `git fetch`; never pull or check out on their behalf. Read every doc and spec from this clone for the whole run. If the clone changes during the run, stop and ask whether to restart from the new SHA.
 
 Untracked local notes in the clone (for example files matching `uts/UTS_*.md`) are not part of the corpus. Don't read them as specs.
 
@@ -377,7 +377,7 @@ These proposals are presented at STOP-3 and need individual approval at **STOP-4
 
 ### 4.8 Step 2h: derive tier feasibility
 
-Fill a module × tier matrix: for each of `rest`, `realtime`, `objects` and each of unit, integration, proxy, mark **ready**, **ready after building rows X, Y**, or **not possible** (with the reason, e.g. "not possible until the SDK has an objects API (placeholder notes; the skill refuses the module)"). A tier the corpus doesn't have for a module is `n/a` (check with `ls <spec-clone>/uts/<module>`). A tier is **ready** only when its G-19 and G-20 rows (smoke tests and self-tests, guide 2.7) are present, green and wired into CI (or the CI change was declined at STOP-5 and is reported as unmet, 5.4), or will be built in Phase 3.
+Fill a module × tier matrix: for each of `rest`, `realtime`, `objects` and each of unit, integration, proxy, mark **ready**, **ready after building rows X, Y**, or **not possible** (with the reason, e.g. "not possible until the SDK has an objects API (placeholder notes; the skill refuses the module)"). A tier the corpus doesn't have for a module is `n/a` (check with `ls <spec-clone>/uts/<module>`). A tier is **ready** only when its G-19 and G-20 rows (smoke tests and self-tests, guide 2.7) are present, green and wired into CI (or the CI change was declined at STOP-5 and is reported as unmet, so the skill doesn't yet conform to guide 2.5/2.7; see [5.4](#54-step-3d-stop-7-confirm-the-harness)), or will be built in Phase 3.
 
 ### 4.9 Step 2i: STOP-3, approve the design and choose the scope
 
@@ -446,7 +446,7 @@ Write a README next to the harness covering everything guide [3.1](writing-trans
 
 Re-run the assessment of [4.2](#42-step-2b-assess-each-capability-reuse-wrap-extend-or-build) and the tier matrix of [4.8](#48-step-2h-derive-tier-feasibility), and update `uts-infra-design.md` with the build log. Show the user the smoke-test and self-test results per tier (each run by its tier's filter), their CI wiring, the files created or changed, and the updated tier matrix. Only then continue to the skill.
 
-**Done when:** every row the user chose to build is `present`; each supported tier has green smoke tests and self-tests covering guide 2.7, wired into CI (or, if the user declined the CI change at STOP-5, listed in the Final report as an unmet requirement; the tier stays ready, because the skill's preflight still runs the harness tests locally on every run, and the harness README states that CI doesn't yet run them); the strict compile and lint pass; the harness README exists; the user has confirmed at STOP-7. If the user declines network access at STOP-6, the integration and proxy tiers aren't supported: mark them unready (`blockedBy`: harness tests not run) and list them in the Final report.
+**Done when:** every row the user chose to build is `present`; each supported tier has green smoke tests and self-tests covering guide 2.7, wired into CI (or, if the user declined the CI change at STOP-5, listed in the Final report as an unmet requirement: the skill does not conform to guide 2.5/2.7 until CI runs the harness tests, so mark the Appendix E rows "Harness smoke tests per tier and helper self-tests …" and "One CI home per suite …" ✗ with that reason; the tier stays ready, because the skill's preflight still runs the harness tests locally on every run, and the harness README states that CI doesn't yet run them); the strict compile and lint pass; the harness README exists; the user has confirmed at STOP-7. If the user declines network access at STOP-6, the integration and proxy tiers aren't supported: mark them unready (`blockedBy`: harness tests not run) and list them in the Final report.
 
 ---
 
@@ -466,7 +466,7 @@ For each decision below, propose an answer derived from the Repo profile, the bu
 | D-04 | **Naming**: file, class/suite and test-function names; the resolver's name derivation; runner collection rules | [5.1](writing-translator-skills.md#51-traceability), [8.1](writing-translator-skills.md#81-resolver-resolve_utspy-must) | Give three worked examples (a `_test.md` spec, a plain spec, one in a sub-directory) and confirm the runner collects each name (P-03) |
 | D-05 | Name collisions with native tests | [8.1](writing-translator-skills.md#81-resolver-resolve_utspy-must) | Detect in the resolver, or always run with a target-qualified filter. Where the runner imports test files by basename, also apply guide 8.1's file-name uniqueness rule across the whole mapping |
 | D-06 | **Tag syntax** | [5.1](writing-translator-skills.md#51-traceability) | `// UTS: <id>`, or the language's line-comment marker (`# UTS: <id>`), immediately above the test, before its attributes or decorators (guide 3.4 file outline) |
-| D-07 | File header format | [5.1](writing-translator-skills.md#51-traceability), [9.1](writing-translator-skills.md#91-record-what-you-translated-from-must) | Source spec path, tier, `ably/specification@<full-sha>`, disclosures; integration/proxy also the corresponding unit spec |
+| D-07 | File header format | [5.1](writing-translator-skills.md#51-traceability), [9.1](writing-translator-skills.md#91-record-what-you-translated-from-must) | Source spec path, tier, `ably/specification@<full-sha>` (plus `(locally modified; blob <hash>)` for a locally modified spec, guide 9.1), disclosures; integration/proxy also the corresponding unit spec |
 | D-08 | **`deviations.md` location** per owning test module | [7.3](writing-translator-skills.md#73-deviationsmd) | One per owning test module, next to its suites |
 | D-09 | **Runtime skip idiom** (env-gated on `RUN_DEVIATIONS`) and the reproduction command | [7.1](writing-translator-skills.md#71-three-acceptable-end-states) | From P-03; must read the environment at run time |
 | D-10 | **Fail-fast idiom** for UTS spec errors | [7.1](writing-translator-skills.md#71-three-acceptable-end-states) | The framework's unconditional failure with the message `UTS spec error <id> — fix the spec first; see deviations.md` |
@@ -517,13 +517,13 @@ Generate the files in this order: each one depends on the previous ones. `SKILL.
 
 Implement `scripts/resolve_uts.py` (or the language chosen in D-02) to every row of guide [8.1](writing-translator-skills.md#81-resolver-resolve_utspy-must). It prints exactly one JSON object.
 
-Output contract: the fields of guide 8.1, including `harness` (the mapping's harness entry with paths validated, still repo-relative), `testRoot` when the mapping declares a root, including `testFile` wherever the target file name isn't `<className>.<ext>`, plus `ready` and `blockedBy` per tier (*procedure recommendation*: from the mapping's `unready` data, [7.1](#71-step-5a-create-the-layout-and-the-mapping-file)). Also implement the optional `specRepo` (`{sha, dirty}`; making it mandatory is a *procedure recommendation*), so the skill takes the clone's state for headers and reports ([8.1](writing-translator-skills.md#81-resolver-resolve_utspy-must), [9.1](writing-translator-skills.md#91-record-what-you-translated-from-must), [9.4](writing-translator-skills.md#94-local-clone-vs-fetching-main)) from the script rather than recomputing it. Choose the namespace and build-target field names and document them in `SKILL.md`. For example:
+Output contract: the fields of guide 8.1, including `harness` (the mapping's harness entry with paths validated, still repo-relative), `testRoot` when the mapping declares a root, including `testFile` wherever the target file name isn't `<className>.<ext>`, plus `ready` and `blockedBy` per tier (*procedure recommendation*: from the mapping's `unready` data, [7.1](#71-step-5a-create-the-layout-and-the-mapping-file)). Also implement the optional `specRepo` (`{sha, dirty, dirtyFiles}`; making it mandatory is a *procedure recommendation*), so the skill takes the clone's state for headers and reports ([8.1](writing-translator-skills.md#81-resolver-resolve_utspy-must), [9.1](writing-translator-skills.md#91-record-what-you-translated-from-must), [9.4](writing-translator-skills.md#94-local-clone-vs-fetching-main)) from the script rather than recomputing it. Choose the namespace and build-target field names and document them in `SKILL.md`. For example:
 
 ```json
 {
   "ok": true,
   "sourceModule": "realtime",
-  "specRepo": { "sha": "<full-sha>", "dirty": false },
+  "specRepo": { "sha": "<full-sha>", "dirty": false, "dirtyFiles": [] },
   "mapped": true,
   "translationNotes": "<abs path to references/realtime-mapping.md, or null if none declared>",
   "harness": {
@@ -562,7 +562,7 @@ Implement `scripts/audit_translation.py` to every row and the parsing contract o
 | Test-side pattern | Source |
 |---|---|
 | Tag marker (`UTS:` after the line-comment marker) | D-06 |
-| Assertion calls (every assertion form the catalogue maps `ASSERT …` and `FAILS WITH` to) | [7.4](#74-step-5d-fill-the-construct-catalogue) |
+| Assertion calls (every assertion form the catalogue maps `ASSERT …`, `FAILS WITH`, `THROWS`, `EXPECT THROW` and `AWAIT_ERROR` to) | [7.4](#74-step-5d-fill-the-construct-catalogue) |
 | Wait calls (every harness helper the catalogue maps `AWAIT`, `AWAIT_STATE`, `poll_until`, … to) | [7.4](#74-step-5d-fill-the-construct-catalogue); the harness README |
 | Comment syntax (line and block), so commented-out assertions are ignored | P-01 |
 
@@ -572,7 +572,7 @@ Output: use the shape in guide 8.2 "Output shape (SHOULD)", including `notVerifi
 
 **Acceptance** (verified in [8.2](#82-test-the-audit-itself)):
 
-- [ ] Every MUST row and the whole parsing contract of guide 8.2 are implemented, including the end-at-heading rule (a guide SHOULD that this procedure requires: *procedure recommendation*): ID coverage (`missing`, `orphan`, `duplicate`, distinct non-zero exit), per-test ledger, separate assert and await counts (spec-side `poll_until` / `poll_until_success` / `POLL_UNTIL` / `AWAIT UNTIL` / `WAIT_FOR` lines counted as waits, matching the test side), commented-out assertions ignored, never crashes, unverifiable specs reported.
+- [ ] Every MUST row and the whole parsing contract of guide 8.2 are implemented, including the end-at-heading rule (a guide SHOULD that this procedure requires: *procedure recommendation*): ID coverage (`missing`, `orphan`, `duplicate`, distinct non-zero exit), per-test ledger, separate assert and await counts (spec-side `FAILS WITH` / `THROWS` / `EXPECT THROW` / `AWAIT_ERROR` lines counted as assertions, awaited or not, and `poll_until` / `poll_until_success` / `POLL_UNTIL` / `AWAIT UNTIL` / `WAIT_FOR` lines counted as waits, matching the test side), commented-out assertions ignored, never crashes, unverifiable specs reported.
 - [ ] Where your parsing differs from the contract, `SKILL.md` says so (guide 8.2 "Implement exactly this, or say where yours differs").
 - [ ] SHOULD items you implemented are listed in `SKILL.md`; the ones you didn't are listed in the Final report.
 
@@ -609,7 +609,7 @@ for path in root.rglob("*.md"):
             continue
         line = re.sub(r'"[^"]*"', '""', line)                 # ignore string literals
         line = re.split(r"\s(?:#|//)\s", line, maxsplit=1)[0]  # drop trailing comments
-        keywords.update(re.findall(r"\b[A-Z][A-Z_]{2,}\b", line))
+        keywords.update(re.findall(r"\b[A-Z][A-Z_]+\b", line))
         calls.update(re.findall(r"\b([a-z][a-z0-9]*(?:_[a-z0-9]+)+)\s*\(", line))
 for title, counter in (("KEYWORDS", keywords), ("SNAKE_CASE CALLS", calls)):
     print("==", title)
@@ -653,7 +653,7 @@ Follow the outline in guide [3.4](writing-translator-skills.md#34-recommended-ou
 |---|---|---|
 | Frontmatter | `name: uts-to-<lang>`; a pushy `description` with trigger phrases; `argument-hint`; `allowed-tools` from D-22; the model pin from D-26, where the tooling supports one (otherwise the model statement in the opening lines) | [3.3](writing-translator-skills.md#33-frontmatter-and-arguments) |
 | Usage guard | Empty argument → print the usage line and stop; placeholder paths only | [3.3](writing-translator-skills.md#33-frontmatter-and-arguments) |
-| Required reading (step 0) | As guide 4 step 0 (including the "Pseudocode Conventions" section of `uts/README.md`), from the same clone as the module; record its SHA and dirty state | [4](writing-translator-skills.md#phase-1-selection-steps-0-and-af), [9.4](writing-translator-skills.md#94-local-clone-vs-fetching-main) |
+| Required reading (step 0) | As guide 4 step 0 (including the "Pseudocode Conventions" section of `uts/README.md`), from the same clone as the module; record its SHA and dirty state (the resolver's `specRepo`); for each selected spec in `dirtyFiles`, stop and ask, and if the user proceeds stamp its blob (guide 9.1) | [4](writing-translator-skills.md#phase-1-selection-steps-0-and-af), [9.1](writing-translator-skills.md#91-record-what-you-translated-from-must), [9.4](writing-translator-skills.md#94-local-clone-vs-fetching-main) |
 | Skill Phase 1 (selection), steps A–E | As guide 4, with this repo's resolver commands; step C offers only tiers the resolver reports `present` and `ready`, and names `blockedBy` for the others | [4](writing-translator-skills.md#phase-1-selection-steps-0-and-af) |
 | Harness preflight (step F) | As guide 4 step F: compile (or collect) the harness and the test target; run the chosen tier's smoke tests and self-tests with the resolver's `harness` command; check the harness README's Known gaps against the selected specs; on red, stop and report a harness or environment problem, never an SDK deviation; record the result for the final report | [4](writing-translator-skills.md#phase-1-selection-steps-0-and-af), [2.7](writing-translator-skills.md#27-harness-smoke-tests-and-self-tests-must) |
 | Harness reference | Per tier, from the resolver's `harness` output: harness root and README (full repo path), helper sources to read, smoke-test and self-test locations and run commands, the generated-test run command, and a pointer to the README's Known gaps; no inlined helper signatures; smoke tests named as wiring examples only. Also the mid-run harness-change rule (guide 5) | [3.4](writing-translator-skills.md#34-recommended-outlines-should), [2.7](writing-translator-skills.md#27-harness-smoke-tests-and-self-tests-must) |
@@ -710,6 +710,7 @@ Use one known-good test file (the pilot output from [8.3](#83-pilot-translate-on
 | Add a tag that isn't in the spec | `orphan` lists it |
 | Remove one tag | `missing` lists it |
 | Add surplus waits to a test with a deleted assertion | The assertion shortfall is still reported (counts aren't summed) |
+| Delete the native assertion that renders a spec `FAILS WITH` (awaited or not) | A positive assertion shortfall for that test |
 | Delete the poll call that renders a spec `poll_until` (with no `AWAIT` on the spec line) | An await shortfall for that test (spec polls count as waits) |
 
 **Whole-corpus sweep:** run the audit on every spec the resolver lists for each of the three modules, against an empty test file. Every run must print one parseable JSON object and exit with the "ID problems" code (or report "not verifiable" for ID-less specs such as `rest/unit/encoding/msgpack_interop.md`). No crashes. Cross-check the spec-side ID count per module against ``grep -rhoE '\*\*Test ID\*\*: `[^`]+`' <spec-clone>/uts/<module> | sort -u | wc -l`` (as of `12540dcf`: rest 571, realtime 554, objects 339).
@@ -764,7 +765,7 @@ Run each path through the skill (in the session from [8.3](#83-pilot-translate-o
 3. **Placeholder notes:** a module whose notes file is a placeholder → refused, with the reason.
 4. **Unready tier:** a tier the mapping marks unready → not offered at step C, with its `blockedBy`.
 5. **Unmapped module:** on a scratch copy of the mapping, a module without an entry → step B asks for a name and runs `--create`, which writes the D-03 default layout and preserves the other entries.
-6. **Re-sync** (if D-19 ships it): set a pilot file's header SHA to an older spec commit that changed that spec (`git -C <spec-clone> log --format=%H -- uts/<path>`), run `--resync`, and check the classification, that the header SHA is updated, and that only the survivors in guide [9.2](writing-translator-skills.md#92-a-re-sync-mode-should) step 4 are preserved. Restore the file afterwards.
+6. **Re-sync** (if D-19 ships it): set a pilot file's header SHA to an older spec commit that changed that spec (`git -C <spec-clone> log --format=%H -- uts/<path>`), run `--resync`, and check the classification (including a change outside the pseudocode, such as `## Protocol Variants`, reported as **changed**, and, run against a scratch clone of the spec repo (`git clone <spec-clone> <scratch>`; the spec clone itself is never edited, 2.2), an uncommitted edit to that spec reported as **changed**), that the header SHA is updated, and that only the survivors in guide [9.2](writing-translator-skills.md#92-a-re-sync-mode-should) step 4 are preserved. Restore the file afterwards.
 7. **Commands:** every build, run, lint and audit command `SKILL.md` names has now been run through the skill; fix any that failed.
 8. **Red harness:** on a scratch copy (or a temporary working-tree edit you revert afterwards), break one harness test (for example, make the WebSocket mock refuse every connection), or run an integration tier with the network unavailable → the skill stops at step F before generating anything, reports a harness or environment problem (not an SDK deviation), and names the failing test. Restore the change and confirm the preflight is green again.
 9. **Known gap:** select a spec that uses a construct the harness README lists under Known gaps → the preflight reports the conflict and stops to ask (guide 4 step F), rather than generating a substituted rendering. If Known gaps is empty, use a scratch copy of the README with an entry for a construct the selected spec uses.
@@ -805,11 +806,11 @@ The harness and the skill must stay in step with five things that change indepen
 
 | What changed | How to detect it | What to update |
 |---|---|---|
-| **The guide** | `git -C <spec-clone> diff <recorded-sha>..HEAD -- uts/docs/translator-skills/` | Map each changed guide section to the artifacts that implement it, using the "Guide" columns in [6.1](#61-step-4a-draft-the-design-record) and [7.6](#76-step-5f-write-skillmd) and the gap table; update them; re-run the Phase 3 and Phase 6 checks for those artifacts |
-| **The UTS docs or helper specs** | `git -C <spec-clone> diff <recorded-sha>..HEAD -- uts/README.md uts/docs/ uts/objects/helpers uts/rest/unit/helpers uts/realtime/unit/helpers` | Re-run the Phase 2 assessment for the affected rows; update the harness, its smoke tests and self-tests, and its README (Known gaps), the catalogue rows and notes item 9; then re-sync the affected tests |
+| **The guide** | `git -C <spec-clone> diff <recorded-sha> -- uts/docs/translator-skills/` (includes staged and unstaged changes; list untracked files with `git status --porcelain -- <paths>`) | Map each changed guide section to the artifacts that implement it, using the "Guide" columns in [6.1](#61-step-4a-draft-the-design-record) and [7.6](#76-step-5f-write-skillmd) and the gap table; update them; re-run the Phase 3 and Phase 6 checks for those artifacts |
+| **The UTS docs or helper specs** | `git -C <spec-clone> diff <recorded-sha> -- uts/README.md uts/docs/ uts/objects/helpers uts/rest/unit/helpers uts/realtime/unit/helpers` | Re-run the Phase 2 assessment for the affected rows; update the harness, its smoke tests and self-tests, and its README (Known gaps), the catalogue rows and notes item 9; then re-sync the affected tests |
 | **The UTS corpus** | The skill's own re-sync mode (guide [9.2](writing-translator-skills.md#92-a-re-sync-mode-should)), plus the construct scanner ([7.4](#74-step-5d-fill-the-construct-catalogue)) | New catalogue rows (stop and ask for any unmapped construct); new harness symbols the corpus uses; regenerated tests; renamed IDs handled per guide [9.3](writing-translator-skills.md#93-renamed-merged-and-added-ids) |
 | **The harness itself** (a helper, mock, fixture or harness test changes) | Its smoke tests and self-tests in CI; the skill's preflight on every run | Fix a red harness test in the harness before any further translation; update the README and Known gaps; regenerate the tests whose rendering depends on the changed helper (guide 9.2) |
-| **The SDK** (API, hooks, test layout, CI) | `git -C <repo> diff <recorded-sha>..HEAD` over the paths the Repo profile names | Repo profile; harness and hooks; notes (the SDK source is ground truth); mapping; then a re-sync if the harness or module helpers changed shape |
+| **The SDK** (API, hooks, test layout, CI) | `git -C <repo> diff <recorded-sha>` (includes staged and unstaged changes; list untracked files with `git status --porcelain -- <paths>`) over the paths the Repo profile names | Repo profile; harness and hooks; notes (the SDK source is ground truth); mapping; then a re-sync if the harness or module helpers changed shape |
 
 Rules for every maintenance run:
 
@@ -966,7 +967,7 @@ Smoke tests and self-tests per tier (filter, result, CI job): …; updated tier 
 # Design record: uts-to-<lang>
 
 ## Inputs at generation time
-- Spec clone: <sha> (clean | dirty); guide: <sha of last change>
+- Spec clone: <sha> (clean | dirty: <files>); guide: <sha of last change>
 - Repo: <sha>
 - Repo profile confirmed: <date>; harness option at STOP-3: (a | b | c); harness confirmed: <date>
 - Harness README: <full repo path>
@@ -1024,7 +1025,7 @@ Smoke tests and self-tests per tier (filter, result, CI job): …; updated tier 
 ```markdown
 # Final report: uts-to-<lang> for <repo>
 
-- Spec clone <sha> (clean | dirty); repo <sha>; date
+- Spec clone <sha> (clean | dirty: <files>); repo <sha>; date
 - Model: <name and ID> (Opus-class: yes | no, and why); sub-agents: <role → model>, or none
 - Scope: <modules × tiers covered>; out of scope and why
 
