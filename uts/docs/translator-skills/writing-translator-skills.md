@@ -897,11 +897,11 @@ Examples of the pattern, as of 2026-10-07 (spec `12540dcf`):
 Pick **one** source for docs and specs, and pin it. This guide recommends **reading everything from the local spec clone** the module directory came from:
 
 - the UTS docs (`<module-dir>/../docs/writing-derived-tests.md`, `proxy.md`);
-- in evaluate mode, the features specs the decision tree needs (`<module-dir>/../../specifications/features.md`, `objects-features.md`, `protocol.md`), not the GitHub URLs in `writing-derived-tests.md`.
+- in evaluate mode, the features specs the decision tree needs (`<module-dir>/../../specifications/features.md`, `objects-features.md`, `protocol.md`), rather than fetching them from GitHub.
 
 Record the clone's HEAD SHA, whether it is dirty and which files are; a translated spec that is locally modified is handled as in 9.1. You MAY warn when the clone is behind `origin/main`.
 
-- *Divergence from `writing-derived-tests.md`* (Phase 2, "2a. Is the UTS spec wrong?", which links the features specs on GitHub `main`): read them from the same clone as the UTS specs instead, because the UTS spec and the features spec it is judged against must come from one revision, and the clone's SHA is recorded in every header and report (9.1). Fetching `main` gives a revision that nothing records.
+- Read the features specs from the same clone as the UTS specs: the UTS spec and the features spec it is judged against must come from one revision (`writing-derived-tests.md` Phase 2, "2a. Is the UTS spec wrong?"), and the clone's SHA is recorded in every header and report (9.1). Fetching `main` gives a revision that nothing records.
 - *Divergence (existing skills):* both existing skills fetch `writing-derived-tests.md` from GitHub `main`, and tell the model to "fetch" the features spec with no pinned source, while reading specs from the local clone, so the two can skew.
 
 ---

@@ -77,13 +77,13 @@ A test failure has exactly three possible causes. Work through them in order:
 
 #### 2a. Is the UTS spec wrong?
 
-Compare the UTS spec's claim against the relevant Ably **features spec** — the ultimate authority. Every spec lives under the repo's [`specifications/`](https://github.com/ably/specification/tree/main/specifications) directory; the raw, fetchable base is `https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/`. Fetch the one for the module under test:
+Compare the UTS spec's claim against the relevant Ably **features spec** — the ultimate authority. Every spec lives under the repo's [`specifications/`](https://github.com/ably/specification/tree/main/specifications) directory. **Read it from the same revision as the UTS spec you are translating**: from the same local clone, or from GitHub at that commit (`https://raw.githubusercontent.com/ably/specification/<sha>/specifications/`). If the UTS spec came from `main`, resolve `main` to its SHA once and read both from that SHA. A UTS spec and the features spec it is judged against must come from one revision, because features-spec and UTS changes often land in the same commit; comparing against a different revision can misclassify a spec error. The features spec for each module (links point at `main` for browsing; substitute the SHA when reading):
 
 - Core / Realtime / REST — [`features.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/features.md)
 - LiveObjects (`objects`) — [`objects-features.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/objects-features.md)
 - Chat — [`chat-features.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/chat-features.md)
 
-Related authorities in the **same** `specifications/` directory back specific areas — e.g. [`protocol.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/protocol.md) (wire protocol) and [`encryption.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/encryption.md) — fetch them too when a test touches that area.
+Related authorities in the **same** `specifications/` directory back specific areas — e.g. [`protocol.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/protocol.md) (wire protocol) and [`encryption.md`](https://raw.githubusercontent.com/ably/specification/refs/heads/main/specifications/encryption.md) — read them too, from the same revision, when a test touches that area.
 
 A UTS spec can be wrong two ways: it **contradicts the features spec**, or it is **internally inconsistent** (e.g. a replayed serial that doesn't match the value its own harness produces, or a test title that names a state its body never injects). Either way the **spec is the source of truth and must be fixed there** — do **not** silently rewrite the test to match the features spec and move on. Quietly "fixing the test" hides the spec bug, leaves the spec wrong for every other SDK to re-hit, and defeats the point of a single source of truth. Instead:
 
