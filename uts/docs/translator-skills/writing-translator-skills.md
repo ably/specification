@@ -2,7 +2,7 @@
 
 This guide explains how to build a per-language Claude Code skill — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Its rules were distilled from two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), which appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You don't need to read these skills; everything required is in this guide and the UTS docs.
 
-If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, follow the step-by-step procedure in [Generating a UTS Translator Skill](generating-a-translator-skill.md); this guide remains the authority on what the skill must contain.
+If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, follow the step-by-step procedure in [UTS-to-Lang Skill Creator](uts-to-lang-skill-creator.md); this guide remains the authority on what the skill must contain.
 
 **Intent.** A translator skill exists so that translation is near-mechanical: the same spec, translated twice, gives the same test.
 

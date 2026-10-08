@@ -1,4 +1,4 @@
-# Generating a UTS Translator Skill
+# UTS-to-Lang Skill Creator
 
 This is a step-by-step procedure for an LLM agent (for example Claude Code) to create a `uts-to-<lang>` translator skill for one Ably SDK repository. [Writing UTS Translator Skills](writing-translator-skills.md) (below, **the guide**) says **what** a good translator skill is and why. This document says **how** to build one, in what order, with what checks, and where to stop and ask the user. It doesn't repeat the guide: wherever the reason or the detailed requirement lives in the guide, this document links to it, and you must read the linked section.
 
@@ -47,7 +47,7 @@ A skill written before its harness exists can't make translation mechanical (gui
 The user starts a run with one sentence, for example:
 
 ```
-Follow <spec-clone>/uts/docs/translator-skills/generating-a-translator-skill.md to create a uts-to-<lang> skill for this repo.
+Follow <spec-clone>/uts/docs/translator-skills/uts-to-lang-skill-creator.md to create a uts-to-<lang> skill for this repo.
 ```
 
 `<spec-clone>` is the user's local clone of `ably/specification`. If the user also states goals ("objects unit tier first", "rest and realtime only"), record them as inputs.
