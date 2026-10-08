@@ -1,13 +1,13 @@
 # Writing UTS Translator Skills
 
-This guide explains how to build a per-language Claude Code skill — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Its rules were distilled from two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), which appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You shouldn't need to read these skills: this guide and the UTS docs are the authority, and they are meant to be complete. If they don't answer a question while you create or maintain a skill or its harness, the existing skills and harnesses MAY be consulted as a last resort, under the rules in [Reference implementations (last resort)](#reference-implementations-last-resort).
+This guide explains how to build a per-language agent skill (Claude Code and Codex) — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Its rules were distilled from two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), which appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You shouldn't need to read these skills: this guide and the UTS docs are the authority, and they are meant to be complete. If they don't answer a question while you create or maintain a skill or its harness, the existing skills and harnesses MAY be consulted as a last resort, under the rules in [Reference implementations (last resort)](#reference-implementations-last-resort).
 
-If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, follow the step-by-step procedure in [UTS-to-Lang Skill Creator](uts-to-lang-skill-creator.md), on an Opus-class model ([Model tier](#model-tier)); this guide remains the authority on what the skill must contain.
+If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, use the [`uts-to-lang-skill-creator` skill](../../skills/uts-to-lang-skill-creator/SKILL.md) (installation: [`uts/README.md`](../../README.md#installing-the-skill-creator)), on an Opus-class model ([Model tier](#model-tier)). It is the step-by-step procedure for building the skill and its harness; this guide remains the authority on what the skill must contain.
 
 **Intent.** A translator skill exists so that translation is near-mechanical: the same spec, translated twice, gives the same test.
 
 - **Harness and skill are one deliverable.** The skill translates onto a harness built in the same repo from its existing test setup, and it isn't complete until that harness's smoke tests and self-tests are green, in CI, at every tier the skill supports ([section 2](#2-the-harness-uts-test-infrastructure)).
-- **Easy to use.** One command (`/uts-to-<lang> <module-dir>`) and four questions; the skill does the rest.
+- **Easy to use.** One command (`/uts-to-<lang> <module-dir>` in Claude Code, `$uts-to-<lang> <module-dir>` in Codex) and four questions; the skill does the rest.
 - **Context-complete.** Every run gathers the full context: the spec, the translation manual, the sources and README of the UTS test infrastructure (the **harness**), the module notes and the resolver output. A good test doesn't depend on anyone's memory.
 - **Tests are reproducible artifacts.** The UTS spec plus the skill is the source of truth; the generated test is an output. When a translation is wrong or the spec changes, regenerate it ([section 9](#9-keeping-in-sync-with-spec-changes)) rather than hand-maintain it.
 - **Fix the cause, then regenerate.** Fix the skill, the module notes or the harness, never only the generated file. Only DEVIATION gates, adapted assertions, UTS-spec-error fail-fast placeholders and `deviations.md` entries survive regeneration.
@@ -43,7 +43,7 @@ Facts about the existing skills and SDKs are **as of 2026-10-07**: spec commit `
 
 ### What a translator skill is
 
-A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and notes) that Claude Code follows to turn the pseudocode specs in one UTS module directory (`uts/rest`, `uts/realtime`, `uts/objects`) into runnable tests in your SDK's test suite. It optionally runs them and diagnoses failures. It is built on, and delivered with, a harness in the same repo: the native test library that implements the UTS helper specs, with its own smoke tests and self-tests (section 2).
+A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and notes) that an agent (Claude Code or Codex) follows to turn the pseudocode specs in one UTS module directory (`uts/rest`, `uts/realtime`, `uts/objects`) into runnable tests in your SDK's test suite. It optionally runs them and diagnoses failures. It is built on, and delivered with, a harness in the same repo: the native test library that implements the UTS helper specs, with its own smoke tests and self-tests (section 2).
 
 ### How it relates to the other UTS docs
 
@@ -53,7 +53,7 @@ A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and no
 | [`writing-test-specs.md`](../writing-test-specs.md) | The pseudocode reference: Test IDs, mock patterns, `AWAIT_STATE`, `poll_until`, record-and-verify, error pattern, unique channel names |
 | [`writing-derived-tests.md`](../writing-derived-tests.md) | **Translation and evaluation semantics.** Faithful translation, the evaluation decision tree, the three test patterns, `deviations.md` format, idiomatic translation vs deviation, timer and timeout traps |
 | [`integration-testing.md`](../integration-testing.md), [`proxy.md`](../proxy.md) | Integration and proxy tiers: sandbox setup, timeouts, protocol variants, the proxy session and rule API |
-| **This guide** | How to package all of the above into a repeatable, scripted Claude Code skill for one SDK |
+| **This guide** | How to package all of the above into a repeatable, scripted agent skill (Claude Code and Codex) for one SDK |
 | Existing skills and harnesses ([Reference implementations](#reference-implementations-last-resort)) | Nothing normative: a last-resort, read-only reference for patterns when creating a skill, below every document above |
 
 `writing-derived-tests.md` is the **source of truth for semantics**. This guide never redefines what a faithful translation is, or how a deviation is classified and recorded; it says how a skill enforces those rules. If the two ever disagree, `writing-derived-tests.md` wins.
@@ -72,15 +72,15 @@ A skill **SHOULD** keep only the language rendering of a rule and link to the so
 
 ### Model tier
 
-Creating a skill and its harness, and running the skill, are long, multi-file reasoning tasks in which a silent omission costs far more than compute. Use **the most capable model tier available (Claude Opus or an equivalent Opus-class model)**. "Opus-class" means that tier, whatever its current version, not a particular release.
+Creating a skill and its harness, and running the skill, are long, multi-file reasoning tasks in which a silent omission costs far more than compute. Use **the most capable model tier available (Claude Opus or an equivalent Opus-class model)**. "Opus-class" means that tier, whatever its current version, not a particular release; in another tool (for example Codex), it means that tool's most capable tier, recorded by name.
 
 | Task | Level | Why |
 |---|---|---|
-| Creating the skill and building its harness (the [procedure](uts-to-lang-skill-creator.md)) | **MUST** | The agent must hold this guide, the procedure, the UTS docs, the helper specs and the SDK's source in context at once; design hooks, mocks, fixtures and CI wiring that span many files; and decide rules that every later run inherits, so one silent omission becomes a defect in every generated test |
-| Translating and evaluating with the finished skill (`/uts-to-<lang>`) | **SHOULD** | The resolver and the audit ([section 8](#8-deterministic-tooling)) make paths, names, ID coverage and assertion counts mechanical, but not the rest. Matching wait predicates and timeouts, copying comments verbatim, setup fidelity, and diagnosing a failure as SDK, spec or translation ([7](#7-evaluation-and-deviations), [8.3](#83-review-checklist-must-after-the-audit)) remain model judgement, and a count can't catch a changed predicate ([8.2](#82-audit-audit_translationpy-must)) |
+| Creating the skill and building its harness (the [procedure](../../skills/uts-to-lang-skill-creator/SKILL.md)) | **MUST** | The agent must hold this guide, the procedure, the UTS docs, the helper specs and the SDK's source in context at once; design hooks, mocks, fixtures and CI wiring that span many files; and decide rules that every later run inherits, so one silent omission becomes a defect in every generated test |
+| Translating and evaluating with the finished skill (`/uts-to-<lang>` or `$uts-to-<lang>`) | **SHOULD** | The resolver and the audit ([section 8](#8-deterministic-tooling)) make paths, names, ID coverage and assertion counts mechanical, but not the rest. Matching wait predicates and timeouts, copying comments verbatim, setup fidelity, and diagnosing a failure as SDK, spec or translation ([7](#7-evaluation-and-deviations), [8.3](#83-review-checklist-must-after-the-audit)) remain model judgement, and a count can't catch a changed predicate ([8.2](#82-audit-audit_translationpy-must)) |
 | Sub-agents spawned during either (review, validation; pilot runs during creation serve creation) | **The level of the task they serve** | A reviewer weaker than the author misses what the author missed. A cheaper model MAY be used only for a clearly mechanical step whose result a script verifies (for example, running the audit over the corpus and collecting its JSON), if at all |
 
-The deterministic scripts reduce the dependence on the model; they don't remove it. Pin the model where the tooling allows ([3.3](#33-frontmatter-and-arguments)), and record the model used in every run's final report ([section 11](#11-final-report-format)).
+The deterministic scripts reduce the dependence on the model; they don't remove it. State the model tier in the skill, pin it only where a tool supports that ([3.3](#33-frontmatter-and-arguments)), and record the model used in every run's final report ([section 11](#11-final-report-format)).
 
 ---
 
@@ -310,7 +310,7 @@ The harness has two kinds of test of its own, both permanent and both required:
 ### 3.1 Layout
 
 ```
-.claude/skills/uts-to-<lang>/
+<skill-dir>/                         # .claude/skills/uts-to-<lang>/ (linked from .agents/skills/uts-to-<lang>/)
 ├── SKILL.md                         # the procedure
 ├── uts-package-mapping.json         # spec module → target dir/package per tier, + notes pointer
 ├── scripts/
@@ -331,6 +331,16 @@ The harness has two kinds of test of its own, both permanent and both required:
 | `references/<module>-mapping.md` | Maps ably-js-shaped pseudocode to your SDK's API for one module; may override parts of the generic flow | MUST wherever the SDK surface diverges from the pseudocode (in practice `objects` for every typed SDK) |
 
 Both existing skills use Python for scripts. Any language works, but the scripts must run on every developer platform (see [8.1](#81-resolver-resolve_utspy-must) and [section 10](#10-verification-and-ci)).
+
+**Install for both Claude Code and Codex (SHOULD).** Claude Code loads project skills from `.claude/skills/`; Codex loads them from `.agents/skills/`. Keep one copy and link the other location to it, so both tools load the same files:
+
+```sh
+mkdir -p .agents/skills
+ln -s ../../.claude/skills/uts-to-<lang> .agents/skills/uts-to-<lang>
+git add .agents/skills/uts-to-<lang>
+```
+
+Both tools follow directory symlinks. On Windows, Git needs `core.symlinks=true` (and Developer Mode); if that isn't available to your contributors, commit a copy instead, and add a CI check that the two directories are identical. Everything in the skill refers to its own files relative to the skill directory ([3.3](#33-frontmatter-and-arguments)), so either location works. Users invoke it as `/uts-to-<lang> <module-dir>` in Claude Code and `$uts-to-<lang> <module-dir>` in Codex.
 
 Keep two documents with separate roles: the test library's README describes **what exists** (helpers, seams, layout); `SKILL.md` describes **how to author** tests. Refer to the README by its full repo path, so it can't be confused with the spec repo's `uts/README.md`. The harness README MUST include a **Known gaps** section: every helper-spec member or contract point, and every corpus construct, that the harness doesn't implement, by tier, in a form the skill's preflight can match against the selected specs (construct or helper name → status and workaround). Write it as a table whose first column is the exact pseudocode token as it appears in `pseudo` fences (for example `respond_with_timeout`, `PING_MESSAGE`, `AWAIT_ALL`), so the preflight matches mechanically: for each row, grep the selected specs' `pseudo` fences for the token; any hit is a conflict. The corpus scanner (section 6) MAY accept spec files as well as a module directory for this. It SHOULD also cover: the SDK hooks used, each helper-spec symbol → harness symbol, the wait helpers and their default timeouts, the threading and time model, how to run each tier and its smoke tests and self-tests (2.7), and one index of every module's fixture helpers (even those in a separate test-support module).
 
@@ -368,21 +378,30 @@ Each tier value is **one path**, relative to the repo or to a declared root (Swi
 
 ### 3.3 Frontmatter and arguments
 
+Write the skill so the same directory loads in Claude Code and in OpenAI Codex. Both implement the open [Agent Skills](https://agentskills.io/specification) format. Put only the portable fields in `SKILL.md`:
+
 ```yaml
 ---
 name: uts-to-<lang>
-description: "Translate Ably UTS (Universal Test Suite) pseudocode specs into runnable <Lang> tests in <repo>. Use when asked to translate, port, derive, generate or re-sync tests from a UTS spec or module (uts/rest, uts/realtime, uts/objects), to evaluate UTS-derived tests against the SDK, or to check UTS coverage. Takes a UTS module directory, validates it, resolves target test dirs, lets you pick a tier (unit/integration/proxy) and specs, then derives one <Lang> test per spec Test ID. Usage: /uts-to-<lang> <path-to-uts-module-directory>"
-argument-hint: <path-to-uts-module-directory>
-allowed-tools: Bash, Read, Edit, Write
+description: "Translates Ably UTS (Universal Test Suite) pseudocode specs into runnable LANG tests in REPO. Use when asked to translate, port, derive, generate or re-sync tests from a UTS spec or module (uts/rest, uts/realtime, uts/objects), to evaluate UTS-derived tests against the SDK, or to check UTS coverage. Takes a UTS module directory, validates it, resolves the target test directories, asks for a tier (unit, integration, proxy) and specs, then derives one LANG test per spec Test ID. Not for creating the skill or its harness (use uts-to-lang-skill-creator), or for writing UTS specs."
+license: "<the repo's licence>"
+compatibility: "Claude Code or Codex. Needs git, python3 and a local clone of ably/specification; run on an Opus-class model."
+allowed-tools: Bash Read Edit Write
+metadata:
+  version: "1.0.0"
+  short-description: "Translate UTS specs into LANG tests"
 ---
 ```
 
-- **`name`** SHOULD be `uts-to-<lang>`. (`uts-to-kotlin` omits `name` and relies on the directory name; that works but is less explicit.)
-- **`description`** SHOULD be "pushy": list the trigger phrases a user might type ("translate this UTS spec", "port uts/objects to <lang>", "re-sync UTS tests"). Both existing skills' descriptions are procedural, which suits explicit `/` invocation but triggers poorly otherwise.
-- **Argument:** a single UTS **module** directory, directly under `uts/`. Both skills started with single-spec-file input and moved to modules; spec selection happens interactively. If the argument is empty, the skill MUST print the usage line and stop.
-- **`allowed-tools`:** both existing skills declare `Bash, Read, Edit, Write, WebFetch` and search with `grep` through `Bash`. Add `Grep`/`Glob` only if your workflow uses those tools, and `WebFetch` only if the skill fetches anything remotely (see [9.4](#94-local-clone-vs-fetching-main)).
-- **Model (SHOULD):** if your Claude Code version lets a skill declare the model it runs on, pin the skill to an Opus-class model ([Model tier](#model-tier)). Check the current Claude Code documentation for the mechanism rather than assuming a frontmatter field. If it can't, say in the opening lines of `SKILL.md` that the skill should be run on an Opus-class model. Either way, the skill records the model in its final report ([section 11](#11-final-report-format)).
-- **Placeholders, not personal paths,** in examples and usage text: `<cloned-ably-specification-repo-path>/uts/objects`.
+- **`name`** MUST be `uts-to-<lang>`, equal to the skill's directory name: lowercase letters, digits and hyphens, at most 64 characters. (`uts-to-kotlin` omits `name` and relies on the directory name; both tools accept that, but the Agent Skills format requires the field.)
+- **`description`** MUST be at most 1,024 characters and contain no `<` or `>`. Write `LANG` and `REPO`, not `<lang>`: skill packaging validators (for example skill-creator's `quick_validate.py`) reject angle brackets, and Anthropic's skill-authoring best practices also say no XML tags in descriptions. It SHOULD be "pushy" and written in the third person: front-load the trigger phrases a user might type ("translate this UTS spec", "port uts/objects to LANG", "re-sync UTS tests") and end with a "Not for …" boundary. Put the usage line in the body, not in the description. Both existing skills' descriptions are procedural, which suits explicit invocation but triggers poorly otherwise.
+- **`metadata`** values MUST be strings (quote `"1.0.0"` and `"false"`). Codex shows `metadata.short-description` in its skill list.
+- **`allowed-tools`** is space-separated. Claude Code pre-approves the listed tools while the skill runs; Codex ignores the field. Both existing skills declare `Bash, Read, Edit, Write, WebFetch` and search with `grep` through `Bash`. Add `Grep`/`Glob` only if your workflow uses those tools, and `WebFetch` only if the skill fetches anything remotely (see [9.4](#94-local-clone-vs-fetching-main)).
+- **Claude Code-only fields** (`argument-hint`, `model`, `disable-model-invocation`, `when_to_use`, `context`, …) MAY be added only if the team accepts that they aren't portable: Codex ignores them, and they make claude.ai upload and standard packaging fail. Put Codex-only settings (display name, implicit-invocation policy) in an optional `agents/openai.yaml` in the skill directory.
+- **Argument:** a single UTS **module** directory, directly under `uts/`. Both skills started with single-spec-file input and moved to modules; spec selection happens interactively. Don't depend on argument substitution (`$ARGUMENTS` works only in Claude Code): say in words where the argument comes from ("the module directory given after `/uts-to-LANG` in Claude Code or `$uts-to-LANG` in Codex, or named in the user's message"). If there is none, the skill MUST print the usage line and stop.
+- **Paths to the skill's own files** MUST be relative to the skill directory (the directory containing `SKILL.md`), for example "run `scripts/resolve_uts.py` from this skill's directory". Never write `.claude/skills/uts-to-<lang>/scripts/…`: Codex loads the skill from `.agents/skills/`, and `${CLAUDE_SKILL_DIR}` is Claude Code-only. The scripts follow the same rule: they locate the mapping file and the notes relative to their own file (for example `Path(__file__).parent.parent`), never relative to the working directory.
+- **Model (SHOULD):** no portable frontmatter field pins a model. State in the opening lines of `SKILL.md` (and in `compatibility`) that the skill should run on an Opus-class model ([Model tier](#model-tier)). Claude Code's `model` field is a non-portable option (see above). Either way, the skill records the model in its final report ([section 11](#11-final-report-format)).
+- **Placeholders, not personal paths,** in examples and usage text: `<cloned-ably-specification-repo-path>/uts/objects` in the body (angle brackets are fine in the body, but not in `description`).
 
 ### 3.4 Recommended outlines (SHOULD)
 
@@ -684,7 +703,7 @@ Fill in the last column for your language; the skill MUST map every construct it
 | `BEFORE ALL TESTS`, `AFTER ALL TESTS`, `BEFORE EACH TEST`, `AFTER EACH TEST`, `AFTER TEST:` | Fixtures | `with…` scopes, per test | `@BeforeAll` / `@AfterAll` | |
 | `POST https://…/apps WITH body from …`, `DELETE … WITH Authorization: Basic …` | Sandbox provisioning | `SandboxApp` | `SandboxApp.create()` / `delete()` | |
 | `create_proxy_session(endpoint:, rules:)` (or `rules:` only; see 6.7), `add_rules`, `trigger_action`, `get_log()` / `session.getLog()`, `proxy_port` | `proxy.md` | `withProxySession(rules:)`; typed `ProxyEvent` log | `ProxySession.create(…)`, `finally { session.close() }`; typed log | |
-| `"__PASSTHROUGH__"` as a field value in a `replace` action's message *(undocumented)* | A uts-proxy sentinel that `proxy.md` doesn't define (used in `realtime/integration/proxy/connection_resume.md`); confirm its behaviour against the pinned uts-proxy release before mapping it | — | — | |
+| `"__PASSTHROUGH__"` as a field value in a `replace` action's message *(undocumented)* | A placeholder string, not a uts-proxy feature: uts-proxy v0.3.0 sends a `replace` message verbatim, so the SDK receives the literal value (used in `realtime/integration/proxy/connection_resume.md` Test 22, whose assertions don't depend on it). Treat it as an ordinary string; don't implement a substitution | — | — | |
 | `MockVCDiffEncoder()`, `MockVCDiffDecoder`, `FailingMockVCDiffDecoder` | `mock_vcdiff.md` | — | — | |
 | `setup_synced_channel`, `setup_synced_channel_no_ack`, `STANDARD_POOL_OBJECTS`, `build_*`, serial helpers, `provision_objects_via_rest` | `standard_test_pool.md` | Unit tier seeds the pool directly (sanctioned stand-in); helpers in the test-support target | `setupSyncedChannel("test")`, `build*` in module `Helpers.kt` | |
 | White-box access: `applyOperation`, `channel.object.objectsPool`, `processChannelState`, direct construction, `get_backoff_coefficient(n)`, `get_jitter_coefficient()`, `encode_recovery_key(…)`, `CLEAR channel._lastPayload.messageId` | Internal access ([5.9](#59-internal-access-white-box-unit-specs)). `CLEAR …` in `delta_decoding_test.md` is a private-field write inside an *integration* spec | Core: `import Ably.Private` + private headers; objects: `@testable import` + `testsOnly_` accessors | `internal` within `:liveobjects` | |
@@ -853,11 +872,11 @@ A per-module manifest (spec file → SHA → test file) MAY be kept as well. Lin
 
 ### 9.2 A re-sync mode (SHOULD)
 
-Neither existing skill has one; both have stale suites as a result. Add a mode (for example `/uts-to-<lang> <module-dir> --resync`) that:
+Neither existing skill has one; both have stale suites as a result. Add a mode (for example `/uts-to-<lang> <module-dir> --resync` in Claude Code, `$uts-to-<lang> <module-dir> --resync` in Codex) that:
 
 1. Runs the audit over **every** mapped spec in the module, not only the ones selected.
 2. Lists changed spec files against each file's recorded state, including uncommitted changes: `git diff --name-status -M <recorded-sha> -- uts/<module>` (the working tree, staged and unstaged, against the SHA; group files by the SHA in their headers), or `git hash-object` for a file stamped with a blob (9.1). Untracked spec files have no committed state: compare one stamped with a blob (9.1) with that blob, and treat one with no test file as **new**; untracked files outside the tier directories are local notes and are ignored. Decide new and removed by comparing the resolver's spec list with the existing test files. Then re-scan the corpus for constructs the skill can't map (section 6).
-3. Classifies each spec as **new**, **changed** (any change to the spec file since its recorded state; report the kind: ID set, pseudocode, fixtures, or other content such as `## Protocol Variants`, `## Test Type` or prose), **unchanged** or **removed**. Review each changed file's diff to decide which tests to regenerate, and say why when a changed file is not regenerated. A spec whose helper specs or the UTS docs it relies on changed is reviewed too ([procedure section 10](uts-to-lang-skill-creator.md#10-maintenance)).
+3. Classifies each spec as **new**, **changed** (any change to the spec file since its recorded state; report the kind: ID set, pseudocode, fixtures, or other content such as `## Protocol Variants`, `## Test Type` or prose), **unchanged** or **removed**. Review each changed file's diff to decide which tests to regenerate, and say why when a changed file is not regenerated. A spec whose helper specs or the UTS docs it relies on changed is reviewed too ([procedure section 10](../../skills/uts-to-lang-skill-creator/references/maintenance.md#10-maintenance)).
 4. Regenerates the affected tests, **preserving only** DEVIATION gates, adapted assertions, UTS-spec-error fail-fast placeholders (they stay until the spec is fixed; `writing-derived-tests.md` "Resolution") and `deviations.md` entries, and updating those entries.
 5. Updates the SHA in each regenerated file's header, and its blob note (9.1): re-stamped if the spec is still locally modified, removed if not (and in the manifest, if kept).
 6. Reports the classification ([section 11](#11-final-report-format)).
@@ -973,7 +992,9 @@ The skill and its harness are one deliverable: the skill isn't done until every 
 
 **Skill files**
 
-- [ ] `SKILL.md` with `name: uts-to-<lang>`, a pushy description with trigger phrases, `argument-hint`, usage guard, placeholder paths; follows the [3.4](#34-recommended-outlines-should) outline, including the Harness reference
+- [ ] `SKILL.md` frontmatter portable across Claude Code and Codex: `name` equal to the directory; a pushy third-person description of at most 1,024 characters with no `<` or `>` and a "Not for" boundary; string-valued `metadata`; Claude Code-only fields only if accepted as non-portable ([3.3](#33-frontmatter-and-arguments))
+- [ ] `SKILL.md`: a usage guard that doesn't rely on `$ARGUMENTS`; the skill's own files referred to relative to the skill directory, in `SKILL.md` and in the scripts; placeholder paths; follows the [3.4](#34-recommended-outlines-should) outline, including the Harness reference
+- [ ] Installed for both tools from one source: `.claude/skills/` and `.agents/skills/`, by in-repo symlink or a CI-checked copy ([3.1](#31-layout)) (SHOULD)
 - [ ] `uts-package-mapping.json`: one path per tier, unique namespaces, `notes` relative to the skill dir, hand-maintained entries marked, `harness` entry
 - [ ] `resolve_uts.py`: validation, errors, output contract, path-based tiers, relative exclusions, runner-collectable naming, collision detection, validate-then-write `--create` preserving entries, `harness` output
 - [ ] `audit_translation.py`: the parsing contract, ID coverage, duplicates, separate assert/await counts, ignores commented assertions, never crashes, flags unverifiable specs; itself mutation-tested
@@ -1022,7 +1043,7 @@ The skill and its harness are one deliverable: the skill isn't done until every 
 
 **Creation process**
 
-- [ ] Skill and harness created on an Opus-class model (MUST); the skill pins the model or states it for its runs (SHOULD), and records it in its final report ([Model tier](#model-tier))
+- [ ] Skill and harness created on an Opus-class model (MUST); the skill states the model for its runs, or pins it where the tool supports that (SHOULD), and records it in its final report ([Model tier](#model-tier))
 - [ ] Reads of the [reference implementations](#reference-implementations-last-resort), if any, made only as a last resort, recorded, and reported as guide gaps
 
 ---
@@ -1056,7 +1077,7 @@ Rules:
 5. **Record each consultation**: the repo, commit and path, the question, what you learned, and how you checked it. Report each one as a gap in this guide: a candidate guide improvement.
 6. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-local-clone-vs-fetching-main)), and neither does the pilot run that validates it.
 
-Reading GitHub is network access: the [procedure](uts-to-lang-skill-creator.md#21-your-inputs) gates it, or offers local clones that contain the pinned commits instead.
+Reading GitHub is network access: the [procedure](../../skills/uts-to-lang-skill-creator/SKILL.md#21-your-inputs) gates it, or offers local clones that contain the pinned commits instead.
 
 ### Patterns to avoid
 
@@ -1068,6 +1089,7 @@ Observed in the existing skills and their harnesses as of 2026-10-07 (the review
 - **Two sources of tier truth**: path-based in the resolver, content-based in the `SKILL.md` integration section.
 - **A `CONTAINS_IN_ORDER` mapping that isn't a subsequence check** ([6.7](#67-notes-on-the-catalogue)).
 - **No re-sync mode, no final report, no lint step, no collision detection**, and a silent `null` when a declared notes file is missing.
+- **Claude Code-only packaging** ([3.3](#33-frontmatter-and-arguments)): script paths hard-coded as `python3 .claude/skills/<name>/scripts/…` and reliance on `$ARGUMENTS`, both of which break under Codex; angle-bracket placeholders (`<…>`) in `description`, which skill packaging validators reject.
 
 **In the harnesses**
 
