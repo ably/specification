@@ -126,7 +126,7 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
 - `(RSC15)` Host Fallback
   - `(RSC15m)` The fallback behavior described by this section, [RSC15](#RSC15), only applies when the set of `fallback domains`, as determined by [`REC2`](#REC2) is not empty. When the set of `fallback domains` is empty, failing HTTP requests that would have [qualified for a retry against a fallback host (see RSC15d)](#RSC15d) will instead result in an error immediately.
   - `(RSC15n)` When the use of fallbacks applies, the set of `fallback domains` is determined by [`REC2`](#REC2).
-  - `(RSC15b)` This clause has been replaced by [`RSC15j`](#RSC15j) as of specification version 4.0.0.
+  - `(RSC15b)` This clause has been replaced by [`RSC15m`](#RSC15m) as of specification version 4.0.0.
   - `(RSC15e)` This clause has been replaced by [`RSC25`](#RSC25) as of specification version 4.0.0.
   - `(RSC15a)` In the case of an error necessitating use of an alternative host (see [RSC15d](#RSC15d)), try `fallback domains` in random order, continuing to try further domains if [qualifying errors](#RSC15d) occur, failing when all have been tried or the configured `httpMaxRetryCount` has been reached (see [`TO3l`](#TO3l5)). This ensures that a client library is able to work around routing or other problems for the user's closest datacenter. For example, if a `POST` request to `main.realtime.ably.net` fails because the default endpoint is unreachable or unserviceable, then the `POST` request should be retried again against the fallback hosts in attempt to find an alternate healthy datacenter to service the request
   - `(RSC15g)` This clause has been replaced by [`RSC15n`](#RSC15n) as of specification version 4.0.0.
@@ -136,7 +136,7 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
     - `(RSC15g4)` This clause has been replaced by [`RSC15n`](#RSC15n) as of specification version 4.0.0.
   - `(RSC15h)` This clause has been replaced by [`REC2`](#REC2) as of specification version 4.0.0.
   - `(RSC15i)` This clause has been replaced by [`REC2`](#REC2) as of specification version 4.0.0.
-  - `(RSC15j)` Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to `main.realtime.ably.net` fails and will be retried to `c.ably-realtime.com`, the Host header must be set to `c.ably-realtime.com` in the retried request
+  - `(RSC15j)` Requests to fallback hosts must use a matching Host header as this is necessary when fallbacks are proxied through a CDN. For example, if a request to `main.realtime.ably.net` fails and will be retried to `main.c.fallback.ably-realtime.com`, the Host header must be set to `main.c.fallback.ably-realtime.com` in the retried request
   - `(RSC15d)` This clause has been replaced by [`RSC15l`](#RSC15l).
   - `(RSC15l)` Errors that necessitate use of an alternative host include any of the following conditions. (Resending requests that have failed for other failure conditions will not fix the problem and will simply increase the load on other datacenters unnecessarily).
     - `(RSC15l1)` host unresolvable or unreachable
@@ -633,14 +633,14 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTN17)` Domain selection and fallback behaiviour
   - `(RTN17g)` The fallback behavior described by this section, [RTN17](#RTN17), only applies when the set of `fallback domains`, as determined by [`REC2`](#REC2) is not empty. When the set of `fallback domains` is empty, failing HTTP requests that would have [qualified for a retry against a fallback host (see RSC15d)](#RSC15d) will instead result in an error immediately.
   - `(RTN17h)` When the use of fallbacks applies, the set of `fallback domains` is determined by [`REC2`](#REC2).
-  - `(RTN17b)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
-    - `(RTN17b1)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
-    - `(RTN17b2)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
-    - `(RTN17b3)` This clause has been replaced by [`RSC17h`](#RSC17h) as of specification version 4.0.0.
+  - `(RTN17b)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
+    - `(RTN17b1)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
+    - `(RTN17b2)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
+    - `(RTN17b3)` This clause has been replaced by [`RTN17g`](#RTN17g) as of specification version 4.0.0.
   - `(RTN17i)` By default, every connection attempt is first attempted to the `primary domain` as specified in "`REC1`"#REC1. The client library must always prefer the primary domain, even if a previous connection attempt to that endpoint has failed. (That is, `RSC15f` does not apply)
-  - `(RTN17a)` This clause has been replaced by [`RSC17i`](#RSC17i) as of specification version 4.0.0.
+  - `(RTN17a)` This clause has been replaced by [`RTN17i`](#RTN17i) as of specification version 4.0.0.
   - `(RTN17j)` In the case of an error necessitating use of an alternative host (see [RTN17f](#RTN17f)), the `Connection` manager should first check if an internet connection is available by issuing a `GET` request to the `connectivityCheckUrl` as determined via "`REC3`"#REC3. If the request succeeds and the text "yes" is included in the body, then the client library can assume it has a viable internet connection and should then immediately retry the connection against `fallback domains` in random order to find an alternative healthy datacenter.
-  - `(RTN17c)` This clause has been replaced by [`RSC17j`](#RSC17j) as of specification version 4.0.0.
+  - `(RTN17c)` This clause has been replaced by [`RTN17j`](#RTN17j) as of specification version 4.0.0.
   - `(RTN17d)` This clause has been replaced by [`RTN17f`](#RTN17f).
   - `(RTN17f)` Errors that necessitate use of an alternative host include any of the failure conditions specified in [`RSC15l`](#RSC15l), and additionally also:
     - `(RTN17f1)` a `DISCONNECTED` response with an `error.statusCode` in the range `500 <= code <= 504`
@@ -2185,16 +2185,16 @@ Each type, method, and attribute is labelled with the name of one or more clause
       clientId: String? // RSC17, RSA15, TO3a
       defaultTokenParams: TokenParams? // TO3j11
       echoMessages: Bool default true // RTC1a, TO3h
-      environment: String? // RSC15e, TO3k1 (optional, deprecated)
-      endpoint: String? // RSC15e, TO3k8
+      environment: String? // REC1c, TO3k1 (optional, deprecated)
+      endpoint: String? // REC1b, TO3k8
       logHandler: // platform specific - TO3c
       logLevel: // platform specific - TO3b
       logExceptionReportingUrl: String default "[library specific]" // TO3m (deprecated)
       port: Int default 80 // TO3k4
       queueMessages: Bool default true // RTP16b, TO3g
-      restHost: String default "main.realtime.ably.net" // RSC12, TO3k2 (optional, deprecated)
-      realtimeHost: String default "main.realtime.ably.net" // RTC1d, TO3k3 (optional, deprecated)
-      fallbackHosts: String[] default nil // RSC15b, RSC15a, TO3k6
+      restHost: String default "main.realtime.ably.net" // REC1d1, TO3k2 (optional, deprecated)
+      realtimeHost: String default "main.realtime.ably.net" // REC1d2, TO3k3 (optional, deprecated)
+      fallbackHosts: String[] default nil // REC2a, RSC15a, TO3k6
       fallbackHostsUseDefault: Bool default false // TO3k7 (optional, deprecated)
       recover: String? // RTC1c, TO3i
       tls: Bool default true // RSC18, TO3d
