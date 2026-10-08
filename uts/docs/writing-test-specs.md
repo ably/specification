@@ -843,7 +843,8 @@ wall-clock* in `writing-derived-tests.md` for the traps on both sides).
 
 For a **negative assertion** at unit tier — proving something did *not* happen — there is
 nothing to poll for: use `process_pending_events()` (see the pseudocode conventions in
-`uts/README.md`) to let already-queued events settle, then assert. Never a fixed `WAIT`.
+`uts/README.md`) to drain all already-queued work, then assert (see *No real timers in unit
+tests* in `writing-derived-tests.md` for SDKs that chain work across queues). Never a fixed `WAIT`.
 
 ```pseudo
 # Good - negative assertion: settle pending events, then assert nothing happened

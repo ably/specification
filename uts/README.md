@@ -142,8 +142,9 @@ Pseudocode maps to language idioms rather than prescribing exact syntax:
   unit tier before asserting, especially for negative assertions ("nothing happened"). Involves
   no real delay and is never rendered as a timed sleep; implementations define a shared helper
   using the platform's zero-delay yield (e.g. `flushAsync()` awaiting a `setImmediate` in
-  ably-js, or `runCurrent()` on a kotlinx-coroutines test scheduler) — see the timer guidance
-  in [docs/writing-derived-tests.md](docs/writing-derived-tests.md).
+  ably-js, or `runCurrent()` on a kotlinx-coroutines test scheduler), repeated or replaced by an
+  explicit queue drain where the SDK chains work across queues, threads or loop iterations — see
+  the timer guidance in [docs/writing-derived-tests.md](docs/writing-derived-tests.md).
 - **Language-inapplicable inputs**: a test input that cannot be constructed in a given language
   (e.g. a non-string map key in JavaScript, where object keys are always coerced to strings; or a
   `null` argument where the SDK's signature makes null indistinguishable from "omitted") makes
