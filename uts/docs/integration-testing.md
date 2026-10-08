@@ -302,6 +302,7 @@ The following integration test specs are annotated with `## Protocol Variants`:
 **LiveObjects:**
 - `objects/integration/objects_lifecycle_test.md`
 - `objects/integration/objects_sync_test.md`
+- `objects/integration/objects_gc_test.md`
 
 ## Writing Proxy Tests
 
