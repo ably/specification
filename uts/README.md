@@ -34,7 +34,7 @@ uts/
 │   ├── writing-test-specs.md          # How to write UTS specs
 │   ├── writing-derived-tests.md       # How to translate specs into SDK tests
 │   ├── translator-skills/             # Building uts-to-<lang> translator skills
-│   │   ├── writing-translator-skills.md      # What a translator skill must contain
+│   │   ├── writing-translator-skills.md      # What a translator skill and its harness must contain
 │   │   └── uts-to-lang-skill-creator.md      # Agent procedure to build one
 │   ├── integration-testing.md         # Integration testing policy
 │   ├── proxy.md                       # Proxy infrastructure spec (cross-module)
@@ -141,8 +141,8 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 - **[Writing Test Specs](docs/writing-test-specs.md)** — How to author UTS specs: mock patterns, pseudocode conventions, proxy test structure, common mistakes
 - **[Writing Derived Tests](docs/writing-derived-tests.md)** — How to translate UTS specs into SDK-specific tests, diagnose failures, and record deviations
-- **[Writing UTS Translator Skills](docs/translator-skills/writing-translator-skills.md)** — How to build a per-language `uts-to-<lang>` Claude Code skill: prerequisites, workflow, construct mapping, audit tooling, re-sync
-- **[UTS-to-Lang Skill Creator](docs/translator-skills/uts-to-lang-skill-creator.md)** — Step-by-step procedure for an LLM agent to create a `uts-to-<lang>` skill for an SDK repo: understand the repo, design and build the UTS test infrastructure (harness), generate the skill, validate it with pilot translations
+- **[Writing UTS Translator Skills](docs/translator-skills/writing-translator-skills.md)** — How to build a per-language `uts-to-<lang>` Claude Code skill and its harness: harness smoke tests and self-tests, workflow, construct mapping, audit tooling, re-sync
+- **[UTS-to-Lang Skill Creator](docs/translator-skills/uts-to-lang-skill-creator.md)** — Step-by-step procedure for an LLM agent to create a `uts-to-<lang>` skill for an SDK repo: understand the repo, design, build and test the UTS test infrastructure (harness), generate the skill, validate it with pilot translations
 - **[Integration Testing Policy](docs/integration-testing.md)** — When to write integration vs unit tests, proxy test design principles, test structure conventions
 - **[Completion Status](docs/completion-status.md)** — Coverage matrix tracking which spec items have UTS test specs
 

@@ -1,11 +1,12 @@
 # Writing UTS Translator Skills
 
-This guide explains how to build a per-language Claude Code skill — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Its rules were distilled from two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), which appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You don't need to read these skills; everything required is in this guide and the UTS docs.
+This guide explains how to build a per-language Claude Code skill — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Its rules were distilled from two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), which appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You shouldn't need to read these skills: this guide and the UTS docs are the authority, and they are meant to be complete. If they don't answer a question while you create or maintain a skill or its harness, the existing skills and harnesses MAY be consulted as a last resort, under the rules in [Reference implementations (last resort)](#reference-implementations-last-resort).
 
-If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, follow the step-by-step procedure in [UTS-to-Lang Skill Creator](uts-to-lang-skill-creator.md); this guide remains the authority on what the skill must contain.
+If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, follow the step-by-step procedure in [UTS-to-Lang Skill Creator](uts-to-lang-skill-creator.md), on an Opus-class model ([Model tier](#model-tier)); this guide remains the authority on what the skill must contain.
 
 **Intent.** A translator skill exists so that translation is near-mechanical: the same spec, translated twice, gives the same test.
 
+- **Harness and skill are one deliverable.** The skill translates onto a harness built in the same repo from its existing test setup, and it isn't complete until that harness's smoke tests and self-tests are green, in CI, at every tier the skill supports ([section 2](#2-the-harness-uts-test-infrastructure)).
 - **Easy to use.** One command (`/uts-to-<lang> <module-dir>`) and four questions; the skill does the rest.
 - **Context-complete.** Every run gathers the full context: the spec, the translation manual, the sources and README of the UTS test infrastructure (the **harness**), the module notes and the resolver output. A good test doesn't depend on anyone's memory.
 - **Tests are reproducible artifacts.** The UTS spec plus the skill is the source of truth; the generated test is an output. When a translation is wrong or the spec changes, regenerate it ([section 9](#9-keeping-in-sync-with-spec-changes)) rather than hand-maintain it.
@@ -22,7 +23,7 @@ Facts about the existing skills and SDKs are **as of 2026-10-07**: spec commit `
 ## Contents
 
 1. [Purpose and scope](#1-purpose-and-scope)
-2. [Prerequisites in the SDK repo](#2-prerequisites-in-the-sdk-repo)
+2. [The harness (UTS test infrastructure)](#2-the-harness-uts-test-infrastructure)
 3. [Skill anatomy](#3-skill-anatomy)
 4. [The workflow the skill must implement](#4-the-workflow-the-skill-must-implement)
 5. [Translation rules](#5-translation-rules)
@@ -42,7 +43,7 @@ Facts about the existing skills and SDKs are **as of 2026-10-07**: spec commit `
 
 ### What a translator skill is
 
-A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and notes) that Claude Code follows to turn the pseudocode specs in one UTS module directory (`uts/rest`, `uts/realtime`, `uts/objects`) into runnable tests in your SDK's test suite. It optionally runs them and diagnoses failures.
+A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and notes) that Claude Code follows to turn the pseudocode specs in one UTS module directory (`uts/rest`, `uts/realtime`, `uts/objects`) into runnable tests in your SDK's test suite. It optionally runs them and diagnoses failures. It is built on, and delivered with, a harness in the same repo: the native test library that implements the UTS helper specs, with its own smoke tests and self-tests (section 2).
 
 ### How it relates to the other UTS docs
 
@@ -53,6 +54,7 @@ A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and no
 | [`writing-derived-tests.md`](../writing-derived-tests.md) | **Translation and evaluation semantics.** Faithful translation, the evaluation decision tree, the three test patterns, `deviations.md` format, idiomatic translation vs deviation, timer and timeout traps |
 | [`integration-testing.md`](../integration-testing.md), [`proxy.md`](../proxy.md) | Integration and proxy tiers: sandbox setup, timeouts, protocol variants, the proxy session and rule API |
 | **This guide** | How to package all of the above into a repeatable, scripted Claude Code skill for one SDK |
+| Existing skills and harnesses ([Reference implementations](#reference-implementations-last-resort)) | Nothing normative: a last-resort, read-only reference for patterns when creating a skill, below every document above |
 
 `writing-derived-tests.md` is the **source of truth for semantics**. This guide never redefines what a faithful translation is, or how a deviation is classified and recorded; it says how a skill enforces those rules. If the two ever disagree, `writing-derived-tests.md` wins.
 
@@ -68,11 +70,25 @@ A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and no
 
 A skill **SHOULD** keep only the language rendering of a rule and link to the source for its meaning. Inline copies of semantic rules drift. Both existing skills replaced their inline `deviations.md` format with a pointer to the manual for this reason, although they still inline the decision tree and test patterns.
 
+### Model tier
+
+Creating a skill and its harness, and running the skill, are long, multi-file reasoning tasks in which a silent omission costs far more than compute. Use **the most capable model tier available (Claude Opus or an equivalent Opus-class model)**. "Opus-class" means that tier, whatever its current version, not a particular release.
+
+| Task | Level | Why |
+|---|---|---|
+| Creating the skill and building its harness (the [procedure](uts-to-lang-skill-creator.md)) | **MUST** | The agent must hold this guide, the procedure, the UTS docs, the helper specs and the SDK's source in context at once; design hooks, mocks, fixtures and CI wiring that span many files; and decide rules that every later run inherits, so one silent omission becomes a defect in every generated test |
+| Translating and evaluating with the finished skill (`/uts-to-<lang>`) | **SHOULD** | The resolver and the audit ([section 8](#8-deterministic-tooling)) make paths, names, ID coverage and assertion counts mechanical, but not the rest. Matching wait predicates and timeouts, copying comments verbatim, setup fidelity, and diagnosing a failure as SDK, spec or translation ([7](#7-evaluation-and-deviations), [8.3](#83-review-checklist-must-after-the-audit)) remain model judgement, and a count can't catch a changed predicate ([8.2](#82-audit-audit_translationpy-must)) |
+| Sub-agents spawned during either (review, validation; pilot runs during creation serve creation) | **The level of the task they serve** | A reviewer weaker than the author misses what the author missed. A cheaper model MAY be used only for a clearly mechanical step whose result a script verifies (for example, running the audit over the corpus and collecting its JSON), if at all |
+
+The deterministic scripts reduce the dependence on the model; they don't remove it. Pin the model where the tooling allows ([3.3](#33-frontmatter-and-arguments)), and record the model used in every run's final report ([section 11](#11-final-report-format)).
+
 ---
 
-## 2. Prerequisites in the SDK repo
+## 2. The harness (UTS test infrastructure)
 
-A skill cannot make translation mechanical if the harness it translates onto does not exist. Build these **before** writing the skill. In both existing SDKs this took several iterations, and the harness co-evolved with the first real translation run.
+The harness is part of the deliverable, not an optional prerequisite: a `uts-to-<lang>` skill is delivered together with its harness, and it isn't complete until the harness's smoke tests and self-tests ([2.7](#27-harness-smoke-tests-and-self-tests-must)) are green, in CI, at every tier the skill supports. A skill can't make translation mechanical if the harness it translates onto doesn't exist or doesn't keep its contracts.
+
+**Design the harness from the repo's existing test setup.** For every capability in 2.1–2.7, first find what the SDK's native tests already have, then decide to **reuse** it, **wrap** it in a pseudocode-shaped facade, **extend** it, or **build** new (2.2, "Reuse before you build"). Build the harness, and its tests, **before** writing the skill. In both existing SDKs this took several iterations, and the harness co-evolved with the first real translation run.
 
 ### 2.1 SDK test hooks (MUST)
 
@@ -88,7 +104,7 @@ The unit tier needs injection points in production code:
 
 Mocks and the fake clock are injected **at client construction**, so the harness must install them before the client is created.
 
-**The clock hook must cover every time source the SDK uses**: timers, and also blocking waits (condition variables, timed `wait`, dispatch-after). If any wait runs on the real clock, retries fire on wall-clock time regardless of `ADVANCE_TIME`, and "nothing happened before the advance" becomes unassertable. (ably-java found this when `FakeClock.waitOn` did a real timed wait, commit `c4502c67`.) Likewise, check that the fake clock drives your async runtime's timers: in asyncio, for example, faking the wall clock doesn't fire `loop.call_later` callbacks; in .NET, route `Task.Delay` and timers through a `TimeProvider`-style abstraction.
+**The clock hook must cover every time source the SDK uses**: timers, and also blocking waits (condition variables, timed `wait`, dispatch-after). If any wait runs on the real clock, retries fire on wall-clock time regardless of `ADVANCE_TIME`, and "nothing happened before the advance" becomes unassertable. (ably-java found this when a retry ran on wall-clock time through `FakeClock.waitOn`, which does a real timed wait, commit `c4502c67`.) Likewise, check that the fake clock drives your async runtime's timers: in asyncio, for example, faking the wall clock doesn't fire `loop.call_later` callbacks; in .NET, route `Task.Delay` and timers through a `TimeProvider`-style abstraction. Two workable shapes: route every SDK delay (`sleep`, `call_later`, timeouts) through the clock hook, so `ADVANCE_TIME` runs them; or run unit tests on a virtual-time event loop whose `time()` the fake clock controls, in which case the wall-clock timeout wrapper must not use the loop's clock (it measures virtual time).
 
 If a hook doesn't exist, add it to the SDK first. Without these hooks, the unit tier is impossible.
 
@@ -118,13 +134,33 @@ The library also needs:
 - **A log sink** for "an error is logged" assertions.
 - **An in-order subsequence assertion** for `CONTAINS_IN_ORDER`.
 - **Caller-attributed failures:** helpers that time out or receive an unexpected error report the failure at the calling test line (Swift `sourceLocation:`, pytest `__tracebackhide__`, C# caller-info attributes), not inside the helper.
-- **Harness smoke tests (SHOULD)**, one per tier, as the acceptance gate while the harness is being built. They are structural examples only: not spec-derived, no `UTS:` tag, and the skill must never copy their shape. They MAY be retired once spec-derived tests cover each tier: ably-java keeps them in `:uts`; ably-cocoa removed its own (commit `58fa0f5e`).
+- **Per-tier smoke tests and helper self-tests (MUST)**, permanent and run in CI: the minimum set, and the rules for where they live and how they run, are in [2.7](#27-harness-smoke-tests-and-self-tests-must).
 
 **Placement.** Separate **shared** test-support code (used by both the SDK's native tests and the UTS ports, importing no test framework) from **port-only** harness code (doubles and fixtures used only by UTS ports); keep port-only code with the ports. Module-specific helpers (for example the `standard_test_pool.md` implementation) live next to that module's suites; the shared library stays module-agnostic. For a plugin-backed module such as LiveObjects, provide a client-options builder in the module helpers that registers the plugin, so tests never wire it by hand.
 
+**Recommended layout (SHOULD).** One harness library (a test-support module, target or package) that every target hosting UTS tests consumes as a test dependency, organised by tier, with its smoke tests and self-tests beside it and the generated tests kept separate:
+
+```
+<harness>/                      # the harness library; one per SDK
+  README.md                     # what exists, how to run each tier's harness tests, Known gaps (3.1)
+  common/                       # wait and poll helpers, capture, log sink, assertContainsInOrder, caller attribution
+  unit/                         # client factory, MockWebSocket, MockHttpClient, fake clock, message templates, optional mocks
+  integration/                  # SandboxApp, suite fixture with guaranteed teardown
+  proxy/                        # ProxyManager, ProxySession, rule builders
+  tests/                        # smoke tests and helper self-tests (2.7), by tier:
+    common/ unit/ integration/ proxy/
+<generated tests>               # the mapping's target directories (3.2), outside <harness>/
+  unit/<module>/  integration/standard/<module>/  integration/proxy/<module>/
+<module helpers>                # next to each module's suites, depending on <harness>, never the reverse;
+                                # a module's smoke test lives beside its helpers (outside every target dir)
+                                # and is selected by the unit tier's harness command
+```
+
+Where the SDK already has a test-options type, add the hooks to it, and implement the SDK's own transport and HTTP abstractions rather than patching internals. Keep the harness tests where one per-tier filter selects them (2.5), and where no generated test can collide with or overwrite them. (ably-java's `:uts` Gradle module is one example of this shape: per-tier harness packages, with the smoke tests in the module's own test set.)
+
 **Document each fixture helper's scope** in the module notes: which client messages it auto-answers, which spec branches it doesn't wire (a DETACH reply, fake timers), the local pattern tests use for those gaps, and any option tweaks the gap needs. (ably-java: the fake-clock variant of `setupSyncedChannel` needs a large `maxIdleInterval`, or virtual-time advances trip the idle timer.)
 
-**Reuse before you build.** If the SDK's native tests already have transport doubles, a fake clock or sandbox helpers, assess whether to reuse, wrap or extend them against the helper specs' semantics before writing new ones; never change their behaviour for the native tests that use them.
+**Reuse before you build.** If the SDK's native tests already have transport doubles, a fake clock or sandbox helpers, assess whether to reuse, wrap or extend them against the helper specs' semantics before writing new ones; never change their behaviour for the native tests that use them. Existing doubles bound to another test framework, or built for real-network interception rather than the helper specs' in-process semantics, are usually better left alone: build pseudocode-shaped doubles on the same SDK hooks instead, and extract shared plumbing (such as sandbox retries) for both. (One SDK kept its legacy doubles for its native suite and built new framework-free UTS doubles on the same transport and HTTP seams.)
 
 **Build the harness to look like the pseudocode.** Callback-style mocks with the spec's handler names, and a client factory that mirrors `Realtime(options: …)`, turn translation into transliteration. ably-java's first generation run replaced a "wrap every callback in a coroutine" rule with callback-style mocks for exactly this reason.
 
@@ -136,7 +172,7 @@ The library also needs:
 
 ### 2.4 The proxy (MUST for the proxy tier)
 
-- A `ProxyManager` that downloads, caches and starts [`ably/uts-proxy`](https://github.com/ably/uts-proxy). Pin the version, and check that the pinned release publishes a binary for every developer OS (its GitHub release assets). An environment override pointing at a locally built binary (`UTS_PROXY_LOCAL_PATH` in both existing harnesses; ably-java also accepts `-Duts.proxy.localPath`) is useful; keep it a configuration override, not a test gate.
+- A `ProxyManager` that downloads, caches and starts [`ably/uts-proxy`](https://github.com/ably/uts-proxy). Pin the version, and check that the pinned release publishes a binary for every developer OS (its GitHub release assets). An environment override pointing at a locally built binary (`UTS_PROXY_LOCAL_PATH` in both existing harnesses; ably-java also accepts `-Duts.proxy.localPath`) is useful; keep it a configuration override, not a test gate. Operationally, the manager also verifies the downloaded archive (a checksum), serialises the download across concurrent test processes, waits for the proxy's control endpoint to report healthy before returning, reaps the proxy process when the test process exits, and handles the port: proxy suites share one control port, so run them in one process (one fork or worker), or give each worker its own port.
 - A native `ProxySession` implementing [`proxy.md`](../proxy.md): `create_proxy_session`, `add_rules`, `trigger_action`, `get_log`, `close`, plus rule-builder helpers and a typed event log.
 - **The `action` inside a frame `match` (`ws_frame_to_client` / `ws_frame_to_server`) must be a JSON string**: a name (`"ATTACHED"`) or a numeric string (`"11"`), never a number (the proxy rejects a number with HTTP 400). uts-proxy v0.3.0 resolves names only up to `AUTH` (17), so use numeric strings for `OBJECT` (`"19"`), `OBJECT_SYNC` (`"20"`) and `ANNOTATION` (`"21"`); an unresolvable name silently never matches. This applies only to `match.action`: a rule's own `action` is an object (`{"type": "suppress"}`), and the `action` inside an injected message stays a number. Rule builders should take an integer and stringify it, as both existing harnesses do.
 - Proxy tests always use JSON: the proxy supports text frames only (`integration-testing.md`, "Protocol Variants").
@@ -145,7 +181,7 @@ The library also needs:
 
 ### 2.5 Build and CI wiring (MUST)
 
-- Test tasks or filters that select each tier (unit, direct integration, proxy), each with a single-class/single-test filter.
+- Test tasks or filters that select each tier (unit, direct integration, proxy), each with a single-class/single-test filter, and, per tier, a filter and the complete command that runs that tier's harness smoke tests and self-tests ([2.7](#27-harness-smoke-tests-and-self-tests-must)). The harness tests run ungated in their tier's CI job. Check the repo's existing test commands and jobs: a bare `pytest`, `dotnet test` on the solution, or a Gradle `test` that aggregates every module also collects the new harness and UTS tests (including network tiers). Exclude them there (`testpaths`/`--ignore`, a solution filter, a separate project or task), or include them deliberately in that job as their one CI home.
 - **Every suite runs in exactly one CI job per platform it targets, and nothing runs green without executing** (MUST). Splitting by tier (unit in the fast check job; integration and proxy in a networked job) is recommended (SHOULD): ably-java does this, while ably-cocoa runs all UTS tiers from one job definition, one job per platform (an iOS / tvOS / macOS matrix; proxy suites compile only on macOS).
 - Integration jobs need network access, the `ably-common` submodule and the proxy binary.
 
@@ -159,6 +195,113 @@ Most flakiness in both existing SDKs came from concurrency, not from translation
 - **Whether the runner runs tests in parallel** (xUnit does by default; pytest-xdist and NUnit `[Parallelizable]` when enabled; Swift Testing unless `.serialized`). If any injected mock, fake clock or log sink is process-global, serialise the UTS suites or make the hooks per-client, and say which in the skill. ably-cocoa marks its core realtime/rest and integration suites `@Suite(.serialized)`; its objects unit suites, which inject nothing process-global, are plain parallel `struct`s.
 - Whether the language enforces concurrency safety at compile time (Swift 6 `Sendable` drove ably-cocoa's capture types).
 - Where white-box unit specs can see internals (Swift `@testable import`, Objective-C private headers, C# `InternalsVisibleTo`, Kotlin `internal` within the owning module). This decides **where tests live**.
+
+### 2.7 Harness smoke tests and self-tests (MUST)
+
+The harness has two kinds of test of its own, both permanent and both required:
+
+- **Per-tier smoke tests:** end-to-end wiring of one tier through the real SDK hooks (unit with mocks and the fake clock; direct sandbox; proxy).
+- **Helper self-tests:** contract tests that each harness helper obeys its helper spec, or this guide's rule for it.
+
+**Why both.** Spec-derived tests can't be the harness's acceptance gate. They are regenerated, they may legitimately be red (a UTS spec error), and a failing one has to be triaged as SDK, spec or harness. A smoke-test or self-test failure is unambiguously a harness or environment fault. Scenario-only smoke tests aren't enough: they follow a happy path, so a helper that breaks its contract (a mock `close()` that notifies synchronously, a declared mock event that is never emitted, a state wait that samples) still passes, and the defect surfaces later as a flaky spec-derived test. Both existing SDKs hit this (as of 2026-10-07). One had connect-only smoke tests, env-gated and never run in CI, then removed them; its sampling state wait, error-swallowing polls and teardown hangs were later found only through flaky spec-derived tests. The other's scenario smoke tests, run in CI, caught a fake clock that waited on the real clock, but not its synchronous mock `close()` or a mock event type it declares and never emits.
+
+**Rules (MUST):**
+
+- **Permanent.** Don't retire them when spec-derived tests cover a tier.
+- **In CI, ungated.** They run, ungated, in whichever CI job runs their tier ([2.5](#25-build-and-ci-wiring-must)); no environment variable may skip them (compile-time platform gating per 2.4 aside).
+- **Untagged and structural.** No `UTS:` tag; each is named after the capability it proves; each passes on its own under the single-class filter.
+- **Never copied.** The skill never copies their shape and never names them as reference tests. Its Harness reference ([3.4](#34-recommended-outlines-should)) may cite a smoke test as a wiring example only (client construction, suite fixtures, teardown).
+- **Separate.** They live with the harness (layout in 2.2), outside every directory the mapping gives the resolver as a target, so generated tests can't collide with or overwrite them.
+- **Selectable.** One complete command per tier runs that tier's smoke tests and self-tests (plus the common self-tests). The mapping declares it ([3.2](#32-the-mapping-file)), and the skill's preflight runs it ([4](#4-the-workflow-the-skill-must-implement), step F).
+- **Explicit.** Each item below is an explicit assertion. One scenario test may cover several items; an item covered only implicitly doesn't count. Every event type the harness declares is emitted and asserted (or the type is removed). A helper-spec contract point the harness doesn't meet is listed in the harness README's Known gaps ([3.1](#31-layout)), not left untested.
+
+**Minimum set per tier** (a tier the skill doesn't support needs none of its entries):
+
+**Common (every tier)**
+
+- Self-tests:
+  - `assertContainsInOrder` has subsequence semantics (interleaving passes, a repeated state passes, wrong order fails)
+  - `poll_until` returns the settled value and aborts on an error
+  - `poll_until_success` rethrows the last error on timeout
+  - The wall-clock timeout wrapper bounds a wait, including under a virtual-time runner
+  - Capture lists are safe under concurrent appends
+  - A failing helper reports the caller's line
+  - Every state-wait helper (unit and integration) latches a state entered and left within one scheduling tick and fails fast on FAILED
+  - Teardown closes clients and cancels timers when the body throws, and, from a state where the SDK's `close()` can't reach CLOSED ([5.4](#54-setup-and-teardown)), doesn't wait for CLOSED
+
+**Unit, realtime (mock WebSocket and fake clock)**
+
+- Smoke test:
+  - A factory-built client with the mock installed reaches CONNECTED via `respond_with_success` and `CONNECTED_MESSAGE`, and a template field (e.g. the connection id) reaches the client
+  - The connection attempt exposes host, port, TLS and query params
+  - A client→server frame (ATTACH, with a non-ASCII channel name) is captured and decoded
+  - A server→client frame (ATTACHED) changes state
+  - `simulate_disconnect` yields DISCONNECTED, observed by record-and-verify
+  - A timer-driven retry doesn't happen before `ADVANCE_TIME` and does after it
+  - The await style drives refused attempts through to SUSPENDED
+- Self-tests:
+  - Mock `close()` calls `onClose` asynchronously
+  - CONNECTED is delivered after the connection completes
+  - A raw untyped frame can be sent
+  - WS-level timeout and DNS-error outcomes exist
+  - Handler and await styles both work, and the documented mixing rule holds
+  - Every declared mock event type is emitted, in order
+  - `process_pending_events()` runs a queued callback with no real delay
+
+**Unit, fake clock**
+
+- Smoke test: (driven by the realtime smoke test)
+- Self-tests:
+  - One `ADVANCE_TIME` runs cascaded work to quiescence (zero-delay reschedules, timers created mid-advance)
+  - The fake clock never waits on the real clock (the SDK's timed blocking waits and the async runtime's timers follow it)
+  - A poll deadline still expires with the fake clock installed
+
+**Unit, REST (mock HTTP)**
+
+- Smoke test:
+  - A request is captured with method, path, headers and body
+  - `respond_with` status, body and headers are decoded by the SDK
+  - A realtime-driven HTTP request (e.g. token auth via `authUrl`) is served by the HTTP mock while the WS mock serves the connection
+- Self-tests:
+  - Connection-level and request-level failures are distinguishable
+  - Handler and await styles both work
+
+**Unit, optional mocks**
+
+- Smoke test:
+  - `MockNetworkListener` (if the SDK has a network monitor) and `MockVCDiff*` (if it supports deltas) each drive the SDK once
+
+**Unit, objects (each module with a fixture helper)**
+
+- Smoke test:
+  - `setup_synced_channel` (or its sanctioned stand-in) completes and one pool object reads its seeded value
+- Self-tests:
+  - Serial helpers sort as the helper spec requires
+
+**Direct sandbox**
+
+- Smoke test:
+  - An app is provisioned once per suite (or per test where 5.4 allows it, disclosed) and deleted in teardown, and its keys look right
+  - A client connects to the sandbox (the recorded state sequence ends CONNECTED)
+  - Attach, subscribe and ack-awaited publish on a unique channel, with messages received in order
+  - A REST read (history) returns them via `poll_until`
+  - It runs once per protocol variant
+  - Every wait is wall-clock and bounded
+- Self-tests:
+  - `SandboxApp` creates and deletes an app, and never retries `POST /apps`
+
+**Proxy**
+
+- Smoke test:
+  - The pinned proxy (or the local override) is fetched, verified, started and healthy
+  - A pass-through session connects a client with the chosen proxy auth
+  - The typed log shows `ws_connect` and a server→client CONNECTED frame
+  - `trigger_action(disconnect)` is followed by a recorded DISCONNECTED, then recovery
+  - A frame-match rule with a string `match.action` (e.g. `"11"`) fires once, then the client recovers
+  - Sessions and clients close in teardown, even on failure
+- Self-tests:
+  - Rule builders stringify `match.action`
+  - A session with `rules:` only defaults its endpoint to the sandbox ([6.7](#67-notes-on-the-catalogue))
 
 ---
 
@@ -181,7 +324,7 @@ Most flakiness in both existing SDKs came from concurrency, not from translation
 | File | Purpose | Level |
 |---|---|---|
 | `SKILL.md` | The two-phase procedure, construct table, a file template per tier, evaluation patterns, tier wiring. Keep it **module-generic**: the core realtime/rest mapping may live here; plugin or typed-module specifics go in notes | MUST |
-| `uts-package-mapping.json` | Maps each source module (`rest`, `realtime`, `objects`) and tier (`unit`, `integration`, `proxy`) to one target directory, plus an optional `notes` path | MUST |
+| `uts-package-mapping.json` | Maps each source module (`rest`, `realtime`, `objects`) and tier (`unit`, `integration`, `proxy`) to one target directory, plus an optional `notes` path; declares the harness (root, README, per-tier sources and harness-test command) | MUST |
 | `scripts/resolve_uts.py` | Validates the module dir, reads the mapping, lists specs and derives file/class/package names; prints one JSON object | MUST |
 | `scripts/audit_translation.py` | Compares one spec file with its generated test file; prints one JSON object | MUST |
 | `scripts/scan_constructs.py` | Lists the uppercase keywords and snake_case calls in a module's `pseudo` fences, so unmapped constructs are found mechanically ([section 6](#6-pseudocode-construct-catalogue)) | SHOULD |
@@ -189,7 +332,7 @@ Most flakiness in both existing SDKs came from concurrency, not from translation
 
 Both existing skills use Python for scripts. Any language works, but the scripts must run on every developer platform (see [8.1](#81-resolver-resolve_utspy-must) and [section 10](#10-verification-and-ci)).
 
-Keep two documents with separate roles: the test library's README describes **what exists** (helpers, seams, layout); `SKILL.md` describes **how to author** tests. Refer to the README by its full repo path, so it can't be confused with the spec repo's `uts/README.md`. The harness README SHOULD cover: the SDK hooks used, each helper-spec symbol → harness symbol, the wait helpers and their default timeouts, the threading and time model, how to run each tier, and known gaps against the helper specs.
+Keep two documents with separate roles: the test library's README describes **what exists** (helpers, seams, layout); `SKILL.md` describes **how to author** tests. Refer to the README by its full repo path, so it can't be confused with the spec repo's `uts/README.md`. The harness README MUST include a **Known gaps** section: every helper-spec member or contract point, and every corpus construct, that the harness doesn't implement, by tier, in a form the skill's preflight can match against the selected specs (construct or helper name → status and workaround). Write it as a table whose first column is the exact pseudocode token as it appears in `pseudo` fences (for example `respond_with_timeout`, `PING_MESSAGE`, `AWAIT_ALL`), so the preflight matches mechanically: for each row, grep the selected specs' `pseudo` fences for the token; any hit is a conflict. The corpus scanner (section 6) MAY accept spec files as well as a module directory for this. It SHOULD also cover: the SDK hooks used, each helper-spec symbol → harness symbol, the wait helpers and their default timeouts, the threading and time model, how to run each tier and its smoke tests and self-tests (2.7), and one index of every module's fixture helpers (even those in a separate test-support module).
 
 **The notes are a map, not an authority.** Where the notes, the spec's IDL and the SDK disagree about the SDK's API, the SDK source is the ground truth: fix the notes.
 
@@ -200,6 +343,15 @@ Each tier value is **one path**, relative to the repo or to a declared root (Swi
 ```json
 {
   "_comment": "Maps each UTS module to its target test dir per tier. Used by scripts/resolve_uts.py.",
+  "harness": {
+    "root": "<harness>",
+    "readme": "<harness>/README.md",
+    "tiers": {
+      "unit":        { "sources": ["<harness>/common", "<harness>/unit"], "tests": "<command: unit smoke tests and self-tests>" },
+      "integration": { "sources": ["<harness>/common", "<harness>/integration"], "tests": "<command>" },
+      "proxy":       { "sources": ["<harness>/common", "<harness>/integration", "<harness>/proxy"], "tests": "<command>" }
+    }
+  },
   "packages": {
     "realtime": { "unit": "<path>/unit/realtime", "integration": "<path>/integration/standard/realtime", "proxy": "<path>/integration/proxy/realtime" },
     "objects":  { "unit": "...", "integration": "...", "proxy": "...", "notes": "references/objects-mapping.md" }
@@ -209,6 +361,7 @@ Each tier value is **one path**, relative to the repo or to a declared root (Swi
 
 - **Make every derived namespace unique**: keep a module segment after the tier (`unit/realtime`, never bare `unit`), or use a module-specific prefix (ably-java's objects tests use `io.ably.lib.liveobjects.uts.unit`).
 - **`notes`** is relative to the skill directory, not the repo root.
+- **`harness`** (MUST): the harness root and README, and per tier the helper sources to read and the complete command, run from the repo root, that runs that tier's smoke tests and self-tests (e.g. `dotnet test tests/Uts --filter "Category=UtsHarness.Unit|Category=UtsHarness.Common"`, `pytest test/uts/harness/tests/common test/uts/harness/tests/unit`) ([2.7](#27-harness-smoke-tests-and-self-tests-must)). Paths are repo-relative. The resolver reports it, with paths validated (still repo-relative) ([8.1](#81-resolver-resolve_utspy-must)), so `SKILL.md` never hard-codes harness paths.
 - **Language-specific derivations live in the resolver.** Swift has no package, so the directory is the full story. Kotlin derives `package` from the path after `src/test/kotlin/` and the Gradle module from the first segment. A C# resolver might map `tests/IO.Ably.Tests.Uts/Unit/Realtime` to namespace `IO.Ably.Tests.Uts.Unit.Realtime` (PascalCase segments) and to the nearest ancestor `.csproj`; a Python resolver derives a dotted package path.
 - **Hand-maintained entries.** `--create` scaffolds only the repo's default layout. A module whose tests live elsewhere (ably-java's `objects`, in `:liveobjects`) is hand-maintained: the skill MUST say which entries are, and must not offer `--create` to "fix" them.
 - You MAY store per-module defaults as data, e.g. `"evaluate": true` or a list of white-box specs, instead of prose in the notes.
@@ -228,16 +381,21 @@ allowed-tools: Bash, Read, Edit, Write
 - **`description`** SHOULD be "pushy": list the trigger phrases a user might type ("translate this UTS spec", "port uts/objects to <lang>", "re-sync UTS tests"). Both existing skills' descriptions are procedural, which suits explicit `/` invocation but triggers poorly otherwise.
 - **Argument:** a single UTS **module** directory, directly under `uts/`. Both skills started with single-spec-file input and moved to modules; spec selection happens interactively. If the argument is empty, the skill MUST print the usage line and stop.
 - **`allowed-tools`:** both existing skills declare `Bash, Read, Edit, Write, WebFetch` and search with `grep` through `Bash`. Add `Grep`/`Glob` only if your workflow uses those tools, and `WebFetch` only if the skill fetches anything remotely (see [9.4](#94-local-clone-vs-fetching-main)).
+- **Model (SHOULD):** if your Claude Code version lets a skill declare the model it runs on, pin the skill to an Opus-class model ([Model tier](#model-tier)). Check the current Claude Code documentation for the mechanism rather than assuming a frontmatter field. If it can't, say in the opening lines of `SKILL.md` that the skill should be run on an Opus-class model. Either way, the skill records the model in its final report ([section 11](#11-final-report-format)).
 - **Placeholders, not personal paths,** in examples and usage text: `<cloned-ably-specification-repo-path>/uts/objects`.
 
 ### 3.4 Recommended outlines (SHOULD)
 
-Use these shapes (both existing skills converged on them independently of language):
+The outlines are SHOULD; the Harness reference section within the `SKILL.md` outline is MUST (below). Use these shapes (both existing skills converged on them independently of language):
 
 ```
 SKILL.md
   Required reading (local clone, 9.4)
-  Phase 1, selection: usage guard; step 0; A resolve; B mapping; C tier; D specs; E translate vs evaluate
+  Harness reference: per tier, from the resolver's harness output: harness root and README path,
+      helper sources to read, smoke-test and self-test locations and run commands, the
+      generated-test run command, the README's Known gaps
+  Phase 1, selection: usage guard; step 0; A resolve; B mapping; C tier; D specs;
+      E translate vs evaluate; F harness preflight
   Phase 2, per spec: 1 read spec + notes; 2 output path; 3 read harness + reference test;
       4 generate (construct table, client construction, mocks, timers, assertions, naming,
         file template per tier); 5 compile; 6 run + diagnose (evaluate only); 7 audit + review
@@ -245,6 +403,8 @@ SKILL.md
       rule builders, event log); file templates
   Final report (section 11)
 ```
+
+`SKILL.md` MUST have the **Harness reference** section. It points at the harness sources, README and harness tests; it doesn't copy helper signatures inline (inlined copies drift). A construct that relies on a listed known gap is a stop-and-ask or a Mock Infrastructure Limitation, never a substitution (5.2). A smoke test may be named as a wiring example only, never as a reference test (2.7).
 
 A module notes file should cover:
 
@@ -278,9 +438,9 @@ file-local helpers: before the first test or in a separate file (the audit attri
 
 ## 4. The workflow the skill must implement
 
-The workflow has two phases. Implement both.
+The workflow has two phases. Implement both. Runs SHOULD use an Opus-class model ([Model tier](#model-tier)); the final report records the model used ([section 11](#11-final-report-format)).
 
-### Phase 1: selection (steps 0 and A–E)
+### Phase 1: selection (steps 0 and A–F)
 
 | Step | What happens | Interaction |
 |---|---|---|
@@ -290,6 +450,7 @@ The workflow has two phases. Implement both.
 | **C. Choose the tier** | Offer only tiers that are present. Where the mapping records a tier as not ready (per-module data, 3.2), refuse it and name what blocks it. The tier fixes the target dir, the spec list **and** the translation flow (mocked / sandbox / proxy). Don't re-detect it per spec | **Ask** |
 | **D. Choose specs** | All specs in the tier, or a subset | **Ask** |
 | **E. Translate-only, or translate and evaluate?** | Translate-only: generate, compile, and run the step 7 audit and review, but don't run the tests (the SDK feature may not exist yet). Translate and evaluate: also run and diagnose. If unsure whether the implementation exists, ask rather than guess | **Ask** |
+| **F. Harness preflight** | Before generating anything, for the chosen tier and specs, in both modes: compile (or collect) the harness and the test target; run the tier's smoke tests and self-tests with the resolver's `harness` command ([2.7](#27-harness-smoke-tests-and-self-tests-must)); check the harness README's Known gaps against the selected specs. Integration and proxy tiers need network (and the proxy binary or platform) for this. If anything is red, **stop** and report it as a harness or environment problem, never as an SDK deviation or a spec error; don't generate tests on a red harness. If a selected spec needs a known gap, stop and ask: extend the harness (a harness change, section 5), deselect the spec, or proceed recording a Mock Infrastructure Limitation for the affected lines. Never substitute. Record the result in the final report | Stop on red |
 
 If the module's notes file exists but is only a placeholder, the skill MUST tell the user the module's mapping hasn't been authored and treat the module as not yet translatable, rather than guess a mapping.
 
@@ -299,7 +460,7 @@ If the module's notes file exists but is only a placeholder, the skill MUST tell
 
 1. **Read the spec and the notes.** Read the module notes first (once per run); where they override the generic flow (reading list, internal-access ladder, naming, deviations location), the notes win. Then identify per spec: test cases and IDs, protocol (WS or HTTP), timer use, `## Protocol Variants`, and any delegating, fixture-driven or ID-less structure.
 2. **Determine the output path.** Use the resolver's `targetDir` and class name. Flatten spec sub-directories. If a suitable suite already exists, add to it rather than create a duplicate.
-3. **Read the harness for exact signatures.** Read the test library's README, then **all** helper sources for the tier, before generating code. Guessed signatures are the most common compile failure. `SKILL.md` SHOULD also name one reviewed, spec-derived test file per tier to read first (ably-cocoa: `ChannelHistoryTests.swift` for direct sandbox, `AuthReauthTests.swift` for proxy; ably-java: `ChannelHistoryTest`, `ObjectsLifecycleTest`). Never point at smoke tests.
+3. **Read the harness for exact signatures.** Read the harness README, then **all** helper sources for the tier (both from the resolver's `harness` output), before generating code. The source wins where the README disagrees; list each disagreement in the final report. Guessed signatures are the most common compile failure. `SKILL.md` SHOULD also name one reviewed, spec-derived test file per tier to read first (ably-cocoa: `ChannelHistoryTests.swift` for direct sandbox, `AuthReauthTests.swift` for proxy; ably-java names `ChannelHistoryTest` (realtime) and `ObjectsLifecycleTest` (objects), both direct sandbox, and no proxy reference). Never name a smoke test as the reference test.
 4. **Generate** using the rules in [section 5](#5-translation-rules) and the table in [section 6](#6-pseudocode-construct-catalogue). A construct the skill can't map is a **stop-and-ask** condition (section 6).
 5. **Compile once per module.** Fix and recompile until clean.
 6. **Run (evaluate mode only).** Run each class by filter, then diagnose per [section 7](#7-evaluation-and-deviations).
@@ -312,6 +473,8 @@ If the module's notes file exists but is only a placeholder, the skill MUST tell
 Every rule below is a MUST unless marked otherwise.
 
 **When a generated test is wrong, fix the cause, then regenerate.** The cause is a rule in `SKILL.md`, a mapping in the module notes, or a harness helper. A fix made only in the generated file is silently reverted by the next regeneration. The only per-test state that survives regeneration is listed in [9.2](#92-a-re-sync-mode-should).
+
+**Changing the harness during a run** (extending a mock, adding a message template or a helper), by the skill or the user, is a harness change, not a translation step. Make it only within the harness scope the user approved. Add or extend a self-test for the new capability, update the harness README (and its Known gaps), and re-run the tier's smoke tests and self-tests ([2.7](#27-harness-smoke-tests-and-self-tests-must)) before continuing; stop if they are red. Then regenerate the affected tests (fix the cause, then regenerate). The final report lists harness changes separately (section 11).
 
 ### 5.1 Traceability
 
@@ -410,7 +573,7 @@ When a white-box spec asserts on the value an internal call returns, assert on t
 
 ## 6. Pseudocode construct catalogue
 
-Fill in the last column for your language; the skill MUST map every construct its specs use. Each row's "meaning" comes from the UTS docs where one exists; rows marked *(undocumented)* are used in the corpus but not defined in the docs, and the meaning is inferred from usage. The Swift and Kotlin cells name only methods and patterns that exist in each skill, its notes, its harness or its generated tests; "—" means that SDK has no rule for the construct, so follow the meaning column.
+Fill in the last column for your language; the skill MUST map every construct its specs use. Each row's "meaning" comes from the UTS docs where one exists; rows marked *(undocumented)* are used in the corpus but not defined in the docs, and the meaning is inferred from usage. The Swift and Kotlin cells name only methods and patterns that exist in each skill, its notes, its harness or its generated tests; "—" means that SDK has no rule for the construct, so follow the meaning column. The cells illustrate; they aren't templates. Write your own column from your harness and SDK, and don't copy theirs, or anything seen in the [reference implementations](#reference-implementations-last-resort).
 
 **This catalogue is not exhaustive**: the corpus keeps growing and has no grammar. The skill MUST treat any uppercase keyword or snake_case helper it can't map as a **stop condition**: tell the user, propose a rendering, and add a row to its own table rather than improvising per test. Re-scan the corpus for new keywords on every re-sync ([9.2](#92-a-re-sync-mode-should)). The skill SHOULD ship a **corpus scanner** (`scripts/scan_constructs.py`, [3.1](#31-layout)) that lists every uppercase keyword and `snake_case(` call in a module's `pseudo` fences, outside comments and string literals, with counts, so the re-scan is mechanical; compare its output with the construct table.
 
@@ -614,7 +777,7 @@ Path validation, mapping, spec discovery, naming and faithfulness checking are m
 |---|---|
 | Validate the module | Expand a leading `~`. The parent directory is named `uts` (compare path parts, so it works on Windows); the directory exists; it has `unit/` or `integration/` |
 | Errors | One JSON object with `ok: false`, a code and a `message`. Example codes (ably-cocoa): `NOT_A_UTS_MODULE_PATH`, `DIR_NOT_FOUND`, `NO_TIER_DIRS`, `MAPPING_NOT_FOUND`, `BAD_MAPPING`, `BAD_TARGET_NAME` |
-| Output contract | On success: `{ok: true, sourceModule, mapped, testRoot?, specRepo?, translationNotes, tiers: {unit, integration, proxy: {present, sourceDir, targetDir, <namespace/package>, <build target>, specs: [{file, className, testFile?}]}}}`. `testFile` (the target file name) is required wherever it isn't `<className>.<ext>`, e.g. pytest `test_<stem>.py` with class `Test<Stem>`. `present` says whether the source tier directory exists; `targetDir` is `null` and `mapped` false when the module has no mapping entry. `testRoot` appears when the mapping declares a root. `specRepo` (`{sha, dirty}`, MAY) gives the spec clone's state for the file headers and the report (9.1, 9.4). Downstream steps read only these fields |
+| Output contract | On success: `{ok: true, sourceModule, mapped, testRoot?, specRepo?, translationNotes, harness, tiers: {unit, integration, proxy: {present, sourceDir, targetDir, <namespace/package>, <build target>, specs: [{file, className, testFile?}]}}}`. `testFile` (the target file name) is required wherever it isn't `<className>.<ext>`, e.g. pytest `test_<stem>.py` with class `Test<Stem>`. `present` says whether the source tier directory exists; `targetDir` is `null` and `mapped` false when the module has no mapping entry. `testRoot` appears when the mapping declares a root. `specRepo` (`{sha, dirty}`, MAY) gives the spec clone's state for the file headers and the report (9.1, 9.4). `harness` (`{root, readme, tiers: {<tier>: {sources, tests}}}`) echoes the mapping's harness entry with paths validated (repo-relative), for the Harness reference and the preflight (3.2, 4 step F). Downstream steps read only these fields |
 | Tier detection by path | `unit/**`; `integration/**` excluding `integration/proxy/**`; `integration/proxy/**`. Every tier can have sub-directories (e.g. `realtime/integration/channels/`). Use the path only. (Both existing skills also describe content-based proxy detection in their integration sections; drop it.) |
 | Exclusions | `helpers/` (implement as harness, never translate), `README.md`, `PLAN.md`, `*_SUMMARY.md`. Match them **relative to the tier base**, so an ancestor directory in the checkout path can't trip them. *(New, defensive; nothing matches today:)* also skip any non-spec notes left inside a tier directory |
 | Deterministic naming | Strip a trailing `_test`, convert to the language's convention, add the suffix or prefix the runner needs (`objects_lifecycle_test.md` → Swift `ObjectsLifecycleTests`, Kotlin `ObjectsLifecycleTest`, pytest `test_objects_lifecycle.py` with class `TestObjectsLifecycle`) |
@@ -683,6 +846,8 @@ Stamp each generated file's header with the spec-repo commit SHA it was derived 
 
 A per-module manifest (spec file → SHA → test file) MAY be kept as well. Link source specs at the pinned SHA, not `blob/main`.
 
+**Record the model.** The run's final report, which is the run record, records the model (name and ID) that generated or regenerated each file ([section 11](#11-final-report-format); part of that MUST format). A header line such as `// Generated with <model ID>` MAY be added as well. It changes whenever a different model regenerates the file, which adds diff noise, so prefer the run record.
+
 ### 9.2 A re-sync mode (SHOULD)
 
 Neither existing skill has one; both have stale suites as a result. Add a mode (for example `/uts-to-<lang> <module-dir> --resync`) that:
@@ -694,7 +859,7 @@ Neither existing skill has one; both have stale suites as a result. Add a mode (
 5. Updates the SHA in each regenerated file's header (and in the manifest, if kept).
 6. Reports the classification ([section 11](#11-final-report-format)).
 
-Regenerate the whole file when most tests changed; otherwise regenerate only the affected tests. Say which in the report. A re-sync is also needed when the shared harness or module helpers change shape (ably-cocoa reset and regenerated its objects ports after aligning them with `standard_test_pool.md`).
+Regenerate the whole file when most tests changed; otherwise regenerate only the affected tests. Say which in the report. A re-sync is also needed when the shared harness or module helpers change shape (ably-cocoa reset and regenerated its objects ports after aligning them with `standard_test_pool.md`). After any harness change, re-run every affected tier's smoke tests and self-tests ([2.7](#27-harness-smoke-tests-and-self-tests-must)) first, then regenerate the tests whose rendering depends on the changed helper.
 
 ### 9.3 Renamed, merged and added IDs
 
@@ -715,7 +880,7 @@ Pick **one** source for docs and specs, and pin it. This guide recommends **read
 Record the clone's HEAD SHA and whether it is dirty. You MAY warn when the clone is behind `origin/main`.
 
 - *Divergence from `writing-derived-tests.md`* (Phase 2, "2a. Is the UTS spec wrong?", which links the features specs on GitHub `main`): read them from the same clone as the UTS specs instead, because the UTS spec and the features spec it is judged against must come from one revision, and the clone's SHA is recorded in every header and report (9.1). Fetching `main` gives a revision that nothing records.
-- *Divergence (existing skills):* both existing skills fetch `writing-derived-tests.md`, and the features specs, from GitHub `main` while reading specs from the local clone, so the two can skew.
+- *Divergence (existing skills):* both existing skills fetch `writing-derived-tests.md` from GitHub `main`, and tell the model to "fetch" the features spec with no pinned source, while reading specs from the local clone, so the two can skew.
 
 ---
 
@@ -723,7 +888,7 @@ Record the clone's HEAD SHA and whether it is dirty. You MAY warn when the clone
 
 Escalate in this order:
 
-1. **Compile the tests** for the module (`swift build --build-tests`; `./gradlew :<module>:compileTestKotlin`; `dotnet build`). For every runner, check that the number of collected (or executed) tests equals the number of `UTS:` tags: a misnamed pytest class, or a JVM test annotated for an engine the task doesn't run (JUnit 4 vs JUnit Platform), is silently skipped. For pytest use `pytest --collect-only` (plus `mypy` if the repo uses it); for .NET, `dotnet test --list-tests`; for Gradle, compare the task's test-report count. In dynamic languages a missing SDK API surfaces only at run time: run a type checker (`mypy`/`pyright`) over the generated tests where the SDK ships type hints, or report missing APIs as unverified in translate-only mode. MUST, in both modes.
+1. **Compile the tests** for the module (`swift build --build-tests`; `./gradlew :<module>:compileTestKotlin`; `dotnet build`). For every runner, check that every tagged test is collected (or executed): the number of distinct collected test functions, counting a parameterised or protocol-variant test once, equals the number of `UTS:` tags (the runner lists each parameter case separately, so group by function): a misnamed pytest class, or a JVM test annotated for an engine the task doesn't run (JUnit 4 vs JUnit Platform), is silently skipped. For pytest use `pytest --collect-only` (plus `mypy` if the repo uses it); for .NET, `dotnet test --list-tests`; for Gradle, compare the task's test-report count. In dynamic languages a missing SDK API surfaces only at run time: run a type checker (`mypy`/`pyright`) over the generated tests where the SDK ships type hints, or report missing APIs as unverified in translate-only mode. MUST, in both modes.
 2. **Lint and format** with the repo's gates (EditorConfig, checkstyle, eslint, ruff…). MUST. Neither existing skill runs lint; both repos needed it.
 3. **Compile as strictly as CI does.** If CI treats warnings as errors, so must the skill. (ably-cocoa's LiveObjects CI failed on a redundant typed-throws cast the local build accepted.) In TypeScript, the test runner may strip types without checking them (`writing-derived-tests.md` "Build pipeline and CI checks").
 4. **Run the generated classes by filter** (evaluate mode): per class, then per tier. Use target-qualified filters where names can collide.
@@ -741,6 +906,7 @@ Neither existing skill defines one; define it. The skill MUST end each run with 
 
 ```
 UTS translation: <module>/<tier> @ ably/specification@<sha> (clone clean|dirty)  (mode: translate-only | evaluate | resync)
+Model: <model name and ID>; sub-agents: <role → model, or none>
 
 | Spec file | Test file | IDs (spec/test) | Audit | Shortfall accounted | Compile | Run | Deviations added |
 |---|---|---|---|---|---|---|---|
@@ -752,6 +918,8 @@ Missing APIs found in translate-only mode: <id> — <API>
 Mock-capability gaps found in translate-only mode: <id> — <capability>
 Harness stand-ins disclosed in file headers: …
 Constructs the skill couldn't map (stopped and asked): …
+Harness preflight (step F): <tier> compile ok | smoke n/n | self-tests n/n | known-gap check ok (or the stop reason)
+Harness changes made during this run, and the self-tests added or extended: …
 Suspected UTS spec errors or gaps (need an upstream fix): <id> — <one line>, draft fix: …
 Mapping or notes changes: …
 Changed files for review: …
@@ -769,36 +937,40 @@ From the git histories of both existing skills. Most lessons are already rules i
 | **Build the harness to look like the pseudocode.** Callback mocks and a builder DSL make translation mechanical | ably-java's first generation run |
 | **Move everything mechanical into scripts.** Paths, names, mapping and coverage checks drift when the model does them | Both: resolver, then audit |
 | **Lessons must reach `SKILL.md`**, not only harness comments or commit messages | ably-java: several flake fixes stayed in KDoc |
-| **Defer formats to the manual**; inline copies drift | Both: deviations format |
+| **Defer formats to the manual**; inline copies drift | The existing skills' inline `deviations.md` format, since replaced by a pointer to the manual (section 1) |
 | **Don't cite line numbers in skill text**; they drift. Cite symbols or headings | ably-cocoa |
 | **Compile the examples in the skill**, or take them from real, compiling files in your own repo | ably-cocoa: an example helper doesn't compile |
 | **Placement follows visibility**: put white-box tests where internals are visible; share the harness as a library | ably-java tests moved to `:liveobjects` |
-| **Evaluation finds spec bugs**; fix them at source | Both: several upstream spec PRs |
+| **Evaluation finds spec bugs**; fix them at source | Evaluation runs of the existing skills |
 | **Concurrency is the main source of flakiness**: thread-safe recording lists, await the seed before subscribing, flush before injecting a stimulus, a fake clock that runs to quiescence | ably-java CI fixes |
+| **Keep the harness smoke tests and self-tests permanently, in CI**; scenario-only smoke tests miss contract violations, and without them harness defects surface as flaky spec-derived tests that must be triaged as SDK, spec or harness | Both: one SDK's env-gated smoke tests never ran in CI and were removed; the other's scenario smoke tests missed two helper contract violations |
 | **Keep generic rules separate from per-language renderings**: write every rule language-neutrally first, then give its rendering for your SDK | Both: the Swift skill began as a port of the Kotlin one, and the generic parts had to be separated afterwards |
 
 ---
 
 ## 13. Checklist for a new `uts-to-<lang>` skill
 
-**Prerequisites**
+The skill and its harness are one deliverable: the skill isn't done until every MUST item below, harness items included, is met for each tier it supports. An item whose source section is SHOULD (marked here or in the linked section) is met, or its omission is explained (✗ with a reason) in the final report.
+
+**Harness**
 
 - [ ] SDK test hooks: WebSocket factory, HTTP client, clock (covering blocking waits and the async runtime's timers), reachability/network monitor, randomness; injected at construction
 - [ ] Shared test library: `mock_http.md` (+ legacy `queue_*` and `mock_http.captured_requests`), `mock_websocket.md` (async close, CONNECTED ordering, raw frames, alternative API, undocumented members), `mock_vcdiff.md`, `standard_test_pool.md`, `MockNetworkListener`
 - [ ] Wait helpers: race-free event-latched `AWAIT_STATE` failing fast on FAILED, value-returning `poll_until`, `poll_until_success`, `process_pending_events()`, wall-clock timeout wrapper, deadlines safe under fake time
 - [ ] Thread-safe capture, log sink, `assertContainsInOrder`, caller-attributed failures
-- [ ] Shared vs port-only placement; fixture-helper scope documented
-- [ ] Harness smoke tests per tier while building (SHOULD)
+- [ ] Harness designed from the repo's existing test setup (reuse, wrap, extend or build, 2.2); shared vs port-only placement; recommended harness layout; fixture-helper scope documented
+- [ ] Harness README with a Known gaps section (MUST)
+- [ ] Harness smoke tests per tier and helper self-tests (2.7): permanent, in CI, ungated, untagged, outside generated-test directories (MUST)
 - [ ] `SandboxApp` (retries idempotent reads only); `ably-common` submodule
-- [ ] `ProxyManager` with a pinned `uts-proxy` version for every developer OS; `ProxySession`; string `match.action`; auth through the proxy decided and commented
+- [ ] `ProxyManager` with a pinned `uts-proxy` version for every developer OS, verified download, health check and port handling; `ProxySession`; string `match.action`; auth through the proxy decided and commented
 - [ ] One CI home per suite (MUST); per-tier jobs (SHOULD)
 - [ ] Concurrency, time, runner-parallelism and internal-visibility models documented
 
 **Skill files**
 
-- [ ] `SKILL.md` with `name: uts-to-<lang>`, a pushy description with trigger phrases, `argument-hint`, usage guard, placeholder paths; follows the [3.4](#34-recommended-outlines-should) outline
-- [ ] `uts-package-mapping.json`: one path per tier, unique namespaces, `notes` relative to the skill dir, hand-maintained entries marked
-- [ ] `resolve_uts.py`: validation, errors, output contract, path-based tiers, relative exclusions, runner-collectable naming, collision detection, validate-then-write `--create` preserving entries
+- [ ] `SKILL.md` with `name: uts-to-<lang>`, a pushy description with trigger phrases, `argument-hint`, usage guard, placeholder paths; follows the [3.4](#34-recommended-outlines-should) outline, including the Harness reference
+- [ ] `uts-package-mapping.json`: one path per tier, unique namespaces, `notes` relative to the skill dir, hand-maintained entries marked, `harness` entry
+- [ ] `resolve_uts.py`: validation, errors, output contract, path-based tiers, relative exclusions, runner-collectable naming, collision detection, validate-then-write `--create` preserving entries, `harness` output
 - [ ] `audit_translation.py`: the parsing contract, ID coverage, duplicates, separate assert/await counts, ignores commented assertions, never crashes, flags unverifiable specs; itself mutation-tested
 - [ ] Per-module notes for every module whose API diverges from the pseudocode (at least `objects`, if the SDK implements it)
 - [ ] Scripts run on every developer platform (path handling, UTF-8, LF)
@@ -806,10 +978,11 @@ From the git histories of both existing skills. Most lessons are already rules i
 **Workflow**
 
 - [ ] Required reading, including features specs, from the same clone as the specs
-- [ ] Steps 0 and A–E with the four user questions (mapping, tier, specs, translate vs evaluate)
+- [ ] Steps 0 and A–F: the four user questions (mapping, tier, specs, translate vs evaluate) and the harness preflight, which stops on red
 - [ ] Steps 1–7 with batching; a reference test per tier; review in both modes
 - [ ] Unmapped constructs stop and ask; corpus scanner in `scripts/` (SHOULD)
 - [ ] Re-sync mode; fix the cause, then regenerate
+- [ ] Mid-run harness changes re-run the smoke tests and self-tests and are reported separately
 
 **Translation rules in `SKILL.md`**
 
@@ -842,29 +1015,61 @@ From the git histories of both existing skills. Most lessons are already rules i
 - [ ] Final report format
 - [ ] The skill's own examples compile
 
+**Creation process**
+
+- [ ] Skill and harness created on an Opus-class model (MUST); the skill pins the model or states it for its runs (SHOULD), and records it in its final report ([Model tier](#model-tier))
+- [ ] Reads of the [reference implementations](#reference-implementations-last-resort), if any, made only as a last resort, recorded, and reported as guide gaps
+
 ---
 
 ## Appendix: Existing skills (background and patterns to avoid)
 
-You don't need to read these skills; everything required is in this guide. They are named only so that the examples and lessons above can be traced.
+You shouldn't need to read these skills: this guide and the UTS docs are the authority. They are named so that the examples and lessons above can be traced, and as a last-resort reference for creating a skill and its harness ([Reference implementations (last resort)](#reference-implementations-last-resort)).
 
 | Skill | Repo and paths | Lessons this guide drew from it |
 |---|---|---|
 | `uts-to-swift` | ably-cocoa, `.claude/skills/uts-to-swift/`; tests under `Test/UTS/` | Strict compile-time concurrency checking (Swift 6); a callback-based core plus a natively async plugin; scoped-resource teardown without async `tearDown`; separate assertion and wait counts in the audit; "a harness stand-in is not a deviation"; the internal-access ladder; module notes overriding the generic flow |
-| `uts-to-kotlin` | ably-java, `.claude/skills/uts-to-kotlin/`; tests in the `lib/` and `liveobjects/` test source sets, harness in `:uts` | Deriving a package and build module from the target path; callback- and await-style mocks; race-free `awaitState`; virtual-time pitfalls and real-clock timeouts; idempotent-only sandbox retries; the `S-n` shape-deviation vocabulary |
+| `uts-to-kotlin` | ably-java, `.claude/skills/uts-to-kotlin/`; tests in the `lib/` (built by the `:java` Gradle module) and `liveobjects/` (`:liveobjects`) test source sets, harness in the `:uts` Gradle module (path `uts/`) | Deriving a package and build module from the target path; callback- and await-style mocks; race-free `awaitState`; virtual-time pitfalls and real-clock timeouts; idempotent-only sandbox retries; the `S-n` shape-deviation vocabulary |
 
 Both contain a `SKILL.md`, a mapping file, a resolver and an audit script, and an objects module notes file.
 
+### Reference implementations (last resort)
+
+This guide and the UTS docs are meant to be complete. If they don't answer a question while you create or maintain a skill and its harness, you MAY consult the existing skills and harnesses, read-only, at the commits this guide reviewed:
+
+| Repo @ commit | Skill | Harness | Harness smoke tests | Generated tests |
+|---|---|---|---|---|
+| [ably-java](https://github.com/ably/ably-java) @ `0ff24017` | [`.claude/skills/uts-to-kotlin`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/.claude/skills/uts-to-kotlin) | The `:uts` Gradle module (path `uts/`): [`uts/src/main/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/uts/src/main/kotlin/io/ably/lib/uts); README `uts/README.md` | [`uts/src/test/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/uts/src/test/kotlin/io/ably/lib/uts): one scenario smoke test per tier (unit, direct sandbox, proxy); no helper self-tests ([Patterns to avoid](#patterns-to-avoid)) | [`lib/src/test/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/lib/src/test/kotlin/io/ably/lib/uts) (rest, realtime; built by `:java`); [`liveobjects/src/test/kotlin/io/ably/lib/liveobjects/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/liveobjects/src/test/kotlin/io/ably/lib/liveobjects/uts) (objects; `:liveobjects`) |
+| [ably-cocoa](https://github.com/ably/ably-cocoa) @ `b5074d9b` | [`.claude/skills/uts-to-swift`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/.claude/skills/uts-to-swift) | The `UTS` test target, [`Test/UTS`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/UTS) (helpers in `Test/UTS/infra`; README `Test/UTS/README.md`), plus the shared test-support targets it depends on: [`Test/AblyTesting`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/AblyTesting) and [`Test/AblyLiveObjectsTesting`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/AblyLiveObjectsTesting) | None: they were retired, a [pattern to avoid](#patterns-to-avoid) | [`Test/UTS/unit`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/UTS/unit), [`Test/UTS/integration`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/UTS/integration) |
+
+Rules:
+
+1. **The authority doesn't change.** Consult the references only after this guide, the UTS docs and the helper specs fail to answer the question. On any conflict, this guide (and, for semantics, the UTS docs, per [How it relates to the other UTS docs](#how-it-relates-to-the-other-uts-docs)) wins; record the conflict.
+2. **Learn the pattern; never copy.** Don't copy, port or translate code, scripts, prose, tables or examples verbatim. Take how a problem was structured or solved, and write your own version in your language's idioms, on your SDK's hooks and harness.
+3. **Check against [Patterns to avoid](#patterns-to-avoid)** before adopting anything. Both skills and both harnesses have documented defects, often in exactly the files you would consult.
+4. **Read the pinned commits** linked above, where Patterns to avoid applies exactly. `main` may since have improved; if you consult `main`, re-check what you take against Patterns to avoid, and record which revision you used.
+5. **Record each consultation**: the repo, commit and path, the question, what you learned, and how you checked it. Report each one as a gap in this guide: a candidate guide improvement.
+6. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-local-clone-vs-fetching-main)), and neither does the pilot run that validates it.
+
+Reading GitHub is network access: the [procedure](uts-to-lang-skill-creator.md#21-your-inputs) gates it, or offers local clones that contain the pinned commits instead.
+
 ### Patterns to avoid
 
-Observed in the existing skills as of 2026-10-07 (the reviewed checkouts, ably-cocoa `b5074d9b` and ably-java `0ff24017`; unchanged on remote `main` as fetched that day); some may since be fixed. Each is a pattern a new skill shouldn't copy.
+Observed in the existing skills and their harnesses as of 2026-10-07 (the reviewed checkouts, ably-cocoa `b5074d9b` and ably-java `0ff24017`; unchanged on remote `main` as fetched that day); some may since be fixed. Each is a pattern a new skill shouldn't copy. Check anything taken from the [reference implementations](#reference-implementations-last-resort) against this list. When the "as of" commits in the introduction move, update the links in that table and this list together.
 
 **In both skills**
 
-- **Fetching the manual and features specs from `main`** while reading specs from a local clone ([9.4](#94-local-clone-vs-fetching-main)).
+- **Fetching the manual from `main`, and telling the model to "fetch" the features spec with no pinned source,** while reading specs from a local clone ([9.4](#94-local-clone-vs-fetching-main)).
 - **Two sources of tier truth**: path-based in the resolver, content-based in the `SKILL.md` integration section.
 - **A `CONTAINS_IN_ORDER` mapping that isn't a subsequence check** ([6.7](#67-notes-on-the-catalogue)).
 - **No re-sync mode, no final report, no lint step, no collision detection**, and a silent `null` when a declared notes file is missing.
+
+**In the harnesses**
+
+- **Smoke tests env-gated and never run in CI, then retired** (ably-cocoa) once spec-derived tests covered their scenarios ([2.7](#27-harness-smoke-tests-and-self-tests-must)).
+- **Scenario-only smoke tests** (ably-java) that stay green while a helper breaks its helper-spec contract.
+- **A mock `close()` that notifies synchronously** (ably-java), although `mock_websocket.md` requires `onClose` to be called asynchronously.
+- **A declared mock event type that is never emitted** (ably-java), so an assertion that filters the event log for it passes on an empty list.
 
 **Seen in `uts-to-swift`**
 
