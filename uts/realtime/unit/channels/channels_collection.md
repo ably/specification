@@ -1,11 +1,11 @@
 # RealtimeChannels Collection Tests
 
-Spec points: `RTS1`, `RTS2`, `RTS3a`, `RTS4b`, `RTS4c`, `RTS4d`
+Spec points: `RTS1`, `RTS2`, `RTS3a`, `RTS4c`, `RTS4d`, `RTS4e`
 
 ## Test Type
 Unit test - no network calls required
 
-These tests verify the channels collection management functionality. Most need no mock infrastructure, as they focus on the in-memory collection behavior. The `RTS4c` and `RTS4d` tests that attach a channel use the mock WebSocket described in `uts/realtime/unit/helpers/mock_websocket.md`.
+These tests verify the channels collection management functionality. Most need no mock infrastructure, as they focus on the in-memory collection behavior. The `RTS4d` and `RTS4e` tests that attach a channel use the mock WebSocket described in `uts/realtime/unit/helpers/mock_websocket.md`.
 
 ---
 
@@ -218,9 +218,9 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTS4b - Release on non-existent channel is no-op
+## RTS4c - Release on non-existent channel is no-op
 
-**Test ID**: `realtime/unit/RTS4b/release-nonexistent-noop-0`
+**Test ID**: `realtime/unit/RTS4c/release-nonexistent-noop-0`
 
 **Spec requirement:** If there is no channel with that name in the collection, `release()` must return without error.
 
@@ -228,7 +228,7 @@ Tests that releasing a channel that doesn't exist completes without error.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTS4b-nonexistent-${random_id()}"
+channel_name = "test-RTS4c-nonexistent-${random_id()}"
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 ```
@@ -248,17 +248,17 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTS4c - Release removes an initialized channel
+## RTS4d - Release removes an initialized channel
 
-**Test ID**: `realtime/unit/RTS4c/release-removes-channel-0`
+**Test ID**: `realtime/unit/RTS4d/release-removes-channel-0`
 
-**Spec requirement:** If the channel's state is `INITIALIZED`, `DETACHED` or `FAILED`, the SDK must remove the channel from the collection before `release()` returns.
+**Spec requirement:** If the channel's state is `INITIALIZED`, `DETACHED` or `FAILED`, the SDK must remove the channel from the collection before `release()` returns, so that it can be garbage collected.
 
 Tests that `release()` synchronously removes an `INITIALIZED` channel from the collection.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTS4c-${random_id()}"
+channel_name = "test-RTS4d-${random_id()}"
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
 ```
@@ -280,17 +280,17 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTS4c - Release removes a channel once detached
+## RTS4d - Release removes a channel once detached
 
-**Test ID**: `realtime/unit/RTS4c/release-after-detach-1`
+**Test ID**: `realtime/unit/RTS4d/release-after-detach-1`
 
-**Spec requirement:** If the channel's state is `INITIALIZED`, `DETACHED` or `FAILED`, the SDK must remove the channel from the collection before `release()` returns.
+**Spec requirement:** If the channel's state is `INITIALIZED`, `DETACHED` or `FAILED`, the SDK must remove the channel from the collection before `release()` returns, so that it can be garbage collected.
 
 Tests that a channel which has been attached and then detached can be released.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTS4c-detached-${random_id()}"
+channel_name = "test-RTS4d-detached-${random_id()}"
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
@@ -336,17 +336,17 @@ CLOSE_CLIENT(client)
 
 ---
 
-## RTS4d - Release of an attached channel fails
+## RTS4e - Release of an attached channel fails
 
-**Test ID**: `realtime/unit/RTS4d/release-attached-fails-0`
+**Test ID**: `realtime/unit/RTS4e/release-attached-fails-0`
 
-**Spec requirement:** If the channel's state is any other state, `release()` must raise an `ErrorInfo` with `code` 90001 and `statusCode` 400. The SDK must not remove the channel from the collection or change its state.
+**Spec requirement:** If the channel's state is anything else, `release()` must raise an `ErrorInfo` with `code` 90011 and `statusCode` 400, and take no other action.
 
 Tests that releasing an `ATTACHED` channel fails, and leaves the channel attached and in the collection.
 
 ### Setup
 ```pseudo
-channel_name = "test-RTS4d-attached-${random_id()}"
+channel_name = "test-RTS4e-attached-${random_id()}"
 
 captured_detach_messages = []
 
@@ -384,7 +384,7 @@ client.channels.release(channel_name) FAILS WITH error
 
 ### Assertions
 ```pseudo
-ASSERT error.code == 90001
+ASSERT error.code == 90011
 ASSERT error.statusCode == 400
 ASSERT channel.state == ChannelState.attached
 ASSERT client.channels.exists(channel_name) == true
