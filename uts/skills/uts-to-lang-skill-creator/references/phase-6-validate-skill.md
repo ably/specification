@@ -43,7 +43,7 @@ Use one known-good test file (the pilot output from [8.3](#83-pilot-translate-on
 | Delete the native assertion that renders a spec `FAILS WITH` (awaited or not) | A positive assertion shortfall for that test |
 | Delete the poll call that renders a spec `poll_until` (with no `AWAIT` on the spec line) | An await shortfall for that test (spec polls count as waits) |
 
-**Whole-corpus sweep:** run the audit on every spec the resolver lists for each of the three modules, against an empty test file. Every run must print one parseable JSON object and exit with the "ID problems" code (or report "not verifiable" for ID-less specs such as `rest/unit/encoding/msgpack_interop.md`). No crashes. Cross-check the spec-side ID count per module against ``grep -rhoE '\*\*Test ID\*\*: `[^`]+`' <spec-clone>/uts/<module> | sort -u | wc -l`` (as of `12540dcf`: rest 571, realtime 554, objects 339).
+**Whole-corpus sweep:** run the audit on every spec the resolver lists for each of the three modules, against an empty test file. Every run must print one parseable JSON object and exit with the "ID problems" code (or report "not verifiable" for ID-less specs such as `rest/unit/encoding/msgpack_interop.md`). No crashes. Cross-check the spec-side ID count per module against ``grep -rhoE '\*\*Test ID\*\*: `[^`]+`' <spec-clone>/uts/<module> | sort -u | wc -l``.
 
 ## 8.3 Pilot-translate one spec per available tier
 

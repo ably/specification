@@ -1,6 +1,6 @@
 # Writing UTS Spec Translator Skills
 
-This guide explains how to build a per-language agent skill (Claude Code and Codex) — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Its rules were distilled from two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), which appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You shouldn't need to read these skills: this guide and the UTS docs are the authority, and they are meant to be complete. If they don't answer a question while you create or maintain a skill or its harness, the existing skills and harnesses MAY be consulted as a last resort, under the rules in [Reference implementations (last resort)](#reference-implementations-last-resort).
+This guide explains how to build a per-language agent skill (Claude Code and Codex) — `uts-to-python`, `uts-to-csharp`, `uts-to-go`, and so on — that translates UTS specs into native tests for one SDK. It is written for an SDK engineer building `uts-to-<lang>` in their own repo. Two existing skills, `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java), appear here only as short examples, as the origin of a lesson, or as patterns to avoid ([Appendix](#appendix-existing-skills-background-and-patterns-to-avoid)). You shouldn't need to read these skills: this guide and the UTS docs are the authority, and they are meant to be complete. If they don't answer a question while you create or maintain a skill or its harness, the existing skills and harnesses MAY be consulted as a last resort, under the rules in [Reference implementations (last resort)](#reference-implementations-last-resort).
 
 If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo, use the [`uts-to-lang-skill-creator` skill](../skills/uts-to-lang-skill-creator/SKILL.md) (installation: [`uts/README.md`](../README.md#installing-the-skill-creator)), on an Opus-class model ([Model tier](#model-tier)). It is the step-by-step procedure for building the skill and its harness; this guide remains the authority on what the skill must contain.
 
@@ -15,10 +15,10 @@ If you are an LLM agent asked to create a `uts-to-<lang>` skill for an SDK repo,
 **How to read this guide.** Requirements use three levels:
 
 - **MUST**: required for a skill that conforms to this guide. Most MUSTs protect translation fidelity (without them a skill produces tests that silently check less than the spec); the rest protect repeatability and reviewability.
-- **SHOULD**: strongly recommended. Both existing skills learned these the hard way.
+- **SHOULD**: strongly recommended.
 - **MAY**: optional, useful in some SDKs.
 
-Facts about the existing skills and SDKs are **as of 2026-10-07**: spec commit `12540dcf`; ably-cocoa at `b5074d9b` and ably-java at `0ff24017` (the checkouts reviewed). Remote `main`, fetched the same day (ably-cocoa `2072e0cd`, ably-java `8b7d3f5f`), has no changes to either skill or UTS harness since those commits. They illustrate patterns, and some may since have been fixed.
+Statements about the existing skills and harnesses describe them when this guide was written, to illustrate patterns; some may since have been fixed.
 
 ## Contents
 
@@ -104,7 +104,7 @@ The unit tier needs injection points in production code:
 
 Mocks and the fake clock are injected **at client construction**, so the harness must install them before the client is created.
 
-**The clock hook must cover every time source the SDK uses**: timers, and also blocking waits (condition variables, timed `wait`, dispatch-after). If any wait runs on the real clock, retries fire on wall-clock time regardless of `ADVANCE_TIME`, and "nothing happened before the advance" becomes unassertable. (ably-java found this when a retry ran on wall-clock time through `FakeClock.waitOn`, which does a real timed wait, commit `c4502c67`.) Likewise, check that the fake clock drives your async runtime's timers: in asyncio, for example, faking the wall clock doesn't fire `loop.call_later` callbacks; in .NET, route `Task.Delay` and timers through a `TimeProvider`-style abstraction. Two workable shapes: route every SDK delay (`sleep`, `call_later`, timeouts) through the clock hook, so `ADVANCE_TIME` runs them; or run unit tests on a virtual-time event loop whose `time()` the fake clock controls, in which case the wall-clock timeout wrapper must not use the loop's clock (it measures virtual time).
+**The clock hook must cover every time source the SDK uses**: timers, and also blocking waits (condition variables, timed `wait`, dispatch-after). If any wait runs on the real clock, retries fire on wall-clock time regardless of `ADVANCE_TIME`, and "nothing happened before the advance" becomes unassertable. (ably-java found this when a retry ran on wall-clock time through `FakeClock.waitOn`, which does a real timed wait.) Likewise, check that the fake clock drives your async runtime's timers: in asyncio, for example, faking the wall clock doesn't fire `loop.call_later` callbacks; in .NET, route `Task.Delay` and timers through a `TimeProvider`-style abstraction. Two workable shapes: route every SDK delay (`sleep`, `call_later`, timeouts) through the clock hook, so `ADVANCE_TIME` runs them; or run unit tests on a virtual-time event loop whose `time()` the fake clock controls, in which case the wall-clock timeout wrapper must not use the loop's clock (it measures virtual time).
 
 If a hook doesn't exist, add it to the SDK first. Without these hooks, the unit tier is impossible.
 
@@ -203,7 +203,7 @@ The harness has two kinds of test of its own, both permanent and both required:
 - **Per-tier smoke tests:** end-to-end wiring of one tier through the real SDK hooks (unit with mocks and the fake clock; direct sandbox; proxy).
 - **Helper self-tests:** contract tests that each harness helper obeys its helper spec, or this guide's rule for it.
 
-**Why both.** Spec-derived tests can't be the harness's acceptance gate. They are regenerated, they may legitimately be red (a UTS spec error), and a failing one has to be triaged as SDK, spec or harness. A smoke-test or self-test failure is unambiguously a harness or environment fault. Scenario-only smoke tests aren't enough: they follow a happy path, so a helper that breaks its contract (a mock `close()` that notifies synchronously, a declared mock event that is never emitted, a state wait that samples) still passes, and the defect surfaces later as a flaky spec-derived test. Both existing SDKs hit this (as of 2026-10-07). One had connect-only smoke tests, env-gated and never run in CI, then removed them; its sampling state wait, error-swallowing polls and teardown hangs were later found only through flaky spec-derived tests. The other's scenario smoke tests, run in CI, caught a fake clock that waited on the real clock, but not its synchronous mock `close()` or a mock event type it declares and never emits.
+**Why both.** Spec-derived tests can't be the harness's acceptance gate. They are regenerated, they may legitimately be red (a UTS spec error), and a failing one has to be triaged as SDK, spec or harness. A smoke-test or self-test failure is unambiguously a harness or environment fault. Scenario-only smoke tests aren't enough: they follow a happy path, so a helper that breaks its contract (a mock `close()` that notifies synchronously, a declared mock event that is never emitted, a state wait that samples) still passes, and the defect surfaces later as a flaky spec-derived test. Both existing SDKs hit this. One had connect-only smoke tests, env-gated and never run in CI, then removed them; its sampling state wait, error-swallowing polls and teardown hangs were later found only through flaky spec-derived tests. The other's scenario smoke tests, run in CI, caught a fake clock that waited on the real clock, but not its synchronous mock `close()` or a mock event type it declares and never emits.
 
 **Rules (MUST):**
 
@@ -427,7 +427,7 @@ SKILL.md
 
 A module notes file should cover:
 
-1. **Source of truth and runtime status:** the spec's IDL that the notes apply, including any typed-SDK variant (for objects, the proposed `RTTS` points (RTTS1–RTTS11 at the branch tip, `c5cc6b8a`) that both existing skills' notes follow; as of `12540dcf` they are on the unmerged `feature/liveobjects-cross-sdk-types-spec` branch, not in `objects-features.md`), and whether the module is implemented (whether evaluate mode is possible).
+1. **Source of truth and runtime status:** the spec's IDL that the notes apply, including any typed-SDK variant (for objects, the proposed `RTTS` points (RTTS1–RTTS11) that both existing skills' notes follow, which are on the unmerged `feature/liveobjects-cross-sdk-types-spec` branch, not in `objects-features.md`), and whether the module is implemented (whether evaluate mode is possible).
 2. **Layers:** spec names that denote several things (e.g. `LiveMap` as a creation value type, a public view and an internal node).
 3. **Entry point and setup:** plugin registration, channel modes.
 4. **Async model:** how `AWAIT`, deferred futures and errors render.
@@ -887,10 +887,10 @@ Regenerate the whole file when most tests changed; otherwise regenerate only the
 
 Treat a removed ID plus an added ID as a **possible rename**, keyed on the descriptive name and position, and **re-check the assertions**: a renamed point can invert its semantics (`RTL15b1/serial-cleared-suspended-1` became `RTL15b2/serial-retained-suspended-1`).
 
-Examples of the pattern, as of 2026-10-07 (spec `12540dcf`):
+Examples of the pattern:
 
-- **Rename not followed.** Both SDKs carried `realtime/unit/RTN16g2/recovery-key-null-inactive-0` after the spec renamed it to `realtime/unit/RTN16g3/recovery-key-null-inactive-0` (spec commit `d0d1c02f`): ably-cocoa `Test/UTS/unit/realtime/ConnectionRecoveryTests.swift` and ably-java `lib/src/test/kotlin/io/ably/lib/uts/unit/realtime/ConnectionRecoveryTest.kt`. The audit reports one missing and one orphan, but nothing prompted a re-run.
-- **Additions not followed.** In ably-java `RealtimeObjectTest.kt`, two `RTO27` tests remained where the spec has a single `RTO27/channel-state-data-lifecycle-0` (the only `RTO27` Test ID in the spec's history, added in `65e6dd5e`), and `RTO20d4/mixed-null-serials-applies-non-null-0` (added in `6425db00`) had no test.
+- **Rename not followed.** Both SDKs carried `realtime/unit/RTN16g2/recovery-key-null-inactive-0` after the spec renamed it to `realtime/unit/RTN16g3/recovery-key-null-inactive-0`: ably-cocoa `Test/UTS/unit/realtime/ConnectionRecoveryTests.swift` and ably-java `lib/src/test/kotlin/io/ably/lib/uts/unit/realtime/ConnectionRecoveryTest.kt`. The audit reports one missing and one orphan, but nothing prompted a re-run.
+- **Additions not followed.** In ably-java `RealtimeObjectTest.kt`, two `RTO27` tests remained where the spec has a single `RTO27/channel-state-data-lifecycle-0` (the only `RTO27` Test ID the spec has ever had), and `RTO20d4/mixed-null-serials-applies-non-null-0` had no test.
 
 ### 9.4 Local clone vs fetching `main`
 
@@ -1061,27 +1061,26 @@ Both contain a `SKILL.md`, a mapping file, a resolver and an audit script, and a
 
 ### Reference implementations (last resort)
 
-This guide and the UTS docs are meant to be complete. If they don't answer a question while you create or maintain a skill and its harness, you MAY consult the existing skills and harnesses, read-only, at the commits this guide reviewed:
+This guide and the UTS docs are meant to be complete. If they don't answer a question while you create or maintain a skill and its harness, you MAY consult the existing skills and harnesses, read-only:
 
-| Repo @ commit | Skill | Harness | Harness smoke tests | Generated tests |
+| Repo | Skill | Harness | Harness smoke tests | Generated tests |
 |---|---|---|---|---|
-| [ably-java](https://github.com/ably/ably-java) @ `0ff24017` | [`.claude/skills/uts-to-kotlin`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/.claude/skills/uts-to-kotlin) | The `:uts` Gradle module (path `uts/`): [`uts/src/main/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/uts/src/main/kotlin/io/ably/lib/uts); README `uts/README.md` | [`uts/src/test/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/uts/src/test/kotlin/io/ably/lib/uts): one scenario smoke test per tier (unit, direct sandbox, proxy); no helper self-tests ([Patterns to avoid](#patterns-to-avoid)) | [`lib/src/test/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/lib/src/test/kotlin/io/ably/lib/uts) (rest, realtime; built by `:java`); [`liveobjects/src/test/kotlin/io/ably/lib/liveobjects/uts`](https://github.com/ably/ably-java/tree/0ff24017d2692accb4acf66217fd42000543cc37/liveobjects/src/test/kotlin/io/ably/lib/liveobjects/uts) (objects; `:liveobjects`) |
-| [ably-cocoa](https://github.com/ably/ably-cocoa) @ `b5074d9b` | [`.claude/skills/uts-to-swift`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/.claude/skills/uts-to-swift) | The `UTS` test target, [`Test/UTS`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/UTS) (helpers in `Test/UTS/infra`; README `Test/UTS/README.md`), plus the shared test-support targets it depends on: [`Test/AblyTesting`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/AblyTesting) and [`Test/AblyLiveObjectsTesting`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/AblyLiveObjectsTesting) | None: they were retired, a [pattern to avoid](#patterns-to-avoid) | [`Test/UTS/unit`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/UTS/unit), [`Test/UTS/integration`](https://github.com/ably/ably-cocoa/tree/b5074d9b25f0b6d502835b027fc407e698cd5802/Test/UTS/integration) |
+| [ably-java](https://github.com/ably/ably-java) | [`.claude/skills/uts-to-kotlin`](https://github.com/ably/ably-java/tree/main/.claude/skills/uts-to-kotlin) | The `:uts` Gradle module (path `uts/`): [`uts/src/main/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/main/uts/src/main/kotlin/io/ably/lib/uts); README `uts/README.md` | [`uts/src/test/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/main/uts/src/test/kotlin/io/ably/lib/uts): one scenario smoke test per tier (unit, direct sandbox, proxy); no helper self-tests ([Patterns to avoid](#patterns-to-avoid)) | [`lib/src/test/kotlin/io/ably/lib/uts`](https://github.com/ably/ably-java/tree/main/lib/src/test/kotlin/io/ably/lib/uts) (rest, realtime; built by `:java`); [`liveobjects/src/test/kotlin/io/ably/lib/liveobjects/uts`](https://github.com/ably/ably-java/tree/main/liveobjects/src/test/kotlin/io/ably/lib/liveobjects/uts) (objects; `:liveobjects`) |
+| [ably-cocoa](https://github.com/ably/ably-cocoa) | [`.claude/skills/uts-to-swift`](https://github.com/ably/ably-cocoa/tree/main/.claude/skills/uts-to-swift) | The `UTS` test target, [`Test/UTS`](https://github.com/ably/ably-cocoa/tree/main/Test/UTS) (helpers in `Test/UTS/infra`; README `Test/UTS/README.md`), plus the shared test-support targets it depends on: [`Test/AblyTesting`](https://github.com/ably/ably-cocoa/tree/main/Test/AblyTesting) and [`Test/AblyLiveObjectsTesting`](https://github.com/ably/ably-cocoa/tree/main/Test/AblyLiveObjectsTesting) | None: they were retired, a [pattern to avoid](#patterns-to-avoid) | [`Test/UTS/unit`](https://github.com/ably/ably-cocoa/tree/main/Test/UTS/unit), [`Test/UTS/integration`](https://github.com/ably/ably-cocoa/tree/main/Test/UTS/integration) |
 
 Rules:
 
 1. **The authority doesn't change.** Consult the references only after this guide, the UTS docs and the helper specs fail to answer the question. On any conflict, this guide (and, for semantics, the UTS docs, per [How it relates to the other UTS docs](#how-it-relates-to-the-other-uts-docs)) wins; record the conflict.
 2. **Learn the pattern; never copy.** Don't copy, port or translate code, scripts, prose, tables or examples verbatim. Take how a problem was structured or solved, and write your own version in your language's idioms, on your SDK's hooks and harness.
-3. **Check against [Patterns to avoid](#patterns-to-avoid)** before adopting anything. Both skills and both harnesses have documented defects, often in exactly the files you would consult.
-4. **Read the pinned commits** linked above, where Patterns to avoid applies exactly. `main` may since have improved; if you consult `main`, re-check what you take against Patterns to avoid, and record which revision you used.
-5. **Record each consultation**: the repo, commit and path, the question, what you learned, and how you checked it. Report each one as a gap in this guide: a candidate guide improvement.
-6. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-local-clone-vs-fetching-main)), and neither does the pilot run that validates it.
+3. **Check against [Patterns to avoid](#patterns-to-avoid)** before adopting anything. Both skills and both harnesses have documented defects, often in exactly the files you would consult. The list describes them when this guide was written; some may since have been fixed, so check what you take either way.
+4. **Record each consultation**: the repo, revision and path, the question, what you learned, and how you checked it. Report each one as a gap in this guide: a candidate guide improvement.
+5. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-local-clone-vs-fetching-main)), and neither does the pilot run that validates it.
 
-Reading GitHub is network access: the [procedure](../skills/uts-to-lang-skill-creator/SKILL.md#21-your-inputs) gates it, or offers local clones that contain the pinned commits instead.
+Reading GitHub is network access: the [procedure](../skills/uts-to-lang-skill-creator/SKILL.md#21-your-inputs) gates it, or offers local clones instead.
 
 ### Patterns to avoid
 
-Observed in the existing skills and their harnesses as of 2026-10-07 (the reviewed checkouts, ably-cocoa `b5074d9b` and ably-java `0ff24017`; unchanged on remote `main` as fetched that day); some may since be fixed. Each is a pattern a new skill shouldn't copy. Check anything taken from the [reference implementations](#reference-implementations-last-resort) against this list. When the "as of" commits in the introduction move, update the links in that table and this list together.
+Observed in the existing skills and their harnesses when this guide was written; some may since have been fixed. Each is a pattern a new skill shouldn't copy. Check anything taken from the [reference implementations](#reference-implementations-last-resort) against this list.
 
 **In both skills**
 

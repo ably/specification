@@ -39,7 +39,7 @@ Tiers not ready; `not available` catalogue rows; harness capabilities missing; a
 - Spec-repo doc issues (contradictions between guide and UTS docs; guide gaps revealed by reference-implementation reads): …
 
 ## Reference-implementation reads
-Each read from the Design record (question, repo @ commit : path, pattern learned, how it was checked against Patterns to avoid), with the guide gap it reveals and a draft guide fix. "None" if the guide sufficed.
+Each read from the Design record (question, repo @ revision : path, pattern learned, how it was checked against Patterns to avoid), with the guide gap it reveals and a draft guide fix. "None" if the guide sufficed.
 
 ## Suggested CI changes
 <job, trigger, command, network/submodule/proxy needs> (not applied unless approved at STOP-5)
