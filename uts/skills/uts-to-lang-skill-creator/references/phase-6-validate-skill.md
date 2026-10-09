@@ -24,7 +24,7 @@ Run the resolver on `<spec-clone>/uts/rest`, `<spec-clone>/uts/realtime` and `<s
 - [ ] No helper spec, `README.md`, `PLAN.md` or `*_SUMMARY.md` appears in `specs`.
 - [ ] Every `className` follows D-04 and is collected by the runner; no collisions (or the collision is reported).
 - [ ] `targetDir`, namespace and build target match the mapping and the Design record.
-- [ ] The same module given as a `~`-prefixed path, and (on Windows) with backslash separators, resolves identically (guide [8.1](../../../docs/translator-skills/writing-translator-skills.md#81-resolver-resolve_utspy-must) "Validate the module").
+- [ ] The same module given as a `~`-prefixed path, and (on Windows) with backslash separators, resolves identically (guide [8.1](../../../docs/writing-uts-spec-translator-skills.md#81-resolver-resolve_utspy-must) "Validate the module").
 
 Then run the negative cases and check each returns `ok: false` with the right code: a path whose parent isn't `uts`; a missing directory; a module with no tier directories (a scratch directory named `uts/<x>` will do); a mapping entry whose notes file is missing (use a scratch copy of the mapping); `--create` with an invalid name; `--create` on a scratch copy of a deliberately corrupt mapping (the file must be left unchanged).
 
@@ -70,7 +70,7 @@ The candidates are examples only. Before choosing one, confirm it exists in your
 Use translate-only mode if the SDK lacks the feature; otherwise evaluate. Then:
 
 1. Compile (and collect: every tagged test function is collected; count a parameterised or protocol-variant test once).
-2. Audit; walk the review checklist (guide [8.3](../../../docs/translator-skills/writing-translator-skills.md#83-review-checklist-must-after-the-audit)).
+2. Audit; walk the review checklist (guide [8.3](../../../docs/writing-uts-spec-translator-skills.md#83-review-checklist-must-after-the-audit)).
 3. In evaluate mode, and after **STOP-6** for network tiers, run the class by filter and diagnose per `writing-derived-tests.md` Phase 2.
 4. Review the generated file line by line against the spec yourself, and show it to the user.
 
@@ -95,7 +95,7 @@ Run each path through the skill (in the session from [8.3](#83-pilot-translate-o
 3. **Placeholder notes:** a module whose notes file is a placeholder → refused, with the reason.
 4. **Unready tier:** a tier the mapping marks unready → not offered at step C, with its `blockedBy`.
 5. **Unmapped module:** on a scratch copy of the mapping, a module without an entry → step B asks for a name and runs `--create`, which writes the D-03 default layout and preserves the other entries.
-6. **Re-sync** (if D-19 ships it): set a pilot file's header SHA to an older spec commit that changed that spec (`git -C <spec-clone> log --format=%H -- uts/<path>`), run `--resync`, and check the classification (including a change outside the pseudocode, such as `## Protocol Variants`, reported as **changed**, and, run against a scratch clone of the spec repo (`git clone <spec-clone> <scratch>`; the spec clone itself is never edited, 2.2), an uncommitted edit to that spec reported as **changed**), that the header SHA is updated, and that only the survivors in guide [9.2](../../../docs/translator-skills/writing-translator-skills.md#92-a-re-sync-mode-should) step 4 are preserved. Restore the file afterwards.
+6. **Re-sync** (if D-19 ships it): set a pilot file's header SHA to an older spec commit that changed that spec (`git -C <spec-clone> log --format=%H -- uts/<path>`), run `--resync`, and check the classification (including a change outside the pseudocode, such as `## Protocol Variants`, reported as **changed**, and, run against a scratch clone of the spec repo (`git clone <spec-clone> <scratch>`; the spec clone itself is never edited, 2.2), an uncommitted edit to that spec reported as **changed**), that the header SHA is updated, and that only the survivors in guide [9.2](../../../docs/writing-uts-spec-translator-skills.md#92-a-re-sync-mode-should) step 4 are preserved. Restore the file afterwards.
 7. **Commands:** every build, run, lint and audit command `SKILL.md` names has now been run through the skill; fix any that failed.
 8. **Red harness:** on a scratch copy (or a temporary working-tree edit you revert afterwards), break one harness test (for example, make the WebSocket mock refuse every connection), or run an integration tier with the network unavailable → the skill stops at step F before generating anything, reports a harness or environment problem (not an SDK deviation), and names the failing test. Restore the change and confirm the preflight is green again.
 9. **Known gap:** select a spec that uses a construct the harness README lists under Known gaps → the preflight reports the conflict and stops to ask (guide 4 step F), rather than generating a substituted rendering. If Known gaps is empty, use a scratch copy of the README with an entry for a construct the selected spec uses.
@@ -107,7 +107,7 @@ Run the frontmatter validation of [7.6](phase-5-generate-skill.md#76-step-5f-wri
 
 ## 8.7 Verify the skill's own examples
 
-Every code example in `SKILL.md` and the notes must compile (guide [12](../../../docs/translator-skills/writing-translator-skills.md#12-lessons-learned)). For each example, either:
+Every code example in `SKILL.md` and the notes must compile (guide [12](../../../docs/writing-uts-spec-translator-skills.md#12-lessons-learned)). For each example, either:
 
 - name the real, compiled file it was copied from (and check it still matches), or
 - paste it into a scratch file in the test target, compile, and delete the scratch file.
@@ -116,6 +116,6 @@ Record which examples were verified and how.
 
 ## 8.8 Name the reference tests
 
-After review, name one spec-derived test file per tier in `SKILL.md` as the file to read first (guide [4, step 3](../../../docs/translator-skills/writing-translator-skills.md#phase-2-per-spec-steps-17)). Never name a smoke test.
+After review, name one spec-derived test file per tier in `SKILL.md` as the file to read first (guide [4, step 3](../../../docs/writing-uts-spec-translator-skills.md#phase-2-per-spec-steps-17)). Never name a smoke test.
 
 **Phase 6 is done when:** the resolver passes on all three modules and all negative cases; every path in 8.5 behaves as expected (including the red-harness stop) and every command in `SKILL.md` has been run; every pilot ran after a green preflight; the audit passes every mutation and the sweep; each pilot compiles, audits clean (or every shortfall is accounted for) and, in evaluate mode, ends in one of the three end states; lint and the CI-strict compile pass; every example is verified.

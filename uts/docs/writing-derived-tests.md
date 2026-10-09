@@ -13,7 +13,7 @@ The process has two phases:
 
 Not every situation has an existing implementation. Tests may be written ahead of the implementation (test-first development), or for a new SDK that doesn't yet exist. In those cases, only the translation phase applies.
 
-To automate translation for one SDK with an agent skill (`uts-to-<lang>`), see [Writing UTS Translator Skills](translator-skills/writing-translator-skills.md). That guide packages this document's rules into a repeatable procedure. This document remains the authority on translation and evaluation semantics.
+To automate translation for one SDK with an agent skill (`uts-to-<lang>`), see [Writing UTS Spec Translator Skills](writing-uts-spec-translator-skills.md). That guide packages this document's rules into a repeatable procedure. This document remains the authority on translation and evaluation semantics.
 
 ---
 
