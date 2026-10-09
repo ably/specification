@@ -66,7 +66,7 @@ uts/
 | Helper specs | 4 | Mock and fixture infrastructure definitions |
 | **Total** | **150** | |
 
-Counts as of 2026-10-08; `find uts/<module> -name '*.md'` is authoritative (it also lists `objects/PLAN.md`, which is not a spec).
+For current counts, `find uts/<module> -name '*.md'` is authoritative (it also lists `objects/PLAN.md`, which is not a spec).
 
 ## Three Test Tiers
 
