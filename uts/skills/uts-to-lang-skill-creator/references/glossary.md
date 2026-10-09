@@ -18,7 +18,7 @@ Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) firs
 | **Self-test** | A harness test that checks one helper obeys its helper-spec contract (guide 2.7); permanent, in CI, no tag |
 | **Preflight** | The generated skill's step F: compile, run the tier's smoke tests and self-tests, check Known gaps; stop on red |
 | **Reference test** | A reviewed, spec-derived test per tier that the skill reads before generating |
-| **Reference implementations** | The existing `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java) skills and their harnesses, at the commits the guide pins: a last-resort, read-only reference for patterns, never copied and never an authority ([2.1](../SKILL.md#21-your-inputs)). Not a reference test |
+| **Reference implementations** | The existing `uts-to-swift` (ably-cocoa) and `uts-to-kotlin` (ably-java) skills and their harnesses, linked from the guide: a last-resort, read-only reference for patterns, never copied and never an authority ([2.1](../SKILL.md#21-your-inputs)). Not a reference test |
 | **Opus-class model** | The most capable model tier available (Claude Opus or an equivalent); required for this procedure and its sub-agents ([2.8](../SKILL.md#28-model-tier-and-sub-agents)) |
 | **Notes** | `references/<module>-mapping.md`: how ably-js-shaped pseudocode maps to this SDK for one module |
 | **Resolver** | `resolve_uts.py`: validates a module and derives targets and names; its output is the single source of truth |

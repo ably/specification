@@ -46,7 +46,7 @@
 |---|---|---|---|---|---|---|---|
 
 ## Reference-implementation reads (last resort, 2.1)
-| # | Date | Question | Guide/UTS sections searched | Repo @ commit : path | Pattern learned (not copied) | Checked against Patterns to avoid | Access (local clone / GitHub, STOP-6 approval) |
+| # | Date | Question | Guide/UTS sections searched | Repo @ revision : path | Pattern learned (not copied) | Checked against Patterns to avoid | Access (local clone / GitHub, STOP-6 approval) |
 |---|---|---|---|---|---|---|---|
 
 ## Changelog (fixes made to the skill, notes or harness)

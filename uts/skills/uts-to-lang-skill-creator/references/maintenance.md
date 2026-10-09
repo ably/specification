@@ -14,7 +14,7 @@ The harness and the skill must stay in step with five things that change indepen
 
 Rules for every maintenance run:
 
-- Follow the same ground rules ([section 2](../SKILL.md#2-ground-rules)) and stop points, including the model tier ([2.8](../SKILL.md#28-model-tier-and-sub-agents)) and the last-resort rules for reference-implementation reads ([2.1](../SKILL.md#21-your-inputs)). If the guide's "as of" commits have moved since a recorded read, re-check that read's conclusion against the updated Patterns to avoid before relying on it again.
+- Follow the same ground rules ([section 2](../SKILL.md#2-ground-rules)) and stop points, including the model tier ([2.8](../SKILL.md#28-model-tier-and-sub-agents)) and the last-resort rules for reference-implementation reads ([2.1](../SKILL.md#21-your-inputs)). If the guide's Patterns to avoid has changed since a recorded read, re-check that read's conclusion against it before relying on it again.
 - Start from the working records; update the Repo profile and the harness design if anything they describe has changed.
 - Regenerate tests through the skill; the only per-test state that survives is the list in guide 9.2 step 4 (DEVIATION gates, adapted assertions, `deviations.md` entries and, per `writing-derived-tests.md`, UTS-spec-error fail-fast placeholders until the spec is fixed) (guide [9.2](../../../docs/writing-uts-spec-translator-skills.md#92-a-re-sync-mode-should)).
 - After any harness change, re-run every affected tier's smoke tests and self-tests, and regenerate the affected tests; after any script change, repeat [8.1](phase-6-validate-skill.md#81-run-the-resolver-on-every-module) and [8.2](phase-6-validate-skill.md#82-test-the-audit-itself).
