@@ -650,9 +650,11 @@ AWAIT_STATE client.connection.state == ConnectionState.connecting
 ```
 
 This means implementations should:
-- Check if condition is already true -> proceed
-- Otherwise wait for state change events with timeout
-- Fail if timeout expires
+- Subscribe to state change events first, then check whether the condition is already true,
+  and proceed on whichever happens first, exactly once (checking before subscribing leaves a
+  window in which a transition is missed)
+- Otherwise wait for a state change event that satisfies the condition, with a timeout
+- Fail if the timeout expires, and remove the listener on success, timeout or cancellation
 
 In **integration and proxy** specs these timeouts are **wall-clock time** (the test waits on a
 real server — see the *Timeout Strategy* section in `docs/integration-testing.md`); in unit specs they may be
@@ -841,7 +843,8 @@ wall-clock* in `writing-derived-tests.md` for the traps on both sides).
 
 For a **negative assertion** at unit tier — proving something did *not* happen — there is
 nothing to poll for: use `process_pending_events()` (see the pseudocode conventions in
-`uts/README.md`) to let already-queued events settle, then assert. Never a fixed `WAIT`.
+`uts/README.md`) to drain all already-queued work, then assert (see *No real timers in unit
+tests* in `writing-derived-tests.md` for SDKs that chain work across queues). Never a fixed `WAIT`.
 
 ```pseudo
 # Good - negative assertion: settle pending events, then assert nothing happened
