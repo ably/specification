@@ -1,5 +1,9 @@
 # Harness design: <repo name> @ <sha>
 
+- Run mode (D-27): …; upgrade: rows seeded from skill-gap-audit.md section C on <date>, each re-checked per 4.2
+- LiveObjects (D-28): full | placeholder | none
+- Capabilities (D-31): rest …; realtime …; side: …; hooks reachable from the SDK language (P-13): yes | no; rows and tiers needing an absent capability are "n/a — capability absent: <capability> (D-31)", not gaps (13.8)
+
 ## Gap table
 | # | Capability | Guide | Status | Evidence | Approach (reuse / wrap / extend / build / n/a) | Builds on | Blocks (module/tier) | Production change? | Size | Acceptance check |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -12,7 +16,7 @@
 | G-07 | MockWebSocket (+ alternative API, undocumented members, raw frames, ping) | 2.2, mock_websocket.md | | | | | | | | |
 | G-08 | MockVCDiff encoder/decoders | 2.2, mock_vcdiff.md | | | | | | | | |
 | G-09 | MockNetworkListener | 2.2 | | | | | | | | |
-| G-10 | standard_test_pool.md implementation; plugin options builder | 2.2, standard_test_pool.md | | | | | | | | |
+| G-10 | standard_test_pool.md implementation; plugin options builder (only if D-28 = full; else n/a (D-28)) | 2.2, standard_test_pool.md | | | | | objects/unit | | | |
 | G-11 | Wait helpers (AWAIT_STATE, poll_until, poll_until_success, process_pending_events, wall-clock wrapper, fake clock driver) | 2.2, 5.6, 5.7 | | | | | | | | |
 | G-12 | Thread-safe capture, log sink, assertContainsInOrder, caller-attributed failures | 2.2 | | | | | | | | |
 | G-13 | Placement and recommended harness layout (shared / port-only / module helpers); fixture-helper scope documented in the module notes | 2.2 | | | | | | | | |
@@ -51,12 +55,13 @@
 ## Tier feasibility
 | Module | unit | integration | proxy |
 |---|---|---|---|
-| rest | ready / after G-.. / not possible: <why> / n/a | | |
+| rest | ready / after G-.. / not possible: <why> / n/a / n/a — capability absent: <capability> (D-31) | | |
 | realtime | | | |
-| objects | | | |
+| objects | per D-28: full → as above; placeholder → not possible: placeholder notes; none → n/a (D-28) | | |
 
 ## Decision at STOP-3
 (a) build now: <rows> | (b) plan only | (c) scope to ready tiers — chosen by <user> on <date>; design changes requested: …
+Upgrade mode: per row build / plan (defer) / skip: …; G-19/G-20 for every tier the skill offers can't be skipped or deferred
 
 ## Build log (Phase 3) / plan (option b)
 | Order | Row | Work | Acceptance check | Result | Date |

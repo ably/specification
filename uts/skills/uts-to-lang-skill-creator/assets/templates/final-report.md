@@ -3,11 +3,19 @@
 - Spec clone <sha> (clean | dirty: <files>); repo <sha>; date
 - Model: <name and ID> (Opus-class: yes | no, and why); sub-agents: <role → model>, or none
 - Scope: <modules × tiers covered>; out of scope and why
+- Conforms to the guide: yes | no (MUST rows ✗: …)
+- Eligibility: <owner/repo> via <remote> (accept | fork-confirmed) | user-named: <owner/repo> (<code>)
+- Capabilities (D-31): rest …; realtime …; side: <none | core | server | device | both>; scope: <modules>; unsupported: … (capability absent); capability-inapplicable: <n> tests; partial skill: yes, extend by Upgrade/Fix when <capability> appears | no
+- State class: S0 | S1 | S2 | S3 | S4 (+ re-entry); run mode: create | upgrade: diff-driven | upgrade: full audit | upgrade: regenerate (resumed | restarted); LiveObjects: full | placeholder | none (translate-only | evaluate), from detector recommendation <yes | no | unclear>
 
 ## Files created or changed
-| Path | New / changed | Kind (hook, harness, smoke test, skill, script, notes, pilot test, CI suggestion) | Approved at |
-|---|---|---|---|
+| Path | New / changed | Kind (hook, harness, smoke test, skill, script, notes, pilot test, CI suggestion) | Item (GA-nn / CH-nn / G-nn, upgrade mode) | Approved at |
+|---|---|---|---|---|
 Hand-maintained project files the user must update: …
+
+## Existing assets and upgrade summary
+Create (S1): the UTS-derived tests and harness code found (P-20), whether they match D-03, D-06 and D-07, and the follow-ups proposed.
+Upgrade/Fix: items added, skipped (with the reason) and deferred (with the plan), by GA-/CH-/G- ID, from skill-gap-audit.md; harness rows decided at STOP-3; preserve list kept; baseline comparison (resolver, audit, harness tests, existing UTS-derived tests): differences and the item that explains each; what the old skill had that the new one lacks (regenerate only).
 
 ## Repo profile
 Link to repo-profile.md; corrections made at STOP-2.
@@ -30,6 +38,9 @@ Link to design-record.md; decisions that depart from the guide's defaults, and w
 Fixes made to the skill, notes or harness during the pilot (from the changelog): …
 Reference tests named in SKILL.md: <tier → file>
 
+## SDK-blocked objects tiers
+<tier>: <feature> — <evidence (error naming the SDK symbol, file:line)>; translate-only until the smoke test passes; acceptance row "Harness smoke tests …" ✗ (SDK-blocked). "None" otherwise.
+
 ## Known limitations
 Tiers not ready; `not available` catalogue rows; harness capabilities missing; audit SHOULD items not implemented; platforms the scripts weren't run on.
 
@@ -45,7 +56,7 @@ Each read from the Design record (question, repo @ revision : path, pattern lear
 <job, trigger, command, network/submodule/proxy needs> (not applied unless approved at STOP-5)
 
 ## Next steps
-Which modules and tiers to translate next, in order, and why; harness work remaining.
+Which modules and tiers to translate next, in order, and why; harness work remaining; deferred gap-audit items with their plan.
 
 ## Acceptance checklist
 (the acceptance-checklist template, filled)

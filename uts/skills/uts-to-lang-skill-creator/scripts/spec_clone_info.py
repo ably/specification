@@ -93,7 +93,8 @@ def main(argv):
 
     try:
         sha = git(clone, "rev-parse", "HEAD").strip()
-        status = git(clone, "status", "--porcelain", "--untracked-files=all", "--", "uts", "specifications").splitlines()
+        status = git(clone, "--no-optional-locks", "status", "--porcelain", "--untracked-files=all", "--", "uts",
+                      "specifications").splitlines()
         last = git(clone, "log", "-1", "--format=%H %cd", "--",
                   "uts/docs/writing-uts-spec-translator-skills.md", SKILL_IN_CLONE.as_posix()).strip()
     except (RuntimeError, OSError) as exc:

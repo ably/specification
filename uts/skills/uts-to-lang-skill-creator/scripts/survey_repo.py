@@ -4,13 +4,17 @@
 Usage: survey_repo.py <repo> [<test-root> ...]
 
 Prints the HEAD SHA and dirty state, file-extension counts, likely test roots,
-submodule status, candidate mocks and fakes, and existing UTS tags. It is a
+submodule status, candidate mocks and fakes, existing UTS tags and existing
+skills (including uts-to-* skill directories that are symlinks). It is a
 starting point for the discovery checklist, not an answer to it: follow the
-evidence, and adapt or extend the searches for the repo's language.
+evidence, and adapt or extend the searches for the repo's language. For an
+existing uts-to-* skill, run inspect_existing_skill.py; for LiveObjects API
+evidence, run detect_liveobjects.py.
 """
-import collections, pathlib, re, subprocess, sys
+import collections, os, pathlib, re, subprocess, sys
 
 MOCK_RE = re.compile(r"class (Mock|Fake|Stub)|(Mock|Fake)[A-Z][A-Za-z]*(Transport|Http|Clock|Timer|Socket)")
+SKILL_DIRS = (".claude/skills/", ".agents/skills/", ".codex/skills/", ".cursor/skills/", ".github/skills/")
 TEST_ROOT_RE = re.compile(r"(^|/)(test|tests|spec|specs)/", re.IGNORECASE)
 
 
@@ -77,8 +81,12 @@ def main(argv):
     print("\n".join(grep(roots, re.compile(r"UTS:"), 10)) or "(none)")
 
     print("\n== Existing skills")
-    print("\n".join(f for f in files if f.startswith((".claude/skills/", ".agents/skills/", ".codex/skills/")) and f.endswith("SKILL.md"))
-          or "(none)")
+    skills = {f for f in files if f.startswith(SKILL_DIRS) and f.endswith("SKILL.md")}
+    for base in SKILL_DIRS:
+        for d in sorted((repo / base).glob("uts-to-*")) if (repo / base).is_dir() else []:
+            link = f" -> {os.readlink(d)}" if d.is_symlink() else ""
+            skills.add(f"{display(d, repo)}/{link}" if link else f"{display(d, repo)}/SKILL.md")
+    print("\n".join(sorted(skills)) or "(none)")
     return 0
 
 

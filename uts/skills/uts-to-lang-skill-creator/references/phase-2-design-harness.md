@@ -53,7 +53,7 @@ Read each helper spec in full, then design its native implementation. For each, 
 | [`mock_http.md`](../../../rest/unit/helpers/mock_http.md) | Which HTTP hook does `install_mock` use? Does an existing HTTP double capture method, URL, headers and body? Can it fail at connection level separately from request level? Will the legacy `queue_*` calls be implemented, or mapped onto `onRequest` handlers in the skill? | The helper spec; guide 2.2 `mock_http.md` row |
 | [`mock_websocket.md`](../../../realtime/unit/helpers/mock_websocket.md) | Which transport hook installs it? Does an existing transport double exist, and is its `close()` asynchronous? How are typed messages and raw untyped frames sent to the client? How are client frames captured? | The helper spec (including "Async Behavior and Event Loop Considerations"); guide 2.2 `mock_websocket.md` row and the notes below it |
 | [`mock_vcdiff.md`](../../../realtime/unit/helpers/mock_vcdiff.md) | Does the SDK support deltas, and how is a decoder registered? | The helper spec; guide 2.2 |
-| [`standard_test_pool.md`](../../../objects/helpers/standard_test_pool.md) | Which channel and plugin setup does `setup_synced_channel` need? Where do module helpers live (where internals are visible, if white-box specs need them)? How is the plugin registered in a client-options builder? | The helper spec; guide 2.2 `standard_test_pool.md` row and "Document each fixture helper's scope" |
+| [`standard_test_pool.md`](../../../objects/helpers/standard_test_pool.md) (in scope only if D-28 chose full objects support, [12.3](liveobjects-support.md#123-what-each-choice-adds-phase-by-phase)) | Which channel and plugin setup does `setup_synced_channel` need? Where do module helpers live (where internals are visible, if white-box specs need them)? How is the plugin registered in a client-options builder? | The helper spec; guide 2.2 `standard_test_pool.md` row and "Document each fixture helper's scope" |
 | *(no helper spec)* `MockNetworkListener` | Is there a network-monitor hook? | guide 2.2 last table row; `realtime/unit/connection/network_change_test.md` |
 
 Where a design question can only be answered by a production change, it becomes a hook proposal (4.6).
@@ -98,7 +98,13 @@ These proposals are presented at STOP-3 and need individual approval at **STOP-4
 
 ## 4.8 Step 2h: derive tier feasibility
 
-Fill a module × tier matrix: for each of `rest`, `realtime`, `objects` and each of unit, integration, proxy, mark **ready**, **ready after building rows X, Y**, or **not possible** (with the reason, e.g. "not possible until the SDK has an objects API (placeholder notes; the skill refuses the module)"). A tier the corpus doesn't have for a module is `n/a` (check with `ls <spec-clone>/uts/<module>`). A tier is **ready** only when its G-19 and G-20 rows (smoke tests and self-tests, guide 2.7) are present, green and wired into CI (or the CI change was declined at STOP-5 and is reported as unmet, so the skill doesn't yet conform to guide 2.5/2.7; see [5.4](phase-3-build-harness.md#54-step-3d-stop-7-confirm-the-harness)), or will be built in Phase 3.
+Fill a module × tier matrix: for each of `rest`, `realtime`, `objects` and each of unit, integration, proxy, mark **ready**, **ready after building rows X, Y**, or **not possible** (with the reason, e.g. "not possible until the SDK has an objects API (placeholder notes; the skill refuses the module)"). A tier the corpus doesn't have for a module is `n/a` (check with `ls <spec-clone>/uts/<module>`). The `objects` rows follow D-28 ([12.3](liveobjects-support.md#123-what-each-choice-adds-phase-by-phase)). Modules and gap-table rows that need a capability the SDK (or the side chosen in D-31) lacks ([13.8](orient.md#138-capabilities-and-scope-stop-17-d-31)) are `n/a — capability absent: <capability> (D-31)`, not gaps:
+
+- **REST-only:** every `realtime` and `objects` tier, and the G-rows 13.8 lists. Their G-19 and G-20 rows are built in their REST form: the sandbox smoke test publishes over REST and reads history; the proxy smoke test serves a REST request through an HTTP rule. The REST-only tests filed under `uts/realtime` (`extraTests`) run on these tiers.
+- **Realtime-only:** every `rest` tier. No G-row is wholly n/a: G-02 (HTTP hook) and G-06 (`MockHttpClient`) are still needed, because the Realtime client uses HTTP for auth, time, history, `request()` and fallback. Only the `rest` tiers' smoke tests in G-19 are n/a.
+- **Hooks unreachable** (P-13, an SDK that wraps native SDKs): the unit tiers are **not possible** until hooks exist in the SDK's language (guide [2.1](../../../docs/writing-uts-spec-translator-skills.md#21-sdk-test-hooks-must)); the integration and proxy tiers are assessed as usual.
+
+A tier is **ready** only when its G-19 and G-20 rows (smoke tests and self-tests, guide 2.7) are present, green and wired into CI (or the CI change was declined at STOP-5 and is reported as unmet, so the skill doesn't yet conform to guide 2.5/2.7; see [5.4](phase-3-build-harness.md#54-step-3d-stop-7-confirm-the-harness)), or will be built in Phase 3. An objects tier whose smoke test ends SDK-blocked is **ready (translate-only)**, under the conditions of [12.5](liveobjects-support.md#125-an-sdk-blocked-objects-tier).
 
 ## 4.9 Step 2i: STOP-3, approve the design and choose the scope
 
@@ -109,5 +115,7 @@ Present `uts-infra-design.md`: the gap table, the helper-spec mappings, the wait
 - **(c) Scope the skill to the tiers possible today.** As (b), without the plan.
 
 Under (b) and (c), G-19 and G-20 for every tier the skill will offer can't be planned or scoped out; Phase 3 and STOP-7 still run for them.
+
+In upgrade mode, the user chooses per row instead of (a)–(c): build, plan (defer) or skip, with the same exception for G-19 and G-20 ([11.4](upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item)). A tier the skill offers today whose smoke tests or self-tests won't be built becomes unready, and the skill refuses it until they exist.
 
 Record the answer and any design changes the user asked for. Under (b) and (c), the skill's tier step (C) must offer only ready tiers, and the Final report lists the rest as known limitations.

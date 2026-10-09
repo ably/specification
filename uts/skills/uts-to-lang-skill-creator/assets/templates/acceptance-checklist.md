@@ -1,4 +1,4 @@
-<!-- Paste this table into the Final report's "Acceptance checklist" section. One row per item of the guide's section 13 checklist (uts/docs/writing-uts-spec-translator-skills.md), with where the procedure produces and verifies it. Mark each ✓, ✗ (with the reason) or n/a (with the reason). -->
+<!-- Paste this table into the Final report's "Acceptance checklist" section. One row per item of the guide's section 13 checklist (uts/docs/writing-uts-spec-translator-skills.md), with where the procedure produces and verifies it. Mark each ✓, ✗ (with the reason) or n/a (with the reason). A row that wholly needs a capability the SDK lacks is "n/a — capability absent: <capability> (D-31)"; a row where only parts do is ✓ with those parts named n/a. n/a never counts as ✗; a scope the user chose to cut is ✗. -->
 
 | Guide §13 item | Produced in | Verified in | Status |
 |---|---|---|---|
@@ -9,7 +9,7 @@
 | Thread-safe capture, log sink, `assertContainsInOrder`, caller-attributed failures | 4.4; 5.2 row 2 | helper tests; G-12 | |
 | Harness designed from the repo's existing test setup (reuse, wrap, extend or build, 2.2); shared vs port-only placement; recommended harness layout; fixture-helper scope documented | 4.2; 4.7; 5.3; notes item 9 | G-13 | |
 | Harness README with a Known gaps section (MUST) | 5.3; 5.2 row 12 | G-14; 8.5 path 9 | |
-| Harness smoke tests per tier and helper self-tests: permanent, in CI, ungated, untagged, outside generated-test directories (MUST) | 4.7; 5.2 rows 1–11, 13 | STOP-7; G-19, G-20; 8.5 path 8 | |
+| Harness smoke tests per tier and helper self-tests: permanent, in CI, ungated, untagged, outside generated-test directories (MUST) | 4.7; 5.2 rows 1–11, 13 | STOP-7; G-19, G-20; 8.5 path 8 (✗ "SDK-blocked" while an objects smoke test is SDK-blocked, 12.5) | |
 | `SandboxApp` (idempotent retries only); `ably-common` | 4.5; 5.2 row 9 | smoke integration test; G-15 | |
 | `ProxyManager` (pinned, every OS, verified download, health check, port handling); `ProxySession`; string `match.action`; proxy auth decided and commented | 4.5; 5.2 row 10; D-18 | smoke proxy test; G-16 | |
 | One CI home per suite (MUST); per-tier jobs (SHOULD) | 5.2 row 13 or suggested CI changes | G-17; Final report | |
@@ -21,7 +21,7 @@
 | `uts-package-mapping.json`: one path per tier, unique namespaces, `notes` relative, hand-maintained entries marked, `harness` entry | 7.1 | 7.1 acceptance; 8.1 | |
 | `resolve_uts.py`: validation, errors, output contract, path tiers, relative exclusions, collectable names, collisions, validate-then-write `--create` preserving other entries, `harness` output | 7.2 | 8.1 | |
 | `audit_translation.py`: parsing contract, ID coverage, duplicates, separate counts, ignores commented assertions, never crashes, flags unverifiable; mutation-tested | 7.3 | 8.2 | |
-| Module notes for every diverging module (at least `objects`) | 7.5; D-23 | 7.5 acceptance | |
+| Module notes for every diverging module; `objects` decided from evidence of the LiveObjects public API (full notes if exposed, even if incomplete; a placeholder or an entry with every tier marked not ready otherwise) | 7.5; D-23; 12.1–12.3; D-28 (decided at STOP-14) | 7.5 acceptance; 8.5 paths 3–4 | |
 | Scripts run on every developer platform (path handling, UTF-8, LF) | 7.1–7.3; D-02 | 8.1 (path parts, `~`), 8.6 (platforms) | |
 | **Workflow** | | | |
 | Required reading incl. features specs, from the same clone | 7.6 (step 0) | 8.3 pilot | |
@@ -58,3 +58,4 @@
 | **Creation process** | | | |
 | Skill and harness created on an Opus-class model (MUST); model stated for runs, or pinned where the tool supports that (SHOULD), and recorded in the skill's final report | 2.8; D-26; 7.6 (frontmatter, final report) | Design record "Inputs at generation time" (Model line); 8.3 (pilot model recorded); Final report header | |
 | Reference-implementation reads, if any, last resort only, recorded and reported as guide gaps | 2.1; design-record template | Final report "Reference-implementation reads" | |
+| An existing skill, its harness and its UTS-derived tests audited against this checklist before being changed; gaps listed for the owner to choose; working parts preserved (SHOULD) | 13 (Orient); 10; 11.2–11.5; D-27; D-29; skill-gap-audit template | STOP-15; 11.6; Final report "Existing assets and upgrade summary" (n/a in create mode) | |
