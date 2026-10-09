@@ -18,7 +18,7 @@ import filecmp, json, os, pathlib, subprocess, sys
 SKILL_NAME = "uts-to-lang-skill-creator"
 SKILL_IN_CLONE = pathlib.Path("uts", "skills", SKILL_NAME)
 REQUIRED = {
-    "guide": "uts/docs/translator-skills/writing-translator-skills.md",
+    "guide": "uts/docs/writing-uts-spec-translator-skills.md",
     "utsReadme": "uts/README.md",
     "writingDerivedTests": "uts/docs/writing-derived-tests.md",
     "writingTestSpecs": "uts/docs/writing-test-specs.md",
@@ -95,7 +95,7 @@ def main(argv):
         sha = git(clone, "rev-parse", "HEAD").strip()
         status = git(clone, "status", "--porcelain", "--untracked-files=all", "--", "uts", "specifications").splitlines()
         last = git(clone, "log", "-1", "--format=%H %cd", "--",
-                  "uts/docs/translator-skills", SKILL_IN_CLONE.as_posix()).strip()
+                  "uts/docs/writing-uts-spec-translator-skills.md", SKILL_IN_CLONE.as_posix()).strip()
     except (RuntimeError, OSError) as exc:
         return fail("GIT_ERROR", str(exc), specClone=str(clone))
 

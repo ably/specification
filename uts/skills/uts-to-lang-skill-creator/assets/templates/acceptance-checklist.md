@@ -1,4 +1,4 @@
-<!-- Paste this table into the Final report's "Acceptance checklist" section. One row per item of the guide's section 13 checklist (uts/docs/translator-skills/writing-translator-skills.md), with where the procedure produces and verifies it. Mark each ✓, ✗ (with the reason) or n/a (with the reason). -->
+<!-- Paste this table into the Final report's "Acceptance checklist" section. One row per item of the guide's section 13 checklist (uts/docs/writing-uts-spec-translator-skills.md), with where the procedure produces and verifies it. Mark each ✓, ✗ (with the reason) or n/a (with the reason). -->
 
 | Guide §13 item | Produced in | Verified in | Status |
 |---|---|---|---|

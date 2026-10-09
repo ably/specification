@@ -31,5 +31,5 @@ Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) firs
 | **Delegating spec/test** | One that says to run another module's tests against this client |
 | **Re-sync** | Re-auditing a module against a newer spec SHA and regenerating what changed |
 | **Spec SHA** | The commit of the local spec clone that a test, or the skill, was derived from |
-| **Phase N / generated-skill Phase 1–2** | "Phase N" (1–7) is a phase of this procedure. "Generated-skill Phase 1" (selection, steps 0 and A–F) and "generated-skill Phase 2" (per spec, steps 1–7) are the generated `uts-to-<lang>` skill's workflow (guide [4](../../../docs/translator-skills/writing-translator-skills.md#4-the-workflow-the-skill-must-implement)). `writing-derived-tests.md` Phase 1/2 is always named with that document |
+| **Phase N / generated-skill Phase 1–2** | "Phase N" (1–7) is a phase of this procedure. "Generated-skill Phase 1" (selection, steps 0 and A–F) and "generated-skill Phase 2" (per spec, steps 1–7) are the generated `uts-to-<lang>` skill's workflow (guide [4](../../../docs/writing-uts-spec-translator-skills.md#4-the-workflow-the-skill-must-implement)). `writing-derived-tests.md` Phase 1/2 is always named with that document |
 | **Working records** | Repo profile, Harness design (with the gap table), Design record, Final report |

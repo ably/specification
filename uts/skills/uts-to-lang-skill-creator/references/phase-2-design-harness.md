@@ -14,23 +14,23 @@ Contents:
 - [4.8 Step 2h: derive tier feasibility](#48-step-2h-derive-tier-feasibility)
 - [4.9 Step 2i: STOP-3, approve the design and choose the scope](#49-step-2i-stop-3-approve-the-design-and-choose-the-scope)
 
-**Goal:** a written design for the harness in this language, derived from the Repo profile: for every capability guide [section 2](../../../docs/translator-skills/writing-translator-skills.md#2-the-harness-uts-test-infrastructure) requires, whether to **reuse** what exists, **wrap** it, **extend** it or **build** it new; how each helper spec maps to native code; which SDK hooks are still needed; where the code lives; and how each piece will be accepted. The user approves the design before you build anything.
+**Goal:** a written design for the harness in this language, derived from the Repo profile: for every capability guide [section 2](../../../docs/writing-uts-spec-translator-skills.md#2-the-harness-uts-test-infrastructure) requires, whether to **reuse** what exists, **wrap** it, **extend** it or **build** it new; how each helper spec maps to native code; which SDK hooks are still needed; where the code lives; and how each piece will be accepted. The user approves the design before you build anything.
 
 Design principles:
 
-- **Follow guide [2.2](../../../docs/translator-skills/writing-translator-skills.md#22-a-shared-test-library-implementing-the-helper-specs-must)**: implement each helper spec once, and build the harness to look like the pseudocode. When an existing double has the right behaviour but a different shape, **wrap it in a pseudocode-shaped facade** rather than teaching the skill to translate into the old shape.
+- **Follow guide [2.2](../../../docs/writing-uts-spec-translator-skills.md#22-a-shared-test-library-implementing-the-helper-specs-must)**: implement each helper spec once, and build the harness to look like the pseudocode. When an existing double has the right behaviour but a different shape, **wrap it in a pseudocode-shaped facade** rather than teaching the skill to translate into the old shape.
 - **Reuse what is correct; don't reuse what is subtly wrong.** An existing double that misses a helper-spec guarantee (for example a synchronous `close()`) will make the UTS ports flaky. Extend or replace it for the UTS ports, leaving the native tests' behaviour unchanged.
-- **Hooks** are injected at client construction, per-client where the SDK allows (guide [2.1](../../../docs/translator-skills/writing-translator-skills.md#21-sdk-test-hooks-must), [2.6](../../../docs/translator-skills/writing-translator-skills.md#26-understand-the-sdks-concurrency-model-must)).
+- **Hooks** are injected at client construction, per-client where the SDK allows (guide [2.1](../../../docs/writing-uts-spec-translator-skills.md#21-sdk-test-hooks-must), [2.6](../../../docs/writing-uts-spec-translator-skills.md#26-understand-the-sdks-concurrency-model-must)).
 
 ## 4.1 Step 2a: list the required capabilities
 
-Start the gap table from rows G-01 to G-20 of the [uts-infra-design template](../assets/templates/uts-infra-design.md), which cover every requirement of guide [2.1](../../../docs/translator-skills/writing-translator-skills.md#21-sdk-test-hooks-must) to [2.7](../../../docs/translator-skills/writing-translator-skills.md#27-harness-smoke-tests-and-self-tests-must). Split a row where its parts get different approaches (e.g. `MockWebSocket` reused but its alternative API built). Rows for concurrency knowledge (G-18) come from the Repo profile (P-09 to P-14) and are "missing" if the profile left them unknown.
+Start the gap table from rows G-01 to G-20 of the [uts-infra-design template](../assets/templates/uts-infra-design.md), which cover every requirement of guide [2.1](../../../docs/writing-uts-spec-translator-skills.md#21-sdk-test-hooks-must) to [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must). Split a row where its parts get different approaches (e.g. `MockWebSocket` reused but its alternative API built). Rows for concurrency knowledge (G-18) come from the Repo profile (P-09 to P-14) and are "missing" if the profile left them unknown.
 
 **Check:** every bullet and table row of guide section 2 maps to a gap-table row.
 
 ## 4.2 Step 2b: assess each capability: reuse, wrap, extend or build
 
-This is the guide's "Reuse before you build" ([2.2](../../../docs/translator-skills/writing-translator-skills.md#22-a-shared-test-library-implementing-the-helper-specs-must)) applied to every row. For each row, record the status (`present`, `partial`, `missing`, `n/a`), the evidence (file and symbol, or what you searched for), and the **approach**:
+This is the guide's "Reuse before you build" ([2.2](../../../docs/writing-uts-spec-translator-skills.md#22-a-shared-test-library-implementing-the-helper-specs-must)) applied to every row. For each row, record the status (`present`, `partial`, `missing`, `n/a`), the evidence (file and symbol, or what you searched for), and the **approach**:
 
 | Approach | When |
 |---|---|
@@ -60,22 +60,22 @@ Where a design question can only be answered by a production change, it becomes 
 
 ## 4.4 Step 2d: design the wait and assertion helpers
 
-Design these against the async and concurrency model from P-09 to P-12 and the existing helpers from P-17. For each, record the native symbol and whether you reuse an existing helper (only if it already meets the requirements), wrap it, or build it. The requirements are in the sources below; the self-tests that prove them (guide [2.7](../../../docs/translator-skills/writing-translator-skills.md#27-harness-smoke-tests-and-self-tests-must)) are in [5.2](phase-3-build-harness.md#52-step-3b-build-in-order-with-acceptance-checks), rows 2, 4 and 7.
+Design these against the async and concurrency model from P-09 to P-12 and the existing helpers from P-17. For each, record the native symbol and whether you reuse an existing helper (only if it already meets the requirements), wrap it, or build it. The requirements are in the sources below; the self-tests that prove them (guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must)) are in [5.2](phase-3-build-harness.md#52-step-3b-build-in-order-with-acceptance-checks), rows 2, 4 and 7.
 
 | Helper | Requirements |
 |---|---|
-| `AWAIT_STATE` (connection and channel) | guide [5.7](../../../docs/translator-skills/writing-translator-skills.md#57-waits-must-catch-events); `writing-test-specs.md` "State Transitions" |
+| `AWAIT_STATE` (connection and channel) | guide [5.7](../../../docs/writing-uts-spec-translator-skills.md#57-waits-must-catch-events); `writing-test-specs.md` "State Transitions" |
 | `poll_until`, `poll_until_success` | `writing-test-specs.md`; `uts/README.md`; guide 5.7; `writing-derived-tests.md` "No real timers in unit tests" (deadlines) |
-| `process_pending_events()` | `uts/README.md`; guide [2.6](../../../docs/translator-skills/writing-translator-skills.md#26-understand-the-sdks-concurrency-model-must) |
-| Wall-clock timeout wrapper | `writing-derived-tests.md` "Integration timeouts are wall-clock"; guide [5.6](../../../docs/translator-skills/writing-translator-skills.md#56-time-and-waiting) |
-| Fake clock driver (`enable_fake_timers`, `ADVANCE_TIME`) | guide [2.1](../../../docs/translator-skills/writing-translator-skills.md#21-sdk-test-hooks-must), [5.6](../../../docs/translator-skills/writing-translator-skills.md#56-time-and-waiting); covers every time source in P-11 |
+| `process_pending_events()` | `uts/README.md`; guide [2.6](../../../docs/writing-uts-spec-translator-skills.md#26-understand-the-sdks-concurrency-model-must) |
+| Wall-clock timeout wrapper | `writing-derived-tests.md` "Integration timeouts are wall-clock"; guide [5.6](../../../docs/writing-uts-spec-translator-skills.md#56-time-and-waiting) |
+| Fake clock driver (`enable_fake_timers`, `ADVANCE_TIME`) | guide [2.1](../../../docs/writing-uts-spec-translator-skills.md#21-sdk-test-hooks-must), [5.6](../../../docs/writing-uts-spec-translator-skills.md#56-time-and-waiting); covers every time source in P-11 |
 | Thread-safe capture, log sink, caller-attributed failures | guide 2.2 |
-| `assertContainsInOrder` | guide [6.7](../../../docs/translator-skills/writing-translator-skills.md#67-notes-on-the-catalogue) |
+| `assertContainsInOrder` | guide [6.7](../../../docs/writing-uts-spec-translator-skills.md#67-notes-on-the-catalogue) |
 
 ## 4.5 Step 2e: design the sandbox and proxy helpers
 
-- **Sandbox** (guide [2.3](../../../docs/translator-skills/writing-translator-skills.md#23-sandbox-provisioning-and-fixtures-must-for-integration-tiers)): check the native integration tests' provisioning (P-18) against guide 2.3; reuse or wrap it if it meets every point, otherwise build `SandboxApp`. Decide how clients are pointed at the sandbox and how per-run vs per-test provisioning maps to the runner's suite fixtures (P-03).
-- **Proxy** (guide [2.4](../../../docs/translator-skills/writing-translator-skills.md#24-the-proxy-must-for-the-proxy-tier), [`proxy.md`](../../../docs/proxy.md)): design `ProxyManager` and `ProxySession` to every point of guide 2.4. Checking that the pinned release has a binary for every developer OS in P-07 is a network read: ask first (**STOP-6**), or mark it unverified until Phase 3 row 10 and plan platform gating where it can't run. Include every operational requirement in guide 2.4. Default the session's endpoint to the sandbox, because two corpus specs pass only `rules:` (guide [6.7](../../../docs/translator-skills/writing-translator-skills.md#67-notes-on-the-catalogue)). Decide auth through the proxy (D-18).
+- **Sandbox** (guide [2.3](../../../docs/writing-uts-spec-translator-skills.md#23-sandbox-provisioning-and-fixtures-must-for-integration-tiers)): check the native integration tests' provisioning (P-18) against guide 2.3; reuse or wrap it if it meets every point, otherwise build `SandboxApp`. Decide how clients are pointed at the sandbox and how per-run vs per-test provisioning maps to the runner's suite fixtures (P-03).
+- **Proxy** (guide [2.4](../../../docs/writing-uts-spec-translator-skills.md#24-the-proxy-must-for-the-proxy-tier), [`proxy.md`](../../../docs/proxy.md)): design `ProxyManager` and `ProxySession` to every point of guide 2.4. Checking that the pinned release has a binary for every developer OS in P-07 is a network read: ask first (**STOP-6**), or mark it unverified until Phase 3 row 10 and plan platform gating where it can't run. Include every operational requirement in guide 2.4. Default the session's endpoint to the sandbox, because two corpus specs pass only `rules:` (guide [6.7](../../../docs/writing-uts-spec-translator-skills.md#67-notes-on-the-catalogue)). Decide auth through the proxy (D-18).
 
 ## 4.6 Step 2f: propose the SDK test hooks
 
@@ -93,7 +93,7 @@ These proposals are presented at STOP-3 and need individual approval at **STOP-4
 ## 4.7 Step 2g: plan placement, harness tests and build order
 
 - **Placement** (guide 2.2, "Placement" and "Recommended layout"): name the harness library and its per-tier directories, the directory and target for shared test-support code (importing no test framework), port-only harness code, and each module's helpers. Put white-box suites, and module helpers they need, where internals are visible (P-14; guide 2.6).
-- **Harness tests:** the per-tier smoke tests and helper self-tests of guide [2.7](../../../docs/translator-skills/writing-translator-skills.md#27-harness-smoke-tests-and-self-tests-must), item by item, for every tier you plan to support. They are permanent and run in CI; they carry no `UTS:` tag and are never copied by the skill; they live outside every directory the mapping will give the resolver as a `targetDir`. Name the command that runs each tier's set plus the common self-tests (guide 2.7 "Selectable"); it goes into the mapping's `harness` entry (D-03). Name the CI job that runs it (5.2 row 13). The acceptance checks in [5.2](phase-3-build-harness.md#52-step-3b-build-in-order-with-acceptance-checks) say what each must prove.
+- **Harness tests:** the per-tier smoke tests and helper self-tests of guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must), item by item, for every tier you plan to support. They are permanent and run in CI; they carry no `UTS:` tag and are never copied by the skill; they live outside every directory the mapping will give the resolver as a `targetDir`. Name the command that runs each tier's set plus the common self-tests (guide 2.7 "Selectable"); it goes into the mapping's `harness` entry (D-03). Name the CI job that runs it (5.2 row 13). The acceptance checks in [5.2](phase-3-build-harness.md#52-step-3b-build-in-order-with-acceptance-checks) say what each must prove.
 - **Build order:** follow the order in 5.2, dropping rows that are `present` or out of scope.
 
 ## 4.8 Step 2h: derive tier feasibility
@@ -105,7 +105,7 @@ Fill a module × tier matrix: for each of `rest`, `realtime`, `objects` and each
 Present `uts-infra-design.md`: the gap table, the helper-spec mappings, the wait-helper design, the sandbox and proxy design, the hook proposals, placement, the build order and the tier matrix. Ask the user to choose:
 
 - **(a) Build the missing harness now**, all or a named subset. Recommend this option (the skill depends on the harness), but the user chooses. Continue with Phase 3.
-- **(b) Plan it only.** Keep the build order, with each row's acceptance check and size, as the plan in `uts-infra-design.md`. Phase 3 is skipped for the planned rows; the skill is generated for the tiers that are already ready, and the unready tiers stay in the mapping but the skill must refuse them with a message naming the missing harness piece, as guide [4, step C](../../../docs/translator-skills/writing-translator-skills.md#phase-1-selection-steps-0-and-af) requires (see the readiness data in [7.1](phase-5-generate-skill.md#71-step-5a-create-the-layout-and-the-mapping-file)).
+- **(b) Plan it only.** Keep the build order, with each row's acceptance check and size, as the plan in `uts-infra-design.md`. Phase 3 is skipped for the planned rows; the skill is generated for the tiers that are already ready, and the unready tiers stay in the mapping but the skill must refuse them with a message naming the missing harness piece, as guide [4, step C](../../../docs/writing-uts-spec-translator-skills.md#phase-1-selection-steps-0-and-af) requires (see the readiness data in [7.1](phase-5-generate-skill.md#71-step-5a-create-the-layout-and-the-mapping-file)).
 - **(c) Scope the skill to the tiers possible today.** As (b), without the plan.
 
 Under (b) and (c), G-19 and G-20 for every tier the skill will offer can't be planned or scoped out; Phase 3 and STOP-7 still run for them.
