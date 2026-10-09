@@ -200,7 +200,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTS1 | Channels collection accessible via RealtimeClient | Yes — `realtime/unit/channels/channels_collection.md` |
 | RTS2 | Methods to check existence and iterate | Yes — `realtime/unit/channels/channels_collection.md` |
 | RTS3 | Get function (RTS3a–RTS3c1) | Yes — `realtime/unit/channels/channels_collection.md` (RTS3a), `realtime/unit/channels/channel_options.md` (RTS3b, RTS3c, RTS3c1) |
-| RTS4 | Release function (RTS4b–RTS4d) | Yes — `realtime/unit/channels/channels_collection.md` |
+| RTS4 | Release function (RTS4c–RTS4e) | Yes — `realtime/unit/channels/channels_collection.md` |
 | RTS5 | GetDerived function (RTS5a–RTS5a2) | Yes — `realtime/unit/channels/channel_options.md` |
 
 ### RealtimeChannel
