@@ -920,7 +920,7 @@ Spec changes aren't the only drift. A skill written by hand, by an earlier versi
 3. **Upgrade in place.** Keep what conforms: rules, names, notes, hand-maintained mapping entries and harness pieces. Close the chosen items one at a time, and compare against the results from before the change (resolver output, audit results, harness tests, and the existing UTS-derived tests and their compile status).
 4. **Regenerate the skill from scratch** only if the owner chooses to. Change existing UTS-derived tests only by regenerating them through the skill (re-sync, 9.2), never by hand-editing them.
 
-The [procedure's upgrade mode](../skills/uts-to-lang-skill-creator/references/upgrade-existing-skill.md#11-upgrade-mode-audit-and-upgrade-an-existing-skill) does this; the procedure starts every run by detecting the repo's skills, their origin, harness and UTS-tagged tests, and recommends creating or upgrading. A repo's own skill and harness are its inputs, not [reference implementations](#reference-implementations-last-resort), even in ably-cocoa and ably-java.
+The [procedure's upgrade mode](../skills/uts-to-lang-skill-creator/references/upgrade-existing-skill.md#11-upgradefix-full-gap-audit) does this; the procedure starts every run by detecting the repo's skills, their origin, harness and UTS-tagged tests, and recommends creating or upgrading. A repo's own skill and harness are its inputs, not [reference implementations](#reference-implementations-last-resort), even in ably-cocoa and ably-java.
 
 ---
 

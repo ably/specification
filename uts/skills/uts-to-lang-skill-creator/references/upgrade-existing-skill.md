@@ -1,4 +1,4 @@
-# 11. Upgrade mode: audit and upgrade an existing skill
+# 11. Upgrade/Fix: full gap audit
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 

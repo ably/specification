@@ -158,7 +158,7 @@ Record the answer as D-27, with the state class.
 | Choice | D-27 | Path |
 |---|---|---|
 | Create (S0, S1) | `create` | Phase 1 (STOP-2, then STOP-14) through Phase 7. Records at `.claude/skills/uts-to-<lang>/generation/`. For S1, P-20 records the existing tests and harness, and D-03, D-06 and D-07 are proposed to match them ([11.1](upgrade-existing-skill.md#111-when-this-mode-applies)) |
-| Upgrade/Fix, full gap audit (S3, or S2 by choice) | `upgrade: full audit` | [Section 11](upgrade-existing-skill.md#11-upgrade-mode-audit-and-upgrade-an-existing-skill): U1 alongside Phase 1, STOP-2, STOP-14, U2 and STOP-15, then 11.5 and 11.6, then Phase 7 |
+| Upgrade/Fix, full gap audit (S3, or S2 by choice) | `upgrade: full audit` | [Section 11](upgrade-existing-skill.md#11-upgradefix-full-gap-audit): U1 alongside Phase 1, STOP-2, STOP-14, U2 and STOP-15, then 11.5 and 11.6, then Phase 7 |
 | Upgrade/Fix, diff-driven (S2) | `upgrade: diff-driven` | [Section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven): the recorded state, a scoped Phase 1, STOP-2, STOP-14, the detected changes as STOP-15 items, the targeted phases, Phase 7. It hands off to the full audit when the checklist changed or the user asks |
 | S4: Upgrade/Fix one named candidate | `upgrade: diff-driven` if its origin is `creator-records`, else `upgrade: full audit` | As the matching row above, for that skill only (rerun Orient with `--skill-dir` to show its own State summary) |
 | S4: Repair the installs first | — | Propose each change (relink, reconcile copies; never delete without asking), apply only the ones the user approves, then rerun Orient |
