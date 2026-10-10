@@ -30,7 +30,7 @@ The harness and the skill are **one deliverable** (guide [section 2](../../docs/
 
 Do this first, in every run, before any phase. It is read-only and quick: no build, no test, no network, no file written. [references/orient.md](references/orient.md) (section 13) has the detail.
 
-1. Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. It runs `check_repo_eligibility.py`, `spec_clone_info.py`, `inspect_existing_skill.py`, `detect_liveobjects.py` and `detect_capabilities.py`, then classifies the repo.
+1. Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. It runs `spec_clone_info.py` (which resolves the spec clone the others read), `check_repo_eligibility.py`, `inspect_existing_skill.py`, `detect_liveobjects.py` and `detect_capabilities.py`, then classifies the repo.
 2. **Eligibility (STOP-16).** This procedure supports only the Ably Pub/Sub SDK repositories on the whitelist in `assets/eligibility.json` (current and legacy names), checked across all remotes; every other repository is rejected, and adding a new SDK repository means adding it there ([13.2](references/orient.md#132-repository-eligibility-stop-16)).
     - On a reject, show the script's message exactly and end the run. There is no override.
     - On an ask (a fork, no remote, too few source files to judge), ask the question first.

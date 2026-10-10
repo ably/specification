@@ -571,7 +571,7 @@ def main(argv):
                     + side_text + (f"; source: {prof['source']}" if override else ""))
         result = {
             "ok": True, "repo": str(repo),
-            "namesSource": loaded["source"], "specRevision": loaded.get("revision"),
+            "namesSource": loaded["source"], "specClone": loaded.get("specClone"), "specRevision": loaded.get("revision"),
             "namesFrom": {r: v.get("from", [])[:1] for r, v in loaded["capability"]["roles"].items()},
             "dataFile": loaded["data"], "warnings": loaded["warnings"],
             "excluded": {"files": res["skipped"], "submodules": res["submodules"]},

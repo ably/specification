@@ -503,7 +503,7 @@ def main(argv):
             "repo": str(repo),
             "head": head,
             "listing": listing,
-            "namesSource": loaded["source"], "specRevision": loaded.get("revision"),
+            "namesSource": loaded["source"], "specClone": loaded.get("specClone"), "specRevision": loaded.get("revision"),
             "namesFrom": names.get("from", []), "dataFile": loaded["data"], "warnings": loaded["warnings"],
             "summary": summary,
             "recommendation": rec,

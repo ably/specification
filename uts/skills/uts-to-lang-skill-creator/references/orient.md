@@ -26,13 +26,13 @@ Contents:
 
 Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass the spec clone the user named, if any. Add `--skill-dir <path>` when the user names the skill, and `--records <dir>` when they say where its working records are. The script runs this skill's read-only scripts in order and prints one JSON object:
 
-1. `check_repo_eligibility.py`: on a reject, nothing else runs.
-2. `spec_clone_info.py`: settles STOP-1 ([2.6](../SKILL.md#26-pin-the-spec-clone)).
+1. `spec_clone_info.py`: resolves the spec clone every other script reads, and settles STOP-1 ([2.6](../SKILL.md#26-pin-the-spec-clone)).
+2. `check_repo_eligibility.py`: on a reject, nothing else runs.
 3. `inspect_existing_skill.py`: skills, their origin and records, harness, UTS-tagged tests.
 4. `detect_liveobjects.py`: a one-line LiveObjects verdict.
 5. `detect_capabilities.py`: the REST and Realtime capability profile, the sides, and the suggested scope (13.8), with eligibility's `capabilityOverride` if the whitelist gives one.
 
-The spec clone (the argument, else the one `spec_clone_info.py` found) is passed to the eligibility check and to both detectors, which read their names from it (13.8). A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else.
+The clone `spec_clone_info.py` resolved (the argument, walked up to the clone root, else `UTS_SPEC_CLONE`, else the clone this skill is installed from) is passed to the eligibility check and to both detectors, which read their names from it (13.8); the State summary's Spec clone line shows that path. An explicit path (the argument or `UTS_SPEC_CLONE`) that isn't in a clone stops Orient with `NOT_A_SPEC_CLONE`: it is never replaced by another clone. A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else.
 
 The JSON has `state` (class, re-entry, reasons, recommended option, options) and `stateSummaryText`. It gives a structured result that is the same under Claude Code and Codex. The facts behind it are in the other fields; `--full` adds the raw script outputs.
 

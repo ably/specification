@@ -5,13 +5,14 @@ Usage: orient.py <repo> [--spec-clone PATH] [--skill-dir PATH] [--records PATH]
                   [--include-submodules] [--full]
 
 Runs, in order and by subprocess, this skill's read-only scripts:
-  1. check_repo_eligibility.py  (STOP-16; on reject nothing else runs)
-  2. spec_clone_info.py         (STOP-1 preconditions)
+  1. spec_clone_info.py         (resolves the spec clone the others read; STOP-1 preconditions;
+                                a bad explicit path stops Orient with NOT_A_SPEC_CLONE)
+  2. check_repo_eligibility.py  (STOP-16; on reject nothing else runs)
   3. inspect_existing_skill.py  (skills, origin, records, harness, UTS-tagged tests)
   4. detect_liveobjects.py      (the one-line LiveObjects verdict; STOP-14 decides later)
   5. detect_capabilities.py     (REST and Realtime capability profile, sides and scope; STOP-17, D-31),
                                 with eligibility's `capabilityOverride` (from the whitelist) if any
-The spec clone (the argument, else the one spec_clone_info.py found) is passed
+The spec clone spec_clone_info.py resolved is passed
 to the scripts that read names from the spec; if they fall back to the data
 file's names (`namesSource` "fallback"), the State summary says so loudly, in
 its first line. The current capability profile is compared with the one the
@@ -358,16 +359,20 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
     lines += [
         f"Repo         {repo_name} @ {(head or '?')[:8]} ({'dirty' if dirty else 'clean'}); languages: {langs}",
         eligibility_line(elig),
-        f"Spec clone   {(spec or {}).get('specClone')} @ {((spec or {}).get('sha') or '?')[:8]} "
-        f"({'dirty' if (spec or {}).get('dirty') else 'clean'}); found by {(spec or {}).get('foundBy')}; "
-        f"creator {(spec or {}).get('skillVersion')} (matches clone: "
-        f"{ {True: 'yes', False: 'no'}.get((spec or {}).get('skillMatchesClone'), 'unknown')})",
+        (f"Spec clone   {spec.get('specClone')} @ {(spec.get('sha') or '?')[:8]} "
+         f"({'dirty' if spec.get('dirty') else 'clean'}); found by {spec.get('foundBy')}; "
+         f"creator {spec.get('skillVersion')} (matches clone: "
+         f"{ {True: 'yes', False: 'no'}.get(spec.get('skillMatchesClone'), 'unknown')})"
+         if (spec or {}).get("ok") else
+         f"Spec clone   NOT FOUND ({(spec or {}).get('code', 'unknown error')}): ask for its path at STOP-1"),
         "Model        (state the session's model; Opus-class required)",
     ]
     if sources:
         rev = ((caps or lo or {}).get("specRevision") or {}).get("sha")
-        lines.append("Spec names   " + ("from the spec clone's IDL" + (f" @ {rev[:8]}" if rev else
-                                                                        " (revision unknown: not a git checkout)")
+        read = (caps or lo or {}).get("specClone")
+        where = "the spec clone's IDL" if read and read == (spec or {}).get("specClone") else f"the IDL in {read}"
+        lines.append("Spec names   " + (f"from {where}" + (f" @ {rev[:8]}" if rev else
+                                                         " (revision unknown: not a git checkout)")
                                         if sources == {"spec"} else
                                         "FALLBACK, don't rely on the LiveObjects or capability verdicts: "
                                         + "; ".join(dict.fromkeys(names_warnings))))
@@ -480,8 +485,18 @@ def main(argv):
     repo = pathlib.Path(args[0]).expanduser().resolve()
     warnings = []
     try:
-        elig, w = run("check_repo_eligibility.py", str(repo),
-                      *(["--spec-clone", opts["--spec-clone"]] if "--spec-clone" in opts else []))
+        # Resolve the spec clone first, so every script reads the same one; a bad explicit path is an error.
+        spec, w = run("spec_clone_info.py", *([opts["--spec-clone"]] if "--spec-clone" in opts else []))
+        warnings += [w] if w else []
+        if spec and spec.get("code") == "NOT_A_SPEC_CLONE":
+            print(json.dumps({"ok": False, "code": "NOT_A_SPEC_CLONE", "message": spec.get("message"),
+                              "missing": spec.get("missing"),
+                              "fix": "pass the path of a local ably/specification clone (or a directory inside "
+                                     "one) with --spec-clone, or correct UTS_SPEC_CLONE, then run again"}, indent=2))
+            return 1
+        clone = spec["specClone"] if spec and spec.get("ok") else None
+        clone_args = ["--spec-clone", clone] if clone else []
+        elig, w = run("check_repo_eligibility.py", str(repo), *clone_args)
         warnings += [w] if w else []
         if data_file_error(elig):
             return 1
@@ -493,10 +508,6 @@ def main(argv):
             result.update(state=state, stop16=elig.get("message"), stateSummaryText=elig.get("message"))
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 0
-        spec, w = run("spec_clone_info.py", *([opts["--spec-clone"]] if "--spec-clone" in opts else []))
-        warnings += [w] if w else []
-        clone = opts.get("--spec-clone") or ((spec or {}).get("specClone") if (spec or {}).get("ok") else None)
-        clone_args = ["--spec-clone", str(clone)] if clone else []
         insp_args = [str(repo)] + ([opts["--skill-dir"]] if "--skill-dir" in opts else []) + \
             (["--records", opts["--records"]] if "--records" in opts else [])
         insp, w = run("inspect_existing_skill.py", *insp_args)
@@ -519,6 +530,10 @@ def main(argv):
                 warnings += [f"{name}: {x}" for x in out.get("warnings", [])]
         caps = caps if caps and caps.get("ok") else None
         lo = lo if lo and lo.get("ok") else None
+        used = {out.get("specClone") for out in (lo, caps) if out and out.get("specClone")}
+        if clone and used - {clone}:
+            warnings.append(f"the detectors read names from {', '.join(sorted(used - {clone}))}, not the spec clone "
+                            f"{clone}")
         skills = [skill_view(s, repo) for s in insp.get("skills", [])]
         others = None
         if "--skill-dir" in opts:  # classify only the named skill; list the others under Problems

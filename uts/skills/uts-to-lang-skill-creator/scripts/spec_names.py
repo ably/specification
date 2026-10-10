@@ -83,6 +83,10 @@ class DataFileError(ValueError):
     """A data file in assets/ is missing, isn't valid JSON, or has the wrong shape. Never falls back."""
 
 
+class SpecCloneError(ValueError):
+    """An explicit spec clone path (--spec-clone or UTS_SPEC_CLONE) isn't an ably/specification clone. Never falls back."""
+
+
 def _strip(value):
     if isinstance(value, dict):
         return {k: _strip(v) for k, v in value.items() if not k.startswith("_")}
@@ -141,12 +145,26 @@ def load_data():
     return load_json(DATA, DATA_SHAPE)
 
 
+def _clone_root(path):
+    """The spec clone containing path (path itself or a parent, e.g. <clone>/uts/objects), or None."""
+    path = pathlib.Path(path).expanduser().resolve()
+    return next((p for p in [path, *path.parents] if (p / "specifications" / "features.md").is_file()), None)
+
+
 def locate(spec_clone=None):
-    """The spec clone: the argument, else UTS_SPEC_CLONE, else the clone this skill lives in."""
-    for cand in (spec_clone, os.environ.get("UTS_SPEC_CLONE"), str(HERE.parents[3])):
-        if cand and (pathlib.Path(cand).expanduser() / "specifications" / "features.md").is_file():
-            return pathlib.Path(cand).expanduser().resolve()
-    return None
+    """The spec clone: the argument, else UTS_SPEC_CLONE, else the clone this skill lives in.
+
+    A path inside a clone is walked up to its root. An explicit path (the argument, or UTS_SPEC_CLONE when there is
+    no argument) that isn't in a clone raises SpecCloneError: it is never replaced by another candidate.
+    """
+    for how, cand in (("--spec-clone", spec_clone), ("UTS_SPEC_CLONE", os.environ.get("UTS_SPEC_CLONE"))):
+        if cand and str(cand).strip():
+            root = _clone_root(cand)
+            if root is None:
+                raise SpecCloneError(f"{cand} (from {how}) isn't an ably/specification clone: no "
+                                     "specifications/features.md in it or a parent directory")
+            return root
+    return _clone_root(HERE.parents[3])
 
 
 def revision(clone):
@@ -338,8 +356,11 @@ def load(spec_clone=None):
 
 
 def error_code(exc, default):
-    """The structured-error code a script reports: DATA_FILE_ERROR for a bad data file, else its own."""
-    return "DATA_FILE_ERROR" if isinstance(exc, DataFileError) else default
+    """The structured-error code a script reports: DATA_FILE_ERROR for a bad data file, NOT_A_SPEC_CLONE for a bad
+    explicit spec clone path, else its own."""
+    if isinstance(exc, DataFileError):
+        return "DATA_FILE_ERROR"
+    return "NOT_A_SPEC_CLONE" if isinstance(exc, SpecCloneError) else default
 
 
 def main(argv):

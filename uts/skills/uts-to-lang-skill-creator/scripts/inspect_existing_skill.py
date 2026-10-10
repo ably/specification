@@ -31,14 +31,18 @@ It never runs the skill's scripts and never writes. Each check names the
 acceptance-checklist item it informs; a "pass" is a regex hit, not a review:
 confirm every row by reading the files. Prints exactly one JSON object.
 """
-import collections, filecmp, json, os, pathlib, re, subprocess, sys
+import collections, filecmp, importlib.util, json, os, pathlib, re, subprocess, sys
+
+_spec = importlib.util.spec_from_file_location("detect_liveobjects",
+                                               pathlib.Path(__file__).resolve().parent / "detect_liveobjects.py")
+lo = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lo)
 
 SKILL_ROOTS = [".claude/skills", ".agents/skills", ".codex/skills", ".cursor/skills", ".github/skills", "skills"]
 SELF = "uts-to-lang-skill-creator"
 NON_PORTABLE = ["argument-hint", "model", "disable-model-invocation", "user-invocable", "when_to_use", "context",
                 "agent", "hooks", "effort", "paths", "shell"]
-SOURCE_EXT = {".cs", ".fs", ".py", ".go", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".rb", ".dart", ".rs",
-              ".java", ".kt", ".kts", ".swift", ".m", ".mm", ".h"}
+SOURCE_EXT = lo.SOURCE_EXT  # one list for every script
 EXCLUDED_DIRS = {".git", "node_modules", "vendor", "Pods", "Carthage", ".build", "build", "dist", "out", "target",
                   "bin", "obj", "DerivedData", ".gradle", "__pycache__", ".venv", "venv", ".claude", ".agents",
                   ".codex", ".cursor"}
