@@ -43,7 +43,7 @@ Statements about the existing skills and harnesses describe them when this guide
 
 ### What a translator skill is
 
-A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and notes) that an agent (Claude Code or Codex) follows to turn the pseudocode specs in one UTS module directory (`uts/rest`, `uts/realtime`, `uts/objects`) into runnable tests in your SDK's test suite. It optionally runs them and diagnoses failures. It is built on, and delivered with, a harness in the same repo: the native test library that implements the UTS helper specs, with its own smoke tests and self-tests (section 2). Translator skills, and the procedure that builds them, are for Ably Pub/Sub SDK repositories (`ably-<lang>`, or its renamed form `ably-pubsub-<lang>`).
+A translator skill is a packaged procedure (`SKILL.md` plus a few scripts and notes) that an agent (Claude Code or Codex) follows to turn the pseudocode specs in one UTS module directory (`uts/rest`, `uts/realtime`, `uts/objects`) into runnable tests in your SDK's test suite. It optionally runs them and diagnoses failures. It is built on, and delivered with, a harness in the same repo: the native test library that implements the UTS helper specs, with its own smoke tests and self-tests (section 2). Translator skills, and the procedure that builds them, are for Ably Pub/Sub SDK repositories. The skill creator accepts only the repositories on its whitelist (current and legacy names, in [`assets/eligibility.json`](../skills/uts-to-lang-skill-creator/assets/eligibility.json)); adding a new SDK repository means adding it there.
 
 ### How it relates to the other UTS docs
 

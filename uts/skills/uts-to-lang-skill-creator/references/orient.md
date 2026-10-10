@@ -30,7 +30,7 @@ Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass t
 2. `spec_clone_info.py`: settles STOP-1 ([2.6](../SKILL.md#26-pin-the-spec-clone)).
 3. `inspect_existing_skill.py`: skills, their origin and records, harness, UTS-tagged tests.
 4. `detect_liveobjects.py`: a one-line LiveObjects verdict.
-5. `detect_capabilities.py`: the REST and Realtime capability profile, the sides, and the suggested scope (13.8), with eligibility's `capabilityOverride` if the repo is allow-listed.
+5. `detect_capabilities.py`: the REST and Realtime capability profile, the sides, and the suggested scope (13.8), with eligibility's `capabilityOverride` if the whitelist gives one.
 
 The spec clone (the argument, else the one `spec_clone_info.py` found) is passed to the eligibility check and to both detectors, which read their names from it (13.8). A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else.
 
@@ -47,37 +47,32 @@ If the user's request conflicts with the state (for example "create a skill" whe
 
 ## 13.2 Repository eligibility (STOP-16)
 
-This procedure applies only to Ably Pub/Sub SDK repositories. `check_repo_eligibility.py <repo> [--spec-clone P]` decides from the repo's remotes, all of them, not only `origin`. Its rules are data in [`assets/eligibility.json`](../assets/eligibility.json) (owner, name pattern, deny-list, allow-list, canonical and planned names, the definition gate's threshold): when Ably adds, renames or retires a repository, update that file, not the script.
+This procedure applies only to the Ably Pub/Sub SDK repositories on the whitelist in [`assets/eligibility.json`](../assets/eligibility.json). Every other repository is rejected. Adding a new SDK repository means adding its name there, not changing the script. `check_repo_eligibility.py <repo> [--spec-clone P]` decides from the repo's remotes, all of them, not only `origin`.
 
-- **Name rule.** A `github.com/ably/<name>` remote whose name matches `^ably-(pubsub-[a-z0-9]+|[a-z0-9]+)$` (case-insensitive, without `.git` or a trailing `/`) is eligible.
-  - Ably is renaming its SDK repositories from `ably-<lang>` to `ably-pubsub-<lang>` (`ably-js` is now `ably-pubsub-js`, and `ably-java` is now `ably-pubsub-java`). Both names are the same repository, and both are accepted. Old clones keep the old URL, which GitHub redirects.
-  - `nameForm` reports `legacy`, `pubsub` or `allow-list`.
+- **Whitelist.** A `github.com/ably/<name>` remote is eligible when `<name>` is in `repositories` (case-insensitive, without `.git` or a trailing `/`).
+  - The list holds both names of a renamed repository: Ably is renaming its SDK repositories from `ably-<lang>` to `ably-pubsub-<lang>` (`ably-js` is now `ably-pubsub-js`), and old clones keep the old URL, which GitHub redirects.
+  - It also holds the target of a rename in preparation, so a clone keeps working after the rename.
+  - `nameForm` reports `current`, `legacy` (a key of `canonical`) or `planned` (a value of `plannedRename`).
   - The script parses HTTPS, `ssh://` and scp-style (`git@github.com:ably/ably-js.git`) URLs, with the scheme and host in any case, resolves SSH host aliases from the local ssh config, and redacts credentials.
-- **Canonical names**, reported only. `canonical` gives a renamed repository's current name: `ably-js`, `ably-java`, `ably-dotnet`, `ably-php`, `ably-python`, `ably-ruby`, `ably-flutter` and `ably-dart` are now `ably-pubsub-<lang>`, and `ably-ios` is now `ably-cocoa`. `plannedRename` gives a rename in preparation (`ably-cocoa` → `ably-pubsub-cocoa`, `ably-go` → `ably-pubsub-go`); either name is accepted. The one exception: a legacy name whose current name fails the name rule is rejected (`NOT_PUBSUB_SDK_NAME`). `ably-nativescript` is now `ably-js-nativescript`, a wrapper that re-exports ably-js.
-- **Deny-list** (legacy single-token names only; `ably-pubsub-<x>` is never denied, but still has to pass the definition gate):
-  - `common`, `specification`, `spec`, `cli`, `docs`, `ui`, `boomer`, `chat`, `spaces`, `objects`, `liveobjects`, `livesync`, `sandbox`, `proxy`;
-  - `examples`, `example`, `website`, `www`, `laravel`, `terraform`, `pubsub`, `labs`, `demo`, `demos`, `dashboard`, `infra`, `control`, `mcp`, `status`;
-  - `benchmark`, `benchmarks`, `test`, `tests`, `tools`, `scripts`, `ai`, `asset`, `assets`;
-  - `brand`, `comply`, `jmeter`, `os`, `research`, `rss`, `scan`, `server`, `titanium`, `roku`, `nativescript`. These are tools, docs repositories and stubs that the name rule alone accepts. `ably-jmeter`, `ably-os` and `ably-server` *use* a client, so a usage-based check would accept them. `ably-titanium` is a README-only stub, and `ably-roku` implements no spec. `server` blocks only `ably-server`, never a server door inside an SDK repository (13.8). `nativescript` is a second guard for the wrapper above.
-
-  These are known non-SDK `ably-<x>` repositories. Names with more hyphens, such as `ably-chat-swift`, `ably-chat-kotlin` and `ably-ai-transport-js`, already fail the name rule.
-- **Allow-list:** `ably-ruby-rest` (the REST-only Ruby SDK) and its renamed form `ably-pubsub-ruby-rest`. These are explicit exceptions to the name rule. Each carries a `capabilityOverride` of REST `full` and realtime `absent`. The repository is a gem wrapping an `ably-ruby` git submodule whose entry point loads only `ably/rest`, so its own tree defines no client, and neither the gate nor the capability detector can see one. The override:
+  - The data file is checked on load: every name in `capabilityOverride`, `canonical` and `plannedRename` must be in `repositories`.
+- **Canonical names**, reported only. `canonical` gives a renamed repository's current name (`ably-java` → `ably-pubsub-java`, `ably-ios` → `ably-cocoa`). `plannedRename` gives a rename in preparation (`ably-cocoa` → `ably-pubsub-cocoa`).
+- **Capability override.** `ably-ruby-rest`, the REST-only Ruby SDK, carries a `capabilityOverride` of REST `full` and realtime `absent`. The repository is a gem wrapping an `ably-ruby` git submodule whose entry point loads only `ably/rest`, so its own tree defines no client, and neither the gate nor the capability detector can see one. The override:
   - is reported as `capabilityOverride`;
   - satisfies the definition gate;
-  - is passed by Orient to `detect_capabilities.py --capability-override`, whose profile then shows `source: override (allow-list)`, and drops the detected reasons for each level it sets;
+  - is passed by Orient to `detect_capabilities.py --capability-override`, whose profile then shows `source: override (whitelist)`, and drops the detected reasons for each level it sets;
   - is still confirmed by the user at STOP-17.
-- **Definition gate**, checked after the name passes. A REST or Realtime client entry point must be *defined* in non-test source, not merely used. The gate counts only the scan's `gateTypes` (`detect_capabilities.py`, 13.8): client types declared in the repo (public or internal, including Go type aliases), plus door factories on a device or server side. It excludes functions (`def`, `func`, `fun`, `fn`, or any function that only returns or constructs another library's client), bindings (`var`, `let`, `const`, `val`, properties), and code under an `example(s)`, `sample(s)` or `demo(s)` path segment. Load tools and servers that import an SDK use a client but define none. `fingerprint` reports `sourceFiles`, `buildFiles`, `testRoot`, `clientDefinitions` (REST and Realtime) and `gate`. With no definition:
+- **Definition gate**, a secondary check after the whitelist. A REST or Realtime client entry point must be *defined* in non-test source, not merely used. The gate counts only the scan's `gateTypes` (`detect_capabilities.py`, 13.8): client types declared in the repo (public or internal, including Go type aliases), plus door factories on a device or server side. It excludes functions (`def`, `func`, `fun`, `fn`, or any function that only returns or constructs another library's client), bindings (`var`, `let`, `const`, `val`, properties), and code under an `example(s)`, `sample(s)` or `demo(s)` path segment. `fingerprint` reports `sourceFiles`, `buildFiles`, `testRoot`, `clientDefinitions` (REST and Realtime) and `gate`. With no definition:
   - with at least `definitionGate.minSourceFilesToReject` (20) non-test source files, the decision is reject, `NO_CLIENT_DEFINITION`;
   - with fewer, it is ask, `NO_SDK_FINGERPRINT`: the wrong path, or a sparse checkout?
-- **Eligibility isn't scope.** Only an allow-list override touches the capability profile. The scope comes from the SDK's capabilities ([13.8](#138-capabilities-and-scope-stop-17-d-31)).
+- **Eligibility isn't scope.** Only a capability override touches the capability profile. The scope comes from the SDK's capabilities ([13.8](#138-capabilities-and-scope-stop-17-d-31)).
 
 | `decision` (`code`) | What you do |
 |---|---|
 | `accept` (`ELIGIBLE`) | Continue; nothing to ask. Show `canonical`, `plannedRename` and `capabilityOverride` in the State summary |
-| `reject` (`NOT_PUBSUB_SDK_NAME`, `DENIED_NON_SDK`, `NOT_ABLY_REPO`, `NO_CLIENT_DEFINITION`) | **STOP-16, hard stop.** Show `message` exactly, for example "uts-to-lang-skill-creator currently supports only Ably Pub/Sub SDK repositories (ably-pubsub-&lt;lang&gt; or ably-&lt;lang&gt;). No workflow exists yet for ably/ably-chat-swift; the skill creator needs to be upgraded to support it." Then end the run. There is no override |
+| `reject` (`NOT_WHITELISTED`, `NOT_ABLY_REPO`, `NO_CLIENT_DEFINITION`) | **STOP-16, hard stop.** Show `message` exactly, for example "uts-to-lang-skill-creator supports only the Ably Pub/Sub SDK repositories listed in assets/eligibility.json. ably/ably-chat-swift isn't one of them; supporting it requires updating the skill creator." Then end the run. There is no override |
 | `ask` (`FORK_CONFIRM`) | **STOP-16.** Only a fork's remote matches (`<user>/ably-js`). Ask the user to confirm it is a fork of `ably/<name>`; record the answer in the decision log once records exist |
 | `ask` (`NO_REMOTE`, `NON_GITHUB_REMOTE`, `NOT_GIT_REPO`) | **STOP-16.** Ask which `github.com/ably` repository this is, and check the answer by the same rule. Adding a remote is the user's action |
-| `ask` (`NO_SDK_FINGERPRINT`) | **STOP-16.** The name passes, but the few source files define no client: is this the right path, or a sparse checkout? |
+| `ask` (`NO_SDK_FINGERPRINT`) | **STOP-16.** The repository is on the whitelist, but the few source files define no client: is this the right path, or a sparse checkout? |
 
 ## 13.3 State classes
 
@@ -114,12 +109,12 @@ Show `stateSummaryText`, completed with the session's model. Its layout:
 ```
 WARNING      SPEC NAMES FALLBACK: the spec clone's IDL wasn't parsed; the LiveObjects and capability verdicts below are unreliable; settle it at STOP-1 first     (only on fallback)
 Repo         <name> @ <sha8> (clean|dirty); languages: <counts>
-Eligibility  accept: <owner>/<repo> via <remote> (<legacy|pubsub|allow-list> name)[; canonical <name>][; planned rename <name>][; capability override rest <level>, realtime <level>]
+Eligibility  accept: <owner>/<repo> via <remote> (<current|legacy|planned> name)[; canonical <name>][; planned rename <name>][; capability override rest <level>, realtime <level>]
               | ask: <no remote | no github.com remote | not a git repo | a fork? | no client definition in few files>[ <owner>/<repo>] (<reason>); STOP-16
 Spec clone   <path> @ <sha8> (clean|dirty); found by <how>; creator <version> (matches clone: <yes|no|unknown>)
 Model        <name and ID> (Opus-class: yes|no)
 Spec names   from the spec clone's IDL @ <sha8> | from the spec clone's IDL (revision unknown: not a git checkout)  |  FALLBACK, don't rely on the LiveObjects or capability verdicts: <warning>
-Capabilities rest <full|partial|absent> (<clients>); realtime <full|partial|absent|unclear> (<clients>; connection …, channels …, presence …); <WebSocket transport | transport in the wrapped native SDKs | no WebSocket code>[; sides: <side> (rest yes|no, realtime yes|no), …][; source: override (allow-list)]
+Capabilities rest <full|partial|absent> (<clients>); realtime <full|partial|absent|unclear> (<clients>; connection …, channels …, presence …); <WebSocket transport | transport in the wrapped native SDKs | no WebSocket code>[; sides: <side> (rest yes|no, realtime yes|no), …][; source: override (whitelist)]
 Method gaps  advisory, realtime partial (<n>): <spec point> <role>.<member>, …; likely deviations or not-implemented, decided per test, never out of scope     (only when realtime is partial)
 Native SDK   wraps native SDKs over a platform bridge: hooks probably unreachable from the SDK language: unit tier only if hooks exist (P-13); integration and proxy still offered     (only if wrapsNativeSdk)
 Side         <side>: rest <entry points | none>; realtime <entry points | none>     (one line per side; only for an SDK with doors)
@@ -239,7 +234,7 @@ For example, ably-dotnet's 2.0 branch reports core (REST and Realtime), server (
 - **realtime:** `full` (a public client, all three sub-areas present, and transport evidence: WebSocket code, or `wrapsNativeSdk`), `partial`, `absent`, or `unclear` (a client is declared, but it isn't public and no public factory returns it). A weak realtime, `partial` with connection and channels both absent and no REST client (a Python-like SDK whose naming the scan misses, or a bare `Realtime` class with nothing around it), gets scope kind `unclear` too, never `realtime-only` (unless an override sets realtime).
 - **`methodGapsAdvisory`**, only when realtime is `partial`: the spec members of connection, channels and presence that weren't found, with their spec points (for example `RTN13 connection.ping`). Naming variants make it noisy, so it is advisory only.
 - **`wrapsNativeSdk`:** the SDK wraps native SDKs over a platform bridge (a Flutter plugin's `MethodChannel`), so its test hooks are probably unreachable from its own language (P-13). It counts as transport evidence, because the native SDK carries the transport.
-- **`source`:** `detected`, or `override (allow-list)` (13.2).
+- **`source`:** `detected`, or `override (whitelist)` (13.2).
 
 **The scope suggestion.** `scopeSuggestion` has `kind`, `modules`, `unsupported` (module → reason), `capabilityInapplicable` (Test IDs or spec paths), `extraTests` (Test IDs), `undecided` (only when `unclear`) and `confirmAtStop17`. The test lists are derived at run time from the corpus (each test's `Rest(...)` and `Realtime(...)` constructions), so read them from the output, not from this page.
 
@@ -263,7 +258,7 @@ On the current corpus, the lists are:
 
 **Wrappers over native SDKs** (`wrapsNativeSdk`, such as a Flutter plugin). The capability is full, but the hooks live in the wrapped native SDKs. Phase 1 checks whether they are reachable from the SDK's language (P-13); if they aren't, that is a harness gap, and the unit tier is offered only once hooks exist ([4.8](phase-2-design-harness.md#48-step-2h-derive-tier-feasibility)). The integration and proxy tiers are still offered.
 
-**STOP-17** is asked, in the same message as STOP-13 and before the mode options, when `confirmAtStop17` is set or the profile differs from the recorded D-31. `confirmAtStop17` is set when the profile isn't full, is unclear, has sides, wraps native SDKs, comes from an allow-list override, or its names come from the fallback. Otherwise the user confirms the profile with their STOP-13 answer. Show the profile with its evidence, the suggested scope, the `reasons`, and the delta if any. The options are:
+**STOP-17** is asked, in the same message as STOP-13 and before the mode options, when `confirmAtStop17` is set or the profile differs from the recorded D-31. `confirmAtStop17` is set when the profile isn't full, is unclear, has sides, wraps native SDKs, comes from a capability override, or its names come from the fallback. Otherwise the user confirms the profile with their STOP-13 answer. Show the profile with its evidence, the suggested scope, the `reasons`, and the delta if any. The options are:
 
 - (1) accept the suggested scope;
 - (2) correct a capability, giving evidence, and rerun;

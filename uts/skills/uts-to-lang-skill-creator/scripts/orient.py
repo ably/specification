@@ -10,7 +10,7 @@ Runs, in order and by subprocess, this skill's read-only scripts:
   3. inspect_existing_skill.py  (skills, origin, records, harness, UTS-tagged tests)
   4. detect_liveobjects.py      (the one-line LiveObjects verdict; STOP-14 decides later)
   5. detect_capabilities.py     (REST and Realtime capability profile, sides and scope; STOP-17, D-31),
-                                with eligibility's `capabilityOverride` (an allow-listed repo) if any
+                                with eligibility's `capabilityOverride` (from the whitelist) if any
 The spec clone (the argument, else the one spec_clone_info.py found) is passed
 to the scripts that read names from the spec; if they fall back to the data
 file's names (`namesSource` "fallback"), the State summary says so loudly, in
@@ -18,7 +18,7 @@ its first line. The current capability profile is compared with the one the
 skill recorded (inspector `capabilityProfile`: the D-31 line, completed by the
 mapping's `unsupported`/`capabilityInapplicable`): levels, scope kind, unsupported
 modules and side; a difference is `capabilityDelta` and sets `stop17`, as do a
-profile that isn't full, an unclear realtime, an allow-list override, doors
+profile that isn't full, an unclear realtime, a capability override, doors
 (the side question) and a wrapper over native SDKs (section 13.8).
 then classifies the repo state and prints one JSON object with `state` (class,
 re-entry, reasons, recommended option, options), `stateSummaryText` (the State

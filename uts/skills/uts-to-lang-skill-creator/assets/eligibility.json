@@ -1,51 +1,40 @@
 {
-  "_description": "Which repositories the skill creator accepts (STOP-16, section 13.2): read by scripts/check_repo_eligibility.py. Update this file, not the script, when Ably adds, renames or retires a repository. Keys starting with '_' are ignored.",
+  "_description": "The whitelist of Ably Pub/Sub SDK repositories the skill creator accepts, read by scripts/check_repo_eligibility.py (section 13.2); every other repository is rejected. To support a new SDK repository, add its name here.",
   "owner": "ably",
-  "namePattern": "^ably-(pubsub-[a-z0-9]+|[a-z0-9]+)$",
-  "_comment": "namePattern is matched case-insensitively against the remote's repository name without .git. Both the legacy ably-<lang> and the renamed ably-pubsub-<lang> forms are the same repository (GitHub redirects the old URL, and local clones keep it), so both are accepted.",
-  "deny": {
-    "_comment": "Single-token names of known non-SDK ably-<name> repositories that namePattern would accept. Legacy form only: ably-pubsub-<name> isn't denied (the definition gate still applies). Multi-hyphen names (ably-chat-swift, ably-ai-transport-js) already fail namePattern. 'pubsub' because ably-pubsub alone names no language. The second group (from brand on) comes from a survey of the ably GitHub organisation: tools, docs or stubs that a name rule alone would accept.",
-    "_comment-server": "ably-server is an Ably-compatible server written in Go that *uses* the Go SDK. Its name looks like a language, and a usage-based gate would accept it.",
-    "_comment-os": "ably-os is an internal MCP server in TypeScript that uses AblyRealtime; not an SDK.",
-    "_comment-nativescript": "ably-nativescript is the legacy name of ably-js-nativescript, a wrapper that re-exports ably-js and defines no client. canonical maps it to that name (rejected by namePattern); the deny entry is a second guard.",
-    "names": [
-      "common", "specification", "spec", "cli", "docs", "ui", "boomer", "chat", "spaces", "objects", "liveobjects",
-      "livesync", "sandbox", "proxy", "examples", "example", "website", "www", "laravel", "terraform", "pubsub",
-      "labs", "demo", "demos", "dashboard", "infra", "control", "mcp", "status", "benchmark", "benchmarks", "test",
-      "tests", "tools", "scripts", "ai", "asset", "assets",
-      "brand", "comply", "jmeter", "os", "research", "rss", "scan", "server", "titanium", "roku", "nativescript"
-    ]
-  },
-  "allow": {
-    "_comment": "Exceptions to namePattern: Pub/Sub SDK repositories whose names it rejects. Eligibility isn't scope: a capabilityOverride replaces detection only where detection can't see the SDK, and is reported as the profile's source.",
-    "_comment-ably-ruby-rest": "ably-ruby-rest is the REST-only Ruby SDK: a gem wrapping an ably-ruby git submodule, whose entry point loads only ably/rest. Its own tree defines no client, so the definition gate and capability detection find nothing; the override supplies REST full and realtime absent.",
-    "ably-ruby-rest": {
-      "capabilityOverride": { "rest": "full", "realtime": "absent" }
-    },
-    "ably-pubsub-ruby-rest": {
-      "capabilityOverride": { "rest": "full", "realtime": "absent" }
-    }
+  "repositories": [
+    "ably-cocoa", "ably-ios", "ably-pubsub-cocoa",
+    "ably-go", "ably-pubsub-go",
+    "ably-pubsub-dart", "ably-dart",
+    "ably-pubsub-dotnet", "ably-dotnet",
+    "ably-pubsub-flutter", "ably-flutter",
+    "ably-pubsub-java", "ably-java",
+    "ably-pubsub-js", "ably-js",
+    "ably-pubsub-php", "ably-php",
+    "ably-pubsub-python", "ably-python",
+    "ably-pubsub-ruby", "ably-ruby",
+    "ably-ruby-rest",
+    "ably-rust"
+  ],
+  "capabilityOverride": {
+    "_comment": "ably-ruby-rest is a REST-only gem wrapping ably-ruby as a submodule: it defines no client itself, so the override supplies the profile.",
+    "ably-ruby-rest": { "rest": "full", "realtime": "absent" }
   },
   "canonical": {
-    "_comment": "Legacy name -> current name (GitHub redirects the old one), reported as `canonical`. Both names are accepted, except where the current name fails namePattern: ably-nativescript is now ably-js-nativescript, a wrapper, so it is rejected.",
-    "ably-js": "ably-pubsub-js",
-    "ably-java": "ably-pubsub-java",
+    "ably-ios": "ably-cocoa",
+    "ably-dart": "ably-pubsub-dart",
     "ably-dotnet": "ably-pubsub-dotnet",
+    "ably-flutter": "ably-pubsub-flutter",
+    "ably-java": "ably-pubsub-java",
+    "ably-js": "ably-pubsub-js",
     "ably-php": "ably-pubsub-php",
     "ably-python": "ably-pubsub-python",
-    "ably-ruby": "ably-pubsub-ruby",
-    "ably-flutter": "ably-pubsub-flutter",
-    "ably-dart": "ably-pubsub-dart",
-    "ably-ios": "ably-cocoa",
-    "ably-nativescript": "ably-js-nativescript"
+    "ably-ruby": "ably-pubsub-ruby"
   },
   "plannedRename": {
-    "_comment": "Renames in preparation, reported as `plannedRename`: either name is accepted.",
     "ably-cocoa": "ably-pubsub-cocoa",
     "ably-go": "ably-pubsub-go"
   },
   "definitionGate": {
-    "_comment": "After the name rule, a REST or Realtime client entry point must be *defined* in non-test source (not just used, as load tools and servers do). With no definition: reject (NO_CLIENT_DEFINITION) when there are at least minSourceFilesToReject non-test source files, else ask (NO_SDK_FINGERPRINT: wrong path or sparse checkout?). An allow-list capabilityOverride satisfies the gate.",
     "minSourceFilesToReject": 20
   }
 }

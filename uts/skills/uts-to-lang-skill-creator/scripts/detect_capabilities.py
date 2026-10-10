@@ -426,7 +426,7 @@ def profile(res, names, override=None):
                     gaps.append(f"{point or '?'} {role}.{m}")
     source = "detected"
     if override:  # the override's levels win; what was detected for them is kept only as labelled context
-        source = "override (allow-list)"
+        source = "override (whitelist)"
         if "rest" in override:
             rest_reasons = [f"detected before override: {r}" for r in rest_reasons]
         if "realtime" in override:
@@ -434,7 +434,7 @@ def profile(res, names, override=None):
         rest_level, rt_level = override.get("rest", rest_level), override.get("realtime", rt_level)
     reasons += rest_reasons + rt_reasons
     if override:
-        reasons.append(f"capability override from the eligibility allow-list: {override}")
+        reasons.append(f"capability override from the eligibility whitelist: {override}")
     door_sides = set(clients["rest"]["doors"]) | set(clients["realtime"]["doors"])
     sides = None
     if door_sides & {"device", "server"}:  # core: the client types themselves (and any side-less door); then each door

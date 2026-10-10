@@ -1,53 +1,19 @@
 #!/usr/bin/env python3
-"""Check that a repository is an Ably Pub/Sub SDK repository (Orient, STOP-16).
+"""Check that a repository is on the skill creator's whitelist of Ably Pub/Sub SDK repositories (Orient, STOP-16).
 
 Usage: check_repo_eligibility.py <repo> [--spec-clone PATH]
 
-The skill creator supports only Ably Pub/Sub SDK repositories. The rules' data
-lives in assets/eligibility.json (update that file, not this script): the
-GitHub owner (`ably`), the name pattern ^ably-(pubsub-[a-z0-9]+|[a-z0-9]+)$
-(case-insensitive, without `.git`), the deny-list of known non-SDK names, the
-allow-list with capability overrides, the canonical and planned-rename tables,
-and the definition gate's threshold.
+A repository is eligible only if a remote is github.com/<owner>/<name> with
+<name> in assets/eligibility.json's `repositories` (case-insensitive, without
+`.git` or a trailing `/`), and the checkout defines a REST or Realtime client
+(the definition gate). Every other repository is rejected. Decision rules and
+codes: references/orient.md 13.2.
 
-Ably is renaming its SDK repositories from ably-<lang> to ably-pubsub-<lang>
-(ably-js is now ably-pubsub-js, ably-java ably-pubsub-java); both names are the
-same repository, local clones often keep the old remote URL (GitHub redirects
-it), and both are accepted. `nameForm` says which form the remote uses:
-"legacy" (ably-<lang>), "pubsub" (ably-pubsub-<lang>) or "allow-list".
-`canonical` reports the current name of a renamed repository, and
-`plannedRename` a rename in preparation (either name is accepted). A legacy
-name whose current name fails the pattern is rejected (ably-nativescript is now
-ably-js-nativescript, a wrapper).
-
-Every remote is checked, not only `origin`, so a fork with an `upstream` remote
-pointing at ably/<name> is accepted. Decision, first match wins:
-  0. not a git repo, or no remote                       -> ask    (NOT_GIT_REPO, NO_REMOTE)
-  1. a github.com/ably/<eligible name> remote           -> accept (then the definition gate below)
-  2. another github.com/ably/<name> remote              -> reject (NOT_PUBSUB_SDK_NAME, DENIED_NON_SDK)
-  3. a github.com/<other owner>/<eligible name> remote  -> ask    (FORK_CONFIRM)
-  4. another GitHub remote                              -> reject (NOT_ABLY_REPO)
-  5. only non-GitHub remotes                            -> ask    (NON_GITHUB_REMOTE)
-After an accept, the definition gate: a REST or Realtime client entry point must
-be *defined* in non-test source (detect_capabilities.py's scan: a declared
-client type or Go type alias, or a door entry point on a device or server
-side), not merely used, as a load tool or a server that imports the SDK does:
-functions returning a client, `const`/`let`/`var`/`val` bindings and code under
-example(s)/sample(s)/demo(s) directories don't count. With no definition the decision becomes
-reject (NO_CLIENT_DEFINITION) when there are at least the data file's
-minSourceFilesToReject non-test source files, else ask (NO_SDK_FINGERPRINT:
-wrong path or sparse checkout?). An allow-listed repo's capabilityOverride
-satisfies the gate.
-
-A reject is a hard stop with the exact `message`; there is no override.
-Eligibility isn't scope: an allow-listed repo's `capabilityOverride` (ably-ruby-
-rest: rest full, realtime absent) is passed by orient.py to
-detect_capabilities.py, which reports it as the profile's source.
-
-Prints exactly one JSON object. Read-only; never touches the network (`git
-ls-remote --get-url` and `ssh -G` only read local configuration). Credentials
-in remote URLs are redacted. A malformed data file is a structured error
-(DATA_FILE_ERROR) naming the file and the key.
+Prints one JSON object: `ok`, `decision` (accept, reject or ask), `eligible`,
+`code`, `reason`, `message` (on a reject), `owner`, `repo`, `remote`,
+`nameForm`, `canonical`, `plannedRename`, `capabilityOverride`, `fingerprint`,
+`remotes` and `warnings`. Read-only; no network. A malformed data file gives
+DATA_FILE_ERROR naming the file and the key.
 """
 import collections, importlib.util, json, pathlib, re, subprocess, sys
 
@@ -68,39 +34,59 @@ def _load(name):
 dc = _load("detect_capabilities")
 sn, lo = dc.sn, dc.lo
 LEVEL = sn.STR
-SHAPE = {"owner": sn.STR, "namePattern": sn.STR, "deny": {"names": [sn.STR]},
-          "allow": {"*": {"capabilityOverride": {"*": LEVEL}}}, "canonical": {"*": sn.STR},
-          "plannedRename": {"*": sn.STR}, "definitionGate": {"minSourceFilesToReject": sn.INT}}
+SHAPE = {"owner": sn.STR, "repositories": [sn.STR], "capabilityOverride": {"*": {"*": LEVEL}},
+         "canonical": {"*": sn.STR}, "plannedRename": {"*": sn.STR}, "definitionGate": {"minSourceFilesToReject": sn.INT}}
+
+
+def normalise(name):
+    """A repository name as the whitelist compares it: lower case, without a trailing `/` or `.git`."""
+    name = name.strip().rstrip("/").lower()
+    return name[:-len(".git")] if name.endswith(".git") else name
 
 
 class Rules:
-    """assets/eligibility.json, validated."""
+    """assets/eligibility.json, validated: every name it mentions must be on the whitelist."""
 
     def __init__(self):
         d = sn.load_json(DATA, SHAPE)
-        try:
-            self.name = re.compile(d["namePattern"], re.I)
-        except re.error as exc:
-            raise sn.DataFileError(f"{DATA.name}: key 'namePattern': not a valid regular expression: {exc}") from None
-        for repo, entry in d["allow"].items():
-            for cap, level in entry["capabilityOverride"].items():
-                where = f"{DATA.name}: key 'allow.{repo}.capabilityOverride.{cap}'"
-                if cap not in dc.LEVELS:
-                    raise sn.DataFileError(f"{where}: expected the capability rest or realtime, got {cap}")
-                if level not in dc.LEVELS[cap]:
-                    raise sn.DataFileError(f"{where}: expected a {cap} level ({', '.join(dc.LEVELS[cap])}), got {level}")
+        where = DATA.name
         self.owner = d["owner"].lower()
-        self.deny = {n.lower() for n in d["deny"]["names"]}
-        self.allow = {k.lower(): v["capabilityOverride"] for k, v in d["allow"].items()}
-        self.canonical = {k.lower(): v for k, v in d["canonical"].items()}
-        self.planned = {k.lower(): v for k, v in d["plannedRename"].items()}
+        self.repos = {normalise(n) for n in d["repositories"]}
+        for key in ("capabilityOverride", "canonical", "plannedRename"):
+            for name, value in d[key].items():
+                names = [name] + ([value] if isinstance(value, str) else [])
+                for n in names:
+                    if normalise(n) not in self.repos:
+                        raise sn.DataFileError(f"{where}: key '{key}.{name}': {n} isn't in 'repositories'")
+        for repo, entry in d["capabilityOverride"].items():
+            for cap, level in entry.items():
+                at = f"{where}: key 'capabilityOverride.{repo}.{cap}'"
+                if cap not in dc.LEVELS:
+                    raise sn.DataFileError(f"{at}: expected the capability rest or realtime, got {cap}")
+                if level not in dc.LEVELS[cap]:
+                    raise sn.DataFileError(f"{at}: expected a {cap} level ({', '.join(dc.LEVELS[cap])}), got {level}")
+        self.override = {normalise(k): v for k, v in d["capabilityOverride"].items()}
+        self.canonical = {normalise(k): v for k, v in d["canonical"].items()}
+        self.planned = {normalise(k): v for k, v in d["plannedRename"].items()}
+        self.planned_targets = {normalise(v) for v in d["plannedRename"].values()}
         self.min_files = d["definitionGate"]["minSourceFilesToReject"]
+
+    def listed(self, repo):
+        return normalise(repo) in self.repos
+
+    def name_form(self, repo):
+        key = normalise(repo)
+        return "legacy" if key in self.canonical else "planned" if key in self.planned_targets else "current"
 
 
 def message(owner, repo):
-    return ("uts-to-lang-skill-creator currently supports only Ably Pub/Sub SDK repositories (ably-pubsub-<lang> or "
-            f"ably-<lang>). No workflow exists yet for {owner}/{repo}; the skill creator needs to be upgraded to "
-            "support it.")
+    return ("uts-to-lang-skill-creator supports only the Ably Pub/Sub SDK repositories listed in assets/eligibility.json. "
+            f"{owner}/{repo} isn't one of them; supporting it requires updating the skill creator.")
+
+
+def gate_message(owner, repo):
+    return (f"{owner}/{repo} is on the whitelist in assets/eligibility.json, but this checkout defines no REST or "
+            "Realtime client, so it can't be an SDK working tree. Check the path and the branch.")
 
 
 def git(repo, *args):
@@ -122,22 +108,6 @@ def resolve_host(host):
         return m.group(1).lower() if m else host.lower()
     except (OSError, subprocess.SubprocessError):
         return host.lower()
-
-
-def name_status(repo, rules):
-    """(name eligible, denied, reason)."""
-    if repo.lower() in rules.allow:
-        return True, False, f"{repo} is on the allow-list"
-    canon = rules.canonical.get(repo.lower())
-    if canon and not rules.name.match(canon):
-        return False, False, f"{repo} is now {canon}, which isn't a Pub/Sub SDK name"
-    m = rules.name.match(repo)
-    if not m:
-        return False, False, "the name doesn't match ably-pubsub-<lang> or ably-<lang>"
-    tail = m.group(1).lower()
-    if tail in rules.deny:
-        return False, True, f"ably-{tail} is a known non-SDK repository"
-    return True, False, "the name matches"
 
 
 def fingerprint(top, spec_clone=None):
@@ -203,15 +173,14 @@ def main(argv):
             r = {"name": name, "url": redact(url)}
             if m:
                 host = resolve_host(m.group("h1") or m.group("h2"))
-                ok, denied, why = name_status(m.group("repo"), rules)
                 r.update(host=host, owner=m.group("owner"), repo=m.group("repo"), github=host in GITHUB,
-                          nameEligible=ok, denied=denied, nameReason=why)
+                         whitelisted=rules.listed(m.group("repo")))
             remotes.append(r)
         result["remotes"] = remotes
         gh = [r for r in remotes if r.get("github")]
         ably = [r for r in gh if r["owner"].lower() == rules.owner]
-        good = [r for r in ably if r["nameEligible"]]
-        forks = [r for r in gh if r["owner"].lower() != rules.owner and r["nameEligible"]]
+        good = [r for r in ably if r["whitelisted"]]
+        forks = [r for r in gh if r["owner"].lower() != rules.owner and r["whitelisted"]]
         if not remotes:
             pick, decision, code, reason = None, "ask", "NO_REMOTE", "no remote: ask which Ably repository this is"
         elif good:
@@ -221,8 +190,8 @@ def main(argv):
                 result["warnings"].append(f"several {rules.owner} remotes: " + ", ".join(r["repo"] for r in ably))
         elif ably:
             pick, decision = ably[0], "reject"
-            code = "DENIED_NON_SDK" if pick["denied"] else "NOT_PUBSUB_SDK_NAME"
-            reason = f"github.com/{pick['owner']}/{pick['repo']}: {pick['nameReason']}"
+            code = "NOT_WHITELISTED"
+            reason = f"github.com/{pick['owner']}/{pick['repo']} isn't on the whitelist in {DATA.name}"
         elif forks:
             pick, decision, code = forks[0], "ask", "FORK_CONFIRM"
             reason = (f"only a fork matches (github.com/{pick['owner']}/{pick['repo']}): ask the user to confirm it is "
@@ -234,8 +203,8 @@ def main(argv):
         else:
             pick, decision, code = None, "ask", "NON_GITHUB_REMOTE"
             reason = f"no GitHub remote: ask the user for the github.com/{rules.owner} repository this tracks"
-        key = pick["repo"].lower() if pick else None
-        override = rules.allow.get(key) if decision != "reject" else None
+        key = normalise(pick["repo"]) if pick else None
+        override = rules.override.get(key) if decision != "reject" else None
         if decision == "accept":
             defined, n_source, loaded, fp = fingerprint(top, opts.get("--spec-clone"))
             result["fingerprint"] = fp
@@ -243,7 +212,7 @@ def main(argv):
             if defined:
                 fp["gate"] = "client definition found"
             elif override:
-                fp["gate"] = "satisfied by the allow-list capabilityOverride (no client defined in this tree)"
+                fp["gate"] = "satisfied by the whitelist capabilityOverride (no client defined in this tree)"
             elif n_source >= rules.min_files:
                 decision, code = "reject", "NO_CLIENT_DEFINITION"
                 fp["gate"] = "failed"
@@ -255,16 +224,14 @@ def main(argv):
                 reason += (f"; but no REST or Realtime client definition in {n_source} non-test source file(s): wrong "
                             "path or sparse checkout? Ask the user")
         if decision == "reject":
-            result["message"] = message(pick["owner"], pick["repo"])
+            result["message"] = (gate_message if code == "NO_CLIENT_DEFINITION" else message)(pick["owner"], pick["repo"])
             override = None
         if override:
             result["capabilityOverride"] = override
         result.update(decision=decision, eligible={"accept": True, "reject": False}.get(decision), code=code,
                       reason=reason, owner=pick["owner"] if pick else None, repo=pick["repo"] if pick else None,
                       remote={"name": pick["name"], "url": pick["url"], "host": pick.get("host")} if pick else None,
-                      nameForm=(None if not pick else "allow-list" if key in rules.allow else
-                                ("pubsub" if key.startswith("ably-pubsub-") else "legacy") if rules.name.match(key)
-                                else None),
+                      nameForm=rules.name_form(key) if pick and rules.listed(key) else None,
                       canonical=rules.canonical.get(key) if key else None,
                       plannedRename=rules.planned.get(key) if key else None)
         print(json.dumps(result, indent=2))
