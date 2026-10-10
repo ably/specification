@@ -1087,7 +1087,7 @@ Rules:
 4. **Record each consultation**: the repo, revision and path, the question, what you learned, and how you checked it. Report each one as a gap in this guide: a candidate guide improvement.
 5. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-local-clone-vs-fetching-main)), and neither does the pilot run that validates it.
 
-Reading GitHub is network access: the [procedure](../skills/uts-to-lang-skill-creator/SKILL.md#21-your-inputs) gates it, or offers local clones instead.
+Reading GitHub is network access: the [procedure](../skills/uts-to-lang-skill-creator/SKILL.md#reference-implementations-last-resort) gates it, or offers local clones instead.
 
 ### Patterns to avoid
 

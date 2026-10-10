@@ -174,7 +174,7 @@ Record the answer as D-27, with the state class.
 | Regenerate from scratch | `upgrade: regenerate` | U1, then the create flow, staged ([11.5](upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)) |
 | Resume or restart | the recorded D-27, plus "resumed" or "restarted" with the date | 13.6 |
 
-The records for Upgrade/Fix go where Orient found them; otherwise to `<existing-skill-dir>/generation/` (D-24). Copy the State summary into the Repo profile when the records are created.
+The records for Upgrade/Fix go where Orient found them; otherwise to `<existing-skill-dir>/generation/` (D-24). At the start of Phase 1, copy the design-record and repo-profile templates to the working-records directory if they aren't there yet, copy the State summary into the Repo profile, and copy the eligibility result into the Design record's Inputs.
 
 ## 13.6 Re-entry: resume or restart
 

@@ -10,6 +10,7 @@
 - Capabilities (D-31): rest <full|partial|absent>; realtime <full|partial|absent|unclear> (<sub-areas>); liveobjects <yes|no>; side: <none | core | server | device | both> (<clients it reaches>); scope: <full|rest-only|realtime-only> (<modules>[ + <n> REST-only tests under realtime]); unsupported: <modules> (<reason>); capability-inapplicable: <n> tests (listed in the <module> notes); names: <spec | fallback>
 - State class (Orient): S0 | S1 | S2 | S3 | S4 (+ re-entry) — <reasons>; run mode (D-27): create | upgrade: diff-driven | upgrade: full audit | upgrade: regenerate (resumed | restarted <date>); target skill: <path> (origin …), or none
 - Run status: in progress (Phase <n>, <date>) | finished (<date>)
+  - After a context compaction: read the skill creator's whole SKILL.md again, then this line, then the current phase's reference, before your next action.
 - LiveObjects evidence: detect_liveobjects.py → <yes | no | unclear>, <confidence>; decision at STOP-14 (D-28)
 
 ## Decisions

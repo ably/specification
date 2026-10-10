@@ -14,11 +14,13 @@ metadata:
 
 # UTS-to-Lang Skill Creator
 
+**After a context compaction:** this file may be in your context only in part (Claude Code keeps only its start; Codex may keep none of it). Before your next action, read this whole `SKILL.md` again, then the Design record's Run status if the records exist ([13.7](references/orient.md#137-provenance-d-30)), then the reference of the phase you are in. Never act at a stop point from memory.
+
 Run this skill on an Opus-class model ([2.8](#28-model-tier-and-sub-agents)). It is a step-by-step procedure for an LLM agent to create or upgrade a `uts-to-<lang>` translator skill, and the UTS test infrastructure (the **harness**) it runs on, for one Ably Pub/Sub SDK repository, starting with [Step 0: Orient](#step-0-orient). [Writing UTS Spec Translator Skills](../../docs/writing-uts-spec-translator-skills.md) (hereafter **the guide**) says what a good translator skill is and why; this skill says how to build one: in what order, with what checks, and where to stop and ask the user. Where the guide holds the reason or the detailed requirement, this skill links to it instead of repeating it; read the linked section.
 
 The harness and the skill are one deliverable (guide [section 2](../../docs/writing-uts-spec-translator-skills.md#2-the-harness-uts-test-infrastructure)): the skill isn't complete until the harness's per-tier smoke tests and helper self-tests (guide [2.7](../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must)) are green, and wired into CI, at every tier it supports. The harness reuses, wraps, extends or builds on the repo's existing tests ([4.2](references/phase-2-design-harness.md#42-step-2b-assess-each-capability-reuse-wrap-extend-or-build)), so the phases run in a fixed order.
 
-"This skill" means this `SKILL.md` with its `references/` and `assets/templates/`. Section numbers are stable across the files: section n+2 holds Phase n, Orient is section 13, and the ground rules (section 2) come before section 1 so that the stop points are read early. Uppercase MUST, SHOULD and MAY cite the guide's requirement levels; this skill's own instructions are imperatives.
+"This skill" is this `SKILL.md` with its `references/` and `assets/templates/`. Section numbers are stable across the files: section n+2 holds Phase n and Orient is section 13; section 2 comes before section 1 so that it survives context compaction. MUST, SHOULD and MAY cite the guide's requirement levels; this skill's own instructions are imperatives.
 
 ## Path convention
 
@@ -28,42 +30,12 @@ The harness and the skill are one deliverable (guide [section 2](../../docs/writ
 
 ## Step 0: Orient
 
-Do this first, in every run, before any phase. It is read-only and quick: no build, no test, no network, no file written. [references/orient.md](references/orient.md) (section 13) has the detail.
+Do this first, in every run, before any phase. It is read-only: no build, no test, no network, no file written. Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]` ([13.1](references/orient.md#131-run-it)), then settle its stops in this order; [references/orient.md](references/orient.md) (section 13) has the rules:
 
-1. Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]` ([13.1](references/orient.md#131-run-it)). It runs `spec_clone_info.py` first (it resolves the spec clone the others read), then the eligibility check, the existing-skill inspector and both detectors, and classifies the repo.
-2. **Eligibility (STOP-16).** This procedure supports only the Ably Pub/Sub SDK repositories on the whitelist in `assets/eligibility.json` (current and legacy names), checked across all remotes. Every other repository is rejected; adding a new SDK repository means adding it there ([13.2](references/orient.md#132-repository-eligibility-stop-16)).
-    - On a reject, show the script's message exactly and end the run. There is no override.
-    - On an ask (a fork, no remote, too few source files to judge), ask the question first.
-3. **STOP-1, if needed:** settle the model tier (2.8) and anything Orient's `stop1` lists, such as the spec clone (2.6).
-4. **STOP-17** when Orient sets `stop17` ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31) lists the triggers). The harness and the skill's scope follow the SDK's REST and Realtime clients, not its name, and, for an SDK with doors, the side the UTS tests use. Record D-31.
-5. **STOP-13, always.** Show the State summary ([13.4](references/orient.md#134-the-state-summary-and-stop-13)) and recommend Create (S0, S1) or Upgrade/Fix (S2, S3), or ask which skill (S4), with a one-line reason ([13.3](references/orient.md#133-state-classes)). Record the answer as D-27.
-6. Route per [13.5](references/orient.md#135-routing). At the start of Phase 1, copy the design-record and repo-profile templates to the working-records directory, copy the State summary into the Repo profile, and copy the eligibility result into the Design record's Inputs.
-
-## Run modes
-
-Orient recommends the mode, and the user decides at STOP-13 (D-27). The same phases, ground rules and stop points serve both modes:
-
-| Mode | When | Read |
-|---|---|---|
-| **Create** | No `uts-to-*` skill yet (S0); or none, but UTS-tagged tests or harness code to adopt (S1, 2.2) | The phases below |
-| **Upgrade/Fix** | A `uts-to-*` skill exists. **Diff-driven** for one this procedure built (S2): follow what changed since its recorded run. **Full gap audit** for one of unknown origin (S3), or by choice: audit the skill, its harness and its UTS-derived tests against the guide, choose per item, upgrade in place. **Regenerate from scratch** only by the user's choice ([11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)) | [Section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven) (diff-driven), [section 11](references/upgrade-existing-skill.md#11-upgradefix-full-gap-audit) |
-
-An interrupted run is resumed or restarted from its records (13.6). In every mode, Phase 1 also asks whether to add LiveObjects (`objects`) support (STOP-14), recommending an answer from `detect_liveobjects.py`'s evidence ([section 12](references/liveobjects-support.md#12-liveobjects-objects-support)).
-
-## Phases at a glance
-
-Before starting a phase, read its reference file in full: this table is a map, not enough to act on. In Upgrade/Fix, full gap audit, read [11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)'s row for each phase first (diff-driven: section 10): the phases are scoped to the chosen items, and acceptance items tied to a skipped or deferred gap-audit row are reported ✗ under D-29, not worked. When regenerating from scratch, read 11.5's last paragraph instead. On resuming an interrupted run, read the working records first, then the reference of the phase you are in.
-
-| Phase | Goal | Read first | Writes | Ends at |
-|---|---|---|---|---|
-| 0. Orient | Eligibility, capabilities and scope, state class, mode | [Step 0](#step-0-orient); [orient.md](references/orient.md) | nothing | STOP-16 (if not eligible), STOP-1 (if needed), STOP-17 (if needed), STOP-13 |
-| 1. Understand the repo | A confirmed Repo profile: how the SDK is built, tested and mocked today; the LiveObjects decision; in Upgrade/Fix, the gap audit or the change list | [phase-1](references/phase-1-understand-repo.md) (and sections 10, 11, 12) | `repo-profile.md`; in Upgrade/Fix `skill-gap-audit.md` | STOP-2, STOP-14 (STOP-15 in Upgrade/Fix) |
-| 2. Design the harness | Reuse, wrap, extend or build each capability; hooks; placement; tier feasibility | [phase-2](references/phase-2-design-harness.md) | `uts-infra-design.md` | STOP-3 |
-| 3. Build and verify the harness | The approved harness, with green per-tier smoke tests and self-tests, wired into CI | [phase-3](references/phase-3-build-harness.md) | harness code and README; build log | STOP-7 |
-| 4. Skill design decisions | D-01 to D-26 decided; D-27 to D-31 confirmed | [phase-4](references/phase-4-design-record.md) | `design-record.md` | STOP-8 |
-| 5. Generate the skill files | Mapping, resolver, audit, construct catalogue, module notes, `SKILL.md` | [phase-5](references/phase-5-generate-skill.md) | the `uts-to-<lang>` skill | (STOP-9 if constructs are unmapped) |
-| 6. Validate the skill | Resolver, audit mutations, pilots, other paths, lint, examples | [phase-6](references/phase-6-validate-skill.md) | pilot tests; results | (STOP-10 at a bound) |
-| 7. Final report and handover | Report and acceptance checklist | [section 9](#9-phase-7-final-report-and-handover) | `final-report.md` with the acceptance checklist | — |
+1. **STOP-16**, if the repo isn't plainly eligible ([13.2](references/orient.md#132-repository-eligibility-stop-16)). On a reject, show the script's message exactly and end the run; there is no override.
+2. **STOP-1**, if needed: the model tier (2.8) and anything in `stop1`, such as the spec clone (2.6).
+3. **STOP-17**, when `stop17` is set: the capability profile and scope ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)). Record D-31.
+4. **STOP-13**, always: the State summary and the recommended mode ([13.4](references/orient.md#134-the-state-summary-and-stop-13)). Record D-27, then route per [13.5](references/orient.md#135-routing).
 
 ## 2. Ground rules
 
@@ -78,13 +50,7 @@ You work from four primary sources:
 
 and, only as a last resort, the reference implementations.
 
-**Reference implementations (last resort).** The guide covers what the existing `uts-to-swift` and `uts-to-kotlin` skills and harnesses teach, so you shouldn't need them. You MAY consult them, read-only, under the guide's [Reference implementations (last resort)](../../docs/writing-uts-spec-translator-skills.md#reference-implementations-last-resort) rules 1 to 5 (the guide wins, learn the pattern and never copy, check against Patterns to avoid, record each consultation, creation only); that section also lists the repos and paths. This skill adds:
-
-- **When:** only after this skill, the guide, the UTS docs and the helper specs fail to answer the question. The guide and the UTS docs always win ([1.6](#16-which-document-wins)).
-- **Access:** read local clones the user named ([1.3](#13-required-inputs)) at their current HEAD (read the files, or `git -C <clone> show HEAD:<path>`); never check out, modify, pull or fetch them on the user's behalf (fetching or pulling is network access). Otherwise read GitHub after STOP-6; the user may approve reference reads once for the whole run, and you record that approval.
-- **Recording:** record each read in the Design record ("Reference-implementation reads": repo, revision, path, question, what you learned, how you checked it), and list it in the Final report as a guide gap.
-
-These rules govern other repos. The target repo's own `uts-to-*` skill, harness and UTS-derived tests are input 4, even in ably-cocoa or ably-java: read them in full and change them in place ([11.1](references/upgrade-existing-skill.md#111-when-this-mode-applies)). A read-only consultation needs no stop point of its own. Where the guide names another SDK's file, script, helper or test (as the origin of a lesson, or in the Swift and Kotlin cells of its construct tables), it is background, not a template. If the references don't resolve the question either, or their only answer departs from the guide, STOP-12. The generated skill never consults them (D-22), and neither does the pilot ([8.3](references/phase-6-validate-skill.md#83-pilot-translate-one-spec-per-available-tier)).
+**Reference implementations (last resort):** consult the existing `uts-to-swift` and `uts-to-kotlin` skills and harnesses only under [Reference implementations (last resort)](#reference-implementations-last-resort) below. Those rules govern other repos: the target repo's own `uts-to-*` skill, harness and UTS-derived tests are input 4; read them in full and change them in place ([11.1](references/upgrade-existing-skill.md#111-when-this-mode-applies)).
 
 ### 2.2 What you may change
 
@@ -161,6 +127,32 @@ Untracked local notes in the clone (for example files matching `uts/UTS_*.md`) a
 - **Sub-agents** you spawn for review, validation or the pilot ([8.3](references/phase-6-validate-skill.md#83-pilot-translate-one-spec-per-available-tier)) MUST also run on an Opus-class model. Where your tooling lets you choose a sub-agent's model, choose it explicitly rather than relying on a default. Use a cheaper model only for a clearly mechanical step whose output a script verifies (for example, the [8.2](references/phase-6-validate-skill.md#82-test-the-audit-itself) corpus sweep), if at all, and record which steps used one.
 - **Record** the model (name and ID) of this session and of every sub-agent in the Design record ("Inputs at generation time") and in the Final report. **State** the generated skill's model tier in its opening lines and `compatibility`; pin it only as D-26 decides.
 
+## Run modes
+
+Orient recommends the mode, and the user decides at STOP-13 (D-27). The same phases, ground rules and stop points serve both modes:
+
+| Mode | When | Read |
+|---|---|---|
+| **Create** | No `uts-to-*` skill yet (S0); or none, but UTS-tagged tests or harness code to adopt (S1, 2.2) | The phases below |
+| **Upgrade/Fix** | A `uts-to-*` skill exists. **Diff-driven** for one this procedure built (S2): follow what changed since its recorded run. **Full gap audit** for one of unknown origin (S3), or by choice: audit the skill, its harness and its UTS-derived tests against the guide, choose per item, upgrade in place. **Regenerate from scratch** only by the user's choice ([11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)) | [Section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven) (diff-driven), [section 11](references/upgrade-existing-skill.md#11-upgradefix-full-gap-audit) |
+
+An interrupted run is resumed or restarted from its records (13.6). In every mode, Phase 1 also asks whether to add LiveObjects (`objects`) support (STOP-14), recommending an answer from `detect_liveobjects.py`'s evidence ([section 12](references/liveobjects-support.md#12-liveobjects-objects-support)).
+
+## Phases at a glance
+
+Before starting a phase, read its reference file in full: this table is a map, not enough to act on. In Upgrade/Fix, full gap audit, read [11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)'s row for each phase first (diff-driven: section 10): the phases are scoped to the chosen items, and acceptance items tied to a skipped or deferred gap-audit row are reported ✗ under D-29, not worked. When regenerating from scratch, read 11.5's last paragraph instead. On resuming an interrupted run, read the working records first, then the reference of the phase you are in.
+
+| Phase | Goal | Read first | Writes | Ends at |
+|---|---|---|---|---|
+| 0. Orient | Eligibility, capabilities and scope, state class, mode | [Step 0](#step-0-orient); [orient.md](references/orient.md) | nothing | STOP-16 (if not eligible), STOP-1 (if needed), STOP-17 (if needed), STOP-13 |
+| 1. Understand the repo | A confirmed Repo profile: how the SDK is built, tested and mocked today; the LiveObjects decision; in Upgrade/Fix, the gap audit or the change list | [phase-1](references/phase-1-understand-repo.md) (and sections 10, 11, 12) | `repo-profile.md`; in Upgrade/Fix `skill-gap-audit.md` | STOP-2, STOP-14 (STOP-15 in Upgrade/Fix) |
+| 2. Design the harness | Reuse, wrap, extend or build each capability; hooks; placement; tier feasibility | [phase-2](references/phase-2-design-harness.md) | `uts-infra-design.md` | STOP-3 |
+| 3. Build and verify the harness | The approved harness, with green per-tier smoke tests and self-tests, wired into CI | [phase-3](references/phase-3-build-harness.md) | harness code and README; build log | STOP-7 |
+| 4. Skill design decisions | D-01 to D-26 decided; D-27 to D-31 confirmed | [phase-4](references/phase-4-design-record.md) | `design-record.md` | STOP-8 |
+| 5. Generate the skill files | Mapping, resolver, audit, construct catalogue, module notes, `SKILL.md` | [phase-5](references/phase-5-generate-skill.md) | the `uts-to-<lang>` skill | (STOP-9 if constructs are unmapped) |
+| 6. Validate the skill | Resolver, audit mutations, pilots, other paths, lint, examples | [phase-6](references/phase-6-validate-skill.md) | pilot tests; results | (STOP-10 at a bound) |
+| 7. Final report and handover | Report and acceptance checklist | [section 9](#9-phase-7-final-report-and-handover) | `final-report.md` with the acceptance checklist | — |
+
 ## 1. Purpose and how to use this procedure
 
 ### 1.1 Who reads this
@@ -220,7 +212,7 @@ The guide's intent ([introduction](../../docs/writing-uts-spec-translator-skills
 | What the harness and the skill must contain, and why | the guide ([How it relates to the other UTS docs](../../docs/writing-uts-spec-translator-skills.md#how-it-relates-to-the-other-uts-docs)) |
 | How and in what order you build them | this skill |
 | The SDK's actual API | the SDK source (guide [3.1](../../docs/writing-uts-spec-translator-skills.md#31-layout), "The notes are a map, not an authority") |
-| Questions none of the above answer, as a last resort only | The reference implementations, under [2.1](#21-your-inputs): never an authority |
+| Questions none of the above answer, as a last resort only | The reference implementations, under [Reference implementations (last resort)](#reference-implementations-last-resort): never an authority |
 
 If two documents disagree, follow the higher one in the table (and STOP-11 if the conflict changes what you would build or generate), record the conflict in the Design record, and list it in the Final report under "Spec-repo doc issues". Don't patch the spec repo. A disagreement between a reference implementation and the guide or the UTS docs is never a STOP-11: follow the guide, and record the disagreement with the read ([2.1](#21-your-inputs)).
 
@@ -232,6 +224,16 @@ If two documents disagree, follow the higher one in the table (and STOP-11 if th
 2. Fill the [acceptance checklist](assets/templates/acceptance-checklist.md): it maps each item of the guide's [section 13 checklist](../../docs/writing-uts-spec-translator-skills.md#13-checklist-for-a-new-uts-to-lang-skill) to where this procedure produces and verifies it. Mark each item ✓, n/a with the reason ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)), or ✗ with why it isn't met (scoped out, planned, skipped or deferred at STOP-15).
 3. Show the user the report, the list of changed and new files (harness, harness tests, hooks, skill, pilot tests), and the suggested CI changes. The run is complete only if the harness tests are green, and in CI, at every tier the skill supports; otherwise the report says which tiers aren't and why. **Don't commit** unless asked.
 4. If the user asks for a commit, follow the repo's commit conventions (P-08) and, if the user agrees, keep the SDK hooks, the harness, the skill and the pilot tests in separate commits. In Upgrade/Fix, offer one commit per closed gap-audit or change item (from the Design record's changelog), harness rows first.
+
+## Reference implementations (last resort)
+
+This section expands the last resort of [2.1](#21-your-inputs). The guide covers what the existing `uts-to-swift` and `uts-to-kotlin` skills and harnesses teach, so you shouldn't need them. You MAY consult them, read-only, under the guide's [Reference implementations (last resort)](../../docs/writing-uts-spec-translator-skills.md#reference-implementations-last-resort) rules 1 to 5 (the guide wins, learn the pattern and never copy, check against Patterns to avoid, record each consultation, creation only); that section also lists the repos and paths. This skill adds:
+
+- **When:** only after this skill, the guide, the UTS docs and the helper specs fail to answer the question. The guide and the UTS docs always win ([1.6](#16-which-document-wins)).
+- **Access:** read local clones the user named ([1.3](#13-required-inputs)) at their current HEAD (read the files, or `git -C <clone> show HEAD:<path>`); never check out, modify, pull or fetch them on the user's behalf (fetching or pulling is network access). Otherwise read GitHub after STOP-6; the user may approve reference reads once for the whole run, and you record that approval.
+- **Recording:** record each read in the Design record ("Reference-implementation reads": repo, revision, path, question, what you learned, how you checked it), and list it in the Final report as a guide gap.
+
+These rules govern other repos. The target repo's own `uts-to-*` skill, harness and UTS-derived tests are input 4, even in ably-cocoa or ably-java: read them in full and change them in place ([11.1](references/upgrade-existing-skill.md#111-when-this-mode-applies)). A read-only consultation needs no stop point of its own. Where the guide names another SDK's file, script, helper or test (as the origin of a lesson, or in the Swift and Kotlin cells of its construct tables), it is background, not a template. If the references don't resolve the question either, or their only answer departs from the guide, STOP-12. The generated skill never consults them (D-22), and neither does the pilot ([8.3](references/phase-6-validate-skill.md#83-pilot-translate-one-spec-per-available-tier)).
 
 ## Reference index
 
@@ -263,6 +265,7 @@ All are read-only Python 3, with no network access; they print to stdout and run
 | `scan_constructs.py <spec-clone>/uts/<module>` | The corpus's constructs and harness calls ([7.4](references/phase-5-generate-skill.md#74-step-5d-fill-the-construct-catalogue)); copied into the generated skill (D-19) |
 | `inspect_existing_skill.py <repo> [<skill-dir>] [--records <dir>]` | Inventory of an existing `uts-to-*` skill, its installs, harness, UTS-derived tests and records; regex hints, not a review ([11.2](references/upgrade-existing-skill.md#112-step-u1-understand-the-existing-skill)) |
 | `detect_liveobjects.py <repo> [--spec-clone P] [--include-submodules]` | Evidence for the LiveObjects decision at STOP-14 ([12.1](references/liveobjects-support.md#121-gather-the-evidence-step-1b-p-15)) |
+| `check_layout.py [SKILL_MD]` | For maintainers, not a run: do the stop table and the ground rules still end within the compaction window? ([Maintaining this skill](#maintaining-this-skill)) |
 
 ### Maintaining this skill
 
@@ -272,3 +275,5 @@ What the scripts know about Ably's repositories and SDK names that the spec can'
 - [`assets/capability-names.json`](assets/capability-names.json): update it when an SDK adds a client alias or a door factory, or the spec renames a LiveObjects name its IDL no longer shows.
 
 Each file starts with one `_description` (what the file is and when to update it); add a `_comment` key only where an entry would otherwise puzzle a maintainer. The scripts ignore `_` keys, check the shape, and report a malformed file as `DATA_FILE_ERROR`, naming the file and the key. Client, channel, connection, presence and LiveObjects names come from the spec clone at run time (13.8) and need no edit. After an edit, rerun Orient on a repository the change affects.
+
+After a context compaction, Claude Code keeps only the start of this `SKILL.md`: about 5,000 tokens, which it counts as about 20,000 characters of the text after the frontmatter, including a line with the install path. Codex may keep none of it. So Step 0, the stop table and the ground rules (section 2) come first, and everything else follows section 2. After editing anything before the end of section 2, run `python3 <skill-dir>/scripts/check_layout.py`: it measures, in characters after the frontmatter, where the stop table and section 2 end, and fails above 16,000 and 18,500. Move material out of the way rather than raising the limits.
