@@ -1,4 +1,4 @@
-# 10. Maintenance
+# 10. Upgrade/Fix: diff-driven
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 
@@ -21,7 +21,7 @@ The harness and the skill must stay in step with five things that change indepen
 
 Each file starts with one `_description` (what the file is and when to update it); add a `_comment` key only where an entry would otherwise puzzle a maintainer. The scripts ignore `_` keys, check the shape, and report a malformed file as `DATA_FILE_ERROR`, naming the file and the key. Client, channel, connection, presence and LiveObjects names come from the spec clone at run time (13.8) and need no edit. After an edit, rerun Orient on a repository the change affects.
 
-Rules for every maintenance run:
+Rules for every diff-driven run:
 
 - Follow the same ground rules ([section 2](../SKILL.md#2-ground-rules)) and stop points, including the model tier ([2.8](../SKILL.md#28-model-tier-and-sub-agents)) and the last-resort rules for reference-implementation reads ([2.1](../SKILL.md#21-your-inputs)). If the guide's Patterns to avoid has changed since a recorded read, re-check that read's conclusion against it before relying on it again.
 - Start from the working records; update the Repo profile and the harness design if anything they describe has changed. Orient has run and STOP-13 chose this mode. Of Phase 1, re-run the discovery rows the change touches, STOP-2 for the updated profile, and step 1e (STOP-14).

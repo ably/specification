@@ -66,7 +66,7 @@ If the result is `unclear`, ask the user where the public API lives before you r
 
 An existing placeholder notes file gets the normal options above.
 
-Ask this after STOP-2 (step 1e, [3.5](phase-1-understand-repo.md#35-step-1e-decide-liveobjects-support-stop-14)). Record the answer as D-28 (with the detector's recommendation and the mode, translate-only or evaluate), add it to the Repo profile's objects line, and log it in the decision log. A later run that finds new evidence asks again (see [section 10](maintenance.md#10-maintenance)).
+Ask this after STOP-2 (step 1e, [3.5](phase-1-understand-repo.md#35-step-1e-decide-liveobjects-support-stop-14)). Record the answer as D-28 (with the detector's recommendation and the mode, translate-only or evaluate), add it to the Repo profile's objects line, and log it in the decision log. A later run that finds new evidence asks again (see [section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 
 ## 12.3 What each choice adds, phase by phase
 

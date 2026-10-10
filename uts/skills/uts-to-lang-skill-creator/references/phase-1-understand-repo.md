@@ -8,7 +8,7 @@ Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) firs
 
 Read these first, if they exist, and follow them for the rest of the run: `CLAUDE.md` (root and nested), `AGENTS.md`, `CONTRIBUTING.md`, `README.md`, `.editorconfig`, any `docs/` or `Docs/` pages about testing, and any existing `.claude/`, `.agents/` or `.codex/` directory (settings, skills, commands). Record any instruction that constrains you (for example "don't edit project file X", "use helper Y instead of Z").
 
-Orient (Step 0, [section 13](orient.md#13-step-0-orient)) has already checked eligibility and chosen the mode at STOP-13. In Upgrade/Fix with a full gap audit, or when regenerating, do step U1 ([11.2](upgrade-existing-skill.md#112-step-u1-understand-the-existing-skill)) alongside the discovery checklist below; in diff-driven Upgrade/Fix, follow [section 10](maintenance.md#10-maintenance). The discovery and the design cover the modules in the scope confirmed in Orient (D-31), through the side chosen there if the SDK has doors: for a REST-only SDK, only `rest`, and `realtime` and `objects` are unsupported (capability absent); for a realtime-only SDK or side, `realtime` (and `objects` per D-28), and `rest` is unsupported.
+Orient (Step 0, [section 13](orient.md#13-step-0-orient)) has already checked eligibility and chosen the mode at STOP-13. In Upgrade/Fix with a full gap audit, or when regenerating, do step U1 ([11.2](upgrade-existing-skill.md#112-step-u1-understand-the-existing-skill)) alongside the discovery checklist below; in diff-driven Upgrade/Fix, follow [section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven). The discovery and the design cover the modules in the scope confirmed in Orient (D-31), through the side chosen there if the SDK has doors: for a REST-only SDK, only `rest`, and `realtime` and `objects` are unsupported (capability absent); for a realtime-only SDK or side, `realtime` (and `objects` per D-28), and `rest` is unsupported.
 
 ## 3.2 Step 1b: answer the discovery checklist
 
@@ -82,7 +82,7 @@ In every run and every mode, after STOP-2, ask **STOP-14** from the LiveObjects 
 
 ## 3.6 Step 1f: gap audit (upgrade mode only, STOP-15)
 
-Write the gap audit and stop at **STOP-15** ([11.3](upgrade-existing-skill.md#113-step-u2-write-the-gap-audit), [11.4](upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item)). Diff-driven: the section H change list instead ([section 10](maintenance.md#10-maintenance)).
+Write the gap audit and stop at **STOP-15** ([11.3](upgrade-existing-skill.md#113-step-u2-write-the-gap-audit), [11.4](upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item)). Diff-driven: the section H change list instead ([section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 
 **Done when:**
 

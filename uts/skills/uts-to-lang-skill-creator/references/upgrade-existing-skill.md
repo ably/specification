@@ -2,7 +2,7 @@
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 
-**Goal:** bring an existing `uts-to-<lang>` skill, its harness and its UTS-derived tests up to the guide, one item at a time and as the user chooses, while keeping everything that already conforms. Guide [9.5](../../../docs/writing-uts-spec-translator-skills.md#95-upgrading-an-existing-skill-should) is the requirement. The ground rules, the stop points and the phases all apply unchanged. This section says what is different. It is the full-gap-audit form of Upgrade/Fix, and it also serves regenerate-from-scratch (11.5) and a diff-driven Upgrade/Fix run that needs a conformance check ([section 10](maintenance.md#10-maintenance)).
+**Goal:** bring an existing `uts-to-<lang>` skill, its harness and its UTS-derived tests up to the guide, one item at a time and as the user chooses, while keeping everything that already conforms. Guide [9.5](../../../docs/writing-uts-spec-translator-skills.md#95-upgrading-an-existing-skill-should) is the requirement. The ground rules, the stop points and the phases all apply unchanged. This section says what is different. It is the full-gap-audit form of Upgrade/Fix, and it also serves regenerate-from-scratch (11.5) and a diff-driven Upgrade/Fix run that needs a conformance check ([section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 
 Contents:
 
@@ -20,7 +20,7 @@ Orient (Step 0, [section 13](orient.md#13-step-0-orient)) decides it. This secti
 - **Upgrade/Fix with a full gap audit**: recommended for a skill of unknown origin (S3), and a choice for one this procedure built (S2);
 - **regenerate from scratch**.
 
-Diff-driven Upgrade/Fix for an S2 skill is [section 10](maintenance.md#10-maintenance); it hands off to 11.2 and 11.3 when it needs a conformance check. The State summary already lists the offered tiers that lack harness smoke tests or self-tests (G-19, G-20). Whatever is chosen, those tiers get them built, or the skill refuses them until they exist ([4.9](phase-2-design-harness.md#49-step-2i-stop-3-approve-the-design-and-choose-the-scope)).
+Diff-driven Upgrade/Fix for an S2 skill is [section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven); it hands off to 11.2 and 11.3 when it needs a conformance check. The State summary already lists the offered tiers that lack harness smoke tests or self-tests (G-19, G-20). Whatever is chosen, those tiers get them built, or the skill refuses them until they exist ([4.9](phase-2-design-harness.md#49-step-2i-stop-3-approve-the-design-and-choose-the-scope)).
 
 In Create mode for a repo with UTS-derived tests or harness code but no skill (S1), those assets are inputs:
 

@@ -6,7 +6,7 @@ compatibility: "Claude Code or Codex, on an Opus-class model. Needs shell and fi
 allowed-tools: Read Grep Glob
 metadata:
   team: "engineering"
-  version: "1.1.0"
+  version: "1.0.0"
   tags: "testing, uts, translator-skill, skill-creator, harness, ably-specification"
   marketplace: "false"
   short-description: "Detect, then build or upgrade a uts-to-LANG skill and its harness"
@@ -99,7 +99,7 @@ At a stop point, present what you found and the options, then wait for the user'
 | **STOP-12** | Any | The guide, the UTS docs and the reference implementations ([2.1](#21-your-inputs)) together don't answer a question, or the only answer the references give would depart from the guide | The question; the guide and UTS sections you searched; the references you read (repo, revision, path) and what they showed; the reading you propose |
 | **STOP-13** | 0 (Orient), every run | Always ([13.4](references/orient.md#134-the-state-summary-and-stop-13)) | The State summary, the state class (S0–S4, re-entry) and the options for it, with the recommended one: Create; Upgrade/Fix (diff-driven or full gap audit); regenerate from scratch; resume or restart; pick a skill (S4); stop |
 | **STOP-14** | 1 (step 1e), every run | Always, in every mode ([12.2](references/liveobjects-support.md#122-stop-14-recommend-then-ask)) | The `detect_liveobjects.py` evidence (public-API, legacy, internal and wire-only names, with files and counts), its recommendation and yours, and the options: full objects support (translate-only if incomplete), placeholder, none now |
-| **STOP-15** | 1 (step 1f), Upgrade/Fix | The gap audit, or the list of detected changes (diff-driven), is written ([11.4](references/upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item), [section 10](references/maintenance.md#10-maintenance)) | Every non-conforming item or detected change, with the proposed change and the options add, skip or defer (a skipped or deferred MUST row leaves the skill not conforming); or regenerate from scratch instead |
+| **STOP-15** | 1 (step 1f), Upgrade/Fix | The gap audit, or the list of detected changes (diff-driven), is written ([11.4](references/upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item), [section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven)) | Every non-conforming item or detected change, with the proposed change and the options add, skip or defer (a skipped or deferred MUST row leaves the skill not conforming); or regenerate from scratch instead |
 | **STOP-16** | 0 (Orient), first check | `check_repo_eligibility.py` rejects the repo, or can't decide ([13.2](references/orient.md#132-repository-eligibility-stop-16)) | Reject: the exact message that this procedure supports only Ably Pub/Sub SDK repositories and needs upgrading for this one; the run ends, with no override. Ask: the remotes found and the question (confirm a fork, name the GitHub repository, check the path) |
 | **STOP-17** | 0 (Orient), with STOP-13 | The capability profile isn't full, is unclear, has door sides, wraps native SDKs, comes from a capability override, uses fallback names, or changed since the recorded run ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)) | The profile (REST, Realtime and its sub-areas, with evidence), the suggested scope (modules in scope; `unsupported` modules; capability-inapplicable tests), the delta if any; options: accept, correct with evidence and rerun, stop. With doors, also the side question: construct clients through the core constructors (sanctioned internal-access route), the server door, the device door, or both as a parameter; the scope follows the side |
 
@@ -192,7 +192,7 @@ Create each record by copying its template from `assets/templates/` (the repo-pr
 
 Write them from STOP-13 on, at the location Orient's routing gives (13.5), by default using the language inferred so far for `<lang>`; if STOP-2 changes the language or D-24 chooses another location, move the files then. They are working notes, not skill files, so writing them before STOP-7 is allowed.
 
-The working records are what a later agent reads to maintain or regenerate the skill ([section 10](references/maintenance.md#10-maintenance)), so keep them accurate as you go, not only at the end.
+The working records are what a later agent reads to maintain or regenerate the skill ([section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven)), so keep them accurate as you go, not only at the end.
 
 ### 1.5 Intent
 
@@ -222,7 +222,7 @@ Orient (Step 0) recommends the mode, and the user decides at STOP-13 (D-27). The
 | Mode | When | Read |
 |---|---|---|
 | **Create** | No `uts-to-*` skill yet (S0); or none, but UTS-tagged tests or harness code to adopt (S1, 2.2) | The phases below |
-| **Upgrade/Fix** | A `uts-to-*` skill exists. **Diff-driven** for one this procedure built (S2): follow what changed since its recorded run ([section 10](references/maintenance.md#10-maintenance)). **Full gap audit** for one of unknown origin (S3), or by choice: audit it, its harness and its UTS-derived tests against the guide, choose per item, upgrade in place ([section 11](references/upgrade-existing-skill.md#11-upgrade-mode-audit-and-upgrade-an-existing-skill)). **Regenerate from scratch** only by the user's choice ([11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)) | Sections 10 and 11 |
+| **Upgrade/Fix** | A `uts-to-*` skill exists. **Diff-driven** for one this procedure built (S2): follow what changed since its recorded run ([section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven)). **Full gap audit** for one of unknown origin (S3), or by choice: audit it, its harness and its UTS-derived tests against the guide, choose per item, upgrade in place ([section 11](references/upgrade-existing-skill.md#11-upgrade-mode-audit-and-upgrade-an-existing-skill)). **Regenerate from scratch** only by the user's choice ([11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)) | Sections 10 and 11 |
 
 An interrupted run is resumed or restarted from its records (13.6). In every mode, Phase 1 also asks whether to add LiveObjects (`objects`) support (**STOP-14**), recommending an answer from `detect_liveobjects.py`'s evidence: [references/liveobjects-support.md](references/liveobjects-support.md) (section 12).
 
@@ -261,7 +261,7 @@ The acceptance checklist maps each item of the guide's [section 13 checklist](..
 | [references/phase-5-generate-skill.md](references/phase-5-generate-skill.md) | Starting Phase 5; listing corpus harness symbols in Phase 2 (7.4) | 7 |
 | [references/phase-6-validate-skill.md](references/phase-6-validate-skill.md) | Starting Phase 6 | 8 |
 | [references/orient.md](references/orient.md) | Step 0, every run | 13 |
-| [references/maintenance.md](references/maintenance.md) | Upgrade/Fix, diff-driven (S2) | 10 |
+| [references/upgrade-diff-driven.md](references/upgrade-diff-driven.md) | Upgrade/Fix, diff-driven (S2) | 10 |
 | [references/upgrade-existing-skill.md](references/upgrade-existing-skill.md) | Upgrade/Fix, full gap audit or regenerate | 11 |
 | [references/liveobjects-support.md](references/liveobjects-support.md) | Phase 1 step 1e (every run); writing the objects notes | 12 |
 | [assets/templates/repo-profile.md](assets/templates/repo-profile.md) | Copy to the working-records directory at the start of Phase 1 | — |
@@ -277,7 +277,7 @@ The templates are copied, not linked: they contain no links, so they stay valid 
 
 ## Scripts
 
-All read-only, Python 3, printing to stdout (no network); run them from anywhere as `python3 <skill-dir>/scripts/<name>.py`. What they know about Ably's repositories and SDK names that the spec can't give is data in `assets/eligibility.json` and `assets/capability-names.json`: update the data file, not the code ([section 10](references/maintenance.md#10-maintenance)).
+All read-only, Python 3, printing to stdout (no network); run them from anywhere as `python3 <skill-dir>/scripts/<name>.py`. What they know about Ably's repositories and SDK names that the spec can't give is data in `assets/eligibility.json` and `assets/capability-names.json`: update the data file, not the code ([section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 
 | Script | Use | Output |
 |---|---|---|
