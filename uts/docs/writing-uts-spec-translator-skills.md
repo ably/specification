@@ -1061,7 +1061,7 @@ The skill and its harness are one deliverable: the skill isn't done until every 
 
 ## Appendix: Existing skills (background and patterns to avoid)
 
-They are named so that the examples and lessons above can be traced, and as a last-resort reference for creating a skill and its harness ([Reference implementations (last resort)](#reference-implementations-last-resort)). Ably is renaming its SDK repositories from `ably-<lang>` to `ably-pubsub-<lang>` (`ably-java` is now [`ably/ably-pubsub-java`](https://github.com/ably/ably-pubsub-java)); this guide keeps the short names, and old clones' remotes still work through GitHub's redirect.
+The existing skills, `uts-to-swift` and `uts-to-kotlin`, are named so that the examples and lessons above can be traced, and as a last-resort reference for creating a skill and its harness ([Reference implementations (last resort)](#reference-implementations-last-resort)). Ably is renaming its SDK repositories from `ably-<lang>` to `ably-pubsub-<lang>` (`ably-java` is now [`ably/ably-pubsub-java`](https://github.com/ably/ably-pubsub-java)); this guide keeps the short names, and old clones' remotes still work through GitHub's redirect.
 
 | Skill | Repo and paths | Lessons this guide drew from it |
 |---|---|---|

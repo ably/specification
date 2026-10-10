@@ -56,7 +56,7 @@ Copy the [skill-gap-audit template](../assets/templates/skill-gap-audit.md) to t
 
 Fill in `skill-gap-audit.md`. Give every row of sections B and D an ID (GA-01, GA-02, …), so the decision, the change that closes it and the Final report can all name it.
 
-- **Section B (conformance):** one row per guide §13 item, in §13 order (one per row of the [acceptance checklist](../assets/templates/acceptance-checklist.md)), apart from the Harness group, so the guide's §13, the checklist and the audit stay one list. For each row, record:
+- **Section B (conformance):** one row per guide §13 item, in §13 order (one per row of the [acceptance checklist](../assets/templates/acceptance-checklist.md); copy its first column), apart from the Harness group, so the guide's §13, the checklist and the audit stay one list. For each row, record:
   - the status: `conforms`, `partial`, `missing`, `non-conforming`, `n/a` (with the reason, for example a tier the skill doesn't support), or `unverified (checked in <step>)` where only a later step can tell (the construct table at 7.4, compiling the examples at 8.7, or a network tier after STOP-6);
   - the evidence: a file and heading or symbol, or a command and its result;
   - for every row that isn't `conforms`: the proposed change, the step that makes it (for example "7.3: write `audit_translation.py`"), its size (S, M or L), and whether it needs STOP-4 or STOP-5 approval.

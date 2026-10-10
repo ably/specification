@@ -44,7 +44,7 @@ The clone `spec_clone_info.py` resolved (the argument, walked up to the clone ro
 
 The JSON has `state` (class, re-entry, reasons, recommended option, options) and `stateSummaryText`, the same under Claude Code and Codex. The facts behind them are in the other fields.
 
-Settle the stops in this order, in as few messages as possible:
+If Orient stopped with `NOT_A_SPEC_CLONE`, settle the clone's path (STOP-1) and rerun Orient first. Then settle the stops in this order, in as few messages as possible:
 
 1. **STOP-16** (13.2), if the repo isn't plainly eligible.
 2. **STOP-1** for the model (2.8) and for anything listed in `stop1`, such as the spec clone's path or a stale install of this skill.
@@ -95,7 +95,7 @@ The first match wins:
 | **S1** | No skill, but UTS-tagged tests or harness code (for example tagged tests in the SDK's native suite) | Create, keeping and matching the existing tests and harness |
 | **S0** | Nothing | Create |
 
-**Re-entry** is an overlay on any class: records from a run that didn't finish (their `Run status` is "in progress"). It is offered first (13.6).
+**Re-entry** is an overlay on any class: records from a run that didn't finish (their `Run status` is "in progress"). It is offered first (13.6). Records written before the `Run status` line existed count as unfinished when there is no `final-report.md`; `inspect_existing_skill.py` also reads the older mapping keys `notApplicable` and `notApplicableSpecs`, reported as `legacyKeys`.
 
 Some situations don't make a repo ambiguous:
 

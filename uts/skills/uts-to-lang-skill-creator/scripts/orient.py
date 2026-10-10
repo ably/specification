@@ -351,6 +351,8 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
           f"creator {spec.get('skillVersion')} (matches clone: "
           f"{ {True: 'yes', False: 'no'}.get(spec.get('skillMatchesClone'), 'unknown')})"
           if (spec or {}).get("ok") else
+          f"Spec clone   {spec['specClone']} (not usable: {spec.get('code')}: {spec.get('message')}); settle it at "
+          "STOP-1" if (spec or {}).get("specClone") else
           f"Spec clone   NOT FOUND ({(spec or {}).get('code', 'unknown error')}): ask for its path at STOP-1"),
         "Model        (state the session's model; Opus-class required)",
     ]
@@ -498,7 +500,8 @@ def main(argv):
                               "fix": "pass the path of a local ably/specification clone (or a directory inside "
                                       "one) with --spec-clone, or correct UTS_SPEC_CLONE, then run again"}, indent=2))
             return 1
-        clone = spec["specClone"] if spec and spec.get("ok") else None
+        # Set on success, and on GIT_ERROR (a spec copy that isn't a git checkout): never drop an explicit clone.
+        clone = (spec or {}).get("specClone")
         clone_args = ["--spec-clone", clone] if clone else []
         elig, w = run("check_repo_eligibility.py", str(repo), *clone_args)
         warnings += [w] if w else []
