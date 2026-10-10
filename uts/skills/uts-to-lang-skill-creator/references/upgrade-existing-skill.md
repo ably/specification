@@ -2,7 +2,7 @@
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 
-**Goal:** bring an existing `uts-to-<lang>` skill, its harness and its UTS-derived tests up to the guide, one item at a time and as the user chooses, while keeping everything that already conforms. Guide [9.5](../../../docs/writing-uts-spec-translator-skills.md#95-upgrading-an-existing-skill-should) is the requirement. The ground rules, the stop points and the phases all apply unchanged. This section says what is different. It is the full-gap-audit form of Upgrade/Fix, and it also serves regenerate-from-scratch (11.5) and a diff-driven Upgrade/Fix run that needs a conformance check ([section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)).
+**Goal:** bring an existing `uts-to-<lang>` skill, its harness and its UTS-derived tests up to the guide, one item at a time and as the user chooses, while keeping everything that already conforms. Guide [9.5](../../../docs/writing-uts-spec-translator-skills.md#95-upgrading-an-existing-skill-should) is the requirement. The ground rules, the stop points and the phases all apply unchanged. It is the full-gap-audit form of Upgrade/Fix, and it also serves regenerate-from-scratch (11.5) and a diff-driven Upgrade/Fix run that needs a conformance check ([section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 
 Contents:
 
@@ -56,7 +56,7 @@ Copy the [skill-gap-audit template](../assets/templates/skill-gap-audit.md) to t
 
 Fill in `skill-gap-audit.md`. Give every row of sections B and D an ID (GA-01, GA-02, …), so the decision, the change that closes it and the Final report can all name it.
 
-- **Section B (conformance):** one row per row of the [acceptance checklist](../assets/templates/acceptance-checklist.md), apart from the Harness group. Copy the checklist's first column, so the guide's §13, the checklist and the audit stay one list. For each row, record:
+- **Section B (conformance):** one row per guide §13 item, in §13 order (one per row of the [acceptance checklist](../assets/templates/acceptance-checklist.md)), apart from the Harness group, so the guide's §13, the checklist and the audit stay one list. For each row, record:
   - the status: `conforms`, `partial`, `missing`, `non-conforming`, `n/a` (with the reason, for example a tier the skill doesn't support), or `unverified (checked in <step>)` where only a later step can tell (the construct table at 7.4, compiling the examples at 8.7, or a network tier after STOP-6);
   - the evidence: a file and heading or symbol, or a command and its result;
   - for every row that isn't `conforms`: the proposed change, the step that makes it (for example "7.3: write `audit_translation.py`"), its size (S, M or L), and whether it needs STOP-4 or STOP-5 approval.
@@ -88,21 +88,29 @@ Recommend **add** for every MUST row. The user can also choose **regenerate from
 
 The choices are provisional where a row is `unverified`. When its status changes, re-confirm it: at STOP-8 for rows settled by then, or after Phase 6 for rows settled there.
 
-The harness rows are decided at STOP-3, where in upgrade mode the user chooses per row: build, plan (defer) or skip. The exception is G-19 and G-20 for every tier the skill keeps offering; those can't be skipped or deferred (4.9). STOP-7 still gates the skill files in this mode.
+The harness rows are decided at STOP-3, where in Upgrade/Fix the user chooses per row: build, plan (defer) or skip. The exception is G-19 and G-20 for every tier the skill keeps offering; those can't be skipped or deferred (4.9). STOP-7 still gates the skill files in this mode.
 
 ## 11.5 Step U4: run the phases, scoped
 
-| Phase | In upgrade mode |
+| Phase | In Upgrade/Fix, full gap audit |
 |---|---|
 | 1 | Already done before U2 (Repo profile, STOP-2, STOP-14) |
 | 2 | Start the gap table from section C. Assess the existing harness as 4.2 says ("check it, don't trust it"). Design only the rows the chosen items and the missing MUST rows need. At STOP-3, decide per row (11.4) |
 | 3 | Build the rows chosen at STOP-3. Don't change the behaviour of any harness code that existing UTS-derived tests or native tests use (2.2). Re-run the existing harness tests before and after each change. STOP-7 as usual |
-| 4 | Pre-fill D-01 to D-26 with what the existing skill does ("Decided by: existing skill"), and propose a change only where a chosen item needs one. Fill in D-27 to D-29. At STOP-8, show the changed decisions, and the rows from 11.3 whose status changed |
-| 5 | Edit the files in place: <br>• Keep every section that conforms. <br>• Change the smallest unit that closes the item (a rule, a table row, a function). <br>• Keep the skill's names, idioms and verified notes. <br>• When the chosen item is a restructure (for example moving long sections into `references/` to meet the 3.4 outline), move the text rather than rewrite it. <br>• Write any new file (for example a missing `audit_translation.py`) from the guide, never from another SDK's skill (2.1). <br>• Log each change in the Design record's changelog, with the GA- or G- row it closes |
+| 4 | Pre-fill D-01 to D-26 with what the existing skill does ("Decided by: existing skill"), and propose a change only where a chosen item needs one. Fill in D-27 to D-29 and D-31 (from Orient and Phase 1); D-30 is refreshed in Phase 7. At STOP-8, show the changed decisions, and the rows from 11.3 whose status changed |
+| 5 | Edit the files in place, by the rules below the table |
 | 6 | 11.6 decides which of 8.1 to 8.8 run, and adds the baseline comparison |
 | 7 | The Final report, with its "Existing assets and upgrade summary". If the user asks for commits, offer one per closed item, from the changelog, harness rows first ([9](../SKILL.md#9-phase-7-final-report-and-handover)) |
 
-The acceptance items of 7.1 to 7.6 and the "Done when" of each phase apply to what this run changes. An item tied to a skipped or deferred gap-audit row is reported ✗ under D-29, not worked.
+Phase 5 edits in place:
+
+- Keep every section that conforms, and the skill's names, idioms and verified notes.
+- Change the smallest unit that closes the item (a rule, a table row, a function).
+- When the chosen item is a restructure (for example moving long sections into `references/` to meet the 3.4 outline), move the text rather than rewrite it.
+- Write any new file (for example a missing `audit_translation.py`) from the guide, never from another SDK's skill (2.1).
+- Log each change in the Design record's changelog, with the GA- or G- row it closes.
+
+The acceptance items of 7.1 to 7.6 and each phase's exit check (its Done-when, checklist or stop point) apply to what this run changes. An item tied to a skipped or deferred gap-audit row is reported ✗ under D-29, not worked.
 
 Existing UTS-derived tests are regenerated only through an item the user chose, such as a re-sync, and only through the skill (fix the cause, then regenerate). They are never hand-edited.
 

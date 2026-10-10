@@ -9,7 +9,7 @@
 - State class: S0 | S1 | S2 | S3 | S4 (+ re-entry); run mode: create | upgrade: diff-driven | upgrade: full audit | upgrade: regenerate (resumed | restarted); LiveObjects: full | placeholder | none (translate-only | evaluate), from detector recommendation <yes | no | unclear>
 
 ## Files created or changed
-| Path | New / changed | Kind (hook, harness, smoke test, skill, script, notes, pilot test, CI suggestion) | Item (GA-nn / CH-nn / G-nn, upgrade mode) | Approved at |
+| Path | New / changed | Kind (hook, harness, smoke test, skill, script, notes, pilot test, CI suggestion) | Item (GA-nn / CH-nn / G-nn, Upgrade/Fix) | Approved at |
 |---|---|---|---|---|
 Hand-maintained project files the user must update: …
 
@@ -33,8 +33,8 @@ Link to design-record.md; decisions that depart from the guide's defaults, and w
 
 ## Pilot results
 (each pilot run's full section-11 report as the skill printed it: the header line, the table row, and every labelled line, including not-applicable omissions, missing APIs, mock-capability gaps, harness stand-ins and constructs it couldn't map; the table below collects the rows)
-| Spec file | Test file | IDs (spec/test) | Audit | Shortfall accounted | Compile | Run | Deviations added |
-|---|---|---|---|---|---|---|---|
+| Spec file | Test file | Model | IDs (spec/test) | Audit | Shortfall accounted | Compile | Run | Deviations added |
+|---|---|---|---|---|---|---|---|---|
 Fixes made to the skill, notes or harness during the pilot (from the changelog): …
 Reference tests named in SKILL.md: <tier → file>
 
@@ -57,6 +57,9 @@ Each read from the Design record (question, repo @ revision : path, pattern lear
 
 ## Next steps
 Which modules and tiers to translate next, in order, and why; harness work remaining; deferred gap-audit items with their plan.
+
+## Upgrade/Fix runs (dated)
+One entry per diff-driven run (section 10): date; the changes detected (CH- items); the artifacts updated; the checks re-run; the acceptance-checklist rows re-marked. "None" otherwise.
 
 ## Acceptance checklist
 (the acceptance-checklist template, filled)

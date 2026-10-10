@@ -2,7 +2,7 @@
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 
-**Goal:** a written, user-confirmed Repo profile that explains how the SDK is built, tested and mocked today, in enough depth to design the harness from it. This phase is mandatory and comes before anything else: the harness you design in Phase 2 should extend what the repo already has, follow its test style, and plug into its build and CI, and the skill's file locations, idioms and commands all derive from this profile.
+**Goal:** a written, user-confirmed Repo profile that explains how the SDK is built, tested and mocked today, in enough depth to design the harness from it. This phase is mandatory and comes before every other phase: the harness you design in Phase 2 should extend what the repo already has, follow its test style, and plug into its build and CI, and the skill's file locations, idioms and commands all derive from this profile.
 
 ## 3.1 Step 1a: read the repo's own instructions
 
@@ -50,7 +50,7 @@ Answer every item. For each, record the answer and its evidence in the Repo prof
 | P-20 | **Existing UTS assets and their state**: any UTS harness, UTS-derived tests (`UTS:` tags), `deviations.md` files, previous `uts-to-*` skills in this repo. For each asset: does it compile, do its tests pass, which spec SHA do headers name, which helper-spec symbols exist | Orient's State summary and `scripts/inspect_existing_skill.py`; `grep -rn "UTS:" <test-roots>`; search for `MockWebSocket`, `MockHttpClient`, `SandboxApp`, `uts-proxy`, `deviations.md`, `.claude/skills/uts-*`, `.agents/skills/uts-*`, `.codex/skills/uts-*` |
 | P-21 | **Sandbox access**: whether tests can reach `sandbox.realtime.ably-nonprod.net` from developer machines and CI | Existing integration tests; CI network settings (guide [2.3](../../../docs/writing-uts-spec-translator-skills.md#23-sandbox-provisioning-and-fixtures-must-for-integration-tiers)). Probing the sandbox, or running existing integration tests for P-20, is network access: **STOP-6** first |
 
-For a first pass, run `python3 <skill-dir>/scripts/survey_repo.py <repo> [<test-root> …]` (read-only; it prints the HEAD SHA and dirty state, extension counts, likely test roots, submodule status, candidate mocks and fakes, existing `UTS:` tags and existing skills). It is a starting point, not an answer: adapt or extend the searches for the repo's language, and record each answer's evidence.
+For a first pass, run `python3 <skill-dir>/scripts/survey_repo.py <repo> [<test-root> …]` (read-only; it prints the HEAD SHA and dirty state, extension counts, likely test roots, submodule status, candidate mocks and fakes, existing `UTS:` tags and existing skills; outside a git repository it says so and lists files by a directory walk). It is a starting point, not an answer: adapt or extend the searches for the repo's language, and record each answer's evidence.
 
 ## 3.3 Step 1c: study how the existing tests drive the SDK
 
@@ -80,11 +80,13 @@ Write `repo-profile.md` from the [repo-profile template](../assets/templates/rep
 
 In every run and every mode, after STOP-2, ask **STOP-14** from the LiveObjects evidence gathered for P-15, as [section 12](liveobjects-support.md#12-liveobjects-objects-support) describes. Record the answer as D-28, and add it to the Repo profile's objects line. Phases 2 to 6 follow it ([12.3](liveobjects-support.md#123-what-each-choice-adds-phase-by-phase)).
 
-## 3.6 Step 1f: gap audit (upgrade mode only, STOP-15)
+## 3.6 Step 1f: gap audit (Upgrade/Fix only, STOP-15)
 
 Write the gap audit and stop at **STOP-15** ([11.3](upgrade-existing-skill.md#113-step-u2-write-the-gap-audit), [11.4](upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item)). Diff-driven: the section H change list instead ([section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 
-**Done when:**
+## 3.7 Done when
+
+Phase 1 is done when:
 
 - every P-row has an answer with evidence, or an explicit "unknown" with a question;
 - the build-tests and single-class commands have been run, or marked unverified with the reason;

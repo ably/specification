@@ -60,5 +60,5 @@
 |---|---|---|---|---|---|---|---|
 
 ## Changelog (fixes made to the skill, notes or harness)
-| # | Date | Found by | Cause (skill / notes / catalogue / script / harness) | Fix | Closes (gap-audit GA-nn / G-nn, if any) | Tests regenerated |
+| # | Date | Found by | Cause (skill / notes / catalogue / script / harness) | Fix | Closes (GA-nn / CH-nn / G-nn, if any) | Tests regenerated |
 |---|---|---|---|---|---|---|

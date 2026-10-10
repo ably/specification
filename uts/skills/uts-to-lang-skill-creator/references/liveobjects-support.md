@@ -9,7 +9,7 @@ Contents:
 - [12.1 Gather the evidence (step 1b, P-15)](#121-gather-the-evidence-step-1b-p-15)
 - [12.2 STOP-14: recommend, then ask](#122-stop-14-recommend-then-ask)
 - [12.3 What each choice adds, phase by phase](#123-what-each-choice-adds-phase-by-phase)
-- [12.4 What the objects notes typically cover](#124-what-the-objects-notes-typically-cover)
+- [12.4 What the objects notes cover](#124-what-the-objects-notes-cover)
 - [12.5 An SDK-blocked objects tier](#125-an-sdk-blocked-objects-tier)
 
 ## 12.1 Gather the evidence (step 1b, P-15)
@@ -79,7 +79,7 @@ Ask this after STOP-2 (step 1e, [3.5](phase-1-understand-repo.md#35-step-1e-deci
 | 5 | Notes per [7.5](phase-5-generate-skill.md#75-step-5e-write-the-module-notes) and 12.4. Catalogue rows for the constructs `scan_constructs.py` finds in `uts/objects` | A placeholder notes file saying why, and what would unblock it | — |
 | 6 | An objects pilot ([8.3](phase-6-validate-skill.md#83-pilot-translate-one-spec-per-available-tier)), translate-only when D-28 says so, and always for an SDK-blocked tier (12.5) | 8.5 path 3 (placeholder refused) | 8.5 path 4 (unready tier refused, with the reason) |
 
-## 12.4 What the objects notes typically cover
+## 12.4 What the objects notes cover
 
 The requirement is guide [3.4](../../../docs/writing-uts-spec-translator-skills.md#34-recommended-outlines-should)'s thirteen items, in order, as [7.5](phase-5-generate-skill.md#75-step-5e-write-the-module-notes) says. For `objects`, they usually amount to the following. Use this list to know where to look, not as text to fill in. Write every mapping from the SDK source and the harness as built: the notes are a map, and the SDK source is the authority (guide 3.1).
 
@@ -119,7 +119,7 @@ Guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke
 - **Generated skill, step F.** Pass only when the SDK-blocked items listed in Known gaps (under their expected-failure marker) are the only failures, and print them clearly in the preflight output. Re-check them in every preflight. When the smoke test passes, clear the Known gap and the `translateOnly` entry; evaluate then becomes available.
 - **Records.**
   - D-28: "full; SDK-blocked: …".
-  - The Final report: its own "SDK-blocked" line.
-  - In upgrade mode, gap-audit section E.
+  - The Final report: its "SDK-blocked objects tiers" section.
+  - In Upgrade/Fix, gap-audit section E.
 - **Acceptance checklist.** The row "Harness smoke tests per tier and helper self-tests …" is ✗ with the reason "SDK-blocked: objects unit smoke test (<feature>)". This is the same pattern as the declined-CI case in [5.4](phase-3-build-harness.md#54-step-3d-stop-7-confirm-the-harness). Other rows aren't affected.
 - **Pilot.** The objects pilot for that tier runs translate-only, and the report says so (8.3).

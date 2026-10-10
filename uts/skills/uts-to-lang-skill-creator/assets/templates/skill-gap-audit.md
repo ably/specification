@@ -17,14 +17,16 @@
 | UTS-derived tests (see D) | | |
 | Working records | | |
 
-## B. Conformance (one row per acceptance-checklist row outside the Harness group; copy its first column)
-A row (or part of one) needing a capability the SDK lacks is "n/a — capability absent: <capability> (D-31)"; one that was n/a when recorded and whose capability now exists is "missing (newly applicable)". Each row and each section-D follow-up gets an ID (GA-01, GA-02, …) used by the decision, the changelog and the Final report. Status: conforms / partial / missing / non-conforming / n/a (reason) / unverified (checked in <step>). Choice at STOP-15: add / skip / defer (a skipped or deferred MUST row leaves the skill not conforming). The objects half of the module-notes row comes from D-28; Creation-process rows for a skill of unknown origin: "origin unknown; this run meets it for the artifacts it changes".
+## B. Conformance
+One row per guide §13 item outside the Harness group, in §13 order (one per acceptance-checklist row). A row (or part of one) needing a capability the SDK lacks is "n/a — capability absent: <capability> (D-31)"; one that was n/a when recorded and whose capability now exists is "missing (newly applicable)". Each row and each section-D follow-up gets an ID (GA-01, GA-02, …) used by the decision, the changelog and the Final report. Status: conforms / partial / missing / non-conforming / n/a (reason) / unverified (checked in <step>). Choice at STOP-15: add / skip / defer (a skipped or deferred MUST row leaves the skill not conforming). The objects half of the module-notes row comes from D-28; Creation-process rows for a skill of unknown origin: "origin unknown; this run meets it for the artifacts it changes".
 
 | # | Acceptance-checklist item | Level | Status | Evidence | Proposed change | Step | Size | Approval needed | Choice | Re-confirmed (STOP-8 or after Phase 6) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | GA-01 | | MUST / SHOULD | | | | | | | | |
 
-## C. Harness (decided per row at STOP-3, not here; G-19/G-20 for offered tiers can't be skipped or deferred)
+## C. Harness
+Decided per row at STOP-3, not here; G-19/G-20 for offered tiers can't be skipped or deferred.
+
 | Row | Capability | Quick status | Evidence | Note for Phase 2 |
 |---|---|---|---|---|
 | G-01 … G-20 | (from the uts-infra-design template) | | | |

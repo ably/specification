@@ -46,11 +46,12 @@
 - Proxy: version …; binaries per OS …; local override …; auth through the proxy …; platform gating …
 
 ## Hook proposals (each needs STOP-4 approval)
-| Hook | API | Default behaviour | Visibility | Files touched | Installed how | Per-client? | Approved on |
-|---|---|---|---|---|---|---|---|
+| Hook | API | Default behaviour | Visibility | Files touched | Installed how | Per-client? | Time sources covered (clock hook) | Approved on |
+|---|---|---|---|---|---|---|---|---|
 
 ## Placement
 - Shared test-support: <dir/target>; port-only harness: <dir/target>; module helpers: <dir per module>
+- Harness tests per tier: <tier → command that runs its smoke tests and self-tests; CI job>
 
 ## Tier feasibility
 | Module | unit | integration | proxy |
@@ -61,7 +62,7 @@
 
 ## Decision at STOP-3
 (a) build now: <rows> | (b) plan only | (c) scope to ready tiers — chosen by <user> on <date>; design changes requested: …
-Upgrade mode: per row build / plan (defer) / skip: …; G-19/G-20 for every tier the skill offers can't be skipped or deferred
+Upgrade/Fix: per row build / plan (defer) / skip: …; G-19/G-20 for every tier the skill offers can't be skipped or deferred
 
 ## Build log (Phase 3) / plan (option b)
 | Order | Row | Work | Acceptance check | Result | Date |

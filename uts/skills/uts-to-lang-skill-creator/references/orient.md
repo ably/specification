@@ -1,11 +1,12 @@
-# 13. Step 0: orient
+# 13. Step 0: Orient
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 
-**Goal:** before anything else, in every run, establish four things:
+**Goal:** before anything else, in every run, establish five things:
 
 - that the repository is one this procedure supports;
 - what it already has;
+- its REST and Realtime capability profile and the skill's scope (STOP-17, D-31);
 - which mode to run in (**Create** or **Upgrade/Fix**);
 - for Upgrade/Fix, which existing skill to work on.
 
@@ -24,7 +25,7 @@ Contents:
 
 ## 13.1 Run it
 
-Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass the spec clone the user named, if any. Add `--skill-dir <path>` when the user names the skill, and `--records <dir>` when they say where its working records are. The script runs this skill's read-only scripts in order and prints one JSON object:
+Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass the spec clone the user named, if any. Add `--skill-dir <path>` when the user names the skill, `--records <dir>` when they say where its working records are (with `--skill-dir`, it applies to the named skill only), `--include-submodules` to scan submodule sources too, and `--full` for the raw script outputs. The script runs this skill's read-only scripts in order and prints one JSON object:
 
 1. `spec_clone_info.py`: resolves the spec clone every other script reads, and settles STOP-1 ([2.6](../SKILL.md#26-pin-the-spec-clone)).
 2. `check_repo_eligibility.py`: on a reject, nothing else runs.
@@ -32,9 +33,16 @@ Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass t
 4. `detect_liveobjects.py`: a one-line LiveObjects verdict.
 5. `detect_capabilities.py`: the REST and Realtime capability profile, the sides, and the suggested scope (13.8), with eligibility's `capabilityOverride` if the whitelist gives one.
 
-The clone `spec_clone_info.py` resolved (the argument, walked up to the clone root, else `UTS_SPEC_CLONE`, else the clone this skill is installed from) is passed to the eligibility check and to both detectors, which read their names from it (13.8); the State summary's Spec clone line shows that path. An explicit path (the argument or `UTS_SPEC_CLONE`) that isn't in a clone stops Orient with `NOT_A_SPEC_CLONE`: it is never replaced by another clone. A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else.
+The clone `spec_clone_info.py` resolved (the argument, walked up to the clone root, else `UTS_SPEC_CLONE`, else the clone this skill is symlinked from) is passed to the eligibility check and to both detectors, which read their names from it (13.8); the State summary's Spec clone line shows that path. An explicit path (the argument or `UTS_SPEC_CLONE`) that isn't in a clone stops Orient with `NOT_A_SPEC_CLONE`: it is never replaced by another clone. A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else ([Maintaining this skill](../SKILL.md#maintaining-this-skill)).
 
-The JSON has `state` (class, re-entry, reasons, recommended option, options) and `stateSummaryText`. It gives a structured result that is the same under Claude Code and Codex. The facts behind it are in the other fields; `--full` adds the raw script outputs.
+`spec_clone_info.py [<spec-clone> | --spec-clone <path>]` checks that the guide, the UTS docs and the helper specs exist, and runs `git rev-parse HEAD`, `git status --porcelain -- uts specifications` and `git log -1 --format='%H %cd'` on the guide and this skill ([2.6](../SKILL.md#26-pin-the-spec-clone) says what to record). Its outcomes:
+
+- Any `ok: false` (for example `SPEC_CLONE_NOT_FOUND`, `NOT_A_SPEC_CLONE`, `GIT_ERROR`): STOP-1; ask for the clone's path.
+- `foundBy` other than `argument`: tell the user which clone was found and how, and confirm it before Phase 1.
+- `skillMatchesClone: false` (an installed copy that differs from this clone's copy of the skill, also reported in `warnings`): STOP-1; ask the user to refresh the install, or to confirm which version to follow.
+- `skillMatchesClone: null` (the clone has no copy of this skill, for example an older checkout): tell the user and confirm before Phase 1.
+
+The JSON has `state` (class, re-entry, reasons, recommended option, options) and `stateSummaryText`, the same under Claude Code and Codex. The facts behind them are in the other fields.
 
 Settle the stops in this order, in as few messages as possible:
 
@@ -87,7 +95,7 @@ The first match wins:
 | **S1** | No skill, but UTS-tagged tests or harness code (for example tagged tests in the SDK's native suite) | Create, keeping and matching the existing tests and harness |
 | **S0** | Nothing | Create |
 
-**Re-entry** is an overlay on any class: records from a run that didn't finish (their `Run status` is "in progress", or, for older records, there is a design record but no final report). It is offered first (13.6).
+**Re-entry** is an overlay on any class: records from a run that didn't finish (their `Run status` is "in progress"). It is offered first (13.6).
 
 Some situations don't make a repo ambiguous:
 
@@ -97,7 +105,7 @@ Some situations don't make a repo ambiguous:
 
 `origin` comes from evidence this procedure writes:
 
-- `creator-records`: a design record (in `<skill>/generation/`, or the `--records` directory) whose header is "Design record: uts-to-…" and that names "uts-to-lang-skill-creator version".
+- `creator-records`: a Design record (in `<skill>/generation/`, or the `--records` directory) whose header is "Design record: uts-to-…" and that names "uts-to-lang-skill-creator version".
 - `creator-metadata`: the skill's `metadata.generated-by` stamp (13.7).
 
 A version number alone proves nothing.
@@ -180,11 +188,11 @@ When Orient finds records with `Run status: in progress`, offer:
 So that a later Orient can tell this procedure's skills from others (S2 vs S3), the procedure writes two kinds of evidence. Both are a *procedure recommendation*.
 
 - **The skill's frontmatter** carries `metadata.generated-by: "uts-to-lang-skill-creator <version> @ <spec-sha8>"`, and `metadata.records: "<repo-relative records dir>"` (or `"not kept"`). Both are strings, so they stay portable (guide 3.3). Phase 7 refreshes them.
-- **The design record** carries a `Run status` line: "in progress (Phase n)" from STOP-13 on, updated at each phase end, and "finished" at Phase 7.
+- **The Design record** carries a `Run status` line: "in progress (Phase n)" from STOP-13 on, updated at each phase end, and "finished" at Phase 7.
 
 ## 13.8 Capabilities and scope (STOP-17, D-31)
 
-The harness and the skill cover what the SDK can do, not what its name suggests (guide [section 2](../../../docs/writing-uts-spec-translator-skills.md#2-the-harness-uts-test-infrastructure)). `detect_capabilities.py <repo> [--spec-clone P] [--include-submodules] [--capability-override rest=full,realtime=absent]` (Orient runs it; an unknown capability or a level not valid for it is `USAGE_ERROR`, naming the valid levels) finds:
+The harness and the skill cover what the SDK can do, not what its name suggests (guide [section 2](../../../docs/writing-uts-spec-translator-skills.md#2-the-harness-uts-test-infrastructure)). `detect_capabilities.py <repo> [--spec-clone P] [--include-submodules] [--capability-override rest=full,realtime=absent]` (Orient runs it; an unknown capability or a level not valid for it is a usage error naming the valid levels: usage on stderr, exit 2) finds:
 
 - **The REST client**, with its key members (`request`, `stats`, `time`, …) and a REST channel (`publish`, `history`, …).
 - **The Realtime client**, with three sub-areas, each `present`, `stub` or `absent`. A sub-area is `present` only when its own files declare at least one of its key members (not a generic one); its names declared with no such member are `stub`:
@@ -250,15 +258,11 @@ For example, ably-dotnet's 2.0 branch reports core (REST and Realtime), server (
 | rest `absent`, realtime `partial` with connection and channels absent (weak realtime) | `unclear` | No modules; `undecided`: `realtime` and `objects`. Ask at STOP-17 what the SDK offers (the scan may miss its naming); never decided as realtime-only |
 | no public client | `none` | Probably the wrong path: STOP-16 ask |
 
-On the current corpus, the lists are:
-
-- **REST tests that need a Realtime client** (13): the three RSC24 tests in `rest/integration/batch_presence.md`; RSP4, RSP4b1, RSP4b2, RSP4b3 and RSP5 in `rest/integration/presence.md`; RSA17g and RSA17c in `rest/integration/revoke_tokens.md`; REC3a, REC3b and REC3 in `rest/unit/fallback.md`.
-- **Realtime tests that need a REST client** (4): RSA9a and RSA9 in `realtime/integration/auth/token_request_test.md`; RTN15h1 in `realtime/integration/proxy/connection_resume.md`; RTL6 in `realtime/integration/proxy/rest_faults.md`.
-- **REST-only tests filed under `uts/realtime`** (`extraTests`, 3): RSC10 and RSC15m in `realtime/integration/proxy/rest_faults.md`, and RSA4e in `realtime/unit/auth/auth_callback_errors_test.md`. A REST-only skill translates these too.
+For example, the three RSC24 tests in `rest/integration/batch_presence.md` need a Realtime client; `spec_names.py` prints the current lists. A REST-only skill also translates the REST-only tests filed under `uts/realtime` (`extraTests`).
 
 **Wrappers over native SDKs** (`wrapsNativeSdk`, such as a Flutter plugin). The capability is full, but the hooks live in the wrapped native SDKs. Phase 1 checks whether they are reachable from the SDK's language (P-13); if they aren't, that is a harness gap, and the unit tier is offered only once hooks exist ([4.8](phase-2-design-harness.md#48-step-2h-derive-tier-feasibility)). The integration and proxy tiers are still offered.
 
-**STOP-17** is asked, in the same message as STOP-13 and before the mode options, when `confirmAtStop17` is set or the profile differs from the recorded D-31. `confirmAtStop17` is set when the profile isn't full, is unclear, has sides, wraps native SDKs, comes from a capability override, or its names come from the fallback. Otherwise the user confirms the profile with their STOP-13 answer. Show the profile with its evidence, the suggested scope, the `reasons`, and the delta if any. The options are:
+**STOP-17** is asked, in the same message as STOP-13 and before the mode options, when Orient sets `stop17`. This is the one list of its triggers: `confirmAtStop17` is set (the profile isn't full, is unclear, has sides, wraps native SDKs, comes from a capability override, or its names come from the fallback), or the profile differs from the recorded D-31 (below). Otherwise the user confirms the profile with their STOP-13 answer. Show the profile with its evidence, the suggested scope, the `reasons`, and the delta if any. The options are:
 
 - (1) accept the suggested scope;
 - (2) correct a capability, giving evidence, and rerun;
@@ -277,7 +281,7 @@ Show each side's entry points from the Side lines, and let the user choose. Anot
 
 **The scope follows the chosen side.** A side without a REST client (usually the device door) gives a `realtime-only` scope, and a side with both clients gives `full`. With the harness-parameter option, the scope is the union, and a test one side can't run is capability-inapplicable on that side's run.
 
-Record the result as **D-31**, as one parseable line in the design record. Record the levels detected for the whole repository, not for the chosen side, so that a later Orient compares like with like; the side and the scope carry the choice. For example:
+Record the result as **D-31**, as one parseable line in the Design record. Record the levels detected for the whole repository, not for the chosen side, so that a later Orient compares like with like; the side and the scope carry the choice. For example:
 
 ```
 - Capabilities (D-31): rest full; realtime absent; liveobjects no; side: none; scope: rest-only (rest + 3 REST-only tests under realtime); unsupported: realtime, objects (capability absent); capability-inapplicable: 13 tests (listed in the rest notes); names: spec
@@ -297,17 +301,19 @@ Record the result as **D-31**, as one parseable line in the design record. Recor
 - **Acceptance checklist.** A row that wholly needs the absent capability is `n/a — capability absent: <capability> (D-31)`. A row with only some parts affected is ✓ with those parts named as n/a. n/a never counts as ✗; a scope the user chose to cut still is ✗.
 - **LiveObjects.** STOP-14 is still asked. With no Realtime client it recommends "no", with the reason "capability absent: no realtime client".
 
-**When the capability or the side changes later.** Orient compares the current profile with the recorded one (the D-31 line, completed by the mapping's `unsupported` markers; for records with no D-31 line, the levels inferred from the mapping). `inspect_existing_skill.py` reports that recorded profile as `capabilityProfile`: it parses the D-31 line and reads each mapping module's `unsupported`, `capabilityInapplicable` and `extraTests`, and also the legacy keys `notApplicable` and `notApplicableSpecs` (listed as `legacyKeys`); `levelsInferred` says the levels came from the mapping, not from D-31. It reports `capabilityDelta` as `{changes, added, lowered}`, or null when nothing changed:
+**When the capability or the side changes later.** Orient compares the current profile with the recorded one (the D-31 line, completed by the mapping's `unsupported` markers). `inspect_existing_skill.py` reports that recorded profile as `capabilityProfile`: it parses the D-31 line and reads each mapping module's `unsupported`, `capabilityInapplicable` and `extraTests`; if there is no D-31 line, it infers the levels from the mapping and sets `levelsInferred`. It reports `capabilityDelta` as `{changes, added, lowered}`, or null when nothing changed:
 
 - `changes`: each differing item, `"old -> new"`. The REST and Realtime levels are always compared, because D-31 records the whole repository's levels. `side` changes when doors appear, disappear, or the recorded side is no longer among them. The scope kind (`scope`) and the `unsupported` modules depend on the chosen side, so they are compared only when no side was recorded and the repo has no doors now.
 - `added`: capabilities now higher than recorded, or modules no longer unsupported (not `objects`, which follows realtime and STOP-14 decides).
-- `lowered`: capabilities lower than recorded, or modules newly unsupported: a detector miss, or really removed? Ask for evidence at STOP-17.
+- `lowered`: capabilities lower than recorded, or modules newly unsupported: a detector miss, or removed? Ask for evidence at STOP-17.
 
 Any change makes STOP-17 ask, and the State summary shows the Capability line. On S2 (not re-entry), a change recommends Upgrade/Fix, diff-driven, never "Stop". The change item "capability added: <capability>" ([section 10](upgrade-diff-driven.md#10-upgradefix-diff-driven)):
 
 - supersedes D-31;
-- removes `unsupported`, and the `capabilityInapplicable` entries the new client makes runnable, and maps the new tiers;
-- turns the G-rows and checklist parts that were n/a for that capability into gaps;
+- removes the module's `unsupported` marker, and the `capabilityInapplicable` entries the new client makes runnable, maps the new tiers and adds the module notes;
+- turns the G-rows and checklist parts that were n/a for that capability into gaps (gap-audit sections B and C, marked "newly applicable"), and adds the guide 2.7 sets for the new tiers;
 - asks STOP-14 again.
 
-A change of side (for example, the user now wants the server door, or both) is a change item of the same kind: it supersedes D-31, and the scope follows the new side.
+A removed capability is its own change item; tests are never deleted without asking.
+
+A change of side (the SDK gains doors, or the user now wants another side, or both) is the change item "side changed: <old> -> <new>": ask STOP-17's side question again, supersede D-31, and make the scope, the mapping markers and the harness's construction path follow the new side. In the generated skill, a scope change is a mapping edit (`unsupported`, `capabilityInapplicable`, `extraTests`), not a resolver change ([7.1](phase-5-generate-skill.md#71-step-5a-create-the-layout-and-the-mapping-file)).

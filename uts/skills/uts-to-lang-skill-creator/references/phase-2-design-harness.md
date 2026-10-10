@@ -116,6 +116,6 @@ Present `uts-infra-design.md`: the gap table, the helper-spec mappings, the wait
 
 Under (b) and (c), G-19 and G-20 for every tier the skill will offer can't be planned or scoped out; Phase 3 and STOP-7 still run for them.
 
-In upgrade mode, the user chooses per row instead of (a)–(c): build, plan (defer) or skip, with the same exception for G-19 and G-20 ([11.4](upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item)). A tier the skill offers today whose smoke tests or self-tests won't be built becomes unready, and the skill refuses it until they exist.
+In Upgrade/Fix (either sub-mode), the user chooses per row instead of (a)–(c): build, plan (defer) or skip, with the same exception for G-19 and G-20 ([11.4](upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item)). A tier the skill offers today whose smoke tests or self-tests won't be built becomes unready, and the skill refuses it until they exist.
 
 Record the answer and any design changes the user asked for. Under (b) and (c), the skill's tier step (C) must offer only ready tiers, and the Final report lists the rest as known limitations.

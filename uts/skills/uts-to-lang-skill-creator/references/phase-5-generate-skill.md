@@ -136,7 +136,7 @@ Write `references/<module>-mapping.md` for every module chosen in D-23. Cover th
 - **Item 9 (helper-spec coverage):** the module's rows of the symbol tables from [4.3](phase-2-design-harness.md#43-step-2c-map-each-helper-spec-to-native-code), as built, with each fixture helper's scope and every sanctioned stand-in.
 - **Item 12 (worked example):** translate one short real test from the module by hand, name each mechanical rewrite, and make sure it compiles (it becomes one of the skill's examples; [8.7](phase-6-validate-skill.md#87-verify-the-skills-own-examples)).
 
-For `objects`, [12.4](liveobjects-support.md#124-what-the-objects-notes-typically-cover) says what these items usually amount to, and where to look.
+For `objects`, [12.4](liveobjects-support.md#124-what-the-objects-notes-cover) says what these items usually amount to, and where to look.
 
 A module whose mapping you can't author yet gets a **placeholder** notes file that says so; the skill must then refuse that module (guide [4](../../../docs/writing-uts-spec-translator-skills.md#phase-1-selection-steps-0-and-af), "If the module's notes file exists but is only a placeholder").
 

@@ -55,4 +55,14 @@ Write a README next to the harness covering everything guide [3.1](../../../docs
 
 Re-run the assessment of [4.2](phase-2-design-harness.md#42-step-2b-assess-each-capability-reuse-wrap-extend-or-build) and the tier matrix of [4.8](phase-2-design-harness.md#48-step-2h-derive-tier-feasibility), and update `uts-infra-design.md` with the build log. Show the user the smoke-test and self-test results per tier (each run by its tier's filter), their CI wiring, the files created or changed, and the updated tier matrix. Only then continue to the skill.
 
-**Done when:** every row the user chose to build is `present`; each supported tier has green smoke tests and self-tests covering guide 2.7, wired into CI (or, if the user declined the CI change at STOP-5, listed in the Final report as an unmet requirement: the skill does not conform to guide 2.5/2.7 until CI runs the harness tests, so mark the acceptance-checklist rows "Harness smoke tests per tier and helper self-tests …" and "One CI home per suite …" ✗ with that reason; the tier stays ready, because the skill's preflight still runs the harness tests locally on every run, and the harness README states that CI doesn't yet run them); an objects smoke test that fails only on SDK not-implemented paths, with green self-tests, is recorded as SDK-blocked under [12.5](liveobjects-support.md#125-an-sdk-blocked-objects-tier) (the tier is translate-only, and the smoke-test checklist row is ✗ "SDK-blocked"); the strict compile and lint pass; the harness README exists; the user has confirmed at STOP-7. If the user declines network access at STOP-6, the integration and proxy tiers aren't supported: mark them unready (`blockedBy`: harness tests not run) and list them in the Final report.
+**Done when:**
+
+- every row the user chose to build is `present`;
+- each supported tier has green smoke tests and self-tests covering guide 2.7, wired into CI;
+- if the user declined the CI change at STOP-5: the Final report lists it as an unmet requirement (the skill doesn't conform to guide 2.5/2.7 until CI runs the harness tests), the acceptance-checklist rows "Harness smoke tests per tier and helper self-tests …" and "One CI home per suite …" are ✗ with that reason, and the harness README states that CI doesn't yet run them. The tier stays ready, because the skill's preflight still runs the harness tests locally on every run;
+- an objects smoke test that fails only on SDK not-implemented paths, with green self-tests, is recorded as SDK-blocked under [12.5](liveobjects-support.md#125-an-sdk-blocked-objects-tier): the tier is translate-only, and the smoke-test checklist row is ✗ "SDK-blocked";
+- the strict compile and lint pass;
+- the harness README exists;
+- the user has confirmed at STOP-7.
+
+If the user declines network access at STOP-6, the integration and proxy tiers aren't supported: mark them unready (`blockedBy`: harness tests not run) and list them in the Final report.

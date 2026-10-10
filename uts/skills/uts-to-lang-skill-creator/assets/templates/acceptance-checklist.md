@@ -1,4 +1,4 @@
-<!-- Paste this table into the Final report's "Acceptance checklist" section. One row per item of the guide's section 13 checklist (uts/docs/writing-uts-spec-translator-skills.md), with where the procedure produces and verifies it. Mark each ✓, ✗ (with the reason) or n/a (with the reason). A row that wholly needs a capability the SDK lacks is "n/a — capability absent: <capability> (D-31)"; a row where only parts do is ✓ with those parts named n/a. n/a never counts as ✗; a scope the user chose to cut is ✗. -->
+<!-- Paste into final-report.md, "Acceptance checklist". One row per guide §13 item. Mark ✓, ✗ (reason) or n/a (reason); n/a rules: skill section 13.8. -->
 
 | Guide §13 item | Produced in | Verified in | Status |
 |---|---|---|---|

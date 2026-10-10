@@ -68,7 +68,7 @@ The candidates are examples only. Before choosing one, confirm it exists in your
 
 **A green preflight comes first.** The skill's step F (after **STOP-6** for network tiers) must pass for the pilot's tier before the pilot translates anything; a pilot run on a red harness doesn't count. The one exception is an SDK-blocked objects tier ([12.5](liveobjects-support.md#125-an-sdk-blocked-objects-tier)): there the preflight passes with only the SDK-blocked items red, and the pilot runs translate-only. Record the preflight result with the pilot. If network access is declined, that tier's pilot isn't run and is reported as unvalidated.
 
-Use translate-only mode if the SDK lacks the feature (for `objects`, as D-28 recorded: a public API whose implementation is incomplete is piloted translate-only); otherwise evaluate. In upgrade mode, [11.6](upgrade-existing-skill.md#116-step-u5-validate-without-regressions) decides which of 8.1 to 8.8 run, and adds the baseline comparison. Then:
+Use translate-only mode if the SDK lacks the feature (for `objects`, as D-28 recorded: a public API whose implementation is incomplete is piloted translate-only); otherwise evaluate. In Upgrade/Fix, full gap audit, [11.6](upgrade-existing-skill.md#116-step-u5-validate-without-regressions) decides which of 8.1 to 8.8 run, and adds the baseline comparison; in Upgrade/Fix, diff-driven, section 10 says which checks to re-run. Then:
 
 1. Compile (and collect: every tagged test function is collected; count a parameterised or protocol-variant test once).
 2. Audit; walk the review checklist (guide [8.3](../../../docs/writing-uts-spec-translator-skills.md#83-review-checklist-must-after-the-audit)).
@@ -96,7 +96,7 @@ Run each path through the skill (in the session from [8.3](#83-pilot-translate-o
 3. **Placeholder notes:** a module whose notes file is a placeholder → refused, with the reason.
 4. **Unready tier:** a tier the mapping marks unready → not offered at step C, with its `blockedBy`; an `unsupported` module (D-31) → refused with "unsupported: <reason>", and no build hint; a spec or Test ID under `capabilityInapplicable` → never selected, and reported with its reason; for a REST-only skill, the `realtime` module → only its `extraTests` offered ([7.1](phase-5-generate-skill.md#71-step-5a-create-the-layout-and-the-mapping-file)); a `translateOnly` tier (12.5) → step E offers only translate-only.
 5. **Unmapped module:** on a scratch copy of the mapping, a module without an entry → step B asks for a name and runs `--create`, which writes the D-03 default layout and preserves the other entries.
-6. **Re-sync** (if D-19 ships it): set a pilot file's header SHA to an older spec commit that changed that spec (`git -C <spec-clone> log --format=%H -- uts/<path>`), run `--resync`, and check the classification (including a change outside the pseudocode, such as `## Protocol Variants`, reported as **changed**, and, run against a scratch clone of the spec repo (`git clone <spec-clone> <scratch>`; the spec clone itself is never edited, 2.2), an uncommitted edit to that spec reported as **changed**), that the header SHA is updated, and that only the survivors in guide [9.2](../../../docs/writing-uts-spec-translator-skills.md#92-a-re-sync-mode-should) step 4 are preserved. Restore the file afterwards.
+6. **Re-sync** (if D-19 ships it): set a pilot file's header SHA to an older spec commit that changed that spec (`git -C <spec-clone> log --format=%H -- uts/<path>`), run `--resync`, and check the classification. A change outside the pseudocode, such as `## Protocol Variants`, is reported as **changed**; so is an uncommitted edit to that spec, made in a scratch clone of the spec repo (`git clone <spec-clone> <scratch>`; the spec clone itself is never edited, 2.2). Check that the header SHA is updated, and that only the survivors in guide [9.2](../../../docs/writing-uts-spec-translator-skills.md#92-a-re-sync-mode-should) step 4 are preserved. Restore the file afterwards.
 7. **Commands:** every build, run, lint and audit command `SKILL.md` names has now been run through the skill; fix any that failed.
 8. **Red harness:** on a scratch copy (or a temporary working-tree edit you revert afterwards), break one harness test (for example, make the WebSocket mock refuse every connection), or run an integration tier with the network unavailable → the skill stops at step F before generating anything, reports a harness or environment problem (not an SDK deviation), and names the failing test. Restore the change and confirm the preflight is green again.
 9. **Known gap:** select a spec that uses a construct the harness README lists under Known gaps → the preflight reports the conflict and stops to ask (guide 4 step F), rather than generating a substituted rendering. If Known gaps is empty, use a scratch copy of the README with an entry for a construct the selected spec uses.
@@ -119,4 +119,14 @@ Record which examples were verified and how.
 
 After review, name one spec-derived test file per tier in `SKILL.md` as the file to read first (guide [4, step 3](../../../docs/writing-uts-spec-translator-skills.md#phase-2-per-spec-steps-17)). Never name a smoke test.
 
-**Phase 6 is done when:** the resolver passes on all three modules and all negative cases; every path in 8.5 behaves as expected (including the red-harness stop) and every command in `SKILL.md` has been run; every pilot ran after a green preflight (or an SDK-blocked preflight, 12.5); the audit passes every mutation and the sweep; each pilot compiles, audits clean (or every shortfall is accounted for) and, in evaluate mode, ends in one of the three end states; lint and the CI-strict compile pass; every example is verified. In upgrade mode, 11.6's "Done when" replaces this one.
+**Phase 6 is done when:**
+
+- the resolver passes on all three modules and all negative cases;
+- every path in 8.5 behaves as expected (including the red-harness stop), and every command in `SKILL.md` has been run;
+- every pilot ran after a green preflight (or an SDK-blocked preflight, 12.5);
+- the audit passes every mutation and the sweep;
+- each pilot compiles, audits clean (or every shortfall is accounted for) and, in evaluate mode, ends in one of the three end states;
+- lint and the CI-strict compile pass;
+- every example is verified.
+
+In Upgrade/Fix, full gap audit, 11.6's "Done when" replaces this list.
