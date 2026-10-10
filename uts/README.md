@@ -17,6 +17,7 @@ uts/
 │   │   ├── push/                      # RSH — push admin
 │   │   └── types/                     # T* — type definitions
 │   └── integration/                   # REST integration tests (Ably sandbox)
+│       └── proxy/                     # Proxy-based fault injection tests
 ├── realtime/
 │   ├── unit/                          # Realtime unit tests (mocked WebSocket)
 │   │   ├── helpers/
@@ -29,13 +30,23 @@ uts/
 │   │   └── presence/                  # RTP — realtime presence
 │   └── integration/                   # Realtime integration tests
 │       ├── proxy/                     # Proxy-based fault injection tests
+│       ├── auth/, channels/, connection/, presence/   # Direct sandbox tests, by area
 │       └── *.md                       # Direct sandbox tests
+├── objects/
+│   ├── helpers/
+│   │   └── standard_test_pool.md      # Standard LiveObjects test pool and fixtures
+│   ├── unit/                          # LiveObjects unit tests (mocked WebSocket)
+│   └── integration/                   # LiveObjects integration tests
+│       └── proxy/                     # Proxy-based fault injection tests
 ├── docs/                              # Guides and reference
 │   ├── writing-test-specs.md          # How to write UTS specs
 │   ├── writing-derived-tests.md       # How to translate specs into SDK tests
+│   ├── writing-uts-spec-translator-skills.md  # What a uts-to-<lang> translator skill and its harness must contain
 │   ├── integration-testing.md         # Integration testing policy
 │   ├── proxy.md                       # Proxy infrastructure spec (cross-module)
 │   └── completion-status.md           # Spec coverage matrix
+├── skills/                            # Agent skills (Claude Code, Codex)
+│   └── uts-to-lang-skill-creator/     # Builds or upgrades a uts-to-<lang> skill and its harness (SKILL.md, references/, assets/, scripts/)
 └── README.md                          # This file
 ```
 
@@ -43,13 +54,19 @@ uts/
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| REST unit | 40 | Mocked HTTP client tests |
-| REST integration | 11 | Ably sandbox tests |
+| REST unit | 41 | Mocked HTTP client tests |
+| REST integration (direct) | 11 | Ably sandbox tests |
+| REST integration (proxy) | 1 | Fault injection via Go proxy |
 | Realtime unit | 54 | Mocked WebSocket tests |
 | Realtime integration (direct) | 13 | Direct sandbox tests |
 | Realtime integration (proxy) | 7 | Fault injection via Go proxy |
-| Helper specs | 4 | Mock infrastructure definitions |
-| **Total** | **129** | |
+| Objects unit | 15 | LiveObjects, mocked WebSocket |
+| Objects integration (direct) | 3 | LiveObjects sandbox tests |
+| Objects integration (proxy) | 1 | LiveObjects fault injection |
+| Helper specs | 4 | Mock and fixture infrastructure definitions |
+| **Total** | **150** | |
+
+For current counts, `find uts/<module> -name '*.md'` is authoritative (it also lists `objects/PLAN.md`, which is not a spec).
 
 ## Three Test Tiers
 
@@ -138,8 +155,23 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 - **[Writing Test Specs](docs/writing-test-specs.md)** — How to author UTS specs: mock patterns, pseudocode conventions, proxy test structure, common mistakes
 - **[Writing Derived Tests](docs/writing-derived-tests.md)** — How to translate UTS specs into SDK-specific tests, diagnose failures, and record deviations
+- **[Writing UTS Spec Translator Skills](docs/writing-uts-spec-translator-skills.md)** — How to build a per-language `uts-to-<lang>` agent skill (Claude Code and Codex) and its harness: harness smoke tests and self-tests, workflow, construct mapping, audit tooling, re-sync, upgrading an existing skill
+- **[UTS-to-Lang Skill Creator](skills/uts-to-lang-skill-creator/SKILL.md)** — An agent skill (Claude Code and Codex) that builds or upgrades an SDK repo's `uts-to-<lang>` skill and the UTS test infrastructure (harness) it runs on. Each run starts with Orient: it checks the repo against the whitelist in [`assets/eligibility.json`](skills/uts-to-lang-skill-creator/assets/eligibility.json) (Ably Pub/Sub SDK repositories only), detects any existing `uts-to-*` skill, harness and UTS-tagged tests, classifies the repo's state (S0–S4), and detects its REST and Realtime clients, which set the scope: a REST-only or realtime-only SDK gets a partial skill. It then recommends Create (design, build and test the harness, generate the skill, validate it with pilot translations) or Upgrade/Fix (diff-driven for a skill it built, or a full gap audit against the guide), and always asks whether to add LiveObjects (`uts/objects`) support. See [Installing the skill creator](#installing-the-skill-creator)
 - **[Integration Testing Policy](docs/integration-testing.md)** — When to write integration vs unit tests, proxy test design principles, test structure conventions
 - **[Completion Status](docs/completion-status.md)** — Coverage matrix tracking which spec items have UTS test specs
+
+### Installing the skill creator
+
+Install it once, at user level, by symlinking (if an earlier copy is there, remove it first: `ln -sfn` would create the link inside it) the skill directory from your local clone of this repo into both tools' skill directories. Both Claude Code and Codex follow directory symlinks, and a `git pull` of the clone updates both:
+
+```sh
+SPEC=~/src/specification            # your local clone of ably/specification
+mkdir -p ~/.claude/skills ~/.agents/skills
+ln -sfn "$SPEC/uts/skills/uts-to-lang-skill-creator" ~/.claude/skills/uts-to-lang-skill-creator   # Claude Code
+ln -sfn "$SPEC/uts/skills/uts-to-lang-skill-creator" ~/.agents/skills/uts-to-lang-skill-creator   # Codex
+```
+
+Then, in the SDK repo, run `/uts-to-lang-skill-creator <spec-clone-path>` (Claude Code) or `$uts-to-lang-skill-creator <spec-clone-path>` (Codex), or ask for a `uts-to-<lang>` skill in your own words. Run it on the most capable model tier available (Opus-class). If symlinks aren't available (for example on Windows without Developer Mode), copy the directory instead and re-copy after each pull; the skill detects a stale copy and asks you to refresh it. Without installing, any agent can be told: "Read `<spec-clone>/uts/skills/uts-to-lang-skill-creator/SKILL.md` and follow it."
 
 ## Go Test Proxy
 
