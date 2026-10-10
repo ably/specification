@@ -357,7 +357,7 @@ Each tier value is **one path**, relative to the repo or to a declared root (Swi
 
 ```json
 {
-  "_description": "Maps each UTS module to its target test dir per tier. Used by scripts/resolve_uts.py.",
+  "_description": "Maps each UTS module to its target test directory per tier, for scripts/resolve_uts.py. Update it when a module is added or its tests move.",
   "harness": {
     "root": "<harness>",
     "readme": "<harness>/README.md",
@@ -796,7 +796,7 @@ Per `uts/README.md`, an input that can't be constructed in your language makes t
 
 ## 8. Deterministic tooling
 
-Path validation, mapping, spec discovery, naming and faithfulness checking are mechanical. **Scripts do them identically every run; a model eyeballing two files does them inconsistently.** In ably-java the audit's first use found three undocumented omissions in already-reviewed tests. Data that maintainers update (such as the mapping) belongs in a JSON file, not in script code; start each file with a `_description` key, and explain non-obvious entries with `_comment` keys, which the scripts ignore.
+Path validation, mapping, spec discovery, naming and faithfulness checking are mechanical. **Scripts do them identically every run; a model eyeballing two files does them inconsistently.** In ably-java the audit's first use found three undocumented omissions in already-reviewed tests. Data that maintainers update (such as the mapping) belongs in a JSON file, not in script code; start each file with one `_description` key (what the file is and when to update it), and add a `_comment` key only where an entry would otherwise puzzle a maintainer; the scripts ignore keys that start with `_`.
 
 ### 8.1 Resolver (`resolve_uts.py`): MUST
 

@@ -319,7 +319,7 @@ def scan(repo, include_submodules=False, names=None):
                 elif not (test or comment) and re.match(r"\s*(?:<[^>()]*>)?\s*[(:]", line[m.end():]) \
                         and MEMBER_DECL.match(line):
                     roles = names.member_roles(tok)
-                    for role in roles - set(SUB_AREAS):  # clients and the REST channel: from any file, as before
+                    for role in roles - set(SUB_AREAS):  # clients and the REST channel: from any file
                         areas[role]["members"][tok] += 1
                     if roles & set(SUB_AREAS):
                         i = bisect.bisect_right(offsets, starts[min(n, len(starts)) - 1] + m.start()) - 1

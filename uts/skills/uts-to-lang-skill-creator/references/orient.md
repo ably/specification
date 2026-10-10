@@ -58,9 +58,9 @@ This procedure applies only to Ably Pub/Sub SDK repositories. `check_repo_eligib
   - `common`, `specification`, `spec`, `cli`, `docs`, `ui`, `boomer`, `chat`, `spaces`, `objects`, `liveobjects`, `livesync`, `sandbox`, `proxy`;
   - `examples`, `example`, `website`, `www`, `laravel`, `terraform`, `pubsub`, `labs`, `demo`, `demos`, `dashboard`, `infra`, `control`, `mcp`, `status`;
   - `benchmark`, `benchmarks`, `test`, `tests`, `tools`, `scripts`, `ai`, `asset`, `assets`;
-  - `brand`, `comply`, `jmeter`, `os`, `research`, `rss`, `scan`, `server`, `titanium`, `roku`, `nativescript`. These are tools, docs repositories and stubs from a survey of the `ably` organisation that the name rule alone accepts. `ably-jmeter`, `ably-os` and `ably-server` *use* a client, so a usage-based check would accept them. `ably-titanium` is a README-only stub, and `ably-roku` implements no spec. `server` blocks only `ably-server`, never a server door inside an SDK repository (13.8). `nativescript` is a second guard for the wrapper above.
+  - `brand`, `comply`, `jmeter`, `os`, `research`, `rss`, `scan`, `server`, `titanium`, `roku`, `nativescript`. These are tools, docs repositories and stubs that the name rule alone accepts. `ably-jmeter`, `ably-os` and `ably-server` *use* a client, so a usage-based check would accept them. `ably-titanium` is a README-only stub, and `ably-roku` implements no spec. `server` blocks only `ably-server`, never a server door inside an SDK repository (13.8). `nativescript` is a second guard for the wrapper above.
 
-  These are known non-SDK `ably-<x>` repositories; the data file's `_comment` keys give the reasons. Names with more hyphens, such as `ably-chat-swift`, `ably-chat-kotlin` and `ably-ai-transport-js`, already fail the name rule.
+  These are known non-SDK `ably-<x>` repositories. Names with more hyphens, such as `ably-chat-swift`, `ably-chat-kotlin` and `ably-ai-transport-js`, already fail the name rule.
 - **Allow-list:** `ably-ruby-rest` (the REST-only Ruby SDK) and its renamed form `ably-pubsub-ruby-rest`. These are explicit exceptions to the name rule. Each carries a `capabilityOverride` of REST `full` and realtime `absent`. The repository is a gem wrapping an `ably-ruby` git submodule whose entry point loads only `ably/rest`, so its own tree defines no client, and neither the gate nor the capability detector can see one. The override:
   - is reported as `capabilityOverride`;
   - satisfies the definition gate;
@@ -209,7 +209,7 @@ Both detectors report `namesSource` (`spec` or `fallback`), `specRevision` (the 
 
 Names the spec can't give live in [`assets/capability-names.json`](../assets/capability-names.json):
 
-- SDK aliases for renamed clients (`PubSubHttpClient`, `PubSubRealtimeClient`, `PubSubClient`);
+- SDK aliases for renamed clients (`PubSubHttpClient`, `PubSubRealtimeClient`, `PubSubClient`, from ably-dotnet's 2.0 split SDK);
 - door factories, and how their sides are recognised;
 - LiveObjects names from earlier spec revisions, or given only in the spec's prose ([12.1](liveobjects-support.md#121-gather-the-evidence-step-1b-p-15)).
 

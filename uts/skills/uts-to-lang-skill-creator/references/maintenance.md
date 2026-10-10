@@ -19,7 +19,7 @@ The harness and the skill must stay in step with five things that change indepen
 - [`assets/eligibility.json`](../assets/eligibility.json): when Ably adds, renames or retires a repository (the deny-list, the allow-list and its capability overrides, the canonical and planned names, the definition gate's threshold).
 - [`assets/capability-names.json`](../assets/capability-names.json): when an SDK adds a client alias or a door factory, or the spec renames a LiveObjects name its IDL no longer shows.
 
-Each file starts with `_description`; give a non-obvious entry a `_comment` key. The scripts ignore `_` keys, check the shape, and report a malformed file as `DATA_FILE_ERROR`, naming the file and the key. Client, channel, connection, presence and LiveObjects names come from the spec clone at run time (13.8) and need no edit. After an edit, rerun Orient on a repository the change affects.
+Each file starts with one `_description` (what the file is and when to update it); add a `_comment` key only where an entry would otherwise puzzle a maintainer. The scripts ignore `_` keys, check the shape, and report a malformed file as `DATA_FILE_ERROR`, naming the file and the key. Client, channel, connection, presence and LiveObjects names come from the spec clone at run time (13.8) and need no edit. After an edit, rerun Orient on a repository the change affects.
 
 Rules for every maintenance run:
 

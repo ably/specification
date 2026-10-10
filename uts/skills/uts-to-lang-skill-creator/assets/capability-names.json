@@ -1,7 +1,6 @@
 {
-  "_description": "Names the capability and LiveObjects detectors can't read from the spec: SDK client aliases, door factories (2.0 split SDKs), earlier-revision and spec-prose LiveObjects names, and the fallback used only when the spec can't be parsed. Update this file, not the scripts, when an SDK adds an alias or a door, or the spec renames something. Everything else (client, channel, connection, presence and LiveObjects names and members) is read at run time from the spec clone by scripts/spec_names.py (section 13.8). Keys starting with '_' are ignored.",
+  "_description": "Names the capability and LiveObjects detectors need but can't read from the spec clone's IDL (scripts/spec_names.py reads all the others at run time): SDK client aliases, door factories of 2.0 split SDKs, earlier-revision and prose-only LiveObjects names, and a minimal fallback used only when the spec can't be parsed. Update this file, not the scripts, when an SDK adds an alias or a door, or the spec renames something its IDL no longer shows.",
   "aliases": {
-    "_comment": "SDK names for the REST and Realtime clients that aren't spec names or their per-language forms: the 2.0 split SDKs' client types (ably-dotnet integration/v2 PubSubHttpClient, PubSubRealtimeClient).",
     "rest": [
       "PubSubHttpClient",
       "DefaultPubSubHttpClient"
@@ -13,7 +12,7 @@
     ]
   },
   "doorFactories": {
-    "_comment": "Public entry points of split SDKs (2.0 'doors'). A door factory's capability comes from its return type, else its name (Http or Rest: REST; otherwise realtime). Its side comes from its enclosing type (sides.*.types, matched whole, e.g. static class PubSubDevice) or else a path segment (sides.*.paths, e.g. Ably.PubSub.Device, pubsub-device); a door with neither is core. Sides come only from doors: a client type under a 'device' path (push LocalDevice code) is not a side.",
+    "_comment": "A door factory's capability comes from its return type, else its name (Http or Rest: REST; otherwise realtime). Its side comes from its enclosing type (sides.*.types, matched whole) or else a path segment (sides.*.paths); a door with neither is core. Sides come only from doors: a client type under a 'device' path (push LocalDevice code) is not a side.",
     "names": [
       "createClient",
       "createHttpClient",
@@ -59,7 +58,7 @@
       }
     }
   },
-  "_comment": "legacyPublicApi: public LiveObjects names from earlier revisions of objects-features.md (before channel.object.get() and the LiveMap and LiveCounter value types). legacyNowInternal: public then, internal now; a public declaration counts as legacy. internalFromProse: internal names the spec gives only in prose (no IDL entry).",
+  "_comment": "legacyPublicApi: public names from earlier objects-features.md revisions. legacyNowInternal: public then, internal now; a public declaration counts as legacy. internalFromProse: internal names the spec gives only in prose, with no IDL entry.",
   "legacyPublicApi": [
     "RealtimeObjects",
     "getRoot",
@@ -79,7 +78,6 @@
     "ObjectsPool"
   ],
   "fallback": {
-    "_comment": "Used only when the spec can't be parsed: reported as namesSource 'fallback' with a warning that Orient shows. Keep it minimal; never rely on it.",
     "capability": {
       "clients": {
         "rest": [

@@ -149,7 +149,7 @@ Untracked local notes in the clone (for example files matching `uts/UTS_*.md`) a
 
 - **The executor** is an LLM agent working inside the target SDK repository, with shell access, file read/write access, and the ability to ask the user questions, running on an Opus-class model ([2.8](#28-model-tier-and-sub-agents)). Every instruction below is addressed to it ("you").
 - **The user** is an SDK engineer who owns the target repository. They answer the questions at the stop points and approve every change outside the skill directory.
-- **The lead reviewer** may skim the working records (Repo profile, Harness design, Design record, Final report) instead of the whole conversation. Any human may skim this skill to see what the agent will do and where it will ask for decisions.
+- **A reviewer** may skim the working records (Repo profile, Harness design, Design record, Final report) instead of the whole conversation. Any human may skim this skill to see what the agent will do and where it will ask for decisions.
 
 ### 1.2 Invocation
 
