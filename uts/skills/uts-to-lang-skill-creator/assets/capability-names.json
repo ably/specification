@@ -1,5 +1,5 @@
 {
-  "_description": "Names the capability and LiveObjects detectors need but can't read from the spec clone's IDL (scripts/spec_names.py reads all the others at run time): SDK client aliases, door factories of 2.0 split SDKs, earlier-revision and prose-only LiveObjects names, and a minimal fallback used only when the spec can't be parsed. Update this file, not the scripts, when an SDK adds an alias or a door, or the spec renames something its IDL no longer shows.",
+  "_description": "Names the detectors need but can't read from the spec's IDL: SDK client aliases, door factories, earlier-revision and prose-only LiveObjects names, and a minimal fallback. Update this file, not the scripts.",
   "aliases": {
     "rest": [
       "PubSubHttpClient",
@@ -12,7 +12,7 @@
     ]
   },
   "doorFactories": {
-    "_comment": "A door factory's capability comes from its return type, else its name (Http or Rest: REST; otherwise realtime). Its side comes from its enclosing type (sides.*.types, matched whole) or else a path segment (sides.*.paths); a door with neither is core. Sides come only from doors: a client type under a 'device' path (push LocalDevice code) is not a side.",
+    "_comment": "A door's capability: its return type, else its name (Http or Rest: REST). Its side: its enclosing type (sides.*.types), else a path segment (sides.*.paths), else core.",
     "names": [
       "createClient",
       "createHttpClient",

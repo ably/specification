@@ -4,44 +4,25 @@
 Usage: orient.py <repo> [--spec-clone PATH] [--skill-dir PATH] [--records PATH]
                   [--include-submodules] [--full]
 
-Runs, in order and by subprocess, this skill's read-only scripts:
-  1. spec_clone_info.py         (resolves the spec clone the others read; STOP-1 preconditions;
-                                a bad explicit path stops Orient with NOT_A_SPEC_CLONE)
-  2. check_repo_eligibility.py  (STOP-16; on reject nothing else runs)
-  3. inspect_existing_skill.py  (skills, origin, records, harness, UTS-tagged tests)
-  4. detect_liveobjects.py      (the one-line LiveObjects verdict; STOP-14 decides later)
-  5. detect_capabilities.py     (REST and Realtime capability profile, sides and scope; STOP-17, D-31),
-                                with eligibility's `capabilityOverride` (from the whitelist) if any
-The spec clone spec_clone_info.py resolved is passed
-to the scripts that read names from the spec; if they fall back to the data
-file's names (`namesSource` "fallback"), the State summary says so loudly, in
-its first line. The current capability profile is compared with the one the
-skill recorded (inspector `capabilityProfile`: the D-31 line, completed by the
-mapping's `unsupported`/`capabilityInapplicable`): levels, scope kind, unsupported
-modules and side; a difference is `capabilityDelta` and sets `stop17`, as do a
-profile that isn't full, an unclear realtime, a capability override, doors
-(the side question) and a wrapper over native SDKs (section 13.8).
-then classifies the repo state and prints one JSON object with `state` (class,
-re-entry, reasons, recommended option, options), `stateSummaryText` (the State
-summary shown at STOP-13) and the facts behind them. `--full` embeds the raw
-outputs of the four scripts.
+Runs five of this skill's read-only scripts by subprocess, in order:
+spec_clone_info.py (which resolves the spec clone the others read),
+check_repo_eligibility.py (on a reject nothing else runs),
+inspect_existing_skill.py, detect_liveobjects.py and detect_capabilities.py.
+It then classifies the repo state (INELIGIBLE, S4, S2, S3, S1, S0, first match
+wins, with re-entry as an overlay) and compares the current capability profile
+with the recorded one.
 
-State classes, first match wins (section 13.3 of the skill):
-  INELIGIBLE  the repo isn't an Ably Pub/Sub SDK repository (hard stop)
-  S4          ambiguous: several distinct uts-to-* skills, a broken install, a skill
-              whose language isn't in the repo, or finished records with no skill
-  S2          one skill, made by this procedure (its records), last run finished
-  S3          one skill of unknown origin (hand-written, or records not kept)
-  S1          no skill, but UTS-tagged tests or harness code exist
-  S0          nothing
-Re-entry (an unfinished run's records) is an overlay on the class; if the spec
-clone's SHA differs from the records', it adds "spec moved since the records:
-ask about restarting (13.6)". With --skill-dir only the named skill is
-classified (after S4, to Upgrade/Fix one candidate); the other skills, broken
-installs and orphan records are listed under Problems, not made S4.
+Prints one JSON object: `ok`, `repo`, `eligibility`, `warnings`, `state`
+(class, re-entry, reasons, recommended option, options), `stateSummaryText`
+(the State summary shown at STOP-13), `stop1`, `stop16`, `stop17`,
+`capabilityDelta` and the facts behind them. `--full` adds `raw`: the outputs
+of spec_clone_info, inspect_existing_skill and the two detectors (the
+eligibility output is always under `eligibility`). Exit 0 whenever it
+classifies; 1 with {"ok": false} on NOT_A_SPEC_CLONE, DATA_FILE_ERROR or
+ORIENT_ERROR; 2 on a usage error. Read-only; never touches the network.
 
-Read-only: it writes nothing and never touches the network. Exit 0 whenever it
-classifies; 2 on a usage error; 1 with {"ok": false} if it can't run at all.
+Rules: references/orient.md 13.1 (what runs), 13.3 (state classes), 13.4 (the
+State summary), 13.6 (re-entry), 13.8 (capability delta, STOP-17).
 """
 import json, pathlib, re, subprocess, sys
 
@@ -60,12 +41,17 @@ def run(script, *args):
     """Run one of this skill's scripts; return (parsed JSON or None, warning or None)."""
     try:
         out = subprocess.run([sys.executable, str(HERE / script), *args], capture_output=True, text=True,
-                              timeout=TIMEOUT)
-        return json.loads(out.stdout), None
+                              encoding="utf-8", errors="replace", timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
         return None, f"{script} timed out after {TIMEOUT} s"
-    except (ValueError, OSError) as exc:
+    except OSError as exc:
         return None, f"{script} failed: {type(exc).__name__}: {exc}"
+    try:
+        return json.loads(out.stdout), None
+    except ValueError as exc:  # no JSON: a usage error or a traceback; show the exit code and the end of stderr
+        tail = out.stderr.strip()[-500:]
+        return None, (f"{script} failed (exit {out.returncode}): no JSON output ({type(exc).__name__}: {exc})"
+                      + (f"; stderr: {tail}" if tail else ""))
 
 
 def data_file_error(*outs):
@@ -80,7 +66,8 @@ def data_file_error(*outs):
 
 
 def git(repo, *args):
-    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, encoding="utf-8",
+                          errors="replace")
     return out.stdout if out.returncode == 0 else None
 
 
@@ -360,11 +347,11 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
         f"Repo         {repo_name} @ {(head or '?')[:8]} ({'dirty' if dirty else 'clean'}); languages: {langs}",
         eligibility_line(elig),
         (f"Spec clone   {spec.get('specClone')} @ {(spec.get('sha') or '?')[:8]} "
-         f"({'dirty' if spec.get('dirty') else 'clean'}); found by {spec.get('foundBy')}; "
-         f"creator {spec.get('skillVersion')} (matches clone: "
-         f"{ {True: 'yes', False: 'no'}.get(spec.get('skillMatchesClone'), 'unknown')})"
-         if (spec or {}).get("ok") else
-         f"Spec clone   NOT FOUND ({(spec or {}).get('code', 'unknown error')}): ask for its path at STOP-1"),
+          f"({'dirty' if spec.get('dirty') else 'clean'}); found by {spec.get('foundBy')}; "
+          f"creator {spec.get('skillVersion')} (matches clone: "
+          f"{ {True: 'yes', False: 'no'}.get(spec.get('skillMatchesClone'), 'unknown')})"
+          if (spec or {}).get("ok") else
+          f"Spec clone   NOT FOUND ({(spec or {}).get('code', 'unknown error')}): ask for its path at STOP-1"),
         "Model        (state the session's model; Opus-class required)",
     ]
     if sources:
@@ -372,7 +359,7 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
         read = (caps or lo or {}).get("specClone")
         where = "the spec clone's IDL" if read and read == (spec or {}).get("specClone") else f"the IDL in {read}"
         lines.append("Spec names   " + (f"from {where}" + (f" @ {rev[:8]}" if rev else
-                                                         " (revision unknown: not a git checkout)")
+                                                          " (revision unknown: not a git checkout)")
                                         if sources == {"spec"} else
                                         "FALLBACK, don't rely on the LiveObjects or capability verdicts: "
                                         + "; ".join(dict.fromkeys(names_warnings))))
@@ -468,21 +455,38 @@ def run_status(rec):
     return rec["runStatus"] + (f" (Phase {m.group(1)})" if m and rec["runStatus"] == "in progress" else "")
 
 
+USAGE = ("usage: orient.py <repo> [--spec-clone PATH] [--skill-dir PATH] [--records PATH] "
+          "[--include-submodules] [--full]")
+
+
+def usage_error(message):
+    print(f"{USAGE}\norient.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
     args, opts, flags = [], {}, set()
     it = iter(argv[1:])
     for a in it:
         if a in ("--spec-clone", "--skill-dir", "--records"):
-            opts[a] = next(it, None)
+            opts[a] = next(it, "")
+            if not opts[a] or opts[a].startswith("-"):
+                return usage_error(f"{a} needs a value")
         elif a in ("--include-submodules", "--full"):
             flags.add(a)
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
         else:
             args.append(a)
-    if len(args) != 1 or not pathlib.Path(args[0]).is_dir() or None in opts.values():
-        print("usage: orient.py <repo> [--spec-clone PATH] [--skill-dir PATH] [--records PATH] "
-              "[--include-submodules] [--full]", file=sys.stderr)
-        return 2
-    repo = pathlib.Path(args[0]).expanduser().resolve()
+    if len(args) != 1:
+        return usage_error(f"expected one <repo>, got {len(args)} arguments")
+    repo = pathlib.Path(args[0]).expanduser()
+    if not repo.is_dir():
+        return usage_error(f"not a directory: {args[0]}")
+    repo = repo.resolve()
     warnings = []
     try:
         # Resolve the spec clone first, so every script reads the same one; a bad explicit path is an error.
@@ -492,7 +496,7 @@ def main(argv):
             print(json.dumps({"ok": False, "code": "NOT_A_SPEC_CLONE", "message": spec.get("message"),
                               "missing": spec.get("missing"),
                               "fix": "pass the path of a local ably/specification clone (or a directory inside "
-                                     "one) with --spec-clone, or correct UTS_SPEC_CLONE, then run again"}, indent=2))
+                                      "one) with --spec-clone, or correct UTS_SPEC_CLONE, then run again"}, indent=2))
             return 1
         clone = spec["specClone"] if spec and spec.get("ok") else None
         clone_args = ["--spec-clone", clone] if clone else []

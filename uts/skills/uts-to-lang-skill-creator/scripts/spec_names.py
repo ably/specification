@@ -1,45 +1,22 @@
 #!/usr/bin/env python3
-"""Read the names the detectors look for from the spec clone, at run time.
+"""Read the names the detectors look for from the spec clone's IDL, at run time.
 
-Usage: spec_names.py [--spec-clone PATH]     (prints the derived names as JSON)
+Usage: spec_names.py [--spec-clone PATH]
 
-Used as a module by detect_capabilities.py and detect_liveobjects.py, so the
-names follow the spec when it renames things (RealtimeObjects became
-RealtimeObject). It parses the IDL sections of specifications/features.md and
-specifications/objects-features.md (heading "Interface Definition"): type
-lines `    class|interface|enum Name: // PREFIX*[, internal]` and member lines
-indented under them.
+Used as a module by detect_capabilities.py and detect_liveobjects.py (load()), and
+by every script that reads a data file in assets/ (load_json(): it ignores keys
+starting with `_` and checks the shape). Names the spec can't give live in
+assets/capability-names.json: update that file, not the code.
 
-Rules (documented in section 13.8 of the skill):
-  - Capability roles come from a type's spec-point prefix: RSC rest client,
-    RTC realtime client, RSL rest channel, RTL/TH realtime channel, RTP
-    realtime presence, RTN/TA connection. A client's base name is its type name
-    without "Client" (RestClient -> Rest), as the UTS pseudocode writes it.
-  - Key members are a role's method names, without the generic names in
-    assets/capability-names.json; each keeps its spec point.
-  - LiveObjects: objects-features.md types and members marked `internal` are
-    internal; `PublicAPI::` types, and the types and enum values their members
-    use, are shared (public and protocol); the other types are public. Members
-    count only if their name has two or more words (compactJson), since
-    single-word members (get, value) are too common to search for.
-  - Protocol-only (wire) names: the features.md IDL types reachable from the
-    shared types that aren't shared, and enum values starting OBJECT_.
-  - The RTL27 accessor's type: the RealtimeChannel property whose type is a
-    LiveObjects type (`object: RealtimeObject`).
-The corpus-derived lists (capability-inapplicable tests, presence specs) don't
-depend on the IDL: they are computed separately, so a fallback keeps them.
-Names the spec can't give (SDK aliases, door factories, earlier-revision names,
-names from spec prose) live in assets/capability-names.json: update that file,
-not the code. Generic member names and the spelling transforms are code
-constants below.
+Run directly, it prints one JSON object: `ok`, `source` ("spec", or "fallback"
+with a warning the caller must show), `specClone`, `warnings`, `data`,
+`revision`, `capability` (clients and roles), `liveobjects` (the name sets) and
+`capabilityInapplicable` (from the corpus). Exit 0 on success; 1 with
+{"ok": false} on an error (DATA_FILE_ERROR naming the file and key,
+NOT_A_SPEC_CLONE, SPEC_NAMES_ERROR); 2 on a usage error. Read-only; never touches
+the network.
 
-If the IDL can't be parsed, `source` is "fallback": the minimal names in the
-data file's `fallback` are used, with a warning that the caller must show.
-Never silent. A malformed data file is an error naming the file and the key,
-never a fallback. Read-only; never touches the network.
-
-Also the shared loader for the skill's data files (load_json): it ignores keys
-starting with `_` (`_description`, `_comment`) and checks the shape.
+Rules: references/orient.md 13.8; LiveObjects categories: references/liveobjects-support.md 12.1.
 """
 import json, os, pathlib, re, subprocess, sys
 
@@ -161,15 +138,17 @@ def locate(spec_clone=None):
         if cand and str(cand).strip():
             root = _clone_root(cand)
             if root is None:
-                raise SpecCloneError(f"{cand} (from {how}) isn't an ably/specification clone: no "
-                                     "specifications/features.md in it or a parent directory")
+                raise SpecCloneError(
+                    f"{cand} (from {how}) isn't an ably/specification clone: no specifications/features.md in it or "
+                    "a parent directory")
             return root
     return _clone_root(HERE.parents[3])
 
 
 def revision(clone):
     def git(*a):
-        out = subprocess.run(["git", "-C", str(clone), *a], capture_output=True, text=True)
+        out = subprocess.run(["git", "-C", str(clone), *a], capture_output=True, text=True, encoding="utf-8",
+                              errors="replace")
         return out.stdout.strip() if out.returncode == 0 else None
     sha = git("rev-parse", "HEAD")
     dirty = git("--no-optional-locks", "status", "--porcelain", "--", "specifications")
@@ -221,8 +200,7 @@ def parse_idl(path):
     return types, heading
 
 
-def capability_names(features, heading, data):
-    generic = GENERIC_MEMBERS
+def capability_names(features, heading):
     roles = {r: {"names": [], "members": {}, "from": []} for _, r in ROLE_BY_PREFIX}
     for name, t in features.items():
         first = re.match(r"\s*([A-Z]{2,4})(?=\d|\*)", t["comment"])
@@ -232,7 +210,7 @@ def capability_names(features, heading, data):
         roles[role]["names"].append(name)
         roles[role]["from"].append(f"features.md, {heading}: {t['kind']} {name} // {t['comment'].strip()}")
         for mname, mem in t["members"].items():
-            if mem["kind"] == "method" and mname not in generic:
+            if mem["kind"] == "method" and mname not in GENERIC_MEMBERS:
                 roles[role]["members"].setdefault(mname, mem["specPoint"])
     clients = {}
     for cap, role in (("rest", "restClient"), ("realtime", "realtimeClient")):
@@ -245,7 +223,7 @@ def capability_names(features, heading, data):
 
 
 def liveobjects_names(objects, features, heading_o, heading_f, data):
-    def multiword(n):
+    def multiword(n):  # members count only with two or more words (compactJson): get, value are too common
         return bool(re.search(r"[a-z][A-Z]", n))
     public, internal, shared, shared_consts = set(), set(), set(), set()
     for name, t in objects.items():
@@ -329,7 +307,7 @@ def load(spec_clone=None):
         result["revision"] = revision(clone)
         features, hf = parse_idl(clone / "specifications" / "features.md")
         objects, ho = parse_idl(clone / "specifications" / "objects-features.md")
-        clients, roles = capability_names(features, hf, data)
+        clients, roles = capability_names(features, hf)
         result["capability"] = {"clients": clients, "roles": roles}
         result["liveobjects"] = liveobjects_names(objects, features, ho, hf, data)
     except (OSError, ValueError, KeyError) as exc:
@@ -363,10 +341,31 @@ def error_code(exc, default):
     return "NOT_A_SPEC_CLONE" if isinstance(exc, SpecCloneError) else default
 
 
+USAGE = "usage: spec_names.py [--spec-clone PATH]"
+
+
+def usage_error(message):
+    print(f"{USAGE}\nspec_names.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
-    clone = argv[argv.index("--spec-clone") + 1] if "--spec-clone" in argv[:-1] else None
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
+    clone = None
+    it = iter(argv[1:])
+    for a in it:
+        if a == "--spec-clone":
+            clone = next(it, "")
+            if not clone or clone.startswith("-"):
+                return usage_error(f"{a} needs a value")
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
+        else:
+            return usage_error(f"unexpected argument {a}")
     try:
-        print(json.dumps(load(clone), indent=2, default=sorted))
+        print(json.dumps({"ok": True, **load(clone)}, indent=2, default=sorted))
         return 0
     except Exception as exc:  # never crash: report a structured error
         print(json.dumps({"ok": False, "code": error_code(exc, "SPEC_NAMES_ERROR"),

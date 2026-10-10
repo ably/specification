@@ -13,7 +13,8 @@ Prints one JSON object: `ok`, `decision` (accept, reject or ask), `eligible`,
 `code`, `reason`, `message` (on a reject), `owner`, `repo`, `remote`,
 `nameForm`, `canonical`, `plannedRename`, `capabilityOverride`, `fingerprint`,
 `remotes` and `warnings`. Read-only; no network. A malformed data file gives
-DATA_FILE_ERROR naming the file and the key.
+DATA_FILE_ERROR naming the file and the key. Exit 0 when it decides; 1 with
+{"ok": false} on an error; 2 on a usage error.
 """
 import collections, importlib.util, json, pathlib, re, subprocess, sys
 
@@ -35,7 +36,7 @@ dc = _load("detect_capabilities")
 sn, lo = dc.sn, dc.lo
 LEVEL = sn.STR
 SHAPE = {"owner": sn.STR, "repositories": [sn.STR], "capabilityOverride": {"*": {"*": LEVEL}},
-         "canonical": {"*": sn.STR}, "plannedRename": {"*": sn.STR}, "definitionGate": {"minSourceFilesToReject": sn.INT}}
+          "canonical": {"*": sn.STR}, "plannedRename": {"*": sn.STR}, "definitionGate": {"minSourceFilesToReject": sn.INT}}
 
 
 def normalise(name):
@@ -90,7 +91,8 @@ def gate_message(owner, repo):
 
 
 def git(repo, *args):
-    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, encoding="utf-8",
+                          errors="replace")
     return out.stdout if out.returncode == 0 else None
 
 
@@ -103,7 +105,10 @@ def resolve_host(host):
     if host.lower() in GITHUB or "." in host:
         return host.lower()
     try:
-        out = subprocess.run(["ssh", "-G", host], capture_output=True, text=True, timeout=5)
+        # `ssh -G` only prints the resolved config and never connects, but it does evaluate any `Match exec` blocks
+        # in the user's ssh config.
+        out = subprocess.run(["ssh", "-G", host], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              timeout=5)
         m = re.search(r"(?m)^hostname\s+(\S+)", out.stdout)
         return m.group(1).lower() if m else host.lower()
     except (OSError, subprocess.SubprocessError):
@@ -139,18 +144,35 @@ def fingerprint(top, spec_clone=None):
         "clientDefinitions": defined}
 
 
+USAGE = "usage: check_repo_eligibility.py <repo> [--spec-clone PATH]"
+
+
+def usage_error(message):
+    print(f"{USAGE}\ncheck_repo_eligibility.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
     args, opts = [], {}
     it = iter(argv[1:])
     for a in it:
         if a == "--spec-clone":
-            opts[a] = next(it, None)
+            opts[a] = next(it, "")
+            if not opts[a] or opts[a].startswith("-"):
+                return usage_error(f"{a} needs a value")
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
         else:
             args.append(a)
-    if len(args) != 1 or not pathlib.Path(args[0]).is_dir() or None in opts.values():
-        print("usage: check_repo_eligibility.py <repo> [--spec-clone PATH]", file=sys.stderr)
-        return 2
-    path = pathlib.Path(args[0]).expanduser().resolve()
+    if len(args) != 1:
+        return usage_error(f"expected one <repo>, got {len(args)} arguments")
+    path = pathlib.Path(args[0]).expanduser()
+    if not path.is_dir():
+        return usage_error(f"not a directory: {args[0]}")
+    path = path.resolve()
     result = {"ok": True, "path": str(path), "warnings": []}
     try:
         rules = Rules()
@@ -174,7 +196,7 @@ def main(argv):
             if m:
                 host = resolve_host(m.group("h1") or m.group("h2"))
                 r.update(host=host, owner=m.group("owner"), repo=m.group("repo"), github=host in GITHUB,
-                         whitelisted=rules.listed(m.group("repo")))
+                          whitelisted=rules.listed(m.group("repo")))
             remotes.append(r)
         result["remotes"] = remotes
         gh = [r for r in remotes if r.get("github")]

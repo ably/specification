@@ -1,55 +1,24 @@
 #!/usr/bin/env python3
-"""Look for LiveObjects (UTS module `objects`) API evidence in an SDK repository.
+"""Look for LiveObjects (UTS module `objects`) API evidence in an SDK repository (STOP-14).
 
 Usage: detect_liveobjects.py <repo> [--spec-clone PATH] [--include-submodules]
 
-A read-only regex heuristic for STOP-14 (section 12 of the skill). Every name it
-searches for comes from the Ably specification, never from another SDK's code.
-The names are read at run time from the spec clone by spec_names.py (the IDLs in
-specifications/objects-features.md and features.md); earlier-revision and
-spec-prose names come from assets/capability-names.json (update that file, not
-the code). The output records `namesSource` ("spec", or "fallback" with a
-warning when the spec can't be parsed), `specRevision` and `warnings`.
+A read-only regex heuristic. Every name it searches for comes from the spec
+clone, read at run time by spec_names.py, plus the earlier-revision and
+prose-only names in assets/capability-names.json. Its output is evidence for
+the user's decision, not the decision: read the files it lists.
 
-  publicApi        types and members of the IDL in
-                    specifications/objects-features.md that aren't marked
-                    `internal`, and that aren't also protocol types
-  accessor         the RealtimeChannel#object accessor (RTL27), used or
-                    declared; the earlier spec's channel.objects form is
-                    counted here too (form "objects")
-  legacyPublicApi  public names from earlier revisions of that spec, before
-                    the entry point became channel.object.get() and the value
-                    types became LiveMap and LiveCounter (RealtimeObjects,
-                    getRoot, createMap, createCounter, LiveObjectSubscription,
-                    LiveMapValueType, LiveCounterValueType), and public
-                    declarations of LiveObject and its *Update interfaces,
-                    which were public then and are internal now
-  shared           public message types that are also protocol types
-                    (PublicAPI::ObjectMessage, PublicAPI::ObjectOperation and
-                    their operation types and actions): they count neither for
-                    nor against a public API
-  internalApi      names that are internal in the current spec (IDL members
-                    marked `internal`, and ObjectsPool from the spec prose)
-  wireOnly         protocol-only names from features.md: OBJECT_SYNC,
-                    ObjectState, ObjectData, ObjectsMap, ObjectsCounter and
-                    their parts, and the object channel modes
-  pluginKey        identifiers that name the LiveObjects plugin (PC5, PT2b),
-                    e.g. LiveObjectsPlugin, PluginType.LiveObjects
+Prints one JSON object: `ok`, `repo`, `head`, `listing`, `namesSource`,
+`specClone`, `specRevision`, `namesFrom`, `dataFile`, `warnings`, `summary`,
+`recommendation`, `scanned`, `excluded`, `evidence` (per category:
+publicApi, legacyPublicApi, shared, internalApi, wireOnly, plus accessor,
+pluginKey, packaging, missingPublicNames), `stubMarkers` and `note`. Exit 0 on
+success; 1 with {"ok": false} on an error (DATA_FILE_ERROR, NOT_A_SPEC_CLONE,
+REPO_IS_SPEC_CLONE, DETECT_ERROR); 2 on a usage error. Never touches the
+network.
 
-Identifiers are matched whole: the spec name; the name behind a short all-caps
-prefix (an Objective-C `ART`, a C# `I`); its snake_case form; and, for members,
-any capitalisation (GetRoot, CompactJSON; for earlier-spec members, only when
-declared). Hits on comment lines and in test files are counted apart and don't
-drive the recommendation. Vendored directories, agent skill directories, git
-submodules, any copy of the spec repo and copies of this script are skipped;
-in a git repo, ignored files (build output) are skipped too, and untracked
-files are counted apart.
-
-Prints exactly one JSON object: a one-paragraph `summary`, the recommendation,
-and the evidence (symbols, counts, files, where public names are declared, and
-the current-spec public names not found). It is evidence for the user's
-decision, not the decision: read the files it lists before relying on it.
-Never touches the network.
+Rules: references/liveobjects-support.md 12.1 (categories, matching,
+exclusions) and 12.2 (the recommendation).
 """
 import collections, importlib.util, json, os, pathlib, re, subprocess, sys
 
@@ -71,6 +40,8 @@ NESTED_PACKAGE_MANIFESTS = {"go.mod", "package.json", "Cargo.toml", "pubspec.yam
 ALWAYS_EXCLUDED = {".git", "node_modules", "vendor", "vendored", "pods", "carthage", "third_party", "third-party",
                     "deps", "external", "extern", "bower_components", ".yarn", "site-packages",
                     ".claude", ".agents", ".codex", ".cursor"}
+# Where agent skills are installed in a repository: the one list every script uses.
+SKILL_ROOTS = [".claude/skills", ".agents/skills", ".codex/skills", ".cursor/skills", ".github/skills", "skills"]
 # Also skipped when the repo isn't a git repo (in a git repo, .gitignore already drops build output).
 WALK_EXCLUDED = ALWAYS_EXCLUDED | {".build", "build", "dist", "out", "target", "bin", "obj", "deriveddata",
                                     ".gradle", "__pycache__", ".venv", "venv", ".tox", ".nox", ".mypy_cache",
@@ -93,11 +64,11 @@ COMMENT_LINE = re.compile(r"^\s*(//|#(?!(?:if|ifdef|ifndef|else|elif|endif|impor
 # match), or channels.get(...), reading .object / .objects / getObject(s)() / GetObject().
 ACCESSOR_USE = re.compile(r"(?:\b(?:[a-z_]\w*Channel|channel)\w*|\bchannels\s*\.\s*get\s*\([^)]*\))\s*"
                           r"(?:\.|->|\?\.|!\.)\s*(?:[Gg]et_?)?([Oo]bjects?)\b(?!\s*=[^=])")
-# RTL27 declaration: a member named object(s) / getObject(s) declared with the accessor's type (from the spec IDL:
-# RealtimeChannel's `object: RealtimeObject`), singular or plural (the earlier RealtimeObjects).
 
 
 def accessor_decl(types):
+    """RTL27 declaration: a member named object(s) / getObject(s) declared with the accessor's type (`types`, from the
+    spec IDL: RealtimeChannel's `object: RealtimeObject`), singular or plural (the earlier RealtimeObjects)."""
     t = "(?:" + "|".join(sorted(map(re.escape, types), key=len, reverse=True)) + ")s?"
     return re.compile(
         rf"\b(?:[A-Z]{{1,4}})?{t}\b[\s?!>]*(?:\*\s*|\s+)(?:get\s+|get_?)?([Oo]bjects?)\b"
@@ -106,7 +77,6 @@ def accessor_decl(types):
         rf"|\bfunc\s*\([^)]*\)\s*(?:Get)?(Objects?)\s*\(\)\s*\(?\*?(?:[A-Z]{{1,4}})?{t}\b")
 
 
-ACCESSOR_DECL = accessor_decl(["RealtimeObject"])  # replaced at run time by the spec's accessor type
 # Untyped declarations (a Ruby attr_reader, a JS getter) count only in a file named after the channel.
 ACCESSOR_DECL_UNTYPED = re.compile(r"\battr_(?:reader|accessor)\s+:(objects?)\b"
                                     r"|^\s*(?:static\s+)?get\s+(objects?)\s*\(\)\s*\{")
@@ -187,12 +157,12 @@ def walk_files(repo):
         WALK_SKIPPED.update(d.lower() for d in dirs if d.lower() in WALK_EXCLUDED)
         dirs[:] = [d for d in dirs if d.lower() not in WALK_EXCLUDED]
         files += [pathlib.Path(root, n).relative_to(repo).as_posix() for n in names]
-    return files
+    return sorted(files)  # os.walk order varies: keep the output deterministic
 
 
 def submodule_paths(repo):
     out = subprocess.run(["git", "-C", str(repo), "config", "--file", ".gitmodules", "--get-regexp", r"\.path$"],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
     return [line.split(" ", 1)[1].strip() for line in out.stdout.splitlines() if " " in line]
 
 
@@ -339,21 +309,38 @@ def fail(code, message):
     return 1
 
 
+USAGE = "usage: detect_liveobjects.py <repo> [--spec-clone PATH] [--include-submodules]"
+
+
+def usage_error(message):
+    print(f"{USAGE}\ndetect_liveobjects.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
     args, opts = [], {}
     it = iter(argv[1:])
     for a in it:
         if a == "--spec-clone":
-            opts[a] = next(it, None)
+            opts[a] = next(it, "")
+            if not opts[a] or opts[a].startswith("-"):
+                return usage_error(f"{a} needs a value")
         elif a == "--include-submodules":
             opts[a] = True
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
         else:
             args.append(a)
     include_submodules = bool(opts.get("--include-submodules"))
-    if len(args) != 1 or not pathlib.Path(args[0]).is_dir() or ("--spec-clone" in opts and not opts["--spec-clone"]):
-        print("usage: detect_liveobjects.py <repo> [--spec-clone PATH] [--include-submodules]", file=sys.stderr)
-        return 2
-    repo = pathlib.Path(args[0]).expanduser().resolve()
+    if len(args) != 1:
+        return usage_error(f"expected one <repo>, got {len(args)} arguments")
+    repo = pathlib.Path(args[0]).expanduser()
+    if not repo.is_dir():
+        return usage_error(f"not a directory: {args[0]}")
+    repo = repo.resolve()
     try:
         loaded = sn.load(opts.get("--spec-clone"))
         names = loaded["liveobjects"]
@@ -366,7 +353,8 @@ def main(argv):
         else:
             listing = "git ls-files (tracked, and untracked but not ignored)"
             tracked = set(git_files(repo) or [])
-            out = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True)
+            out = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace")
             head = out.stdout.strip() or None
 
         spec_clones = sorted({f[: -len(m)].rstrip("/") or "." for f in files for m in SPEC_CLONE_MARKERS

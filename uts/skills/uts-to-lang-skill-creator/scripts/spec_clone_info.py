@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-"""Locate, validate and pin the local ably/specification clone.
+"""Locate, validate and pin the local ably/specification clone (STOP-1).
 
-Usage: spec_clone_info.py [SPEC_CLONE]
+Usage: spec_clone_info.py [SPEC_CLONE | --spec-clone PATH]
 
-Discovery order:
-  1. the SPEC_CLONE argument (the path the user gave);
-  2. the UTS_SPEC_CLONE environment variable;
-  3. the clone this skill lives in, when it is installed by symlink
-    (the real path of this skill's directory, three levels up);
-  otherwise: {"ok": false, "code": "SPEC_CLONE_NOT_FOUND"}.
-A path inside a clone (e.g. <clone>/uts/objects) is walked up to the clone root.
+Discovery order: the path given (walked up to the clone root from a path inside
+a clone), else UTS_SPEC_CLONE, else the clone this skill is installed from. A
+path given (or UTS_SPEC_CLONE) that isn't in a clone is NOT_A_SPEC_CLONE: it is
+never replaced by another candidate.
 
-Prints exactly one JSON object. Read-only; never touches the network.
+Prints one JSON object: `ok`, `specClone`, `foundBy`, `sha`, `dirty`,
+`dirtyFiles`, `guideLastChange`, `skillDir`, `skillRealpath`, `skillVersion`,
+`skillMatchesClone`, `paths` and `warnings` (a list, possibly empty). Exit 0 on
+success; 1 with {"ok": false} and a `code` (SPEC_CLONE_NOT_FOUND,
+NOT_A_SPEC_CLONE, GIT_ERROR, INTERNAL_ERROR); 2 on a usage error. Read-only;
+never touches the network.
+
+Rules: SKILL.md 2.6.
 """
 import filecmp, json, os, pathlib, subprocess, sys
 
@@ -64,12 +68,37 @@ def skill_version(skill_dir):
     return None
 
 
+USAGE = "usage: spec_clone_info.py [SPEC_CLONE | --spec-clone PATH]"
+
+
+def usage_error(message):
+    print(f"{USAGE}\nspec_clone_info.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
+    given = []
+    it = iter(argv[1:])
+    for a in it:
+        if a == "--spec-clone":
+            value = next(it, "")
+            if not value or value.startswith("-"):
+                return usage_error(f"{a} needs a value")
+            given.append(value)
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
+        else:
+            given.append(a)
+    if len(given) > 1:
+        return usage_error("give the spec clone once (SPEC_CLONE or --spec-clone PATH)")
     skill_dir = pathlib.Path(__file__).absolute().parent.parent
     skill_real = skill_dir.resolve()
     candidates = []
-    if len(argv) > 1 and argv[1].strip():
-        candidates.append(("argument", argv[1]))
+    if given and given[0].strip():
+        candidates.append(("argument", given[0]))
     if os.environ.get("UTS_SPEC_CLONE"):
         candidates.append(("UTS_SPEC_CLONE", os.environ["UTS_SPEC_CLONE"]))
     candidates.append(("skill location", str(skill_real.parent.parent.parent)))
@@ -126,9 +155,10 @@ def main(argv):
         "skillVersion": skill_version(skill_real),
         "skillMatchesClone": matches,
         "paths": {key: str(clone / rel) for key, rel in REQUIRED.items()},
+        "warnings": [],
     }
     if matches is False:
-        result["warning"] = (
+        result["warnings"].append(
             "SKILL_MISMATCH: the installed skill differs from the copy in this spec clone. "
             "Ask the user to refresh the install, or to confirm which version to follow (STOP-1)."
         )
@@ -140,4 +170,4 @@ if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv))
     except Exception as exc:  # never crash: report as JSON
-        sys.exit(fail("INTERNAL_ERROR", repr(exc)))
+        sys.exit(fail("INTERNAL_ERROR", f"{type(exc).__name__}: {exc}"))

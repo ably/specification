@@ -3,24 +3,36 @@
 
 Usage: survey_repo.py <repo> [<test-root> ...]
 
-Prints the HEAD SHA and dirty state, file-extension counts, likely test roots,
-submodule status, candidate mocks and fakes, existing UTS tags and existing
-skills (including uts-to-* skill directories that are symlinks). It is a
-starting point for the discovery checklist, not an answer to it: follow the
-evidence, and adapt or extend the searches for the repo's language. For an
-existing uts-to-* skill, run inspect_existing_skill.py; for LiveObjects API
-evidence, run detect_liveobjects.py.
+A starting point for the discovery checklist, not an answer to it: follow the
+evidence, and adapt or extend the searches for the repo's language.
+
+Prints plain text, in sections: HEAD and status, extension counts (top 20),
+likely test roots, the roots searched, submodules, candidate mocks, fakes and
+stubs, existing UTS tags, and existing skills (including uts-to-* skill
+directories that are symlinks). Outside a git repository it says so and lists
+files by a directory walk. Exit 0 on success; 2 on a usage error. Read-only
+(git runs with --no-optional-locks); never touches the network.
+
+Rules: references/phase-1-understand-repo.md 3.2.
 """
-import collections, os, pathlib, re, subprocess, sys
+import collections, importlib.util, os, pathlib, re, subprocess, sys
+
+_spec = importlib.util.spec_from_file_location("detect_liveobjects",
+                                                pathlib.Path(__file__).resolve().parent / "detect_liveobjects.py")
+lo = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lo)
 
 MOCK_RE = re.compile(r"class (Mock|Fake|Stub)|(Mock|Fake)[A-Z][A-Za-z]*(Transport|Http|Clock|Timer|Socket)")
-SKILL_DIRS = (".claude/skills/", ".agents/skills/", ".codex/skills/", ".cursor/skills/", ".github/skills/")
+SKILL_DIRS = tuple(root + "/" for root in lo.SKILL_ROOTS)
 TEST_ROOT_RE = re.compile(r"(^|/)(test|tests|spec|specs)/", re.IGNORECASE)
+USAGE = "usage: survey_repo.py <repo> [<test-root> ...]"
 
 
 def git(repo, *args):
-    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, encoding="utf-8")
-    return out.stdout if out.returncode == 0 else f"(git {' '.join(args)} failed: {out.stderr.strip()})\n"
+    """git's output, or None when it fails (not a git repository, no commits): never its error text."""
+    out = subprocess.run(["git", "-C", str(repo), "--no-optional-locks", *args], capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    return out.stdout if out.returncode == 0 else None
 
 
 def grep(roots, pattern, limit):
@@ -48,16 +60,34 @@ def display(path, repo):
         return str(path)
 
 
+def usage_error(message):
+    print(f"{USAGE}\nsurvey_repo.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
-    if len(argv) < 2 or not pathlib.Path(argv[1]).is_dir():
-        print("usage: survey_repo.py <repo> [<test-root> ...]", file=sys.stderr)
-        return 2
-    repo = pathlib.Path(argv[1]).resolve()
-    files = git(repo, "ls-files").splitlines()
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
+    unknown = [a for a in argv[1:] if a.startswith("-")]
+    if unknown:
+        return usage_error(f"unknown option {unknown[0]}")
+    if len(argv) < 2:
+        return usage_error("expected <repo>")
+    repo = pathlib.Path(argv[1]).expanduser()
+    if not repo.is_dir():
+        return usage_error(f"not a directory: {argv[1]}")
+    repo = repo.resolve()
+    listed = git(repo, "ls-files")
+    is_git = listed is not None
+    files = listed.splitlines() if is_git else lo.walk_files(repo)
 
     print("== HEAD and status")
-    print(git(repo, "rev-parse", "HEAD").strip())
-    print(git(repo, "status", "--porcelain").strip() or "(clean)")
+    if is_git:
+        print((git(repo, "rev-parse", "HEAD") or "(no commits)").strip())
+        print((git(repo, "status", "--porcelain") or "").strip() or "(clean)")
+    else:
+        print("(not a git repository: files listed by a directory walk, skipping build and vendored directories)")
 
     print("\n== Extension counts (top 20)")
     exts = collections.Counter(f.rsplit(".", 1)[-1] if "." in f.rsplit("/", 1)[-1] else "(none)" for f in files)
@@ -72,7 +102,10 @@ def main(argv):
     print("\n== Roots searched below: " + (", ".join(display(r, repo) for r in roots) or "(none)"))
 
     print("\n== Submodules")
-    print(git(repo, "submodule", "status").strip() or "(none)")
+    if is_git:
+        print((git(repo, "submodule", "status") or "").strip() or "(none)")
+    else:
+        print("(not a git repository)")
 
     print("\n== Candidate mocks, fakes and stubs (first 40)")
     print("\n".join(grep(roots, MOCK_RE, 40)) or "(none)")

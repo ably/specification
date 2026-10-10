@@ -1,44 +1,34 @@
 #!/usr/bin/env python3
 """Static inventory of an existing uts-to-* skill, its harness and its UTS-derived tests.
 
-Usage: inspect_existing_skill.py <repo> [<skill-dir>]
+Usage: inspect_existing_skill.py <repo> [<skill-dir>] [--records <dir>]
 
-A read-only first pass for STOP-13 and the gap audit (section 11 of the skill).
-It finds uts-to-* skills in the usual agent skill directories (.claude/skills,
-.agents/skills, .codex/skills, .cursor/skills, .github/skills, skills) and any
-other SKILL.md whose directory or `name:` starts with uts-to-, groups installs
-that are the same directory (symlinks), and for each skill runs regex checks
-against the guide's requirements: frontmatter portability, the files the
-layout requires, the mapping's harness entry and notes, and SKILL.md sections.
-Without a mapping `harness` entry it lists harness candidates (README
-files near MockWebSocket / SandboxApp / ProxyManager definitions, smoke and
-self-test files by name, CI workflow lines). It compares copies installed for
-both tools, finds working records, counts UTS-derived test tags (and those
-outside the mapped tier directories), the spec SHAs in their headers, and
-deviations.md and other deviation-like records, and lists uts-to-* skills
-installed at user level.
+A read-only first pass for STOP-13 and the gap audit. It finds uts-to-* skills
+in the agent skill directories (detect_liveobjects.SKILL_ROOTS) and any other
+SKILL.md whose directory or `name:` starts with uts-to-, and runs regex checks
+keyed to acceptance-checklist items: a "pass" is a pattern hit, not a review.
+`--records <dir>` reads the working records from <dir> instead of
+<skill>/generation/ (for the named <skill-dir> only, when one is given). It
+never runs the skill's scripts and never writes.
 
-Each skill's `capabilityProfile` (also under `records`) is the design record's
-parseable "Capabilities (D-31):" line (levels, liveobjects, side, scope kind and
-modules, unsupported modules, capability-inapplicable count, names source),
-completed by the mapping's `unsupported`, `capabilityInapplicable` and
-`extraTests` keys (and the older `notApplicable`, `notApplicableSpecs`, and an
-`unready` reason saying "not applicable" or "REST-only"). Without a D-31 line,
-levels are inferred from the mapping's unsupported modules (`levelsInferred`).
-Orient compares it with the current profile (section 13.8).
+Prints one JSON object: `ok`, `repo`, `head`, `skills` (per skill: installs,
+origin, records, `capabilityProfile`, language, frontmatter, files, mapping,
+harness, checks, summary), `namedSkill`, `workingRecords`, `brokenInstalls`,
+`orphanRecords`, `otherRepoSkills`, `repoLanguages`, `harnessCandidates`,
+`userLevelInstalls`, `derivedTests`, `note` and `found`. Exit 0 on success; 1
+with {"ok": false} on an error (INSPECT_ERROR); 2 on a usage error.
 
-It never runs the skill's scripts and never writes. Each check names the
-acceptance-checklist item it informs; a "pass" is a regex hit, not a review:
-confirm every row by reading the files. Prints exactly one JSON object.
+Rules: references/orient.md 13.3 (origin, S4), 13.8 (the recorded capability
+profile); references/upgrade-existing-skill.md 11.2 (the gap audit).
 """
 import collections, filecmp, importlib.util, json, os, pathlib, re, subprocess, sys
 
 _spec = importlib.util.spec_from_file_location("detect_liveobjects",
-                                               pathlib.Path(__file__).resolve().parent / "detect_liveobjects.py")
+                                                pathlib.Path(__file__).resolve().parent / "detect_liveobjects.py")
 lo = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(lo)
 
-SKILL_ROOTS = [".claude/skills", ".agents/skills", ".codex/skills", ".cursor/skills", ".github/skills", "skills"]
+SKILL_ROOTS = lo.SKILL_ROOTS  # one list for every script
 SELF = "uts-to-lang-skill-creator"
 NON_PORTABLE = ["argument-hint", "model", "disable-model-invocation", "user-invocable", "when_to_use", "context",
                 "agent", "hooks", "effort", "paths", "shell"]
@@ -93,12 +83,12 @@ def git_lines(repo, *args):
 
 
 def frontmatter(text):
-    """Return (fields, raw lines, body). A small YAML subset: top-level keys and one nested map."""
+    """Return (fields, body). A small YAML subset: top-level keys and one nested map."""
     if not text.startswith("---"):
-        return None, [], text
+        return None, text
     end = text.find("\n---", 3)
     if end < 0:
-        return None, [], text
+        return None, text
     raw = text[3:end].strip("\n").splitlines()
     fields, current, block = {}, None, None
     for line in raw:
@@ -119,7 +109,7 @@ def frontmatter(text):
         m = re.match(r"^\s+([A-Za-z0-9_.-]+):\s*(.*)$", line)
         if m and current is not None and isinstance(fields[current], dict):
             fields[current][m.group(1)] = m.group(2)
-    return fields, raw, text[end + 4:]
+    return fields, text[end + 4:]
 
 
 def unquote(value):
@@ -135,7 +125,6 @@ def check(checks, cid, item, ok, evidence, warn=False):
 
 
 BROKEN = []
-RECORDS_DIR = None
 REPO_EXT_COUNTS = {}
 LANG_EXT = {"csharp": {".cs"}, "dotnet": {".cs"}, "python": {".py"}, "go": {".go"}, "golang": {".go"},
             "js": {".js", ".ts"}, "javascript": {".js", ".ts"}, "typescript": {".ts"}, "ruby": {".rb"},
@@ -294,6 +283,15 @@ def named_path(repo, explicit):
     return pathlib.Path(os.path.abspath(p))  # absolute, symlinks kept (an install may be a symlink)
 
 
+def display(path, repo):
+    """`path` relative to the repo when it is inside it, else as given."""
+    try:
+        inside = os.path.commonpath([str(path), str(repo)]) == str(repo)
+    except ValueError:
+        inside = False
+    return os.path.relpath(path, repo) if inside else str(path)
+
+
 def find_skills(repo, explicit):
     candidates = []
     if explicit:
@@ -312,23 +310,23 @@ def find_skills(repo, explicit):
     groups = collections.OrderedDict()
     for c in candidates:
         if not (c / "SKILL.md").is_file():
-            rel = os.path.relpath(c, repo) if str(c).startswith(str(repo)) else str(c)
+            rel = display(c, repo)
             if c.is_symlink() and not c.exists():
                 BROKEN.append({"path": rel, "problem": f"dangling symlink to {os.readlink(c)}"})
             elif c.is_dir() and not (c / "generation" / "design-record.md").is_file():
                 BROKEN.append({"path": rel, "problem": "uts-to-* directory without SKILL.md"})
             continue
         real = str(c.resolve())
-        rel = os.path.relpath(c, repo) if str(c).startswith(str(repo)) else str(c)
+        rel = display(c, repo)
         if rel not in [i["path"] for i in groups.get(real, [])]:  # the named <skill-dir> is also found by the scan
             groups.setdefault(real, []).append({"path": rel, "symlink": c.is_symlink()})
     return groups
 
 
-def inspect_skill(repo, real, installs):
+def inspect_skill(repo, real, installs, records_dir=None):
     d = pathlib.Path(real)
     text = (d / "SKILL.md").read_text(encoding="utf-8", errors="replace")
-    fields, raw, body = frontmatter(text)
+    fields, body = frontmatter(text)
     checks = []
     fm_item = "`SKILL.md` frontmatter portable across Claude Code and Codex ..."
     dir_name = pathlib.Path(installs[0]["path"]).name
@@ -492,7 +490,7 @@ def inspect_skill(repo, real, installs):
     check(checks, "I-both-tools", "Installed for both tools from one source ... (SHOULD)", bool(codex and claude),
           f"installs: {[i['path'] for i in installs]}", warn=True)
 
-    records = read_records(pathlib.Path(RECORDS_DIR)) if RECORDS_DIR else read_records(d / "generation")
+    records = read_records(records_dir) if records_dir else read_records(d / "generation")
     mprof = mapping_profile(modules)
     profile = merge_profile(records, mprof)
     if records:
@@ -528,7 +526,7 @@ def inspect_skill(repo, real, installs):
 def derived_tests(repo):
     listed = git_lines(repo, "ls-files", "-co", "--exclude-standard", "-z")
     if listed is None:
-        listed = [str(p.relative_to(repo)) for p in repo.rglob("*") if p.is_file()]
+        listed = sorted(p.relative_to(repo).as_posix() for p in repo.rglob("*") if p.is_file())
     per_dir, styles, shas, no_sha, deviations, tagged_files = (collections.Counter(), collections.Counter(),
                                                                 collections.Counter(), [], [], 0)
     unpinned, other_records, by_mt, layouts = 0, [], collections.Counter(), collections.Counter()
@@ -587,7 +585,8 @@ def derived_tests(repo):
     }
 
 
-HARNESS_SYMBOL = re.compile(r"\b(MockWebSocket|MockHttpClient|SandboxApp|ProxyManager|ProxySession)\b")
+HARNESS_DECL = re.compile(r"\b(class|struct|object|interface|protocol|def|func|fun)\s+(MockWebSocket|MockHttpClient|"
+                          r"SandboxApp|ProxyManager|ProxySession)\b")
 SMOKE_NAME = re.compile(r"(?i)(smoke|selftest|self_test|self-test)")
 
 
@@ -602,8 +601,7 @@ def find_harness(repo):
             text = (repo / rel).read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        if re.search(r"\b(class|struct|object|interface|protocol|def|func|fun)\s+(MockWebSocket|MockHttpClient|"
-                      r"SandboxApp|ProxyManager|ProxySession)\b", text):
+        if HARNESS_DECL.search(text):
             dirs[rel.rsplit("/", 1)[0] if "/" in rel else "."] += 1
     readmes = []
     for d in dirs:
@@ -669,17 +667,37 @@ def user_level_installs():
     return found
 
 
+USAGE = "usage: inspect_existing_skill.py <repo> [<skill-dir>] [--records <dir>]"
+
+
+def usage_error(message):
+    print(f"{USAGE}\ninspect_existing_skill.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
-    global RECORDS_DIR
-    if "--records" in argv:
-        i = argv.index("--records")
-        RECORDS_DIR = argv[i + 1] if i + 1 < len(argv) else None
-        argv = argv[:i] + argv[i + 2:]
-    if len(argv) not in (2, 3) or not pathlib.Path(argv[1]).is_dir():
-        print("usage: inspect_existing_skill.py <repo> [<skill-dir>] [--records <dir>]", file=sys.stderr)
-        return 2
-    skill_arg = argv[2] if len(argv) == 3 else None
-    repo = pathlib.Path(argv[1]).expanduser().resolve()
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
+    args, records_arg = [], None
+    it = iter(argv[1:])
+    for a in it:
+        if a == "--records":
+            records_arg = next(it, "")
+            if not records_arg or records_arg.startswith("-"):
+                return usage_error(f"{a} needs a value")
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
+        else:
+            args.append(a)
+    if len(args) not in (1, 2):
+        return usage_error(f"expected <repo> and an optional <skill-dir>, got {len(args)} arguments")
+    repo = pathlib.Path(args[0]).expanduser()
+    if not repo.is_dir():
+        return usage_error(f"not a directory: {args[0]}")
+    repo = repo.resolve()
+    skill_arg = args[1] if len(args) == 2 else None
+    records_dir = pathlib.Path(records_arg).expanduser() if records_arg else None
     try:
         for f in git_lines(repo, "ls-files", "-z") or []:
             ext = pathlib.PurePosixPath(f).suffix
@@ -687,8 +705,10 @@ def main(argv):
                 REPO_EXT_COUNTS[ext] = REPO_EXT_COUNTS.get(ext, 0) + 1
         groups = find_skills(repo, skill_arg)
         head = git_lines(repo, "rev-parse", "HEAD")
-        skills = [inspect_skill(repo, real, installs) for real, installs in groups.items()]
         named = str(named_path(repo, skill_arg).resolve()) if skill_arg else None
+        # --records belongs to the named skill when one is given, else to every skill found.
+        skills = [inspect_skill(repo, real, installs, records_dir if named is None or real == named else None)
+                  for real, installs in groups.items()]
         for sk in skills:  # orient.py --skill-dir classifies only the named skill
             sk["named"] = named is not None and sk["realPath"] == named
         records = set()
@@ -702,7 +722,7 @@ def main(argv):
         records.update(f for f in listed if f.endswith(("/design-record.md", "/skill-gap-audit.md"))
                         and "uts-to-lang-skill-creator/assets/templates/" not in f)
         orphans = []
-        for root in (".claude/skills", ".agents/skills", ".codex/skills", ".cursor/skills"):
+        for root in SKILL_ROOTS:
             for dr in sorted((repo / root).glob("*/generation/design-record.md")) if (repo / root).is_dir() else []:
                 if not (dr.parent.parent / "SKILL.md").is_file():
                     rec = read_records(dr.parent)

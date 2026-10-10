@@ -4,52 +4,23 @@
 Usage: detect_capabilities.py <repo> [--spec-clone PATH] [--include-submodules]
                               [--capability-override rest=full,realtime=absent]
 
-The harness and the skill's scope follow the SDK's capabilities, not its name
-(section 13.8 of the skill): a REST client, and a Realtime client with its
-connection, channels and presence. Names are read at run time from the spec
-clone (spec_names.py: the features.md IDL, by spec-point prefix), plus the
-aliases and door factories in assets/capability-names.json (update that file,
-not the code). If the spec can't be parsed, `namesSource` is "fallback" with a
-warning.
+A read-only regex heuristic over definitions, never usages. Names are read at
+run time from the spec clone (spec_names.py), plus the aliases and door
+factories in assets/capability-names.json. Levels: rest full|partial|absent;
+realtime full|partial|absent|unclear. An invalid --capability-override (an
+unknown capability, or a level not valid for it) is a usage error.
 
-Matching (definitions, never usages):
-  - type declarations of a spec name or its per-language forms: a short all-caps
-    prefix (ART, I), spec_names.TRANSFORMS' word prefixes and suffixes, snake_case;
-  - Go constructors New<Name> and type aliases (`type HTTPClient = ably.REST`);
-  - a bare word (Client, Channel, Connection, Presence: a spec name without its
-    Rest/Realtime prefix) only under a rest/realtime/http path segment;
-  - members in any case, snake_case, without an Async suffix, including typed
-    returns without a modifier (Dart `Future<void> enter(`, Java `void
-    attach(`); a connection, channels or presence member counts only inside
-    that sub-area's own type (the last type declared before it, or a Go
-    receiver), or outside any recognised type in a file declaring one;
-  - door factories (2.0 split SDKs), whose side (device, server) comes from the
-    enclosing door type (PubSubDevice) or else the path (Ably.PubSub.Device),
-    and whose capability comes from the return type or the name.
-A client is public when its type is public, or when a public factory returns
-it; constructor visibility is ignored. Sides come only from doors: when a door
-has a device or server side, `sides` lists core (the client types themselves,
-reached through the internal-access route) and each door side; otherwise it is
-null. A client type under a `device` path (push LocalDevice code) isn't a side.
+Prints one JSON object: `ok`, `repo`, `namesSource`, `specClone`,
+`specRevision`, `namesFrom`, `dataFile`, `warnings`, `excluded`,
+`capabilities` (rest and realtime: levels, clients, sub-areas, transport,
+`methodGapsAdvisory`; `clients.*.gateTypes` is internal, for the eligibility
+definition gate), `source`, `sides`, `wrapsNativeSdk`, `scopeSuggestion`,
+`reasons`, `summary` and `note`. Exit 0 on success; 1 with {"ok": false} on an
+error (DATA_FILE_ERROR, NOT_A_SPEC_CLONE, CAPABILITY_ERROR); 2 on a usage
+error. Never touches the network.
 
-Levels: rest full | partial | absent; realtime full | partial | absent |
-unclear, with connection, channels and presence (present: a declared name and
-at least one key member; stub: names only, or not-implemented markers;
-absent), transport evidence, and, only when realtime is partial, advisory
-method-level gaps (spec members not found; naming variants make them noisy on
-full SDKs). Realtime "unclear" (a client declared but not public) leaves
-realtime undecided: scope kind "unclear", asked at STOP-17, never decided as
-rest-only; so does a realtime client with no connection, no channels and no
-REST client. It flags an SDK that wraps native SDKs (hooks unreachable from
-its language); the bridge then counts as its transport evidence. With
-presence absent (scope full or realtime-only), the corpus's presence specs
-(spec_names.py) are capability-inapplicable. --capability-override levels are
-validated (USAGE_ERROR). `clients.*.gateTypes` (internal) holds what the
-eligibility definition gate counts: declared client types (not bindings or
-functions, not under example(s)/sample(s)/demo(s)) and device/server doors.
-Reuses detect_liveobjects.py's exclusions. Prints one JSON object with the
-profile, a scope suggestion (modules, unsupported modules, capability-
-inapplicable tests) and a summary. Read-only; never touches the network.
+Rules: references/orient.md 13.8 (matching, levels, sides, scope) and 13.2 (the
+definition gate).
 """
 import bisect, collections, importlib.util, json, pathlib, re, sys
 
@@ -494,31 +465,47 @@ def scope_for(rest_level, rt_level, inapplicable, weak_realtime=False):
     return {"kind": "none", "modules": [], "unsupported": {}, "capabilityInapplicable": [], "extraTests": []}
 
 
+USAGE = ("usage: detect_capabilities.py <repo> [--spec-clone PATH] [--include-submodules] "
+          "[--capability-override rest=full,realtime=absent]")
+
+
+def usage_error(message):
+    print(f"{USAGE}\ndetect_capabilities.py: error: {message}", file=sys.stderr)
+    return 2
+
+
 def main(argv):
+    if "-h" in argv[1:] or "--help" in argv[1:]:
+        print(__doc__.strip())
+        return 0
     args, opts = [], {}
     it = iter(argv[1:])
     for a in it:
         if a in ("--spec-clone", "--capability-override"):
-            opts[a] = next(it, None)
+            opts[a] = next(it, "")
+            if not opts[a] or opts[a].startswith("-"):
+                return usage_error(f"{a} needs a value")
         elif a == "--include-submodules":
             opts[a] = True
+        elif a.startswith("-"):
+            return usage_error(f"unknown option {a}")
         else:
             args.append(a)
-    if len(args) != 1 or not pathlib.Path(args[0]).is_dir():
-        print("usage: detect_capabilities.py <repo> [--spec-clone PATH] [--include-submodules] "
-              "[--capability-override rest=full,realtime=absent]", file=sys.stderr)
-        return 2
-    repo = pathlib.Path(args[0]).expanduser().resolve()
+    if len(args) != 1:
+        return usage_error(f"expected one <repo>, got {len(args)} arguments")
+    override = None
+    if "--capability-override" in opts:
+        try:
+            override = parse_override(opts["--capability-override"])
+        except ValueError as exc:
+            return usage_error(str(exc))
+    repo = pathlib.Path(args[0]).expanduser()
+    if not repo.is_dir():
+        return usage_error(f"not a directory: {args[0]}")
+    repo = repo.resolve()
     try:
         loaded = sn.load(opts.get("--spec-clone"))
         names = Names(loaded)
-        override = None
-        if opts.get("--capability-override"):
-            try:
-                override = parse_override(opts["--capability-override"])
-            except ValueError as exc:
-                print(json.dumps({"ok": False, "code": "USAGE_ERROR", "message": str(exc)}))
-                return 2
         res = scan(repo, bool(opts.get("--include-submodules")), names)
         prof = profile(res, names, override)
         inapplicable = loaded.get("capabilityInapplicable", {})
@@ -564,7 +551,7 @@ def main(argv):
                     + f"; realtime {rt_level}"
                     + (f" ({', '.join(prof['realtime']['client']['names'][:2])}; "
                       + ", ".join(f"{a} {v['level']}" for a, v in prof["realtime"]["subAreas"].items()) + ")"
-                      if rt_level not in ("absent",) else "")
+                      if rt_level != "absent" else "")
                     + ("; WebSocket transport" if prof["realtime"]["transport"]["nonTestHits"] or
                       prof["realtime"]["transport"]["manifests"] else
                       "; transport in the wrapped native SDKs" if prof["wrapsNativeSdk"] else "; no WebSocket code")
