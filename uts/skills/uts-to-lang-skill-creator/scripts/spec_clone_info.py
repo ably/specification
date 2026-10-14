@@ -3,26 +3,45 @@
 
 Usage: spec_clone_info.py [SPEC_CLONE | --spec-clone PATH]
 
-Discovery order: the path given (walked up to the clone root from a path inside
-a clone), else UTS_SPEC_CLONE, else the clone this skill is installed from. A
-path given (or UTS_SPEC_CLONE) that isn't in a clone is NOT_A_SPEC_CLONE: it is
-never replaced by another candidate.
+Precedence (ensure_spec_clone.py's): the path given (walked up to the clone
+root from a path inside a clone), else the clone this skill is installed from,
+else ABLY_SPEC_CLONE (UTS_SPEC_CLONE is read as a deprecated alias, with a
+warning), else the shared default ~/.ably/specification. A path given that
+isn't in a clone is NOT_A_SPEC_CLONE: it is never replaced by another
+candidate. An ABLY_SPEC_CLONE path, or the default, that doesn't exist is
+SPEC_CLONE_NOT_FOUND with `bootstrapPath`. A clone whose checkout lacks the
+guide or this skill (a revision that predates them) is SPEC_CLONE_INCOMPLETE,
+with `missing` and a message saying how to proceed. Only the shared clone is
+synced (`syncEligible`); any other clone gets `notSyncedWarning`.
 
-Prints one JSON object: `ok`, `specClone`, `foundBy`, `sha`, `dirty`,
-`dirtyFiles`, `guideLastChange`, `skillDir`, `skillRealpath`, `skillVersion`,
-`skillMatchesClone`, `paths` and `warnings` (a list, possibly empty). Exit 0 on
-success; 1 with {"ok": false} and a `code` (SPEC_CLONE_NOT_FOUND,
-NOT_A_SPEC_CLONE, GIT_ERROR, INTERNAL_ERROR); 2 on a usage error. Read-only;
-never touches the network.
+Prints one JSON object: `ok`, `specClone`, `kind`, `foundBy`,
+`isSharedClone`, `syncEligible`, `notSyncedWarning`, `sha`, `branch`,
+`detached`, `dirty`, `dirtyFiles`, `trackedChanges`, `operationInProgress`,
+`upstream` {ref, sha, ahead, behind, lastFetch, lastFetchDays},
+`onOriginMain`, `originUrl`,
+`originIsAblySpecification`, `fastForwardBlockedBy`, `headAgeDays`,
+`staleWarning`, `stalenessLine`, `syncPolicy`, `guideLastChange`, `skillDir`,
+`skillRealpath`, `skillVersion`, `skillMatchesClone`, `paths` and `warnings`
+(a list, possibly empty). Exit 0 on success; 1 with {"ok": false} and a `code`
+(SPEC_CLONE_NOT_FOUND with `bootstrapPath`, NOT_A_SPEC_CLONE,
+SPEC_CLONE_INCOMPLETE, SPEC_CLONE_ENV_CONFLICT, GIT_ERROR, INTERNAL_ERROR); 2
+on a usage error. Read-only; never touches the network (the sync is
+ensure_spec_clone.py's).
 
-Rules: SKILL.md 2.6.
+Rules: SKILL.md 2.6; references/orient.md 13.1, 13.9.
 """
-import filecmp, json, os, pathlib, subprocess, sys
+import filecmp, importlib.util, json, pathlib, sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+_spec = importlib.util.spec_from_file_location("ensure_spec_clone", HERE / "ensure_spec_clone.py")
+esc = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(esc)
 
 SKILL_NAME = "uts-to-lang-skill-creator"
 SKILL_IN_CLONE = pathlib.Path("uts", "skills", SKILL_NAME)
 REQUIRED = {
     "guide": "uts/docs/writing-uts-spec-translator-skills.md",
+    "skillCreator": (SKILL_IN_CLONE / "SKILL.md").as_posix(),
     "utsReadme": "uts/README.md",
     "writingDerivedTests": "uts/docs/writing-derived-tests.md",
     "writingTestSpecs": "uts/docs/writing-test-specs.md",
@@ -39,17 +58,6 @@ REQUIRED = {
 def fail(code, message, **extra):
     print(json.dumps({"ok": False, "code": code, "message": message, **extra}, indent=2))
     return 1
-
-
-def git(clone, *args):
-    out = subprocess.run(["git", "-C", str(clone), *args], capture_output=True, text=True, encoding="utf-8")
-    if out.returncode != 0:
-        raise RuntimeError(out.stderr.strip() or f"git {' '.join(args)} failed")
-    return out.stdout
-
-
-def is_spec_clone(path):
-    return all((path / rel).exists() for rel in REQUIRED.values())
 
 
 def skill_files(root):
@@ -96,38 +104,27 @@ def main(argv):
         return usage_error("give the spec clone once (SPEC_CLONE or --spec-clone PATH)")
     skill_dir = pathlib.Path(__file__).absolute().parent.parent
     skill_real = skill_dir.resolve()
-    candidates = []
-    if given and given[0].strip():
-        candidates.append(("argument", given[0]))
-    if os.environ.get("UTS_SPEC_CLONE"):
-        candidates.append(("UTS_SPEC_CLONE", os.environ["UTS_SPEC_CLONE"]))
-    candidates.append(("skill location", str(skill_real.parent.parent.parent)))
-
-    clone, source = None, None
-    for source, raw in candidates:
-        path = pathlib.Path(os.path.expanduser(raw)).resolve()
-        # accept a path inside a clone (e.g. <clone>/uts/objects): walk up to the root
-        found = next((p for p in [path, *path.parents] if is_spec_clone(p)), None)
-        if found is not None:
-            clone = found
-            break
-        if source != "skill location":
-            missing = [rel for rel in REQUIRED.values() if not (path / rel).exists()]
-            return fail("NOT_A_SPEC_CLONE", f"{path} (from {source}) is not an ably/specification clone",
-                        missing=missing)
+    loc = esc.locate(given[0] if given else None, list(REQUIRED.values()))
+    warnings = loc.pop("warnings", [])
+    clone = pathlib.Path(loc["specClone"]) if loc.get("specClone") else None
     if clone is None:
-        return fail("SPEC_CLONE_NOT_FOUND",
-                    "No spec clone given and the skill is not installed from one. "
-                    "Ask the user for the path of their local ably/specification clone (STOP-1).")
-
+        return fail(loc["code"], loc["message"], **{k: v for k, v in loc.items() if k not in ("ok", "code", "message")},
+                    warnings=warnings)
     try:
-        sha = git(clone, "rev-parse", "HEAD").strip()
-        status = git(clone, "--no-optional-locks", "status", "--porcelain", "--untracked-files=all", "--", "uts",
-                      "specifications").splitlines()
-        last = git(clone, "log", "-1", "--format=%H %cd", "--",
-                  "uts/docs/writing-uts-spec-translator-skills.md", SKILL_IN_CLONE.as_posix()).strip()
-    except (RuntimeError, OSError) as exc:
-        return fail("GIT_ERROR", str(exc), specClone=str(clone))
+        st = esc.status(clone)
+        last = esc.git(clone, "log", "-1", "--format=%H %cd", "--",
+                      REQUIRED["guide"], SKILL_IN_CLONE.as_posix()).strip()
+    except (esc.GitError, OSError) as exc:
+        return fail("GIT_ERROR", str(exc), specClone=str(clone), kind=loc.get("kind"), foundBy=loc.get("foundBy"),
+                    warnings=warnings)
+    if not loc["ok"]:
+        return fail("SPEC_CLONE_INCOMPLETE", esc.incomplete_message(loc, st, clone), specClone=str(clone),
+                    kind=loc["kind"], foundBy=loc["foundBy"], isSharedClone=loc.get("isSharedClone"),
+                    syncEligible=loc.get("syncEligible"), notSyncedWarning=loc.get("notSyncedWarning"),
+                    missing=loc["missing"], sha=st["head"], branch=st["branch"], detached=st["detached"],
+                    upstream=st["upstream"], fastForwardBlockedBy=st["fastForwardBlockedBy"],
+                    staleWarning=st["staleWarning"], stalenessLine=st["stalenessLine"], syncPolicy=esc.policy(),
+                    warnings=warnings)
 
     clone_skill = clone / SKILL_IN_CLONE
     matches = None
@@ -142,10 +139,27 @@ def main(argv):
     result = {
         "ok": True,
         "specClone": str(clone),
-        "foundBy": source,
-        "sha": sha,
-        "dirty": bool(status),
-        "dirtyFiles": [line[3:] for line in status],
+        "kind": loc["kind"],
+        "foundBy": loc["foundBy"],
+        "isSharedClone": loc["isSharedClone"],
+        "syncEligible": loc["syncEligible"],
+        "notSyncedWarning": loc["notSyncedWarning"],
+        "sha": st["head"],
+        "branch": st["branch"],
+        "detached": st["detached"],
+        "dirty": bool(st["dirtyFiles"]),
+        "dirtyFiles": st["dirtyFiles"],
+        "trackedChanges": st["trackedChanges"],
+        "operationInProgress": st["operationInProgress"],
+        "upstream": st["upstream"],
+        "onOriginMain": st["onOriginMain"],
+        "originUrl": st["originUrl"],
+        "originIsAblySpecification": st["originIsAblySpecification"],
+        "fastForwardBlockedBy": st["fastForwardBlockedBy"],
+        "headAgeDays": st["headAgeDays"],
+        "staleWarning": st["staleWarning"],
+        "stalenessLine": st["stalenessLine"],
+        "syncPolicy": esc.policy(),
         "guideLastChange": {
             "sha": last.split(" ", 1)[0] if last else None,
             "date": last.split(" ", 1)[1] if " " in last else None,
@@ -155,7 +169,7 @@ def main(argv):
         "skillVersion": skill_version(skill_real),
         "skillMatchesClone": matches,
         "paths": {key: str(clone / rel) for key, rel in REQUIRED.items()},
-        "warnings": [],
+        "warnings": warnings,
     }
     if matches is False:
         result["warnings"].append(

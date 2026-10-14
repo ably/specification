@@ -18,10 +18,13 @@ the network.
 
 Rules: references/orient.md 13.8; LiveObjects categories: references/liveobjects-support.md 12.1.
 """
-import json, os, pathlib, re, subprocess, sys
+import importlib.util, json, pathlib, re, subprocess, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 DATA = HERE.parent / "assets" / "capability-names.json"
+_esc_spec = importlib.util.spec_from_file_location("ensure_spec_clone", HERE / "ensure_spec_clone.py")
+esc = importlib.util.module_from_spec(_esc_spec)
+_esc_spec.loader.exec_module(esc)
 TYPE_LINE = re.compile(r"^    (class|interface|enum)\s+((?:PublicAPI::)?[A-Za-z_]\w*)(?:<[^>]*>)?(?:\s+extends\s+[\w, ]+)?:?\s*"
                         r"(?://\s*(.*))?$")
 MEMBER_LINE = re.compile(r"^      ([a-zA-Z_]\w*)\s*(\(|:)")
@@ -61,7 +64,7 @@ class DataFileError(ValueError):
 
 
 class SpecCloneError(ValueError):
-    """An explicit spec clone path (--spec-clone or UTS_SPEC_CLONE) isn't an ably/specification clone. Never falls back."""
+    """An explicit spec clone path (--spec-clone or ABLY_SPEC_CLONE) isn't an ably/specification clone. Never falls back."""
 
 
 def _strip(value):
@@ -122,27 +125,19 @@ def load_data():
     return load_json(DATA, DATA_SHAPE)
 
 
-def _clone_root(path):
-    """The spec clone containing path (path itself or a parent, e.g. <clone>/uts/objects), or None."""
-    path = pathlib.Path(path).expanduser().resolve()
-    return next((p for p in [path, *path.parents] if (p / "specifications" / "features.md").is_file()), None)
-
-
 def locate(spec_clone=None):
-    """The spec clone: the argument, else UTS_SPEC_CLONE, else the clone this skill lives in.
+    """The spec clone, by ensure_spec_clone.py's precedence: the argument (walked up to its root), else the clone this
+    skill lives in, else ABLY_SPEC_CLONE (or the deprecated UTS_SPEC_CLONE), else ~/.ably/specification.
 
-    A path inside a clone is walked up to its root. An explicit path (the argument, or UTS_SPEC_CLONE when there is
-    no argument) that isn't in a clone raises SpecCloneError: it is never replaced by another candidate.
+    An explicit path (the argument, or ABLY_SPEC_CLONE) that isn't in a clone raises SpecCloneError: it is never
+    replaced by another candidate. None when no clone exists.
     """
-    for how, cand in (("--spec-clone", spec_clone), ("UTS_SPEC_CLONE", os.environ.get("UTS_SPEC_CLONE"))):
-        if cand and str(cand).strip():
-            root = _clone_root(cand)
-            if root is None:
-                raise SpecCloneError(
-                    f"{cand} (from {how}) isn't an ably/specification clone: no specifications/features.md in it or "
-                    "a parent directory")
-            return root
-    return _clone_root(HERE.parents[3])
+    found = esc.locate(spec_clone)
+    if found.get("specClone"):
+        return pathlib.Path(found["specClone"])
+    if found["code"] in ("NOT_A_SPEC_CLONE", "SPEC_CLONE_ENV_CONFLICT"):
+        raise SpecCloneError(found["message"])
+    return None
 
 
 def revision(clone):
@@ -303,7 +298,7 @@ def load(spec_clone=None):
     result = {"source": "spec", "specClone": str(clone) if clone else None, "warnings": [], "data": str(DATA)}
     try:
         if clone is None:
-            raise ValueError("no spec clone found (pass --spec-clone, or set UTS_SPEC_CLONE)")
+            raise ValueError("no spec clone found (pass --spec-clone, or set ABLY_SPEC_CLONE)")
         result["revision"] = revision(clone)
         features, hf = parse_idl(clone / "specifications" / "features.md")
         objects, ho = parse_idl(clone / "specifications" / "objects-features.md")
