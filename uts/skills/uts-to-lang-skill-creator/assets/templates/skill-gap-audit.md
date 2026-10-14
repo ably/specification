@@ -1,7 +1,8 @@
 # Gap audit: uts-to-<lang> in <repo name>
 
 - Existing skill: <path> (installs: <.claude/skills/…, .agents/skills/… (symlink | copy)>); frontmatter version <metadata.version or none>
-- Repo <sha> (clean | dirty: <files>); spec clone <sha> (clean | dirty: <files>)
+- Repo <sha> (clean | dirty: <files>)
+- Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>
 - State class (Orient): S2 | S3 | S4; mode at STOP-13: upgrade: diff-driven | upgrade: full audit | upgrade: regenerate — chosen by <user> on <date>
 - inspect_existing_skill.py run: <date>; its checks are regex hints, every row below is confirmed by reading
 - Capabilities: recorded D-31 <line or none> vs Orient now <profile; side>; delta: <none | capability added | side changed>

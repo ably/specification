@@ -4,7 +4,7 @@
 (paste orient.py's stateSummaryText, completed with the model, the capability profile confirmed at STOP-13 or STOP-17 (D-31), and the option chosen at STOP-13)
 
 - Repo: <path>, HEAD <sha> (clean | dirty: <files>)
-- Spec clone: <path>, HEAD <sha> (clean | dirty: <files>); guide/skill last changed in <sha>; skill version <metadata.version>
+- Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>; guide/skill last changed in <sha>; skill version <metadata.version>
 - Date: <yyyy-mm-dd>; confirmed by the user on <date> (STOP-2)
 - User goals: <modules and tiers, in priority order>
 

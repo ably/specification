@@ -1,6 +1,7 @@
 # Final report: uts-to-<lang> for <repo>
 
-- Spec clone <sha> (clean | dirty: <files>); repo <sha>; date
+- Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>; repo <sha>; date
+- Spec SHA not on origin/main (a branch run): <none | sha: the stamp and any test headers that carry it may stop resolving once that branch is deleted>
 - Model: <name and ID> (Opus-class: yes | no, and why); sub-agents: <role → model>, or none
 - Scope: <modules × tiers covered>; out of scope and why
 - Conforms to the guide: yes | no (MUST rows ✗: …)

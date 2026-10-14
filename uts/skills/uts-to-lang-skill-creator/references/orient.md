@@ -10,7 +10,7 @@ Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) firs
 - which mode to run in (**Create** or **Upgrade/Fix**);
 - for Upgrade/Fix, which existing skill to work on.
 
-Orient is read-only and quick. It builds nothing, runs no tests, touches no network and writes no file. The working records are created only after STOP-13, because their location depends on the answer (D-24).
+Orient is read-only and quick. It builds nothing, runs no tests, touches no network and writes no file. The spec-clone sync after STOP-16 (13.9) is separate. The working records are created only after STOP-13, because their location depends on the answer (D-24).
 
 Contents:
 
@@ -22,34 +22,37 @@ Contents:
 - [13.6 Re-entry: resume or restart](#136-re-entry-resume-or-restart)
 - [13.7 Provenance (D-30)](#137-provenance-d-30)
 - [13.8 Capabilities and scope (STOP-17, D-31)](#138-capabilities-and-scope-stop-17-d-31)
+- [13.9 Sync the spec clone](#139-sync-the-spec-clone)
 
 ## 13.1 Run it
 
 Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass the spec clone the user named, if any. Add `--skill-dir <path>` when the user names the skill, `--records <dir>` when they say where its working records are (with `--skill-dir`, it applies to the named skill only), `--include-submodules` to scan submodule sources too, and `--full` for the raw script outputs. The script runs this skill's read-only scripts in order and prints one JSON object:
 
-1. `spec_clone_info.py`: resolves the spec clone every other script reads, and settles STOP-1 ([2.6](../SKILL.md#26-pin-the-spec-clone)).
-2. `check_repo_eligibility.py`: on a reject, nothing else runs.
+1. `spec_clone_info.py`: resolves the spec clone every other script reads, offline ([2.6](../SKILL.md#26-pin-the-spec-clone)).
+2. `check_repo_eligibility.py`, with or without a clone: on a reject, nothing else runs.
 3. `inspect_existing_skill.py`: skills, their origin and records, harness, UTS-tagged tests.
 4. `detect_liveobjects.py`: a one-line LiveObjects verdict.
 5. `detect_capabilities.py`: the REST and Realtime capability profile, the sides, and the suggested scope (13.8), with eligibility's `capabilityOverride` if the whitelist gives one.
 
-The clone `spec_clone_info.py` resolved (the argument, walked up to the clone root, else `UTS_SPEC_CLONE`, else the clone this skill is symlinked from) is passed to the eligibility check and to both detectors, which read their names from it (13.8); the State summary's Spec clone line shows that path. An explicit path (the argument or `UTS_SPEC_CLONE`) that isn't in a clone stops Orient with `NOT_A_SPEC_CLONE`: it is never replaced by another clone. A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else ([Maintaining this skill](../SKILL.md#maintaining-this-skill)).
+The clone `spec_clone_info.py` resolved (the argument, walked up to the clone root, else the clone this skill is installed from, else `ABLY_SPEC_CLONE`, else the shared default `~/.ably/specification`; 13.9) is passed to the eligibility check and to both detectors, which read their names from it (13.8); the State summary's Spec clone line shows that path. An explicit path (the argument or `ABLY_SPEC_CLONE`) that isn't in a clone stops Orient with `NOT_A_SPEC_CLONE`: it is never replaced by another clone. When no clone is found, Orient still runs the eligibility check, so STOP-16 is settled before any offer to clone one. A malformed data file in `assets/` (`DATA_FILE_ERROR`, naming the file and the key) stops Orient with `ok: false`: fix the file before anything else ([Maintaining this skill](../SKILL.md#maintaining-this-skill)).
 
-`spec_clone_info.py [<spec-clone> | --spec-clone <path>]` checks that the guide, the UTS docs and the helper specs exist, and runs `git rev-parse HEAD`, `git status --porcelain -- uts specifications` and `git log -1 --format='%H %cd'` on the guide and this skill ([2.6](../SKILL.md#26-pin-the-spec-clone) says what to record). Its outcomes:
+`spec_clone_info.py [<spec-clone> | --spec-clone <path>]` checks that the guide, this skill, the UTS docs and the helper specs exist, reads the clone's git state offline (`ensure_spec_clone.py`'s status: branch, tracked changes, the last fetch of `origin/main`), and runs `git log -1 --format='%H %cd'` on the guide and this skill ([2.6](../SKILL.md#26-pin-the-spec-clone) says what to record). Its outcomes:
 
-- Any `ok: false` (for example `SPEC_CLONE_NOT_FOUND`, `NOT_A_SPEC_CLONE`, `GIT_ERROR`): STOP-1; ask for the clone's path.
-- `foundBy` other than `argument`: tell the user which clone was found and how, and confirm it before Phase 1.
+- `SPEC_CLONE_NOT_FOUND` (nothing at `ABLY_SPEC_CLONE`, or at the default): after STOP-16, the STOP-1 bootstrap offer (13.9).
+- `SPEC_CLONE_INCOMPLETE` (a revision that predates the guide or this skill): STOP-1, with the script's message (13.9).
+- Any other `ok: false` (`NOT_A_SPEC_CLONE`, `SPEC_CLONE_ENV_CONFLICT`, `GIT_ERROR`): STOP-1; ask for the clone's path.
+- `foundBy` other than `argument`: shown in the State summary (with the clone's kind) and confirmed with the STOP-13 answer.
 - `skillMatchesClone: false` (an installed copy that differs from this clone's copy of the skill, also reported in `warnings`): STOP-1; ask the user to refresh the install, or to confirm which version to follow.
-- `skillMatchesClone: null` (the clone has no copy of this skill, for example an older checkout): tell the user and confirm before Phase 1.
 
 The JSON has `state` (class, re-entry, reasons, recommended option, options) and `stateSummaryText`, the same under Claude Code and Codex. The facts behind them are in the other fields.
 
 If Orient stopped with `NOT_A_SPEC_CLONE`, settle the clone's path (STOP-1) and rerun Orient first. Then settle the stops in this order, in as few messages as possible:
 
 1. **STOP-16** (13.2), if the repo isn't plainly eligible.
-2. **STOP-1** for the model (2.8) and for anything listed in `stop1`, such as the spec clone's path or a stale install of this skill.
-3. **STOP-17** (13.8), when `stop17` is set: the capability profile needs confirming.
-4. **STOP-13** (13.4).
+2. **The spec-clone sync** (13.9), as `specSync` describes; rerun Orient if it moved HEAD or created the clone.
+3. **STOP-1** for the model (2.8) and for anything listed in `stop1`, such as the spec clone's path or a stale install of this skill.
+4. **STOP-17** (13.8), when `stop17` is set: the capability profile needs confirming.
+5. **STOP-13** (13.4).
 
 If the user's request conflicts with the state (for example "create a skill" when one exists), say so at STOP-13.
 
@@ -115,11 +118,15 @@ A version number alone proves nothing.
 Show `stateSummaryText`, completed with the session's model. Its layout:
 
 ```
+WARNING      SPEC CLONE NOT SYNCED: Using <the spec clone you named | the clone this skill is installed from> (<path>). It isn't synced; make sure its UTS specs are up to date.     (only for a clone that isn't the shared clone, 13.9)
+WARNING      STALE SPEC CLONE: <staleWarning>; offer the sync at STOP-6 (13.9) | the sync is off (ABLY_SPEC_SYNC=off)     (only for the shared clone, when the last fetch is over 30 days old, or unknown)
 WARNING      SPEC NAMES FALLBACK: the spec clone's IDL wasn't parsed; the LiveObjects and capability verdicts below are unreliable; settle it at STOP-1 first     (only on fallback)
 Repo         <name> @ <sha8> (clean|dirty); languages: <counts>
 Eligibility  accept: <owner>/<repo> via <remote> (<current|legacy|planned> name)[; canonical <name>][; planned rename <name>][; capability override rest <level>, realtime <level>]
               | ask: <no remote | no github.com remote | not a git repo | a fork? | no client definition in few files>[ <owner>/<repo>] (<reason>); STOP-16
-Spec clone   <path> @ <sha8> (clean|dirty); found by <how>; creator <version> (matches clone: <yes|no|unknown>)
+Spec clone   <path> @ <sha8> (clean|dirty); <shared clone | named clone | skill clone (not the shared clone) | …>; branch <name> | detached; found by <how>; creator <version> (matches clone: <yes|no|unknown>)
+              HEAD committed <n> days ago; origin/main as last fetched <n> days ago was <n> commit(s) ahead; the real gap may be larger; sync: <what 13.9 will offer> | not synced (not the shared clone)
+              | NOT FOUND (SPEC_CLONE_NOT_FOUND): no clone at <path>; after STOP-16, offer to clone it there …  |  NOT USABLE (<code>): <message>; settle it at STOP-1  |  <path> (not usable: <code>: <message>)
 Model        <name and ID> (Opus-class: yes|no)
 Spec names   from the spec clone's IDL @ <sha8> | from the spec clone's IDL (revision unknown: not a git checkout)  |  FALLBACK, don't rely on the LiveObjects or capability verdicts: <warning>
 Capabilities rest <full|partial|absent> (<clients>); realtime <full|partial|absent|unclear> (<clients>; connection …, channels …, presence …); <WebSocket transport | transport in the wrapped native SDKs | no WebSocket code>[; sides: <side> (rest yes|no, realtime yes|no), …][; source: override (whitelist)]
@@ -131,12 +138,13 @@ Scope        <full|rest-only|realtime-only|unclear|none>: <modules> (objects per
 Capability   changed since the recorded run: <item old -> new>, …[; added: <capabilities>][; lower than recorded: <capabilities>]     (only if it changed)
 Skill        <path> [installs: …] name <name|missing>, version <v|none>, origin <creator-records|creator-metadata|unknown>     (one per skill)
               inspector hints: <f> fail, <w> warn, <p> pass (regex, not a review); mapping: <modules>; objects notes: <present|placeholder|none>
-Harness      <from mapping | candidates: …>; smoke/self-test files: <n>[; offered tiers lacking them: <list> | unknown (some files don't name a tier)]
+Harness      <from mapping | candidates: …>; smoke/self-test files: <n>[ by name; <n> candidate(s) by location (read to confirm)][; offered tiers lacking them: <list> | unknown (some files don't name a tier)]
 Records      <dir>: run <finished|in progress (Phase n)>; recorded spec <sha8>, repo <sha8>     (only if the skill has records)
 Skills       none[; other repo skills: …]     (instead of the Skill lines, when there is no skill)
 Harness      <candidates: … | none found>     (with "Skills none")
 Problems     <broken installs, orphan records>          (only if any)
 Changes      since recorded spec <sha8>: guide <n>, UTS docs <n>, helper specs <n>, corpus <n> files; checklist changed: <yes|no>[; repo <n> files]
+              | recorded spec <sha8> isn't in this clone: fetch it (STOP-6, 13.9) | the user fetches it (this clone isn't synced), or run a full gap audit  |  the records name no spec SHA: run a full gap audit
 UTS tests    <n> tags in <n> files (<dedicated|nativeSuite|mixed>); <module/tier counts>; header SHAs …; deviations.md: …
 LiveObjects  <yes|no|unclear> (<confidence>): <summary> (decided at STOP-14)
 User-level   <uts-to-* installs | none>
@@ -145,6 +153,8 @@ Recommended  <option>  |  none (S4): ask which skill
 ```
 
 The **Spec names** line says where the detectors' names came from (13.8). "FALLBACK" means the spec clone's IDL couldn't be parsed, so the detectors used the data file's minimal names: the LiveObjects and capability verdicts are unreliable. Orient then also puts the **WARNING** line first, and adds the problem to `stop1` and `warnings`. Settle it at STOP-1 (fix the clone, or report the parser gap) before relying on either verdict; never go on silently with fallback names. "(revision unknown: not a git checkout)" means the names came from the IDL, but the clone isn't a git checkout, so the records can't pin its SHA: settle that at STOP-1 too.
+
+The **Spec clone** line's second line is offline: how old HEAD is, and how far behind `origin/main` was at the last fetch; after the sync, replace its `sync:` part with the sync's outcome (13.9), as you complete the Model line. For a clone that isn't the shared clone it says "not synced", and the SPEC CLONE NOT SYNCED warning comes first: nothing suggests syncing it. **Changes** says so when the recorded spec SHA isn't in the clone: then Orient recommends the full gap audit, because diff-driven can't diff (13.9, "Reproducibility"). A **Harness** candidate found by location is an untagged test file under the harness root that uses a harness type: read it before counting it as a self-test.
 
 The other optional lines: **Method gaps** (only when realtime is `partial`) and **Native SDK** (only when `wrapsNativeSdk`) come from the capability detector (13.8). The **Side** lines, and the side question under them, appear only when the SDK has device or server doors; the question's options depend on which doors exist (13.8). The **Capability** line appears only when the profile differs from the recorded one (13.8, "When the capability or the side changes later"). On an `ask`, the Eligibility line names the question and ends with STOP-16 (13.2).
 
@@ -180,7 +190,7 @@ The records for Upgrade/Fix go where Orient found them; otherwise to `<existing-
 
 When Orient finds records with `Run status: in progress`, offer:
 
-- **Resume:** read the records and continue from the phase their Run status names. D-27 keeps its recorded value. STOP-14 is asked again only if D-28 isn't recorded yet. If the spec clone's SHA has moved since the records were written, Orient adds the re-entry reason "spec moved since the records: ask about restarting (13.6)"; ask whether to restart from the new SHA (2.6).
+- **Resume:** read the records and continue from the phase their Run status names. D-27 keeps its recorded value. STOP-14 is asked again only if D-28 isn't recorded yet. If the spec clone's SHA has moved since the records were written (a sync, or another run's fast-forward of a shared clone, 13.9), Orient adds the re-entry reason "spec moved since the records: ask about restarting (13.6)"; ask whether to restart from the new SHA (2.6).
 - **Restart:** supersede the recorded decisions in the decision log, keep every file, and start again from Phase 1 in the mode chosen now. Picking one of the class's options instead of Resume means Restart in that mode.
 
 ## 13.7 Provenance (D-30)
@@ -317,3 +327,83 @@ Any change makes STOP-17 ask, and the State summary shows the Capability line. O
 A removed capability is its own change item; tests are never deleted without asking.
 
 A change of side (the SDK gains doors, or the user now wants another side, or both) is the change item "side changed: <old> -> <new>": ask STOP-17's side question again, supersede D-31, and make the scope, the mapping markers and the harness's construction path follow the new side. In the generated skill, a scope change is a mapping edit (`unsupported`, `capabilityInapplicable`, `extraTests`), not a resolver change ([7.1](phase-5-generate-skill.md#71-step-5a-create-the-layout-and-the-mapping-file)).
+
+## 13.9 Sync the spec clone
+
+Every run reads the guide, the UTS docs, the helper specs, the corpus and the features specs from one local clone of `ably/specification`, pinned at one SHA (2.6). By default this is a clone shared by every run and every SDK repo, kept current by the **spec-clone sync**: Step 0's only network use, and the only change this procedure makes to a spec clone. The sync runs only when the clone in use is the shared clone, however it was found. Any other clone (one the user names, or the clone this skill is installed from, when it isn't the shared clone) is never fetched or changed, whatever `ABLY_SPEC_SYNC` says, and no sync question is asked for it: Orient shows a static warning instead, "Using the spec clone you named (`<path>`). It isn't synced; make sure its UTS specs are up to date." (or "Using the clone this skill is installed from (`<path>`). …"), and keeping it current is the user's responsibility. `orient.py` and `spec_clone_info.py` stay offline; `scripts/ensure_spec_clone.py` does the sync, and only with approval. The sync is settled after STOP-16, so an ineligible repo is never asked a network question, and before STOP-1. Orient's `specSync` says what to offer, and the command to run.
+
+### Which clone
+
+The first candidate that exists wins:
+
+| # | Candidate | `kind` / `foundBy` | If it doesn't exist | Synced |
+|---|---|---|---|---|
+| 1 | The path the user names (`--spec-clone <path>`, or a path in their words; a path inside a clone is walked up to its root) | `explicit` / `argument` | `NOT_A_SPEC_CLONE`: STOP-1 | Only if it is the shared clone's directory |
+| 2 | The clone this skill is installed from (`<clone>/uts/skills/uts-to-lang-skill-creator`) | `skill-clone` / `skill location` | Skipped | Only if it is the shared clone's directory |
+| 3 | `ABLY_SPEC_CLONE` (`UTS_SPEC_CLONE` is read as a deprecated alias, with a warning; both set and different is `SPEC_CLONE_ENV_CONFLICT`: STOP-1, unless row 1 or 2 already found a clone) | `env` / `ABLY_SPEC_CLONE` or `UTS_SPEC_CLONE (deprecated)` | `SPEC_CLONE_NOT_FOUND`, with `bootstrapPath`: the bootstrap offer, there | Yes: it is the shared clone |
+| 4 | The shared default, `~/.ably/specification` (`%USERPROFILE%\.ably\specification` on Windows) | `shared` / `shared default` | `SPEC_CLONE_NOT_FOUND`: the bootstrap offer | Yes |
+
+A path from row 1 or 3 that exists but isn't a clone is `NOT_A_SPEC_CLONE`: it is never replaced by another candidate. The skill's own clone comes before the variable and the default because `SKILL.md` links into the guide by section, and the two change together: read the guide from the revision this skill was loaded from. Whether a clone is the shared clone is decided by comparing directories (symlinks resolved, case-insensitive where the filesystem is), so a named path into the shared clone, or a skill installed from it, is the shared clone. With the recommended install (a symlink from the shared clone, [`uts/README.md`](../../../README.md#installing-the-skill-creator)), rows 2 and 3 or 4 are the same clone, and the State summary says "skill clone, the shared clone". A skill installed from another clone or worktree (to test a spec-repo branch) reads that clone, on its branch, untouched and never synced ("skill clone (not the shared clone)", with the static warning). To test a branch without a second full clone, add a worktree of the shared clone (`git -C ~/.ably/specification worktree add <dir> <branch>`) and install the skill from it, or pass `--spec-clone <dir>`; the shared clone stays on `main`, and the worktree isn't synced.
+
+A clone that exists but whose checkout lacks a file this skill needs (the guide, this skill, a UTS doc or helper spec) is `SPEC_CLONE_INCOMPLETE`: that revision predates it. This is the case for a clone on `main` until the skill creator is merged there. The message says whether `origin/main`, as last fetched, has the files: if it does, the sync fixes it for the shared clone (the user updates any other clone); if not, use a clone or worktree of a branch that has them (the clone you installed the skill from does), named with `--spec-clone` or by installing from it. Never fetch the missing files from GitHub instead.
+
+### No clone: the bootstrap offer
+
+When nothing is found, after STOP-16 ask (STOP-1, with STOP-6's content, because cloning is network): (1) give the path of an existing clone; (2) clone to `bootstrapPath` (the command, about 30 MiB, from github.com); (3) stop. On (2), run `python3 <skill-dir>/scripts/ensure_spec_clone.py --bootstrap`, then rerun Orient. It clones `https://github.com/ably/specification.git` in full (not shallow or partial: Upgrade/Fix and re-sync diff against recorded SHAs, and a partial clone would make Orient's offline diffs fetch), without submodules, with `core.autocrlf=false` in the new clone, into a temporary sibling (`<path>.partial-<pid>`) that it renames into place, so an interrupted clone never sits at the well-known path. It refuses a path that exists. A leftover `.partial-*` directory is reported for the user to remove; nothing is deleted on their behalf.
+
+### The question, once per run
+
+This applies to the shared clone only; for any other clone there is no question, only the static warning. `ABLY_SPEC_SYNC` is the user's standing answer: `ask` (the default), `auto` or `off`. The user sets it (in their shell, or the tool's environment settings); never write it to their shell profile, the tool's settings or any file yourself: a stored preference would be a write outside the repo (2.2) and invisible state.
+
+- **`off`:** no question and no network. Use the clone as it is, and report "not updated (ABLY_SPEC_SYNC=off)" with the staleness line. `off` covers the sync only: with no clone at all, the bootstrap offer is still made, and cloning needs the user's explicit approval.
+- **`auto`:** no question. Run `--update` when nothing rules out a fast-forward; otherwise use the clone as it is and report why ("not on main: not updated"). `auto` only ever fast-forwards the shared clone's clean, checked-out `main`; a clone the user names, or the clone this skill is installed from, when it isn't the shared clone, is never fetched. When `origin` isn't `ably/specification`, nothing is fetched and the user is still asked: use it as it is, or stop.
+- **`ask`:** one question, at STOP-6, built from the offline status (`fastForwardBlockedBy`, the branch, the staleness line), so it is asked once and never repeated after the fetch. When nothing rules out a fast-forward, the options are: (1) yes, this run: fetch and fast-forward `main` (`--update`); (2) no, use it as it is; (3) always: the user sets `ABLY_SPEC_SYNC=auto`; (4) never ask: the user sets `ABLY_SPEC_SYNC=off`. When something does (not on `main`, detached, tracked changes, an operation in progress, `main` ahead or diverged), the options are: (1) use it as it is (the default for a deliberate branch); (2) fetch only (`--fetch`: updates `origin/main`, no branch or file changes), so the ahead and behind counts are current; (3) stop, so the user can change the clone themselves. When `origin` isn't `github.com/ably/specification` in any URL form, nothing is fetched: use it as it is, or stop.
+
+The fetch and the fast-forward write under the clone's `.git`, outside the SDK repo. In a sandbox, the user may need to allow that directory (in Claude Code, `/add-dir` or `permissions.additionalDirectories`) and network access (in Codex, a writable root and network). Say so in the question, so that a denial reads as "not updated: sandbox", not as a failure.
+
+### The update rule
+
+`ensure_spec_clone.py --update` applies to the shared clone only: fast-forwarding its clean, checked-out `main` with consent loses nothing. For any other clone, `--fetch` and `--update` change nothing and use no network: they report `NOT_SYNCED_NAMED_CLONE` with the static warning (`notSyncedWarning`).
+
+1. Take the sync lock (below).
+2. Check that `origin` is `github.com/ably/specification` (`ORIGIN_NOT_ABLY_SPEC` otherwise; no remote is added).
+3. Fetch `+refs/heads/main:refs/remotes/origin/main` only, with credential and SSH prompts suppressed and a timeout. This changes no local branch and no file. Like a default `git fetch`, it updates the remote-tracking ref `origin/main` even if `main` was force-pushed on GitHub (the previous value stays in that ref's reflog); local branches, including `main`, are only ever fast-forwarded in step 5.
+4. Leave the clone alone unless HEAD is the branch `main`, there are no tracked changes (staged or unstaged), no merge, rebase, cherry-pick, revert or bisect is in progress, and `main` is strictly behind `origin/main`.
+5. Fast-forward with `git merge --ff-only --no-overwrite-ignore`. Untracked files don't block it, but git refuses rather than overwrite one; `--no-overwrite-ignore` makes it refuse for ignored files too, which git would otherwise silently overwrite (the spec repo ignores `/output/` and `/build/content/`). A refusal changes nothing (`FF_REFUSED`).
+
+It never runs `pull`, `reset`, `checkout`, `switch`, `stash`, `clean`, `rebase`, `push` or `--force`, never adds a remote, and changes no git configuration. On a branch the user chose (testing an unmerged spec change), it reports "on branch `<name>` @ `<sha8>`, `<n>` ahead / `<m>` behind `origin/main` as of the last fetch; not updated", and never switches back.
+
+| `code` | What happens | What the user sees |
+|---|---|---|
+| `UP_TO_DATE` | Nothing to do | "up to date (fetched now)" |
+| `FAST_FORWARDED` | HEAD moves; `changed` says whether the guide and this skill changed, and counts the UTS docs, helper specs and corpus files changed | "fast-forwarded `<old8>..<new8>` (`<n>` commits)", with whether the guide and the skill changed |
+| `FETCHED` | Fetch only: `origin/main` moves | the new ahead and behind counts |
+| `NOT_SYNCED_NAMED_CLONE` | Not the shared clone: no network, nothing changes | the static warning |
+| `SYNC_OFF`, or the user declined | No network | "not updated", with the staleness line |
+| `FETCH_FAILED` | Offline, DNS, timeout, a suppressed auth prompt, a sandbox denial (including a git directory the sync can't write its lock in) | "not updated: fetch failed (`<first line of git's error>`)", with the staleness line |
+| `LOCKED` | Another sync of this clone holds the lock for more than 30 seconds | "not updated: another sync in progress (pid, host, started)" |
+| `NOT_ON_MAIN`, `DETACHED`, `DIRTY`, `OP_IN_PROGRESS`, `AHEAD`, `DIVERGED`, `FF_REFUSED`, `ORIGIN_NOT_ABLY_SPEC` | Nothing changes | the reason, with the branch, the files or the counts |
+
+All of these leave a usable clone (exit 0): use it as it is unless the user chooses to stop. `SPEC_CLONE_NOT_FOUND`, `NOT_A_SPEC_CLONE`, `SPEC_CLONE_INCOMPLETE`, `SPEC_CLONE_ENV_CONFLICT`, a failed bootstrap (`BOOTSTRAP_PATH_EXISTS`, `BOOTSTRAP_FAILED`), `GIT_ERROR` and `INTERNAL_ERROR` exit 1: STOP-1.
+
+### After the sync
+
+- If HEAD moved (a fast-forward or a bootstrap), rerun `orient.py`, so the capability names, the LiveObjects evidence and the Changes line reflect the synced revision. If `changed.skill` is true and this skill is installed from that clone, read this `SKILL.md` again first: the copy in your context is stale.
+- Add the outcome to the State summary's Spec clone line, and record it (below).
+- **Staleness**, offline, from data on disk: HEAD's age, and how many commits `origin/main` was ahead at the last fetch (the latest of: an update of `origin/main` in its reflog, a fetch of `main` in `FETCH_HEAD`, which a fetch that changes nothing also renews, and the clone itself); "unknown (never fetched)" when there is none. Over 30 days since the last fetch, or unknown, Orient puts a STALE SPEC CLONE WARNING line at the top of the State summary for the shared clone; for any other clone, the static warning takes that place, and the staleness facts are still shown and recorded.
+
+### Reproducibility
+
+Record in the Design record's Inputs, the Repo profile, the gap audit and the Final report:
+
+```
+Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>; guide/skill: <sha of last change>; uts-to-lang-skill-creator version <metadata.version>
+```
+
+- A SHA that isn't on `origin/main` (a branch run) is listed in the Final report: the provenance stamp and any test headers that carry it may stop resolving once that branch is deleted.
+- Upgrade/Fix diff-driven, and the generated skill's re-sync, diff against a recorded SHA. After a fast-forward, every earlier `main` SHA is an ancestor of HEAD, so those diffs keep working. When the recorded SHA isn't in the shared clone (Orient's Changes line says so), fetching it is part of the sync: ask it in the same STOP-6 question (under `auto`, fetch it without asking; under `off`, run the full gap audit instead): `git -C <spec-clone> fetch --no-tags origin <sha>` (GitHub serves any commit reachable from a ref; it changes no branch or file), then rerun Orient. If it is still missing, run the full gap audit instead. In any other clone, never fetch it: tell the user to fetch it themselves, and offer the full gap audit.
+
+### Concurrency
+
+- **Two syncs at once** (two SDK repos sharing the clone): the lock, `ably-spec-sync.lock` in the clone's git directory (never a working-tree change), is held only around the fetch and the fast-forward. A second sync waits up to 30 seconds, then reports `LOCKED` and uses the clone as it is. A lock older than 10 minutes whose process is gone, on this host, is removed (POSIX only); any other lock is reported, and the user may remove it.
+- **Another run's fast-forward mid-run** switches the files this run reads to a new revision. Detect it: check `git -C <spec-clone> rev-parse HEAD` against the pinned SHA at each phase end, before Phase 7, and before writing any SHA into a record, a stamp or a test header. If it moved, stop and ask whether to restart from the new SHA, or abandon the run (2.6).
