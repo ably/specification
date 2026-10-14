@@ -5,15 +5,16 @@ Usage: inspect_existing_skill.py <repo> [<skill-dir>] [--records <dir>]
 
 A read-only first pass for STOP-13 and the gap audit. It finds uts-to-* skills
 in the agent skill directories (detect_liveobjects.SKILL_ROOTS) and any other
-SKILL.md whose directory or `name:` starts with uts-to-, and runs regex checks
-keyed to acceptance-checklist items: a "pass" is a pattern hit, not a review.
+SKILL.md whose directory or `name:` starts with uts-to-, and runs checks keyed
+to acceptance-checklist items, mostly regex (R-spec-sync compares a copied
+script by hash): a "pass" is a pattern hit, not a review.
 `--records <dir>` reads the working records from <dir> instead of
 <skill>/generation/ (for the named <skill-dir> only, when one is given). It
 never runs the skill's scripts and never writes.
 
 Prints one JSON object: `ok`, `repo`, `head`, `skills` (per skill: installs,
 origin, records, `capabilityProfile`, language, frontmatter, files, mapping,
-harness, checks, summary), `namedSkill`, `workingRecords`, `brokenInstalls`,
+harness (with `selfTestCandidates` and `ciSources`), checks, summary), `namedSkill`, `workingRecords`, `brokenInstalls`,
 `orphanRecords`, `otherRepoSkills`, `repoLanguages`, `harnessCandidates`,
 `userLevelInstalls`, `derivedTests`, `note` and `found`. Exit 0 on success; 1
 with {"ok": false} on an error (INSPECT_ERROR); 2 on a usage error.
@@ -21,13 +22,14 @@ with {"ok": false} on an error (INSPECT_ERROR); 2 on a usage error.
 Rules: references/orient.md 13.3 (origin, S4), 13.8 (the recorded capability
 profile); references/upgrade-existing-skill.md 11.2 (the gap audit).
 """
-import collections, filecmp, importlib.util, json, os, pathlib, re, subprocess, sys
+import collections, filecmp, hashlib, importlib.util, json, os, pathlib, re, subprocess, sys
 
 _spec = importlib.util.spec_from_file_location("detect_liveobjects",
                                                 pathlib.Path(__file__).resolve().parent / "detect_liveobjects.py")
 lo = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(lo)
 
+HERE = pathlib.Path(__file__).resolve().parent
 SKILL_ROOTS = lo.SKILL_ROOTS  # one list for every script
 SELF = "uts-to-lang-skill-creator"
 NON_PORTABLE = ["argument-hint", "model", "disable-model-invocation", "user-invocable", "when_to_use", "context",
@@ -70,10 +72,25 @@ BODY_DEFECTS = [
       "relies on $ARGUMENTS (Claude Code only)"),
     ("X-claude-path", "SKILL.md: usage guard ... own files referred to relative to the skill directory ...",
       r"\.claude/skills/", "hard-codes a .claude/skills/ path (breaks under Codex)"),
-    ("X-fetch-main", "Required reading incl. features specs, from the same clone",
-      r"(?i)(raw\.githubusercontent\.com/ably/specification|github\.com/ably/specification/(blob|tree)/main|fetch first)",
-      "fetches docs or specs from GitHub main instead of the local clone"),
+    ("X-fetch-main", "Required reading incl. features specs, from the same clone, synced first",
+      r"(?i)(raw\.githubusercontent\.com/ably/specification|github\.com/ably/specification/(blob|tree)/main|"
+      r"gh\s+api\b[^\n]*ably/specification|api\.github\.com/repos/ably/specification|"
+      r"repos/ably/specification/contents|fetch first)",
+      "fetches docs or specs from GitHub instead of the local clone"),
 ]
+UNPINNED = re.compile(r"(?i)gh\s+api|api\.github\.com|/contents|/(blob|tree)/main|specification/(refs/heads/)?main/")
+# A usage guard (guide 3.3 MUST): a usage line, and a stop when the argument is missing.
+USAGE_LINE = re.compile(r"(?i)\busage:|usage line")
+USAGE_STOP = re.compile(r"(?i)(\bno\b|missing|empty|blank|without)[^\n]{0,80}\bstop|\bstop[^\n]{0,60}"
+                        r"(no|missing|empty|without)\b[^\n]{0,20}(argument|module|path)")
+TEST_NAME = re.compile(r"(?i)(tests?|spec)\.[a-z]+$|^test_|_test\.[a-z]+$")
+TYPE_DECL = re.compile(r"\b(?:class|struct|interface|protocol|object|enum|record|type)\s+([A-Z][A-Za-z0-9_]{3,})")
+CI_SCRIPT = re.compile(r"(?:^|[\s\"'=(])(\.{0,2}/?[\w./-]+\.(?:sh|bash|ps1|cake|py|rb|js|mjs|mk|gradle|kts|bat|cmd))\b")
+# Build tools named without a file: the entrypoint each reads by default (`make -C dir` / `-f file` respected).
+CI_TOOL = re.compile(r"(?:^|[\s;&|(`\"'])(make|gmake|rake|cake|dotnet\s+cake)(?=[\s\"';&|)`]|$)([^\n;&|)]*)")
+CI_PROSE = re.compile(r"^\s*(#|-?\s*name:)")  # comments and step names: "make sure ..." is not a command
+TOOL_FILES = {"make": ["GNUmakefile", "makefile", "Makefile"], "gmake": ["GNUmakefile", "makefile", "Makefile"],
+              "rake": ["Rakefile", "rakefile", "Rakefile.rb"], "cake": ["build.cake"]}
 
 
 def git_lines(repo, *args):
@@ -117,6 +134,11 @@ def unquote(value):
     if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
         return value[1:-1], True
     return value, False
+
+
+def digest(path):
+    """sha256 of a text file with line endings normalised (a Windows copy compares equal)."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def check(checks, cid, item, ok, evidence, warn=False):
@@ -204,7 +226,8 @@ def read_records(rec_dir):
     text = dr.read_text(encoding="utf-8", errors="replace")
     ours = bool(re.match(r"#\s*Design record:\s*uts-to-", text)) and "uts-to-lang-skill-creator version" in text
     status = re.search(r"(?im)^-?\s*Run status:\s*(.+)$", text)
-    spec = re.search(r"(?im)^-?\s*Spec clone:\s*([0-9a-f]{7,40})", text)
+    # "Spec clone: <sha> (…)", or "Spec clone: <kind> <path>; <sha> on <branch> …" (13.9)
+    spec = re.search(r"(?im)^-?\s*Spec clone:\s*(?:[^;\n]*;\s*)?([0-9a-f]{7,40})\b", text)
     repo_sha = re.search(r"(?im)^-?\s*Repo:\s*([0-9a-f]{7,40})", text)
     caps = re.search(r"(?im)^-?\s*Capabilities \(D-31\):\s*(.+)$", text)
     profile = None
@@ -368,16 +391,24 @@ def inspect_skill(repo, real, installs, records_dir=None):
         hit = re.search(pattern, body_no_urls)
         check(checks, cid, item, bool(hit), meaning + (" found" if hit else " not found") + " (outside URLs)",
               warn=cid in WARN_ONLY)
+    has_usage, has_stop = bool(USAGE_LINE.search(body)), bool(USAGE_STOP.search(body))
+    check(checks, "B-usage-guard", "SKILL.md: usage guard that doesn't rely on `$ARGUMENTS` ...", has_usage and has_stop,
+          ("a usage line " + ("found" if has_usage else "not found") + "; a stop when the argument is missing "
+          + ("found" if has_stop else "not found")), warn=has_usage != has_stop)
+    # X-* checks read only the skill's own files (guide 13): SKILL.md, references/ and scripts/.
     defect_sources = {"SKILL.md": body}
-    for ref in sorted((d / "references").glob("*.md")) if (d / "references").is_dir() else []:
-        defect_sources[f"references/{ref.name}"] = ref.read_text(encoding="utf-8", errors="replace")
+    for sub in ("references", "scripts"):
+        for ref in sorted(x for x in (d / sub).rglob("*") if x.is_file() and "__pycache__" not in x.parts
+                          and x.suffix in (".md", ".py", ".sh", ".js", ".ts", ".rb", ".json")) \
+                if (d / sub).is_dir() else []:
+            defect_sources[ref.relative_to(d).as_posix()] = ref.read_text(encoding="utf-8", errors="replace")
     lines = text.count("\n") + 1
     check(checks, "B-length", "SKILL.md: ... follows the 3.4 outline", lines <= 500,
           f"{lines} lines (agent-skill guidance: keep SKILL.md under 500; move detail to references)", warn=True)
 
     files = {"SKILL.md": True}
     for rel in ("uts-package-mapping.json", "scripts/resolve_uts.py", "scripts/audit_translation.py",
-                "scripts/scan_constructs.py"):
+                "scripts/scan_constructs.py", "scripts/ensure_spec_clone.py"):
         files[rel] = (d / rel).is_file()
     check(checks, "L-mapping", "`uts-package-mapping.json`: ...", files["uts-package-mapping.json"], "present"
           if files["uts-package-mapping.json"] else "missing")
@@ -456,6 +487,11 @@ def inspect_skill(repo, real, installs, records_dir=None):
                                                               readme.read_text(encoding="utf-8", errors="replace"))),
             "tiers": {t: {"tests": (v or {}).get("tests") if isinstance(v, dict) else None} for t, v in tiers.items()},
         }
+        if harness.get("root"):
+            listed = git_lines(repo, "ls-files", "-co", "--exclude-standard", "-z") or []
+            by_name = smoke_by_name(listed, [str(harness["root"]).strip("/")])
+            harness_info.update(smokeOrSelfTestFiles=by_name, selfTestCandidates=self_test_candidates(
+                repo, listed, [str(harness["root"]).strip("/")], by_name))
         check(checks, "H-readme-known-gaps", "Harness README with a Known gaps section (MUST)",
               harness_info["knownGaps"], f"README {harness.get('readme')}: Known gaps "
               + ("found" if harness_info["knownGaps"] else "not found"))
@@ -468,19 +504,35 @@ def inspect_skill(repo, real, installs, records_dir=None):
               + (", ".join(f"{r['path']} (Known gaps {'found' if r['knownGaps'] else 'not found'})" for r in readmes)
                   or "none found"), warn=not readmes)
     if harness_info:
-        for r in ([harness_info["readme"]] if harness_info.get("readmeExists") else []) + \
-                [x["path"] for x in harness_info.get("readmes", [])]:
-            defect_sources[r] = (repo / r).read_text(encoding="utf-8", errors="replace")
+        by_name, cands = harness_info.get("smokeOrSelfTestFiles"), harness_info.get("selfTestCandidates")
         check(checks, "H-smoke-self-tests", "Harness smoke tests per tier and helper self-tests ... (MUST)",
-              bool(harness_info.get("smokeOrSelfTestFiles")),
-              f"smoke/self-test files: {harness_info.get('smokeOrSelfTestFiles') or 'none found by name'}; "
-              f"CI lines: {harness_info.get('ciLines') or 'none'}")
+              bool(by_name),
+              f"smoke/self-test files: {by_name or 'none found by name'}"
+              + (f"; {len(cands)} candidate(s) by location, read to confirm: {cands}" if cands else "")
+              + f"; CI lines ({harness_info.get('ciSources') or 'workflow files only'}): "
+              f"{harness_info.get('ciLines') or 'none'}", warn=not by_name and bool(cands))
     for cid, item, pattern, meaning in BODY_DEFECTS:
-        per_file = {k: len(re.findall(pattern, v)) for k, v in defect_sources.items()}
-        per_file = {k: v for k, v in per_file.items() if v}
+        per_file, unpinned = {}, 0
+        for k, v in defect_sources.items():
+            hits = list(re.finditer(pattern, v))
+            if hits:
+                per_file[k] = len(hits)
+            if cid == "X-fetch-main":  # an API fetch without ?ref=, or a URL on main, reads the default branch
+                for m in hits:
+                    end = v.find("\n", m.end())
+                    line = v[v.rfind("\n", 0, m.start()) + 1:end if end != -1 else len(v)]
+                    unpinned += bool(UNPINNED.search(v[m.start():m.end() + 20])) and "ref=" not in line
         check(checks, cid, item, not per_file,
-              "none" if not per_file else f"{meaning}: " + ", ".join(f"{k} ×{v}" for k, v in per_file.items()))
+              "none" if not per_file else f"{meaning}: " + ", ".join(f"{k} ×{v}" for k, v in per_file.items())
+              + (f" ({unpinned} unpinned: no ref=)" if unpinned else ""))
 
+    ours, theirs = HERE / "ensure_spec_clone.py", d / "scripts" / "ensure_spec_clone.py"
+    synced = theirs.is_file() and digest(theirs) == digest(ours)
+    sync_state = ("matches the skill creator's copy" if synced else
+                  "differs from the skill creator's copy: a change item (refresh it, D-32)" if theirs.is_file() else
+                  "missing (guide 9.4 SHOULD, D-32)")
+    check(checks, "R-spec-sync", "Required reading incl. features specs, from the same clone, synced first", synced,
+          f"scripts/ensure_spec_clone.py {sync_state}", warn=True)
     codex = [i for i in installs if i["path"].startswith(".agents/")]
     claude = [i for i in installs if i["path"].startswith(".claude/")]
     for other in find_copies(repo, real, installs):
@@ -613,16 +665,92 @@ def find_harness(repo):
                     text = (repo / cand).read_text(encoding="utf-8", errors="replace")
                     readmes.append({"path": cand, "knownGaps": bool(re.search(r"(?im)^#+\s*known gaps", text))})
                 break
-    smoke = [f for f in listed if SMOKE_NAME.search(f.rsplit("/", 1)[-1])
-              and pathlib.PurePosixPath(f).suffix in SOURCE_EXT][:20]
-    ci = []
-    for f in listed:
-        if f.startswith(".github/workflows/") and f.endswith((".yml", ".yaml")):
-            for n, line in enumerate((repo / f).read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-                if re.search(r"(?i)\buts\b|smoke|self-?test", line):
-                    ci.append(f"{f}:{n}: {line.strip()[:100]}")
+    smoke = smoke_by_name(listed)
+    roots = [r["path"].rsplit("/", 1)[0] if "/" in r["path"] else "." for r in readmes]
+    if not roots and dirs:
+        roots = [os.path.commonpath(list(dirs)).replace(os.sep, "/")]
+    ci, sources = ci_evidence(repo, listed)
     return {"fromMapping": False, "candidateDirs": dict(dirs.most_common(10)), "readmes": readmes,
-            "smokeOrSelfTestFiles": smoke, "ciLines": ci[:20]}
+            "smokeOrSelfTestFiles": smoke, "selfTestCandidates": self_test_candidates(repo, listed, roots, smoke),
+            "ciLines": ci[:20], "ciSources": sources}
+
+
+def smoke_by_name(listed, roots=None):
+    """Source files named smoke or self-test (under roots, if given)."""
+    return [f for f in listed if SMOKE_NAME.search(f.rsplit("/", 1)[-1]) and pathlib.PurePosixPath(f).suffix in
+            SOURCE_EXT and (roots is None or any(under(f, r) for r in roots))][:20]
+
+
+def under(path, root):
+    return root in ("", ".") or path == root or path.startswith(root.rstrip("/") + "/")
+
+
+def has_tag(text):
+    return any(TAG.match(line) for line in text.splitlines())
+
+
+def self_test_candidates(repo, listed, roots, by_name):
+    """Untagged test files under the harness roots that use a type the harness declares: self-test candidates found
+    by location, not by name (read them to confirm)."""
+    files = [f for f in listed if pathlib.PurePosixPath(f).suffix in SOURCE_EXT and any(under(f, r) for r in roots)
+            and not any(p in EXCLUDED_DIRS for p in f.split("/")[:-1])]
+    texts = {}
+    for f in files:
+        try:
+            texts[f] = (repo / f).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+    texts = {f: t for f, t in texts.items() if not has_tag(t)}
+    tests = [f for f in texts if TEST_NAME.search(f.rsplit("/", 1)[-1]) and f not in by_name]
+    declared = {f: set(TYPE_DECL.findall(t)) for f, t in texts.items() if f not in tests}
+    harness_types = set().union(*declared.values()) if declared else set()
+    found = []
+    for f in tests:
+        own = set(TYPE_DECL.findall(texts[f]))
+        names = harness_types - own
+        if names and re.search(r"\b(" + "|".join(sorted(map(re.escape, names))) + r")\b", texts[f]):
+            found.append(f)
+    return found[:20]
+
+
+def ci_evidence(repo, listed):
+    """UTS, smoke and self-test lines in the CI workflows and in the scripts they call (followed to depth 3)."""
+    tracked = set(listed)
+    queue = [f for f in listed if f.startswith(".github/workflows/") and f.endswith((".yml", ".yaml"))]
+    seen, scripts, ci = set(queue), [], []
+    depth = {f: 0 for f in queue}
+    while queue:
+        f = queue.pop(0)
+        try:
+            text = (repo / f).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            if re.search(r"(?i)\buts\b|smoke|self-?test", line):
+                ci.append(f"{f}:{n}: {line.strip()[:100]}")
+        if depth[f] >= 3:
+            continue
+        base = f.rsplit("/", 1)[0] if "/" in f else ""
+        refs = CI_SCRIPT.findall(text)
+        commands = "\n".join(line for line in text.splitlines() if not CI_PROSE.match(line))
+        for tool, opts in CI_TOOL.findall(commands):
+            tool = tool.split()[-1]
+            where = re.search(r"(?:^|(?<=\s))(?:-C\s*|--directory[= ])([\w./-]+)", opts)  # an option, not a target
+            given = re.search(r"(?:^|(?<=\s))(?:-f\s*|--(?:make)?file[= ])([\w./-]+)", opts)
+            folder = where.group(1).rstrip("/") + "/" if where else ""
+            refs += [folder + given.group(1)] if given else [folder + name for name in TOOL_FILES[tool]]
+        for ref in refs:
+            ref = ref[2:] if ref.startswith("./") else ref
+            for cand in (os.path.normpath(ref).replace(os.sep, "/"),
+                        os.path.normpath(f"{base}/{ref}").replace(os.sep, "/") if base else None):
+                if cand and cand in tracked and cand not in seen:
+                    seen.add(cand)
+                    depth[cand] = depth[f] + 1
+                    scripts.append(cand)
+                    queue.append(cand)
+    return ci, ("workflow files only" if not scripts else
+                f"workflow files and {len(scripts)} script(s) they call: {', '.join(scripts[:8])}"
+                + (", …" if len(scripts) > 8 else ""))
 
 
 def find_copies(repo, real, installs):
