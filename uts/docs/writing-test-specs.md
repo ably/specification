@@ -35,7 +35,7 @@ Every test in the UTS suite has a unique identifier. The ID appears explicitly i
 
 | Field | Description |
 |-------|-------------|
-| `category` | One of: `rest/unit`, `rest/integration`, `rest/proxy`, `realtime/unit`, `realtime/integration`, `realtime/proxy` |
+| `category` | One of: `rest/unit`, `rest/integration`, `rest/proxy`, `realtime/unit`, `realtime/integration`, `realtime/proxy`, `objects/unit`, `objects/integration`, `objects/proxy` |
 | `spec-point` | The primary spec point being tested (e.g. `RSC15l2`, `RTN14a`) |
 | `descriptive-name` | 2–4 hyphenated words describing the specific behaviour (e.g. `timeout-fallback`, `cloudfront-header`) |
 | `n` | 0-based index disambiguating multiple tests for the same spec point within the same file |
@@ -343,7 +343,7 @@ Tests that [behaviour] when the proxy injects [fault].
 
 ```pseudo
 session = create_proxy_session(
-  target: TargetConfig(realtimeHost: "sandbox.realtime.ably-nonprod.net", restHost: "sandbox.realtime.ably-nonprod.net"),
+  endpoint: "nonprod:sandbox",
   rules: [{
     "match": { ... },
     "action": { ... },
@@ -657,6 +657,18 @@ This means implementations should:
 In **integration and proxy** specs these timeouts are **wall-clock time** (the test waits on a
 real server — see the *Timeout Strategy* section in `docs/integration-testing.md`); in unit specs they may be
 realised with fake/virtual timers.
+
+### Closing Clients (`CLOSE_CLIENT`)
+
+Realtime clients hold internal timers (retry, heartbeat, suspend) that keep the test process alive after the assertions complete. A test that creates a Realtime client should end with `CLOSE_CLIENT(client)`, one call per client it created:
+
+```pseudo
+ASSERT client.connection.state == ConnectionState.connected
+
+CLOSE_CLIENT(client)
+```
+
+`CLOSE_CLIENT` is a cleanup step, not an assertion: it closes the client so its timers stop, and doesn't wait for or assert the CLOSED state. Derived tests should close the client even when the test fails (see *Cleanup with afterEach* in `writing-derived-tests.md`).
 
 ## Timer Mocking
 

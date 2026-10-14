@@ -71,7 +71,10 @@ key_name = key_parts[0]
 key_secret = key_parts[1]
 
 # Create proxy session with clean passthrough (no fault rules)
-session = create_proxy_session(rules: [])
+session = create_proxy_session(
+  endpoint: "nonprod:sandbox",
+  rules: []
+)
 
 # client: the presence member, connects through the proxy so we can inject ATTACHED
 # Needs a clientId for presence — use authCallback with JWT that includes clientId
@@ -191,6 +194,7 @@ key_secret = key_parts[1]
 # 1. Close the WebSocket 3s after connect (giving time to attach + enter presence)
 # 2. Replace the 2nd ATTACHED on the channel with a non-resumed one
 session = create_proxy_session(
+  endpoint: "nonprod:sandbox",
   rules: [
     {
       match: { type: "delay_after_ws_connect", delayMs: 3000 },
