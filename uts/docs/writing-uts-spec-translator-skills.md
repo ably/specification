@@ -313,7 +313,8 @@ The minimum set per tier follows. A tier the skill doesn't support needs none of
 ├── scripts/
 │   ├── resolve_uts.py               # deterministic selection
 │   ├── audit_translation.py         # deterministic faithfulness audit
-│   └── scan_constructs.py           # corpus construct scanner (SHOULD, section 6)
+│   ├── scan_constructs.py           # corpus construct scanner (SHOULD, section 6)
+│   └── ensure_spec_clone.py         # spec-clone sync, copied from the skill creator (SHOULD, 9.4)
 └── references/
     └── <module>-mapping.md          # module notes (e.g. objects-mapping.md)
 ```
@@ -325,6 +326,7 @@ The minimum set per tier follows. A tier the skill doesn't support needs none of
 | `scripts/resolve_uts.py` | Validates the module dir, reads the mapping, lists specs and derives file/class/package names; prints one JSON object | MUST |
 | `scripts/audit_translation.py` | Compares one spec file with its generated test file; prints one JSON object | MUST |
 | `scripts/scan_constructs.py` | The corpus construct scanner ([section 6](#6-pseudocode-construct-catalogue)) | SHOULD |
+| `scripts/ensure_spec_clone.py` | A copy of the skill creator's spec-clone sync ([9.4](#94-one-pinned-local-clone-brought-up-to-date-first)) | SHOULD |
 | `references/<module>-mapping.md` | Maps ably-js-shaped pseudocode to your SDK's API for one module; may override parts of the generic flow | MUST wherever the SDK surface diverges from the pseudocode (in practice `objects` for every typed SDK) |
 
 Both existing skills use Python for scripts. Any language works, but the scripts MUST run on every developer platform (see [8.1](#81-resolver-resolve_utspy-must) and [section 10](#10-verification-and-ci)).
@@ -385,7 +387,7 @@ Write the skill so the same directory loads in Claude Code and in OpenAI Codex. 
 name: uts-to-<lang>
 description: "Translates Ably UTS (Universal Test Suite) pseudocode specs into runnable LANG tests in REPO. Use when asked to translate, port, derive, generate or re-sync tests from a UTS spec or module (uts/rest, uts/realtime, uts/objects), to evaluate UTS-derived tests against the SDK, or to check UTS coverage. Takes a UTS module directory, validates it, resolves the target test directories, asks for a tier (unit, integration, proxy) and specs, then derives one LANG test per spec Test ID. Not for creating the skill or its harness (use uts-to-lang-skill-creator), or for writing UTS specs."
 license: "<the repo's licence>"
-compatibility: "Claude Code or Codex. Needs git, python3 and a local clone of ably/specification; run on an Opus-class model."
+compatibility: "Claude Code or Codex. Needs git, python3 and a local clone of ably/specification (cloned or updated on approval); run on an Opus-class model."
 allowed-tools: Bash Read Edit Write
 metadata:
   version: "1.0.0"
@@ -396,9 +398,9 @@ metadata:
 - **`name`** MUST be `uts-to-<lang>`, equal to the skill's directory name: lowercase letters, digits and hyphens, at most 64 characters. (`uts-to-kotlin` omits `name` and relies on the directory name; both tools accept that, but the Agent Skills format requires the field.)
 - **`description`** MUST be at most 1,024 characters and contain no `<` or `>`. Write `LANG` and `REPO`, not `<lang>`: skill packaging validators (for example skill-creator's `quick_validate.py`) reject angle brackets. It SHOULD be "pushy" and written in the third person: front-load the trigger phrases a user might type ("translate this UTS spec", "port uts/objects to LANG", "re-sync UTS tests") and end with a "Not for …" boundary. Put the usage line in the body, not in the description. Both existing skills' descriptions are procedural, which suits explicit invocation but triggers poorly otherwise.
 - **`metadata`** values MUST be strings (quote `"1.0.0"` and `"false"`). Codex shows `metadata.short-description` in its skill list.
-- **`allowed-tools`** is space-separated. Claude Code pre-approves the listed tools while the skill runs; Codex ignores the field. Both existing skills declare `Bash, Read, Edit, Write, WebFetch` and search with `grep` through `Bash`. Add `Grep`/`Glob` only if your workflow uses those tools, and `WebFetch` only if the skill fetches anything remotely (see [9.4](#94-local-clone-vs-fetching-main)).
+- **`allowed-tools`** is space-separated. Claude Code pre-approves the listed tools while the skill runs; Codex ignores the field. Both existing skills declare `Bash, Read, Edit, Write, WebFetch` and search with `grep` through `Bash`. Add `Grep`/`Glob` only if your workflow uses those tools, and `WebFetch` only if the skill fetches anything remotely (see [9.4](#94-one-pinned-local-clone-brought-up-to-date-first)).
 - **Claude Code-only fields** (`argument-hint`, `model`, `disable-model-invocation`, `when_to_use`, `context`, …) MAY be added only if the team accepts that they aren't portable: Codex ignores them, and they make claude.ai upload and standard packaging fail. Put Codex-only settings (display name, implicit-invocation policy) in an optional `agents/openai.yaml` in the skill directory.
-- **Argument:** a single UTS module directory, directly under `uts/`. Both skills started with single-spec-file input and moved to modules; spec selection happens interactively. Don't depend on argument substitution (`$ARGUMENTS` works only in Claude Code): say in words where the argument comes from ("the module directory given after `/uts-to-LANG` in Claude Code or `$uts-to-LANG` in Codex, or named in the user's message"). If there is none, the skill MUST print the usage line and stop.
+- **Argument:** a single UTS module directory, directly under `uts/`, or (MAY) a bare module name (`rest`, `realtime`, `objects`) resolved against the shared spec clone ([9.4](#94-one-pinned-local-clone-brought-up-to-date-first)). Only the shared clone is synced; a module path into another clone is used as it is, with a warning. Both skills started with single-spec-file input and moved to modules; spec selection happens interactively. Don't depend on argument substitution (`$ARGUMENTS` works only in Claude Code): say in words where the argument comes from ("the module directory given after `/uts-to-LANG` in Claude Code or `$uts-to-LANG` in Codex, or named in the user's message"). If there is none, the skill MUST print the usage line and stop.
 - **Paths to the skill's own files** MUST be relative to the skill directory (the directory containing `SKILL.md`), for example "run `scripts/resolve_uts.py` from this skill's directory". Never write `.claude/skills/uts-to-<lang>/scripts/…`: Codex loads the skill from `.agents/skills/`, and `${CLAUDE_SKILL_DIR}` is Claude Code-only. The scripts follow the same rule: they locate the mapping file and the notes relative to their own file (for example `Path(__file__).parent.parent`), never relative to the working directory.
 - **Model (SHOULD):** no portable frontmatter field pins a model. State in the opening lines of `SKILL.md` (and in `compatibility`) that the skill should run on an Opus-class model ([Model tier](#model-tier)). Claude Code's `model` field is a non-portable option (see above).
 - **Placeholders, not personal paths,** in examples and usage text: `<cloned-ably-specification-repo-path>/uts/objects` in the body (angle brackets are fine in the body, but not in `description`).
@@ -464,7 +466,7 @@ The workflow has two phases. Implement both.
 
 | Step | What happens | Interaction |
 |---|---|---|
-| **0. Required reading** | Read `writing-derived-tests.md` and the "Pseudocode Conventions" section of `uts/README.md` once per run (plus `proxy.md` for the proxy tier; in evaluate mode, the features specs as needed), from the same spec clone as the module ([9.4](#94-local-clone-vs-fetching-main)). Read `writing-test-specs.md` whenever the construct table defers a meaning to it. Don't rely on memory or inlined summaries | — |
+| **0. Required reading** | Sync the shared spec clone, or warn about another clone the argument names ([9.4](#94-one-pinned-local-clone-brought-up-to-date-first)), then read `writing-derived-tests.md` and the "Pseudocode Conventions" section of `uts/README.md` once per run (plus `proxy.md` for the proxy tier; in evaluate mode, the features specs as needed), from that same clone. Read `writing-test-specs.md` whenever the construct table defers a meaning to it. Don't rely on memory or inlined summaries | — |
 | **A. Resolve the module** | Run `resolve_uts.py "<module-dir>"`. If `ok` is false, relay `message` and stop. Treat the output as the single source of truth: never recompute a path or name by hand | Stop on error |
 | **B. Confirm or create the mapping** | If mapped, show each tier's target dir verbatim and ask the user to confirm. If unmapped, ask for the target base name (default: the source module name; suggest a rename only when the SDK uses different terminology) and run `resolve_uts.py --create <name>`. If the user says an entry is wrong, re-run `--create <name>` to overwrite it (keeping its `notes`), unless it is hand-maintained (3.2), in which case edit it by hand | Ask |
 | **C. Choose the tier** | Offer only tiers that are present. Where the mapping records a tier as not ready (per-module data, 3.2), refuse it and name what blocks it. The tier fixes the target dir, the spec list and the translation flow (mocked / sandbox / proxy). Don't re-detect it per spec | Ask |
@@ -802,9 +804,9 @@ Path validation, mapping, spec discovery, naming and faithfulness checking are m
 
 | Requirement | Detail |
 |---|---|
-| Validate the module | Expand a leading `~`. The parent directory is named `uts` (compare path parts, so it works on Windows); the directory exists; it has `unit/` or `integration/` |
+| Validate the module | Expand a leading `~`. The parent directory is named `uts` (compare path parts, so it works on Windows); the directory exists; it has `unit/` or `integration/`. A bare module name, if accepted (3.3), is resolved against the shared spec clone (9.4) first |
 | Errors | One JSON object with `ok: false`, a code and a `message`. Example codes (ably-cocoa): `NOT_A_UTS_MODULE_PATH`, `DIR_NOT_FOUND`, `NO_TIER_DIRS`, `MAPPING_NOT_FOUND`, `BAD_MAPPING`, `BAD_TARGET_NAME` |
-| Output contract | On success: `{ok: true, sourceModule, mapped, testRoot?, specRepo?, translationNotes, harness, tiers: {unit, integration, proxy: {present, sourceDir, targetDir, <namespace/package>, <build target>, specs: [{file, className, testFile?}]}}}`. `testFile` (the target file name) is required wherever it isn't `<className>.<ext>`, e.g. pytest `test_<stem>.py` with class `Test<Stem>`. `present` says whether the source tier directory exists; `targetDir` is `null` and `mapped` false when the module has no mapping entry. `testRoot` appears when the mapping declares a root. `specRepo` (`{sha, dirty, dirtyFiles}`, MAY) gives the spec clone's state (`dirtyFiles`: the modified or untracked files under `uts/` and `specifications/`, 9.1) for the file headers and the report (9.1, 9.4). `harness` (`{root, readme, tiers: {<tier>: {sources, tests}}}`) echoes the mapping's harness entry with paths validated (repo-relative), for the Harness reference and the preflight (3.2, 4 step F). Downstream steps read only these fields |
+| Output contract | On success: `{ok: true, sourceModule, mapped, testRoot?, specRepo?, translationNotes, harness, tiers: {unit, integration, proxy: {present, sourceDir, targetDir, <namespace/package>, <build target>, specs: [{file, className, testFile?}]}}}`. `testFile` (the target file name) is required wherever it isn't `<className>.<ext>`, e.g. pytest `test_<stem>.py` with class `Test<Stem>`. `present` says whether the source tier directory exists; `targetDir` is `null` and `mapped` false when the module has no mapping entry. `testRoot` appears when the mapping declares a root. `specRepo` (`{sha, dirty, dirtyFiles, branch, kind, onOriginMain}`, MAY) gives the spec clone's state (`dirtyFiles`: the modified or untracked files under `uts/` and `specifications/`, 9.1; `kind`: the shared clone or the one the argument names, which isn't synced unless it is the shared clone; `onOriginMain`: whether the SHA is on `origin/main`, 9.4) for the file headers and the report (9.1, 9.4). `harness` (`{root, readme, tiers: {<tier>: {sources, tests}}}`) echoes the mapping's harness entry with paths validated (repo-relative), for the Harness reference and the preflight (3.2, 4 step F). Downstream steps read only these fields |
 | Tier detection by path | `unit/**`; `integration/**` excluding `integration/proxy/**`; `integration/proxy/**`. Every tier can have sub-directories (e.g. `realtime/integration/channels/`). Use the path only |
 | Exclusions | `helpers/` (implement as harness, never translate), `README.md`, `PLAN.md`, `*_SUMMARY.md`. Match them relative to the tier base, so an ancestor directory in the checkout path can't trip them. Also skip any non-spec notes left inside a tier directory |
 | Deterministic naming | Strip a trailing `_test`, convert to the language's convention, add the suffix or prefix the runner needs (`objects_lifecycle_test.md` → Swift `ObjectsLifecycleTests`, Kotlin `ObjectsLifecycleTest`, pytest `test_objects_lifecycle.py` with class `TestObjectsLifecycle`) |
@@ -871,7 +873,7 @@ Stamp each generated file's header with the spec-repo commit SHA it was derived 
 // at ably/specification@<full-sha>
 ```
 
-A per-module manifest (spec file → SHA → test file) MAY be kept as well. Link source specs at the pinned SHA, not `blob/main`.
+A per-module manifest (spec file → SHA → test file) MAY be kept as well. Link source specs at the pinned SHA, not `blob/main`. If the SHA isn't on `origin/main` (a branch run), list it in the final report: it may stop resolving once that branch is deleted.
 
 **A SHA identifies only committed content.** If a translated spec file differs from the recorded SHA (`git status --porcelain -- <file>` is non-empty: staged, unstaged or untracked), stop and ask. If the user proceeds, add `(locally modified; blob <git hash-object <file>>)` to that file's header, list the file in the final report, and have re-sync compare the file with that blob rather than with the SHA. Local changes elsewhere in the clone (for example untracked notes outside the tier directories) only need recording, as 9.4 says.
 
@@ -882,7 +884,7 @@ A per-module manifest (spec file → SHA → test file) MAY be kept as well. Lin
 Add a mode (for example `/uts-to-<lang> <module-dir> --resync` in Claude Code, `$uts-to-<lang> <module-dir> --resync` in Codex) that:
 
 1. Runs the audit over every mapped spec in the module, not only the ones selected.
-2. Lists changed spec files against each file's recorded state, including uncommitted changes: `git diff --name-status -M <recorded-sha> -- uts/<module>` (the working tree, staged and unstaged, against the SHA; group files by the SHA in their headers), or `git hash-object` for a file stamped with a blob (9.1). Untracked spec files have no committed state: compare one stamped with a blob (9.1) with that blob, and treat one with no test file as new; untracked files outside the tier directories are local notes and are ignored. Decide new and removed by comparing the resolver's spec list with the existing test files. Then re-scan the corpus for constructs the skill can't map (section 6).
+2. Lists changed spec files against each file's recorded state, including uncommitted changes: `git diff --name-status -M <recorded-sha> -- uts/<module>` (the working tree, staged and unstaged, against the SHA; group files by the SHA in their headers), or `git hash-object` for a file stamped with a blob (9.1). Untracked spec files have no committed state: compare one stamped with a blob (9.1) with that blob, and treat one with no test file as new; untracked files outside the tier directories are local notes and are ignored. Decide new and removed by comparing the resolver's spec list with the existing test files. If a recorded SHA isn't in the clone, fetch it (with approval, and only in the shared clone; the user fetches it into any other clone); otherwise review each spec stamped with it in full, as changed (base unknown). Then re-scan the corpus for constructs the skill can't map (section 6).
 3. Classifies each spec as new, changed (any change to the spec file since its recorded state; report the kind: ID set, pseudocode, fixtures, or other content such as `## Protocol Variants`, `## Test Type` or prose), unchanged or removed. Review each changed file's diff to decide which tests to regenerate, and say why when a changed file is not regenerated. A spec whose helper specs or the UTS docs it relies on changed is reviewed too ([procedure section 10](../skills/uts-to-lang-skill-creator/references/upgrade-diff-driven.md#10-upgradefix-diff-driven)).
 4. Regenerates the affected tests, preserving only DEVIATION gates, adapted assertions, UTS-spec-error fail-fast placeholders (they stay until the spec is fixed; `writing-derived-tests.md` "Resolution") and `deviations.md` entries, and updating those entries.
 5. Updates the SHA in each regenerated file's header, and its blob note (9.1): re-stamped if the spec is still locally modified, removed if not (and in the manifest, if kept).
@@ -899,16 +901,21 @@ Examples of the pattern:
 - **Rename not followed.** Both SDKs carried `realtime/unit/RTN16g2/recovery-key-null-inactive-0` after the spec renamed it to `realtime/unit/RTN16g3/recovery-key-null-inactive-0`: ably-cocoa `Test/UTS/unit/realtime/ConnectionRecoveryTests.swift` and ably-java `lib/src/test/kotlin/io/ably/lib/uts/unit/realtime/ConnectionRecoveryTest.kt`. The audit reports one missing and one orphan, but nothing prompted a re-run.
 - **Additions not followed.** In ably-java `RealtimeObjectTest.kt`, two `RTO27` tests remained where the spec has a single `RTO27/channel-state-data-lifecycle-0` (the only `RTO27` Test ID the spec has ever had), and `RTO20d4/mixed-null-serials-applies-non-null-0` had no test.
 
-### 9.4 Local clone vs fetching `main`
+### 9.4 One pinned local clone, brought up to date first
 
-Pick one source for docs and specs, and pin it. This guide recommends **reading everything from the local spec clone** the module directory came from:
+Pick one source for docs and specs, and pin it: the local spec clone. By default it is the shared clone that the skill creator also uses (`ABLY_SPEC_CLONE`, else `~/.ably/specification`); a module directory given as the argument names its own clone, which is used instead, so an explicit path into any clone keeps working. The sync below runs only when the clone in use is the shared clone, however it was found: a module path into any other clone is never synced or fetched, whatever `ABLY_SPEC_SYNC` says, and the skill shows a static warning instead ("Using the spec clone you named (`<path>`). It isn't synced; make sure its UTS specs are up to date."); keeping that clone current is the user's responsibility.
 
-- the UTS docs (`<module-dir>/../docs/writing-derived-tests.md`, `proxy.md`);
-- in evaluate mode, the features specs the decision tree needs (`<module-dir>/../../specifications/features.md`, `objects-features.md`, `protocol.md`), not the GitHub URLs in `writing-derived-tests.md`.
+**Bring the shared clone up to date first (SHOULD).** Before reading anything, with the user's approval or their standing `ABLY_SPEC_SYNC=auto` (`off` means no network; the user sets the variable, never the skill), fetch `origin main` and fast-forward `main` with `git merge --ff-only --no-overwrite-ignore`, only if `main` is checked out, has no tracked changes, no merge, rebase or other git operation is in progress, and it is strictly behind `origin/main`. Never pull, reset, stash, rebase or switch branches: on another branch, a dirty tree, or an ahead or diverged `main`, report it and ask (use it as it is, fetch only, or stop). Offline, declined or failed: use the clone as it is, and say how far behind it was at its last fetch. A skill SHOULD do this with a copy of the skill creator's `scripts/ensure_spec_clone.py` ([procedure 13.9](../skills/uts-to-lang-skill-creator/references/orient.md#139-sync-the-spec-clone)). The fast-forward happens before the run, so the run is still pinned: check HEAD again before stamping headers and before the final report, and if it moved, stop and ask.
 
-Record the clone's HEAD SHA, whether it is dirty and which files are; a translated spec that is locally modified is handled as in 9.1. You MAY warn when the clone is behind `origin/main`.
+Then read everything from that clone, at the pinned SHA:
+
+- the UTS docs (`<spec-clone>/uts/docs/writing-derived-tests.md`, `proxy.md`);
+- in evaluate mode, the features specs the decision tree needs (`<spec-clone>/specifications/features.md`, `objects-features.md`, `protocol.md`), not the GitHub URLs in `writing-derived-tests.md`.
+
+Record the clone's HEAD SHA, its branch, whether it is dirty and which files are, and the sync's outcome (or "not synced"); a translated spec that is locally modified is handled as in 9.1.
 
 - *Divergence from `writing-derived-tests.md`* (Phase 2, "2a. Is the UTS spec wrong?", which links the features specs on GitHub `main`): read them from the same clone as the UTS specs instead, because the UTS spec and the features spec it is judged against must come from one revision, and the clone's SHA is recorded in every header and report (9.1). Fetching `main` gives a revision that nothing records.
+- Fetching docs or specs file by file (for example `gh api …/contents/…` or raw URLs) mixes revisions and records none: don't.
 
 ### 9.5 Upgrading an existing skill (SHOULD)
 
@@ -1013,7 +1020,7 @@ The skill and its harness are one deliverable: the skill isn't done until every 
 
 **Workflow**
 
-- [ ] Required reading, including features specs, from the same clone as the specs
+- [ ] Required reading, including features specs, from the same clone as the specs, the shared clone synced first per [9.4](#94-one-pinned-local-clone-brought-up-to-date-first) (SHOULD)
 - [ ] Steps 0 and A–F: the four user questions (mapping, tier, specs, translate vs evaluate) and the harness preflight, which stops on red
 - [ ] Steps 1–7 with batching; a reference test per tier; review in both modes
 - [ ] Unmapped constructs stop and ask; corpus scanner in `scripts/` (SHOULD)
@@ -1085,7 +1092,7 @@ Rules:
 2. **Learn the pattern; never copy.** Don't copy, port or translate code, scripts, prose, tables or examples verbatim. Take how a problem was structured or solved, and write your own version in your language's idioms, on your SDK's hooks and harness.
 3. **Check against [Patterns to avoid](#patterns-to-avoid)** before adopting anything. Both skills and both harnesses have documented defects, often in exactly the files you would consult.
 4. **Record each consultation**: the repo, revision and path, the question, what you learned, and how you checked it. Report each one as a gap in this guide: a candidate guide improvement.
-5. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-local-clone-vs-fetching-main)), and neither does the pilot run that validates it.
+5. **Creation only.** This applies to creating or maintaining a skill and its harness. A generated skill, at run time, never consults another SDK's skill (it reads only the local spec clone, [9.4](#94-one-pinned-local-clone-brought-up-to-date-first)), and neither does the pilot run that validates it.
 
 Reading GitHub is network access: the [procedure](../skills/uts-to-lang-skill-creator/SKILL.md#reference-implementations-last-resort) gates it, or offers local clones instead.
 
@@ -1095,11 +1102,15 @@ Observed in the existing skills and their harnesses when this guide was written,
 
 **In both skills**
 
-- **Fetching the manual from `main`, and telling the model to "fetch" the features spec with no pinned source,** while reading specs from a local clone ([9.4](#94-local-clone-vs-fetching-main)).
+- **Fetching the manual from `main`, and telling the model to "fetch" the features spec with no pinned source,** while reading specs from a local clone ([9.4](#94-one-pinned-local-clone-brought-up-to-date-first)).
 - **Two sources of tier truth**: path-based in the resolver, content-based in the `SKILL.md` integration section.
 - **A `CONTAINS_IN_ORDER` mapping that isn't a subsequence check** ([6.7](#67-notes-on-the-catalogue)).
 - **No re-sync mode, no final report, no lint step, no collision detection**, and a silent `null` when a declared notes file is missing.
 - **Claude Code-only packaging** ([3.3](#33-frontmatter-and-arguments)): script paths hard-coded as `python3 .claude/skills/<name>/scripts/…` and reliance on `$ARGUMENTS`, both of which break under Codex; angle-bracket placeholders (`<…>`) in `description`, which skill packaging validators reject.
+
+**In other skills**
+
+- **Fetching docs and specs file by file from the default branch** (`gh api …/contents/…`, raw URLs), unpinned: a run can mix revisions, the headers can record none, and it needs `gh` auth and a POSIX `base64` ([9.4](#94-one-pinned-local-clone-brought-up-to-date-first)).
 
 **In the harnesses**
 

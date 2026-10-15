@@ -1,8 +1,8 @@
 ---
 name: uts-to-lang-skill-creator
-description: "Builds or upgrades a uts-to-LANG translator skill, with the UTS test harness it runs on, for one Ably Pub/Sub SDK repository on this skill's whitelist (C#, Python, Go, JavaScript, Ruby, ...). Use it whenever asked to create a uts-to-* skill; to audit, fix, upgrade or refresh one after the guide, UTS docs, corpus or SDK changed; to add LiveObjects (uts/objects) support; or to set up UTS test infrastructure (SDK test hooks, MockHttpClient, MockWebSocket, fake clock, sandbox and proxy helpers, harness smoke tests and self-tests). First checks the repo is on the whitelist, then detects what it has (uts-to-* skills and their origin, harness, UTS-tagged tests, REST and Realtime capabilities and scope, LiveObjects API) and recommends Create or Upgrade/Fix, then runs a procedure with user stop points. Needs a local ably/specification clone. Not for Chat, Spaces, AI Transport, CLI or other non-Pub/Sub repos, for translating specs once a uts-to-* skill exists (use that skill), or for writing UTS specs."
+description: "Builds or upgrades a uts-to-LANG translator skill, with the UTS test harness it runs on, for one Ably Pub/Sub SDK repository on this skill's whitelist (C#, Python, Go, JavaScript, Ruby, ...). Use it whenever asked to create a uts-to-* skill; to audit, fix, upgrade or refresh one after the guide, UTS docs, corpus or SDK changed; to add LiveObjects (uts/objects) support; or to set up UTS test infrastructure (SDK test hooks, MockHttpClient, MockWebSocket, fake clock, sandbox and proxy helpers, harness smoke tests and self-tests). First checks the repo is on the whitelist, then detects what it has (uts-to-* skills and their origin, harness, UTS-tagged tests, REST and Realtime capabilities and scope, LiveObjects API) and recommends Create or Upgrade/Fix, then runs a procedure with user stop points. Needs a local (synced) ably/specification clone. Not for Chat, Spaces, AI Transport, CLI or other non-Pub/Sub repos, for translating specs once a uts-to-* skill exists (use that skill), or for writing UTS specs."
 license: Apache-2.0
-compatibility: "Claude Code or Codex, on an Opus-class model. Needs shell and file access, git, Python 3.8+, a local clone of ably/specification, and the target SDK's build toolchain."
+compatibility: "Claude Code or Codex, on an Opus-class model. Needs shell and file access, git, Python 3.8+, a local clone of ably/specification (cloned or updated on approval), and the target SDK's build toolchain."
 allowed-tools: Read Grep Glob
 metadata:
   team: "engineering"
@@ -30,12 +30,13 @@ The harness and the skill are one deliverable (guide [section 2](../../docs/writ
 
 ## Step 0: Orient
 
-Do this first, in every run, before any phase. It is read-only: no build, no test, no network, no file written. Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]` ([13.1](references/orient.md#131-run-it)), then settle its stops in this order; [references/orient.md](references/orient.md) (section 13) has the rules:
+Do this first, in every run, before any phase. `orient.py` is read-only: no build, no test, no network, no file written. Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]` ([13.1](references/orient.md#131-run-it)), then settle its stops in this order; [references/orient.md](references/orient.md) (section 13) has the rules:
 
 1. **STOP-16**, if the repo isn't plainly eligible ([13.2](references/orient.md#132-repository-eligibility-stop-16)). On a reject, show the script's message exactly and end the run; there is no override.
-2. **STOP-1**, if needed: the model tier (2.8) and anything in `stop1`, such as the spec clone (2.6).
-3. **STOP-17**, when `stop17` is set: the capability profile and scope ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)). Record D-31.
-4. **STOP-13**, always: the State summary and the recommended mode ([13.4](references/orient.md#134-the-state-summary-and-stop-13)). Record D-27, then route per [13.5](references/orient.md#135-routing).
+2. **The spec-clone sync** ([13.9](references/orient.md#139-sync-the-spec-clone)): Step 0's only network use, for the shared clone only, after STOP-6 (not asked if `ABLY_SPEC_SYNC` is `auto` or `off`); rerun `orient.py` if HEAD moved.
+3. **STOP-1**, if needed: the model tier (2.8) and anything in `stop1`, such as the spec clone (2.6).
+4. **STOP-17**, when `stop17` is set: the capability profile and scope ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)). Record D-31.
+5. **STOP-13**, always: the State summary and the recommended mode ([13.4](references/orient.md#134-the-state-summary-and-stop-13)). Record D-27, then route per [13.5](references/orient.md#135-routing).
 
 ## 2. Ground rules
 
@@ -63,7 +64,7 @@ and, only as a last resort, the reference implementations.
 | Change CI workflows, build scripts that CI runs, or dependency manifests (including adding a test dependency) | **Only with explicit approval** ([STOP-5](#23-stop-points)). Otherwise write the change as a suggestion in the Final report |
 | Edit project or solution files needed to register new test files or projects (`.sln`, `.csproj`, `.projitems`, an Xcode project) | Only with explicit approval ([STOP-5](#23-stop-points)), recorded in the Design record (D-20). If the user declines, give them the exact entries to add, wait until they confirm, and list them in the Final report |
 | Stage, commit, push, branch, or open a PR | **No, unless the user asks** |
-| Edit anything in the spec clone | No. Report spec errors and doc gaps in the Final report with a draft fix |
+| Edit anything in the spec clone | No, except the shared clone's sync (13.9). Report spec errors and doc gaps in the Final report with a draft fix |
 | Delete or rewrite existing tests or existing UTS-derived tests | No, unless the user asks. Report their state in the Repo profile |
 | Edit, replace or delete files of an existing `uts-to-*` skill or UTS harness that this run didn't create | Only for the items the user chose at STOP-15 (D-29) or the harness rows approved at STOP-3; the objects files that the STOP-14 decision (D-28) changes; when regenerating, replacements the user approves ([11.5](references/upgrade-existing-skill.md#115-step-u4-run-the-phases-scoped)); the provenance stamp in its frontmatter (D-30). Never delete without asking |
 | Run the full test suite, or any integration or proxy test (network, sandbox, proxy binary download) | Ask first ([STOP-6](#23-stop-points)) |
@@ -75,12 +76,12 @@ At a stop point, present what you found and the options, then wait for the user'
 
 | ID | Phase | When | What you present |
 |---|---|---|---|
-| **STOP-1** | 0 (Orient) | A required input is missing, the session's model isn't Opus-class ([2.8](#28-model-tier-and-sub-agents)), or `spec_clone_info.py` fails or reports `skillMatchesClone: false` ([2.6](#26-pin-the-spec-clone)) | The missing input (or the model found) and why it's needed |
+| **STOP-1** | 0 (Orient) | A required input is missing, the session's model isn't Opus-class ([2.8](#28-model-tier-and-sub-agents)), or no usable spec clone is found (offer to clone it, 13.9), or `skillMatchesClone: false` ([2.6](#26-pin-the-spec-clone)) | The missing input (or the model found) and why it's needed |
 | **STOP-2** | 1 (step 1d) | The Repo profile is written | The profile, for confirmation or correction |
 | **STOP-3** | 2 (end) | The harness design is written | The gap table, the design and three options: (a) build the missing harness now, (b) plan it only, (c) scope the skill to the tiers possible today |
 | **STOP-4** | 3 onwards | Before any SDK production-code change | The hook or visibility proposal ([4.6](references/phase-2-design-harness.md#46-step-2f-propose-the-sdk-test-hooks)) |
 | **STOP-5** | 3 onwards | Before any CI, build-script, dependency-manifest or project/solution-file change (including creating a test project or adding one to a solution) | The diff you propose and why |
-| **STOP-6** | 1 onwards | Before any network access (network tests, proxy releases, a reference implementation on GitHub or fetching its clone, [2.1](#21-your-inputs)), or running a full suite | The command, the expected duration, what it touches; for reference reads, whether the approval covers the whole run |
+| **STOP-6** | 0 onwards | Before any network access (the shared clone's sync, 13.9, unless `ABLY_SPEC_SYNC` is `auto` or `off`; network tests, proxy releases, a reference implementation on GitHub or fetching its clone, [2.1](#21-your-inputs)), or running a full suite | The command, the expected duration, what it touches; for reference reads and the sync, whether the approval covers the whole run |
 | **STOP-7** | 3 (end) | The harness is built | The build results (smoke tests and self-tests per tier, CI wiring, updated tier feasibility), before any skill file is written |
 | **STOP-8** | 4 (end) | The Design record is written | The Design record, for confirmation |
 | **STOP-9** | 5 | Pseudocode constructs, helper symbols or spec shapes you can't map ([7.4](references/phase-5-generate-skill.md#74-step-5d-fill-the-construct-catalogue)); batch everything one scan finds into one stop | Each construct, where it occurs, a proposed rendering |
@@ -90,7 +91,7 @@ At a stop point, present what you found and the options, then wait for the user'
 | **STOP-13** | 0 (Orient), every run | Always ([13.4](references/orient.md#134-the-state-summary-and-stop-13)) | The State summary, the state class (S0–S4, re-entry) and the options for it, with the recommended one: Create; Upgrade/Fix (diff-driven or full gap audit); regenerate from scratch; resume or restart; for S4, pick a skill, create a new skill or repair the installs first; stop |
 | **STOP-14** | 1 (step 1e), every run | Always, in every mode ([12.2](references/liveobjects-support.md#122-stop-14-recommend-then-ask)) | The `detect_liveobjects.py` evidence (names per category, with files and counts), its recommendation and yours; options: full objects support (translate-only if incomplete), placeholder, none now |
 | **STOP-15** | 1 (step 1f), Upgrade/Fix | The gap audit, or the list of detected changes (diff-driven), is written ([11.4](references/upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item), [section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven)) | Every non-conforming item or detected change, with the proposed change and the options add, skip or defer (a skipped or deferred MUST row leaves the skill not conforming); or regenerate from scratch instead |
-| **STOP-16** | 0 (Orient), first stop after the spec clone resolves | `check_repo_eligibility.py` rejects the repo, or can't decide ([13.2](references/orient.md#132-repository-eligibility-stop-16)) | Reject: the script's exact message (not on the whitelist; or, for `NO_CLIENT_DEFINITION`, no client defined in this checkout); the run ends, with no override. Ask: the remotes found and the question (confirm a fork, name the GitHub repository, check the path) |
+| **STOP-16** | 0 (Orient), first stop, before the spec-clone sync | `check_repo_eligibility.py` rejects the repo, or can't decide ([13.2](references/orient.md#132-repository-eligibility-stop-16)) | Reject: the script's exact message (not on the whitelist; or, for `NO_CLIENT_DEFINITION`, no client defined in this checkout); the run ends, with no override. Ask: the remotes found and the question (confirm a fork, name the GitHub repository, check the path) |
 | **STOP-17** | 0 (Orient), with STOP-13 | Orient sets `stop17`: the capability profile needs confirming ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31) lists the triggers) | The profile (REST, Realtime and its sub-areas, with evidence), the suggested scope (modules; `unsupported` modules; capability-inapplicable tests) and any delta; options: accept, correct with evidence and rerun, stop. With doors, also the side question: the core constructors (sanctioned internal-access route), the server door, the device door, or both as a parameter; the scope follows the side |
 
 ### 2.4 Never guess
@@ -108,11 +109,7 @@ Every choice you make that isn't forced by the guide or the UTS docs goes into t
 
 ### 2.6 Pin the spec clone
 
-Orient runs `scripts/spec_clone_info.py` with the path the user gave, if any. It locates the clone, checks that the guide, the UTS docs and the helper specs exist, and reads the clone's git state; [13.1](references/orient.md#131-run-it) gives the discovery order, the outcomes and the stop or confirmation each needs.
-
-Record the SHA, whether the clone is clean (and, if not, which files under `uts/` or `specifications/` are modified or untracked), the guide's and this skill's last-change commit (`guideLastChange`) and `skillVersion`. Read every spec-repo file at the absolute paths the script reports (`paths`), or under `specClone`, and from this clone for the whole run. A spec you will translate that is itself modified or untracked is handled as in guide [9.1](../../docs/writing-uts-spec-translator-skills.md#91-record-what-you-translated-from-must) (stop and ask; if the user proceeds, stamp its blob hash). Compare with `origin/main` only if the user agrees to a `git fetch`; never pull or check out on their behalf. If the clone changes during the run, stop and ask whether to restart from the new SHA.
-
-Untracked local notes in the clone (for example files matching `uts/UTS_*.md`) are not part of the corpus. Don't read them as specs.
+Step 0 syncs the shared clone (no other clone is synced), then Orient pins it: [13.9](references/orient.md#139-sync-the-spec-clone) gives the precedence, the update rule and the outcomes. Record what the sync and `spec_clone_info.py` report: the SHA, the branch, the sync result, the dirty files under `uts/` and `specifications/`, `guideLastChange` and `skillVersion`. Read every spec-repo file at the paths it reports (`paths`), from this clone, for the whole run. A spec you will translate that is modified or untracked is handled as in guide [9.1](../../docs/writing-uts-spec-translator-skills.md#91-record-what-you-translated-from-must). Never fetch, pull or check out outside 13.9. If HEAD moves during the run, stop and ask whether to restart from the new SHA. Untracked notes in the clone (such as `uts/UTS_*.md`) aren't specs.
 
 ### 2.7 Working style
 
@@ -148,7 +145,7 @@ Before starting a phase, read its reference file in full: this table is a map, n
 | 1. Understand the repo | A confirmed Repo profile: how the SDK is built, tested and mocked today; the LiveObjects decision; in Upgrade/Fix, the gap audit or the change list | [phase-1](references/phase-1-understand-repo.md) (and sections 10, 11, 12) | `repo-profile.md`; in Upgrade/Fix `skill-gap-audit.md` | STOP-2, STOP-14 (STOP-15 in Upgrade/Fix) |
 | 2. Design the harness | Reuse, wrap, extend or build each capability; hooks; placement; tier feasibility | [phase-2](references/phase-2-design-harness.md) | `uts-infra-design.md` | STOP-3 |
 | 3. Build and verify the harness | The approved harness, with green per-tier smoke tests and self-tests, wired into CI | [phase-3](references/phase-3-build-harness.md) | harness code and README; build log | STOP-7 |
-| 4. Skill design decisions | D-01 to D-26 decided; D-27 to D-31 confirmed | [phase-4](references/phase-4-design-record.md) | `design-record.md` | STOP-8 |
+| 4. Skill design decisions | D-01 to D-26 and D-32 decided; D-27 to D-31 confirmed | [phase-4](references/phase-4-design-record.md) | `design-record.md` | STOP-8 |
 | 5. Generate the skill files | Mapping, resolver, audit, construct catalogue, module notes, `SKILL.md` | [phase-5](references/phase-5-generate-skill.md) | the `uts-to-<lang>` skill | (STOP-9 if constructs are unmapped) |
 | 6. Validate the skill | Resolver, audit mutations, pilots, other paths, lint, examples | [phase-6](references/phase-6-validate-skill.md) | pilot tests; results | (STOP-10 at a bound) |
 | 7. Final report and handover | Report and acceptance checklist | [section 9](#9-phase-7-final-report-and-handover) | `final-report.md` with the acceptance checklist | — |
@@ -166,12 +163,12 @@ Before starting a phase, read its reference file in full: this table is a map, n
 The user starts a run in the target SDK repo with one sentence, for example:
 
 ```
-/uts-to-lang-skill-creator ~/src/specification realtime unit first     (Claude Code; $uts-to-lang-skill-creator in Codex)
+/uts-to-lang-skill-creator realtime unit first     (Claude Code; $uts-to-lang-skill-creator in Codex)
 Audit our uts-to-python skill against the guide and upgrade it; add LiveObjects support.
 Read <spec-clone>/uts/skills/uts-to-lang-skill-creator/SKILL.md and follow it to create a uts-to-<lang> skill for this repo.   (skill not installed)
 ```
 
-`<spec-clone>` is the user's local clone of `ably/specification`. Take it, and any goals ("objects unit tier first", "rest and realtime only"), from the user's words, and record the goals as inputs. Installation is described in [`uts/README.md`](../../README.md#installing-the-skill-creator).
+`<spec-clone>` is a local clone of `ably/specification`: by default the shared clone ([13.9](references/orient.md#139-sync-the-spec-clone)), so naming one is optional; a clone the user names isn't synced unless it is the shared clone, and otherwise Orient warns them to keep it up to date. Take any path the user names (`--spec-clone <path>`, or a path in their words), and any goals ("objects unit tier first", "rest and realtime only"), from the user's words, and record the goals as inputs. Installation is described in [`uts/README.md`](../../README.md#installing-the-skill-creator).
 
 ### 1.3 Required inputs
 
@@ -179,7 +176,7 @@ Read <spec-clone>/uts/skills/uts-to-lang-skill-creator/SKILL.md and follow it to
 |---|---|---|
 | Target SDK repo path | the current working directory | Ask. Don't assume the working directory is the SDK repo: Orient checks that it is an eligible Ably Pub/Sub SDK repository with SDK sources and tests (STOP-16) |
 | Language (and the skill name it implies) | C# → `uts-to-csharp`; Python → `uts-to-python` | Infer from the repo in Phase 1, then confirm |
-| Local spec clone path | `~/src/specification` (the directory that contains `uts/` and `specifications/`) | Located by `scripts/spec_clone_info.py` ([2.6](#26-pin-the-spec-clone)) and confirmed with the user; otherwise stop and ask ([STOP-1](#23-stop-points)). Never fetch the spec or the UTS docs from GitHub instead |
+| Local spec clone path | `~/.ably/specification` (the directory that contains `uts/` and `specifications/`) | Optional. Located by `scripts/spec_clone_info.py` (precedence: argument, this skill's clone, `ABLY_SPEC_CLONE`, `~/.ably/specification`), or cloned there on approval ([13.9](references/orient.md#139-sync-the-spec-clone)). Only the shared clone is synced. Never fetch the spec or the UTS docs file by file from GitHub |
 | User goals: modules and tiers wanted first | "realtime unit, then rest unit; objects later" | Ask. Default to every module (`rest`, `realtime`, `objects`) and every tier the SDK can support, prioritised by the user |
 | Model tier | The session's model | See [2.8](#28-model-tier-and-sub-agents) (STOP-1 if it isn't Opus-class) |
 | Local clones of ably-cocoa and ably-java (now `ably-pubsub-java`) (optional) | Clones of either repo, read at their current HEAD (ideally a recent `main`) | Not needed to start. Ask only if you reach the last-resort reference reads ([2.1](#21-your-inputs)); without clones, those reads go to GitHub after STOP-6 |
@@ -187,7 +184,7 @@ Read <spec-clone>/uts/skills/uts-to-lang-skill-creator/SKILL.md and follow it to
 ### 1.4 Outputs
 
 1. **The harness** for this language, in the target repo: the shared test library implementing the helper specs, wait and assertion helpers, sandbox and proxy helpers, module helpers, the per-tier smoke tests and helper self-tests (guide [2.7](../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must); permanent and run in CI), a harness README with its Known gaps and, with explicit approval, SDK test hooks. Built in Phase 3, unless the user scopes it down at STOP-3.
-2. **The skill** (in Upgrade/Fix, the existing skill, upgraded in place), at `.claude/skills/uts-to-<lang>/`, linked from `.agents/skills/uts-to-<lang>/` for Codex, unless D-01 says otherwise: `SKILL.md`, `uts-package-mapping.json`, `scripts/resolve_uts.py`, `scripts/audit_translation.py`, `references/<module>-mapping.md` and, if D-19 ships it, `scripts/scan_constructs.py` (guide [3.1](../../docs/writing-uts-spec-translator-skills.md#31-layout)).
+2. **The skill** (in Upgrade/Fix, the existing skill, upgraded in place), at `.claude/skills/uts-to-<lang>/`, linked from `.agents/skills/uts-to-<lang>/` for Codex, unless D-01 says otherwise: `SKILL.md`, `uts-package-mapping.json`, `scripts/resolve_uts.py`, `scripts/audit_translation.py`, `references/<module>-mapping.md`, `scripts/scan_constructs.py` if D-19 ships it, and `scripts/ensure_spec_clone.py` per D-32 (guide [3.1](../../docs/writing-uts-spec-translator-skills.md#31-layout)).
 3. **Pilot-translated tests**, one spec per available tier (in Upgrade/Fix, per tier whose rules changed, 11.6), produced by the new skill in Phase 6.
 4. **Working records** (*procedure recommendation*): Markdown files in the working-records directory (default `.claude/skills/uts-to-<lang>/generation/`; D-24, confirmed in Phase 4). Copy each template from `assets/templates/` there under the same file name, then fill it in:
     - [repo-profile](assets/templates/repo-profile.md) and [design-record](assets/templates/design-record.md) (which holds the decision log), at the start of Phase 1;
@@ -252,12 +249,13 @@ Each phase's reference (sections 3 to 8) is linked from [Phases at a glance](#ph
 
 ## Scripts
 
-All are read-only Python 3, with no network access; they print to stdout and run from anywhere as `python3 <skill-dir>/scripts/<name>.py`. `--help` prints a script's docstring (purpose, usage, output and exit codes) and exits 0; a usage error prints the usage to stderr and exits 2. Each row's linked section has the rules.
+All but `ensure_spec_clone.py` are read-only Python 3, with no network access; they print to stdout and run from anywhere as `python3 <skill-dir>/scripts/<name>.py`. `--help` prints a script's docstring (purpose, usage, output and exit codes) and exits 0; a usage error prints the usage to stderr and exits 2. Each row's linked section has the rules.
 
 | Script | Use |
 |---|---|
 | `orient.py <repo> [--spec-clone P] [--skill-dir P] [--records P] [--include-submodules] [--full]` | Step 0: runs `spec_clone_info.py`, the eligibility check, the inspector and both detectors, classifies the repo, recommends a mode ([13.1](references/orient.md#131-run-it)) |
 | `spec_clone_info.py [SPEC_CLONE \| --spec-clone P]` | Locate, validate and pin the spec clone; `warnings` is a list, possibly empty ([13.1](references/orient.md#131-run-it)) |
+| `ensure_spec_clone.py [--spec-clone P] [--status \| --fetch \| --update \| --bootstrap]` | Step 0's sync of the shared clone (no other clone): the only script that uses the network or changes the spec clone, and only on approval ([13.9](references/orient.md#139-sync-the-spec-clone)); copied into the generated skill (D-32) |
 | `check_repo_eligibility.py <repo> [--spec-clone P]` | Is the repository on the whitelist? ([13.2](references/orient.md#132-repository-eligibility-stop-16)) |
 | `detect_capabilities.py <repo> [--spec-clone P] [--include-submodules] [--capability-override rest=full,realtime=absent]` | Capability profile, door sides, suggested scope ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)) |
 | `spec_names.py [--spec-clone P]` | The detectors' names, from the spec clone's IDL, and the capability-inapplicable tests ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)) |

@@ -12,17 +12,23 @@ It then classifies the repo state (INELIGIBLE, S4, S2, S3, S1, S0, first match
 wins, with re-entry as an overlay) and compares the current capability profile
 with the recorded one.
 
+Runs the eligibility check even when no spec clone is found, so STOP-16 is
+settled before any offer to clone one. Never syncs the clone: `specSync` says
+what Step 0's sync (ensure_spec_clone.py, after STOP-16) should offer; only the
+shared clone is synced, and any other clone gets a static warning.
+
 Prints one JSON object: `ok`, `repo`, `eligibility`, `warnings`, `state`
 (class, re-entry, reasons, recommended option, options), `stateSummaryText`
 (the State summary shown at STOP-13), `stop1`, `stop16`, `stop17`,
-`capabilityDelta` and the facts behind them. `--full` adds `raw`: the outputs
+`specSync`, `capabilityDelta` and the facts behind them. `--full` adds `raw`: the outputs
 of spec_clone_info, inspect_existing_skill and the two detectors (the
 eligibility output is always under `eligibility`). Exit 0 whenever it
 classifies; 1 with {"ok": false} on NOT_A_SPEC_CLONE, DATA_FILE_ERROR or
 ORIENT_ERROR; 2 on a usage error. Read-only; never touches the network.
 
 Rules: references/orient.md 13.1 (what runs), 13.3 (state classes), 13.4 (the
-State summary), 13.6 (re-entry), 13.8 (capability delta, STOP-17).
+State summary), 13.6 (re-entry), 13.8 (capability delta, STOP-17), 13.9 (the
+spec-clone sync).
 """
 import json, pathlib, re, subprocess, sys
 
@@ -116,6 +122,7 @@ def skill_view(s, repo):
                     ("candidates: " + ", ".join(r["path"] for r in harness.get("readmes", [])) if harness.get("readmes")
                       else "none found")),
         "smokeOrSelfTestFiles": len(smoke) if isinstance(smoke, list) else None,
+        "selfTestCandidates": len(harness.get("selfTestCandidates") or []),
         "tiersLackingSmoke": tiers_lacking_smoke(tiers, smoke),
         "named": bool(s.get("named")),
     }
@@ -243,12 +250,18 @@ def classify(elig, spec, insp, skills, named_only=False):
         return {"class": "INELIGIBLE", "reentry": False, "reasons": [elig.get("message")], "recommended": None,
                 "options": []}, stop1
     if not spec or not spec.get("ok"):
-        stop1.append(f"spec clone: {(spec or {}).get('code', 'unknown error')}: ask for the clone's path")
-    else:
-        if spec.get("skillMatchesClone") is False:
-            stop1.append("the installed skill differs from the clone's copy: refresh the install or confirm")
-        if spec.get("foundBy") != "argument":
-            stop1.append(f"confirm the spec clone found by {spec.get('foundBy')}: {spec.get('specClone')}")
+        code = (spec or {}).get("code", "unknown error")
+        if code == "SPEC_CLONE_NOT_FOUND":
+            stop1.append(f"spec clone not found: after STOP-16, offer to clone it to {spec.get('bootstrapPath')} "
+                        "(with STOP-6, 13.9), or ask for the path of an existing clone"
+                        + (f"; partial clone(s) left by an interrupted bootstrap, for the user to remove: "
+                            f"{', '.join(spec['partialLeftovers'])}" if spec.get("partialLeftovers") else ""))
+        elif code == "SPEC_CLONE_INCOMPLETE":
+            stop1.append(f"spec clone too old for this skill: {spec.get('message')}")
+        else:
+            stop1.append(f"spec clone: {code}: ask for the clone's path")
+    elif spec.get("skillMatchesClone") is False:
+        stop1.append("the installed skill differs from the clone's copy: refresh the install or confirm")
     broken, orphans = insp.get("brokenInstalls", []), insp.get("orphanRecords", [])
     mismatch = [s for s in skills if s["languageMatchesRepo"] is False]
     finished_orphans = [o for o in orphans if o["runStatus"] == "finished"]
@@ -330,8 +343,58 @@ def eligibility_line(elig):
     return f"Eligibility  {elig.get('decision')}: {what}{repo} ({reason}){names}; STOP-16"
 
 
+def clone_label(spec):
+    """How the State summary names the clone's kind (13.4)."""
+    shared = spec.get("isSharedClone")
+    return {"shared": "shared clone", "env": f"shared clone ({spec.get('foundBy')})",
+            "explicit": "named clone" + (", the shared clone" if shared else ""),
+            "skill-clone": "skill clone" + (", the shared clone" if shared else " (not the shared clone)")}.get(
+        spec.get("kind"), spec.get("kind") or "?")
+
+
+def sync_plan(spec):
+    """What Step 0's spec-clone sync offers after STOP-16 (13.9), from the offline status. Never runs it."""
+    if not spec:
+        return None
+    script = "python3 <skill-dir>/scripts/ensure_spec_clone.py"
+    if spec.get("code") == "SPEC_CLONE_NOT_FOUND" and spec.get("bootstrapPath"):
+        path = spec["bootstrapPath"]
+        return {"step": "bootstrap", "ask": "STOP-1 with STOP-6, after STOP-16", "bootstrapPath": path,
+                "partialLeftovers": spec.get("partialLeftovers") or [],
+                "command": f"{script} --bootstrap",
+                "options": ["give the path of an existing clone",
+                            f"clone ably/specification to {path} (network: about 30 MiB from github.com)", "stop"],
+                "summary": "bootstrap offered after STOP-16"}
+    if not spec.get("specClone") or spec.get("code") not in (None, "SPEC_CLONE_INCOMPLETE"):
+        return {"step": "none", "summary": "none until the clone is settled at STOP-1"}
+    if not spec.get("syncEligible"):  # only the shared clone is synced, however it was found
+        return {"step": "none", "synced": False, "warning": spec.get("notSyncedWarning"),
+                "summary": "not synced (not the shared clone)"}
+    policy, blocked = spec.get("syncPolicy") or "ask", spec.get("fastForwardBlockedBy") or []
+    arg = f" --spec-clone {spec['specClone']}" if spec.get("kind") == "explicit" else ""
+    if policy == "off":
+        return {"step": "none", "policy": "off", "summary": "not updated (ABLY_SPEC_SYNC=off)"}
+    if "ORIGIN_NOT_ABLY_SPEC" in blocked:
+        return {"step": "ask", "policy": policy, "blockedBy": blocked, "ask": "STOP-6, after STOP-16",
+                "options": ["use it as it is", "stop"], "command": None,
+                "summary": "origin isn't ably/specification: no fetch; ask"}
+    if blocked:
+        return {"step": "ask" if policy == "ask" else "none", "policy": policy, "blockedBy": blocked,
+                "ask": "STOP-6, after STOP-16" if policy == "ask" else None, "command": f"{script} --fetch{arg}",
+                "options": ["use it as it is", "fetch only (network: updates origin/main; no branch or file changes)",
+                            "stop"] if policy == "ask" else None,
+                "summary": f"no fast-forward ({', '.join(blocked)}): "
+                          + ("ask: use as is, fetch only, or stop" if policy == "ask" else "used as is (auto)")}
+    return {"step": "ask" if policy == "ask" else "update", "policy": policy, "blockedBy": [],
+            "ask": "STOP-6, after STOP-16" if policy == "ask" else None, "command": f"{script} --update{arg}",
+            "options": ["yes, this run: fetch and fast-forward main", "no, use it as it is",
+                        "always: the user sets ABLY_SPEC_SYNC=auto", "never ask: the user sets ABLY_SPEC_SYNC=off"]
+            if policy == "ask" else None,
+            "summary": "ask at STOP-6 after STOP-16" if policy == "ask" else "fetch and fast-forward (auto)"}
+
+
 def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, state, caps=None, delta=None,
-                  added=(), lowered=(), stop17=None, others=None):
+                  added=(), lowered=(), stop17=None, others=None, sync=None):
     if state["class"] == "INELIGIBLE":
         return state["reasons"][0]
     dt = insp.get("derivedTests", {})
@@ -340,6 +403,12 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
     sources = {src.get("namesSource") for src in (lo, caps) if src and src.get("namesSource")}
     fallback = bool(sources) and sources != {"spec"}
     lines = []
+    if (spec or {}).get("notSyncedWarning"):
+        lines.append(f"WARNING      SPEC CLONE NOT SYNCED: {spec['notSyncedWarning']}")
+    elif (spec or {}).get("staleWarning"):
+        lines.append(f"WARNING      STALE SPEC CLONE: {spec['staleWarning']}; "
+                    + ("the sync is off (ABLY_SPEC_SYNC=off)" if spec.get("syncPolicy") == "off" else
+                        "offer the sync at STOP-6 (13.9)"))
     if fallback:
         lines.append("WARNING      SPEC NAMES FALLBACK: the spec clone's IDL wasn't parsed; the LiveObjects and capability "
                       "verdicts below are unreliable; settle it at STOP-1 first")
@@ -347,15 +416,24 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
         f"Repo         {repo_name} @ {(head or '?')[:8]} ({'dirty' if dirty else 'clean'}); languages: {langs}",
         eligibility_line(elig),
         (f"Spec clone   {spec.get('specClone')} @ {(spec.get('sha') or '?')[:8]} "
-          f"({'dirty' if spec.get('dirty') else 'clean'}); found by {spec.get('foundBy')}; "
+          f"({'dirty' if spec.get('dirty') else 'clean'}); {clone_label(spec)}; "
+          f"{'branch ' + spec['branch'] if spec.get('branch') else 'detached'}; found by {spec.get('foundBy')}; "
           f"creator {spec.get('skillVersion')} (matches clone: "
           f"{ {True: 'yes', False: 'no'}.get(spec.get('skillMatchesClone'), 'unknown')})"
           if (spec or {}).get("ok") else
           f"Spec clone   {spec['specClone']} (not usable: {spec.get('code')}: {spec.get('message')}); settle it at "
           "STOP-1" if (spec or {}).get("specClone") else
-          f"Spec clone   NOT FOUND ({(spec or {}).get('code', 'unknown error')}): ask for its path at STOP-1"),
-        "Model        (state the session's model; Opus-class required)",
+          f"Spec clone   {'NOT FOUND' if (spec or {}).get('code') == 'SPEC_CLONE_NOT_FOUND' else 'NOT USABLE'} "
+          f"({(spec or {}).get('code', 'unknown error')}): "
+          + (f"no clone at {spec['bootstrapPath']}; after STOP-16, offer to clone it there (STOP-1 with STOP-6, 13.9) "
+            "or ask for its path" if (spec or {}).get("bootstrapPath") else
+            ((spec or {}).get("message") or "") + "; settle it at STOP-1")),
     ]
+    if (spec or {}).get("stalenessLine"):
+        lines.append(f"             {spec['stalenessLine']}; "
+                    + (f"sync: {(sync or {}).get('summary', 'none')}" if spec.get("syncEligible") else
+                        "not synced (not the shared clone)"))
+    lines.append("Model        (state the session's model; Opus-class required)")
     if sources:
         rev = ((caps or lo or {}).get("specRevision") or {}).get("sha")
         read = (caps or lo or {}).get("specClone")
@@ -408,6 +486,8 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
                           f" objects notes: {s['objectsNotes']}")
             lack = s["tiersLackingSmoke"]
             lines.append(f"Harness      {s['harness']}; smoke/self-test files: {s['smokeOrSelfTestFiles']}"
+                          + (f" by name; {s['selfTestCandidates']} candidate(s) by location (read to confirm)"
+                            if s.get("selfTestCandidates") else "")
                           + (f"; offered tiers lacking them: {lack if isinstance(lack, str) else ', '.join(lack)}"
                             + (" (some files don't name a tier)" if lack == "unknown" else "") if lack else ""))
             if s["records"]:
@@ -425,7 +505,15 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
     problems += [f"{d}: another uts-to-* skill, not classified (--skill-dir)" for d in others or []]
     if problems:
         lines.append("Problems     " + "; ".join(problems))
-    if changes and changes.get("anchorPresent"):
+    if changes and not changes.get("anchorPresent"):
+        if changes.get("anchorSpec"):  # a recorded SHA this clone lacks; None when the records name no SHA
+            fetch = ("fetch it (STOP-6, 13.9)" if (spec or {}).get("syncEligible") else
+                    "the user fetches it (this clone isn't synced)")
+            lines.append(f"Changes      recorded spec {changes['anchorSpec'][:8]} isn't in this clone: {fetch}, or "
+                        "run a full gap audit")
+        else:
+            lines.append("Changes      the records name no spec SHA: run a full gap audit")
+    elif changes:
         lines.append(f"Changes      since recorded spec {changes['anchorSpec'][:8]}: guide {changes['guide']}, UTS docs "
                       f"{changes['utsDocs']}, helper specs {changes['helperSpecs']}, corpus {changes['corpus']} files; "
                       f"checklist changed: {'yes' if changes['checklistChanged'] else 'no'}"
@@ -498,7 +586,7 @@ def main(argv):
             print(json.dumps({"ok": False, "code": "NOT_A_SPEC_CLONE", "message": spec.get("message"),
                               "missing": spec.get("missing"),
                               "fix": "pass the path of a local ably/specification clone (or a directory inside "
-                                      "one) with --spec-clone, or correct UTS_SPEC_CLONE, then run again"}, indent=2))
+                                      "one) with --spec-clone, or correct ABLY_SPEC_CLONE, then run again"}, indent=2))
             return 1
         # Set on success, and on GIT_ERROR (a spec copy that isn't a git checkout): never drop an explicit clone.
         clone = (spec or {}).get("specClone")
@@ -573,13 +661,32 @@ def main(argv):
                 changes.get(k) for k in ("guide", "utsDocs", "helperSpecs", "corpus", "repo")):
             state["reasons"].append("nothing changed since the recorded run")
             state["recommended"] = "Stop"
+        if state["class"] == "S2" and not state["reentry"] and changes and not changes.get("anchorPresent"):
+            if changes.get("anchorSpec"):
+                fetch = "fetch it (STOP-6)" if (spec or {}).get("syncEligible") else \
+                    "the user fetches it (this clone isn't synced)"
+                state["reasons"].append(f"recorded spec {changes['anchorSpec'][:8]} isn't in this clone: diff-driven "
+                                        f"can't diff; {fetch} and rerun, or run the full gap audit")
+            else:
+                state["reasons"].append("the records name no spec SHA: diff-driven can't diff; run the full gap audit")
+            state["recommended"] = "Upgrade/Fix, full gap audit (section 11)"
+        sync = sync_plan(spec)
+        if (spec or {}).get("notSyncedWarning"):
+            warnings.append(f"spec clone: {spec['notSyncedWarning']}")
+        if (spec or {}).get("staleWarning"):
+            warnings.append(f"spec clone: {spec['staleWarning']}")
+        warnings += [f"spec clone: {w}" for w in (spec or {}).get("warnings", [])]
         head = (git(repo, "rev-parse", "HEAD") or "").strip() or None
         dirty = bool((git(repo, "--no-optional-locks", "status", "--porcelain") or "").strip())
         stop16 = None if not elig or elig.get("decision") == "accept" else (elig.get("reason") or elig.get("message"))
         result.update(
             head=head, dirty=dirty, stop16=stop16,
-            stop1=stop1, spec={k: (spec or {}).get(k) for k in ("ok", "code", "specClone", "foundBy", "sha", "dirty",
-                                                                "skillVersion", "skillMatchesClone")},
+            stop1=stop1, spec={k: (spec or {}).get(k) for k in (
+                "ok", "code", "specClone", "kind", "foundBy", "isSharedClone", "syncEligible", "notSyncedWarning",
+                "sha", "branch", "detached", "dirty",
+                "upstream", "onOriginMain", "fastForwardBlockedBy", "staleWarning", "syncPolicy", "bootstrapPath",
+                "partialLeftovers",
+                "missing", "skillVersion", "skillMatchesClone")}, specSync=sync,
             repoLanguages=insp.get("repoLanguages"), skills=skills, brokenInstalls=insp.get("brokenInstalls"),
             orphanRecords=insp.get("orphanRecords"), otherRepoSkills=insp.get("otherRepoSkills"),
             unclassifiedSkills=others,
@@ -601,7 +708,7 @@ def main(argv):
                           "summary": (lo or {}).get("summary")}),
             changesSinceRecorded=changes, state=state)
         result["stateSummaryText"] = summary_text(repo.name, head, dirty, elig, spec, insp, skills, lo, changes, state,
-                                                  caps, delta, added, lowered, stop17, others)
+                                                  caps, delta, added, lowered, stop17, others, sync)
         if "--full" in flags:
             result["raw"] = {"spec": spec, "inspect": insp, "liveObjects": lo, "capabilities": caps}
         print(json.dumps(result, indent=2, ensure_ascii=False))

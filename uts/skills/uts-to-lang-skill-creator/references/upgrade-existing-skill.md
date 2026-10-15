@@ -97,7 +97,7 @@ The harness rows are decided at STOP-3, where in Upgrade/Fix the user chooses pe
 | 1 | Already done before U2 (Repo profile, STOP-2, STOP-14) |
 | 2 | Start the gap table from section C. Assess the existing harness as 4.2 says ("check it, don't trust it"). Design only the rows the chosen items and the missing MUST rows need. At STOP-3, decide per row (11.4) |
 | 3 | Build the rows chosen at STOP-3. Don't change the behaviour of any harness code that existing UTS-derived tests or native tests use (2.2). Re-run the existing harness tests before and after each change. STOP-7 as usual |
-| 4 | Pre-fill D-01 to D-26 with what the existing skill does ("Decided by: existing skill"), and propose a change only where a chosen item needs one. Fill in D-27 to D-29 and D-31 (from Orient and Phase 1); D-30 is refreshed in Phase 7. At STOP-8, show the changed decisions, and the rows from 11.3 whose status changed |
+| 4 | Pre-fill D-01 to D-26 and D-32 with what the existing skill does ("Decided by: existing skill"), and propose a change only where a chosen item needs one. Fill in D-27 to D-29 and D-31 (from Orient and Phase 1); D-30 is refreshed in Phase 7. At STOP-8, show the changed decisions, and the rows from 11.3 whose status changed |
 | 5 | Edit the files in place, by the rules below the table |
 | 6 | 11.6 decides which of 8.1 to 8.8 run, and adds the baseline comparison |
 | 7 | The Final report, with its "Existing assets and upgrade summary". If the user asks for commits, offer one per closed item, from the changelog, harness rows first ([9](../SKILL.md#9-phase-7-final-report-and-handover)) |

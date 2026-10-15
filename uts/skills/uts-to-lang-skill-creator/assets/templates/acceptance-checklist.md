@@ -24,7 +24,7 @@
 | Module notes for every diverging module; `objects` decided from evidence of the LiveObjects public API (full notes if exposed, even if incomplete; a placeholder or an entry with every tier marked not ready otherwise) | 7.5; D-23; 12.1–12.3; D-28 (decided at STOP-14) | 7.5 acceptance; 8.5 paths 3–4 | |
 | Scripts run on every developer platform (path handling, UTF-8, LF) | 7.1–7.3; D-02 | 8.1 (path parts, `~`), 8.6 (platforms) | |
 | **Workflow** | | | |
-| Required reading incl. features specs, from the same clone | 7.6 (step 0) | 8.3 pilot | |
+| Required reading incl. features specs, from the same clone, synced first (SHOULD; D-32) | 7.6 (step 0) | 8.3 pilot; 8.5 path 11 | |
 | Steps 0 and A–F: the four questions and the harness preflight (stop on red) | 7.6 | 8.3 pilot (green preflight first); 8.5 paths 8–9 | |
 | Steps 1–7 with batching; a reference test per tier; review in both modes | 7.6; 8.8 | 8.3 pilot; 8.8 | |
 | Unmapped constructs stop and ask; corpus scanner in `scripts/` (SHOULD) | 7.4; 7.6; D-19 | 8.3 pilot; 8.5 (re-sync) | |

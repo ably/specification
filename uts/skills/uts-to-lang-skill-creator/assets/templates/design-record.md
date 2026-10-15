@@ -1,7 +1,7 @@
 # Design record: uts-to-<lang>
 
 ## Inputs at generation time
-- Spec clone: <sha> (clean | dirty: <files>); guide/skill: <sha of last change>; uts-to-lang-skill-creator version <metadata.version>
+- Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>; guide/skill: <sha of last change>; uts-to-lang-skill-creator version <metadata.version>
 - Repo: <sha>
 - Repo profile confirmed: <date>; harness option at STOP-3: (a | b | c); harness confirmed: <date>
 - Harness README: <full repo path>
@@ -47,6 +47,7 @@
 | D-29 | Gap-audit choices: add / skip / defer per GA- or CH- item; preserve list (STOP-15; n/a in create mode) | | | | |
 | D-30 | Provenance stamp (metadata.generated-by, metadata.records) and Run status | | | | |
 | D-31 | Capability profile and skill scope (STOP-13 or STOP-17) | | | | |
+| D-32 | Spec-clone sync in the generated skill (ensure_spec_clone.py copied; ABLY_SPEC_SYNC) | | | | |
 
 ### D-03 mapping
 | Module | unit | integration | proxy | notes | hand-maintained? |
