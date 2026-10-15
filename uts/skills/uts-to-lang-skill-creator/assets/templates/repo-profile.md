@@ -1,7 +1,7 @@
 # Repo profile: <repo name>
 
 ## State summary (Orient, STOP-13)
-(paste orient.py's stateSummaryText, completed with the model, the capability profile confirmed at STOP-13 or STOP-17 (D-31), and the option chosen at STOP-13)
+(paste orient.py's stateSummaryText (the text form of the State summary shown at STOP-13), completed with the model, the capability profile confirmed at STOP-13 or STOP-17 (D-31), and the option chosen at STOP-13)
 
 - Repo: <path>, HEAD <sha> (clean | dirty: <files>)
 - Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>; guide/skill last changed in <sha>; skill version <metadata.version>

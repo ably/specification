@@ -46,7 +46,7 @@
 | D-28 | LiveObjects support: full / placeholder / none; translate-only / evaluate; SDK-blocked tiers and evidence, if any (STOP-14, 12.5) | | | | |
 | D-29 | Gap-audit choices: add / skip / defer per GA- or CH- item; preserve list (STOP-15; n/a in create mode) | | | | |
 | D-30 | Provenance stamp (metadata.generated-by, metadata.records) and Run status | | | | |
-| D-31 | Capability profile and skill scope (STOP-13 or STOP-17) | | | | |
+| D-31 | Capability profile, skill scope and side: the UTS infrastructure plan (STOP-13 or STOP-17; side re-confirmed at STOP-3) | | | | |
 | D-32 | Spec-clone sync in the generated skill (ensure_spec_clone.py copied; ABLY_SPEC_SYNC) | | | | |
 
 ### D-03 mapping

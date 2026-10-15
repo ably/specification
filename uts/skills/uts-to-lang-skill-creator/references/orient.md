@@ -26,7 +26,7 @@ Contents:
 
 ## 13.1 Run it
 
-Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass the spec clone the user named, if any. Add `--skill-dir <path>` when the user names the skill, `--records <dir>` when they say where its working records are (with `--skill-dir`, it applies to the named skill only), `--include-submodules` to scan submodule sources too, and `--full` for the raw script outputs. The script runs this skill's read-only scripts in order and prints one JSON object:
+Run `python3 <skill-dir>/scripts/orient.py <repo> [--spec-clone <path>]`. Pass the spec clone the user named, if any. Add `--skill-dir <path>` when the user names the skill, `--capability-override rest=<level>,realtime=<level>` or `--side <core|server|device|both>` when the user corrects a capability or chooses the side at STOP-17 (13.8), `--records <dir>` when they say where its working records are (with `--skill-dir`, it applies to the named skill only), `--include-submodules` to scan submodule sources too, and `--full` for the raw script outputs. The script runs this skill's read-only scripts in order and prints one JSON object:
 
 1. `spec_clone_info.py`: resolves the spec clone every other script reads, offline ([2.6](../SKILL.md#26-pin-the-spec-clone)).
 2. `check_repo_eligibility.py`, with or without a clone: on a reject, nothing else runs.
@@ -44,14 +44,14 @@ The clone `spec_clone_info.py` resolved (the argument, walked up to the clone ro
 - `foundBy` other than `argument`: shown in the State summary (with the clone's kind) and confirmed with the STOP-13 answer.
 - `skillMatchesClone: false` (an installed copy that differs from this clone's copy of the skill, also reported in `warnings`): STOP-1; ask the user to refresh the install, or to confirm which version to follow.
 
-The JSON has `state` (class, re-entry, reasons, recommended option, options) and `stateSummaryText`, the same under Claude Code and Codex. The facts behind them are in the other fields.
+The JSON has `state` (class, re-entry, reasons, recommended option, options), the State summary in two forms (`stateSummaryMarkdown`, shown at STOP-13, and `stateSummaryText`, pasted into the Repo profile; 13.4), `specCloneWarning`, and for STOP-17 `stop17`, `stop17Markdown` and `infraPlan` (13.8). The facts behind them are in the other fields.
 
-If Orient stopped with `NOT_A_SPEC_CLONE`, settle the clone's path (STOP-1) and rerun Orient first. Then settle the stops in this order, in as few messages as possible:
+If Orient stopped with `NOT_A_SPEC_CLONE`, settle the clone's path (STOP-1) and rerun Orient first. Then settle the stops in this order, in as few messages as possible, each stop in its own block as [asking.md](asking.md) lays out, with one **Reply with:** line at the end:
 
 1. **STOP-16** (13.2), if the repo isn't plainly eligible.
 2. **The spec-clone sync** (13.9), as `specSync` describes; rerun Orient if it moved HEAD or created the clone.
 3. **STOP-1** for the model (2.8) and for anything listed in `stop1`, such as the spec clone's path or a stale install of this skill.
-4. **STOP-17** (13.8), when `stop17` is set: the capability profile needs confirming.
+4. **STOP-17** (13.8), when `stop17` is set: the UTS infrastructure plan, because the capability profile needs confirming or the side is undecided.
 5. **STOP-13** (13.4).
 
 If the user's request conflicts with the state (for example "create a skill" when one exists), say so at STOP-13.
@@ -115,17 +115,27 @@ A version number alone proves nothing.
 
 ## 13.4 The State summary and STOP-13
 
-Show `stateSummaryText`, completed with the session's model. Its layout:
+Show `stateSummaryMarkdown`, completed with the session's model, before the stop blocks. It is Orient's facts as a two-column table that wraps cleanly in a terminal, with each warning first, as a bold line starting with ⚠:
+
+- **Spec clone not synced** (`specCloneWarning`, for a clone that isn't the shared clone, 13.9). It says what this run reads from that clone (the guide, UTS docs, helper specs, corpus and features specs) and that it won't be updated. It has two forms:
+  - a *notice* when the clone has `main` checked out, with no tracked changes and no local commits: where it is, and how far behind `origin/main` it was at the last fetch;
+  - a *warning* ("…, and not on main", "…, and not on origin/main", "…, and has tracked changes") when the clone is on another branch or a detached HEAD, carries commits not on `origin/main`, or has tracked changes. It gives the branch and the ahead/behind counts, says the harness, the construct catalogue and the records will follow that clone, and that the STOP-13 answer confirms using it. Untracked files don't count: notes in the clone aren't specs (2.6).
+- **Stale spec clone**, for the shared clone only: the last fetch is over 30 days old, or unknown (13.9).
+- **Spec names fallback** (below).
+
+The table's rows, in order: Repo, Eligibility, Spec clone, Sync, Creator, Model, Spec names, Capabilities, Method gaps, Native SDK, Sides, Scope, Plan, Capability change, Skill, Harness, Records (or Skills and Harness when there is no skill), Problems, Changes, UTS tests, LiveObjects, User-level, State, Recommended. Optional rows appear only when they apply, as in the text form below. Each cell is one short line; a longer value is cut with "…", and the JSON field has it in full. For an ineligible repo, `stateSummaryMarkdown` is the single bold line "⚠ Not eligible." with the script's message.
+
+The table carries every fact in short form; the fixed-width text, `stateSummaryText`, spells each one out (for example every module and tier count, the deviations.md paths, the LiveObjects summary), and it is what the Repo profile records. Its layout:
 
 ```
-WARNING      SPEC CLONE NOT SYNCED: Using <the spec clone you named | the clone this skill is installed from> (<path>). It isn't synced; make sure its UTS specs are up to date.     (only for a clone that isn't the shared clone, 13.9)
+WARNING      SPEC CLONE NOT SYNCED[, AND <NOT ON MAIN | NOT ON ORIGIN/MAIN | HAS TRACKED CHANGES>[ AND HAS TRACKED CHANGES]]: <what this run reads from <the spec clone you named | the clone this skill is installed from> (<path>), its branch and drift>     (only for a clone that isn't the shared clone, 13.9)
 WARNING      STALE SPEC CLONE: <staleWarning>; offer the sync at STOP-6 (13.9) | the sync is off (ABLY_SPEC_SYNC=off)     (only for the shared clone, when the last fetch is over 30 days old, or unknown)
 WARNING      SPEC NAMES FALLBACK: the spec clone's IDL wasn't parsed; the LiveObjects and capability verdicts below are unreliable; settle it at STOP-1 first     (only on fallback)
 Repo         <name> @ <sha8> (clean|dirty); languages: <counts>
 Eligibility  accept: <owner>/<repo> via <remote> (<current|legacy|planned> name)[; canonical <name>][; planned rename <name>][; capability override rest <level>, realtime <level>]
               | ask: <no remote | no github.com remote | not a git repo | a fork? | no client definition in few files>[ <owner>/<repo>] (<reason>); STOP-16
 Spec clone   <path> @ <sha8> (clean|dirty); <shared clone | named clone | skill clone (not the shared clone) | …>; branch <name> | detached; found by <how>; creator <version> (matches clone: <yes|no|unknown>)
-              HEAD committed <n> days ago; origin/main as last fetched <n> days ago was <n> commit(s) ahead; the real gap may be larger; sync: <what 13.9 will offer> | not synced (not the shared clone)
+              HEAD committed <n> days ago; <a> ahead / <b> behind origin/main as of the last fetch (<n> days ago)  |  origin/main: unknown (never fetched); sync: <what 13.9 will offer> | not synced (not the shared clone)
               | NOT FOUND (SPEC_CLONE_NOT_FOUND): no clone at <path>; after STOP-16, offer to clone it there …  |  NOT USABLE (<code>): <message>; settle it at STOP-1  |  <path> (not usable: <code>: <message>)
 Model        <name and ID> (Opus-class: yes|no)
 Spec names   from the spec clone's IDL @ <sha8> | from the spec clone's IDL (revision unknown: not a git checkout)  |  FALLBACK, don't rely on the LiveObjects or capability verdicts: <warning>
@@ -133,8 +143,9 @@ Capabilities rest <full|partial|absent> (<clients>); realtime <full|partial|abse
 Method gaps  advisory, realtime partial (<n>): <spec point> <role>.<member>, …; likely deviations or not-implemented, decided per test, never out of scope     (only when realtime is partial)
 Native SDK   wraps native SDKs over a platform bridge: hooks probably unreachable from the SDK language: unit tier only if hooks exist (P-13); integration and proxy still offered     (only if wrapsNativeSdk)
 Side         <side>: rest <entry points | none>; realtime <entry points | none>     (one line per side; only for an SDK with doors)
-              STOP-17 must ask which side the UTS tests construct clients through: (a) core/internal constructor (the sanctioned internal-access route), (b) server door, (c) device door, (d) both doors as a harness parameter; the scope follows the side (D-31)
+              side: <chosen side (from --side | records (D-31))> | asked at STOP-17 (13.8)
 Scope        <full|rest-only|realtime-only|unclear|none>: <modules> (objects per STOP-14)[; undecided: realtime, objects (ask at STOP-17)][; unsupported: <module> (<reason>)][; <n> capability-inapplicable test(s) or path(s)][; plus <n> REST-only test(s) under realtime][; partial skill, extendable by Upgrade/Fix]; confirm <with STOP-13 | at STOP-17>
+Plan         confirm <at STOP-17 | with STOP-13>: <tiers>; smoke tests and self-tests per tier | existing harness (<where>), audited at U1 and STOP-15; side: <side | asked at STOP-17 | one side>; left out: <modules or tests | nothing>
 Capability   changed since the recorded run: <item old -> new>, …[; added: <capabilities>][; lower than recorded: <capabilities>]     (only if it changed)
 Skill        <path> [installs: …] name <name|missing>, version <v|none>, origin <creator-records|creator-metadata|unknown>     (one per skill)
               inspector hints: <f> fail, <w> warn, <p> pass (regex, not a review); mapping: <modules>; objects notes: <present|placeholder|none>
@@ -154,11 +165,11 @@ Recommended  <option>  |  none (S4): ask which skill
 
 The **Spec names** line says where the detectors' names came from (13.8). "FALLBACK" means the spec clone's IDL couldn't be parsed, so the detectors used the data file's minimal names: the LiveObjects and capability verdicts are unreliable. Orient then also puts the **WARNING** line first, and adds the problem to `stop1` and `warnings`. Settle it at STOP-1 (fix the clone, or report the parser gap) before relying on either verdict; never go on silently with fallback names. "(revision unknown: not a git checkout)" means the names came from the IDL, but the clone isn't a git checkout, so the records can't pin its SHA: settle that at STOP-1 too.
 
-The **Spec clone** line's second line is offline: how old HEAD is, and how far behind `origin/main` was at the last fetch; after the sync, replace its `sync:` part with the sync's outcome (13.9), as you complete the Model line. For a clone that isn't the shared clone it says "not synced", and the SPEC CLONE NOT SYNCED warning comes first: nothing suggests syncing it. **Changes** says so when the recorded spec SHA isn't in the clone: then Orient recommends the full gap audit, because diff-driven can't diff (13.9, "Reproducibility"). A **Harness** candidate found by location is an untagged test file under the harness root that uses a harness type: read it before counting it as a self-test.
+The **Spec clone** line's second line (in the table, the **Sync** row) is offline: how old HEAD is, and how far ahead of and behind `origin/main` it was at the last fetch; after the sync, replace its `sync:` part (the Sync row's last part) with the sync's outcome (13.9), as you complete the Model row. For a clone that isn't the shared clone it says "not synced", and the SPEC CLONE NOT SYNCED warning comes first: nothing suggests syncing it. **Changes** says so when the recorded spec SHA isn't in the clone: then Orient recommends the full gap audit, because diff-driven can't diff (13.9, "Reproducibility"). A **Harness** candidate found by location is an untagged test file under the harness root that uses a harness type: read it before counting it as a self-test.
 
-The other optional lines: **Method gaps** (only when realtime is `partial`) and **Native SDK** (only when `wrapsNativeSdk`) come from the capability detector (13.8). The **Side** lines, and the side question under them, appear only when the SDK has device or server doors; the question's options depend on which doors exist (13.8). The **Capability** line appears only when the profile differs from the recorded one (13.8, "When the capability or the side changes later"). On an `ask`, the Eligibility line names the question and ends with STOP-16 (13.2).
+The other optional lines: **Method gaps** (only when realtime is `partial`) and **Native SDK** (only when `wrapsNativeSdk`) come from the capability detector (13.8). The **Side** lines appear only when the SDK has device or server doors; the side question itself is part of STOP-17 (13.8). The **Plan** line is the UTS infrastructure plan in one line (13.8): when STOP-17 isn't asked, the STOP-13 answer confirms it. The **Capability** line appears only when the profile differs from the recorded one (13.8, "When the capability or the side changes later"). On an `ask`, the Eligibility line names the question and ends with STOP-16 (13.2).
 
-Then **STOP-13**, always, in every run: the options for the class, with the recommended one marked, and a one-line reason ("Recommended: (1) Upgrade/Fix, full gap audit, because uts-to-kotlin has no records or provenance from this procedure"). Present the options as plain numbered text, so it works the same in Claude Code and Codex.
+Then **STOP-13**, always, in every run, as a block laid out as [asking.md](asking.md) says: the options for the class, the recommended one first and marked, with its one-line reason ("Upgrade/Fix, full gap audit (recommended): uts-to-kotlin has no records or provenance from this procedure"). Its answer also confirms the capability profile and the Plan when STOP-17 wasn't asked, and the spec clone when Orient shows the stronger not-synced warning.
 
 | Class | Options |
 |---|---|
@@ -252,7 +263,7 @@ For example, ably-dotnet's 2.0 branch reports core (REST and Realtime), server (
 - **realtime:** `full` (a public client, all three sub-areas present, and transport evidence: WebSocket code, or `wrapsNativeSdk`), `partial`, `absent`, or `unclear` (a client is declared, but it isn't public and no public factory returns it). A weak realtime, `partial` with connection and channels both absent and no REST client (a Python-like SDK whose naming the scan misses, or a bare `Realtime` class with nothing around it), gets scope kind `unclear` too, never `realtime-only` (unless an override sets realtime).
 - **`methodGapsAdvisory`**, only when realtime is `partial`: the spec members of connection, channels and presence that weren't found, with their spec points (for example `RTN13 connection.ping`). Naming variants make it noisy, so it is advisory only.
 - **`wrapsNativeSdk`:** the SDK wraps native SDKs over a platform bridge (a Flutter plugin's `MethodChannel`), so its test hooks are probably unreachable from its own language (P-13). It counts as transport evidence, because the native SDK carries the transport.
-- **`source`:** `detected`, or `override (whitelist)` (13.2).
+- **`source`:** `detected`, `override (whitelist)` (13.2), or, after the user's correction at STOP-17, `override (your correction, --capability-override)`.
 
 **The scope suggestion.** `scopeSuggestion` has `kind`, `modules`, `unsupported` (module → reason), `capabilityInapplicable` (Test IDs or spec paths), `extraTests` (Test IDs), `undecided` (only when `unclear`) and `confirmAtStop17`. The test lists are derived at run time from the corpus (each test's `Rest(...)` and `Realtime(...)` constructions), so read them from the output, not from this page.
 
@@ -272,22 +283,42 @@ For example, the three RSC24 tests in `rest/integration/batch_presence.md` need 
 
 **Wrappers over native SDKs** (`wrapsNativeSdk`, such as a Flutter plugin). The capability is full, but the hooks live in the wrapped native SDKs. Phase 1 checks whether they are reachable from the SDK's language (P-13); if they aren't, that is a harness gap, and the unit tier is offered only once hooks exist ([4.8](phase-2-design-harness.md#48-step-2h-derive-tier-feasibility)). The integration and proxy tiers are still offered.
 
-**STOP-17** is asked, in the same message as STOP-13 and before the mode options, when Orient sets `stop17`. This is the one list of its triggers: `confirmAtStop17` is set (the profile isn't full, is unclear, has sides, wraps native SDKs, comes from a capability override, or its names come from the fallback), or the profile differs from the recorded D-31 (below). Otherwise the user confirms the profile with their STOP-13 answer. Show the profile with its evidence, the suggested scope, the `reasons`, and the delta if any. The options are:
+**STOP-17: the UTS infrastructure plan.** This skill's deliverable is the `uts-to-<lang>` skill and the harness it runs on, so STOP-17 doesn't ask about "capabilities" in the abstract: it shows the plan the capability profile implies, and the user confirms or adjusts it. Orient derives it as `infraPlan` (and `stop17Markdown`, the question block in the [asking.md](asking.md) format):
 
-- (1) accept the suggested scope;
-- (2) correct a capability, giving evidence, and rerun;
+- **Per tier, the harness pieces,** with their gap-table rows ([`uts-infra-design.md`](../assets/templates/uts-infra-design.md)):
+  - REST unit: the HTTP hook, `MockHttpClient`, the fake clock and the randomness hooks (G-02, G-06, G-03, G-05);
+  - Realtime unit: the WebSocket hook, `MockWebSocket`, the fake clock, the network monitor, the randomness hooks, `MockVCDiff`, `MockNetworkListener` and the wait helpers (G-01, G-07, G-03, G-04, G-05, G-08, G-09, G-11), plus G-02 and G-06 when REST is out of scope (a Realtime client still uses HTTP);
+  - the sandbox and proxy integration tiers: `SandboxApp` (G-15), `ProxyManager` and `ProxySession` (G-16);
+  - on every tier, G-12, G-13, G-14, G-17 and G-18.
+- **The smoke tests and self-tests per tier** (G-19, G-20; guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must)).
+- **What's left out, and why:** `unsupported` modules (capability absent, or not on the chosen side), `undecided` modules (an `unclear` scope: ask at STOP-17 what the SDK offers; never decided as REST-only), the count of capability-inapplicable tests, and `objects`, which STOP-14 decides.
+- **How the harness creates clients** (the side), when the SDK has device or server doors: below.
+
+The plan is an outline from detection. Phase 2 designs it in full, from the Phase 1 facts Orient doesn't have (P-13 injection points, P-14 the internal-access mechanism, P-15 the API surface, P-16 existing mocks and test support), and STOP-3 presents that design against this outline ([4.9](phase-2-design-harness.md#49-step-2i-stop-3-approve-the-design-and-choose-the-scope)).
+
+**When STOP-17 is asked** (`stop17` set; this is the one list of its triggers):
+
+- the capability profile needs confirming: `confirmAtStop17` is set (the profile isn't full, is unclear, wraps native SDKs, comes from a capability override, or its names come from the fallback), or it differs from the recorded D-31 (below); `stop17` then lists those reasons, and the block shows them under "To confirm", with the profile and its evidence (the client names, the Realtime sub-areas, the transport, and the source) and the delta if any;
+- the side is undecided: the SDK has doors, and neither `--side` nor a recorded D-31 side that is still among them chose one.
+
+Otherwise there is no STOP-17: the State summary's Plan row shows the outline, and the STOP-13 answer confirms it, as it confirms the profile. When asked, STOP-17 is one block, before STOP-13 in the same message, with these options:
+
+- (1) accept the plan (recommended);
+- (2) adjust it: the user says what, with evidence; rerun Orient with `--capability-override rest=<level>,realtime=<level>` for a capability or `--side <side>` for the side, show the new plan, and record the change in D-31 with the evidence (the override wins over a whitelist one);
 - (3) stop.
 
-**The side question**, asked at STOP-17 only when `sides` has a server or device door: through which side do the UTS tests construct clients? Orient prints it under the Side lines, and in `stop17`, with options lettered from the doors found. With both doors:
+**In Upgrade/Fix (S2, S3, S4)**, when the repo already has a harness (from the skill's mapping, or a candidate the inspector found), the block names it ("Existing harness: …; audited at U1 and STOP-15, not planned here") instead of the per-tier table, so STOP-17 asks only the side question and any capability confirmation; with no harness found, it shows the per-tier plan as in Create. The existing harness is assessed against the guide in the gap audit ([11.3](upgrade-existing-skill.md#113-step-u2-write-the-gap-audit)), not re-planned here.
 
-- (a) the core/internal constructor, through the sanctioned internal-access route (guide [5.9](../../../docs/writing-uts-spec-translator-skills.md#59-internal-access-white-box-unit-specs); for example `InternalsVisibleTo` for the UTS test project);
+**The side question**, when the SDK has a server or device door: through which entry point does the harness create clients? The options are lettered from the doors found, with the recommended one, if any, moved first. With both doors:
+
+- (a) the core constructors, through the sanctioned internal-access route (guide [5.9](../../../docs/writing-uts-spec-translator-skills.md#59-internal-access-white-box-unit-specs); for example `InternalsVisibleTo` for the UTS test project);
 - (b) the server door;
 - (c) the device door;
 - (d) both doors, as a harness parameter: one suite, run once per side.
 
-With one door, the options are (a) the core/internal constructor, (b) that door, and (c) the core and that door as a harness parameter.
+With one door, the options are (a) the core constructors, (b) that door, and (c) the core and that door as a harness parameter. Each option names its entry points; a door without a REST or Realtime client says that the plan drops those tiers.
 
-Show each side's entry points from the Side lines, and let the user choose. Another SDK's per-side switch (on a branch, ably-cocoa runs its UTS through either its core or its device factory, chosen by an environment variable) is only evidence that a harness-parameter option works. Design this SDK's own; never copy it ([2.1](../SKILL.md#21-your-inputs)).
+The recommendation comes only from evidence: Orient looks in the repo's tracked source under a `uts` path segment for the core constructors (`new <Client>(`) and the doors' entry points, and recommends a side only when exactly one side is used there, naming up to three files. Without such evidence, no option is marked recommended. The side is **provisional**: Phase 1 reads the test support (P-13, P-14, P-16), and STOP-3 re-confirms it. A different side then adds a decision-log entry that supersedes D-31 (2.5). Another SDK's per-side switch (on a branch, ably-cocoa runs its UTS through either its core or its device factory, chosen by an environment variable) is only evidence that a harness-parameter option works. Design this SDK's own; never copy it ([2.1](../SKILL.md#21-your-inputs)).
 
 **The scope follows the chosen side.** A side without a REST client (usually the device door) gives a `realtime-only` scope, and a side with both clients gives `full`. With the harness-parameter option, the scope is the union, and a test one side can't run is capability-inapplicable on that side's run.
 
@@ -330,7 +361,7 @@ A change of side (the SDK gains doors, or the user now wants another side, or bo
 
 ## 13.9 Sync the spec clone
 
-Every run reads the guide, the UTS docs, the helper specs, the corpus and the features specs from one local clone of `ably/specification`, pinned at one SHA (2.6). By default this is a clone shared by every run and every SDK repo, kept current by the **spec-clone sync**: Step 0's only network use, and the only change this procedure makes to a spec clone. The sync runs only when the clone in use is the shared clone, however it was found. Any other clone (one the user names, or the clone this skill is installed from, when it isn't the shared clone) is never fetched or changed, whatever `ABLY_SPEC_SYNC` says, and no sync question is asked for it: Orient shows a static warning instead, "Using the spec clone you named (`<path>`). It isn't synced; make sure its UTS specs are up to date." (or "Using the clone this skill is installed from (`<path>`). …"), and keeping it current is the user's responsibility. `orient.py` and `spec_clone_info.py` stay offline; `scripts/ensure_spec_clone.py` does the sync, and only with approval. The sync is settled after STOP-16, so an ineligible repo is never asked a network question, and before STOP-1. Orient's `specSync` says what to offer, and the command to run.
+Every run reads the guide, the UTS docs, the helper specs, the corpus and the features specs from one local clone of `ably/specification`, pinned at one SHA (2.6). By default this is a clone shared by every run and every SDK repo, kept current by the **spec-clone sync**: Step 0's only network use, and the only change this procedure makes to a spec clone. The sync runs only when the clone in use is the shared clone, however it was found. Any other clone (one the user names, or the clone this skill is installed from, when it isn't the shared clone) is never fetched or changed, whatever `ABLY_SPEC_SYNC` says, and no sync question is asked for it: there is a static warning instead, and keeping it current is the user's responsibility. `ensure_spec_clone.py` reports it as `notSyncedWarning` ("Using the spec clone you named (`<path>`). It isn't synced; make sure its UTS specs are up to date.", or "Using the clone this skill is installed from (`<path>`). …"), the form generated skills show. Orient builds a fuller form from the same offline facts (`specCloneWarning`, 13.4): what this run reads from that clone, its branch and drift, and, when the clone is off `main` or has tracked changes, the stronger warning that the STOP-13 answer confirms. `orient.py` and `spec_clone_info.py` stay offline; `scripts/ensure_spec_clone.py` does the sync, and only with approval. The sync is settled after STOP-16, so an ineligible repo is never asked a network question, and before STOP-1. Orient's `specSync` says what to offer, and the command to run.
 
 ### Which clone
 

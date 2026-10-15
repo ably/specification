@@ -187,6 +187,8 @@ def parse_d31(line):
             "capabilityInapplicable": None, "names": None, "unparsed": []}
     for seg in (x.strip() for x in line.split(";")):
         low = seg.lower()
+        if re.match(r"[a-z-]+\s*:?\s*<", low):  # a template placeholder not filled in yet: no value
+            continue
         m = re.match(r"(rest|realtime|liveobjects)\s+(full|partial|absent|unclear|yes|no)\b", low)
         if m:
             prof[m.group(1)] = m.group(2)
@@ -233,6 +235,9 @@ def read_records(rec_dir):
     profile = None
     if caps:
         profile = parse_d31(caps.group(1))
+        if not any(profile[k] for k in ("rest", "realtime", "liveobjects", "side", "scopeKind", "scopeModules",
+                                        "unsupported", "names", "unparsed")) and profile["capabilityInapplicable"] is None:
+            profile = None  # the template line, not filled in yet: no recorded profile
     elif re.search(r"(?i)scope:\s*rest-only|not applicable: REST-only", text):
         profile = {"raw": None, "from": "older records (REST-only scope, before D-31)", "rest": "full",
                     "realtime": "absent", "liveobjects": None, "side": None, "scopeKind": "rest-only",

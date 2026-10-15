@@ -2,6 +2,7 @@
 
 - Run mode (D-27): …; upgrade: rows seeded from skill-gap-audit.md section C on <date>, each re-checked per 4.2
 - LiveObjects (D-28): full | placeholder | none
+- UTS infrastructure plan (STOP-17 or STOP-13): <tiers and harness pieces>; side: <side> (provisional; re-confirmed at STOP-3: <same | changed to …, decision #n>); differences from the outline: <none | …>
 - Capabilities (D-31): rest …; realtime …; side: …; hooks reachable from the SDK language (P-13): yes | no; rows and tiers needing an absent capability are "n/a — capability absent: <capability> (D-31)", not gaps (13.8)
 
 ## Gap table

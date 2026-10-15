@@ -539,7 +539,8 @@ def main(argv):
         if prof["wrapsNativeSdk"]:
             reasons.append("wraps native SDKs over a platform bridge: test hooks are probably unreachable from the "
                             "SDK language; the unit tier only if hooks exist (P-13), integration and proxy still apply")
-        confirm = bool(scope["kind"] != "full" or rest_level != "full" or rt_level != "full" or prof["sides"]
+        # Sides alone don't need the profile confirmed: Orient asks the side question separately (13.8).
+        confirm = bool(scope["kind"] != "full" or rest_level != "full" or rt_level != "full"
                         or override or prof["wrapsNativeSdk"] or loaded["source"] == "fallback")
         side_text = ""
         if prof["sides"]:
