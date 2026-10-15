@@ -35,8 +35,8 @@ Do this first, in every run, before any phase. `orient.py` is read-only: no buil
 1. **STOP-16**, if the repo isn't plainly eligible ([13.2](references/orient.md#132-repository-eligibility-stop-16)). On a reject, show the script's message exactly and end the run; there is no override.
 2. **The spec-clone sync** ([13.9](references/orient.md#139-sync-the-spec-clone)): Step 0's only network use, for the shared clone only, after STOP-6 (not asked if `ABLY_SPEC_SYNC` is `auto` or `off`); rerun `orient.py` if HEAD moved.
 3. **STOP-1**, if needed: the model tier (2.8) and anything in `stop1`, such as the spec clone (2.6).
-4. **STOP-17**, when `stop17` is set: the UTS infrastructure plan, its scope and side ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)). Record D-31.
-5. **STOP-13**, always: the State summary and the recommended mode ([13.4](references/orient.md#134-the-state-summary-and-stop-13)). Record D-27, then route per [13.5](references/orient.md#135-routing).
+4. **STOP-13**, always: the State summary and the recommended mode ([13.4](references/orient.md#134-the-state-summary-and-stop-13)). Record D-27, then route per [13.5](references/orient.md#135-routing).
+5. **STOP-17**, only while open: the UTS infrastructure plan and side, in a follow-up if it depends on the mode ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31)). Record D-31.
 
 ## 2. Ground rules
 
@@ -72,7 +72,7 @@ and, only as a last resort, the reference implementations.
 
 ### 2.3 Stop points
 
-At a stop point, present what you found and the options, laid out as [asking.md](references/asking.md) says, then wait for the user's answer. Record the question and the answer in the decision log ([design-record template](assets/templates/design-record.md)). Orient's stops are recorded once the records exist; a STOP-16 reject ends the run.
+At a stop point, ask as [asking.md](references/asking.md) says (one question per decision, in plain words), then wait for the answer. Record the question and the answer in the decision log ([design-record template](assets/templates/design-record.md)). Orient's stops are recorded once the records exist; a STOP-16 reject ends the run.
 
 | ID | Phase | When | What you present |
 |---|---|---|---|
@@ -92,7 +92,7 @@ At a stop point, present what you found and the options, laid out as [asking.md]
 | **STOP-14** | 1 (step 1e), every run | Always, in every mode ([12.2](references/liveobjects-support.md#122-stop-14-recommend-then-ask)) | The `detect_liveobjects.py` evidence (names per category, with files and counts), its recommendation and yours; options: full objects support (translate-only if incomplete), placeholder, none now |
 | **STOP-15** | 1 (step 1f), Upgrade/Fix | The gap audit, or the list of detected changes (diff-driven), is written ([11.4](references/upgrade-existing-skill.md#114-step-u3-stop-15-choose-per-item), [section 10](references/upgrade-diff-driven.md#10-upgradefix-diff-driven)) | Every non-conforming item or detected change, with the proposed change and the options add, skip or defer (a skipped or deferred MUST row leaves the skill not conforming); or regenerate from scratch instead |
 | **STOP-16** | 0 (Orient), first stop, before the spec-clone sync | `check_repo_eligibility.py` rejects the repo, or can't decide ([13.2](references/orient.md#132-repository-eligibility-stop-16)) | Reject: the script's exact message (not on the whitelist; or, for `NO_CLIENT_DEFINITION`, no client defined in this checkout); the run ends, with no override. Ask: the remotes found and the question (confirm a fork, name the GitHub repository, check the path) |
-| **STOP-17** | 0 (Orient), with STOP-13 | Orient sets `stop17`: the capability profile needs confirming, or the side is undecided ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31) lists the triggers) | The UTS infrastructure plan (`stop17Markdown`): per tier the harness pieces, smoke tests and self-tests; what's left out and why; how the harness creates clients (the side, provisional until STOP-3); the profile with its evidence when it needs confirming. Options: accept, adjust with evidence (Orient reruns), stop |
+| **STOP-17** | 0 (Orient), after STOP-13 | Open: the profile needs confirming, or the side isn't settled ([13.8](references/orient.md#138-capabilities-and-scope-stop-17-d-31) lists the triggers) | Up to two questions. Is the UTS infrastructure plan right (per tier the harness pieces, smoke tests and self-tests; what's left out and why; the profile's evidence if needed)? Yes, change with evidence (Orient reruns), or stop. How does the harness create clients (the side, provisional until STOP-3)? |
 
 ### 2.4 Never guess
 
@@ -141,7 +141,7 @@ Before starting a phase, read its reference file in full: this table is a map, n
 
 | Phase | Goal | Read first | Writes | Ends at |
 |---|---|---|---|---|
-| 0. Orient | Eligibility, capabilities and scope, state class, mode | [Step 0](#step-0-orient); [orient.md](references/orient.md) | nothing | STOP-16 (if not eligible), STOP-1 (if needed), STOP-17 (if needed), STOP-13 |
+| 0. Orient | Eligibility, capabilities and scope, state class, mode | [Step 0](#step-0-orient); [orient.md](references/orient.md) | nothing | STOP-16 (if not eligible), STOP-1 (if needed), STOP-13, STOP-17 (if open) |
 | 1. Understand the repo | A confirmed Repo profile: how the SDK is built, tested and mocked today; the LiveObjects decision; in Upgrade/Fix, the gap audit or the change list | [phase-1](references/phase-1-understand-repo.md) (and sections 10, 11, 12) | `repo-profile.md`; in Upgrade/Fix `skill-gap-audit.md` | STOP-2, STOP-14 (STOP-15 in Upgrade/Fix) |
 | 2. Design the harness | Reuse, wrap, extend or build each capability; hooks; placement; tier feasibility | [phase-2](references/phase-2-design-harness.md) | `uts-infra-design.md` | STOP-3 |
 | 3. Build and verify the harness | The approved harness, with green per-tier smoke tests and self-tests, wired into CI | [phase-3](references/phase-3-build-harness.md) | harness code and README; build log | STOP-7 |
@@ -244,7 +244,7 @@ Each phase's reference (sections 3 to 8) is linked from [Phases at a glance](#ph
 | [liveobjects-support.md](references/liveobjects-support.md) | Phase 1 step 1e (every run); writing the objects notes | 12 |
 | [phase-4-design-record.md](references/phase-4-design-record.md) | Mapping a guide change to decisions (Upgrade/Fix, diff-driven) | 6 |
 | [phase-5-generate-skill.md](references/phase-5-generate-skill.md) | Listing the corpus harness symbols in Phase 2 (7.4) | 7 |
-| [asking.md](references/asking.md) | Before asking any stop point: how to lay out the question | — |
+| [asking.md](references/asking.md) | Before asking any stop point: the question format, Orient's ready-made questions, and the AskUserQuestion tool in Claude Code | — |
 | [glossary.md](references/glossary.md) | A term is unclear | — |
 | [failure-modes.md](references/failure-modes.md) | A harness check, a pilot test or a command fails in a way you don't recognise | — |
 
@@ -254,7 +254,7 @@ All but `ensure_spec_clone.py` are read-only Python 3, with no network access; t
 
 | Script | Use |
 |---|---|
-| `orient.py <repo> [--spec-clone P] [--skill-dir P] [--records P] [--capability-override rest=L,realtime=L] [--side S] [--include-submodules] [--full]` | Step 0: runs `spec_clone_info.py`, the eligibility check, the inspector and both detectors, classifies the repo, recommends a mode, and derives the UTS infrastructure plan for STOP-17 ([13.1](references/orient.md#131-run-it)) |
+| `orient.py <repo> [--spec-clone P] [--skill-dir P] [--records P] [--capability-override rest=L,realtime=L] [--side S] [--include-submodules] [--full]` | Step 0: runs `spec_clone_info.py`, the eligibility check, the inspector and both detectors, classifies the repo, recommends a mode, derives the UTS infrastructure plan, and words the STOP-13 and STOP-17 questions ([13.1](references/orient.md#131-run-it)) |
 | `spec_clone_info.py [SPEC_CLONE \| --spec-clone P]` | Locate, validate and pin the spec clone; `warnings` is a list, possibly empty ([13.1](references/orient.md#131-run-it)) |
 | `ensure_spec_clone.py [--spec-clone P] [--status \| --fetch \| --update \| --bootstrap]` | Step 0's sync of the shared clone (no other clone): the only script that uses the network or changes the spec clone, and only on approval ([13.9](references/orient.md#139-sync-the-spec-clone)); copied into the generated skill (D-32) |
 | `check_repo_eligibility.py <repo> [--spec-clone P]` | Is the repository on the whitelist? ([13.2](references/orient.md#132-repository-eligibility-stop-16)) |

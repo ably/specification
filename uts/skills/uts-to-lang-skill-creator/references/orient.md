@@ -44,15 +44,24 @@ The clone `spec_clone_info.py` resolved (the argument, walked up to the clone ro
 - `foundBy` other than `argument`: shown in the State summary (with the clone's kind) and confirmed with the STOP-13 answer.
 - `skillMatchesClone: false` (an installed copy that differs from this clone's copy of the skill, also reported in `warnings`): STOP-1; ask the user to refresh the install, or to confirm which version to follow.
 
-The JSON has `state` (class, re-entry, reasons, recommended option, options), the State summary in two forms (`stateSummaryMarkdown`, shown at STOP-13, and `stateSummaryText`, pasted into the Repo profile; 13.4), `specCloneWarning`, and for STOP-17 `stop17`, `stop17Markdown` and `infraPlan` (13.8). The facts behind them are in the other fields.
+The JSON has `state` (class, re-entry, reasons, recommended option, options), the State summary in two forms (`stateSummaryMarkdown`, shown before the questions, and `stateSummaryText`, pasted into the Repo profile; 13.4), `specCloneWarning`, `stop17` (why STOP-17 may be asked) and `infraPlan` (13.8). It also has Orient's questions, ready to ask in the [asking.md](asking.md) format:
 
-If Orient stopped with `NOT_A_SPEC_CLONE`, settle the clone's path (STOP-1) and rerun Orient first. Then settle the stops in this order, in as few messages as possible, each stop in its own block as [asking.md](asking.md) lays out, with one **Reply with:** line at the end:
+- `questions.now`: STOP-13, then any STOP-17 question needed whatever the run mode;
+- `questions.followUp`: STOP-17 questions only some run modes need, each with `askIf`, the STOP-13 options that need it;
+- `questionsMarkdown`, the Markdown form of `questions.now`, and `askUserQuestion`, its Claude Code tool form (null where it doesn't fit);
+- `followUpByOption`: for each STOP-13 option in an `askIf`, the follow-up message with only the questions that option needs, numbered from 1, in both forms.
+
+The facts behind them are in the other fields.
+
+If Orient stopped with `NOT_A_SPEC_CLONE`, settle the clone's path (STOP-1) and rerun Orient first. Then show the State summary and settle the stops in this order, as [asking.md](asking.md) lays out: one question per decision, numbered in the order asked, in plain words, with one reply line at the end of each message:
 
 1. **STOP-16** (13.2), if the repo isn't plainly eligible.
 2. **The spec-clone sync** (13.9), as `specSync` describes; rerun Orient if it moved HEAD or created the clone.
 3. **STOP-1** for the model (2.8) and for anything listed in `stop1`, such as the spec clone's path or a stale install of this skill.
-4. **STOP-17** (13.8), when `stop17` is set: the UTS infrastructure plan, because the capability profile needs confirming or the side is undecided.
-5. **STOP-13** (13.4).
+4. **STOP-13** (13.4), the run mode: always.
+5. **STOP-17** (13.8), the UTS infrastructure plan, only while it is open: the capability profile needs confirming, or the side isn't settled. The run mode decides whether the plan matters (an Upgrade/Fix run audits the existing harness; Create and Regenerate plan a new one), so a STOP-17 question that depends on the STOP-13 answer goes in a follow-up message (`followUpByOption`, for the option chosen), asked only if the answer needs it. One that doesn't depend on it follows STOP-13 in the same message (`questions.now`). Clarity comes before saving a round trip.
+
+Ask the stops that come first in the same message as STOP-13 when they don't change Orient's output, and renumber its questions to follow them.
 
 If the user's request conflicts with the state (for example "create a skill" when one exists), say so at STOP-13.
 
@@ -115,7 +124,7 @@ A version number alone proves nothing.
 
 ## 13.4 The State summary and STOP-13
 
-Show `stateSummaryMarkdown`, completed with the session's model, before the stop blocks. It is Orient's facts as a two-column table that wraps cleanly in a terminal, with each warning first, as a bold line starting with ⚠:
+Show `stateSummaryMarkdown`, completed with the session's model, before the questions. It is Orient's facts as a two-column table that wraps cleanly in a terminal, in plain words ([asking.md](asking.md)), with each warning first, as a bold line starting with ⚠:
 
 - **Spec clone not synced** (`specCloneWarning`, for a clone that isn't the shared clone, 13.9). It says what this run reads from that clone (the guide, UTS docs, helper specs, corpus and features specs) and that it won't be updated. It has two forms:
   - a *notice* when the clone has `main` checked out, with no tracked changes and no local commits: where it is, and how far behind `origin/main` it was at the last fetch;
@@ -123,7 +132,7 @@ Show `stateSummaryMarkdown`, completed with the session's model, before the stop
 - **Stale spec clone**, for the shared clone only: the last fetch is over 30 days old, or unknown (13.9).
 - **Spec names fallback** (below).
 
-The table's rows, in order: Repo, Eligibility, Spec clone, Sync, Creator, Model, Spec names, Capabilities, Method gaps, Native SDK, Sides, Scope, Plan, Capability change, Skill, Harness, Records (or Skills and Harness when there is no skill), Problems, Changes, UTS tests, LiveObjects, User-level, State, Recommended. Optional rows appear only when they apply, as in the text form below. Each cell is one short line; a longer value is cut with "…", and the JSON field has it in full. For an ineligible repo, `stateSummaryMarkdown` is the single bold line "⚠ Not eligible." with the script's message.
+The table's rows, in order: Repo, Eligibility, Spec clone, Sync, Creator, Model, Spec names, Capabilities, Method gaps, Native SDK, Sides, Client setup, Scope, Plan, Capability change, Skill, Skill hints, Harness, Records (or Skills and Harness when there is no skill), Problems, Changes, UTS tests, LiveObjects, User-level, State, Recommended. Optional rows appear only when they apply, as in the text form below. Each line of a value is at most 70 characters, so the table wraps less in a narrow terminal: a longer value continues on the next rows with an empty Field, broken at a "; ", a ", " or a space (never inside a code span), and never cut; only a single word or code span longer than that stays whole on its line. An empty value shows "—". The State row shows the first reason with "(+N more)"; the text form and `state.reasons` have them all. For an ineligible repo, `stateSummaryMarkdown` is the single bold line "⚠ Not eligible." with the script's message.
 
 The table carries every fact in short form; the fixed-width text, `stateSummaryText`, spells each one out (for example every module and tier count, the deviations.md paths, the LiveObjects summary), and it is what the Repo profile records. Its layout:
 
@@ -143,7 +152,7 @@ Capabilities rest <full|partial|absent> (<clients>); realtime <full|partial|abse
 Method gaps  advisory, realtime partial (<n>): <spec point> <role>.<member>, …; likely deviations or not-implemented, decided per test, never out of scope     (only when realtime is partial)
 Native SDK   wraps native SDKs over a platform bridge: hooks probably unreachable from the SDK language: unit tier only if hooks exist (P-13); integration and proxy still offered     (only if wrapsNativeSdk)
 Side         <side>: rest <entry points | none>; realtime <entry points | none>     (one line per side; only for an SDK with doors)
-              side: <chosen side (from --side | records (D-31))> | asked at STOP-17 (13.8)
+              side: <chosen side (from --side | records (D-31) | existing UTS code)>; provisional, re-confirmed at STOP-3 | asked at STOP-17 (13.8)
 Scope        <full|rest-only|realtime-only|unclear|none>: <modules> (objects per STOP-14)[; undecided: realtime, objects (ask at STOP-17)][; unsupported: <module> (<reason>)][; <n> capability-inapplicable test(s) or path(s)][; plus <n> REST-only test(s) under realtime][; partial skill, extendable by Upgrade/Fix]; confirm <with STOP-13 | at STOP-17>
 Plan         confirm <at STOP-17 | with STOP-13>: <tiers>; smoke tests and self-tests per tier | existing harness (<where>), audited at U1 and STOP-15; side: <side | asked at STOP-17 | one side>; left out: <modules or tests | nothing>
 Capability   changed since the recorded run: <item old -> new>, …[; added: <capabilities>][; lower than recorded: <capabilities>]     (only if it changed)
@@ -167,9 +176,9 @@ The **Spec names** line says where the detectors' names came from (13.8). "FALLB
 
 The **Spec clone** line's second line (in the table, the **Sync** row) is offline: how old HEAD is, and how far ahead of and behind `origin/main` it was at the last fetch; after the sync, replace its `sync:` part (the Sync row's last part) with the sync's outcome (13.9), as you complete the Model row. For a clone that isn't the shared clone it says "not synced", and the SPEC CLONE NOT SYNCED warning comes first: nothing suggests syncing it. **Changes** says so when the recorded spec SHA isn't in the clone: then Orient recommends the full gap audit, because diff-driven can't diff (13.9, "Reproducibility"). A **Harness** candidate found by location is an untagged test file under the harness root that uses a harness type: read it before counting it as a self-test.
 
-The other optional lines: **Method gaps** (only when realtime is `partial`) and **Native SDK** (only when `wrapsNativeSdk`) come from the capability detector (13.8). The **Side** lines appear only when the SDK has device or server doors; the side question itself is part of STOP-17 (13.8). The **Plan** line is the UTS infrastructure plan in one line (13.8): when STOP-17 isn't asked, the STOP-13 answer confirms it. The **Capability** line appears only when the profile differs from the recorded one (13.8, "When the capability or the side changes later"). On an `ask`, the Eligibility line names the question and ends with STOP-16 (13.2).
+The other optional lines: **Method gaps** (only when realtime is `partial`) and **Native SDK** (only when `wrapsNativeSdk`) come from the capability detector (13.8). The **Side** lines appear only when the SDK has device or server doors; the side question itself is part of STOP-17 (13.8). In the table they are two rows: **Sides** lists them, and **Client setup** says how the harness creates clients and what settled it (the existing UTS code, with a file and a count; the records; or the user's choice), or that it is asked below. The **Plan** line is the UTS infrastructure plan in one line (13.8): when STOP-17 isn't asked, the STOP-13 answer confirms it. With an existing harness, the table's Plan row says what each kind of run mode does with it: Upgrade/Fix checks it in the audit, and Create or Regenerate builds a new one (with "plan asked next" where a follow-up asks it). The **Capability** line appears only when the profile differs from the recorded one (13.8, "When the capability or the side changes later"). On an `ask`, the Eligibility line names the question and ends with STOP-16 (13.2).
 
-Then **STOP-13**, always, in every run, as a block laid out as [asking.md](asking.md) says: the options for the class, the recommended one first and marked, with its one-line reason ("Upgrade/Fix, full gap audit (recommended): uts-to-kotlin has no records or provenance from this procedure"). Its answer also confirms the capability profile and the Plan when STOP-17 wasn't asked, and the spec clone when Orient shows the stronger not-synced warning.
+Then **STOP-13**, always, in every run: `questions.now[0]`, Question 1 of Orient's questions ([asking.md](asking.md)). It gives the options for the class in plain words, the recommended one first and marked, with one short sentence of why ("The skill wasn't made by this procedure, so its gaps against the guide are unknown."). Its answer also confirms the capability profile and the Plan when STOP-17 wasn't asked (the Plan row says "accepted with your run-mode answer"), and the spec clone when Orient shows the stronger not-synced warning (the warning says so). The table below gives the options by their internal names, which the decision log records; the question words them plainly (for example "Upgrade/Fix, full audit").
 
 | Class | Options |
 |---|---|
@@ -283,7 +292,7 @@ For example, the three RSC24 tests in `rest/integration/batch_presence.md` need 
 
 **Wrappers over native SDKs** (`wrapsNativeSdk`, such as a Flutter plugin). The capability is full, but the hooks live in the wrapped native SDKs. Phase 1 checks whether they are reachable from the SDK's language (P-13); if they aren't, that is a harness gap, and the unit tier is offered only once hooks exist ([4.8](phase-2-design-harness.md#48-step-2h-derive-tier-feasibility)). The integration and proxy tiers are still offered.
 
-**STOP-17: the UTS infrastructure plan.** This skill's deliverable is the `uts-to-<lang>` skill and the harness it runs on, so STOP-17 doesn't ask about "capabilities" in the abstract: it shows the plan the capability profile implies, and the user confirms or adjusts it. Orient derives it as `infraPlan` (and `stop17Markdown`, the question block in the [asking.md](asking.md) format):
+**STOP-17: the UTS infrastructure plan.** This skill's deliverable is the `uts-to-<lang>` skill and the harness it runs on, so STOP-17 doesn't ask about "capabilities" in the abstract: it shows the plan the capability profile implies, and the user confirms or adjusts it. Orient derives it as `infraPlan`, and asks it through the STOP-17 questions in `questions` (13.1, [asking.md](asking.md)):
 
 - **Per tier, the harness pieces,** with their gap-table rows ([`uts-infra-design.md`](../assets/templates/uts-infra-design.md)):
   - REST unit: the HTTP hook, `MockHttpClient`, the fake clock and the randomness hooks (G-02, G-06, G-03, G-05);
@@ -294,35 +303,41 @@ For example, the three RSC24 tests in `rest/integration/batch_presence.md` need 
 - **What's left out, and why:** `unsupported` modules (capability absent, or not on the chosen side), `undecided` modules (an `unclear` scope: ask at STOP-17 what the SDK offers; never decided as REST-only), the count of capability-inapplicable tests, and `objects`, which STOP-14 decides.
 - **How the harness creates clients** (the side), when the SDK has device or server doors: below.
 
+`infraPlan` keeps the gap-table rows; the question shows each tier as one plain bullet (what the harness gets, and its smoke test and self-tests), without them.
+
 The plan is an outline from detection. Phase 2 designs it in full, from the Phase 1 facts Orient doesn't have (P-13 injection points, P-14 the internal-access mechanism, P-15 the API surface, P-16 existing mocks and test support), and STOP-3 presents that design against this outline ([4.9](phase-2-design-harness.md#49-step-2i-stop-3-approve-the-design-and-choose-the-scope)).
 
-**When STOP-17 is asked** (`stop17` set; this is the one list of its triggers):
+**When STOP-17 is asked.** Only while it is open; this is the one list of its triggers:
 
-- the capability profile needs confirming: `confirmAtStop17` is set (the profile isn't full, is unclear, wraps native SDKs, comes from a capability override, or its names come from the fallback), or it differs from the recorded D-31 (below); `stop17` then lists those reasons, and the block shows them under "To confirm", with the profile and its evidence (the client names, the Realtime sub-areas, the transport, and the source) and the delta if any;
-- the side is undecided: the SDK has doors, and neither `--side` nor a recorded D-31 side that is still among them chose one.
+- **The capability profile needs confirming:** `confirmAtStop17` is set (the profile isn't full, is unclear, wraps native SDKs, comes from a capability override, or its names come from the fallback), or it differs from the recorded D-31 (below). `stop17` lists those reasons.
+- **The side is open:** the SDK has doors, and nothing settled it. The side is settled by `--side` (the user's answer), else by a recorded D-31 side that is still among the doors, else by the existing UTS code when it uses exactly one side (the evidence below). That last case is a detected fact, not a question: the State summary's Client setup row shows it with its evidence, and in Upgrade/Fix the audit checks it.
 
-Otherwise there is no STOP-17: the State summary's Plan row shows the outline, and the STOP-13 answer confirms it, as it confirms the profile. When asked, STOP-17 is one block, before STOP-13 in the same message, with these options:
+Otherwise there is no STOP-17, even in Create: the State summary's Plan row shows the outline, and the STOP-13 answer accepts it, as it confirms the profile.
 
-- (1) accept the plan (recommended);
-- (2) adjust it: the user says what, with evidence; rerun Orient with `--capability-override rest=<level>,realtime=<level>` for a capability or `--side <side>` for the side, show the new plan, and record the change in D-31 with the evidence (the override wins over a whitelist one);
-- (3) stop.
+When it is open, STOP-17 is up to two questions, each its own question with one option list ([asking.md](asking.md)):
 
-**In Upgrade/Fix (S2, S3, S4)**, when the repo already has a harness (from the skill's mapping, or a candidate the inspector found), the block names it ("Existing harness: …; audited at U1 and STOP-15, not planned here") instead of the per-tier table, so STOP-17 asks only the side question and any capability confirmation; with no harness found, it shows the per-tier plan as in Create. The existing harness is assessed against the guide in the gap audit ([11.3](upgrade-existing-skill.md#113-step-u2-write-the-gap-audit)), not re-planned here.
+1. **"Is this harness plan right?"**, with the plan as short plain bullets: per tier, what the harness gets and its smoke test and self-tests; what's left out, and why; and, when the profile needs confirming, what was found (the client names, the Realtime sub-areas, the transport) and what to check, in plain words. Options: (1) yes (recommended); (2) change something: the user says what, with evidence; (3) stop. It is needed when the profile needs confirming, and, when the side is open, for a run mode that plans a new harness: Create, Regenerate, or Upgrade/Fix when no harness was found.
+2. **"How should the harness create clients?"**, only when the side is open (the options are below).
 
-**The side question**, when the SDK has a server or device door: through which entry point does the harness create clients? The options are lettered from the doors found, with the recommended one, if any, moved first. With both doors:
+Orient schedules each question against the STOP-13 options (13.1). A question that every run mode needs goes in `questions.now`, after STOP-13. One that only some modes need goes in `questions.followUp`, with those modes in `askIf`, and is asked in a follow-up message once the STOP-13 answer picks one of them. Stop and "Repair the installs first" don't count: after a repair, Orient runs again. The plan question's content follows the mode. In Upgrade/Fix, when the repo already has a harness (from the skill's mapping, or a candidate the inspector found), it names that harness and says the audit checks it, instead of the per-tier bullets; the harness is assessed against the guide in the gap audit ([11.3](upgrade-existing-skill.md#113-step-u2-write-the-gap-audit)), not re-planned here. Create and Regenerate get the per-tier plan. When both kinds of mode need the question, each gets its own version, and `followUpByOption` gives each STOP-13 option only its own.
 
-- (a) the core constructors, through the sanctioned internal-access route (guide [5.9](../../../docs/writing-uts-spec-translator-skills.md#59-internal-access-white-box-unit-specs); for example `InternalsVisibleTo` for the UTS test project);
-- (b) the server door;
-- (c) the device door;
-- (d) both doors, as a harness parameter: one suite, run once per side.
+**Adjusting the plan.** "Change something" and any answer that corrects a capability or chooses the side rerun Orient: `--capability-override rest=<level>,realtime=<level>` for a capability (it wins over a whitelist one) or `--side <side>` for the side. Show the new plan, and record the change in D-31 with the evidence. A follow-up is asked from the first Orient output, without a rerun: its plan says what each client-setup answer would drop. Once every question is answered, rerun Orient once with the answers, so that `infraPlan`, the Plan row and D-31 match them; don't ask again what was answered. Only "Change something" asks again, with the new plan.
 
-With one door, the options are (a) the core constructors, (b) that door, and (c) the core and that door as a harness parameter. Each option names its entry points; a door without a REST or Realtime client says that the plan drops those tiers.
+**The side question**, when the SDK has a server or device door and the side is open: through which entry point does the harness create clients? The options are numbered from the doors found, in plain words, with the recommended one, if any, first. With both doors:
 
-The recommendation comes only from evidence: Orient looks in the repo's tracked source under a `uts` path segment for the core constructors (`new <Client>(`) and the doors' entry points, and recommends a side only when exactly one side is used there, naming up to three files. Without such evidence, no option is marked recommended. The side is **provisional**: Phase 1 reads the test support (P-13, P-14, P-16), and STOP-3 re-confirms it. A different side then adds a decision-log entry that supersedes D-31 (2.5). Another SDK's per-side switch (on a branch, ably-cocoa runs its UTS through either its core or its device factory, chosen by an environment variable) is only evidence that a harness-parameter option works. Design this SDK's own; never copy it ([2.1](../SKILL.md#21-your-inputs)).
+1. the core constructors, through the sanctioned internal-access route (guide [5.9](../../../docs/writing-uts-spec-translator-skills.md#59-internal-access-white-box-unit-specs); for example `InternalsVisibleTo` for the UTS test project);
+2. the server entry point (the server door);
+3. the device entry point (the device door);
+4. both, as a harness setting: one suite, run once per side;
+5. stop.
+
+With one door, the options are the core constructors, that door, the core and that door as a harness setting, and stop. Each option names its entry points; a door without a REST or Realtime client says that those tests are dropped.
+
+The evidence: Orient looks in the repo's tracked source under a `uts` path segment for the core constructors (`new <Client>(`) and the doors' entry points, and finds a side only when exactly one side is used there; it names up to three files, with a count. When the side is open, that evidence can only be missing or conflicting, so no option is marked recommended; `infraPlan.side.recommended` holds the detected side for the cases above. The side is **provisional**, whether detected or chosen: Phase 1 reads the test support (P-13, P-14, P-16), and STOP-3 re-confirms it. A different side then adds a decision-log entry that supersedes D-31 (2.5). Another SDK's per-side switch (on a branch, ably-cocoa runs its UTS through either its core or its device factory, chosen by an environment variable) is only evidence that a harness-parameter option works. Design this SDK's own; never copy it ([2.1](../SKILL.md#21-your-inputs)).
 
 **The scope follows the chosen side.** A side without a REST client (usually the device door) gives a `realtime-only` scope, and a side with both clients gives `full`. With the harness-parameter option, the scope is the union, and a test one side can't run is capability-inapplicable on that side's run.
 
-Record the result as **D-31**, as one parseable line in the Design record. Record the levels detected for the whole repository, not for the chosen side, so that a later Orient compares like with like; the side and the scope carry the choice. For example:
+Record the result as **D-31**, as one parseable line in the Design record, whether STOP-17 was asked or the STOP-13 answer accepted the plan; a side detected from the existing UTS code is recorded with that evidence. Record the levels detected for the whole repository, not for the chosen side, so that a later Orient compares like with like; the side and the scope carry the choice. For example:
 
 ```
 - Capabilities (D-31): rest full; realtime absent; liveobjects no; side: none; scope: rest-only (rest + 3 REST-only tests under realtime); unsupported: realtime, objects (capability absent); capability-inapplicable: 13 tests (listed in the rest notes); names: spec
