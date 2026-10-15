@@ -162,22 +162,18 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 ### Installing the skill creator
 
-Keep one shared clone of this repo, `~/.ably/specification` (`%USERPROFILE%\.ably\specification` on Windows), or wherever `ABLY_SPEC_CLONE` points, and install the skill once, at user level, by symlinking its directory from that clone into both tools' skill directories. Both Claude Code and Codex follow directory symlinks. The clone's checkout must contain `uts/skills/uts-to-lang-skill-creator`; if its `main` doesn't yet, see the last bullet below.
+Clone this repo to `~/.ably/specification` and link the skill into Claude Code and Codex:
 
 ```sh
-SPEC="${ABLY_SPEC_CLONE:-$HOME/.ably/specification}"     # the shared clone
-[ -d "$SPEC/.git" ] || git clone -c core.autocrlf=false --no-recurse-submodules https://github.com/ably/specification.git "$SPEC"
+git clone https://github.com/ably/specification.git ~/.ably/specification
 mkdir -p ~/.claude/skills ~/.agents/skills
-ln -sfn "$SPEC/uts/skills/uts-to-lang-skill-creator" ~/.claude/skills/uts-to-lang-skill-creator   # Claude Code
-ln -sfn "$SPEC/uts/skills/uts-to-lang-skill-creator" ~/.agents/skills/uts-to-lang-skill-creator   # Codex
+ln -sfn ~/.ably/specification/uts/skills/uts-to-lang-skill-creator ~/.claude/skills/uts-to-lang-skill-creator   # Claude Code
+ln -sfn ~/.ably/specification/uts/skills/uts-to-lang-skill-creator ~/.agents/skills/uts-to-lang-skill-creator   # Codex
 ```
 
-- **Keeping it current.** Each run offers to fetch and fast-forward the shared clone's `main`, which also updates the skill; it does so only when `main` is checked out, clean and strictly behind `origin/main`, and otherwise reports the clone's state and asks. It never pulls, resets, stashes or switches branches. Set `ABLY_SPEC_SYNC=auto` to stop being asked, or `off` to stay offline (with no clone at all, the skill still offers to clone one, and asks first). The skill never sets it for you.
-- **An earlier install.** If a copy of the skill directory is already at either install path, remove it first: `ln -sfn` would create the link inside it.
-- **Windows.** Without symlinks (Developer Mode), copy the directory instead, and copy it again after each update; the skill detects a stale copy and asks you to refresh it.
-- **Testing an unmerged spec or skill change.** Add a worktree of the shared clone (`git -C "$SPEC" worktree add <dir> <branch>`) and install the skill from it, or pass `--spec-clone <dir>`; keep the shared clone itself on `main`. The sync runs only when the clone in use is the shared clone, however it was found: a worktree, or any other clone you name, is never synced, and the skill warns you to keep it up to date yourself. Unless you name another clone, the skill reads the one it is installed from, so the guide it reads matches it. If the shared clone's `main` doesn't contain `uts/skills/uts-to-lang-skill-creator` yet, install from a clone or worktree of a branch that does; given only a clone that predates the skill, it stops with `SPEC_CLONE_INCOMPLETE` and says what to do.
+The skill offers to keep that clone up to date each time it runs. If either path already holds a copied folder rather than a link, delete it first. On Windows, copy the folder to both paths instead of linking it.
 
-Then, in the SDK repo, run `/uts-to-lang-skill-creator` (Claude Code) or `$uts-to-lang-skill-creator` (Codex), or ask for a `uts-to-<lang>` skill in your own words; no path is needed (`--spec-clone <path>`, or a path in your words, still names another clone, which isn't synced). Run it on the most capable model tier available (Opus-class). Without installing, any agent can be told: "Read `<spec-clone>/uts/skills/uts-to-lang-skill-creator/SKILL.md` and follow it." The `uts-to-<lang>` skills it generates use the same shared clone by default, with the same rule: a module path into any other clone is used as it is, with a warning.
+Then, in the SDK repo, run `/uts-to-lang-skill-creator` (Claude Code) or `$uts-to-lang-skill-creator` (Codex) on an Opus-class model.
 
 ## Go Test Proxy
 
