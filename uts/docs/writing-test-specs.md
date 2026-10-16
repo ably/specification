@@ -10,6 +10,7 @@ This guide provides comprehensive guidance for writing portable test specificati
 - Test client-side validation and error handling
 - Token strings are opaque - any arbitrary string works for unit tests
 - No network calls - fast and deterministic
+- **Protocol (JSON vs msgpack):** `useBinaryProtocol` defaults to `true` (TO3f), so a plain-key client sends msgpack request bodies. A spec that reads the request body — e.g. `body = parse_json(request.body)` — or otherwise makes assertions that depend on the encoding (a stringified `data`, an `encoding` value, base64 for binary payloads) must pin the protocol on the client under test. Set `useBinaryProtocol: false` in `ClientOptions` to derive against JSON; see `rest/unit/encoding/message_encoding.md` for the pattern in both directions. A spec that does not pin `useBinaryProtocol` is to be derived against JSON.
 
 ### Integration Tests (Ably Sandbox)
 - Run against `https://sandbox.realtime.ably-nonprod.net`
