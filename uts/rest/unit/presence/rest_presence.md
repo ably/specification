@@ -1221,8 +1221,8 @@ channel_name = "test-RSP5g-${random_id()}"
 captured_requests = []
 cipher_key = base64_decode("WUP6u0K7MXI5Zeo0VppPwg==")
 
-# Encrypted data for {"secret":"data"}
-encrypted_data = "HO4cYSP8LybPYBPZPHQOtuD53yrD3YV3NBoTEYBh4U0="
+# Encrypted data for {"example":{"json":"Object"}}
+encrypted_data = "HO4cYSP8LybPYBPZPHQOtuD53yrD3YV3NBoTEYBh4U0N1QXHbtkfsDfTspKeLQFt"
 
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
@@ -1255,6 +1255,7 @@ result = AWAIT channel.presence.get()
 ```pseudo
 ASSERT result.items[0].data IS Object/Map
 # Decryption applied based on cipher+aes-128-cbc encoding
+ASSERT result.items[0].data == { "example": { "json": "Object" } }
 ```
 
 ---
