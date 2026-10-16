@@ -16,7 +16,7 @@ Hand-maintained project files the user must update: …
 
 ## Existing assets and upgrade summary
 Create (S1): the UTS-derived tests and infra code found (P-20), whether they match D-03, D-06 and D-07, and the follow-ups proposed.
-Upgrade/Fix: items added, skipped (with the reason) and deferred (with the plan), by GA-/CH-/G- ID, from skill-gap-audit.md; infra rows decided at STOP-3; preserve list kept; baseline comparison (resolver, audit, infra tests, existing UTS-derived tests): differences and the item that explains each; derived tests made stale, and whether they were regenerated; what the old skill had that the new one lacks (regenerate only).
+Upgrade/Fix: items added, skipped (with the reason) and deferred (with the plan), by GA-/CH-/G- ID, from skill-gap-audit.md; infra rows decided at STOP-3; preserve list kept; baseline comparison (resolver, audit, infra tests): differences and the item that explains each; derived tests made stale, and whether they were regenerated; what the old skill had that the new one lacks (regenerate only).
 
 ## Repo profile
 Link to repo-profile.md; corrections made at STOP-2.
@@ -79,7 +79,7 @@ Run the skill on one module per tier first (no spec-derived test exists yet), an
 ## Run timings
 | Phase | Start | End | Duration | Waiting at stop points | Sub-agents (role → model) |
 |---|---|---|---|---|---|
-From the decision log's times. Totals: the run, the time waiting for answers, and the time the sub-agents saved, if any.
+From the Design record's Phase timings. Totals: the run, the time waiting for answers, and the time the sub-agents saved, if any.
 
 ## Upgrade/Fix runs (dated)
 One entry per diff-driven run (section 10): date; the changes detected (CH- items); the artifacts updated; the checks re-run; the acceptance-checklist rows re-marked. "None" otherwise.

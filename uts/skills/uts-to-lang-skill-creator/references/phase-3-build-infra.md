@@ -6,7 +6,7 @@ Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) firs
 
 ## 5.1 Step 3a: rules while building
 
-- **Scope is UTS only.** Change only the UTS infra, the skill and the approved hooks. Don't fix, skip, retry or rewrite native tests, even flaky or failing ones. Record each one with its evidence (Repo profile; Final report, "Native test findings (not fixed)"). An SDK bug found while building is an observation for the Final report, never a fix.
+- **Scope is UTS only.** Change only the UTS infra, the skill and the approved hooks. Don't fix, skip, retry or rewrite native tests, even flaky or failing ones. Record each failing or flaky native test with its evidence (Repo profile; Final report, "Native test findings (not fixed)"). An SDK bug found while building is an observation for the Final report, never a fix. Native test-support code changes only where a hook's interface forces it, as listed in and approved with the hook's STOP-4 proposal.
 - **Production hooks only after STOP-4 approval**, one proposal at a time, in the smallest form that works.
 - **The approved proposal bounds the change.** Touch only the production files the STOP-4 proposal listed, in the shape approved. Another file, a new type in a different place, or a change to the default path needs a new STOP-4. Never restructure to avoid a stop (for example, putting new types in unrelated files to skip a project-file edit).
 - Record the production diffstat in the build log, next to the proposal's file list.

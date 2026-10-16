@@ -9,7 +9,7 @@ Every stop point (SKILL.md [2.3](../SKILL.md#23-stop-points)) is a question the 
 One decision per question, and one numbered option list per question. A second decision is a second question, never a lettered sub-question or a second list under the same heading.
 
 1. **The heading:** the question in bold, numbered in the order you ask it, with the stop ID at the end in italics for the decision log: `` **Question 1: How should this run work on `.claude/skills/uts-to-csharp`?** *(STOP-13)* ``. Number from 1 in each message.
-2. **Why:** at most one short sentence, in plain words. When the run assumes something you settled without asking, such as a client setup detected from the existing code, add one plain sentence that names it.
+2. **Why:** one short sentence, in plain words. The only exception: when the run assumes something settled without asking (a client setup detected from the UTS code, or taken from the last run's records), add a second plain sentence that names it.
 3. **Evidence,** only what the decision needs: a few short bullets in plain words. Long lists stay in the records or the JSON.
 4. **The options,** numbered, one line each: `1. <label> (recommended): <how>`, where the label says what happens (below). The recommended option comes first. "Stop" comes last wherever stopping is allowed. Mark an option recommended only when the evidence supports it; otherwise mark none.
 

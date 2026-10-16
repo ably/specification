@@ -468,6 +468,8 @@ OUT_OF_SCOPE = re.compile(r"(?i)out of scope")
 def derivable_keys(mapping):
     """Mapping keys the resolver can derive, or that live elsewhere (guide 3.2): read, but reported for slimming."""
     found = [k for k in ("testProject", "namespaceRoot") if k in mapping]
+    if INFRA_KEY in mapping and INFRA_ALIAS in mapping:
+        found.append(f"both `{INFRA_KEY}` and the former key `{INFRA_ALIAS}` (`{INFRA_ALIAS}` is ignored: remove it)")
     entry = mapping.get(infra_key(mapping))
     if isinstance(entry, dict) and isinstance(entry.get("tiers"), dict) and any(
             isinstance(v, dict) and v.get("sources") for v in entry["tiers"].values()):
@@ -519,7 +521,8 @@ def tier_layout(repo, root, tiers):
                 + (f"; missing: {', '.join(missing)}" if missing else "")
                 + f"; top-level folders: {', '.join(top) or 'none'}")
     if missing and "integration/proxy/" in missing and child(base, "proxy"):
-        evidence += "; proxy/ is a sibling of integration/: nest it"
+        evidence += ("; proxy/ is a sibling of integration/: nest it" if child(base, "integration") else
+                      "; a top-level proxy/: nest it under integration/")
     if missing:
         evidence += " (guide 2.2 MUST: restructure by tier, gap-table row G-13)"
     return not missing, evidence, False

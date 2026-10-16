@@ -998,7 +998,9 @@ def plan_row(plan, stop17, md=False, where=None):
                                                                               []) else
                       "accepted with your run-mode answer: ")
         short = re.sub(r"(?:[^\s,/]+/)+([^\s,/]+/[^\s,/]+)", r"\1", plain(plan["existingInfra"]))
-        how = "updated for what changed" if "diff-driven" in (w.get("recommended") or "") else "checked in the audit"
+        rec = w.get("recommended") or ""
+        how = ("kept as it is" if rec == "Stop" else "updated for what changed" if "diff-driven" in rec else
+                "checked in the audit")
         return prefix + (tiers if new else f"existing UTS infra {short}, {how}") + left
     side_text = (f"side: {side['chosen']}" if side.get("chosen") else
                   "side: asked at STOP-17" if side else "one side")
