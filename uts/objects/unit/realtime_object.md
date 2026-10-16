@@ -1799,6 +1799,9 @@ scenarios = [
       install_mock(mock_ws)
       client = Realtime(options: { key: "fake:key", autoConnect: true })
       channel = client.channels.get("test", { modes: ["OBJECT_SUBSCRIBE", "OBJECT_PUBLISH"] })
+      // Let the fresh channel's objects message pipeline finish subscribing before attach()
+      // (see process_pending_events in uts/README.md)
+      process_pending_events()
       // NOTE: channel is NOT yet attached/synced here — listeners must be wired
       // by the loop before scenario.trigger() calls attach().
       RETURN { client, channel, mock_ws }
