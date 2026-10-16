@@ -1,0 +1,212 @@
+{
+  "_description": "Names the detectors need but can't read from the spec's IDL: SDK client aliases, door factories, earlier-revision and prose-only LiveObjects names, and a minimal fallback. Update this file, not the scripts.",
+  "aliases": {
+    "rest": [
+      "PubSubHttpClient",
+      "DefaultPubSubHttpClient"
+    ],
+    "realtime": [
+      "PubSubRealtimeClient",
+      "DefaultPubSubRealtimeClient",
+      "PubSubClient"
+    ]
+  },
+  "doorFactories": {
+    "_comment": "A door's capability: its return type, else its name (Http or Rest: REST). Its side: its enclosing type (sides.*.types), else a path segment (sides.*.paths), else core.",
+    "names": [
+      "createClient",
+      "createHttpClient",
+      "createRestClient",
+      "createRealtimeClient",
+      "create_client",
+      "create_http_client",
+      "create_rest_client",
+      "create_realtime_client",
+      "CreateClient",
+      "CreateHttpClient",
+      "CreateRealtimeClient",
+      "NewClient",
+      "NewHTTPClient",
+      "NewRealtimeClient",
+      "clientBuilder",
+      "httpClientBuilder",
+      "realtimeClientBuilder",
+      "createClientWithOptions",
+      "createClientWithKey",
+      "createClientWithToken"
+    ],
+    "sides": {
+      "device": {
+        "types": [
+          "PubSubDevice",
+          "AblyPubSubDevice"
+        ],
+        "paths": [
+          "device",
+          "pubsub-device"
+        ]
+      },
+      "server": {
+        "types": [
+          "PubSubServer",
+          "AblyPubSubServer"
+        ],
+        "paths": [
+          "server",
+          "pubsub-server"
+        ]
+      }
+    }
+  },
+  "_comment": "legacyPublicApi: public names from earlier objects-features.md revisions. legacyNowInternal: public then, internal now; a public declaration counts as legacy. internalFromProse: internal names the spec gives only in prose, with no IDL entry.",
+  "legacyPublicApi": [
+    "RealtimeObjects",
+    "getRoot",
+    "createMap",
+    "createCounter",
+    "LiveObjectSubscription",
+    "LiveMapValueType",
+    "LiveCounterValueType"
+  ],
+  "legacyNowInternal": [
+    "LiveObject",
+    "LiveObjectUpdate",
+    "LiveMapUpdate",
+    "LiveCounterUpdate"
+  ],
+  "internalFromProse": [
+    "ObjectsPool"
+  ],
+  "fallback": {
+    "capability": {
+      "clients": {
+        "rest": [
+          "Rest",
+          "RestClient"
+        ],
+        "realtime": [
+          "Realtime",
+          "RealtimeClient"
+        ]
+      },
+      "roles": {
+        "restClient": {
+          "names": [
+            "RestClient"
+          ],
+          "members": {
+            "request": "RSC19",
+            "stats": "RSC6a",
+            "time": "RSC16"
+          },
+          "from": [
+            "fallback"
+          ]
+        },
+        "realtimeClient": {
+          "names": [
+            "RealtimeClient"
+          ],
+          "members": {
+            "connect": "RTC15",
+            "close": "RTC16"
+          },
+          "from": [
+            "fallback"
+          ]
+        },
+        "restChannel": {
+          "names": [
+            "RestChannel"
+          ],
+          "members": {
+            "publish": "RSL1",
+            "history": "RSL2"
+          },
+          "from": [
+            "fallback"
+          ]
+        },
+        "channels": {
+          "names": [
+            "RealtimeChannel",
+            "ChannelStateChange",
+            "ChannelState",
+            "ChannelEvent"
+          ],
+          "members": {
+            "attach": "RTL4",
+            "detach": "RTL5",
+            "whenState": "RTL25"
+          },
+          "from": [
+            "fallback"
+          ]
+        },
+        "presence": {
+          "names": [
+            "RealtimePresence"
+          ],
+          "members": {
+            "enterClient": "RTP4",
+            "history": "RTP12"
+          },
+          "from": [
+            "fallback"
+          ]
+        },
+        "connection": {
+          "names": [
+            "Connection",
+            "ConnectionStateChange",
+            "ConnectionState",
+            "ConnectionEvent"
+          ],
+          "members": {
+            "createRecoveryKey": "RTN16g",
+            "whenState": "RTN26"
+          },
+          "from": [
+            "fallback"
+          ]
+        }
+      }
+    },
+    "liveobjects": {
+      "publicApi": [
+        "RealtimeObject",
+        "PathObject",
+        "LiveMap",
+        "LiveCounter",
+        "compactJson"
+      ],
+      "internalApi": [
+        "InternalLiveMap",
+        "InternalLiveCounter",
+        "LiveObject",
+        "ObjectsPool"
+      ],
+      "shared": [
+        "ObjectMessage",
+        "ObjectOperation"
+      ],
+      "sharedConstants": [
+        "MAP_SET",
+        "COUNTER_INC"
+      ],
+      "wireOnly": [
+        "ObjectState",
+        "ObjectData"
+      ],
+      "wireConstants": [
+        "OBJECT_SYNC"
+      ],
+      "accessorTypes": [
+        "RealtimeObject"
+      ],
+      "from": [
+        "fallback"
+      ]
+    }
+  }
+}
