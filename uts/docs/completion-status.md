@@ -334,7 +334,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | TN1–TN3 | Token string | |
 | AD1–AD2 | AuthDetails | |
 | TS1–TS14 | Stats | |
-| TI1–TI5 | ErrorInfo | Yes — `rest/unit/types/error_types.md` |
+| TI1, TI2, TI4 | ErrorInfo | Yes — `rest/unit/types/error_types.md` |
 | TA1–TA5 | ConnectionStateChange | |
 | TH1–TH6 | ChannelStateChange | Yes — `realtime/unit/channels/channel_state_events.md` |
 | TC1–TC2 | Capability | |
@@ -356,7 +356,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | TO1–TO3 | ClientOptions | Yes — `rest/unit/types/options_types.md` |
-| TK1–TK6 | TokenParams | Yes — `rest/unit/types/token_types.md` |
+| TK1, TK2, TK2a–TK2e | TokenParams | Yes — `rest/unit/types/token_types.md` |
 | AO1–AO2 | AuthOptions | Yes — `rest/unit/types/options_types.md` |
 | TB1–TB4 | ChannelOptions | Yes — `realtime/unit/channels/channel_options.md` |
 | DO1–DO2 | DeriveOptions | Yes — `realtime/unit/channels/channel_options.md` |
