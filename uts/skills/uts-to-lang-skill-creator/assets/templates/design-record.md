@@ -3,15 +3,15 @@
 ## Inputs at generation time
 - Spec clone: <shared|env|explicit|skill-clone> <path>; <sha> on <branch|detached> (clean | dirty: <files>); on origin/main: <yes|no>; sync: <fast-forwarded <old8>..<new8> | up to date | not updated: <reason>, behind <n> as of last fetch | not synced (not the shared clone)>; guide/skill: <sha of last change>; uts-to-lang-skill-creator version <metadata.version>
 - Repo: <sha>
-- Repo profile confirmed: <date>; harness option at STOP-3: (a | b | c); harness confirmed: <date>
-- Harness README: <full repo path>
+- Repo profile confirmed: <date>; infra option at STOP-3: (a | b | c); UTS infra confirmed: <date>
+- Infra README: <full repo path>
 - Model: <name and ID> (Opus-class: yes | no, departure in decision log #<n>); sub-agents: <role → model>, or none
 - Eligibility: <owner/repo> via <remote> (accept | fork-confirmed) | user-named: <owner/repo> (<code>)
 - Capabilities (D-31): rest <full|partial|absent>; realtime <full|partial|absent|unclear> (<sub-areas>); liveobjects <yes|no>; side: <none | core | server | device | both> (<clients it reaches>); scope: <full|rest-only|realtime-only> (<modules>[ + <n> REST-only tests under realtime]); unsupported: <modules> (<reason>); capability-inapplicable: <n> tests (listed in the <module> notes); names: <spec | fallback>
 - State class (Orient): S0 | S1 | S2 | S3 | S4 (+ re-entry) — <reasons>; run mode (D-27): create | upgrade: diff-driven | upgrade: full audit | upgrade: regenerate (resumed | restarted <date>); target skill: <path> (origin …), or none
 - Run status: in progress (Phase <n>, <date>) | finished (<date>)
   - After a context compaction: read the skill creator's whole SKILL.md again, then this line, then the current phase's reference, before your next action.
-  - Finished only at the completion gate: the acceptance checklist has no open row, check_acceptance.py --final has no unexplained fail, the independent verification has no unresolved dispute, and the harness tests are green in CI at every supported tier (or the Final report says why not).
+  - Finished only at the completion gate: the acceptance checklist has no open row, check_acceptance.py --final has no unexplained fail, the independent verification has no unresolved dispute, and the infra tests are green in CI at every supported tier (or the Final report says why not).
 - LiveObjects evidence: detect_liveobjects.py → <yes | no | unclear>, <confidence>; decision at STOP-14 (D-28)
 
 ## Decisions
@@ -54,7 +54,7 @@
 | Module | unit | integration | proxy | notes | readiness and scope markers (unready, unsupported, extraTests, capabilityInapplicable, translateOnly) | hand-maintained? |
 |---|---|---|---|---|---|---|
 
-- harness: root <dir>; readme <path>; testsRoot <dir>; testCommand <command with {tier}>
+- infra: root <dir>; readme <path>; testsRoot <dir>; testCommand <command with {tier}>
 - Values the build can't give (each with why): <key → value: reason | none>
 - Derived by the resolver, not stored: test project, namespace root, each tier's helper sources (tier layout), per-spec targetDir and testFile (sub-directories mirrored)
 
@@ -70,6 +70,6 @@
 | # | Date | Question | Guide/UTS sections searched | Repo @ revision : path | Pattern learned (not copied) | Checked against Patterns to avoid | Access (local clone / GitHub, STOP-6 approval) |
 |---|---|---|---|---|---|---|---|
 
-## Changelog (fixes made to the skill, notes or harness)
-| # | Date | Found by | Cause (skill / notes / catalogue / script / harness) | Fix | Closes (GA-nn / CH-nn / G-nn, if any) | Tests regenerated |
+## Changelog (fixes made to the skill, notes or UTS infra)
+| # | Date | Found by | Cause (skill / notes / catalogue / script / UTS infra) | Fix | Closes (GA-nn / CH-nn / G-nn, if any) | Tests regenerated |
 |---|---|---|---|---|---|---|

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static inventory of an existing uts-to-* skill, its harness and its UTS-derived tests.
+"""Static inventory of an existing uts-to-* skill, its UTS infra and its UTS-derived tests.
 
 Usage: inspect_existing_skill.py <repo> [<skill-dir>] [--records <dir>]
 
@@ -14,8 +14,8 @@ never runs the skill's scripts and never writes.
 
 Prints one JSON object: `ok`, `repo`, `head`, `skills` (per skill: installs,
 origin, records (with the acceptance checklist's progress, `checklist`), `capabilityProfile`, language, frontmatter, files, mapping,
-harness (with `selfTestCandidates` and `ciSources`), checks, summary), `namedSkill`, `workingRecords`, `brokenInstalls`,
-`orphanRecords`, `otherRepoSkills`, `repoLanguages`, `harnessCandidates`,
+infra (with `selfTestCandidates` and `ciSources`), checks, summary), `namedSkill`, `workingRecords`, `brokenInstalls`,
+`orphanRecords`, `otherRepoSkills`, `repoLanguages`, `infraCandidates`,
 `userLevelInstalls`, `derivedTests`, `note` and `found`. Exit 0 on success; 1
 with {"ok": false} on an error (INSPECT_ERROR); 2 on a usage error.
 
@@ -44,10 +44,10 @@ HEADER_UNPINNED = re.compile(r"ably/specification/(blob|tree)/main/")
 
 # (id, acceptance-checklist item it informs, regex over SKILL.md body, what a hit means)
 BODY_CHECKS = [
-    ("B-harness-reference", "SKILL.md: usage guard ... 3.4 outline incl. the Harness reference",
-      r"(?im)^#+\s.*harness reference", "a Harness reference heading"),
-    ("B-preflight", "Steps 0 and A–F: the four questions and the harness preflight (stop on red)",
-      r"(?i)preflight|step\s+F\b", "a harness preflight (step F)"),
+    ("B-infra-reference", "SKILL.md: usage guard ... 3.4 outline incl. the Infra reference",
+      r"(?im)^#+\s.*(?:infra|harness) reference", "an Infra (formerly Harness) reference heading"),
+    ("B-preflight", "Steps 0 and A–F: the four questions and the infra preflight (stop on red)",
+      r"(?i)preflight|step\s+F\b", "an infra preflight (step F)"),
     ("B-resync", "Re-sync mode; fix the cause, then regenerate", r"(?i)--resync|re-sync|resync", "a re-sync mode"),
     ("B-final-report", "Final report format", r"(?i)final report", "a final report"),
     ("B-lint", "Compile (or collect), lint, CI-strict compile, filtered run", r"(?i)\blint", "a lint step"),
@@ -55,7 +55,7 @@ BODY_CHECKS = [
       r"RUN_DEVIATIONS", "the RUN_DEVIATIONS reproduction command"),
     ("B-deviations-deferred", "`deviations.md` location; format deferred; written at the right time",
       r"writing-derived-tests\.md", "a link to writing-derived-tests.md"),
-    ("B-model", "Skill and harness created on an Opus-class model (MUST); model stated for runs ...",
+    ("B-model", "Skill and UTS infra created on an Opus-class model (MUST); model stated for runs ...",
       r"(?i)opus", "a model-tier statement"),
     ("B-reference-tests", "Steps 1–7 with batching; a reference test per tier; review in both modes",
       r"(?i)reference (test|example)|read (this|it) first", "named reference tests"),
@@ -87,7 +87,7 @@ USAGE_STOP = re.compile(r"(?i)(\bno\b|missing|empty|blank|without)[^\n]{0,80}\bs
 MODULE_QUESTION = re.compile(
     r"(?i)\bask(s|ing)?\b[^\n]{0,40}\bwhich (uts )?module|never guess(es)?\b[^\n]{0,20}\bmodule"
     r"|module (question|selection|listing)|--list-modules")
-# The harness's tier directories (guide 2.2, MUST): `<root>/unit`, `<root>/integration`, `<root>/integration/proxy`.
+# The UTS infra's tier directories (guide 2.2, MUST): `<root>/unit`, `<root>/integration`, `<root>/integration/proxy`.
 TIER_DIRS = {"unit": ("unit",), "integration": ("integration",), "proxy": ("integration", "proxy")}
 TEST_NAME = re.compile(r"(?i)(tests?|spec)\.[a-z]+$|^test_|_test\.[a-z]+$")
 TYPE_DECL = re.compile(r"\b(?:class|struct|interface|protocol|object|enum|record|type)\s+([A-Z][A-Za-z0-9_]{3,})")
@@ -422,14 +422,23 @@ def mapping_profile(modules):
 TIERS = ("unit", "integration", "proxy")
 
 
-def infra_entry(entry):
-    """The mapping's `harness` entry, read in the current shape {root, readme, testsRoot, testCommand} (guide 3.2)
-    or an older one, accepted with a warning: per-tier `tiers.<tier>.sources` and `tiers.<tier>.tests` (commands),
-    and a string `tests` (read as testsRoot). Returns {older, warning, testsRoot, commands: {tier: command}}."""
+INFRA_KEY, INFRA_ALIAS = "infra", "harness"  # the alias: the key's former name, read with a warning (guide 3.2)
+
+
+def infra_key(mapping):
+    """The mapping key holding the infra entry: `infra`, else the deprecated alias `harness`; None without either."""
+    return next((k for k in (INFRA_KEY, INFRA_ALIAS) if isinstance(mapping, dict) and k in mapping), None)
+
+
+def infra_entry(entry, key=INFRA_KEY):
+    """The mapping's `infra` entry, read in the current shape {root, readme, testsRoot, testCommand} (guide 3.2)
+    or an older one, accepted with a warning: under the alias key `harness` (in any shape), per-tier
+    `tiers.<tier>.sources` and `tiers.<tier>.tests` (commands), and a string `tests` (read as testsRoot).
+    Returns {older, warning, testsRoot, commands: {tier: command}}."""
     out = {"older": False, "warning": None, "testsRoot": None, "commands": {}}
     if not isinstance(entry, dict):
         return out
-    old = []
+    old = [f"the key `{key}` (a deprecated alias of `{INFRA_KEY}`)"] if key != INFRA_KEY else []
     tests_root = entry.get("testsRoot")
     if not isinstance(tests_root, str) and isinstance(entry.get("tests"), str):
         tests_root = entry["tests"]
@@ -448,8 +457,8 @@ def infra_entry(entry):
         old.append("per-tier `tiers.<tier>." + "/".join(kinds) + "`" if kinds else "per-tier `tiers`")
     if old:
         out["older"] = True
-        out["warning"] = ("older shape, accepted: " + "; ".join(old)
-                          + "; the current shape is {root, readme, testsRoot, testCommand} (guide 3.2)")
+        out["warning"] = ("older mapping, accepted: " + "; ".join(old)
+                          + f"; the current entry is `{INFRA_KEY}`: {{root, readme, testsRoot, testCommand}} (guide 3.2)")
     return out
 
 
@@ -459,7 +468,7 @@ OUT_OF_SCOPE = re.compile(r"(?i)out of scope")
 def derivable_keys(mapping):
     """Mapping keys the resolver can derive, or that live elsewhere (guide 3.2): read, but reported for slimming."""
     found = [k for k in ("testProject", "namespaceRoot") if k in mapping]
-    entry = mapping.get("harness")
+    entry = mapping.get(infra_key(mapping))
     if isinstance(entry, dict) and isinstance(entry.get("tiers"), dict) and any(
             isinstance(v, dict) and v.get("sources") for v in entry["tiers"].values()):
         found.append("per-tier source lists (derived from the tier layout)")
@@ -490,7 +499,7 @@ def offered_tiers(modules):
 
 
 def tier_layout(repo, root, tiers):
-    """Guide 2.2 (MUST): a directory per offered tier under the harness root, proxy nested under integration
+    """Guide 2.2 (MUST): a directory per offered tier under the infra root, proxy nested under integration
     (`unit/`, `integration/`, `integration/proxy/`; names compared case-insensitively). Returns (ok, evidence, warn)."""
     base = repo / root if root else None
     if base is None or not base.is_dir():
@@ -644,7 +653,7 @@ def inspect_skill(repo, real, installs, records_dir=None):
                 if (d / sub).is_dir() else []:
             defect_sources[ref.relative_to(d).as_posix()] = ref.read_text(encoding="utf-8", errors="replace")
     lines = text.count("\n") + 1
-    check(checks, "B-length", "SKILL.md: ... 3.4 outline incl. the Harness reference", lines <= 500,
+    check(checks, "B-length", "SKILL.md: ... 3.4 outline incl. the Infra reference", lines <= 500,
           f"{lines} lines (agent-skill guidance: keep SKILL.md under 500; move detail to references)", warn=True)
 
     files = {"SKILL.md": True}
@@ -663,7 +672,8 @@ def inspect_skill(repo, real, installs, records_dir=None):
         src = (d / "scripts/resolve_uts.py").read_text(encoding="utf-8", errors="replace")
         for cid, pattern, meaning in (("S-resolver-create", r"--create", "--create"),
                                       ("S-resolver-collision", r"(?i)collision", "collision detection"),
-                                      ("S-resolver-harness", r"[\"']harness[\"']", "harness output"),
+                                      ("S-resolver-infra", r"[\"'](?:infra|harness)[\"']",
+                                        "infra output (or its former name, harness)"),
                                       ("S-resolver-guarded-json", r"except\s*(\(?[^:\n]*(JSONDecodeError|ValueError|Exception))",
                                         "a guarded mapping load (no traceback on a malformed mapping)"),
                                       ("S-resolver-notes-error", r"(?i)notes_not_found|notes.*not.*(found|exist)",
@@ -681,7 +691,7 @@ def inspect_skill(repo, real, installs, records_dir=None):
             check(checks, cid, "`audit_translation.py`: ...", bool(re.search(pattern, src)),
                   meaning + (" found" if re.search(pattern, src) else " not found"))
 
-    mapping, modules, notes, harness = None, {}, {}, None
+    mapping, modules, notes, infra, ikey = None, {}, {}, None, None
     if files["uts-package-mapping.json"]:
         try:
             mapping = json.loads((d / "uts-package-mapping.json").read_text(encoding="utf-8"))
@@ -703,13 +713,14 @@ def inspect_skill(repo, real, installs, records_dir=None):
                 head = note.read_text(encoding="utf-8", errors="replace")[:2000] if note.is_file() else ""
                 notes[module] = {"path": entry["notes"], "exists": note.is_file(), "bytes": size,
                                   "placeholder": bool(re.search(r"(?i)placeholder|not yet authored", head))}
-        harness = mapping.get("harness")
-        ientry = infra_entry(harness)
-        check(checks, "M-harness", "`uts-package-mapping.json`: ... `harness` entry",
-              isinstance(harness, dict) and not ientry["older"],
-              ("harness entry present" + (f"; {ientry['warning']}" if ientry["older"] else ""))
-              if isinstance(harness, dict) else "no harness entry (guide 3.2 MUST)",
-              warn=isinstance(harness, dict))
+        ikey = infra_key(mapping)
+        infra = mapping.get(ikey) if ikey else None
+        ientry = infra_entry(infra, ikey)
+        check(checks, "M-infra", "`uts-package-mapping.json`: ... `infra` entry",
+              isinstance(infra, dict) and not ientry["older"],
+              (f"entry present under `{ikey}`" + (f"; {ientry['warning']}" if ientry["older"] else ""))
+              if isinstance(infra, dict) else "no infra entry (guide 3.2 MUST)",
+              warn=isinstance(infra, dict))
         derivable = derivable_keys(mapping)
         check(checks, "M-minimal", "`uts-package-mapping.json`: ... nothing the resolver can derive", not derivable,
               "only what the resolver can't derive" if not derivable else
@@ -726,15 +737,16 @@ def inspect_skill(repo, real, installs, records_dir=None):
               f"objects notes: {notes.get('objects')}", warn=True)
     other_notes = sorted(p.name for p in (d / "references").glob("*-mapping.md")) if (d / "references").is_dir() else []
 
-    harness_info = None
+    infra_info = None
     layout_item = "... organised by tier (MUST; names SHOULD) ..."
-    if isinstance(harness, dict):
-        readme = repo / str(harness.get("readme", ""))
-        root = str(harness.get("root") or "").strip("/")
+    if isinstance(infra, dict):
+        readme = repo / str(infra.get("readme", ""))
+        root = str(infra.get("root") or "").strip("/")
         tests_root = (ientry["testsRoot"] or "").strip("/") or None
-        harness_info = {
-            "root": harness.get("root"), "rootExists": bool(root) and (repo / root).exists(),
-            "readme": harness.get("readme"), "readmeExists": readme.is_file(),
+        infra_info = {
+            "mappingKey": ikey,
+            "root": infra.get("root"), "rootExists": bool(root) and (repo / root).exists(),
+            "readme": infra.get("readme"), "readmeExists": readme.is_file(),
             "knownGaps": readme.is_file() and bool(re.search(r"(?im)^#+\s*known gaps",
                                                               readme.read_text(encoding="utf-8", errors="replace"))),
             "testsRoot": ientry["testsRoot"], "testsRootExists": bool(tests_root) and (repo / tests_root).is_dir(),
@@ -743,43 +755,43 @@ def inspect_skill(repo, real, installs, records_dir=None):
         }
         if root:
             listed = git_lines(repo, "ls-files", "-co", "--exclude-standard", "-z") or []
-            # Smoke tests and self-tests: in the harness-tests tree (testsRoot), or under the root (`<root>/tests/`);
+            # Smoke tests and self-tests: in the infra-tests tree (testsRoot), or under the root (`<root>/tests/`);
             # for an older mapping without testsRoot, also beside the root (a separate tier tree, guide 2.2).
             roots = [root] + ([tests_root] if tests_root else [])
             parent = root.rsplit("/", 1)[0] if "/" in root else ""
             if not tests_root and parent:
                 roots.append(parent)
             by_name = smoke_by_name(listed, roots)
-            harness_info.update(smokeOrSelfTestFiles=by_name, smokeSearchRoots=roots,
+            infra_info.update(smokeOrSelfTestFiles=by_name, smokeSearchRoots=roots,
                                 selfTestCandidates=self_test_candidates(repo, listed, roots, by_name))
-        check(checks, "H-readme-known-gaps", "Harness README with a Known gaps section (MUST)",
-              harness_info["knownGaps"], f"README {harness.get('readme')}: Known gaps "
-              + ("found" if harness_info["knownGaps"] else "not found"))
+        check(checks, "H-readme-known-gaps", "Infra README with a Known gaps section (MUST)",
+              infra_info["knownGaps"], f"README {infra.get('readme')}: Known gaps "
+              + ("found" if infra_info["knownGaps"] else "not found"))
         ok, evidence, warn = tier_layout(repo, root, offered_tiers(modules))
         check(checks, "T-tier-layout", layout_item, ok, evidence, warn=warn)
     else:
-        harness_info = find_harness(repo)
-        readmes = harness_info["readmes"]
+        infra_info = find_infra(repo)
+        readmes = infra_info["readmes"]
         gaps = [r for r in readmes if r["knownGaps"]]
-        check(checks, "H-readme-known-gaps", "Harness README with a Known gaps section (MUST)", bool(gaps),
-              "no harness entry; candidate harness READMEs: "
+        check(checks, "H-readme-known-gaps", "Infra README with a Known gaps section (MUST)", bool(gaps),
+              "no infra entry; candidate infra READMEs: "
               + (", ".join(f"{r['path']} (Known gaps {'found' if r['knownGaps'] else 'not found'})" for r in readmes)
                   or "none found"), warn=not readmes)
         # The candidate root: the common ancestor of the directories declaring the core doubles and fixtures.
-        cand_dirs = list(harness_info.get("candidateDirs") or {})
+        cand_dirs = list(infra_info.get("candidateDirs") or {})
         cand = os.path.commonpath(cand_dirs).replace(os.sep, "/") if cand_dirs else None
         ok, evidence, _ = tier_layout(repo, cand, offered_tiers(modules)) if cand and cand != "." else (False, "", 0)
         check(checks, "T-tier-layout", layout_item, False,
               "no root declared in the mapping; candidate: " + (evidence or "none found")
               + (" (tier-shaped: declare it in the mapping)" if ok else ""), warn=True)
-    if harness_info:
-        by_name, cands = harness_info.get("smokeOrSelfTestFiles"), harness_info.get("selfTestCandidates")
-        check(checks, "H-smoke-self-tests", "Harness smoke tests per tier and helper self-tests ... (MUST)",
+    if infra_info:
+        by_name, cands = infra_info.get("smokeOrSelfTestFiles"), infra_info.get("selfTestCandidates")
+        check(checks, "H-smoke-self-tests", "Infra smoke tests per tier and helper self-tests ... (MUST)",
               bool(by_name),
               f"smoke/self-test files: {by_name or 'none found by name'}"
               + (f"; {len(cands)} candidate(s) by location, read to confirm: {cands}" if cands else "")
-              + f"; CI lines ({harness_info.get('ciSources') or 'workflow files only'}): "
-              f"{harness_info.get('ciLines') or 'none'}", warn=not by_name and bool(cands))
+              + f"; CI lines ({infra_info.get('ciSources') or 'workflow files only'}): "
+              f"{infra_info.get('ciLines') or 'none'}", warn=not by_name and bool(cands))
     for cid, item, pattern, meaning in BODY_DEFECTS:
         per_file, unpinned = {}, 0
         for k, v in defect_sources.items():
@@ -838,7 +850,7 @@ def inspect_skill(repo, real, installs, records_dir=None):
                               and "__pycache__" not in p.parts),
         "mapping": {"modules": modules, "notes": notes, "otherNotesFiles": other_notes,
                     "testRoot": mapping.get("testRoot") if isinstance(mapping, dict) else None},
-        "harness": harness_info,
+        "infra": infra_info,
         "checks": checks,
         "summary": dict(collections.Counter(c["status"] for c in checks)),
     }
@@ -906,13 +918,13 @@ def derived_tests(repo):
     }
 
 
-HARNESS_DECL = re.compile(r"\b(class|struct|object|interface|protocol|def|func|fun)\s+(MockWebSocket|MockHttpClient|"
+INFRA_DECL = re.compile(r"\b(class|struct|object|interface|protocol|def|func|fun)\s+(MockWebSocket|MockHttpClient|"
                           r"SandboxApp|ProxyManager|ProxySession)\b")
 SMOKE_NAME = re.compile(r"(?i)(smoke|selftest|self_test|self-test)")
 
 
-def find_harness(repo):
-    """Without a mapping `harness` entry: candidate harness directories, READMEs, smoke/self-test files, CI lines."""
+def find_infra(repo):
+    """Without a mapping `infra` entry: candidate infra directories, READMEs, smoke/self-test files, CI lines."""
     listed = git_lines(repo, "ls-files", "-co", "--exclude-standard", "-z") or []
     dirs = collections.Counter()
     for rel in listed:
@@ -922,7 +934,7 @@ def find_harness(repo):
             text = (repo / rel).read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        if HARNESS_DECL.search(text):
+        if INFRA_DECL.search(text):
             dirs[rel.rsplit("/", 1)[0] if "/" in rel else "."] += 1
     readmes = []
     for d in dirs:
@@ -959,7 +971,7 @@ def has_tag(text):
 
 
 def self_test_candidates(repo, listed, roots, by_name):
-    """Untagged test files under the harness roots that use a type the harness declares: self-test candidates found
+    """Untagged test files under the infra roots that use a type the infra declares: self-test candidates found
     by location, not by name (read them to confirm)."""
     files = [f for f in listed if pathlib.PurePosixPath(f).suffix in SOURCE_EXT and any(under(f, r) for r in roots)
             and not any(p in EXCLUDED_DIRS for p in f.split("/")[:-1])]
@@ -972,11 +984,11 @@ def self_test_candidates(repo, listed, roots, by_name):
     texts = {f: t for f, t in texts.items() if not has_tag(t)}
     tests = [f for f in texts if TEST_NAME.search(f.rsplit("/", 1)[-1]) and f not in by_name]
     declared = {f: set(TYPE_DECL.findall(t)) for f, t in texts.items() if f not in tests}
-    harness_types = set().union(*declared.values()) if declared else set()
+    infra_types = set().union(*declared.values()) if declared else set()
     found = []
     for f in tests:
         own = set(TYPE_DECL.findall(texts[f]))
-        names = harness_types - own
+        names = infra_types - own
         if names and re.search(r"\b(" + "|".join(sorted(map(re.escape, names))) + r")\b", texts[f]):
             found.append(f)
     return found[:20]
@@ -1147,7 +1159,7 @@ def main(argv):
             "otherRepoSkills": other_skills,
             "repoLanguages": {LANG_NAMES[e]: n for e, n in sorted(REPO_EXT_COUNTS.items(), key=lambda x: -x[1])
                               if e in LANG_NAMES},
-            "harnessCandidates": None if skills else find_harness(repo),
+            "infraCandidates": None if skills else find_infra(repo),
             "userLevelInstalls": user_level_installs(),
             "derivedTests": derived,
             "note": "Regex checks only: a pass is a pattern hit, not a review. Confirm each gap-audit row by reading "

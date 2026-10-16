@@ -54,16 +54,16 @@ Record each question, with its stop ID, and the answer in the Design record's de
   - "Change something" on the plan: rerun at once, show the new plan, and ask the plan question again.
   - A client-setup answer, or a correction given with an answer: keep it for the single rerun after every question, follow-ups included, is answered. A follow-up comes from the first Orient output; a rerun before it would drop it.
 
-## Example: Upgrade/Fix, client setup found in the existing harness
+## Example: Upgrade/Fix, client setup found in the existing UTS infra
 
-On ably-dotnet the existing UTS code already creates its clients through the core constructors. That is a detected fact, so there is no client-setup question. The State summary shows it as a row (`` | Client setup | core constructors: … (existing harness: `UtsClients.cs` +2) | ``), the run-mode question names it in one sentence, and the audit checks it. The profile is full, so there is no plan question either:
+On ably-dotnet the existing UTS code already creates its clients through the core constructors. That is a detected fact, so there is no client-setup question. The State summary shows it as a row (`` | Client setup | core constructors: … (existing UTS infra: `UtsClients.cs` +2) | ``), the run-mode question names it in one sentence, and the audit checks it. The profile is full, so there is no plan question either:
 
 > **Question 1: How should this run work on `.claude/skills/uts-to-csharp`?** *(STOP-13)*
 > The skill wasn't made by this procedure, so its gaps against the guide are unknown.
-> Keeps the existing client setup (core constructors) and audits the existing harness.
+> Keeps the existing client setup (core constructors) and audits the existing UTS infra.
 >
-> 1. Upgrade/Fix, full audit (recommended): check the skill, harness and tests against the guide, then choose what to fix
-> 2. Regenerate from scratch: rebuild the skill and harness, approving each replacement
+> 1. Upgrade/Fix, full audit (recommended): check the skill, UTS infra and tests against the guide, then choose what to fix
+> 2. Regenerate from scratch: rebuild the skill and UTS infra, approving each replacement
 > 3. Stop
 >
 > Reply with a number, or `ok` to accept the recommendation.
@@ -73,19 +73,19 @@ On ably-dotnet the existing UTS code already creates its clients through the cor
 An SDK with server and device entry points, and no UTS code yet to show which one the tests use. Both STOP-17 questions are needed whatever the run mode, so they follow STOP-13 in the same message:
 
 > **Question 1: Should I create a UTS translator skill for ably-dotnet?** *(STOP-13)*
-> There's no translator skill, harness or UTS test here yet.
+> There's no translator skill, UTS infra or UTS test here yet.
 >
-> 1. Create (recommended): build the skill and its UTS test harness
+> 1. Create (recommended): build the skill and its UTS infra
 > 2. Stop
 >
-> **Question 2: Is this harness plan right?** *(STOP-17)*
-> I'll build this harness, and the skill can translate only the tests it covers.
+> **Question 2: Is this infra plan right?** *(STOP-17)*
+> I'll build this UTS infra, and the skill can translate only the tests it covers.
 >
 > - REST unit tests: HTTP hook, MockHttpClient, fake clock, randomness hooks; smoke test; MockHttpClient and fake-clock self-tests.
 > - Realtime unit tests: WebSocket hook, MockWebSocket, fake clock, network monitor, randomness hooks, MockVCDiff, MockNetworkListener, wait helpers; smoke test; MockWebSocket, fake-clock and wait-helper self-tests.
 > - Sandbox integration tests: SandboxApp and fixtures; smoke test and self-tests.
 > - Proxy integration tests: ProxyManager, ProxySession; smoke test and self-tests.
-> - Every tier: log capture, file placement, a harness README with known gaps, the test target and CI, and a concurrency model.
+> - Every tier: log capture, file placement, an infra README with known gaps, the test target and CI, and a concurrency model.
 > - Client setup: the next question.
 > - Left out: nothing.
 > - LiveObjects: a separate question later.
@@ -94,22 +94,22 @@ An SDK with server and device entry points, and no UTS code yet to show which on
 > 2. Change something: tell me what
 > 3. Stop
 >
-> **Question 3: How should the harness create clients?** *(STOP-17)*
+> **Question 3: How should the UTS infra create clients?** *(STOP-17)*
 > Every generated test sets up its clients this way.
 >
 > 1. Core constructors: `PubSubHttpClient`, `PubSubRealtimeClient`, through internal access
 > 2. Server entry point: `CreateHttpClient`, `CreateRealtimeClient`
 > 3. Device entry point: `CreateClient`; no REST client, so the REST tests are dropped
-> 4. Both: server and device entry points as a harness setting; the suite runs once for each
+> 4. Both: server and device entry points as an infra setting; the suite runs once for each
 > 5. Stop
 >
 > Reply with a number per question, or `ok` to accept all recommendations (Question 3 has no recommendation, so it needs a number).
 
-In Claude Code, the same message is the State summary, then the plan's bullets under **Harness plan**, then one `AskUserQuestion` call with three questions: "Run mode", "Harness plan" and "Client setup". "Client setup" has five options, so "Stop" is left out of it.
+In Claude Code, the same message is the State summary, then the plan's bullets under **Infra plan**, then one `AskUserQuestion` call with three questions: "Run mode", "Infra plan" and "Client setup". "Client setup" has five options, so "Stop" is left out of it.
 
 ## Example: an SDK hook
 
-Ask one question per hook ([4.6](phase-2-design-harness.md#46-step-2f-propose-the-sdk-test-hooks)). The evidence names the exact files and the change in each, one line per file; the existing seams and harness-side options tried, and why each fell short; the specs that need the hook; and the guarantee that the default path doesn't change. The same question asks for the native tests' before-and-after run, with its command and expected duration, so one answer approves both. Shortened from ably-dotnet's timers-and-clock hook, whose full list has 17 production files:
+Ask one question per hook ([4.6](phase-2-design-infra.md#46-step-2f-propose-the-sdk-test-hooks)). The evidence names the exact files and the change in each, one line per file; the existing seams and infra-side options tried, and why each fell short; the specs that need the hook; and the guarantee that the default path doesn't change. The same question asks for the native tests' before-and-after run, with its command and expected duration, so one answer approves both. Shortened from ably-dotnet's timers-and-clock hook, whose full list has 17 production files:
 
 > **Question 1: May I add a test clock to the SDK, so the unit tests can control its timers?** *(STOP-4)*
 > Without it, the fake-clock unit tests can't run: the SDK's timers and delays always use the real clock.

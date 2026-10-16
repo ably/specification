@@ -12,7 +12,7 @@ records, the Final report's "Acceptance checklist" section), and checks:
 - every inspector `fail` is explained: its row is ✗ or n/a with a reason (a
   fail under a ✓ row, or under an open row, is unexplained);
 - the records exist: repo-profile.md, uts-infra-design.md, design-record.md,
-  the checklist, the harness README with a Known gaps section and, with
+  the checklist, the infra README with a Known gaps section and, with
   --final, final-report.md.
 With --final (Phase 7, the completion gate) it also needs no open row and the
 "Independent verification" line recorded with no unresolved dispute. Rows are

@@ -41,12 +41,12 @@ uts/
 ├── docs/                              # Guides and reference
 │   ├── writing-test-specs.md          # How to write UTS specs
 │   ├── writing-derived-tests.md       # How to translate specs into SDK tests
-│   ├── writing-uts-spec-translator-skills.md  # What a uts-to-<lang> translator skill and its harness must contain
+│   ├── writing-uts-spec-translator-skills.md  # What a uts-to-<lang> translator skill and its UTS infra must contain
 │   ├── integration-testing.md         # Integration testing policy
 │   ├── proxy.md                       # Proxy infrastructure spec (cross-module)
 │   └── completion-status.md           # Spec coverage matrix
 ├── skills/                            # Agent skills (Claude Code, Codex)
-│   └── uts-to-lang-skill-creator/     # Builds or upgrades a uts-to-<lang> skill and its harness (SKILL.md, references/, assets/, scripts/)
+│   └── uts-to-lang-skill-creator/     # Builds or upgrades a uts-to-<lang> skill and its UTS infra (SKILL.md, references/, assets/, scripts/)
 └── README.md                          # This file
 ```
 
@@ -155,8 +155,8 @@ See [docs/writing-test-specs.md](docs/writing-test-specs.md) for the full pseudo
 
 - **[Writing Test Specs](docs/writing-test-specs.md)** — How to author UTS specs: mock patterns, pseudocode conventions, proxy test structure, common mistakes
 - **[Writing Derived Tests](docs/writing-derived-tests.md)** — How to translate UTS specs into SDK-specific tests, diagnose failures, and record deviations
-- **[Writing UTS Spec Translator Skills](docs/writing-uts-spec-translator-skills.md)** — How to build a per-language `uts-to-<lang>` agent skill (Claude Code and Codex) and its harness: harness smoke tests and self-tests, workflow, construct mapping, audit tooling, re-sync, upgrading an existing skill
-- **[UTS-to-Lang Skill Creator](skills/uts-to-lang-skill-creator/SKILL.md)** — An agent skill (Claude Code and Codex) that builds or upgrades an SDK repo's `uts-to-<lang>` skill and the UTS test infrastructure (harness) it runs on. Each run starts with Orient: it checks the repo against the whitelist in [`assets/eligibility.json`](skills/uts-to-lang-skill-creator/assets/eligibility.json) (Ably Pub/Sub SDK repositories only), detects any existing `uts-to-*` skill, harness and UTS-tagged tests, classifies the repo's state (S0–S4), and detects its REST and Realtime clients, which set the scope: a REST-only or realtime-only SDK gets a partial skill. It then recommends Create (design, build and test the harness, generate the skill, validate it without generating tests) or Upgrade/Fix (diff-driven for a skill it built, or a full gap audit against the guide), and always asks whether to add LiveObjects (`uts/objects`) support. See [Installing the skill creator](#installing-the-skill-creator)
+- **[Writing UTS Spec Translator Skills](docs/writing-uts-spec-translator-skills.md)** — How to build a per-language `uts-to-<lang>` agent skill (Claude Code and Codex) and its UTS infrastructure: infra smoke tests and self-tests, workflow, construct mapping, audit tooling, re-sync, upgrading an existing skill
+- **[UTS-to-Lang Skill Creator](skills/uts-to-lang-skill-creator/SKILL.md)** — An agent skill (Claude Code and Codex) that builds or upgrades an SDK repo's `uts-to-<lang>` skill and the UTS test infrastructure (UTS infra) it runs on. Each run starts with Orient: it checks the repo against the whitelist in [`assets/eligibility.json`](skills/uts-to-lang-skill-creator/assets/eligibility.json) (Ably Pub/Sub SDK repositories only), detects any existing `uts-to-*` skill, UTS infra and UTS-tagged tests, classifies the repo's state (S0–S4), and detects its REST and Realtime clients, which set the scope: a REST-only or realtime-only SDK gets a partial skill. It then recommends Create (design, build and test the UTS infra, generate the skill, validate it without generating tests) or Upgrade/Fix (diff-driven for a skill it built, or a full gap audit against the guide), and always asks whether to add LiveObjects (`uts/objects`) support. See [Installing the skill creator](#installing-the-skill-creator)
 - **[Integration Testing Policy](docs/integration-testing.md)** — When to write integration vs unit tests, proxy test design principles, test structure conventions
 - **[Completion Status](docs/completion-status.md)** — Coverage matrix tracking which spec items have UTS test specs
 

@@ -27,7 +27,7 @@
 | P-10 | Threading, callback queues, internal-queue drain, compile-time concurrency checks | | | |
 | P-11 | Every time source (timers, timed waits, delayed callbacks, clock reads) | | | |
 | P-12 | Runner parallelism and how to serialise | | | |
-| P-13 | Hooks: WS factory / HTTP / clock / network monitor / randomness (symbol, how set, when, per-client or global, reachable from the SDK language: yes / no, a harness gap) | | | |
+| P-13 | Hooks: WS factory / HTTP / clock / network monitor / randomness (symbol, how set, when, per-client or global, reachable from the SDK language: yes / no, an infra gap) | | | |
 | P-14 | Internal-access mechanism and current use | | | |
 | P-15 | API surface vs pseudocode, per module (rest / realtime / objects); objects: detect_liveobjects.py summary | | | |
 
@@ -38,7 +38,7 @@
 | P-17 | Existing test helpers (waits, polls, capture, log capture, assertions, factories) | | | |
 | P-18 | Existing sandbox/integration support; fault-injection tooling | | | |
 | P-19 | ably-common submodule (path, initialised, fixture files) | | | |
-| P-20 | Existing UTS assets and their state (inspect_existing_skill.py: skills and installs, harness entry, tags, header SHAs, deviations.md) | | | |
+| P-20 | Existing UTS assets and their state (inspect_existing_skill.py: skills and installs, infra entry, tags, header SHAs, deviations.md) | | | |
 | P-21 | Sandbox access from developer machines and CI | | | |
 
 ## How the existing tests drive the SDK (step 1c)

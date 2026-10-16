@@ -54,7 +54,7 @@ Present:
 
 | Option | When to recommend it | Result |
 |---|---|---|
-| **(a) Full objects support** | The SDK exposes the LiveObjects public API, even if the implementation is incomplete | Objects notes, the `objects` mapping entry and the objects harness pieces ([12.3](#123-what-each-choice-adds-phase-by-phase)). If the implementation is incomplete, objects runs default to translate-only (the skill's step E); once evaluated, a failing test is an SDK deviation, gated, or a skipped stub where the API is missing (guide [7.1](../../../docs/writing-uts-spec-translator-skills.md#71-three-acceptable-end-states)) |
+| **(a) Full objects support** | The SDK exposes the LiveObjects public API, even if the implementation is incomplete | Objects notes, the `objects` mapping entry and the objects infra pieces ([12.3](#123-what-each-choice-adds-phase-by-phase)). If the implementation is incomplete, objects runs default to translate-only (the skill's step E); once evaluated, a failing test is an SDK deviation, gated, or a skipped stub where the API is missing (guide [7.1](../../../docs/writing-uts-spec-translator-skills.md#71-three-acceptable-end-states)) |
 | **(b) Placeholder** | Only internal, wire-level or packaging evidence; or the public API is planned but not yet in the source | A placeholder notes file and mapping entry. The skill refuses the module until the notes are written (guide [4](../../../docs/writing-uts-spec-translator-skills.md#phase-1-selection-steps-0-and-af)) |
 | **(c) No objects support now** | No evidence, or the user doesn't want it | An `objects` mapping entry marked not ready as a whole, with one module-level reason and no tier paths (`"objects": {"unready": "out of scope (D-28): <reason>"}`; never `unsupported`, guide 3.2), and no notes. The skill's step C then refuses the module with that reason; without an entry, its step B would offer to create one and translate with no notes |
 
@@ -73,15 +73,15 @@ Ask this after STOP-2 (step 1e, [3.5](phase-1-understand-repo.md#35-step-1e-deci
 | Phase | (a) Full | (b) Placeholder | (c) None |
 |---|---|---|---|
 | 1 | The P-15 objects divergence list (IDL followed, plugin or built-in, typed or dynamic). Read a plugin test in step 1c ([3.3](phase-1-understand-repo.md#33-step-1c-study-how-the-existing-tests-drive-the-sdk)) | P-15 says why it's a placeholder | P-15 says why there's no objects support |
-| 2 | G-10 in scope: the [`standard_test_pool.md`](../../../objects/helpers/standard_test_pool.md) symbol map ([4.3](phase-2-design-harness.md#43-step-2c-map-each-helper-spec-to-native-code)) and a plugin client-options builder. Place the module helpers where white-box specs can see internals (P-14). Fill the objects rows of the tier matrix ([4.8](phase-2-design-harness.md#48-step-2h-derive-tier-feasibility)) | G-10 `n/a` (D-28). The objects rows read "not possible: placeholder notes" | G-10 and the objects rows `n/a` |
-| 3 | [5.2](phase-3-build-harness.md#52-step-3b-build-in-order-with-acceptance-checks) row 11 (the objects unit smoke test and the serial-helper self-test). The objects REST provisioning helper is built with row 9. If the implementation is incomplete, the smoke test may end SDK-blocked ([12.5](#125-an-sdk-blocked-objects-tier)) | — | — |
+| 2 | G-10 in scope: the [`standard_test_pool.md`](../../../objects/helpers/standard_test_pool.md) symbol map ([4.3](phase-2-design-infra.md#43-step-2c-map-each-helper-spec-to-native-code)) and a plugin client-options builder. Place the module helpers where white-box specs can see internals (P-14). Fill the objects rows of the tier matrix ([4.8](phase-2-design-infra.md#48-step-2h-derive-tier-feasibility)) | G-10 `n/a` (D-28). The objects rows read "not possible: placeholder notes" | G-10 and the objects rows `n/a` |
+| 3 | [5.2](phase-3-build-infra.md#52-step-3b-build-in-order-with-acceptance-checks) row 11 (the objects unit smoke test and the serial-helper self-test). The objects REST provisioning helper is built with row 9. If the implementation is incomplete, the smoke test may end SDK-blocked ([12.5](#125-an-sdk-blocked-objects-tier)) | — | — |
 | 4 | D-03 gets an `objects` entry (hand-maintained if the module lives in a separate plugin package or build module). D-12 says the white-box specs are listed in the objects notes, and D-23 says full | D-03 entry with placeholder notes. D-23 says placeholder | D-03 entry not ready as a whole (one module-level `unready`, no tier paths). D-23: none |
 | 5 | Notes per [7.5](phase-5-generate-skill.md#75-step-5e-write-the-module-notes) and 12.4. Catalogue rows for the constructs `scan_constructs.py` finds in `uts/objects` | A placeholder notes file saying why, and what would unblock it | — |
-| 6 | The objects tier's harness gate (SDK-blocked per 12.5) and selection dry run ([8.3](phase-6-validate-skill.md#83-harness-gate-and-selection-dry-run)); 8.1 on `uts/objects` | 8.5 path 3 (placeholder refused) | 8.5 path 4 (unready tier refused, with the reason) |
+| 6 | The objects tier's infra gate (SDK-blocked per 12.5) and selection dry run ([8.3](phase-6-validate-skill.md#83-infra-gate-and-selection-dry-run)); 8.1 on `uts/objects` | 8.5 path 3 (placeholder refused) | 8.5 path 4 (unready tier refused, with the reason) |
 
 ## 12.4 What the objects notes cover
 
-The requirement is guide [3.4](../../../docs/writing-uts-spec-translator-skills.md#34-recommended-outlines-should)'s thirteen items, in order, as [7.5](phase-5-generate-skill.md#75-step-5e-write-the-module-notes) says. For `objects`, they usually amount to the following. Use this list to know where to look, not as text to fill in. Write every mapping from the SDK source and the harness as built: the notes are a map, and the SDK source is the authority (guide 3.1).
+The requirement is guide [3.4](../../../docs/writing-uts-spec-translator-skills.md#34-recommended-outlines-should)'s thirteen items, in order, as [7.5](phase-5-generate-skill.md#75-step-5e-write-the-module-notes) says. For `objects`, they usually amount to the following. Use this list to know where to look, not as text to fill in. Write every mapping from the SDK source and the UTS infra as built: the notes are a map, and the SDK source is the authority (guide 3.1).
 
 1. **Source of truth:** which IDL the SDK follows. It may be the current [`objects-features.md`](../../../../specifications/objects-features.md) (`channel.object.get()` returning a `PathObject`, RTO23), an earlier revision (the detector's legacy names, such as `channel.objects.getRoot()`), or the typed-SDK variant that guide 3.4 item 1 names. Also say whether the module is implemented: this is the translate-only or evaluate decision (D-28).
 2. **Layers:** `LiveMap` and `LiveCounter` as creation value types (RTLMV, RTLCV), the public views (`PathObject`, `Instance`) and the internal nodes (`InternalLiveMap`, `InternalLiveCounter`). The specs use all three.
@@ -101,18 +101,18 @@ The `objects` notes of the existing `uts-to-swift` and `uts-to-kotlin` skills ar
 
 ## 12.5 An SDK-blocked objects tier
 
-Guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must) ("SDK-blocked objects smoke test") and guide [4, step F](../../../docs/writing-uts-spec-translator-skills.md#phase-1-selection-steps-0-and-af) are the requirement. When the SDK exposes the LiveObjects public API but doesn't implement it yet, the objects unit smoke test (`setup_synced_channel` completes and a pool object reads its seeded value) can't pass. Without this rule, the objects tiers would stay unready, and objects specs could never be translated.
+Guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-infra-smoke-tests-and-self-tests-must) ("SDK-blocked objects smoke test") and guide [4, step F](../../../docs/writing-uts-spec-translator-skills.md#phase-1-selection-steps-0-and-af) are the requirement. When the SDK exposes the LiveObjects public API but doesn't implement it yet, the objects unit smoke test (`setup_synced_channel` completes and a pool object reads its seeded value) can't pass. Without this rule, the objects tiers would stay unready, and objects specs could never be translated.
 
-**When it applies.** Only when all of these hold. Any other red stays a harness or environment stop, as everywhere else.
+**When it applies.** Only when all of these hold. Any other red stays a UTS infra or environment stop, as everywhere else.
 
 1. D-28 is full objects support.
-2. The objects harness compiles.
+2. The objects UTS infra compiles.
 3. Every helper self-test of that tier is green.
 4. Every failing smoke-test assertion traces to an SDK not-implemented path. Record the evidence for each: the error or stack trace naming the SDK symbol (for example a `NotImplementedError` or a `TODO` throw), with its file and line.
 
 **What you do:**
 
-- **Known gaps.** List each one in the harness README's Known gaps as `SDK-blocked: <feature> (<evidence>)`.
+- **Known gaps.** List each one in the infra README's Known gaps as `SDK-blocked: <feature> (<evidence>)`.
 - **Keep the test running.** Keep the failing assertion running in CI under the runner's *strict* expected-failure marker (or as an assertion that the not-implemented error occurs). It is never skipped, and once the SDK passes it, the marker fails, which forces the gap to be cleared (guide 2.7 "In CI, ungated").
 - **Readiness data.** Mark the tier in the mapping as translate-only, not unready; it keeps its target path, and nothing else is added to the mapping (guide 3.2). *Procedure recommendation:* a `translateOnly` object per module, for example `"translateOnly": {"unit": "SDK-blocked: RTO23 get()"}`, which the resolver reports as `tiers.<tier>.translateOnly` with the reason ([7.1](phase-5-generate-skill.md#71-step-5a-create-the-layout-and-the-mapping-file)).
 - **Generated skill, step E.** Don't offer evaluate for that tier.
@@ -121,5 +121,5 @@ Guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke
   - D-28: "full; SDK-blocked: …".
   - The Final report: its "SDK-blocked objects tiers" section.
   - In Upgrade/Fix, gap-audit section E.
-- **Acceptance checklist.** The row "Harness smoke tests per tier and helper self-tests …" is ✗ with the reason "SDK-blocked: objects unit smoke test (<feature>)". This is the same pattern as the declined-CI case in [5.4](phase-3-build-harness.md#54-step-3d-stop-7-confirm-the-harness). Other rows aren't affected.
+- **Acceptance checklist.** The row "Infra smoke tests per tier and helper self-tests …" is ✗ with the reason "SDK-blocked: objects unit smoke test (<feature>)". This is the same pattern as the declined-CI case in [5.4](phase-3-build-infra.md#54-step-3d-stop-7-confirm-the-uts-infra). Other rows aren't affected.
 - **Dry run.** Step E offers only translate-only for that tier, and the dry run checks that (8.3; 8.5 path 4).

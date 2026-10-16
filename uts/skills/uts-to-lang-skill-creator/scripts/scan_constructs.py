@@ -6,7 +6,7 @@ Usage: scan_constructs.py <spec-clone>/uts/<module>
 Prints the uppercase keywords and snake_case calls used in `pseudo` fences,
 outside comments and string literals, with counts, as plain text in two
 sections (KEYWORDS, SNAKE_CASE CALLS). Compare its output with the construct
-catalogue; also use it to list the harness symbols the corpus uses. Exit 0 on
+catalogue; also use it to list the infra symbols the corpus uses. Exit 0 on
 success; 2 on a usage error. Standalone (no imports from sibling scripts), so it
 can be copied into a generated skill.
 """
