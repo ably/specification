@@ -1,6 +1,6 @@
 # Stats API Tests
 
-Spec points: `RSC6`, `RSC6a`, `RSC6b1`, `RSC6b2`, `RSC6b3`, `RSC6b4`
+Spec points: `RSC6`, `RSC6a`, `RSC6b1`, `RSC6b2`, `RSC6b3`, `RSC6b4`, `TS12`, `TS12a`, `TS12c`, `TS12p`, `TS12r`
 
 ## Test Type
 Unit test with mocked HTTP client
@@ -26,21 +26,27 @@ Tests that `stats()` makes a GET request to `/stats` and returns a PaginatedResu
 ### Setup
 ```pseudo
 captured_requests = []
+# TS12: the flattened Stats shape — intervalId, unit, and a flat `entries`
+# map keyed by dotted metric path (plus optional schema/appId/inProgress).
+# The deep per-type structure (all/inbound/outbound/… → messages/presence →
+# count/data) was deprecated and removed as of specification version 2.2.
 stats_data = [
   {
     "intervalId": "2024-01-01:00:00",
     "unit": "hour",
-    "all": {
-      "messages": {"count": 100, "data": 5000},
-      "all": {"count": 100, "data": 5000}
+    "schema": "https://schemas.ably.com/json/app-stats-0.0.1.json",
+    "appId": "abcd1234",
+    "entries": {
+      "messages.all.all.count": 100,
+      "messages.all.all.data": 5000
     }
   },
   {
     "intervalId": "2024-01-01:01:00",
     "unit": "hour",
-    "all": {
-      "messages": {"count": 150, "data": 7500},
-      "all": {"count": 150, "data": 7500}
+    "entries": {
+      "messages.all.all.count": 150,
+      "messages.all.all.data": 7500
     }
   }
 ]
@@ -68,10 +74,16 @@ result = AWAIT client.stats()
 ASSERT result IS PaginatedResult
 ASSERT result.items.length == 2
 
-# Stats objects should have correct fields
-ASSERT result.items[0].intervalId == "2024-01-01:00:00"
-ASSERT result.items[0].unit == "hour"
+# Stats objects should have the correct fields (TS12)
+ASSERT result.items[0].intervalId == "2024-01-01:00:00"    # TS12a
+ASSERT result.items[0].unit == "hour"                       # TS12c
+# TS12r: statistics are exposed as a flat `entries` map
+ASSERT result.items[0].entries["messages.all.all.count"] == 100
+ASSERT result.items[0].entries["messages.all.all.data"] == 5000
+# TS12p: intervalTime is parsed from intervalId
+ASSERT result.items[0].intervalTime == Time(2024, 1, 1, 0, 0, 0, UTC)
 ASSERT result.items[1].intervalId == "2024-01-01:01:00"
+ASSERT result.items[1].entries["messages.all.all.count"] == 150
 
 # Verify correct endpoint and method
 ASSERT captured_requests.length == 1
