@@ -39,10 +39,11 @@ UTS specs use generic pseudocode. You need to map this onto the SDK's actual API
 | `enable_fake_timers()` | Timer control mechanism |
 | `ADVANCE_TIME(ms)` | Fake timer tick method |
 | `AWAIT_STATE(connection, "connected")` | State waiting helper |
-| `poll_until(condition, ...)` | Shared polling helper (wall-clock deadline — see below) |
-| `poll_until_success(condition)` | Error-tolerant polling helper (see the pseudocode conventions in `uts/README.md`) |
+| `poll_until(condition, ...)` | Shared polling helper (wall-clock deadline — see below). Two forms, per the reference definition in `writing-test-specs.md`: a bare condition (re-evaluated until true), or a producer whose first truthy result is **returned** — a value-assigned poll (`x = poll_until(...)`) yields the settled value and later assertions run on **it**, never on a re-read (a refetch of an eventually-consistent read can return fewer items). An error raised inside the condition aborts the poll immediately and fails the test — never swallow it inside the predicate; if a read is expected to raise until data is ready, use `poll_until_success` instead |
+| `poll_until_success(condition)` | Error-tolerant polling helper: an error raised by the condition means "keep polling", and the last error is re-raised on timeout. Use **only** for reads that raise by design until data is ready (store reads `getMessage`/`getMessageVersions`/`annotations.get`, or objects value reads across a DETACHED recovery window); where an error should fail the test, use plain `poll_until`. See the pseudocode conventions in `uts/README.md` |
+| `random_id()` | The language's native UUID/GUID generator (`UUID.randomUUID()`, `UUID().uuidString`, `crypto.randomUUID()`) |
 
-Check the SDK's existing test infrastructure and conventions before writing anything. Reuse existing helpers, mock classes, and patterns.
+Check the SDK's existing test infrastructure and conventions before writing anything. Reuse existing helpers, mock classes, and patterns. When a shared helper is missing (e.g. `poll_until` / `poll_until_success`), **port its reference definition** from `writing-test-specs.md` (§ *Avoiding Flaky Tests*) rather than reconstructing it from the rows above — every clause is load-bearing (past harnesses drifted by refetching instead of returning the produced value, and by swallowing errors inside the predicate). For steps the spec does not time — including plumbing the port has to add itself, such as an explicit connect-and-await where the spec relies on auto-connect — use the harness's default wait; don't invent a tighter per-call timeout.
 
 ### 3. Flag ambiguity
 
@@ -195,13 +196,13 @@ Deviations are grouped into four sections. **Keep all four headings present in e
 - **UTS Spec Errors** — the UTS spec itself is wrong (contradicts the features spec, or is internally inconsistent). The test **fails fast** pointing here (see "Spec-error fail-fast"); the fix belongs in the spec, not the SDK. Unlike the categories below, this is not an SDK problem.
 - **Failing Tests** — SDK non-compliance where the spec-correct test is present but skipped (env-gated). These are the primary output — each maps to a potential issue to file.
 - **Adapted Tests** — SDK non-compliance where the test asserts the SDK's *actual* behaviour instead of the spec's. It passes, guards against regressions, and documents the deviation. **Whenever the actual behaviour is stable and assertable, prefer this and record the test here** — a running adapted test is worth more than a spec-correct assertion skipped indefinitely. (Reserve *Failing Tests* for deviations you expect to be fixed, where preserving the spec-correct assertion as the target matters.)
-- **Mock Infrastructure Limitations** — tests that can't be implemented due to missing mock capabilities (e.g. msgpack support). These are skipped stubs, not SDK deviations.
+- **Mock Infrastructure Limitations** — tests that can't be implemented due to missing mock capabilities (e.g. msgpack support). These are skipped stubs, not SDK deviations — i.e. the case cannot run at all. A sanctioned harness stand-in under which the test runs is not a limitation and belongs in the test file's header comment, not here (see case 4 under *Idiomatic translation vs genuine deviations*).
 
 This file is valuable output. It gives the SDK team a precise catalogue of spec gaps, each with a failing test that can be turned on once the fix lands.
 
 ### Idiomatic translation vs genuine deviations
 
-A test that doesn't read word-for-word like the pseudocode is **not** automatically a deviation. Before recording anything, decide which of three situations you're in — only the last two are deviations:
+A test that doesn't read word-for-word like the pseudocode is **not** automatically a deviation. Before recording anything, decide which of four situations you're in — only cases 2 and 3 are deviations:
 
 **1. Idiomatic naming / rendering — not a deviation. Just translate it; record nothing.**
 The public API is legitimately spelled differently in this language: a different method name, a property or getter where the spec writes a call, an idiomatic enum value (`MapSemantics.LWW` vs the wire string `'lww'`), `toJson()` rendered as `toMap()` / `to_dict()`, or a keyword that must be escaped (`channel.object` → `` channel.`object` `` in Kotlin). This is ordinary translation — see Phase 1 § *Map pseudocode to language idioms*, the naming rules in `writing-test-specs.md` § *Identifier Naming*, and the SDK's own mapping reference (e.g. ably-java's `objects-mapping.md`). The behaviour is identical; only the spelling changed, so there is nothing to record.
@@ -214,7 +215,10 @@ Some *unit* specs are deliberately white-box: they drive internal classes and me
   - **Preserve the coverage** — assert the equivalent *observable* (the resulting object state, the emitted event, the tombstone flag, …). Adapting the *shape* of the check is fine; **dropping** it is not. If an internal difference genuinely removes an observable, that is a real deviation, not an adaptation.
   - **Name recurring differences once** as a shape-deviation vocabulary (`S-1…S-n`) and cite the tag per test, so each entry stays about *that* test rather than re-explaining the mechanism.
 
-Because **integration and proxy specs exercise only the public API**, case 3 never applies at those tiers — such a test must not reach into internal APIs to make itself pass. If one appears to need that, it is really case 2 (a public-behaviour deviation) or a translation bug. And never log case 1 (idiomatic naming) as a deviation — the deviations file is for behaviour the SDK gets *wrong*, not for how its API is spelled.
+**4. Harness/infra substitution — not a deviation; record nothing in the deviations file.**
+When a tier deliberately renders the spec's mock infrastructure differently (direct state seeding in place of a mock transport, fake timers where the spec uses real ones, an internal capture seam instead of reading sent frames) and the tests **run and assert the spec's observables**, that is an infra-driving choice, not a deviation. Document it in the test file's header comment (and the SDK's mapping reference, if it has one) — never as a deviations entry. Only when the substitution leaves a case **unable to run** does it become a *Mock Infrastructure Limitation* (a skipped stub).
+
+Because **integration and proxy specs exercise only the public API**, case 3 never applies at those tiers — such a test must not reach into internal APIs to make itself pass. If one appears to need that, it is really case 2 (a public-behaviour deviation) or a translation bug. And never log case 1 (idiomatic naming) or case 4 (a sanctioned infra substitution) as a deviation — the deviations file is for behaviour the SDK gets *wrong*, not for how its API is spelled or how the harness renders the spec's mocks.
 
 ### Filing issues from deviations
 
@@ -330,14 +334,20 @@ generic error instead of the poll's informative one. Two remedies, in order of p
 A *synchronous* stub window is exempt: stubbing the clock around a single non-awaiting call and
 restoring it in a `finally` never overlaps a poll, so the trap cannot fire. Sometimes it is the
 only option — the SDK reads the clock internally and the spec fixture is a fixed epoch, as in
-RTLM19's GC-boundary test — and it should then be recorded as a deviation in the test file
-header.
+RTLM19's GC-boundary test — and it should then be documented in the test file header (an infra
+note per case 4 of *Idiomatic translation vs genuine deviations*, not a deviations-file entry).
 
 ### Integration timeouts are wall-clock (beware virtual-time frameworks)
 
 The rule above is inverted for **integration and proxy tests**: every `WITH timeout`,
 `poll_until` and `WAIT` in an integration spec is **wall-clock (real) time**, because the test
 is waiting on a real server or proxy over a real network.
+
+A spec-written `WAIT n` in an integration spec is **deliberate** — the spec's accompanying
+comment says why (e.g. letting the server assign distinct timestamps between publish batches, or
+a documented scheduler yield where no observable state exists to poll). Translate it as a real
+sleep and carry the spec's comment; the anti-flake "no fixed sleeps" convention bans *invented*
+waits used as synchronisation, not spec-mandated ones.
 
 This is a trap in test frameworks that virtualise time by default. For example,
 kotlinx-coroutines' `runTest` runs the test body on a virtual clock: a bare `withTimeout(15s)`

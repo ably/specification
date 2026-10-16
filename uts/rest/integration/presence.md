@@ -274,9 +274,6 @@ client = Rest(options: ClientOptions(
 
 channel_name = "presence-history-time-" + random_id()
 
-# Record time before any presence events
-time_before = now_millis()
-
 # Generate presence events via realtime
 realtime = Realtime(options: ClientOptions(
   key: api_key,
@@ -289,17 +286,22 @@ AWAIT realtime_channel.presence.enter(data: "test")
 AWAIT realtime_channel.presence.leave()
 AWAIT realtime.close()
 
-time_after = now_millis()
-
-# Poll until events appear
+# Poll until events appear, retrieving their server-assigned timestamps
 rest_channel = client.channels.get(channel_name)
-poll_until(
+events = poll_until(
   condition: FUNCTION() =>
     result = AWAIT rest_channel.presence.history()
-    RETURN result.items.length >= 2,
+    RETURN result.items IF result.items.length >= 2 ELSE null,
   interval: 500ms,
   timeout: 10s
 )
+
+# Use server-assigned timestamps to define the queried range.
+# Client-side now() must not be used here — client and server clocks may
+# differ, and a skewed client clock would silently exclude the events.
+event_timestamps = [msg.timestamp FOR msg IN events]
+time_before = min(event_timestamps) - 1000
+time_after = max(event_timestamps) + 1000
 
 # Query with time range
 history = AWAIT rest_channel.presence.history(

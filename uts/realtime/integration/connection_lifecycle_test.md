@@ -234,5 +234,5 @@ AFTER EACH TEST:
     client.connection.close()
     # Wait briefly for close to complete
     AWAIT_STATE client.connection.state == ConnectionState.closed
-      WITH timeout: 10 seconds
+      WITH timeout: 15 seconds
 ```

@@ -234,6 +234,10 @@ against the real clock; see the *Integration timeouts are wall-clock* section in
 ### Avoiding Flaky Tests
 
 - Use polling with timeouts instead of fixed waits (see `README.md` polling conventions)
+- When a poll observes a remote read (history, presence get), have `poll_until` return the
+  settled result (`RETURN result IF … ELSE null`) and assert on that value — re-fetching after
+  the poll can hit a less-replicated frontend and return fewer items than the poll just observed, reintroducing the race the poll
+  just absorbed
 - For token expiry tests, use short TTLs and poll for rejection
 - For state transition assertions, wait for the target state event rather than asserting after a delay
 - Proxy tests should use proxy event logs for verification rather than timing-dependent assertions
