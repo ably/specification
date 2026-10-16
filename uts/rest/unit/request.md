@@ -7,13 +7,13 @@ Unit test with mocked HTTP client
 
 ## Mock Configuration
 
-These tests use the mock HTTP infrastructure defined in `rest_client.md`. The mock supports:
+These tests use the mock HTTP infrastructure defined in `helpers/mock_http.md`. The mock supports:
 - Handler-based configuration with `onConnectionAttempt` and `onRequest`
 - Capturing requests via `captured_requests` arrays
 - Configurable responses with status codes, bodies, and headers
 - Await-based API for coordinating test responses
 
-See `rest_client.md` for detailed mock interface documentation.
+See `helpers/mock_http.md` for detailed mock interface documentation.
 
 ## Overview
 
@@ -208,8 +208,16 @@ Tests that the version parameter sets the X-Ably-Version header.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, [])
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -224,12 +232,11 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ### Test Steps
 ```pseudo
 FOR EACH test_case IN test_cases:
-  mock_http.reset()
-  mock_http.queue_response(200, [])
+  captured_requests = []
 
   response = AWAIT client.request("GET", "/test", version: test_case.version)
 
-  request = mock_http.captured_requests[0]
+  request = captured_requests[0]
   ASSERT request.headers["X-Ably-Version"] == test_case.expected_header
 ```
 
@@ -319,8 +326,16 @@ Tests that Accept and Content-Type headers reflect the configured protocol.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, [])
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -338,7 +353,7 @@ response = AWAIT client.request("POST", "/test",
 
 ### Assertions
 ```pseudo
-request = mock_http.captured_requests[0]
+request = captured_requests[0]
 ASSERT request.headers["Accept"] == "application/json"
 ASSERT request.headers["Content-Type"] == "application/json"
 ```
@@ -353,8 +368,16 @@ Tests that Accept and Content-Type headers reflect MsgPack protocol when configu
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, msgpack_encode([]))
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, msgpack_encode([]))
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -372,7 +395,7 @@ response = AWAIT client.request("POST", "/test",
 
 ### Assertions
 ```pseudo
-request = mock_http.captured_requests[0]
+request = captured_requests[0]
 ASSERT request.headers["Accept"] == "application/x-msgpack"
 ASSERT request.headers["Content-Type"] == "application/x-msgpack"
 ```
@@ -389,8 +412,16 @@ Tests that the request body is encoded using the configured protocol.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, [])
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -408,7 +439,7 @@ response = AWAIT client.request("POST", "/test",
 
 ### Assertions
 ```pseudo
-request = mock_http.captured_requests[0]
+request = captured_requests[0]
 # Body should be valid JSON
 body = json_decode(request.body)
 ASSERT body["name"] == "event"
@@ -419,8 +450,16 @@ ASSERT body["data"]["nested"] == "value"
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, msgpack_encode([]))
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, msgpack_encode([]))
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -438,7 +477,7 @@ response = AWAIT client.request("POST", "/test",
 
 ### Assertions
 ```pseudo
-request = mock_http.captured_requests[0]
+request = captured_requests[0]
 # Body should be valid MsgPack
 body = msgpack_decode(request.body)
 ASSERT body["name"] == "event"
@@ -457,11 +496,16 @@ Tests that the response body is automatically decoded based on Content-Type head
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200,
-  body: json_encode([{ "id": "1", "name": "item1" }, { "id": "2", "name": "item2" }]),
-  headers: { "Content-Type": "application/json" }
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200,
+      body: json_encode([{ "id": "1", "name": "item1" }, { "id": "2", "name": "item2" }]),
+      headers: { "Content-Type": "application/json" }
+    )
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -483,11 +527,16 @@ ASSERT items[1]["name"] == "item2"
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200,
-  body: msgpack_encode([{ "id": "1" }]),
-  headers: { "Content-Type": "application/x-msgpack" }
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200,
+      body: msgpack_encode([{ "id": "1" }]),
+      headers: { "Content-Type": "application/x-msgpack" }
+    )
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -517,11 +566,6 @@ ASSERT items[0]["id"] == "1"
 
 Tests that the response object provides access to the HTTP status code.
 
-### Setup
-```pseudo
-mock_http = MockHttpClient()
-```
-
 ### Test Cases
 
 | ID | Status Code |
@@ -535,13 +579,20 @@ mock_http = MockHttpClient()
 ### Test Steps
 ```pseudo
 FOR EACH test_case IN test_cases:
-  mock_http.reset()
-
-  IF test_case.status_code >= 400:
-    mock_http.queue_response(test_case.status_code,
-      { "error": { "code": test_case.status_code * 100, "message": "Error" } })
-  ELSE:
-    mock_http.queue_response(test_case.status_code, [])
+  # A 500 is a qualifying error (RSC15l3) and triggers fallback retries;
+  # the handler answers every attempt with the same status so the final
+  # response carries the expected status code.
+  mock_http = MockHttpClient(
+    onConnectionAttempt: (conn) => conn.respond_with_success(),
+    onRequest: (req) => {
+      IF test_case.status_code >= 400:
+        req.respond_with(test_case.status_code,
+          { "error": { "message": "Error", "code": test_case.status_code * 100, "statusCode": test_case.status_code } })
+      ELSE:
+        req.respond_with(test_case.status_code, [])
+    }
+  )
+  install_mock(mock_http)
 
   client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
   response = AWAIT client.request("GET", "/test", version: 3)
@@ -556,12 +607,6 @@ FOR EACH test_case IN test_cases:
 **Test ID**: `rest/unit/RSC19d/response-success-indicator-1`
 
 Tests that the success property correctly reflects 2xx status codes.
-
-### Setup
-```pseudo
-mock_http = MockHttpClient()
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-```
 
 ### Test Cases
 
@@ -578,14 +623,21 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ### Test Steps
 ```pseudo
 FOR EACH test_case IN test_cases:
-  mock_http.reset()
+  # A 500 is a qualifying error (RSC15l3) and triggers fallback retries;
+  # the handler answers every attempt with the same status.
+  mock_http = MockHttpClient(
+    onConnectionAttempt: (conn) => conn.respond_with_success(),
+    onRequest: (req) => {
+      IF test_case.status_code >= 400:
+        req.respond_with(test_case.status_code,
+          { "error": { "message": "Error", "code": test_case.status_code * 100, "statusCode": test_case.status_code } })
+      ELSE:
+        req.respond_with(test_case.status_code, [])
+    }
+  )
+  install_mock(mock_http)
 
-  IF test_case.status_code >= 400:
-    mock_http.queue_response(test_case.status_code,
-      { "error": { "code": test_case.status_code * 100, "message": "Error" } })
-  ELSE:
-    mock_http.queue_response(test_case.status_code, [])
-
+  client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
   response = AWAIT client.request("GET", "/test", version: 3)
 
   ASSERT response.success == test_case.expected_success
@@ -601,11 +653,16 @@ Tests that the errorCode property extracts the value from X-Ably-Errorcode heade
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(401,
-  body: { "error": { "code": 40101, "message": "Unauthorized" } },
-  headers: { "X-Ably-Errorcode": "40101" }
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(401,
+      body: { "error": { "message": "Unauthorized", "code": 40101, "statusCode": 401 } },
+      headers: { "X-Ably-Errorcode": "40101" }
+    )
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -630,14 +687,19 @@ Tests that the errorMessage property extracts the value from X-Ably-Errormessage
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(401,
-  body: { "error": { "code": 40101, "message": "Unauthorized" } },
-  headers: {
-    "X-Ably-Errorcode": "40101",
-    "X-Ably-Errormessage": "Token expired"
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(401,
+      body: { "error": { "message": "Unauthorized", "code": 40101, "statusCode": 401 } },
+      headers: {
+        "X-Ably-Errorcode": "40101",
+        "X-Ably-Errormessage": "Token expired"
+      }
+    )
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -662,15 +724,20 @@ Tests that all response headers are accessible.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200,
-  body: [],
-  headers: {
-    "Content-Type": "application/json",
-    "X-Request-Id": "req-123",
-    "X-Custom-Header": "custom-value"
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200,
+      body: [],
+      headers: {
+        "Content-Type": "application/json",
+        "X-Request-Id": "req-123",
+        "X-Custom-Header": "custom-value"
+      }
+    )
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -698,11 +765,16 @@ Tests that the items() method returns the decoded response body.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, [
-  { "id": "msg1", "name": "event1", "data": "data1" },
-  { "id": "msg2", "name": "event2", "data": "data2" }
-])
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200, [
+      { "id": "msg1", "name": "event1", "data": "data1" },
+      { "id": "msg2", "name": "event2", "data": "data2" }
+    ])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -735,21 +807,26 @@ Tests that multi-page responses can be navigated using next().
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-
-# First page
-mock_http.queue_response(200,
-  body: [{ "id": "1" }, { "id": "2" }],
-  headers: {
-    "Link": '</channels/test/messages?page=2>; rel="next"'
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    IF req.url.query_params["page"] == "2":
+      # Second page
+      req.respond_with(200,
+        body: [{ "id": "3" }],
+        headers: {}  # No "next" link - last page
+      )
+    ELSE:
+      # First page
+      req.respond_with(200,
+        body: [{ "id": "1" }, { "id": "2" }],
+        headers: {
+          "Link": '</channels/test/messages?page=2>; rel="next"'
+        }
+      )
   }
 )
-
-# Second page
-mock_http.queue_response(200,
-  body: [{ "id": "3" }],
-  headers: {}  # No "next" link - last page
-)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -784,23 +861,33 @@ Tests that non-array responses are handled correctly (wrapped as single item).
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+# The channel-status path returns a single JSON object (not an array),
+# which is what this test exercises.
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(200, {
+      "channelId": "test",
+      "status": { "isActive": true }
+    })
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
 ### Test Steps
 ```pseudo
-response = AWAIT client.request("GET", "/time", version: 3)
+response = AWAIT client.request("GET", "/channels/test", version: 3)
 items = response.items()
 ```
 
 ### Assertions
 ```pseudo
-# Non-array response should be accessible
-ASSERT items.length == 1 OR items["time"] == 1234567890000
-# Implementation may vary - either wrap in array or return object directly
+# A single (non-array) JSON object response is wrapped as one item
+ASSERT items.length == 1
+ASSERT items[0]["channelId"] == "test"
 ```
 
 ---
@@ -842,12 +929,13 @@ Tests that request timeouts are properly handled.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_delayed_response(
-  delay: 5000,  # 5 second delay
-  status: 200,
-  body: []
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with_delay(5000, 200, [])  # 5 second delay
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -872,11 +960,19 @@ Tests that HTTP error responses (4xx, 5xx with valid Ably error body) are return
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(400,
-  body: { "error": { "code": 40000, "message": "Bad request" } },
-  headers: { "X-Ably-Errorcode": "40000" }
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(400,
+      body: { "error": { "message": "Bad request", "code": 40000, "statusCode": 400 } },
+      headers: { "X-Ably-Errorcode": "40000" }
+    )
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -897,7 +993,7 @@ ASSERT response.success == false
 ASSERT response.errorCode == 40000
 
 # Only one request should have been made (no fallback)
-ASSERT mock_http.captured_requests.length == 1
+ASSERT captured_requests.length == 1
 ```
 
 ---
@@ -910,16 +1006,26 @@ Tests that fallback hosts are attempted when primary host returns server error w
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
+request_count = 0
+captured_requests = []
 
-# Primary host fails with non-Ably 500 error
-mock_http.queue_response(500,
-  body: "Internal Server Error",
-  headers: { "Content-Type": "text/plain" }
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      # Primary host fails with non-Ably 500 error
+      req.respond_with(500,
+        body: "Internal Server Error",
+        headers: { "Content-Type": "text/plain" }
+      )
+    ELSE:
+      # Fallback succeeds
+      req.respond_with(200, [{ "id": "1" }])
+  }
 )
-
-# Fallback succeeds
-mock_http.queue_response(200, [{ "id": "1" }])
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -938,8 +1044,8 @@ ASSERT response.statusCode == 200
 ASSERT response.success == true
 
 # Two requests: primary failed, fallback succeeded
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[1].url.host == "fallback.ably-realtime.com"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[1].url.host == "fallback.ably-realtime.com"
 ```
 
 ---
@@ -952,8 +1058,16 @@ Tests that the request() method does not allow overriding the configured authent
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, [])
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -969,7 +1083,7 @@ response = AWAIT client.request("GET", "/test",
 
 ### Assertions
 ```pseudo
-request = mock_http.captured_requests[0]
+request = captured_requests[0]
 
 # The configured Basic auth should be used, not the custom header
 ASSERT request.headers["Authorization"] STARTS_WITH "Basic "
@@ -990,7 +1104,17 @@ Tests that paths are handled correctly whether or not they include a leading sla
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [])
+  }
+)
+install_mock(mock_http)
+
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
 
@@ -1004,12 +1128,11 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ### Test Steps
 ```pseudo
 FOR EACH test_case IN test_cases:
-  mock_http.reset()
-  mock_http.queue_response(200, [])
+  captured_requests = []
 
   response = AWAIT client.request("GET", test_case.path, version: 3)
 
-  request = mock_http.captured_requests[0]
+  request = captured_requests[0]
   ASSERT request.url.path == test_case.expected_path
 ```
 
@@ -1023,11 +1146,16 @@ Tests that empty responses (204 No Content) are handled correctly.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(204,
-  body: null,  # No body
-  headers: {}
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    req.respond_with(204,
+      body: null,  # No body
+      headers: {}
+    )
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
