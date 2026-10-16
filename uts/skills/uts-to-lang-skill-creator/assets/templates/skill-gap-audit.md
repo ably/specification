@@ -11,7 +11,7 @@
 | Part | What exists (path, symbol, command → result) | Baseline result (resolver, audit, harness tests, compile) |
 |---|---|---|
 | SKILL.md (lines, headings, frontmatter fields) | | |
-| uts-package-mapping.json (modules, tiers, notes, harness entry, unready data, `unsupported` / `capabilityInapplicable` / `extraTests` markers) | | |
+| uts-package-mapping.json (modules, tiers, notes, harness entry and its shape: `{root, readme, testsRoot, testCommand}` or older per-tier lists, unready data, `unsupported` / `capabilityInapplicable` / `extraTests` markers; keys the resolver could derive, e.g. file lists, a test project, a white-box list, dummy tier paths) | | |
 | scripts/ (resolver, audit, scanner, others) | | |
 | references/ (notes per module; placeholders) | | |
 | Harness (root, README, Known gaps, smoke tests, self-tests, CI jobs) | | |
@@ -32,9 +32,16 @@ Decided per row at STOP-3, not here; G-19/G-20 for offered tiers can't be skippe
 |---|---|---|---|---|
 | G-01 … G-20 | (from the uts-infra-design template) | | | |
 
+G-13 restructure by tier (when the harness isn't organised by tier; MUST): move list, each file from → to with its namespace or package change and any split by tier (e.g. a file mixing unit factories and every-tier waits); size; harness tests run green before and after; moving with no logic change keeps the preserve list's behaviour (not a rewrite); UTS-derived tests that reference the old namespace become regenerate candidates.
+
+| From | To | Namespace or package change | Split? | Notes |
+|---|---|---|---|---|
+
 ## D. UTS-derived tests
 | # | Module × tier (or "outside mapped tiers") | Files | Tags | Tag style | Header SHAs (vs clone HEAD) | No SHA / links main | deviations.md and other deviation records | Compile | Audit | Follow-up proposed | Choice |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+
+Lessons carried into the skill (the tests are evidence, not a constraint): <lesson from a deviation, a hand-patched or failing test, or an adapted assertion> → <the rule, note or harness row that now carries it>; "none" otherwise.
 
 ## E. LiveObjects (decided at STOP-14)
 detect_liveobjects.py → <yes | no | unclear>, <confidence>; decision D-28: full | placeholder | none, translate-only | evaluate; SDK-blocked tiers (12.5): … ; objects items implied: …

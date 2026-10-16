@@ -20,8 +20,8 @@
 | G-10 | standard_test_pool.md implementation; plugin options builder (only if D-28 = full; else n/a (D-28)) | 2.2, standard_test_pool.md | | | | | objects/unit | | | |
 | G-11 | Wait helpers (AWAIT_STATE, poll_until, poll_until_success, process_pending_events, wall-clock wrapper, fake clock driver) | 2.2, 5.6, 5.7 | | | | | | | | |
 | G-12 | Thread-safe capture, log sink, assertContainsInOrder, caller-attributed failures | 2.2 | | | | | | | | |
-| G-13 | Placement and recommended harness layout (shared / port-only / module helpers); fixture-helper scope documented in the module notes | 2.2 | | | | | | | | |
-| G-14 | Harness README with Known gaps; mapping `harness` entry (root, README, per-tier sources and harness-test commands) | 3.1, 3.2 | | | | | | | | |
+| G-13 | Placement and the tier layout (MUST: root, unit/, integration/, integration/proxy/; harness tests in their own tier tree; names follow folders); shared / port-only / module helpers; fixture-helper scope documented in the module notes. Upgrade/Fix, not tier-shaped: restructure by tier, with the move list (Placement) | 2.2 | | | | | | | | |
+| G-14 | Harness README with Known gaps; mapping `harness` entry (root, readme, testsRoot, testCommand with {tier}; sources derived by the resolver) | 3.1, 3.2 | | | | | | | | |
 | G-15 | SandboxApp; ably-common | 2.3 | | | | | */integration | | | |
 | G-16 | ProxyManager (pinned, every OS); ProxySession; rule builders; proxy auth | 2.4 | | | | | */proxy | | | |
 | G-17 | UTS test target; per-tier selection and filters; one CI home per suite | 2.5 | | | | | | | | |
@@ -47,12 +47,17 @@
 - Proxy: version …; binaries per OS …; local override …; auth through the proxy …; platform gating …
 
 ## Hook proposals (each needs STOP-4 approval)
-| Hook | API | Default behaviour | Visibility | Files touched | Installed how | Per-client? | Time sources covered (clock hook) | Approved on |
-|---|---|---|---|---|---|---|---|---|
+| Hook | Existing seams checked (file:line, usable?) | Harness-side alternatives considered (why each falls short) | Specs that need it | API | Default behaviour | Visibility | Files (expected lines) | Installed how | Per-client? | Time sources covered (clock hook) | Approved on |
+|---|---|---|---|---|---|---|---|---|---|---|---|
 
 ## Placement
+- Harness root: <dir> (name SHOULD be infra/); tier directories: <root>, unit/, integration/, integration/proxy/ (MUST); namespaces or packages: <how they follow the folders; shadowing checked>
+- Harness-tests tree (mapping testsRoot): <dir beside the harness, same tier folders | <harness>/tests/<tier>, excluded from source derivation>
 - Shared test-support: <dir/target>; port-only harness: <dir/target>; module helpers: <dir per module>
-- Harness tests per tier: <tier → command that runs its smoke tests and self-tests; CI job>
+- Harness tests per tier: <tier → command that runs its smoke tests and self-tests (testCommand with {tier}); CI job>
+
+| Harness file (existing or planned) | Tiers that use it | Directory | Namespace or package | Moved from (Upgrade/Fix) |
+|---|---|---|---|---|
 
 ## Tier feasibility
 | Module | unit | integration | proxy |

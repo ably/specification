@@ -12,7 +12,7 @@ Orient (Step 0, [section 13](orient.md#13-step-0-orient)) has already checked el
 
 ## 3.2 Step 1b: answer the discovery checklist
 
-Answer every item. For each, record the answer and its evidence in the Repo profile. The "how to find it" column lists starting points; follow the evidence wherever it leads.
+Answer every item. For each, record the answer and its evidence in the Repo profile. The "how to find it" column lists starting points; follow the evidence wherever it leads. This step and 1c are read-only, and their groups of items are independent: you can split them across sub-agents, then merge their findings into the Repo profile yourself ([parallel-work.md](parallel-work.md)).
 
 **Build, test and CI**
 
@@ -47,7 +47,7 @@ Answer every item. For each, record the answer and its evidence in the Repo prof
 | P-17 | **Existing test helpers**: state waits, polling helpers, async-to-sync bridges, event capture or recorder types, log capture, custom assertions, client factories, test-options builders | Shared test-support code; base test classes; helpers used by many test files |
 | P-18 | **Existing sandbox and integration support**: how native integration tests provision a sandbox app (from `test-app-setup.json`?), point clients at the sandbox, retry, clean up; any proxy or fault-injection tooling | Integration test directories and their fixtures; environment variables they read |
 | P-19 | **`ably-common`**: submodule path and name (it may not be called `ably-common`), whether it is initialised, and whether `test-resources/test-app-setup.json`, `msgpack_test_fixtures.json` and `encoding.json` are present | `.gitmodules`; `git submodule status`; list the files |
-| P-20 | **Existing UTS assets and their state**: any UTS harness, UTS-derived tests (`UTS:` tags), `deviations.md` files, previous `uts-to-*` skills in this repo. For each asset: does it compile, do its tests pass, which spec SHA do headers name, which helper-spec symbols exist | Orient's State summary and `scripts/inspect_existing_skill.py`; `grep -rn "UTS:" <test-roots>`; search for `MockWebSocket`, `MockHttpClient`, `SandboxApp`, `uts-proxy`, `deviations.md`, `.claude/skills/uts-*`, `.agents/skills/uts-*`, `.codex/skills/uts-*` |
+| P-20 | **Existing UTS assets and their state**: any UTS harness, UTS-derived tests (`UTS:` tags), `deviations.md` files, previous `uts-to-*` skills in this repo. For each asset: does it compile, do its tests pass, which spec SHA do headers name, which helper-spec symbols exist. The run reads and changes the checked-out branch only: anything the skill or harness refers to that isn't in the checkout is reported as missing (a gap item), and other branches are at most a finding, never a constraint or a question unless the user asks | Orient's State summary and `scripts/inspect_existing_skill.py`; `grep -rn "UTS:" <test-roots>`; search for `MockWebSocket`, `MockHttpClient`, `SandboxApp`, `uts-proxy`, `deviations.md`, `.claude/skills/uts-*`, `.agents/skills/uts-*`, `.codex/skills/uts-*` |
 | P-21 | **Sandbox access**: whether tests can reach `sandbox.realtime.ably-nonprod.net` from developer machines and CI | Existing integration tests; CI network settings (guide [2.3](../../../docs/writing-uts-spec-translator-skills.md#23-sandbox-provisioning-and-fixtures-must-for-integration-tiers)). Probing the sandbox, or running existing integration tests for P-20, is network access: **STOP-6** first |
 
 For a first pass, run `python3 <skill-dir>/scripts/survey_repo.py <repo> [<test-root> …]` (read-only; it prints the HEAD SHA and dirty state, extension counts, likely test roots, submodule status, candidate mocks and fakes, existing `UTS:` tags and existing skills; outside a git repository it says so and lists files by a directory walk). It is a starting point, not an answer: adapt or extend the searches for the repo's language, and record each answer's evidence.
@@ -74,7 +74,7 @@ Then answer, in the Repo profile:
 
 ## 3.4 Step 1d: write and confirm the Repo profile
 
-Write `repo-profile.md` from the [repo-profile template](../assets/templates/repo-profile.md), with Orient's State summary at the top. Record the repo's HEAD SHA and whether it is dirty. Then **STOP-2**: show the user the profile, highlight every "unknown" and every inference, and ask them to confirm or correct it. Apply their corrections before continuing.
+Write `repo-profile.md` from the [repo-profile template](../assets/templates/repo-profile.md), with Orient's State summary at the top. Record the repo's HEAD SHA and whether it is dirty. Then **STOP-2**: the user shouldn't have to open the file to answer. Before the question, show 3–5 key findings in plain words (for example the build or CI quirks, the hook limitations, the baseline test results, the open questions), then the "unknown" entries and inferences they should check, and the path to `repo-profile.md` for the full text. Then ask them to confirm or correct it, laid out as [asking.md](asking.md) says. Apply their corrections before continuing.
 
 ## 3.5 Step 1e: decide LiveObjects support (STOP-14)
 

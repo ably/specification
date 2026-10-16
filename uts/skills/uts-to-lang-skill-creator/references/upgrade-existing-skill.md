@@ -35,7 +35,7 @@ A user-level install of a `uts-to-*` skill (in `~/.claude/skills` or `~/.agents/
 
 ## 11.2 Step U1: understand the existing skill
 
-Copy the [skill-gap-audit template](../assets/templates/skill-gap-audit.md) to the working-records directory as `skill-gap-audit.md` now (create any other working record that doesn't exist yet; update the ones that do, superseding entries in the decision log). Before you judge anything, understand the skill fully, and record what you find in the Repo profile (P-20) and in the gap audit's section A:
+Copy the [skill-gap-audit template](../assets/templates/skill-gap-audit.md) to the working-records directory as `skill-gap-audit.md` now (create any other working record that doesn't exist yet; update the ones that do, superseding entries in the decision log). Before you judge anything, understand the skill fully, and record what you find in the Repo profile (P-20: the checked-out branch only) and in the gap audit's section A:
 
 1. Read in full the existing `SKILL.md`, the mapping file, every script, every `references/` file, and any working records.
 2. Take the **baseline** (11.6), working only on a scratch copy of the whole skill directory, outside any skills directory (so no tool loads it), because the scripts find the mapping relative to their own file:
@@ -43,7 +43,7 @@ Copy the [skill-gap-audit template](../assets/templates/skill-gap-audit.md) to t
     - run the audit, if there is one, over every existing UTS-derived test, plus the 8.2 mutation tests;
     - record "none" for a script that doesn't exist.
 3. Read the harness the skill points at:
-    - its README and sources, from the mapping's `harness` entry, or, if there is none, from the candidates the inspector lists and from P-16, P-17 and P-20;
+    - its README and sources, from the mapping's `harness` entry (`root`, `readme`, `testsRoot`; an older entry may list per-tier `sources` and `tests` commands, or a string `tests` for the harness-tests tree: read them, and propose the minimal shape of guide 3.2 as a change item), or, if there is none, from the candidates the inspector lists and from P-16, P-17 and P-20;
     - its smoke tests and self-tests, and the CI jobs that run them.
 
     Run the harness tests and the existing UTS-derived tests by filter, unit tier only, and record the results and the compile status in the baseline. Network tiers need **STOP-6** first.
@@ -51,6 +51,8 @@ Copy the [skill-gap-audit template](../assets/templates/skill-gap-audit.md) to t
 5. Note where the skill describes something that doesn't exist (a suite, a flag or a helper); the guide lists this as a pattern to avoid.
 
 `inspect_existing_skill.py` gives a first pass. Its checks are regex hits, not a review: every row you write in 11.3 rests on reading the file.
+
+The reading in U1 and U2 is read-only, so it can be split across sub-agents, one per audit section or group of checklist rows (the skill, the harness, the derived tests, the records); you merge and de-duplicate their findings, and own STOP-15 ([parallel-work.md](parallel-work.md)). The baseline's test runs stay serial.
 
 ## 11.3 Step U2: write the gap audit
 
@@ -95,12 +97,14 @@ The harness rows are decided at STOP-3, where in Upgrade/Fix the user chooses pe
 | Phase | In Upgrade/Fix, full gap audit |
 |---|---|
 | 1 | Already done before U2 (Repo profile, STOP-2, STOP-14) |
-| 2 | Start the gap table from section C. Assess the existing harness as 4.2 says ("check it, don't trust it"). Design only the rows the chosen items and the missing MUST rows need. At STOP-3, decide per row (11.4) |
-| 3 | Build the rows chosen at STOP-3. Don't change the behaviour of any harness code that existing UTS-derived tests or native tests use (2.2). Re-run the existing harness tests before and after each change. STOP-7 as usual |
+| 2 | Start the gap table from section C. Assess the existing harness as 4.2 says ("check it, don't trust it"). Design only the rows the chosen items and the missing MUST rows need. A harness not organised by tier (guide 2.2, MUST) gets G-13 as a **restructure by tier** item, with its move list (each file from → to, the namespace or package change, any file split by tier) and its size, from the Placement table (4.7). At STOP-3, decide per row (11.4): restructure now, defer or skip (a skipped MUST leaves the skill not conforming, and the resolver falls back to the whole root) |
+| 3 | Build the rows chosen at STOP-3. Don't change the behaviour of any harness code that native tests use (2.2), and never fix the native tests: report their failures. Existing UTS-derived tests don't constrain the change: record the ones it makes stale, as regenerate candidates (11.6). Re-run the existing harness tests before and after each change. STOP-7 as usual |
 | 4 | Pre-fill D-01 to D-26 and D-32 with what the existing skill does ("Decided by: existing skill"), and propose a change only where a chosen item needs one. Fill in D-27 to D-29 and D-31 (from Orient and Phase 1); D-30 is refreshed in Phase 7. At STOP-8, show the changed decisions, and the rows from 11.3 whose status changed |
 | 5 | Edit the files in place, by the rules below the table |
-| 6 | 11.6 decides which of 8.1 to 8.8 run, and adds the baseline comparison |
-| 7 | The Final report, with its "Existing assets and upgrade summary". If the user asks for commits, offer one per closed item, from the changelog, harness rows first ([9](../SKILL.md#9-phase-7-final-report-and-handover)) |
+| 6 | 11.6 decides which of 8.1 to 8.9 run, and adds the baseline comparison |
+| 7 | The Final report, with its "Existing assets and upgrade summary". The acceptance checklist completed, the automated check with `--final`, the independent verification and the completion gate, as in a create run; the verification covers the rows this run touched. If the user asks for commits, offer one per closed item, from the changelog, harness rows first ([9](../SKILL.md#9-phase-7-final-report-and-handover)) |
+
+**Moving is not rewriting.** The preserve list protects behaviour. A G-13 move whose namespace or package follows the new folder, with no logic change, keeps it: move the files with a plain `mv` (staging only if the user approves it), run the harness tests green before and after, and change nothing else in the same step. Existing UTS-derived tests that reference the old namespace become regenerate candidates (11.6), never hand-edited; a transitional alias in the harness (a C# `global using`, a Python re-export) MAY keep them compiling meanwhile, recorded as transitional.
 
 Phase 5 edits in place:
 
@@ -111,6 +115,8 @@ Phase 5 edits in place:
 - Log each change in the Design record's changelog, with the GA- or G- row it closes.
 
 The acceptance items of 7.1 to 7.6 and each phase's exit check (its Done-when, checklist or stop point) apply to what this run changes. An item tied to a skipped or deferred gap-audit row is reported ✗ under D-29, not worked.
+
+At the start of Phase 2, create the working records' `acceptance-checklist.md` from the template, pre-filled from section B (status and evidence; the Harness group from section C), and update its rows as each phase ends ([1.4](../SKILL.md#14-outputs)). A `conforms` row whose evidence still holds keeps ✓; every row this run changes is re-marked with new evidence.
 
 Existing UTS-derived tests are regenerated only through an item the user chose, such as a re-sync, and only through the skill (fix the cause, then regenerate). They are never hand-edited.
 
@@ -124,8 +130,9 @@ Existing UTS-derived tests are regenerated only through an item the user chose, 
   - the 8.5 paths of every workflow step that changed;
   - the 8.6 frontmatter check, always;
   - 8.7 for every changed example, and 7.4 and 8.7 for `unverified` rows.
-- **Compare with the baseline from U1.** The resolver output for all three modules, the audit results on the existing tests, the results of the harness tests and the existing UTS-derived tests, and the compile status must match the baseline, or every difference must be explained by a STOP-15 item or a STOP-3 row (for example a tier that is now refused until its smoke tests exist). Anything else is a regression: fix its cause.
-- **Pilot** (8.3): at least one spec for each tier whose rules, notes or harness changed, in a fresh session. A pilot never overwrites an existing UTS-derived test: choose a spec that has no test, or ask first (8.3).
-- Run the new or changed audit over the existing UTS-derived tests. Report what it finds in section D and the Final report, and regenerate tests only where the user chose to.
+- **Compare with the baseline from U1.** The resolver output for all three modules, the audit results on the existing tests, the results of the harness tests and of any native tests run, and the compile status must match the baseline, or every difference must be explained by a STOP-15 item or a STOP-3 row (for example a tier that is now refused until its smoke tests exist). Anything else is a regression: fix its cause. The existing UTS-derived tests are the exception: they are the skill's output, not a constraint on it. A derived test that a skill or harness change makes fail or not compile is stale, not a regression: list it as a regenerate item, and the user chooses.
+- **Harness gate and dry run** (8.3): for each tier whose rules, notes or harness changed, in a fresh session. Nothing is written, so no existing UTS-derived test is touched; the regenerate items below are how changed rules reach them.
+- **The acceptance check** (8.9), always.
+- Run the new or changed audit over the existing UTS-derived tests. Report what it finds in section D and the Final report, and regenerate tests only where the user chose to. The stale tests recorded in Phase 3 and in the baseline comparison join that list. Regenerating keeps only what guide [9.2](../../../docs/writing-uts-spec-translator-skills.md#92-a-re-sync-mode-should) step 4 lists, such as DEVIATION gates, adapted assertions and `deviations.md` entries; the lessons the audit carried into the skill (section D) stay in the skill.
 
-**Done when:** every item chosen at STOP-15, and every harness row chosen at STOP-3, is done and verified; every `unverified` row is settled and re-confirmed; nothing in the preserve list changed without a logged reason; the baseline comparison shows no unexplained difference; and the Final report's "Existing assets and upgrade summary" and acceptance checklist reflect every choice.
+**Done when:** every item chosen at STOP-15, and every harness row chosen at STOP-3, is done and verified; every `unverified` row is settled and re-confirmed; nothing in the preserve list changed without a logged reason; the baseline comparison shows no unexplained difference; the automated check (8.9) has no unexplained fail; and the Final report's "Existing assets and upgrade summary" and acceptance checklist reflect every choice.

@@ -123,8 +123,12 @@ def skill_view(s, repo):
             pass
     harness = s.get("harness") or {}
     smoke = harness.get("smokeOrSelfTestFiles")
-    tiers = sorted({t for m in s.get("mapping", {}).get("modules", {}).values() for t in m if t in
-                    ("unit", "integration", "proxy")})
+    # Offered tiers: a target path, and neither the module (a module-level `unready`, e.g. objects out of scope;
+    # `unsupported` without `extraTests`) nor that tier marked not ready (guide 3.2).
+    tiers = sorted({t for m in s.get("mapping", {}).get("modules", {}).values()
+                    if not isinstance(m.get("unready"), str) and not (m.get("unsupported") and not m.get("extraTests"))
+                    for t in m if t in ("unit", "integration", "proxy") and isinstance(m[t], str)
+                    and not (isinstance(m.get("unready"), dict) and t in m["unready"])})
     return {
         "dir": s["installs"][0]["path"], "installs": [i["path"] + (" (symlink)" if i["symlink"] else "")
                                                       for i in s["installs"]],
@@ -135,7 +139,8 @@ def skill_view(s, repo):
         "checks": s.get("summary", {}), "mappedModules": sorted(s.get("mapping", {}).get("modules", {})),
         "objectsNotes": ("placeholder" if (s.get("mapping", {}).get("notes", {}).get("objects") or {}).get("placeholder")
                           else "present" if s.get("mapping", {}).get("notes", {}).get("objects") else "none"),
-        "harness": ("from mapping" if harness.get("readme") else
+        "mappingShape": harness.get("shape"),  # "older": an older mapping entry, read with the inspector's warning
+        "harness": ("from mapping" if harness.get("readme") or harness.get("root") else
                     ("candidates: " + ", ".join(r["path"] for r in harness.get("readmes", [])) if harness.get("readmes")
                       else "none found")),
         "smokeOrSelfTestFiles": len(smoke) if isinstance(smoke, list) else None,
@@ -683,8 +688,9 @@ def option(label, detail="", value=None, recommended=False):
     return {"label": label, "detail": detail, "value": value or label, "recommended": recommended}
 
 
-def stop13_question(state, skills, insp, delta, changes, repo_name):
-    """STOP-13, the run mode, as a question (asking.md; 13.4)."""
+def stop13_question(state, skills, insp, delta, changes, repo_name, plan=None):
+    """STOP-13, the run mode, as a question (asking.md; 13.4). With a side detected from the existing UTS code, a
+    `note` names that client setup in one plain sentence, shown in both forms."""
     cls, d = state["class"], (skills[0]["dir"] if len(skills) == 1 else None)
     target = f"`{d}`" if d else "this repo"
     if state["reentry"]:
@@ -718,7 +724,18 @@ def stop13_question(state, skills, insp, delta, changes, repo_name):
     for x in opts:  # two skills with the same last path part: name them by their directory
         if labels.count(x["label"]) > 1 and x["value"].startswith("Upgrade/Fix "):
             x["label"] = x["value"]
-    return {"stop": "STOP-13", "header": "Run mode", "question": q, "why": why, "details": [], "options": opts}
+    out = {"stop": "STOP-13", "header": "Run mode", "question": q, "why": why, "details": [], "options": opts}
+    side = (plan or {}).get("side") or {}
+    if side.get("chosenBy") in ("existing UTS code", "records (D-31)"):  # what the run assumes, one sentence (13.4)
+        o = next((x for x in side["options"] if x["value"] == side["chosen"]), {"value": side["chosen"]})
+        name = side_view(o, dict(side, recommended=None))[0].lower()
+        rec = state.get("recommended") or ""
+        harness = ("" if not plan.get("existingHarness") or mode_of(rec)[0] != "upgrade" else
+                    " and audits the existing harness" if "full gap audit" in rec else
+                    " and updates the existing harness for what changed")
+        out["note"] = (f"Keeps the existing client setup ({name})" if side["chosenBy"] == "existing UTS code" else
+                        f"Keeps the last run's client setup ({name})") + harness + "."
+    return out
 
 
 def side_view(o, side):
@@ -848,7 +865,7 @@ def stop17_questions(plan, caps, checks, ask_side, cap_reasons, stop13):
 
 def question_markdown(q, n):
     """One question block (asking.md): bold numbered question with the stop ID, why, details, one option list."""
-    out = [f"**Question {n}: {q['question']}** *({q['stop']})*", q["why"]]
+    out = [f"**Question {n}: {q['question']}** *({q['stop']})*", q["why"]] + ([q["note"]] if q.get("note") else [])
     if q["details"]:
         out += [""] + [f"- {x}" for x in q["details"]]
     out.append("")
@@ -903,7 +920,8 @@ def ask_user_question(qs):
             return None
         if q["details"]:
             context.append(f"**{q['header']}**\n" + "\n".join(f"- {x}" for x in q["details"]))
-        out.append({"question": f"{q['question']} {q['why']}", "header": q["header"], "multiSelect": False,
+        out.append({"question": " ".join(x for x in (q["question"], q["why"], q.get("note")) if x),
+                    "header": q["header"], "multiSelect": False,
                     "options": [{"label": o["label"] + (" (Recommended)" if o["recommended"] else ""),
                                   "description": o["detail"] or ("end the run here" if o["label"] == "Stop" else
                                                                   o["label"])} for o in opts]})
@@ -953,9 +971,9 @@ def short_path(path):
 
 def plan_row(plan, stop17, md=False, where=None):
     """The State summary's Plan row (13.4): the outline in one line, and where it is confirmed. The Markdown form is
-    in plain words (asking.md), and `where` says where STOP-17's plan question is asked: {now, laterNew,
-    laterExisting, newLabels} (the STOP-13 labels of the modes, main()). With an existing harness it says what each
-    kind of run mode does with it."""
+    in plain words (asking.md), and `where` says where STOP-17's plan question is asked: {recommended, now,
+    laterNew, laterExisting, newLabels} (the STOP-13 labels of the modes, main()). With an existing harness it shows
+    only the recommended mode's plan; another mode's plan comes with that mode's follow-up."""
     if not plan:
         return None
     side = plan.get("side") or {}
@@ -972,12 +990,16 @@ def plan_row(plan, stop17, md=False, where=None):
                   else "accepted with your run-mode answer: ")
         if not plan.get("existingHarness"):
             return prefix + tiers + left
-        parts = [f"Upgrade/Fix: existing harness {plain(plan['existingHarness'])}, checked in the audit"
-                  + (", plan asked next" if w.get("laterExisting") else "")]
-        if w.get("newLabels") and plan["tiers"]:
-            parts.append(f"{' or '.join(w['newLabels'])}: a new one ({tiers.split(';')[0]}, with smoke tests and "
-                          "self-tests)" + (", plan asked next" if w.get("laterNew") else ""))
-        return ("" if later and not w.get("now") else prefix) + "; ".join(parts) + left
+        # An existing harness: only the recommended mode's plan; another mode's plan comes with its follow-up.
+        mode, label = mode_of(w["recommended"])[:2] if w.get("recommended") else (None, None)
+        new = mode in PLAN_MODES
+        if not w.get("now"):
+            prefix = (f"asked next if you choose {label}: " if label in w.get("laterNew" if new else "laterExisting",
+                                                                              []) else
+                      "accepted with your run-mode answer: ")
+        short = re.sub(r"(?:[^\s,/]+/)+([^\s,/]+/[^\s,/]+)", r"\1", plain(plan["existingHarness"]))
+        how = "updated for what changed" if "diff-driven" in (w.get("recommended") or "") else "checked in the audit"
+        return prefix + (tiers if new else f"existing harness {short}, {how}") + left
     side_text = (f"side: {side['chosen']}" if side.get("chosen") else
                   "side: asked at STOP-17" if side else "one side")
     body = (f"existing harness ({plan['existingHarness']}), audited at U1 and STOP-15" if plan.get("existingHarness")
@@ -1094,7 +1116,7 @@ def summary_markdown(repo_name, head, dirty, elig, spec, insp, skills, lo, chang
         if s["records"]:
             r = s["records"]
             rows.append(("Records", f"`{r['dir']}`: run {run_status(r)}; recorded spec "
-                                    f"`{(r['recordedSpecSha'] or '?')[:8]}`"))
+                                    f"`{(r['recordedSpecSha'] or '?')[:8]}`" + checklist_progress(r)))
     if not skills:
         hc = insp.get("harnessCandidates") or {}
         rows.append(("Skills", "none" + (f"; other repo skills: {', '.join(insp.get('otherRepoSkills', []))}"
@@ -1252,7 +1274,8 @@ def summary_text(repo_name, head, dirty, elig, spec, insp, skills, lo, changes, 
             if s["records"]:
                 r = s["records"]
                 lines.append(f"Records      {r['dir']}: run {run_status(r)}; recorded spec "
-                              f"{(r['recordedSpecSha'] or '?')[:8]}, repo {(r['recordedRepoSha'] or '?')[:8]}")
+                              f"{(r['recordedSpecSha'] or '?')[:8]}, repo {(r['recordedRepoSha'] or '?')[:8]}"
+                              + checklist_progress(r))
     else:
         hc = insp.get("harnessCandidates") or {}
         lines.append("Skills       none" + (f"; other repo skills: {', '.join(insp.get('otherRepoSkills', []))}"
@@ -1302,6 +1325,15 @@ def run_status(rec):
     """`finished`, or `in progress (Phase n)` from the design record's Run status line."""
     m = re.search(r"Phase\s*(\d+)", rec.get("runStatusLine") or "")
     return rec["runStatus"] + (f" (Phase {m.group(1)})" if m and rec["runStatus"] == "in progress" else "")
+
+
+def checklist_progress(rec):
+    """"; checklist ✓ n, ✓ static n, ✗ n, n/a n, open n" from the inspector's records (13.4, 13.6), or ""."""
+    c = rec.get("checklist")
+    if not c:
+        return ""
+    return (f"; checklist ✓ {c['done']}, ✓ static {c['static']}, ✗ {c['fail']}, n/a {c['na']}, open {c['openTotal']}"
+            + ("" if c.get("evidenceColumn") else " (no Evidence column)"))
 
 
 USAGE = ("usage: orient.py <repo> [--spec-clone PATH] [--skill-dir PATH] [--records PATH] "
@@ -1456,12 +1488,13 @@ def main(argv):
             state["recommended"] = "Upgrade/Fix, full gap audit (section 11)"
         questions = {"now": [], "followUp": []}
         if state["class"] != "INELIGIBLE":
-            stop13 = stop13_question(state, skills, insp, delta, changes, repo.name)
+            stop13 = stop13_question(state, skills, insp, delta, changes, repo.name, plan)
             checks = profile_checks(caps, delta, added, lowered) if cap_reasons else []
             now17, later17 = stop17_questions(plan, caps, checks, ask_side, cap_reasons, stop13)
             questions = {"now": [stop13] + now17, "followUp": later17}
         later = [q for q in questions["followUp"] if q.get("part") == "plan"]
         plan_where = {  # where STOP-17's plan question is asked, by kind of run mode (13.4 Plan row)
+            "recommended": state.get("recommended"),
             "now": any(q.get("part") == "plan" for q in questions["now"]),
             "laterNew": [mode_of(v)[1] for q in later if "build this harness" in q["why"] for v in q["askIf"]],
             "laterExisting": [mode_of(v)[1] for q in later if "build this harness" not in q["why"]

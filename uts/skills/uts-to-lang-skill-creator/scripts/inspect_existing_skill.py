@@ -13,7 +13,7 @@ script by hash): a "pass" is a pattern hit, not a review.
 never runs the skill's scripts and never writes.
 
 Prints one JSON object: `ok`, `repo`, `head`, `skills` (per skill: installs,
-origin, records, `capabilityProfile`, language, frontmatter, files, mapping,
+origin, records (with the acceptance checklist's progress, `checklist`), `capabilityProfile`, language, frontmatter, files, mapping,
 harness (with `selfTestCandidates` and `ciSources`), checks, summary), `namedSkill`, `workingRecords`, `brokenInstalls`,
 `orphanRecords`, `otherRepoSkills`, `repoLanguages`, `harnessCandidates`,
 `userLevelInstalls`, `derivedTests`, `note` and `found`. Exit 0 on success; 1
@@ -79,10 +79,16 @@ BODY_DEFECTS = [
       "fetches docs or specs from GitHub instead of the local clone"),
 ]
 UNPINNED = re.compile(r"(?i)gh\s+api|api\.github\.com|/contents|/(blob|tree)/main|specification/(refs/heads/)?main/")
-# A usage guard (guide 3.3 MUST): a usage line, and a stop when the argument is missing.
+# A usage guard (guide 3.3 MUST): a usage line, and the skill never guesses a module: either a stop when the
+# argument is missing (the older form), or, with the optional argument, a question asking which module.
 USAGE_LINE = re.compile(r"(?i)\busage:|usage line")
 USAGE_STOP = re.compile(r"(?i)(\bno\b|missing|empty|blank|without)[^\n]{0,80}\bstop|\bstop[^\n]{0,60}"
                         r"(no|missing|empty|without)\b[^\n]{0,20}(argument|module|path)")
+MODULE_QUESTION = re.compile(
+    r"(?i)\bask(s|ing)?\b[^\n]{0,40}\bwhich (uts )?module|never guess(es)?\b[^\n]{0,20}\bmodule"
+    r"|module (question|selection|listing)|--list-modules")
+# The harness's tier directories (guide 2.2, MUST): `<root>/unit`, `<root>/integration`, `<root>/integration/proxy`.
+TIER_DIRS = {"unit": ("unit",), "integration": ("integration",), "proxy": ("integration", "proxy")}
 TEST_NAME = re.compile(r"(?i)(tests?|spec)\.[a-z]+$|^test_|_test\.[a-z]+$")
 TYPE_DECL = re.compile(r"\b(?:class|struct|interface|protocol|object|enum|record|type)\s+([A-Z][A-Za-z0-9_]{3,})")
 CI_SCRIPT = re.compile(r"(?:^|[\s\"'=(])(\.{0,2}/?[\w./-]+\.(?:sh|bash|ps1|cake|py|rb|js|mjs|mk|gradle|kts|bat|cmd))\b")
@@ -220,6 +226,124 @@ def parse_d31(line):
     return prof
 
 
+CHECKLIST_HEADER = re.compile(r"^\|\s*Guide §13 item\s*\|")
+PLACEHOLDER = re.compile(r"^<[^>]*>$|^(…|\.\.\.|-|—)?$")
+
+
+def table_cells(line):
+    """The cells of a Markdown table row, split at `|` outside code spans and not escaped."""
+    cells, cur, code, i = [], "", False, 0
+    body = line.strip()
+    body = body[1:] if body.startswith("|") else body
+    while i < len(body):
+        ch = body[i]
+        if ch == "\\" and i + 1 < len(body) and body[i + 1] == "|":
+            cur += "|"
+            i += 2
+            continue
+        if ch == "`":
+            code = not code
+        if ch == "|" and not code:
+            cells.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    if cur.strip():
+        cells.append(cur.strip())
+    return cells
+
+
+def status_kind(status, evidence):
+    """(kind, reason) of an acceptance-checklist Status cell: done, static ("✓ static; behaviour at first
+    translation"), fail (✗), na, open (blank or "open"), or unknown. A ✗ or n/a reason may sit in the Evidence cell."""
+    s = re.sub(r"\*\*|__", "", status or "").strip()
+    low = s.lower()
+    if not s or low in ("open", "?", "todo", "-", "—") or PLACEHOLDER.match(s):
+        return "open", ""
+    if low.startswith("n/a") or re.match(r"na\b", low):
+        return "na", re.sub(r"^n/?a\W*", "", s, flags=re.I).strip(" ()—:-") or (evidence or "")
+    if s[0] in "✗✘❌" or re.match(r"(no|not met)\b", low):
+        return "fail", s.lstrip("✗✘❌").strip(" ()—:-") or (evidence or "")
+    if s[0] in "✓✔✅":
+        return ("static" if re.match(r"[✓✔✅]\s*static", s) else "done"), ""
+    return "unknown", ""
+
+
+def parse_checklist(text):
+    """The acceptance-checklist table in `text` (the working record, or the Final report's section), or None.
+
+    Returns `rows` (group, item, verified, evidence, status, kind, reason), `evidenceColumn`, and the
+    "Automated check" and "Independent verification" lines (None when absent or still the template's)."""
+    lines = text.splitlines()
+    start = next((i for i, l in enumerate(lines) if CHECKLIST_HEADER.match(l)), None)
+    if start is None:
+        return None
+    header = [c.lower() for c in table_cells(lines[start])]
+    col = {name: header.index(name) for name in ("verified in", "evidence", "status") if name in header}
+    rows, group = [], None
+    for line in lines[start + 1:]:
+        if not line.lstrip().startswith("|"):
+            break
+        cells = table_cells(line)
+        if not cells or set("".join(cells)) <= set("-: "):
+            continue
+        cells += [""] * (len(header) - len(cells))
+        m = re.fullmatch(r"\*\*(.+?)\*\*", cells[0])
+        if m and not any(cells[1:]):
+            group = m.group(1)
+            continue
+        evidence = cells[col["evidence"]] if "evidence" in col else ""
+        evidence = "" if PLACEHOLDER.match(evidence) else evidence
+        status = cells[col["status"]] if "status" in col else cells[-1]
+        kind, reason = status_kind(status, evidence)
+        verified = cells[col["verified in"]] if "verified in" in col else ""
+        rows.append(dict(
+            group=group, item=cells[0], verified=verified, evidence=evidence, status=status, kind=kind, reason=reason))
+
+    def line_after(label):
+        m = re.search(r"(?im)^-?\s*" + label + r"[^:\n]*:\s*(.+)$", "\n".join(lines[:start]))
+        value = m.group(1).strip() if m else None
+        return None if value is None or value.startswith("<") or value.lower().startswith("not run yet") else value
+    return {"rows": rows, "evidenceColumn": "evidence" in col, "automatedCheck": line_after("Automated check"),
+            "verification": line_after("Independent verification")}
+
+
+def checklist_counts(rows):
+    """Counts per status. A ✓ (or ✓ static) without evidence, and a ✗ or n/a without a reason, count as open."""
+    c = collections.Counter()
+    for r in rows:
+        k = r["kind"]
+        if k in ("done", "static") and not r["evidence"]:
+            c["noEvidence"] += 1
+        elif k in ("fail", "na") and not r["reason"]:
+            c["noReason"] += 1
+        else:
+            c[k if k != "unknown" else "open"] += 1
+    counts = {k: c.get(k, 0) for k in ("done", "static", "fail", "na", "open", "noEvidence", "noReason")}
+    counts["openTotal"] = counts["open"] + counts["noEvidence"] + counts["noReason"]
+    counts["rows"] = len(rows)
+    return counts
+
+
+def read_checklist(rec_dir):
+    """The acceptance checklist in rec_dir: acceptance-checklist.md, else the Final report's "Acceptance checklist"
+    section (older records). None if neither has the table."""
+    for name, section in (("acceptance-checklist.md", None), ("final-report.md", "Acceptance checklist")):
+        p = rec_dir / name
+        if not p.is_file():
+            continue
+        text = p.read_text(encoding="utf-8", errors="replace")
+        if section:
+            m = re.search(r"(?ms)^##\s*" + section + r"\s*$(.*?)(?=^##\s|\Z)", text)
+            text = m.group(1) if m else ""
+        parsed = parse_checklist(text)
+        if parsed:
+            parsed["file"] = name
+            return parsed
+    return None
+
+
 def read_records(rec_dir):
     """Working records of this procedure in rec_dir, or None: origin evidence, run status, recorded SHAs, D-31."""
     dr = rec_dir / "design-record.md"
@@ -251,7 +375,16 @@ def read_records(rec_dir):
     return {"dir": str(rec_dir), "creatorRecords": ours, "files": sorted(p.name for p in rec_dir.glob("*.md")),
             "runStatus": run, "runStatusLine": status.group(1).strip() if status else None,
             "recordedSpecSha": spec.group(1) if spec else None, "recordedRepoSha": repo_sha.group(1) if repo_sha else None,
-            "finalReport": final, "capabilityProfile": profile}
+            "finalReport": final, "capabilityProfile": profile, "checklist": checklist_progress(rec_dir)}
+
+
+def checklist_progress(rec_dir):
+    """The acceptance checklist's progress for Orient's re-entry (13.4, 13.6), or None without a checklist."""
+    parsed = read_checklist(rec_dir)
+    if not parsed:
+        return None
+    return {"file": parsed["file"], "evidenceColumn": parsed["evidenceColumn"], **checklist_counts(parsed["rows"]),
+            "verification": parsed["verification"]}
 
 
 LEGACY_UNSUPPORTED = re.compile(r"(?i)not applicable|rest-only|capability absent")
@@ -260,7 +393,9 @@ LEGACY_UNSUPPORTED = re.compile(r"(?i)not applicable|rest-only|capability absent
 def mapping_profile(modules):
     """What the generated skill's mapping records about scope: `unsupported` modules and `capabilityInapplicable`
     entries (and the older keys `notApplicable`, `notApplicableSpecs`, and an `unready` reason saying "not
-    applicable" or "REST-only"). None if the mapping says nothing about either."""
+    applicable" or "REST-only"). None if the mapping says nothing about either. Any other module-level `unready`
+    string (`objects` out of scope, D-28: guide 3.2) is readiness, not scope: it is never read as `unsupported`, so
+    Orient never reports such a module as freed."""
     unsupported, inapplicable, legacy = {}, {}, []
     for module, m in modules.items():
         if m.get("unsupported"):
@@ -282,6 +417,103 @@ def mapping_profile(modules):
         return None
     return {"unsupported": unsupported, "capabilityInapplicable": {k: len(v) for k, v in inapplicable.items()},
             "capabilityInapplicableEntries": inapplicable, "legacyKeys": legacy}
+
+
+TIERS = ("unit", "integration", "proxy")
+
+
+def infra_entry(entry):
+    """The mapping's `harness` entry, read in the current shape {root, readme, testsRoot, testCommand} (guide 3.2)
+    or an older one, accepted with a warning: per-tier `tiers.<tier>.sources` and `tiers.<tier>.tests` (commands),
+    and a string `tests` (read as testsRoot). Returns {older, warning, testsRoot, commands: {tier: command}}."""
+    out = {"older": False, "warning": None, "testsRoot": None, "commands": {}}
+    if not isinstance(entry, dict):
+        return out
+    old = []
+    tests_root = entry.get("testsRoot")
+    if not isinstance(tests_root, str) and isinstance(entry.get("tests"), str):
+        tests_root = entry["tests"]
+        old.append("a string `tests` (read as testsRoot)")
+    out["testsRoot"] = tests_root if isinstance(tests_root, str) and tests_root else None
+    command = entry.get("testCommand")
+    per_tier = entry.get("tiers") if isinstance(entry.get("tiers"), dict) else {}
+    for t in TIERS:
+        if isinstance(command, str) and command:
+            out["commands"][t] = command.replace("{tier}", t)
+        v = per_tier.get(t)
+        if isinstance(v, dict) and isinstance(v.get("tests"), str):
+            out["commands"].setdefault(t, v["tests"])
+    if per_tier:
+        kinds = sorted({k for v in per_tier.values() if isinstance(v, dict) for k in v if k in ("sources", "tests")})
+        old.append("per-tier `tiers.<tier>." + "/".join(kinds) + "`" if kinds else "per-tier `tiers`")
+    if old:
+        out["older"] = True
+        out["warning"] = ("older shape, accepted: " + "; ".join(old)
+                          + "; the current shape is {root, readme, testsRoot, testCommand} (guide 3.2)")
+    return out
+
+
+OUT_OF_SCOPE = re.compile(r"(?i)out of scope")
+
+
+def derivable_keys(mapping):
+    """Mapping keys the resolver can derive, or that live elsewhere (guide 3.2): read, but reported for slimming."""
+    found = [k for k in ("testProject", "namespaceRoot") if k in mapping]
+    entry = mapping.get("harness")
+    if isinstance(entry, dict) and isinstance(entry.get("tiers"), dict) and any(
+            isinstance(v, dict) and v.get("sources") for v in entry["tiers"].values()):
+        found.append("per-tier source lists (derived from the tier layout)")
+    packages = mapping.get("packages") if isinstance(mapping.get("packages"), dict) else {}
+    for module, m in packages.items():
+        if not isinstance(m, dict):
+            continue
+        if "whiteBox" in m:
+            found.append(f"{module}.whiteBox (the notes hold the list)")
+        paths = [t for t in TIERS if isinstance(m.get(t), str)]
+        un = m.get("unready")
+        whole = isinstance(un, str) or (isinstance(un, dict) and paths and set(paths) <= set(un)
+                                        and all(OUT_OF_SCOPE.search(str(r)) for r in un.values()))
+        if paths and whole and not m.get("extraTests"):
+            found.append(f"{module}: tier paths beside an out-of-scope `unready` (one module-level reason is enough)")
+    return found
+
+
+def offered_tiers(modules):
+    """Tiers some module offers: a target path, and neither the module nor that tier marked not ready."""
+    out = set()
+    for m in modules.values():
+        un = m.get("unready")
+        if isinstance(un, str) or (m.get("unsupported") and not m.get("extraTests")):
+            continue
+        out |= {t for t in TIERS if isinstance(m.get(t), str) and not (isinstance(un, dict) and t in un)}
+    return [t for t in TIERS if t in out]
+
+
+def tier_layout(repo, root, tiers):
+    """Guide 2.2 (MUST): a directory per offered tier under the harness root, proxy nested under integration
+    (`unit/`, `integration/`, `integration/proxy/`; names compared case-insensitively). Returns (ok, evidence, warn)."""
+    base = repo / root if root else None
+    if base is None or not base.is_dir():
+        return False, f"root {root or '(none declared)'} not found: the tier layout can't be checked", True
+
+    def child(d, name):
+        return next((c for c in sorted(d.iterdir()) if c.is_dir() and c.name.lower() == name), None) if d else None
+
+    found, missing = [], []
+    for t in tiers or list(TIERS):
+        d = base
+        for part in TIER_DIRS[t]:
+            d = child(d, part)
+        (found if d else missing).append("/".join(TIER_DIRS[t]) + "/")
+    top = [c.name + "/" for c in sorted(base.iterdir()) if c.is_dir()]
+    evidence = (f"tier directories under {root}: {', '.join(found) or 'none'}"
+                + (f"; missing: {', '.join(missing)}" if missing else "")
+                + f"; top-level folders: {', '.join(top) or 'none'}")
+    if missing and "integration/proxy/" in missing and child(base, "proxy"):
+        evidence += "; proxy/ is a sibling of integration/: nest it"
+    if missing:
+        evidence += " (guide 2.2 MUST: restructure by tier, gap-table row G-13)"
+    return not missing, evidence, False
 
 
 def merge_profile(records, mprof):
@@ -397,9 +629,13 @@ def inspect_skill(repo, real, installs, records_dir=None):
         check(checks, cid, item, bool(hit), meaning + (" found" if hit else " not found") + " (outside URLs)",
               warn=cid in WARN_ONLY)
     has_usage, has_stop = bool(USAGE_LINE.search(body)), bool(USAGE_STOP.search(body))
-    check(checks, "B-usage-guard", "SKILL.md: usage guard that doesn't rely on `$ARGUMENTS` ...", has_usage and has_stop,
-          ("a usage line " + ("found" if has_usage else "not found") + "; a stop when the argument is missing "
-          + ("found" if has_stop else "not found")), warn=has_usage != has_stop)
+    has_question = bool(MODULE_QUESTION.search(body))
+    guarded = has_stop or has_question
+    guards = [x for x, ok in (("a module question", has_question), ("a stop when the argument is missing", has_stop))
+              if ok]
+    check(checks, "B-usage-guard", "SKILL.md: usage guard that doesn't rely on `$ARGUMENTS` ...", has_usage and guarded,
+          "a usage line " + ("found" if has_usage else "not found") + "; never guessing a module: "
+          + (" and ".join(guards) or "not found"), warn=has_usage != guarded)
     # X-* checks read only the skill's own files (guide 13): SKILL.md, references/ and scripts/.
     defect_sources = {"SKILL.md": body}
     for sub in ("references", "scripts"):
@@ -408,7 +644,7 @@ def inspect_skill(repo, real, installs, records_dir=None):
                 if (d / sub).is_dir() else []:
             defect_sources[ref.relative_to(d).as_posix()] = ref.read_text(encoding="utf-8", errors="replace")
     lines = text.count("\n") + 1
-    check(checks, "B-length", "SKILL.md: ... follows the 3.4 outline", lines <= 500,
+    check(checks, "B-length", "SKILL.md: ... 3.4 outline incl. the Harness reference", lines <= 500,
           f"{lines} lines (agent-skill guidance: keep SKILL.md under 500; move detail to references)", warn=True)
 
     files = {"SKILL.md": True}
@@ -468,8 +704,17 @@ def inspect_skill(repo, real, installs, records_dir=None):
                 notes[module] = {"path": entry["notes"], "exists": note.is_file(), "bytes": size,
                                   "placeholder": bool(re.search(r"(?i)placeholder|not yet authored", head))}
         harness = mapping.get("harness")
-        check(checks, "M-harness", "`uts-package-mapping.json`: ... `harness` entry", isinstance(harness, dict),
-              "harness entry present" if isinstance(harness, dict) else "no harness entry (guide 3.2 MUST)")
+        ientry = infra_entry(harness)
+        check(checks, "M-harness", "`uts-package-mapping.json`: ... `harness` entry",
+              isinstance(harness, dict) and not ientry["older"],
+              ("harness entry present" + (f"; {ientry['warning']}" if ientry["older"] else ""))
+              if isinstance(harness, dict) else "no harness entry (guide 3.2 MUST)",
+              warn=isinstance(harness, dict))
+        derivable = derivable_keys(mapping)
+        check(checks, "M-minimal", "`uts-package-mapping.json`: ... nothing the resolver can derive", not derivable,
+              "only what the resolver can't derive" if not derivable else
+              "read, but the resolver can derive or another file holds (slim at the next Upgrade/Fix, guide 3.2): "
+              + "; ".join(derivable), warn=True)
         for module in ("rest", "realtime", "objects"):
             check(checks, f"M-module-{module}", "`uts-package-mapping.json`: ...", module in modules,
                   f"{module} {'mapped' if module in modules else 'not mapped'}", warn=True)
@@ -482,24 +727,36 @@ def inspect_skill(repo, real, installs, records_dir=None):
     other_notes = sorted(p.name for p in (d / "references").glob("*-mapping.md")) if (d / "references").is_dir() else []
 
     harness_info = None
+    layout_item = "... organised by tier (MUST; names SHOULD) ..."
     if isinstance(harness, dict):
         readme = repo / str(harness.get("readme", ""))
-        tiers = harness.get("tiers") if isinstance(harness.get("tiers"), dict) else {}
+        root = str(harness.get("root") or "").strip("/")
+        tests_root = (ientry["testsRoot"] or "").strip("/") or None
         harness_info = {
-            "root": harness.get("root"), "rootExists": bool(harness.get("root")) and (repo / harness["root"]).exists(),
+            "root": harness.get("root"), "rootExists": bool(root) and (repo / root).exists(),
             "readme": harness.get("readme"), "readmeExists": readme.is_file(),
             "knownGaps": readme.is_file() and bool(re.search(r"(?im)^#+\s*known gaps",
                                                               readme.read_text(encoding="utf-8", errors="replace"))),
-            "tiers": {t: {"tests": (v or {}).get("tests") if isinstance(v, dict) else None} for t, v in tiers.items()},
+            "testsRoot": ientry["testsRoot"], "testsRootExists": bool(tests_root) and (repo / tests_root).is_dir(),
+            "shape": "older" if ientry["older"] else "current", "shapeWarning": ientry["warning"],
+            "tiers": {t: {"tests": c} for t, c in ientry["commands"].items()},
         }
-        if harness.get("root"):
+        if root:
             listed = git_lines(repo, "ls-files", "-co", "--exclude-standard", "-z") or []
-            by_name = smoke_by_name(listed, [str(harness["root"]).strip("/")])
-            harness_info.update(smokeOrSelfTestFiles=by_name, selfTestCandidates=self_test_candidates(
-                repo, listed, [str(harness["root"]).strip("/")], by_name))
+            # Smoke tests and self-tests: in the harness-tests tree (testsRoot), or under the root (`<root>/tests/`);
+            # for an older mapping without testsRoot, also beside the root (a separate tier tree, guide 2.2).
+            roots = [root] + ([tests_root] if tests_root else [])
+            parent = root.rsplit("/", 1)[0] if "/" in root else ""
+            if not tests_root and parent:
+                roots.append(parent)
+            by_name = smoke_by_name(listed, roots)
+            harness_info.update(smokeOrSelfTestFiles=by_name, smokeSearchRoots=roots,
+                                selfTestCandidates=self_test_candidates(repo, listed, roots, by_name))
         check(checks, "H-readme-known-gaps", "Harness README with a Known gaps section (MUST)",
               harness_info["knownGaps"], f"README {harness.get('readme')}: Known gaps "
               + ("found" if harness_info["knownGaps"] else "not found"))
+        ok, evidence, warn = tier_layout(repo, root, offered_tiers(modules))
+        check(checks, "T-tier-layout", layout_item, ok, evidence, warn=warn)
     else:
         harness_info = find_harness(repo)
         readmes = harness_info["readmes"]
@@ -508,6 +765,13 @@ def inspect_skill(repo, real, installs, records_dir=None):
               "no harness entry; candidate harness READMEs: "
               + (", ".join(f"{r['path']} (Known gaps {'found' if r['knownGaps'] else 'not found'})" for r in readmes)
                   or "none found"), warn=not readmes)
+        # The candidate root: the common ancestor of the directories declaring the core doubles and fixtures.
+        cand_dirs = list(harness_info.get("candidateDirs") or {})
+        cand = os.path.commonpath(cand_dirs).replace(os.sep, "/") if cand_dirs else None
+        ok, evidence, _ = tier_layout(repo, cand, offered_tiers(modules)) if cand and cand != "." else (False, "", 0)
+        check(checks, "T-tier-layout", layout_item, False,
+              "no root declared in the mapping; candidate: " + (evidence or "none found")
+              + (" (tier-shaped: declare it in the mapping)" if ok else ""), warn=True)
     if harness_info:
         by_name, cands = harness_info.get("smokeOrSelfTestFiles"), harness_info.get("selfTestCandidates")
         check(checks, "H-smoke-self-tests", "Harness smoke tests per tier and helper self-tests ... (MUST)",
@@ -779,11 +1043,14 @@ def find_copies(repo, real, installs):
 
 
 def mapped_target_dirs(skills):
+    """Every tier target directory the mappings declare (a tagged test in a mirrored sub-directory of one is inside
+    it). A module marked not ready as a whole has no tier paths (guide 3.2); an older mapping's dummy paths for it
+    are counted too, which only widens what counts as inside."""
     dirs = set()
     for s in skills:
         root = s["mapping"].get("testRoot")
         for tiers in s["mapping"]["modules"].values():
-            for t in ("unit", "integration", "proxy"):
+            for t in TIERS:
                 if isinstance(tiers.get(t), str):
                     dirs.add(f"{root.rstrip('/')}/{tiers[t]}" if root else tiers[t])
     return dirs

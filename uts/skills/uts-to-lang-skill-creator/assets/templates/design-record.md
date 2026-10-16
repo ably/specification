@@ -11,6 +11,7 @@
 - State class (Orient): S0 | S1 | S2 | S3 | S4 (+ re-entry) — <reasons>; run mode (D-27): create | upgrade: diff-driven | upgrade: full audit | upgrade: regenerate (resumed | restarted <date>); target skill: <path> (origin …), or none
 - Run status: in progress (Phase <n>, <date>) | finished (<date>)
   - After a context compaction: read the skill creator's whole SKILL.md again, then this line, then the current phase's reference, before your next action.
+  - Finished only at the completion gate: the acceptance checklist has no open row, check_acceptance.py --final has no unexplained fail, the independent verification has no unresolved dispute, and the harness tests are green in CI at every supported tier (or the Final report says why not).
 - LiveObjects evidence: detect_liveobjects.py → <yes | no | unclear>, <confidence>; decision at STOP-14 (D-28)
 
 ## Decisions
@@ -40,7 +41,7 @@
 | D-22 | allowed-tools; remote access | | | | |
 | D-23 | Notes files per module (full / placeholder; objects per D-28) | | | | |
 | D-24 | Working-records location | | | | |
-| D-25 | Pilot specs and mode per tier | | | | |
+| D-25 | Retired (no pilots): not used | — | — | — | — |
 | D-26 | Model tier and pinning for skill runs | | | | |
 | D-27 | Run mode and state class (STOP-13) | | | | |
 | D-28 | LiveObjects support: full / placeholder / none; translate-only / evaluate; SDK-blocked tiers and evidence, if any (STOP-14, 12.5) | | | | |
@@ -50,11 +51,19 @@
 | D-32 | Spec-clone sync in the generated skill (ensure_spec_clone.py copied; ABLY_SPEC_SYNC) | | | | |
 
 ### D-03 mapping
-| Module | unit | integration | proxy | notes | hand-maintained? |
-|---|---|---|---|---|---|
+| Module | unit | integration | proxy | notes | readiness and scope markers (unready, unsupported, extraTests, capabilityInapplicable, translateOnly) | hand-maintained? |
+|---|---|---|---|---|---|---|
+
+- harness: root <dir>; readme <path>; testsRoot <dir>; testCommand <command with {tier}>
+- Values the build can't give (each with why): <key → value: reason | none>
+- Derived by the resolver, not stored: test project, namespace root, each tier's helper sources (tier layout), per-spec targetDir and testFile (sub-directories mirrored)
+
+## Phase timings
+| Phase | Started (date, time) | Ended (date, time) | Stop waits (STOP-n: asked → answered) | Sub-agents (role → model; task; files written) |
+|---|---|---|---|---|
 
 ## Decision log
-| # | Date | Phase | Question | Options | Answer | By | Supersedes |
+| # | Date and time | Phase | Question | Options | Answer | By | Supersedes |
 |---|---|---|---|---|---|---|---|
 
 ## Reference-implementation reads (last resort, 2.1)

@@ -2,15 +2,20 @@
 
 Part of the `uts-to-lang-skill-creator` skill: read [SKILL.md](../SKILL.md) first (ground rules, stop points, path convention). Links that climb out of the skill directory are spec-repo paths: resolve them against the spec clone, not against this file's installed location.
 
-**Goal:** the approved harness exists, compiles under the repo's strictest settings, and each supported tier has green smoke tests and helper self-tests (guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must)), wired into CI. This is part of the skill's deliverable, not a preliminary. Skip the rows the user didn't choose to build at STOP-3.
+**Goal:** the approved harness exists, compiles under the repo's strictest settings, and each supported tier has green smoke tests and helper self-tests (guide [2.7](../../../docs/writing-uts-spec-translator-skills.md#27-harness-smoke-tests-and-self-tests-must)), wired into CI. This is part of the skill's deliverable, not a preliminary. Skip the rows the user didn't choose to build at STOP-3. At STOP-7, update the acceptance checklist's Harness rows with their evidence (the commands and results, the CI jobs).
 
 ## 5.1 Step 3a: rules while building
 
+- **Scope is UTS only.** Change only the harness, the skill and the approved hooks. Don't fix, skip, retry or rewrite native tests, even flaky or failing ones. Record each one with its evidence (Repo profile; Final report, "Native test findings (not fixed)"). An SDK bug found while building is an observation for the Final report, never a fix.
 - **Production hooks only after STOP-4 approval**, one proposal at a time, in the smallest form that works.
+- **The approved proposal bounds the change.** Touch only the production files the STOP-4 proposal listed, in the shape approved. Another file, a new type in a different place, or a change to the default path needs a new STOP-4. Never restructure to avoid a stop (for example, putting new types in unrelated files to skip a project-file edit).
+- Record the production diffstat in the build log, next to the proposal's file list.
 - **Don't change existing behaviour** of doubles or helpers the native tests use; extend, wrap or add new code instead (see [2.2](../SKILL.md#22-what-you-may-change)).
 - Follow the repo's test style (P-03, P-04, P-08): naming, file headers, assertion library, formatting.
-- Run the existing tests that touch anything you changed, by filter, before and after the change.
+- Run the existing tests that touch anything you changed, by filter, before and after the change. If that means the whole native suite (a cross-cutting hook), ask for that run in the same STOP-4 question (STOP-6).
+- Move files with a plain `mv` (or the language tool's equivalent). Use `git mv` only if the user asked for staging ([2.2](../SKILL.md#22-what-you-may-change)): it stages the change.
 - Log every design change you make while building in the decision log; update `uts-infra-design.md`.
+- **Builds and test runs stay serial**, because the build output and its locks are shared. Self-tests for doubles already built, or tiers with disjoint new files, can be drafted in parallel sub-agents, in disjoint files or separate worktrees; you integrate them ([parallel-work.md](parallel-work.md)).
 
 ## 5.2 Step 3b: build in order, with acceptance checks
 
@@ -24,7 +29,7 @@ Rows 4–7 depend on each other: build them in order, but run an acceptance item
 
 | Order | Build | Acceptance check |
 |---|---|---|
-| 1 | UTS test target/project and its tier selection (directories or filters per tier), wired so that `build-tests` compiles it | A minimal harness test (one trivial passing test; delete it once row 2's self-tests exist) compiles, is collected and passes under the single-class filter and under the tier's harness-test command |
+| 1 | UTS test target/project and its tier selection (directories or filters per tier), wired so that `build-tests` compiles it; the harness's tier directories (root, `unit/`, `integration/`, `integration/proxy/`) and the harness-tests tree with the same tier folders, as Placement names them ([4.7](phase-2-design-harness.md#47-step-2g-plan-placement-harness-tests-and-build-order)) | A minimal harness test (one trivial passing test, in the harness-tests tree; delete it once row 2's self-tests exist) compiles, is collected and passes under the single-class filter and under the harness-test command with `{tier}` expanded |
 | 2 | Library core: thread-safe capture, log sink, `assertContainsInOrder`, caller-attributed failure helper | Tests of the helpers themselves: `assertContainsInOrder` passes on `[connecting, disconnected, connecting, connected]` vs `[disconnected, connecting, connected]` and fails when the order is broken, and a repeated state passes (guide [6.7](../../../docs/writing-uts-spec-translator-skills.md#67-notes-on-the-catalogue)); capture lists are safe under concurrent appends; a failing helper reports the caller's line |
 | 3 | Approved SDK hooks | Each hook replaces the real implementation for one client without affecting another client created afterwards (or, if process-global, that fact is recorded for decision D-14); the existing tests still pass |
 | 4 | Fake clock wired through the clock hook | A timer-driven SDK behaviour doesn't happen before `ADVANCE_TIME` and does happen after it; a timed blocking wait in the SDK (if P-11 found any) is also driven by the fake clock; the async runtime's timers fire under it, and nothing waits on the real clock (guide [2.1](../../../docs/writing-uts-spec-translator-skills.md#21-sdk-test-hooks-must)); one advance runs cascaded work to quiescence (zero-delay reschedules and timers created mid-advance) |
@@ -40,12 +45,14 @@ Rows 4–7 depend on each other: build them in order, but run an acceptance item
 
 Then compile all test targets as strictly as CI does (P-06) and run the repo's lint gates over the new code.
 
+**Layout check** (guide [2.2](../../../docs/writing-uts-spec-translator-skills.md#22-a-shared-test-library-implementing-the-helper-specs-must), "Harness layout", MUST): every harness file sits in the directory the Placement table gives it, under its tier; no harness test sits in the harness library (except under `<harness>/tests/` where Placement chose that); and no tier references a sibling: grep each tier directory for the other's namespace, package or path (`unit/` files never name `integration/` symbols, and the reverse; only `integration/proxy/` may use `integration/`). A hit moves the shared piece up to the lowest directory both tiers see, or is a design change logged in the decision log.
+
 ## 5.3 Step 3c: write the harness README
 
 Write a README next to the harness covering everything guide [3.1](../../../docs/writing-uts-spec-translator-skills.md#31-layout) and [2.2](../../../docs/writing-uts-spec-translator-skills.md#22-a-shared-test-library-implementing-the-helper-specs-must) say it should cover (3.1's list, and 2.2's threading facts for `mock_websocket.md`). Procedure detail:
 
 - take the symbol map from the [4.3](phase-2-design-harness.md#43-step-2c-map-each-helper-spec-to-native-code) tables as built, and the known gaps from the gap table's `partial` and `missing` rows;
-- add the layout (shared, port-only, module helpers, test targets) and the complete command that runs each tier's smoke tests and self-tests;
+- add the layout: the tier directories and what each holds (guide 2.2), the harness-tests tree with its smoke-test and self-test files per tier, the shared and port-only code, module helpers and test targets; and the complete command that runs each tier's smoke tests and self-tests;
 - write the **Known gaps** section (MUST): every helper-spec member, contract point or corpus construct the harness doesn't implement, by tier, as a table whose first column is the exact pseudocode token, matched by grepping the selected specs' `pseudo` fences (guide 3.1), then status and workaround, so the skill's preflight can match it against selected specs. It also lists the constructs of every module D-31 makes unsupported, with the status "unsupported: <reason> (D-31)": for a REST-only SDK the realtime and objects constructs (`Realtime(`, `AWAIT_STATE`, `mock_ws`, `CONNECTED_MESSAGE`, `MockNetworkListener`, …); for a realtime-only SDK the REST-only ones (`Rest(`); and "hooks unreachable from the SDK language" when P-13 found it;
 - index every module's fixture helpers in one place, even those in a separate test-support module;
 - link each fixture helper's scope to the module notes (item 9), where guide 2.2 puts it;
@@ -61,8 +68,8 @@ Re-run the assessment of [4.2](phase-2-design-harness.md#42-step-2b-assess-each-
 - each supported tier has green smoke tests and self-tests covering guide 2.7, wired into CI;
 - if the user declined the CI change at STOP-5: the Final report lists it as an unmet requirement (the skill doesn't conform to guide 2.5/2.7 until CI runs the harness tests), the acceptance-checklist rows "Harness smoke tests per tier and helper self-tests …" and "One CI home per suite …" are ✗ with that reason, and the harness README states that CI doesn't yet run them. The tier stays ready, because the skill's preflight still runs the harness tests locally on every run;
 - an objects smoke test that fails only on SDK not-implemented paths, with green self-tests, is recorded as SDK-blocked under [12.5](liveobjects-support.md#125-an-sdk-blocked-objects-tier): the tier is translate-only, and the smoke-test checklist row is ✗ "SDK-blocked";
-- the strict compile and lint pass;
+- the strict compile, lint and the layout check pass;
 - the harness README exists;
 - the user has confirmed at STOP-7.
 
-If the user declines network access at STOP-6, the integration and proxy tiers aren't supported: mark them unready (`blockedBy`: harness tests not run) and list them in the Final report.
+If the user declines network access at STOP-6, the integration and proxy tiers aren't supported: mark them unready in the mapping (their `unready` reason, which the resolver reports as `blockedBy`: harness tests not run) and list them in the Final report.
