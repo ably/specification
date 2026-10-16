@@ -258,13 +258,13 @@ ASSERT new_callback_called == true
 
 ---
 
-## RSA10i - authorize() preserves key from constructor
+## RSA10j - authorize() authOptions argument supersedes stored key
 
-**Test ID**: `rest/unit/RSA10i/authorize-preserves-key-0`
+**Test ID**: `rest/unit/RSA10j/authorize-supersedes-authoptions-key-0`
 
-**Spec requirement:** The API key from `ClientOptions` is preserved even when `authOptions` are provided.
+**Spec requirement:** Per `RSA8e`/`RSA10j`, an `AuthOptions` argument passed to `authorize()` supersedes the stored `AuthOptions` in their entirety rather than being merged with them. `AuthOptions#key` is one such attribute, so a `key` configured on the constructor is discarded when the `AuthOptions` argument omits one, leaving the client with no key.
 
-Tests that the API key from `ClientOptions` is preserved even when `authOptions` are provided.
+Tests that an `AuthOptions` argument to `authorize()` replaces the stored auth options wholesale, so the constructor key does not survive, and a subsequent operation that has no other means of authenticating fails with `40101`.
 
 ### Setup
 ```pseudo
@@ -275,7 +275,6 @@ mock_http = MockHttpClient(
   onRequest: (req) => {
     captured_requests.append(req)
     IF req.path matches "/keys/.*/requestToken":
-      # Initial token request using key
       req.respond_with(200, {
         "token": "token-via-key",
         "expires": now() + 3600000,
@@ -292,22 +291,28 @@ client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 
 ### Test Steps
 ```pseudo
-# Call authorize with new authUrl but no key
+# Supersede the stored AuthOptions with an argument that carries an authUrl but no key.
+# Per RSA8e/RSA10j the stored AuthOptions (including the constructor key) are replaced
+# wholesale, so the client no longer holds a key.
 AWAIT client.auth.authorize(
   authOptions: AuthOptions(
     authUrl: "https://new-auth.example.com/token"
   )
 )
 
-# The key should still be available for signing
-# Implementation can still use key for requestToken
+# A further authorize() with an empty AuthOptions argument again supersedes the stored
+# options, leaving no key, no authUrl and no authCallback: no means of authenticating remains.
+AWAIT client.auth.authorize(
+  authOptions: AuthOptions()
+) FAILS WITH error
 ```
 
 ### Assertions
 ```pseudo
-# Key from constructor should be preserved (not cleared)
-# Exact assertion depends on whether auth.key is exposed
-# Verify by checking that key-based operations still work
+# The constructor key was superseded, so the final authorize() has no key to sign a
+# token request with and no other credentials: it fails with 40101 ("No key specified").
+ASSERT error.code == 40101
+ASSERT error.statusCode == 401
 ```
 
 ---
