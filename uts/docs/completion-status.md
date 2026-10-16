@@ -298,12 +298,12 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | RSH1 | Push#admin object (RSH1a–RSH1c5) | Yes — `rest/unit/push/push_admin_publish.md` (RSH1, RSH1a), `rest/unit/push/push_device_registrations.md` (RSH1b1–RSH1b5), `rest/unit/push/push_channel_subscriptions.md` (RSH1c1–RSH1c5), `rest/integration/push_admin.md` (RSH1a–RSH1c5) |
-| RSH2 | Platform-specific push operations (RSH2a–RSH2e) | |
-| RSH3 | Activation state machine (RSH3a–RSH3g3) | |
-| RSH4–RSH5 | Event queueing and sequential handling | |
-| RSH6 | Push device authentication (RSH6a–RSH6b) | |
+| RSH2 | Platform-specific push operations (RSH2a–RSH2b, RSH2f) | Yes — `rest/unit/push/push_activation_state_machine.md` (RSH2a, RSH2b), `rest/unit/push/push_update_token.md` (RSH2f1–RSH2f3; pending token-variants spec extension), `rest/integration/push_activation.md` (RSH2a, RSH2b, RSH2f) |
+| RSH3 | Activation state machine (RSH3a–RSH3h) | Yes — `rest/unit/push/push_activation_state_machine.md` (RSH3a–RSH3g3b), `rest/unit/push/push_activation_persistence.md` (RSH3h, RSH3a2c), `rest/unit/push/push_update_token.md` (RSH3d3, RSH3e), `rest/integration/push_activation.md` (RSH3a2a3, RSH3a2c, RSH3b3c) |
+| RSH4–RSH5 | Event queueing and sequential handling | Yes — `rest/unit/push/push_activation_event_queue.md` (RSH4, RSH5), `rest/unit/push/push_update_token.md` (RSH4 via updateToken) |
+| RSH6 | Push device authentication (RSH6a–RSH6b) | Yes — `rest/unit/push/push_device_auth.md` (RSH6a, RSH6b + RSH1b3/RSH1b5/RSH1c3/RSH1c4 own-device clauses); RSH6a also asserted in `rest/unit/push/push_channels.md`, `rest/unit/push/push_activation_state_machine.md`; server acceptance of the RSH6a header verified in `rest/integration/push_activation.md` |
 | RSH7 | Push channels (RSH7a–RSH7e) | Yes — `rest/unit/push/push_channels.md`, `rest/integration/push_channels.md` |
-| RSH8 | LocalDevice (RSH8a–RSH8k2) | |
+| RSH8 | LocalDevice (RSH8a–RSH8l4) | Yes — `rest/unit/push/local_device.md` (RSH8, RSH8a, RSH8d–RSH8f, RSH8k), `rest/unit/push/push_activation_persistence.md` (RSH8a1, RSH8b, RSH8c), `rest/unit/push/push_activation_state_machine.md` (RSH8h), `rest/unit/push/push_update_token.md` (RSH8g, RSH8l2; RSH8l pending token-variants spec extension) |
 
 ---
 
@@ -368,9 +368,10 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| PCS1–PCS5 | PushChannelSubscription | |
-| PCD1–PCD7 | DeviceDetails | |
-| PCP1–PCP4 | DevicePushDetails | |
+| PCS1–PCS5 | PushChannelSubscription | Yes — `rest/unit/types/push_types.md` |
+| PCD1–PCD7 | DeviceDetails | Yes — `rest/unit/types/push_types.md` |
+| PCP1–PCP4 | DevicePushDetails | Yes — `rest/unit/types/push_types.md` (PCP3a variant slots: `rest/unit/push/push_update_token.md`; pending token-variants spec extension) |
+| PDT1–PDT4 | PushDeviceToken (pending token-variants spec extension) | Partial — `rest/unit/push/push_update_token.md` (PDT4 via variant tests); dedicated type tests to be added with the spec PR |
 
 ### Client Library Introspection
 
@@ -420,6 +421,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSC15l | HTTP 5xx with/without error body parsed correctly | Yes — `rest/integration/proxy/rest_fallback.md` |
 | RSC15l | HTTP 4xx not retried, error parsed | Yes — `rest/integration/proxy/rest_fallback.md` |
 | RSL1k4 | Idempotent publish retry deduplication | Pending — `rest/integration/proxy/rest_fallback.md` (needs proxy enhancement) |
+| RSH3c3a/RSH3d2c1/RSH3e3d/RSH3g3b/RSH4 | Push activation fault handling (registration failure + retry, deregistration 401/40005 client-side classification, rollback, queued deactivate, sync failure recovery) | Yes — `rest/integration/proxy/push_activation.md` |
 | RSC10 | Token renewal on HTTP 401 | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RSC15m/REC2c2 | HTTP 503 error (no fallback, hosts disabled) | Yes — `realtime/integration/proxy/rest_faults.md` |
 | RTL6 | End-to-end publish and history | Yes — `realtime/integration/proxy/rest_faults.md` |
@@ -447,11 +449,11 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **EventEmitter** (RTE) | 6 | 0 | None |
 | **Backoff/jitter** (RTB) | 1 | 1 | Full |
 | **Wrapper SDK** (WP) | 7 | 0 | None |
-| **Push notifications** (RSH) | 8 | 1 | Partial |
+| **Push notifications** (RSH) | 8 | 8 | Full |
 | **Plugins** (PC/PT/VD) | 3 | 2 | Partial |
 | **Data types** | 30 | 12 | Partial |
 | **Option types** | 8 | 5 | Partial |
-| **Push types** | 3 | 0 | None |
+| **Push types** | 3 | 3 | Full |
 | **Introspection** (CR) | 1 | 0 | None |
 | **Defaults** (DF) | 1 | 0 | None |
 | **Compatibility** (RSF/RTF) | 2 | 2 | Full |

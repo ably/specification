@@ -294,6 +294,18 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
 mock_ws.active_connection.simulate_disconnect()
 ```
 
+### Push Platform Mock Infrastructure
+
+For push activation tests (`RSH2`/`RSH3`/`RSH8`), reference the push platform mock:
+
+```markdown
+## Mock Push Platform Infrastructure
+
+See `uts/rest/unit/helpers/mock_push_platform.md` for the portable push platform primitives (`PushKeyValueStorage`, `requestToken`, `PushPlatformConfig`), the standard `ably.push.*` storage keys, and the `MockPushStorage` mock.
+```
+
+Key points (full details in the helper spec): the mock platform is installed with `install_push_platform(mock_push_platform)` before client construction, mirroring `install_mock(mock_http)`; `MockPushStorage` offers `dump()` for settled-state assertions, `seed()` for app-restart scenarios, `fail_writes`/`fail_reads` for blanket faults, and an `onOperation` handler for capturing the operation sequence into a local array (and per-key fault injection by raising). The token provider is a plain closure supplied as `requestToken`, counted or gated with local variables.
+
 ## Proxy Integration Tests
 
 For detailed proxy infrastructure documentation, see `uts/docs/proxy.md`.
@@ -452,7 +464,7 @@ ASSERT client.connection.errorReason.code == 40005
 2. Tests use `create_proxy_session()` with rules, then connect SDK through the proxy
 3. Tests use `AWAIT_STATE` for state assertions and record state changes for sequence verification
 4. Tests verify behaviour via SDK state AND proxy event log where useful
-5. All tests use `useBinaryProtocol: false` (SDK doesn't implement msgpack)
+5. Proxy data-path tests follow the `## Protocol Variants` convention (`useBinaryProtocol: PROTOCOL == "msgpack"`); control-plane tests and SDKs that do not implement msgpack pin to JSON (`useBinaryProtocol: false`). See *Protocol Variants* in `integration-testing.md` — the proxy handles both protocols as of uts-proxy v0.3.0
 6. All tests use `endpoint: "localhost"` which auto-disables fallback hosts (REC2c2)
 7. Timeouts are generous (10-30s) since real network is involved
 8. Each test file provisions a sandbox app in `BEFORE ALL TESTS` and cleans up in `AFTER ALL TESTS`
@@ -1117,65 +1129,19 @@ The error object in `FAILS WITH error` represents the ErrorInfo associated with 
 
 ## File Organization
 
+The authoritative directory structure and per-category spec-file counts are maintained in `uts/README.md` — update it when adding spec files. In brief:
+
 ```
 rest/
-  unit/
-    helpers/
-      mock_http.md            # Mock HTTP infrastructure spec
-    auth/
-      auth_callback.md        # RSA8c, RSA8d
-      auth_scheme.md          # RSA1-4, RSA4b
-      authorize.md            # RSA10
-      token_renewal.md        # RSA4b4, RSA14
-      client_id.md            # RSA7, RSC17
-    channel/
-      publish.md              # RSL1
-      history.md              # RSL2
-      idempotency.md          # RSL1k
-    rest_client.md            # RSC7, RSC8, RSC13, RSC18
-    fallback.md               # RSC15, REC1, REC2
-    time.md                   # RSC16
-    stats.md                  # RSC6
-    request.md                # RSC19
-    batch_publish.md          # RSC22, BSP, BPR, BPF
-    presence/
-      rest_presence.md        # RSP1, RSP3, RSP4
-    encoding/
-      message_encoding.md     # RSL4, RSL5, RSL6
-    types/
-      message_types.md        # TM2, TM3, TM4
-      error_types.md          # TI1-5
-      token_types.md          # TD1-5, TK1-6, TE1-6
-      options_types.md        # TO3, AO2
-      paginated_result.md     # TG1-5
-  integration/
-    auth.md
-    publish.md
-    history.md
-    presence.md
-    pagination.md
-    time_stats.md
+  unit/           # mocked-HTTP tests: auth/, channel/, encoding/, presence/, push/, types/, helpers/, plus top-level *.md
+  integration/    # sandbox tests (+ integration/proxy/)
 realtime/
-  unit/
-    helpers/
-      mock_websocket.md       # Mock WebSocket infrastructure spec
-    client/
-      realtime_client.md      # RTC1, RTC2, RTC15, RTC16
-      client_options.md       # TO3 (Realtime-specific)
-    connection/
-      connection_failures_test.md
-      connection_open_failures_test.md
-      ...
-  integration/
-    proxy/
-      connection_open_failures.md   # RTN14 tests via proxy
-      connection_resume.md          # RTN15 tests via proxy
-      heartbeat.md                  # RTN23 tests via proxy
-      channel_faults.md             # RTL4, RTL5, RTL13, RTL14 via proxy
-      rest_faults.md                # RSC10, RSC15 via proxy
-    connection_lifecycle_test.md    # Direct sandbox tests
-    ...
+  unit/           # mocked-WebSocket tests: auth/, channels/, client/, connection/, presence/, helpers/
+  integration/    # sandbox tests (+ integration/proxy/)
+docs/             # this guide, writing-derived-tests.md, integration-testing.md, proxy.md, completion-status.md
 ```
+
+Spec file names are `snake_case.md`. Mock infrastructure (helper) specs live in `unit/helpers/`: `mock_http.md` and `mock_push_platform.md` under `rest/`, `mock_websocket.md` and `mock_vcdiff.md` under `realtime/`.
 
 ## Completion Status Matrix
 
@@ -1269,7 +1235,7 @@ ASSERT captured_requests[0].headers["Authorization"] IS NOT null
 2. Referencing `mock_http.captured_requests` -- Use local `captured_requests` array
 3. Referencing `mock_http.request_count` -- Use local `request_count` variable
 4. Not installing mock: Missing `install_mock(mock_http)` -- Always call `install_mock(mock_http)` after creating mock
-5. Passing mock to client: `Rest(..., httpClient: mock_http)` -- Mock is installed globally via `install_mock()`
+5. Passing mock to client: `Rest(..., httpClient: mock_http)` -- Mock is installed globally via `install_mock()`. The push platform mock follows the same rule via `install_push_platform()` (see `uts/rest/unit/helpers/mock_push_platform.md`)
 6. Missing spec requirement summary -- Every test must have `**Spec requirement:**` or table
 7. Using fixed WAITs for async operations -- Use polling with timeout or `AWAIT_STATE`
 8. Not using unique channel names -- Generate unique names with random component
