@@ -1,6 +1,6 @@
 # REST Channels Collection Tests
 
-Spec points: `RSN1`, `RSN2`, `RSN3a`, `RSN3b`, `RSN3c`, `RSN4a`, `RSN4b`
+Spec points: `RSN1`, `RSN2`, `RSN3a`, `RSN4a`, `RSN4b`
 
 ## Test Type
 Unit test - no network calls required
