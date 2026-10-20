@@ -57,7 +57,7 @@ If the UTS spec is ambiguous — unclear what value to assert, unclear what "sho
 
 Before moving to evaluation (or declaring the test done in a test-first scenario), make sure the test at least compiles, parses, or passes linting. Syntax errors in the translation are not interesting failures.
 
-If a test doesn't compile because the SDK seems to lack an API, check first whether the UTS spec is wrong (the features spec doesn't require the API; Phase 2, section 2a), then whether the translation is wrong (the API exists under another name or on another class; use it and record nothing; section 2b). If neither, the API is missing: handle it now as section 2c describes, and write its deviations entry even in a translate-only run.
+If a test doesn't compile because the SDK seems to lack an API, check first whether the UTS spec is wrong (the features spec doesn't require the API; Phase 2, section 2a), then whether the translation is wrong (the API exists under another name or on another class; use it and record nothing; section 2b), then whether an **equivalent** exists (section 2c, *Look for an equivalent first*); if one does, translate the test through it as an adapted assertion. Only if none of these applies is the API missing: handle it now as section 2c describes, and write its deviations entry even in a translate-only run.
 
 ---
 
@@ -113,7 +113,17 @@ If the UTS spec is correct per the features spec, and the test accurately transl
 - Document exactly what the spec requires vs what the SDK does
 - Record it in the deviations file
 
-**Exception: the SDK lacks the API or feature altogether.** Nothing is wrong with its behaviour; the feature isn't there. This covers a *public* API (one application code can call) or a feature that the features spec *requires*, including one missing parameter, option or overload, and an option the SDK accepts but ignores. Use the **missing API or feature** pattern (section 3) and record it under **Missing SDK Public API / Features**, not **Failing Tests**. These look similar but are handled differently:
+**Look for an equivalent first.** When the API or feature the spec names isn't in the SDK as written, don't conclude it's missing until you've searched for an equivalent. **Adapted Tests is always preferred over Missing SDK Public API / Features:** if any equivalent lets the test exercise the behaviour the spec describes, the test must run through it. Work down this list and stop at the first that applies:
+
+1. **The same API under another name, on another class, or in another idiomatic shape** (a property instead of a method, an enum instead of a string). This is idiomatic translation, not a deviation: use it and record nothing (see [Idiomatic translation vs genuine deviations](#idiomatic-translation-vs-genuine-deviations), case 1).
+2. **Another public mechanism that reaches the same behaviour**, for example a request header where the spec passes a parameter the SDK lacks, a nearby overload, or a differently-shaped option. Translate the test through it with an **adapted assertion** (section 3) and record it under **Adapted Tests**.
+3. **At the unit tier only, an internal member that holds or produces the same value or behaviour**, for example an internal property that stores what the missing public accessor would return. Translate the test through it with an **adapted assertion** and record it under **Adapted Tests**. Integration and proxy tests exercise only the public API, so this step never applies at those tiers.
+4. **An equivalent from steps 2–3 exists but behaves differently from the spec.** That's an ordinary SDK deviation, not a missing API: env-gate the spec-correct assertion or adapt it (section 3), recorded under **Failing Tests** or **Adapted Tests**.
+5. **Nothing relevant exists**, public or (at the unit tier) internal. Only now is it a missing API or feature (the exception below).
+
+For steps 2 and 3, the Adapted Tests entry must say that the public API the spec names is absent (in **What the SDK does**, and in **Status**, e.g. *open: public `Auth#tokenDetails` accessor not implemented*), so the gap stays visible without discarding a test that runs. Record it there only; don't also file it under Missing SDK Public API / Features.
+
+**Exception: the SDK lacks the API or feature altogether, with no equivalent.** Nothing is wrong with its behaviour; the feature isn't there, and step 5 above found nothing that can stand in for it. This covers a *public* API (one application code can call) or a feature that the features spec *requires*, including a missing parameter, option or overload that no other mechanism can stand in for, and an option the SDK accepts but ignores. Use the **missing API or feature** pattern (section 3) and record it under **Missing SDK Public API / Features**, not **Failing Tests**. These look similar but are handled differently:
 
 - **The features spec makes it optional** ("may", "may optionally" or "optional", in that clause or a parent spec point). The test is not applicable; see [Check the SDK's API surface](#check-the-sdks-api-surface). A "should" inside an optional feature binds only SDKs that implement it (RTL2i `hasBacklog`). Any other wording, including "should", is required; if unsure, treat it as required and add a `// NOTE:` to the test.
 - **An internal member is missing in a white-box unit test.** That's an internal-shape difference (case 3 under [Idiomatic translation vs genuine deviations](#idiomatic-translation-vs-genuine-deviations)).
@@ -149,14 +159,16 @@ it("RSC1b - no credentials raises error", function() {
   assert error.code == 40160
 })
 ```
-Use this pattern when the SDK does *something* (just not the right thing) and you want to assert on the actual behaviour to prevent regressions. These tests pass in normal runs. **Prefer this over an env-gated skip when the divergence is permanent or intentional** (the actual behaviour is stable and worth guarding) — a test that runs and asserts real behaviour catches regressions, whereas a spec-correct assertion that is skipped indefinitely verifies nothing. (Distinguish this from *idiomatic naming* — a differently-spelled public API is not a deviation at all — and from *internal-API shape* adaptation in white-box unit tests; see [Idiomatic translation vs genuine deviations](#idiomatic-translation-vs-genuine-deviations) under Recording deviations.)
+Use this pattern when the SDK does *something* (just not the right thing) and you want to assert on the actual behaviour to prevent regressions. These tests pass in normal runs. **Prefer this over an env-gated skip when the divergence is permanent or intentional** (the actual behaviour is stable and worth guarding) — a test that runs and asserts real behaviour catches regressions, whereas a spec-correct assertion that is skipped indefinitely verifies nothing. This is also the pattern for a test that runs through an **equivalent** because the API the spec names is absent (section 2c, *Look for an equivalent first*, steps 2 and 3): assert through the equivalent and comment which spec member it stands in for. (Distinguish this from *idiomatic naming* — a differently-spelled public API is not a deviation at all — and from *internal-API shape* adaptation in white-box unit tests; see [Idiomatic translation vs genuine deviations](#idiomatic-translation-vs-genuine-deviations) under Recording deviations.)
 
-**Missing API or feature** — try the one spec-correct call that uses the missing member:
+**Missing API or feature** — only after section 2c's search found no equivalent. Try the one spec-correct call that uses the missing member:
 
 - If running it **fails visibly**, with an error naming the member (for example "x is not a function" or `AttributeError`), use an **env-gated skip** as above.
-- Otherwise (it doesn't compile, returns normally, is ignored, or fails for another reason), or if you're unsure, write a **missing-API stub**: keep the spec's steps and assertions as comments and skip the test unconditionally. Don't env-gate a stub (its empty body would pass), and don't force the call through reflection or `dynamic`. If only part of a test needs the member, stub the whole test.
+- Otherwise (it doesn't compile, returns normally, is ignored, or fails for another reason), or if you're unsure, write a **missing-API stub**: keep the spec's steps and assertions as comments and skip the test unconditionally. Don't env-gate a stub (its empty body would pass), and don't fake a call to the missing member through reflection or `dynamic`. (Using an internal member that already exists, at the unit tier, isn't faking a call: it's an equivalent; see section 2c.)
 
-The stub's skip reason MUST be exactly `Missing SDK public API: <Type#member or option> (<spec point>); see deviations.md (Missing SDK Public API / Features)`; use the feature's name if it has no member. Pass it to the framework's skip call, or put it in a comment above the skip if that takes no reason:
+**If only part of a test needs the missing member**, don't stub the whole test. Comment out just the spec lines that need the member, put the skip-reason text below as a comment above them, and keep the rest of the test running, so its other assertions still guard the SDK. Stub the whole test only when what remains would no longer test anything meaningful (for example, every assertion needs the member). Either way, record the member under **Missing SDK Public API / Features** and list the test under that entry's **Test impact**.
+
+The stub's skip reason MUST be exactly `Missing SDK public API: <Type#member or option> (<spec point>); see deviations.md (Missing SDK Public API / Features)`; use the feature's name if it has no member. Pass it to the framework's skip call, or put it in a comment above the skip if that takes no reason. For a partial test, the same text goes in a comment above the commented-out lines:
 ```
 // UTS: realtime/unit/RTN26a/immediate-callback-current-state-0
 it("RTN26a - whenState calls back at once for the current state", function() {
@@ -203,8 +215,17 @@ Test fails, or doesn't compile
   |                     |
   |                     YES --> SDK deviation. Env-gated skip or adapted assertion (section 3); record in deviations file
   |                     |
-  |                     NO, and the spec requires it --> Missing API or feature pattern (section 3);
-  |                                                      record in deviations (Missing SDK Public API / Features)
+  |                     NO --> Is there an equivalent? (2c, "Look for an equivalent first": another public
+  |                            |  mechanism, or at the unit tier an internal member)
+  |                            |
+  |                            YES, and it behaves as the spec says --> Adapted assertion through the equivalent;
+  |                            |      record under Adapted Tests, noting the absent public API
+  |                            |
+  |                            YES, but it behaves differently --> SDK deviation. Env-gated skip or adapted
+  |                            |      assertion (section 3); record under Failing Tests or Adapted Tests
+  |                            |
+  |                            NO, and the spec requires it --> Missing API or feature pattern (section 3);
+  |                                   record in deviations (Missing SDK Public API / Features)
 ```
 
 ---
@@ -217,7 +238,7 @@ When evaluating against an existing implementation, maintain a deviations file (
 2. **What the spec says** — quote or paraphrase the features spec
 3. **What the SDK does** — concrete observable behaviour
 4. **Root cause** (if known) — file, function, mechanism
-5. **Test impact** — which test(s) are affected and how each was handled (env-gated skip, adapted assertion, fail-fast, missing-API stub, or a skip for a mock gap)
+5. **Test impact** — which test(s) are affected and how each was handled (env-gated skip, adapted assertion, adapted through an equivalent, fail-fast, missing-API stub, missing-API lines commented out in a partial test, or a skip for a mock gap)
 6. **Status** *(for an SDK deviation)* — *open bug* (to be fixed) vs *intentional / SDK-wide deviation* (and why it won't be), so it's clear whether an issue should be filed
 7. **Resolution** *(once resolved)* — the outcome after the deviation is resolved by analysis or a spec change (e.g. reclassified as a cross-SDK design divergence, or a spec point revised upstream); omit until there is one
 
@@ -228,8 +249,8 @@ Where a suite has recurring *internal-shape* differences (see **Adapted Tests** 
 Deviations are grouped into five sections. **Keep all five headings present in every `deviations.md`, in this order** — and mark an empty category `*(none)*` rather than deleting its heading. This way every entry sits unambiguously under one category, and a reader can tell an empty category (nothing found) from a forgotten one:
 - **UTS Spec Errors** — the UTS spec itself is wrong (contradicts the features spec, or is internally inconsistent). The test **fails fast** pointing here (see "Spec-error fail-fast"); the fix belongs in the spec, not the SDK. Unlike the categories below, this is not an SDK problem.
 - **Failing Tests** — SDK non-compliance where the spec-correct test is present but skipped (env-gated): the SDK implements the feature, but its behaviour is wrong. These are the primary output — each maps to a potential issue to file.
-- **Missing SDK Public API / Features** — the features spec requires a public API or feature that the SDK doesn't implement (section 2c). Each entry maps to a feature request, not a bug.
-- **Adapted Tests** — SDK non-compliance where the test asserts the SDK's *actual* behaviour instead of the spec's. It passes, guards against regressions, and documents the deviation. **Whenever the actual behaviour is stable and assertable, prefer this and record the test here** — a running adapted test is worth more than a spec-correct assertion skipped indefinitely. (Reserve *Failing Tests* for deviations you expect to be fixed, where preserving the spec-correct assertion as the target matters.)
+- **Missing SDK Public API / Features** — the features spec requires a public API or feature that the SDK doesn't implement **and for which no equivalent exists** (section 2c). Each entry maps to a feature request, not a bug. If an equivalent exists, the test belongs under **Adapted Tests** instead.
+- **Adapted Tests** — SDK non-compliance where the test asserts the SDK's *actual* behaviour instead of the spec's. It passes, guards against regressions, and documents the deviation. **Whenever the actual behaviour is stable and assertable, prefer this and record the test here** — a running adapted test is worth more than a spec-correct assertion skipped indefinitely. (Reserve *Failing Tests* for deviations you expect to be fixed, where preserving the spec-correct assertion as the target matters.) This section also holds tests that run through an **equivalent** because the public API the spec names is absent (section 2c, steps 2 and 3); each such entry says the public API is absent. **When an equivalent exists, this section always takes precedence over Missing SDK Public API / Features.**
 - **Mock Infrastructure Limitations** — tests that can't be implemented due to missing mock capabilities (e.g. msgpack support). These are skipped tests, not SDK deviations. Only test-side gaps belong here.
 
 This file is valuable output. It gives the SDK team a precise catalogue of spec gaps, each with a failing test that can be turned on once the fix lands.
@@ -282,7 +303,7 @@ When writing tests before an implementation exists:
 
 ### Check the SDK's API surface
 
-Not everything in the UTS pseudocode maps 1:1 to every SDK. Before writing tests, verify that the API exists. An API that is merely *named* differently is idiomatic translation — use the SDK's name and move on; there is nothing to record (see [Idiomatic translation vs genuine deviations](#idiomatic-translation-vs-genuine-deviations)). An API that is genuinely *missing* is either required (see Phase 2, section 2c) or optional. If it's optional, the test is *not applicable*: generate no test, record nothing, and write this comment where the test would have been, in the language's comment syntax:
+Not everything in the UTS pseudocode maps 1:1 to every SDK. Before writing tests, verify that the API exists. An API that is merely *named* differently is idiomatic translation — use the SDK's name and move on; there is nothing to record (see [Idiomatic translation vs genuine deviations](#idiomatic-translation-vs-genuine-deviations)). An API that has no direct counterpart may still have an **equivalent**: another public mechanism, or at the unit tier an internal member; look for one first and, if it exists, translate through it as an adapted assertion (Phase 2, section 2c). An API that is genuinely *missing*, with no equivalent, is either required (see Phase 2, section 2c) or optional. If it's optional, the test is *not applicable*: generate no test, record nothing, and write this comment where the test would have been, in the language's comment syntax:
 ```
 // UTS-NA: <test-id> — not applicable: <reason>
 ```
