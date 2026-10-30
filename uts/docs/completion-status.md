@@ -100,6 +100,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSL11 | GetMessage function (RSL11a–RSL11c) | Yes — `rest/unit/channel/get_message.md`, `rest/integration/mutable_messages.md` |
 | RSL14 | GetMessageVersions (RSL14a–RSL14c) | Yes — `rest/unit/channel/message_versions.md`, `rest/integration/mutable_messages.md` |
 | RSL15 | UpdateMessage/DeleteMessage/AppendMessage (RSL15a–RSL15f) | Yes — `rest/unit/channel/update_delete_message.md`, `rest/integration/mutable_messages.md` |
+| RSL16 | Object attribute (RSL16a–RSL16b) | Yes — `objects/unit/rest_object_get.md` |
 
 ### Plugins
 
@@ -108,6 +109,23 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | PC1–PC5 | Plugin architecture, VCDiff, Objects | Partial — `realtime/unit/channels/channel_delta_decoding.md` covers PC3, PC3a; `realtime/integration/delta_decoding_test.md` covers PC3 |
 | PT1–PT2 | PluginType enum | |
 | VD1–VD2 | VCDiffDecoder | Partial — `realtime/unit/helpers/mock_vcdiff.md` references VD2a |
+
+### RestObject
+
+Spec items in [objects-features.md](../../specifications/objects-features.md#rest-object).
+
+| Spec item | Description | UTS test spec |
+|-----------|-------------|---------------|
+| RSO1 | RestObject entry point (RSO1a–RSO1b) | Yes — `objects/unit/rest_object_get.md` |
+| RSO2 | Get function (RSO2a–RSO2h) | Yes — `objects/unit/rest_object_get.md`, `objects/integration/rest_object_test.md` |
+| RSO3 | Publish function (RSO3a–RSO3h) | Yes — `objects/unit/rest_object_publish.md`, `objects/integration/rest_object_test.md` |
+| RSO4 | GenerateObjectId function (RSO4a–RSO4k) | Yes — `objects/unit/rest_object_generate_id.md`, `objects/integration/rest_object_test.md` |
+| RSO5 | RestObjectOperation (RSO5a–RSO5j) | Yes — `objects/unit/rest_object_publish.md`, `objects/integration/rest_object_test.md` |
+| RSO6 | Paths passed through verbatim | Yes — `objects/unit/rest_object_get.md`, `objects/unit/rest_object_publish.md`, `objects/integration/rest_object_test.md` |
+| RSO7 | PublishObjectData | Yes — `objects/unit/rest_object_publish.md` |
+| RSO8–RSO9 | Get result types (compact, full) | Yes — `objects/unit/rest_object_get.md` |
+| RSO10–RSO13 | Publish/generateObjectId result and input types | Yes — `objects/unit/rest_object_publish.md`, `objects/unit/rest_object_generate_id.md` |
+| RSO14–RSO16 | RestLiveMap, RestLiveCounter, RestLiveMapEntry | Yes — `objects/unit/rest_object_get.md`, `objects/integration/rest_object_test.md` |
 
 ### RestPresence
 
@@ -434,10 +452,11 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **REST client** (RSC) | 18 | 16 | Partial |
 | **REST auth** (RSA) | 15 | 15 | Full |
 | **REST channels** (RSN) | 4 | 4 | Full |
-| **REST channel** (RSL) | 13 | 13 | Full |
+| **REST channel** (RSL) | 14 | 14 | Full |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
 | **REST encryption** (RSE) | 2 | 0 | None |
 | **REST annotations** (RSAN) | 3 | 3 | Full |
+| **REST objects** (RSO) | 10 | 10 | Full |
 | **Realtime client** (RTC) | 14 | 14 | Full |
 | **Connection** (RTN) | 23 | 19 | Partial |
 | **Realtime channels** (RTS) | 5 | 5 | Full |
