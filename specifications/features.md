@@ -1550,7 +1550,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol
   - `(OD2e)` `number` number - a primitive number leaf value in the object graph
   - `(OD2f)` `string` string - a primitive string leaf value in the object graph
-  - `(OD2g)` `json` JsonObject \| JsonArray - a primitive JSON leaf value (an object or array) in the object graph. It is sent to and received from the server as a JSON-encoded string when using the JSON protocol
+  - `(OD2g)` `json` JsonObject \| JsonArray - a primitive JSON leaf value (an object or array) in the object graph. It is sent to and received from the server as a JSON-encoded string, with both the JSON and MessagePack protocols
 - `(OD3)` The size of the `ObjectData` is calculated as follows:
   - `(OD3a)` The size is the sum of the sizes of the `boolean`, `bytes`, `number`, `string`, and `json` properties
   - `(OD3b)` If set, the size of a `boolean` property is 1
@@ -1567,21 +1567,21 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(OD4c2)` A binary payload is encoded as a MessagePack binary type, and the result is set on the `ObjectData.bytes` attribute
     - `(OD4c3)` A number payload is encoded as a MessagePack float64 type, and the result is set on the `ObjectData.number` attribute
     - `(OD4c4)` A string payload is encoded as a MessagePack string type, and the result is set on the `ObjectData.string` attribute
-    - `(OD4c5)` A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, encoded as a MessagePack string type, and the result is set on the `ObjectData.string` attribute. The `ObjectData.encoding` attribute is then set to "json"
+    - `(OD4c5)` A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, encoded as a MessagePack string type, and the result is set on the `ObjectData.json` attribute
   - `(OD4d)` When the JSON protocol is used:
     - `(OD4d1)` A boolean payload is represented as a JSON boolean and set on the `ObjectData.boolean` attribute
     - `(OD4d2)` A binary payload is Base64-encoded and represented as a JSON string; the result is set on the `ObjectData.bytes` attribute
     - `(OD4d3)` A number payload is represented as a JSON number and set on the `ObjectData.number` attribute
     - `(OD4d4)` A string payload is represented as a JSON string and set on the `ObjectData.string` attribute
-    - `(OD4d5)` A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, represented as a JSON string and the result is set on the `ObjectData.string` attribute. The `ObjectData.encoding` attribute is then set to "json"
+    - `(OD4d5)` A payload consisting of a JSON-encodable object or array is stringified as a JSON object or array, represented as a JSON string and the result is set on the `ObjectData.json` attribute
 - `(OD5)` `ObjectData` decoding:
   - `(OD5a)` When the MessagePack protocol is used:
     - `(OD5a1)` The payloads in `ObjectData.boolean`, `ObjectData.bytes`, `ObjectData.number`, and `ObjectData.string` are decoded as their corresponding MessagePack types
-    - `(OD5a2)` If `ObjectData.encoding` is set to "json", the `ObjectData.string` content is decoded by parsing the string as JSON
+    - `(OD5a2)` The `ObjectData.json` payload is decoded as a MessagePack string type, and the result is parsed as JSON
   - `(OD5b)` When the JSON protocol is used:
     - `(OD5b1)` The payloads in `ObjectData.boolean`, `ObjectData.number`, and `ObjectData.string` are decoded as their corresponding JSON types
     - `(OD5b2)` The `ObjectData.bytes` payload is Base64-decoded into a binary value
-    - `(OD5b3)` If `ObjectData.encoding` is set to "json", the `ObjectData.string` content is decoded by parsing the string as JSON
+    - `(OD5b3)` The `ObjectData.json` payload is decoded as a JSON string, and the result is parsed as JSON
 
 #### Annotation
 
