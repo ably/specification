@@ -1545,7 +1545,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(OD1)` An `ObjectData` represents a value in an object on a channel
 - `(OD2)` The attributes available in an `ObjectData` are listed below. Of the value fields - `boolean`, `bytes`, `number`, `string` and `json` - at most one must be set at a time:
   - `(OD2a)` `objectId` string - a reference to another object
-  - `(OD2b)` `encoding` string - may be set by the client library to indicate that value in `string` field have an encoding
+  - `(OD2b)` This clause has been deleted as of specification version 6.4.0.
   - `(OD2c)` `boolean` boolean - a primitive boolean leaf value in the object graph
   - `(OD2d)` `bytes` binary \| string - a primitive binary leaf value in the object graph. It is sent to and received from the server as a Base64-encoded string when using the JSON protocol
   - `(OD2e)` `number` number - a primitive number leaf value in the object graph
@@ -1561,7 +1561,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
   - `(OD3f)` The size of a `null` or omitted property is zero
 - `(OD4)` `ObjectData` encoding:
   - `(OD4a)` Payloads must be booleans, binary, numbers, strings, or JSON-encodable objects or arrays. Any other data type must not be permitted and result in an error with code 40013
-  - `(OD4b)` `ObjectData.encoding` must be left unset unless specified otherwise by the payload encoding procedure in [OD4c](#OD4c) and [OD4d](#OD4d)
+  - `(OD4b)` This clause has been deleted as of specification version 6.4.0.
   - `(OD4c)` When the MessagePack protocol is used:
     - `(OD4c1)` A boolean payload is encoded as a MessagePack boolean type, and the result is set on the `ObjectData.boolean` attribute
     - `(OD4c2)` A binary payload is encoded as a MessagePack binary type, and the result is set on the `ObjectData.bytes` attribute
@@ -2664,7 +2664,6 @@ Each type, method, and attribute is labelled with the name of one or more clause
 
     class ObjectData // OD*, internal
       objectId: String? // OD2a
-      encoding: String? // OD2b
       boolean: Boolean? // OD2c
       bytes: Binary? | String? // OD2d
       number: Number? // OD2e
