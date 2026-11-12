@@ -107,7 +107,7 @@ Objects feature enables clients to store shared data as "objects" on a channel. 
   - `(RSO9a)` `RestLiveMap` ([RSO14](#RSO14)), returned when the response body has a `map` field per [RSO2g1](#RSO2g1)
   - `(RSO9b)` `RestLiveCounter` ([RSO15](#RSO15)), returned when the response body has a `counter` field per [RSO2g2](#RSO2g2)
   - `(RSO9c)` A decoded [`ObjectData`](../features#OD1) leaf, returned when the response is a typed leaf value per [RSO2g3](#RSO2g3). The library must return an `ObjectData` instance with:
-    - `(RSO9c1)` The [`objectId`](../features#OD2a) and [`encoding`](../features#OD2b) fields unset. (If the response carried an object reference, the result would instead be a `RestLiveMap` ([RSO9a](#RSO9a)), `RestLiveCounter` ([RSO9b](#RSO9b)), or unrecognized-object fallback ([RSO9d](#RSO9d)).)
+    - `(RSO9c1)` The [`objectId`](../features#OD2a) field unset. (If the response carried an object reference, the result would instead be a `RestLiveMap` ([RSO9a](#RSO9a)), `RestLiveCounter` ([RSO9b](#RSO9b)), or unrecognized-object fallback ([RSO9d](#RSO9d)).)
     - `(RSO9c2)` Values decoded per [OD5](../features#OD5): in particular, `bytes` holds a native `Binary` value rather than a Base64-encoded string, and any JSON-encoded payload appears as the parsed `JsonObject` or `JsonArray` rather than as a JSON-encoded string
   - `(RSO9d)` For object types unrecognized by the library, an object containing at minimum `{ objectId: String }`, with additional fields passed through unmodified per [RSF1](../features#RSF1)
 - `(RSO10)` `RestObjectPublishResult` is the return type of [`RestObject#publish`](#RSO3). Its attributes are:
