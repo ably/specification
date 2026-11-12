@@ -489,4 +489,4 @@ Operation shapes (target by `objectId` or `path`; an optional `id` on any operat
 { counterInc:    { number: <number> },                                      objectId|path: "<target>" }      # negative number = decrement
 ```
 
-where `<value>` is a primitive value object: `{ string: "..." }`, `{ number: ... }`, `{ boolean: ... }`, `{ bytes: "<base64>" }`, or a reference `{ objectId: "..." }` (`string`/`bytes` may also carry an optional `encoding`).
+where `<value>` is a primitive value object: `{ string: "..." }`, `{ number: ... }`, `{ boolean: ... }`, `{ bytes: "<base64>" }`, or a reference `{ objectId: "..." }`.
