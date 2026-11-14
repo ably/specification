@@ -23,6 +23,8 @@ field in the fixture describes the expected decoded content of that message.
 
 ## RSL6a3 - Decode binary-encoded protocol messages using interop fixtures
 
+**Test ID**: `rest/unit/RSL6a3/msgpack-fixtures-decode-0`
+
 **Spec requirement:** A set of tests should exist to ensure that the client library
 can successfully encode and decode binary encoded protocol messages.
 
@@ -81,6 +83,8 @@ END
 ---
 
 ## RSL6a3 - Re-encode decoded messages back to msgpack (round-trip)
+
+**Test ID**: `rest/unit/RSL6a3/msgpack-fixtures-round-trip-1`
 
 ### Test: each fixture round-trips through encode/decode
 ```pseudo

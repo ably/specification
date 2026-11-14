@@ -279,6 +279,8 @@ ASSERT "id" NOT IN annotation
 
 ## RSAN2a — delete sends POST with ANNOTATION_DELETE
 
+**Test ID**: `rest/unit/RSAN2a/delete-post-annotation-delete-0`
+
 **Spec requirement:** RSAN2a — Must be identical to RSAN1 `publish()` except that the `Annotation.action` is set to `ANNOTATION_DELETE`, not `ANNOTATION_CREATE`.
 
 Tests that `annotations.delete()` sends a POST with the delete action.
@@ -330,6 +332,8 @@ ASSERT annotation["name"] == "like"
 
 ## RSAN3b — get sends GET to correct endpoint
 
+**Test ID**: `rest/unit/RSAN3b/get-sends-get-0`
+
 | Spec | Requirement |
 |------|-------------|
 | RSAN3b | Sends a GET request to `/channels/{channelName}/messages/{messageSerial}/annotations` |
@@ -380,6 +384,8 @@ ASSERT request.url.path == "/channels/" + encode_uri_component(channel_name) + "
 ---
 
 ## RSAN3c — get returns PaginatedResult of Annotations
+
+**Test ID**: `rest/unit/RSAN3c/get-returns-paginated-result-0`
 
 **Spec requirement:** RSAN3c — Returns a `PaginatedResult<Annotation>` page containing the first page of decoded `Annotation` objects.
 
@@ -457,6 +463,8 @@ ASSERT ann2.clientId == "user-2"
 ---
 
 ## RSAN3b — get passes params as querystring
+
+**Test ID**: `rest/unit/RSAN3b/get-params-querystring-1`
 
 **Spec requirement:** RSAN3b — Any `params` are sent in the querystring.
 
