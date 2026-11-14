@@ -402,7 +402,7 @@ mock_http = MockHttpClient(
       {
         "id": "msg1",
         "name": "event",
-        "data": "encrypted-data-here",
+        "data": "ZW5jcnlwdGVkLWRhdGEtaGVyZQ==",
         "encoding": "custom-encryption/base64",
         "timestamp": 1234567890000
       }
@@ -427,6 +427,56 @@ message = history.items[0]
 ASSERT message.encoding == "custom-encryption"
 # Data should be base64-decoded but not further processed
 ASSERT message.data IS bytes  # Result of base64 decode
+ASSERT message.data == bytes("encrypted-data-here")
+```
+
+---
+
+## RSL6b - Invalid base64 delivered with last successful decoding
+
+**Test ID**: `rest/unit/RSL6b/invalid-base64-preserved-1`
+
+**Spec requirement:** If invalid Base64 is detected in the message payload, an error message must be sent to the logger, but the message must still be delivered with the last successful decoding and the `encoding` field retaining the component that could not be decoded.
+
+### Setup
+```pseudo
+channel_name = "test-RSL6b-invalid-${random_id()}"
+captured_requests = []
+
+# "@@@invalid@@@" is not valid RFC4648 base64 and cannot be decoded.
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.push(req)
+    req.respond_with(200, [
+      {
+        "id": "msg1",
+        "name": "event",
+        "data": "@@@invalid@@@",
+        "encoding": "custom-encryption/base64",
+        "timestamp": 1234567890000
+      }
+    ])
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+history = AWAIT channel.history()
+message = history.items[0]
+```
+
+### Assertions
+```pseudo
+# Base64 decode fails, so the message is delivered with the last successful
+# decoding: the data is unchanged and the encoding retains the base64 component.
+ASSERT message.data == "@@@invalid@@@"
+ASSERT message.encoding == "custom-encryption/base64"
 ```
 
 ---

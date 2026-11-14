@@ -30,17 +30,17 @@ stats_data = [
   {
     "intervalId": "2024-01-01:00:00",
     "unit": "hour",
-    "all": {
-      "messages": {"count": 100, "data": 5000},
-      "all": {"count": 100, "data": 5000}
+    "entries": {
+      "messages.all.all.count": 100,
+      "messages.all.all.data": 5000
     }
   },
   {
     "intervalId": "2024-01-01:01:00",
     "unit": "hour",
-    "all": {
-      "messages": {"count": 150, "data": 7500},
-      "all": {"count": 150, "data": 7500}
+    "entries": {
+      "messages.all.all.count": 150,
+      "messages.all.all.data": 7500
     }
   }
 ]
@@ -71,7 +71,10 @@ ASSERT result.items.length == 2
 # Stats objects should have correct fields
 ASSERT result.items[0].intervalId == "2024-01-01:00:00"
 ASSERT result.items[0].unit == "hour"
+ASSERT result.items[0].entries["messages.all.all.count"] == 100
+ASSERT result.items[0].entries["messages.all.all.data"] == 5000
 ASSERT result.items[1].intervalId == "2024-01-01:01:00"
+ASSERT result.items[1].entries["messages.all.all.count"] == 150
 
 # Verify correct endpoint and method
 ASSERT captured_requests.length == 1
