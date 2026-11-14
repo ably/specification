@@ -127,13 +127,13 @@ Then the BatchResult contains results for all three channels
 ```pseudo
 channel_name = "test-RSC22c6-${random_id()}"
 
-Given a REST client with mock HTTP
+Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests
 When batchPublish is called with messages containing:
   - String data
   - Binary data (Uint8List/[]byte)
   - JSON object data
-Then the captured request shows each message is encoded per RSL4:
+Then the captured request shows each message is encoded per RSL4 (JSON protocol branch):
   - String: data as-is, no encoding
   - Binary: base64 encoded, encoding: "base64"
   - JSON: JSON stringified, encoding: "json"
