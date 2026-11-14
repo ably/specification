@@ -1,0 +1,78 @@
+# Infra design: <repo name> @ <sha>
+
+- Run mode (D-27): …; upgrade: rows seeded from skill-gap-audit.md section C on <date>, each re-checked per 4.2
+- LiveObjects (D-28): full | placeholder | none
+- UTS infrastructure plan (STOP-17 or STOP-13): <tiers and infra pieces>; side: <side> (<chosen at STOP-17 | from the records | detected from the existing UTS code>; provisional; re-confirmed at STOP-3: <same | changed to …, decision #n>); differences from the outline: <none | …>
+- Capabilities (D-31): rest …; realtime …; side: …; hooks reachable from the SDK language (P-13): yes | no; rows and tiers needing an absent capability are "n/a — capability absent: <capability> (D-31)", not gaps (13.8)
+
+## Gap table
+| # | Capability | Guide | Status | Evidence | Approach (reuse / wrap / extend / build / n/a) | Builds on | Blocks (module/tier) | Production change? | Size | Acceptance check |
+|---|---|---|---|---|---|---|---|---|---|---|
+| G-01 | WebSocket transport factory hook | 2.1 | present / partial / missing / n/a | | | | realtime/unit, objects/unit | yes / no | S/M/L | |
+| G-02 | HTTP client hook | 2.1 | | | | | rest/unit | | | |
+| G-03 | Clock hook (timers, timed waits, async-runtime timers) | 2.1 | | | | | | | | |
+| G-04 | Network-monitor hook | 2.1 | | | | | | | | |
+| G-05 | Randomness hooks (jitter, host shuffle) | 2.1 | | | | | | | | |
+| G-06 | MockHttpClient (+ legacy queue_*) | 2.2, mock_http.md | | | | | | | | |
+| G-07 | MockWebSocket (+ alternative API, undocumented members, raw frames, ping) | 2.2, mock_websocket.md | | | | | | | | |
+| G-08 | MockVCDiff encoder/decoders | 2.2, mock_vcdiff.md | | | | | | | | |
+| G-09 | MockNetworkListener | 2.2 | | | | | | | | |
+| G-10 | standard_test_pool.md implementation; plugin options builder (only if D-28 = full; else n/a (D-28)) | 2.2, standard_test_pool.md | | | | | objects/unit | | | |
+| G-11 | Wait helpers (AWAIT_STATE, poll_until, poll_until_success, process_pending_events, wall-clock wrapper, fake clock driver) | 2.2, 5.6, 5.7 | | | | | | | | |
+| G-12 | Thread-safe capture, log sink, assertContainsInOrder, caller-attributed failures | 2.2 | | | | | | | | |
+| G-13 | Placement and the tier layout (MUST: root, unit/, integration/, integration/proxy/; infra tests in their own tier tree; names follow folders); shared / port-only / module helpers; fixture-helper scope documented in the module notes. Upgrade/Fix, not tier-shaped: restructure by tier, with the move list (Placement) | 2.2 | | | | | | | | |
+| G-14 | Infra README with Known gaps; mapping `infra` entry (root, readme, testsRoot, testCommand with {tier}; sources derived by the resolver) | 3.1, 3.2 | | | | | | | | |
+| G-15 | SandboxApp; ably-common | 2.3 | | | | | */integration | | | |
+| G-16 | ProxyManager (pinned, every OS); ProxySession; rule builders; proxy auth | 2.4 | | | | | */proxy | | | |
+| G-17 | UTS test target; per-tier selection and filters; one CI home per suite | 2.5 | | | | | | | | |
+| G-18 | Concurrency, time, parallelism and visibility models known | 2.6 | | | | | | | | |
+| G-19 | Per-tier smoke tests (permanent, in CI, outside generated dirs) | 2.7 | | | | | | | | |
+| G-20 | Helper self-tests (common, unit, fake clock, REST, objects, sandbox, proxy) | 2.7 | | | | | | | | |
+
+## Helper-spec symbol maps (one table per helper spec)
+### mock_http.md
+| Spec symbol (declared or corpus-only) | Native type.member | Approach | Builds on | Notes |
+|---|---|---|---|---|
+### mock_websocket.md
+### mock_vcdiff.md
+### standard_test_pool.md
+### MockNetworkListener (no helper spec)
+
+## Wait and assertion helpers
+| Helper | Native symbol | Approach | Guarantees checked by |
+|---|---|---|---|
+
+## Sandbox and proxy
+- Sandbox provisioning: …; client targeting (endpoint or hosts): …; suite fixture mapping: …
+- Proxy: version …; binaries per OS …; local override …; auth through the proxy …; platform gating …
+
+## Hook proposals (each needs STOP-4 approval)
+| Hook | Existing seams checked (file:line, usable?) | Infra-side alternatives considered (why each falls short) | Specs that need it | API | Default behaviour | Visibility | Files (expected lines) | Installed how | Per-client? | Time sources covered (clock hook) | Approved on |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+
+## Placement
+- Infra root: <dir> (name SHOULD be infra/); tier directories: <root>, unit/, integration/, integration/proxy/ (MUST); namespaces or packages: <how they follow the folders; shadowing checked>
+- Infra-tests tree (mapping testsRoot): <dir beside the UTS infra, same tier folders | <infra>/tests/<tier>, excluded from source derivation>
+- Shared test-support: <dir/target>; port-only UTS infra: <dir/target>; module helpers: <dir per module>
+- Infra tests per tier: <tier → command that runs its smoke tests and self-tests (testCommand with {tier}); CI job>
+
+| Infra file (existing or planned) | Tiers that use it | Directory | Namespace or package | Moved from (Upgrade/Fix) |
+|---|---|---|---|---|
+
+## Tier feasibility
+| Module | unit | integration | proxy |
+|---|---|---|---|
+| rest | ready / after G-.. / not possible: <why> / n/a / n/a — capability absent: <capability> (D-31) | | |
+| realtime | | | |
+| objects | per D-28: full → as above; placeholder → not possible: placeholder notes; none → n/a (D-28) | | |
+
+## Decision at STOP-3
+(a) build now: <rows> | (b) plan only | (c) scope to ready tiers — chosen by <user> on <date>; design changes requested: …
+Upgrade/Fix: per row build / plan (defer) / skip: …; G-19/G-20 for every tier the skill offers can't be skipped or deferred
+
+## Build log (Phase 3) / plan (option b)
+| Order | Row | Work | Acceptance check | Result | Date |
+|---|---|---|---|---|---|
+
+## Confirmation at STOP-7
+Smoke tests and self-tests per tier (filter, result, CI job): …; updated tier matrix: …; confirmed on <date>

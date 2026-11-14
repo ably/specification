@@ -1,0 +1,40 @@
+{
+  "_description": "The whitelist of Ably Pub/Sub SDK repositories the skill creator accepts, read by scripts/check_repo_eligibility.py (section 13.2); every other repository is rejected. To support a new SDK repository, add its name here.",
+  "owner": "ably",
+  "repositories": [
+    "ably-cocoa", "ably-ios", "ably-pubsub-cocoa",
+    "ably-go", "ably-pubsub-go",
+    "ably-pubsub-dart", "ably-dart",
+    "ably-pubsub-dotnet", "ably-dotnet",
+    "ably-pubsub-flutter", "ably-flutter",
+    "ably-pubsub-java", "ably-java",
+    "ably-pubsub-js", "ably-js",
+    "ably-pubsub-php", "ably-php",
+    "ably-pubsub-python", "ably-python",
+    "ably-pubsub-ruby", "ably-ruby",
+    "ably-ruby-rest",
+    "ably-rust"
+  ],
+  "capabilityOverride": {
+    "_comment": "ably-ruby-rest is a REST-only gem wrapping ably-ruby as a submodule: it defines no client itself, so the override supplies the profile.",
+    "ably-ruby-rest": { "rest": "full", "realtime": "absent" }
+  },
+  "canonical": {
+    "ably-ios": "ably-cocoa",
+    "ably-dart": "ably-pubsub-dart",
+    "ably-dotnet": "ably-pubsub-dotnet",
+    "ably-flutter": "ably-pubsub-flutter",
+    "ably-java": "ably-pubsub-java",
+    "ably-js": "ably-pubsub-js",
+    "ably-php": "ably-pubsub-php",
+    "ably-python": "ably-pubsub-python",
+    "ably-ruby": "ably-pubsub-ruby"
+  },
+  "plannedRename": {
+    "ably-cocoa": "ably-pubsub-cocoa",
+    "ably-go": "ably-pubsub-go"
+  },
+  "definitionGate": {
+    "minSourceFilesToReject": 20
+  }
+}
