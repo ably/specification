@@ -376,7 +376,7 @@ mock_http = MockHttpClient(
     captured_requests.append(req)
     IF req.url.path == "/time":
       # Time query
-      req.respond_with(200, { "time": 1234567890000 })
+      req.respond_with(200, [1234567890000])
     ELSE:
       # Token request
       req.respond_with(200, {

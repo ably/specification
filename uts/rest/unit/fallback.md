@@ -7,12 +7,7 @@ Unit test with mocked HTTP client
 
 ## Mock HTTP Infrastructure
 
-See `rest_client.md` for the full Mock HTTP Infrastructure specification. These tests use the same `MockHttpClient` interface with `PendingConnection` and `PendingRequest`.
-
-Fallback tests require the mock to support:
-- Connection-level failures (DNS, connection refused, timeout)
-- Per-host or per-request response configuration
-- Tracking multiple sequential requests to different hosts
+See `helpers/mock_http.md` for the full Mock HTTP Infrastructure specification. These tests use the same `MockHttpClient` interface with `PendingConnection` and `PendingRequest`.
 
 ---
 
@@ -26,8 +21,16 @@ Tests that fallback behavior is skipped when no fallback hosts are configured.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -39,7 +42,7 @@ client = Rest(options: ClientOptions(
 ```pseudo
 AWAIT client.time() FAILS WITH error
 # Should fail without retry
-ASSERT mock_http.captured_requests.length == 1
+ASSERT captured_requests.length == 1
 ASSERT error.statusCode == 500
 ```
 
@@ -55,13 +58,17 @@ Tests that fallback hosts are tried when primary fails, in random order.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
+captured_requests = []
+
 # All requests fail to test full fallback sequence
-mock_http.queue_responses(
-  count: 6,  # primary + 5 fallbacks
-  status: 500,
-  body: { "error": { "code": 50000 } }
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+  }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -74,7 +81,7 @@ AWAIT client.time() FAILS WITH error
 
 ### Assertions
 ```pseudo
-requests = mock_http.captured_requests
+requests = captured_requests
 
 # First request to primary
 ASSERT requests[0].url.host == "main.realtime.ably.net"
@@ -99,81 +106,6 @@ ASSERT ALL host IN fallback_hosts_used: host IN expected_fallbacks
 
 ---
 
-## RSC15l - Qualifying errors trigger fallback
-
-**Test ID**: `rest/unit/RSC15l/qualifying-errors-trigger-fallback-0`
-
-| Spec | Requirement |
-|------|-------------|
-| RSC15l1 | Host unreachable errors trigger fallback |
-| RSC15l2 | Request timeout errors trigger fallback |
-| RSC15l3 | HTTP 5xx status codes (500-504) trigger fallback |
-
-Tests that specific error conditions trigger fallback retry.
-
-### Test Cases
-
-| ID | Spec | Condition | Should Retry |
-|----|------|-----------|--------------|
-| 1 | RSC15l1 | Host unreachable | Yes |
-| 2 | RSC15l2 | Request timeout | Yes |
-| 3 | RSC15l3 | HTTP 500 | Yes |
-| 4 | RSC15l3 | HTTP 501 | Yes |
-| 5 | RSC15l3 | HTTP 502 | Yes |
-| 6 | RSC15l3 | HTTP 503 | Yes |
-| 7 | RSC15l3 | HTTP 504 | Yes |
-| 8 | | HTTP 400 | No |
-| 9 | | HTTP 401 | No |
-| 10 | | HTTP 404 | No |
-
-### Setup (HTTP status codes)
-```pseudo
-FOR EACH test_case IN [500, 501, 502, 503, 504]:
-  mock_http = MockHttpClient()
-  mock_http.queue_response(test_case, { "error": { "code": test_case * 100 } })
-  mock_http.queue_response(200, { "time": 1234567890000 })
-
-  client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-
-  AWAIT client.time()
-
-  ASSERT mock_http.captured_requests.length == 2
-  ASSERT mock_http.captured_requests[1].url.host != mock_http.captured_requests[0].url.host
-```
-
-### Setup (Non-retryable errors)
-```pseudo
-FOR EACH test_case IN [400, 401, 404]:
-  mock_http = MockHttpClient()
-  mock_http.queue_response(test_case, { "error": { "code": test_case * 100 } })
-
-  client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-
-  AWAIT client.time() FAILS WITH error
-  # Expected to fail
-
-  # Should NOT have retried
-  ASSERT mock_http.captured_requests.length == 1
-```
-
-### Setup (Timeout)
-```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_timeout()  # Simulates timeout
-mock_http.queue_response(200, { "time": 1234567890000 })
-
-client = Rest(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  httpRequestTimeout: 1000
-))
-
-AWAIT client.time()
-
-ASSERT mock_http.captured_requests.length == 2
-```
-
----
-
 ## RSC15l4 - CloudFront errors trigger fallback
 
 **Test ID**: `rest/unit/RSC15l4/cloudfront-error-triggers-fallback-0`
@@ -184,12 +116,24 @@ Tests that responses with CloudFront server header and status >= 400 trigger fal
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(403,
-  body: { "error": "Forbidden" },
-  headers: { "Server": "CloudFront" }
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(403,
+        body: { "error": { "message": "Forbidden", "code": 40300, "statusCode": 403 } },
+        headers: { "Server": "CloudFront" }
+      )
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
 )
-mock_http.queue_response(200, { "time": 1234567890000 })
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -201,9 +145,9 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
-ASSERT mock_http.captured_requests[1].url.host != "main.realtime.ably.net"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[1].url.host != "main.realtime.ably.net"
 ```
 
 ---
@@ -230,7 +174,7 @@ mock_http = MockHttpClient(
       conn.respond_with_success()
   },
   onRequest: (req) => {
-    req.respond_with(200, {"time": 1234567890000})
+    req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -262,7 +206,7 @@ mock_http = MockHttpClient(
       conn.respond_with_success()
   },
   onRequest: (req) => {
-    req.respond_with(200, {"time": 1234567890000})
+    req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -293,7 +237,7 @@ mock_http = MockHttpClient(
       conn.respond_with_success()
   },
   onRequest: (req) => {
-    req.respond_with(200, {"time": 1234567890000})
+    req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -329,7 +273,7 @@ mock_http = MockHttpClient(
       req.respond_with_timeout()
     ELSE:
       # Fallback succeeds
-      req.respond_with(200, {"time": 1234567890000})
+      req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -362,7 +306,7 @@ FOR EACH status_code IN [500, 501, 502, 503, 504]:
       IF request_count == 1:
         req.respond_with(status_code, {"error": {"code": status_code * 100}})
       ELSE:
-        req.respond_with(200, {"time": 1234567890000})
+        req.respond_with(200, [1234567890000])
     }
   )
   install_mock(mock_http)
@@ -413,9 +357,21 @@ Tests that the Host header is set correctly for fallback requests.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -427,8 +383,8 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-request_1 = mock_http.captured_requests[0]
-request_2 = mock_http.captured_requests[1]
+request_1 = captured_requests[0]
+request_2 = captured_requests[1]
 
 # Host header should match the actual host being requested
 ASSERT request_1.headers["Host"] == request_1.url.host
@@ -448,13 +404,24 @@ Tests that after successful fallback, that host is used for subsequent requests.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-# First request to primary fails
-mock_http.queue_response_for_host("main.realtime.ably.net", 500, { "error": {} })
-# First fallback succeeds
-mock_http.queue_response_for_host("main.a.fallback.ably-realtime.com", 200, { "time": 1000 })
-# Second request should go directly to cached fallback
-mock_http.queue_response_for_host("main.a.fallback.ably-realtime.com", 200, { "time": 2000 })
+captured_requests = []
+
+# Primary fails; any fallback succeeds. The chosen fallback is observed
+# from the captured requests rather than assumed, since RSC15a picks it
+# in random order.
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    IF req.url.host == "main.realtime.ably.net":
+      # First request to primary fails
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      # Fallback succeeds
+      req.respond_with(200, [1000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -473,16 +440,18 @@ result2 = AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 3
+ASSERT captured_requests.length == 3
 
 # Request 1: primary (failed)
-ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[0].url.host == "main.realtime.ably.net"
 
 # Request 2: fallback (succeeded)
-ASSERT mock_http.captured_requests[1].url.host == "main.a.fallback.ably-realtime.com"
+ASSERT captured_requests[1].url.host != "main.realtime.ably.net"
+
+fallback_host = captured_requests[1].url.host
 
 # Request 3: cached fallback (no retry to primary)
-ASSERT mock_http.captured_requests[2].url.host == "main.a.fallback.ably-realtime.com"
+ASSERT captured_requests[2].url.host == fallback_host
 ```
 
 ---
@@ -498,11 +467,26 @@ Tests that cached fallback host is cleared after `fallbackRetryTimeout`.
 ### Setup
 ```pseudo
 enable_fake_timers()
-mock_http = MockHttpClient()
-mock_http.queue_response_for_host("main.realtime.ably.net", 500, { "error": {} })
-mock_http.queue_response_for_host("main.a.fallback.ably-realtime.com", 200, { "time": 1000 })
-# After timeout, primary should be tried again
-mock_http.queue_response_for_host("main.realtime.ably.net", 200, { "time": 2000 })
+captured_requests = []
+primary_request_count = 0
+
+# Primary fails on its first attempt (triggering fallback) but succeeds
+# on subsequent attempts; any fallback succeeds.
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    IF req.url.host == "main.realtime.ably.net":
+      primary_request_count++
+      IF primary_request_count == 1:
+        req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+      ELSE:
+        req.respond_with(200, [2000])
+    ELSE:
+      req.respond_with(200, [1000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -524,10 +508,10 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 3
+ASSERT captured_requests.length == 3
 
 # After timeout, primary is tried again
-ASSERT mock_http.captured_requests[2].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[2].url.host == "main.realtime.ably.net"
 ```
 
 ---
@@ -543,28 +527,34 @@ Tests that a request that completes successfully against a fallback *after* `fal
 ### Setup
 ```pseudo
 enable_fake_timers()
-mock_http = MockHttpClient()
 
 # Request handler: primary fails on first attempt, all others succeed.
 # Second request (to cached fallback) is NOT responded to immediately —
 # we hold the PendingRequest and respond later, after the timeout expires.
 held_request = null
 request_index = 0
+captured_requests = []
 
-mock_http.onRequest = (req) =>
-  request_index += 1
-  if request_index == 1
-    # First request to primary — fail to trigger fallback
-    req.respond_with(500, { "error": { "message": "fail", "code": 50000, "statusCode": 500 } })
-  else if request_index == 2
-    # First fallback — succeed, caches this host
-    req.respond_with(200, [1000])
-  else if request_index == 3
-    # Second request goes to cached fallback — hold it (don't respond yet)
-    held_request = req
-  else
-    # All subsequent requests — succeed
-    req.respond_with(200, [1000])
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_index += 1
+    if request_index == 1
+      # First request to primary — fail to trigger fallback
+      req.respond_with(500, { "error": { "message": "fail", "code": 50000, "statusCode": 500 } })
+    else if request_index == 2
+      # First fallback — succeed, caches this host
+      req.respond_with(200, [1000])
+    else if request_index == 3
+      # Second request goes to cached fallback — hold it (don't respond yet)
+      held_request = req
+    else
+      # All subsequent requests — succeed
+      req.respond_with(200, [1000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -597,22 +587,22 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 5
+ASSERT captured_requests.length == 5
 
 # Requests 1+2: primary fail → fallback success
-ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
-ASSERT mock_http.captured_requests[1].url.host != "main.realtime.ably.net"
+ASSERT captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[1].url.host != "main.realtime.ably.net"
 
-fallback_host = mock_http.captured_requests[1].url.host
+fallback_host = captured_requests[1].url.host
 
 # Request 3: went to cached fallback (held, not yet responded)
-ASSERT mock_http.captured_requests[2].url.host == fallback_host
+ASSERT captured_requests[2].url.host == fallback_host
 
 # Request 4: after timeout expiry, primary is tried again
-ASSERT mock_http.captured_requests[3].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[3].url.host == "main.realtime.ably.net"
 
 # Request 5: late success from request 3 did NOT re-pin fallback
-ASSERT mock_http.captured_requests[4].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[4].url.host == "main.realtime.ably.net"
 ```
 
 ---
@@ -631,8 +621,16 @@ Tests that the default primary domain is used when no endpoint options are speci
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -644,7 +642,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[0].url.host == "main.realtime.ably.net"
 ```
 
 ---
@@ -657,8 +655,16 @@ Tests that when `endpoint` contains a period (`.`), it's treated as an explicit 
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -673,7 +679,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "custom.ably.example.com"
+ASSERT captured_requests[0].url.host == "custom.ably.example.com"
 ```
 
 ---
@@ -686,8 +692,16 @@ Tests that `endpoint: "localhost"` is treated as an explicit hostname.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -702,7 +716,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "localhost"
+ASSERT captured_requests[0].url.host == "localhost"
 ```
 
 ---
@@ -715,8 +729,16 @@ Tests that `endpoint` containing `::` is treated as an explicit hostname (IPv6).
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -732,8 +754,8 @@ AWAIT client.time()
 ### Assertions
 ```pseudo
 # IPv6 addresses may be bracketed in URLs
-ASSERT mock_http.captured_requests[0].url.host == "::1" OR
-       mock_http.captured_requests[0].url.host == "[::1]"
+ASSERT captured_requests[0].url.host == "::1" OR
+       captured_requests[0].url.host == "[::1]"
 ```
 
 ---
@@ -746,8 +768,16 @@ Tests that `endpoint: "nonprod:[id]"` resolves to `[id].realtime.ably-nonprod.ne
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -762,7 +792,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "staging.realtime.ably-nonprod.net"
+ASSERT captured_requests[0].url.host == "staging.realtime.ably-nonprod.net"
 ```
 
 ---
@@ -775,8 +805,16 @@ Tests that `endpoint: "[id]"` (without period or nonprod prefix) resolves to `[i
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -791,7 +829,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "test.realtime.ably.net"
+ASSERT captured_requests[0].url.host == "test.realtime.ably.net"
 ```
 
 ---
@@ -896,8 +934,16 @@ Tests that the deprecated `environment` option sets primary domain to `[id].real
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -912,7 +958,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
+ASSERT captured_requests[0].url.host == "sandbox.realtime.ably.net"
 ```
 
 ---
@@ -971,8 +1017,16 @@ Tests that the deprecated `restHost` option sets the primary domain.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -987,7 +1041,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "custom.rest.example.com"
+ASSERT captured_requests[0].url.host == "custom.rest.example.com"
 ```
 
 ---
@@ -1000,8 +1054,16 @@ Tests that `realtimeHost` sets primary domain when `restHost` is not specified.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1016,7 +1078,7 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests[0].url.host == "custom.realtime.example.com"
+ASSERT captured_requests[0].url.host == "custom.realtime.example.com"
 ```
 
 ---
@@ -1029,8 +1091,16 @@ Tests that when both `restHost` and `realtimeHost` are specified, `restHost` is 
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(200, { "time": 1234567890000 })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1047,7 +1117,7 @@ AWAIT client.time()
 ### Assertions
 ```pseudo
 # REST client uses restHost, not realtimeHost
-ASSERT mock_http.captured_requests[0].url.host == "rest.example.com"
+ASSERT captured_requests[0].url.host == "rest.example.com"
 ```
 
 ---
@@ -1066,11 +1136,23 @@ Tests that default configuration provides the standard fallback domains.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-# Primary fails
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-# Fallback succeeds
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      # Primary fails
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      # Fallback succeeds
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -1082,8 +1164,8 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "main.realtime.ably.net"
 
 expected_fallbacks = [
   "main.a.fallback.ably-realtime.com",
@@ -1092,7 +1174,7 @@ expected_fallbacks = [
   "main.d.fallback.ably-realtime.com",
   "main.e.fallback.ably-realtime.com"
 ]
-ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
+ASSERT captured_requests[1].url.host IN expected_fallbacks
 ```
 
 ---
@@ -1105,9 +1187,21 @@ Tests that the `fallbackHosts` option overrides default fallbacks.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1122,9 +1216,9 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "main.realtime.ably.net"
-ASSERT mock_http.captured_requests[1].url.host IN ["fb1.example.com", "fb2.example.com", "fb3.example.com"]
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "main.realtime.ably.net"
+ASSERT captured_requests[1].url.host IN ["fb1.example.com", "fb2.example.com", "fb3.example.com"]
 ```
 
 ---
@@ -1160,9 +1254,21 @@ Tests that `fallbackHostsUseDefault: true` uses the default fallback domains.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1178,8 +1284,8 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "custom.host.com"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "custom.host.com"
 
 # Should use default fallbacks despite custom restHost
 expected_fallbacks = [
@@ -1189,7 +1295,7 @@ expected_fallbacks = [
   "main.d.fallback.ably-realtime.com",
   "main.e.fallback.ably-realtime.com"
 ]
-ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
+ASSERT captured_requests[1].url.host IN expected_fallbacks
 ```
 
 ---
@@ -1202,8 +1308,16 @@ Tests that when `endpoint` is an explicit hostname, fallback domains are empty.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1220,8 +1334,8 @@ AWAIT client.time() FAILS WITH error
 ### Assertions
 ```pseudo
 # No fallback attempted - only one request
-ASSERT mock_http.captured_requests.length == 1
-ASSERT mock_http.captured_requests[0].url.host == "custom.ably.example.com"
+ASSERT captured_requests.length == 1
+ASSERT captured_requests[0].url.host == "custom.ably.example.com"
 ```
 
 ---
@@ -1234,9 +1348,21 @@ Tests that nonprod routing policy has corresponding nonprod fallback domains.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1251,8 +1377,8 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "staging.realtime.ably-nonprod.net"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "staging.realtime.ably-nonprod.net"
 
 expected_fallbacks = [
   "staging.a.fallback.ably-realtime-nonprod.com",
@@ -1261,7 +1387,7 @@ expected_fallbacks = [
   "staging.d.fallback.ably-realtime-nonprod.com",
   "staging.e.fallback.ably-realtime-nonprod.com"
 ]
-ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
+ASSERT captured_requests[1].url.host IN expected_fallbacks
 ```
 
 ---
@@ -1274,9 +1400,21 @@ Tests that production routing policy via `endpoint` has corresponding fallback d
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1291,8 +1429,8 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "test.realtime.ably.net"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "test.realtime.ably.net"
 
 expected_fallbacks = [
   "test.a.fallback.ably-realtime.com",
@@ -1301,7 +1439,7 @@ expected_fallbacks = [
   "test.d.fallback.ably-realtime.com",
   "test.e.fallback.ably-realtime.com"
 ]
-ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
+ASSERT captured_requests[1].url.host IN expected_fallbacks
 ```
 
 ---
@@ -1314,9 +1452,21 @@ Tests that production routing policy via deprecated `environment` has correspond
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
-mock_http.queue_response(200, { "time": 1234567890000 })
+request_count = 0
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    request_count++
+    IF request_count == 1:
+      req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+    ELSE:
+      req.respond_with(200, [1234567890000])
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1331,8 +1481,8 @@ AWAIT client.time()
 
 ### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
-ASSERT mock_http.captured_requests[0].url.host == "sandbox.realtime.ably.net"
+ASSERT captured_requests.length == 2
+ASSERT captured_requests[0].url.host == "sandbox.realtime.ably.net"
 
 expected_fallbacks = [
   "sandbox.a.fallback.ably-realtime.com",
@@ -1341,7 +1491,7 @@ expected_fallbacks = [
   "sandbox.d.fallback.ably-realtime.com",
   "sandbox.e.fallback.ably-realtime.com"
 ]
-ASSERT mock_http.captured_requests[1].url.host IN expected_fallbacks
+ASSERT captured_requests[1].url.host IN expected_fallbacks
 ```
 
 ---
@@ -1354,8 +1504,16 @@ Tests that deprecated `restHost` option results in no fallback domains.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1372,8 +1530,8 @@ AWAIT client.time() FAILS WITH error
 ### Assertions
 ```pseudo
 # No fallback attempted
-ASSERT mock_http.captured_requests.length == 1
-ASSERT mock_http.captured_requests[0].url.host == "custom.rest.example.com"
+ASSERT captured_requests.length == 1
+ASSERT captured_requests[0].url.host == "custom.rest.example.com"
 ```
 
 ---
@@ -1386,8 +1544,16 @@ Tests that deprecated `realtimeHost` option results in no fallback domains.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response(500, { "error": { "code": 50000 } })
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(500, { "error": { "message": "Internal error", "code": 50000, "statusCode": 500 } })
+  }
+)
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1404,8 +1570,8 @@ AWAIT client.time() FAILS WITH error
 ### Assertions
 ```pseudo
 # No fallback attempted
-ASSERT mock_http.captured_requests.length == 1
-ASSERT mock_http.captured_requests[0].url.host == "custom.realtime.example.com"
+ASSERT captured_requests.length == 1
+ASSERT captured_requests[0].url.host == "custom.realtime.example.com"
 ```
 
 ---
@@ -1423,13 +1589,19 @@ This test is primarily relevant for Realtime clients that perform connectivity c
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-# Queue response for connectivity check
-mock_http.queue_response_for_url(
-  "https://internet-up.ably-realtime.com/is-the-internet-up.txt",
-  200,
-  "yes"
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    IF req.url.toString() == "https://internet-up.ably-realtime.com/is-the-internet-up.txt":
+      req.respond_with(200, "yes")
+    ELSE:
+      req.respond_with(404, {"error": {"code": 40400}})
+  }
 )
+install_mock(mock_http)
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -1444,7 +1616,7 @@ result = AWAIT client.connection.checkConnectivity()
 
 ### Assertions
 ```pseudo
-connectivity_requests = mock_http.captured_requests.filter(
+connectivity_requests = captured_requests.filter(
   r => r.url.path CONTAINS "is-the-internet-up"
 )
 ASSERT connectivity_requests.length >= 1
@@ -1463,12 +1635,19 @@ Tests that the `connectivityCheckUrl` option overrides the default.
 
 ### Setup
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response_for_url(
-  "https://custom.example.com/connectivity",
-  200,
-  "ok"
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    IF req.url.toString() == "https://custom.example.com/connectivity":
+      req.respond_with(200, "ok")
+    ELSE:
+      req.respond_with(404, {"error": {"code": 40400}})
+  }
 )
+install_mock(mock_http)
 
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -1483,14 +1662,14 @@ result = AWAIT client.connection.checkConnectivity()
 
 ### Assertions
 ```pseudo
-connectivity_requests = mock_http.captured_requests.filter(
+connectivity_requests = captured_requests.filter(
   r => r.url.host == "custom.example.com"
 )
 ASSERT connectivity_requests.length >= 1
 ASSERT connectivity_requests[0].url.toString() == "https://custom.example.com/connectivity"
 
 # Should NOT request the default URL
-default_requests = mock_http.captured_requests.filter(
+default_requests = captured_requests.filter(
   r => r.url.host == "internet-up.ably-realtime.com"
 )
 ASSERT default_requests.length == 0
@@ -1518,12 +1697,16 @@ Tests that the connectivity check expects a specific response.
 
 ### Setup (Case 1 - Success)
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response_for_url(
-  "https://internet-up.ably-realtime.com/is-the-internet-up.txt",
-  200,
-  "yes"
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    IF req.url.toString() == "https://internet-up.ably-realtime.com/is-the-internet-up.txt":
+      req.respond_with(200, "yes")
+    ELSE:
+      req.respond_with(404, {"error": {"code": 40400}})
+  }
 )
+install_mock(mock_http)
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 result = AWAIT client.connection.checkConnectivity()
@@ -1535,12 +1718,16 @@ CLOSE_CLIENT(client)
 
 ### Setup (Case 2 - Wrong body)
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response_for_url(
-  "https://internet-up.ably-realtime.com/is-the-internet-up.txt",
-  200,
-  "no"
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    IF req.url.toString() == "https://internet-up.ably-realtime.com/is-the-internet-up.txt":
+      req.respond_with(200, "no")
+    ELSE:
+      req.respond_with(404, {"error": {"code": 40400}})
+  }
 )
+install_mock(mock_http)
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 result = AWAIT client.connection.checkConnectivity()
@@ -1552,12 +1739,16 @@ CLOSE_CLIENT(client)
 
 ### Setup (Case 4 - HTTP error)
 ```pseudo
-mock_http = MockHttpClient()
-mock_http.queue_response_for_url(
-  "https://internet-up.ably-realtime.com/is-the-internet-up.txt",
-  404,
-  "Not Found"
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    IF req.url.toString() == "https://internet-up.ably-realtime.com/is-the-internet-up.txt":
+      req.respond_with(404, "Not Found")
+    ELSE:
+      req.respond_with(404, {"error": {"code": 40400}})
+  }
 )
+install_mock(mock_http)
 
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret"))
 result = AWAIT client.connection.checkConnectivity()

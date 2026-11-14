@@ -23,11 +23,16 @@ Tests that REST requests are sent to the default primary domain when no endpoint
 
 #### Setup
 ```pseudo
+captured_requests = []
+
 mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, {"time": 1234567890000})
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -39,8 +44,8 @@ AWAIT client.time()
 
 #### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 1
-ASSERT mock_http.captured_requests[0].url.host == DEFAULT_REST_HOST
+ASSERT captured_requests.length == 1
+ASSERT captured_requests[0].url.host == DEFAULT_REST_HOST
 ```
 
 ---
@@ -53,11 +58,16 @@ Tests that REST requests are sent to a custom production routing policy domain.
 
 #### Setup
 ```pseudo
+captured_requests = []
+
 mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, {"time": 1234567890000})
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
@@ -72,8 +82,8 @@ AWAIT client.time()
 
 #### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 1
-ASSERT mock_http.captured_requests[0].url.host == "test.realtime.ably.net"
+ASSERT captured_requests.length == 1
+ASSERT captured_requests[0].url.host == "test.realtime.ably.net"
 ```
 
 ---
@@ -86,11 +96,16 @@ Tests that successive requests continue to use the primary domain (no unexpected
 
 #### Setup
 ```pseudo
+captured_requests = []
+
 mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, {"time": 1234567890000})
+    captured_requests.append(req)
+    req.respond_with(200, [1234567890000])
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -104,8 +119,8 @@ AWAIT client.time()
 
 #### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 3
-FOR EACH request IN mock_http.captured_requests:
+ASSERT captured_requests.length == 3
+FOR EACH request IN captured_requests:
   ASSERT request.url.host == DEFAULT_REST_HOST
 ```
 
@@ -120,16 +135,20 @@ Tests that when the primary host fails and a fallback succeeds, the primary was 
 #### Setup
 ```pseudo
 request_count = 0
+captured_requests = []
 
 mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
+    captured_requests.append(req)
     request_count++
     IF request_count == 1:
-      req.respond_with(500, {"error": {"code": 50000}})
+      req.respond_with(500, {"error": {"message": "Internal error", "code": 50000, "statusCode": 500}})
     ELSE:
-      req.respond_with(200, {"time": 1234567890000})
+      req.respond_with(200, [1234567890000])
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -141,11 +160,11 @@ AWAIT client.time()
 
 #### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 2
+ASSERT captured_requests.length == 2
 # First request was to primary domain
-ASSERT mock_http.captured_requests[0].url.host == DEFAULT_REST_HOST
+ASSERT captured_requests[0].url.host == DEFAULT_REST_HOST
 # Second request was to a fallback domain (not primary)
-ASSERT mock_http.captured_requests[1].url.host != DEFAULT_REST_HOST
+ASSERT captured_requests[1].url.host != DEFAULT_REST_HOST
 ```
 
 ---
@@ -158,11 +177,16 @@ Tests that the request path and query parameters are correctly constructed when 
 
 #### Setup
 ```pseudo
+captured_requests = []
+
 mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
+    captured_requests.append(req)
     req.respond_with(200, [])
   }
 )
+install_mock(mock_http)
 
 client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
 ```
@@ -174,8 +198,8 @@ AWAIT client.channels.get("test-channel").history()
 
 #### Assertions
 ```pseudo
-ASSERT mock_http.captured_requests.length == 1
-request = mock_http.captured_requests[0]
+ASSERT captured_requests.length == 1
+request = captured_requests[0]
 ASSERT request.url.host == DEFAULT_REST_HOST
 ASSERT request.url.path == "/channels/test-channel/messages"
 ASSERT request.method == "GET"
