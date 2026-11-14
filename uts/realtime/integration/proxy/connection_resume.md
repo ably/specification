@@ -779,6 +779,10 @@ As of specification version 6.1.0 this replaces RTN15g (deleted). The client no 
 3. Refuse the second ws_connect (fires once). This keeps the client in DISCONNECTED while the TTL clock runs out, so when the TTL expires the client transitions to SUSPENDED. The third ws_connect (when the `suspendedRetryTimeout` fires) should be a fresh connection.
 
 ```pseudo
+# The replace action sends its message verbatim (uts-proxy has no placeholder that
+# keeps the server's real value), so the client receives the fixed fake
+# connectionKey below. The resume after TTL expiry is expected to fail
+# server-side either way; the test checks only that the client attempts it (RTN14h).
 session = create_proxy_session(
   endpoint: "nonprod:sandbox",
   rules: [
@@ -789,9 +793,9 @@ session = create_proxy_session(
         "message": {
           "action": 4,
           "connectionId": "proxy-ttl-test-id",
-          "connectionKey": "__PASSTHROUGH__",
+          "connectionKey": "proxy-ttl-test-key",
           "connectionDetails": {
-            "connectionKey": "__PASSTHROUGH__",
+            "connectionKey": "proxy-ttl-test-key",
             "clientId": null,
             "maxMessageSize": 65536,
             "maxInboundRate": 250,
