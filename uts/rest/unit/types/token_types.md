@@ -1,6 +1,6 @@
 # Token Types Tests
 
-Spec points: `TD1`, `TD2`, `TD3`, `TD4`, `TD5`, `TK1`, `TK2`, `TK3`, `TK4`, `TK5`, `TK6`, `TE1`, `TE2`, `TE3`, `TE4`, `TE5`, `TE6`
+Spec points: `TD1`, `TD2`, `TD3`, `TD4`, `TD5`, `TD6`, `TD7`, `TK1`, `TK2`, `TK2a`, `TK2b`, `TK2c`, `TK2d`, `TK2e`, `TE1`, `TE2`, `TE3`, `TE4`, `TE5`, `TE6`
 
 ## Test Type
 Unit test - pure type/model validation
@@ -10,35 +10,35 @@ No mocks required for most tests - these verify type structure and serialization
 
 ---
 
-## TD1-TD5 - TokenDetails structure
+## TD2-TD6 - TokenDetails structure
 
-**Test ID**: `rest/unit/TD1/token-details-attributes-0`
+**Test ID**: `rest/unit/TD2/token-details-attributes-0`
 
-**Spec requirement:** TokenDetails type must provide all required attributes according to TD1-TD5 specifications.
+**Spec requirement:** TokenDetails type must provide all required attributes according to TD2-TD6 specifications.
 
 | Spec | Attribute | Description |
 |------|-----------|-------------|
-| TD1 | token | The token string |
-| TD2 | expires | Expiry time in milliseconds since epoch |
-| TD3 | issued | Issue time in milliseconds since epoch |
-| TD4 | capability | Capability JSON string |
-| TD5 | clientId | Client ID associated with the token |
+| TD2 | token | The token string |
+| TD3 | expires | Expiry time in milliseconds since epoch |
+| TD4 | issued | Issue time in milliseconds since epoch |
+| TD5 | capability | Capability JSON string |
+| TD6 | clientId | Client ID associated with the token |
 
 Tests that `TokenDetails` has all required attributes.
 
 ### Test Steps
 ```pseudo
-# TD1 - token attribute
+# TD2 - token attribute
 token_details = TokenDetails(
   token: "test-token",
   expires: 1234567890000
 )
 ASSERT token_details.token == "test-token"
 
-# TD2 - expires attribute (milliseconds since epoch)
+# TD3 - expires attribute (milliseconds since epoch)
 ASSERT token_details.expires == 1234567890000
 
-# TD3 - issued attribute
+# TD4 - issued attribute
 token_with_issued = TokenDetails(
   token: "test-token",
   expires: 1234567890000,
@@ -46,7 +46,7 @@ token_with_issued = TokenDetails(
 )
 ASSERT token_with_issued.issued == 1234567800000
 
-# TD4 - capability attribute (JSON string)
+# TD5 - capability attribute (JSON string)
 token_with_capability = TokenDetails(
   token: "test-token",
   expires: 1234567890000,
@@ -54,7 +54,7 @@ token_with_capability = TokenDetails(
 )
 ASSERT token_with_capability.capability == "{\"*\":[\"*\"]}"
 
-# TD5 - clientId attribute
+# TD6 - clientId attribute
 token_with_client = TokenDetails(
   token: "test-token",
   expires: 1234567890000,
@@ -95,54 +95,54 @@ ASSERT token_details.clientId == "json-client"
 
 ---
 
-## TK1-TK6 - TokenParams structure
+## TK2, TK2a-TK2e - TokenParams structure
 
-**Test ID**: `rest/unit/TK1/token-params-attributes-0`
+**Test ID**: `rest/unit/TK2a/token-params-attributes-0`
 
-**Spec requirement:** TokenParams type must provide all required attributes according to TK1-TK6 specifications.
+**Spec requirement:** TokenParams type must provide all required attributes according to TK2 and TK2a-TK2e specifications.
 
 | Spec | Attribute | Description |
 |------|-----------|-------------|
-| TK1 | ttl | Time to live in milliseconds |
-| TK2 | capability | Capability JSON string |
-| TK3 | clientId | Client ID for the token |
-| TK4 | timestamp | Timestamp in milliseconds since epoch |
-| TK5 | nonce | Unique nonce value |
-| TK6 | (all) | All attributes combined |
+| TK2a | ttl | Time to live in milliseconds |
+| TK2b | capability | Capability JSON string |
+| TK2c | clientId | Client ID for the token |
+| TK2d | timestamp | Timestamp in milliseconds since epoch |
+| TK2e | nonce | Unique nonce value |
+| TK2 | (all) | All attributes combined |
 
 Tests that `TokenParams` has all required attributes.
 
 ### Test Steps
 ```pseudo
-# TK1 - ttl attribute (milliseconds, nullable)
+# TK2a - ttl attribute (milliseconds, nullable)
 params = TokenParams(ttl: 3600000)
 ASSERT params.ttl == 3600000
 
-# TK1 - ttl defaults to null when not specified (RSA5 depends on this)
+# TK2a - ttl defaults to null when not specified (RSA5 depends on this)
 params = TokenParams()
 ASSERT params.ttl IS null
 
-# TK2 - capability attribute (nullable)
+# TK2b - capability attribute (nullable)
 params = TokenParams(capability: "{\"*\":[\"subscribe\"]}")
 ASSERT params.capability == "{\"*\":[\"subscribe\"]}"
 
-# TK2 - capability defaults to null when not specified (RSA6 depends on this)
+# TK2b - capability defaults to null when not specified (RSA6 depends on this)
 params = TokenParams()
 ASSERT params.capability IS null
 
-# TK3 - clientId attribute
+# TK2c - clientId attribute
 params = TokenParams(clientId: "param-client")
 ASSERT params.clientId == "param-client"
 
-# TK4 - timestamp attribute (milliseconds since epoch)
+# TK2d - timestamp attribute (milliseconds since epoch)
 params = TokenParams(timestamp: 1234567890000)
 ASSERT params.timestamp == 1234567890000
 
-# TK5 - nonce attribute
+# TK2e - nonce attribute
 params = TokenParams(nonce: "unique-nonce-value")
 ASSERT params.nonce == "unique-nonce-value"
 
-# TK6 - All attributes together
+# TK2 - All attributes together
 params = TokenParams(
   ttl: 7200000,
   capability: "{\"*\":[\"*\"]}",
@@ -184,26 +184,26 @@ ASSERT query_map["capability"] == "{\"ch\":[\"pub\"]}"
 
 ---
 
-## TE1-TE6 - TokenRequest structure
+## TE2-TE5 - TokenRequest structure
 
-**Test ID**: `rest/unit/TE1/token-request-attributes-0`
+**Test ID**: `rest/unit/TE2/token-request-attributes-0`
 
-**Spec requirement:** TokenRequest type must provide all required attributes according to TE1-TE6 specifications.
+**Spec requirement:** TokenRequest type must provide all required attributes according to TE2-TE5 specifications.
 
 | Spec | Attribute | Description |
 |------|-----------|-------------|
-| TE1 | keyName | API key name (appId.keyId) |
-| TE2 | ttl | Time to live in milliseconds |
+| TE2 | keyName | API key name (appId.keyId) |
+| TE4 | ttl | Time to live in milliseconds |
 | TE3 | capability | Capability JSON string |
-| TE4 | clientId | Client ID for the token |
+| TE2 | clientId | Client ID for the token |
 | TE5 | timestamp | Timestamp in milliseconds since epoch |
-| TE6 | nonce | Unique nonce value |
+| TE2 | nonce | Unique nonce value |
 
 Tests that `TokenRequest` has all required attributes.
 
 ### Test Steps
 ```pseudo
-# TE1 - keyName attribute
+# TE2 - keyName attribute
 request = TokenRequest(
   keyName: "appId.keyId",
   timestamp: 1234567890000,
@@ -211,7 +211,7 @@ request = TokenRequest(
 )
 ASSERT request.keyName == "appId.keyId"
 
-# TE2 - ttl attribute (nullable)
+# TE4 - ttl attribute (nullable)
 request = TokenRequest(
   keyName: "appId.keyId",
   ttl: 3600000,
@@ -220,7 +220,7 @@ request = TokenRequest(
 )
 ASSERT request.ttl == 3600000
 
-# TE2 - ttl defaults to null when not specified (RSA5 depends on this)
+# TE4 - ttl defaults to null when not specified (RSA5 depends on this)
 request = TokenRequest(
   keyName: "appId.keyId",
   timestamp: 1234567890000,
@@ -245,7 +245,7 @@ request = TokenRequest(
 )
 ASSERT request.capability IS null
 
-# TE4 - clientId attribute
+# TE2 - clientId attribute
 request = TokenRequest(
   keyName: "appId.keyId",
   clientId: "request-client",
@@ -262,7 +262,7 @@ request = TokenRequest(
 )
 ASSERT request.timestamp == 1234567890000
 
-# TE6 - nonce attribute
+# TE2 - nonce attribute
 request = TokenRequest(
   keyName: "appId.keyId",
   timestamp: 1234567890000,
