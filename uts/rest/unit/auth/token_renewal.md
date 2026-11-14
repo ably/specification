@@ -149,13 +149,15 @@ ASSERT request_count == 2
 
 ---
 
-## RSA4b1 - Pre-emptive token renewal
+## RSA4b - Token renewal on token error after expiry
 
-**Test ID**: `rest/unit/RSA4b1/preemptive-renewal-0`
+**Test ID**: `rest/unit/RSA4b/renewal-on-token-error-0`
 
-**Spec requirement:** If a token is known to be expired before making a request, renewal must happen pre-emptively without first making a failing request.
+**Spec requirement:** Per RSA4b, when the client has a means to renew the token and the server responds with a token error (401 HTTP status code and an Ably error value `40140 <= code < 40150`), the client makes a single attempt to reissue the token and resend the request using the new token.
 
-Tests that if a token is known to be expired before making a request, renewal happens without first making a failing request.
+Note: This test does not rely on RSA4b1 pre-emptive local expiry detection, which is optional and gated on a persisted server-time offset. The initial (expired) token is sent, the server rejects it with a token error, and renewal is triggered per RSA4b.
+
+Tests that when the initial token is rejected by the server with a token error, the library obtains a new token and retries the request with it.
 
 ### Setup
 ```pseudo
@@ -180,8 +182,18 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    # Only success response (no 401 expected)
-    req.respond_with(200, [])
+    IF req.headers["Authorization"] == "Bearer expired-token":
+      # Server rejects the expired token with a token error
+      req.respond_with(401, {
+        "error": {
+          "code": 40142,
+          "statusCode": 401,
+          "message": "Token expired"
+        }
+      })
+    ELSE:
+      # Retry with the renewed token succeeds
+      req.respond_with(200, [])
   }
 )
 install_mock(mock_http)
@@ -193,10 +205,101 @@ client = Rest(
 
 ### Test Steps
 ```pseudo
-# Force initial token acquisition
+# Force initial (expired) token acquisition
 AWAIT client.auth.authorize()
 
-# This should detect expired token and renew before request
+# The expired token is rejected by the server, triggering renewal (RSA4b)
+AWAIT client.channels.get("test").history()
+```
+
+### Assertions
+```pseudo
+# Callback was called twice (initial + renewal after 401)
+ASSERT callback_count == 2
+
+# Exactly one history request succeeds, using the renewed token
+requests_to_history = captured_requests.filter(
+  r => r.path == "/channels/test/messages"
+)
+ASSERT requests_to_history.any(
+  r => r.headers["Authorization"] == "Bearer fresh-token"
+)
+```
+
+---
+
+## RSA4b1 - Pre-emptive token renewal with server-time offset
+
+**Test ID**: `rest/unit/RSA4b1/preemptive-renewal-with-offset-0`
+
+**Spec requirement:** Per RSA4b1, a client library MAY save a round-trip for expired tokens by detecting expiry locally, but only when all of the following apply: the current token is a `TokenDetails` object with an `expires` attribute; the library has previously queried the time from the Ably service and persisted the local clock offset (RSA10k); and the `expires` time has passed based on the Ably service time. This test establishes those preconditions by setting `queryTime: true` (so the client obtains and persists a server-time offset via RSA10k) and verifies that, when the optional detection is implemented, the client renews pre-emptively without first issuing a failing request.
+
+Note: RSA4b1 is optional. A conformant SDK that declines the optional pre-emptive detection will instead send the expired token and renew on the server's token error (covered by `rest/unit/RSA4b/renewal-on-token-error-0`). SDKs that do not implement RSA4b1 should skip this test.
+
+Tests that, when the server-time offset has been persisted (RSA10k) and the current token has expired according to server time, the library renews the token pre-emptively rather than sending the expired token.
+
+### Setup
+```pseudo
+callback_count = 0
+captured_requests = []
+
+auth_callback = FUNCTION(params):
+  callback_count = callback_count + 1
+  IF callback_count == 1:
+    # First token is already expired
+    RETURN TokenDetails(
+      token: "expired-token",
+      expires: now() - 1000  # Already expired
+    )
+  ELSE:
+    RETURN TokenDetails(
+      token: "fresh-token",
+      expires: now() + 3600000
+    )
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    IF req.path == "/time":
+      # /time returns an ARRAY of a single server-time value in ms.
+      # Return the current time so the persisted offset is ~0 and the
+      # already-expired token is detected as expired against server time.
+      req.respond_with(200, [now()])
+    ELSE IF req.headers["Authorization"] == "Bearer expired-token":
+      # The expired token must never reach the API under RSA4b1;
+      # if it does, respond with a token error to make the failure obvious.
+      req.respond_with(401, {
+        "error": {
+          "code": 40142,
+          "statusCode": 401,
+          "message": "Token expired"
+        }
+      })
+    ELSE:
+      # Request with the renewed token succeeds
+      req.respond_with(200, [])
+  }
+)
+install_mock(mock_http)
+
+# queryTime: true causes the client to obtain and persist the server-time
+# offset (RSA10k), which is the precondition for RSA4b1 local detection.
+client = Rest(
+  options: ClientOptions(
+    authCallback: auth_callback,
+    queryTime: true
+  )
+)
+```
+
+### Test Steps
+```pseudo
+# Force initial (expired) token acquisition and persisting of the offset
+AWAIT client.auth.authorize()
+
+# With the offset persisted and the token expired per server time, the
+# client should detect expiry locally and renew before issuing the request
 AWAIT client.channels.get("test").history()
 ```
 
@@ -205,13 +308,19 @@ AWAIT client.channels.get("test").history()
 # Callback was called twice (initial + pre-emptive renewal)
 ASSERT callback_count == 2
 
-# Only ONE HTTP request to the API (history)
-# No failed request with expired token
+# Exactly one history request, and it used the renewed token
 requests_to_history = captured_requests.filter(
   r => r.path == "/channels/test/messages"
 )
 ASSERT requests_to_history.length == 1
 ASSERT requests_to_history[0].headers["Authorization"] == "Bearer fresh-token"
+
+# The expired token was never sent to the API (renewal was pre-emptive)
+expired_api_requests = captured_requests.filter(
+  r => r.path == "/channels/test/messages"
+       AND r.headers["Authorization"] == "Bearer expired-token"
+)
+ASSERT expired_api_requests.length == 0
 ```
 
 ---

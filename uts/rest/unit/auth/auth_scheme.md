@@ -334,9 +334,11 @@ ASSERT captured_requests.length == 0
 
 **Test ID**: `rest/unit/RSA4a2/expired-token-no-renewal-0`
 
-**Spec requirement:** An error is raised when a static token has expired and there's no way to renew it (code 40171).
+**Spec requirement:** Per RSA4a2, when the server responds with a token error (401 HTTP status code and an Ably error value `40140 <= code < 40150`) and there's no way to renew the token, the library indicates an error with error code 40171.
 
-Tests that an appropriate error is raised when a static token has expired and there's no way to renew it.
+Note: RSA4b1 (pre-emptive local expiry detection) is optional and gated on a persisted server-time offset, so this test does not rely on it; the 40171 error is reached via the server's token error (RSA4a2).
+
+Tests that an appropriate error is raised when a token error is returned by the server and there's no way to renew it.
 
 ### Setup
 ```pseudo
@@ -346,7 +348,14 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, {"channelId": "test"})
+    # Server rejects the (expired) token with a token error
+    req.respond_with(401, {
+      "error": {
+        "code": 40142,
+        "statusCode": 401,
+        "message": "Token expired"
+      }
+    })
   }
 )
 install_mock(mock_http)
@@ -365,13 +374,7 @@ client = Rest(
 ### Test Steps
 ```pseudo
 AWAIT client.request("GET", "/channels/test") FAILS WITH error
-ASSERT error.code == 40171  # Token expired with no means of renewal
-```
-
-### Assertions
-```pseudo
-# No HTTP request should have been made
-ASSERT captured_requests.length == 0
+ASSERT error.code == 40171  # Token error with no means of renewal
 ```
 
 ---
