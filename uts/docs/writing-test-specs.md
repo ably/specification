@@ -591,6 +591,8 @@ ASSERT request.url.path CONTAINS "/channels/"
 
 Use `toJson()` and `fromJson()` as the portable pseudocode names for serializing to and deserializing from wire format. These are language-agnostic — implementations will map them to the appropriate mechanism (e.g., `toMap()`/`fromMap()` in Dart, `toJSON()`/`fromJSON()` in JavaScript, `to_dict()`/`from_dict()` in Python).
 
+A `toJson()` assertion is made against the wire body, and `fromJson()` consumes the wire body. Assert fields using their wire encoding, not a language model's representation — for example, presence and message actions are asserted as their enum ordinal (e.g. `2` for `ENTER`), not the string name.
+
 ```pseudo
 # Serializing to wire format
 json_data = message.toJson()
