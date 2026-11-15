@@ -102,7 +102,8 @@ options = RealtimeChannelOptions.withCipherKey(key)
 ### Assertions
 ```pseudo
 ASSERT options.cipherParams IS NOT null
-ASSERT options.cipherParams.algorithm == "aes"
+# TZ2a gives the default as `AES`; SDKs report it as `AES` or `aes`, so compare case-insensitively
+ASSERT lowercase(options.cipherParams.algorithm) == "aes"
 ASSERT options.cipherParams.keyLength == 256
 ```
 

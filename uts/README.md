@@ -43,13 +43,13 @@ uts/
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| REST unit | 40 | Mocked HTTP client tests |
+| REST unit | 41 | Mocked HTTP client tests |
 | REST integration | 11 | Ably sandbox tests |
-| Realtime unit | 54 | Mocked WebSocket tests |
+| Realtime unit | 55 | Mocked WebSocket tests |
 | Realtime integration (direct) | 13 | Direct sandbox tests |
 | Realtime integration (proxy) | 7 | Fault injection via Go proxy |
 | Helper specs | 4 | Mock infrastructure definitions |
-| **Total** | **129** | |
+| **Total** | **131** | |
 
 ## Three Test Tiers
 

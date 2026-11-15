@@ -91,7 +91,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSL2 | History function (RSL2a–RSL2b3) | Yes — `rest/unit/channel/history.md`, `rest/integration/history.md` |
 | RSL3 | Presence attribute | Yes — `rest/unit/presence/rest_presence.md` (with RSP1a) |
 | RSL4 | Message encoding (RSL4a–RSL4d4) | Yes — `rest/unit/encoding/message_encoding.md`, `realtime/integration/channels/channel_publish_test.md` |
-| RSL5 | Message encryption (RSL5a–RSL5c) | |
+| RSL5 | Message encryption (RSL5a–RSL5c) | Yes — `realtime/unit/channels/channel_encryption.md` (through `RealtimeChannel`, RTL6a and RTL7d, with the ably-common crypto fixtures) |
 | RSL6 | Message decoding (RSL6a–RSL6b) | Yes — `rest/unit/encoding/message_encoding.md`, `realtime/integration/channels/channel_publish_test.md` covers RSL6, RSL6a2 |
 | RSL7 | SetOptions function | Yes — `rest/unit/channel/rest_channel_attributes.md` |
 | RSL8 | Status function (RSL8a) | Yes — `rest/unit/channel/rest_channel_attributes.md` |
@@ -123,8 +123,8 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| RSE1 | Crypto::getDefaultParams (RSE1a–RSE1e) | |
-| RSE2 | Crypto::generateRandomKey (RSE2a–RSE2b) | |
+| RSE1 | Crypto::getDefaultParams (RSE1a–RSE1e) | Yes — `rest/unit/encoding/crypto.md` |
+| RSE2 | Crypto::generateRandomKey (RSE2a–RSE2b) | Yes — `rest/unit/encoding/crypto.md` |
 
 ### RestAnnotations
 
@@ -360,8 +360,8 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | AO1–AO2 | AuthOptions | Yes — `rest/unit/types/options_types.md` |
 | TB1–TB4 | ChannelOptions | Yes — `realtime/unit/channels/channel_options.md` |
 | DO1–DO2 | DeriveOptions | Yes — `realtime/unit/channels/channel_options.md` |
-| TZ1–TZ2 | CipherParams | |
-| CO1–CO2 | CipherParamOptions | |
+| TZ1–TZ2 | CipherParams | Yes — `rest/unit/encoding/crypto.md` |
+| CO1–CO2 | CipherParamOptions | Yes — `rest/unit/encoding/crypto.md`, `realtime/unit/channels/channel_encryption.md` (TB2b2) |
 | WPO1–WPO2 | WrapperSDKProxyOptions | |
 
 ### Push Notification Types
@@ -436,7 +436,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **REST channels** (RSN) | 4 | 4 | Full |
 | **REST channel** (RSL) | 13 | 13 | Full |
 | **REST presence** (RSP) | 5 | 4 | Mostly |
-| **REST encryption** (RSE) | 2 | 0 | None |
+| **REST encryption** (RSE) | 2 | 2 | Full |
 | **REST annotations** (RSAN) | 3 | 3 | Full |
 | **Realtime client** (RTC) | 14 | 14 | Full |
 | **Connection** (RTN) | 23 | 19 | Partial |
@@ -450,7 +450,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Push notifications** (RSH) | 8 | 1 | Partial |
 | **Plugins** (PC/PT/VD) | 3 | 2 | Partial |
 | **Data types** | 30 | 12 | Partial |
-| **Option types** | 8 | 5 | Partial |
+| **Option types** | 8 | 7 | Mostly |
 | **Push types** | 3 | 0 | None |
 | **Introspection** (CR) | 1 | 0 | None |
 | **Defaults** (DF) | 1 | 0 | None |
