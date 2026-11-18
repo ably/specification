@@ -89,6 +89,7 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
     - `(RSC6b3)` `limit` supports up to 1,000 items; if omitted the limit defaults to the REST API default (100)
     - `(RSC6b4)` `unit` is the period for which the stats will be aggregated by, values supported are `minute`, `hour`, `day` or `month`; if omitted the unit defaults to the REST API default (`minute`)
 - `(RSC16)` `RestClient#time` function sends a get request to the `/time` path of the REST endpoint as specified in [`RSC25`](#RSC25) and returns the server time in milliseconds since epoch or as a Date/Time object where suitable
+  - `(RSC16a)` The request to `/time` must be sent without authentication.
 - `(RSC21)` `RestClient#push` attribute provides access to the `Push` object that was instantiated with the `ClientOptions` provided in the `RestClient` constructor
 - `(RSC7)` Sends REST requests over HTTP and HTTPS to the REST endpoint as specified in [`RSC25`](#RSC25).
   - `(RSC7a)` This clause has been replaced by [`RSC7e`](#RSC7e). It was valid up to and including specification version `2.1`.
