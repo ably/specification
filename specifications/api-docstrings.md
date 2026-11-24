@@ -307,6 +307,11 @@ Enables messages to be published and historic messages to be retrieved for a cha
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the append operation. |
 || `params` ||| Optional parameters sent as part of the query string. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
+| patchMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RSL15 | Patches an existing message: atomically sets, appends to or removes values inside its JSON `data`, and sets or removes its headers. Only the `patches` field of the supplied message changes the message. Subscribers receive the patch as a `MESSAGE_PATCH` message, and apply it to their copy of the message with [`Message.applyPatch()`]{@link Message#applyPatch}. |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the [`patches`]{@link MessagePatches} to apply. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the patch operation. |
+|| `params` ||| Optional parameters sent as part of the query string. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RSL14 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
 || `serialOrMsg` ||| Either the serial identifier string of the message whose versions are to be retrieved, or a [`Message`]{@link Message} object containing a populated `serial` field. |
 || `params` ||| Optional parameters sent as part of the query string. |
@@ -397,6 +402,11 @@ Enables messages to be published and subscribed to. Also enables historic messag
 | appendMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL32 | Appends data to an existing message. The supplied `data` field is appended to the previous message's data, while all other fields (`name`, `extras`) replace the previous values if provided. |
 || `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the data to append. |
 || `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the append operation. |
+|| `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
+||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
+| patchMessage(Message, operation?: MessageOperation, params?: `Dict<String, Stringifiable>`) => io UpdateDeleteResult ||| RTL32 | Patches an existing message: atomically sets, appends to or removes values inside its JSON `data`, and sets or removes its headers. Only the `patches` field of the supplied message changes the message. Subscribers receive the patch as a `MESSAGE_PATCH` message, and apply it to their copy of the message with [`Message.applyPatch()`]{@link Message#applyPatch}. |
+|| `Message` ||| A [`Message`]{@link Message} object containing a populated `serial` field and the [`patches`]{@link MessagePatches} to apply. |
+|| `operation` ||| An optional [`MessageOperation`]{@link MessageOperation} object containing metadata about the patch operation. |
 || `params` ||| Optional parameters sent as part of the request. As Ably adds supported parameters, they will be documented on the [docs pages](https://ably.com/docs). |
 ||| `UpdateDeleteResult` || An [`UpdateDeleteResult`]{@link UpdateDeleteResult} object containing the serial of the new version of the message. |
 | getMessageVersions(serialOrMsg: String \| Message, params?: `Dict<String, Stringifiable>`) => io `PaginatedResult<Message>` ||| RTL31 | Retrieves all historical versions of a specific message, ordered by version. This includes the original message and all subsequent updates or delete operations. |
@@ -703,6 +713,7 @@ Enumerates the possible types of `Message` there can be.
 | META | TM5 | A meta-message (a message originating from ably rather than being explicitly published on a channel), containing information such as inband channel occupancy events that has been requested by channel param. |
 | MESSAGE_SUMMARY | TM5 | A message containing the latest rolled-up summary of annotations that have been made to this message. |
 | MESSAGE_APPEND | TM5 | Message action for an appended message. The `serial` field identifies the message to which data is being appended. The `data` field is appended to the previous message's data, while all other fields replace the previous values. |
+| MESSAGE_PATCH | TM5 | Message action for a patch to a message. The `serial` field identifies the patched message, and the `patches` field holds the changes to apply to it. Use [`Message.applyPatch()`]{@link Message#applyPatch} to apply them to your copy of the message. |
 
 ## class RestAnnotations
 
@@ -865,6 +876,60 @@ Contains an individual message that is sent to, or received from, Ably.
 | connectionKey: String? ||| TM2h | Allows a REST client to publish a message on behalf of a Realtime client. If you set this to the [private connection key]{@link Connection.key} of a Realtime connection when publishing a message using a [`RestClient`]{@link RestClient}, the message will be published on behalf of that Realtime client. This property is only populated by a client performing a publish, and will never be populated on an inbound message. |
 | version: MessageVersion ||| TM2s | An object containing information about the latest version of a message. |
 | annotations: MessageAnnotations ||| TM2u | An object containing annotations that have been made to the message. |
+| patches: MessagePatches? ||| TM2v | The changes that a `MESSAGE_PATCH` message makes to the message identified by `serial`. Use [`Message.applyPatch()`]{@link Message#applyPatch} to apply them to your copy of the message. When publishing with `patchMessage()`, the changes to make. |
+| +applyPatch(message: Message, patch: Message) -> Message ||| TM9 | Applies a `MESSAGE_PATCH` to your copy of the message it patches, and returns a new copy that looks as if you had received the latest version of the message as a `MESSAGE_UPDATE`. The copy it is given is not changed. To patch JSON you keep outside an Ably message, pass a `Message` whose `serial` is the `serial` of the patched message and whose `data` is the JSON text, as a string or binary. |
+|| `message` ||| Your copy of the message, received as a `MESSAGE_CREATE` or `MESSAGE_UPDATE`, or returned by an earlier call to `applyPatch`. |
+|| `patch` ||| The `MESSAGE_PATCH` message to apply. |
+||| `Message` || The patched copy of the message. Fails with an [`ErrorInfo`]{@link ErrorInfo} if any operation of the patch cannot be applied, in which case none is applied. |
+
+## class MessagePatches
+
+The changes a `MESSAGE_PATCH` message makes to a message. Each member is optional.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| data: [MessagePatchDataOperation]? ||| MPA2a | Operations that change the message's `data`, applied in order. |
+| extras.headers: [MessagePatchHeaderOperation]? ||| MPA2b1 | Operations that change the message's `extras.headers`, applied in order after the data operations. |
+| extras.userClaim: MessagePatchUserClaimOperation? ||| MPA2b2 | Sets or removes the message's `extras.userClaim`, to the claim of the patch's publisher. Only Ably sets this, on every patch it delivers. |
+| extras.privileged: MessagePatchPrivilegedOperation? ||| MPA2b3 | Removes the message's `extras.privileged`, when the patch's publisher may not set privileged extras. Only Ably sets this. |
+
+## class MessagePatchDataOperation
+
+An operation that changes the message's `data`, or a value inside it.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| op: String ||| MPD2a | The operation: `set` puts a value at the location, `append` adds a string to the end of a string (or binary to the end of binary `data`), and `remove` deletes a member of an object or an element of an array. |
+| path: String? ||| MPD2b | A JSON Pointer (RFC 6901), such as `/content/0/text`, to a location inside `data` that holds a JSON object or array. Without a path, the operation applies to the whole of `data`. With `set`, the last token `-` adds an element after the last one in an array. |
+| data: (String \| Binary \| JsonValue)? ||| MPD2c | The value the operation uses. When publishing, objects, arrays, numbers, booleans and `null` are sent as JSON values. On a received patch, a JSON value stays as JSON text, with an `encoding` of `json`, so that you can parse it into the type of the value it changes. |
+| encoding: String? ||| MPD2d | `json` if `data` is JSON text, and otherwise typically empty, as the SDK encodes and decodes `data` as it does a message's `data`. |
+
+## class MessagePatchHeaderOperation
+
+An operation that changes a header in the message's `extras.headers`.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| op: String ||| MPH2a | The operation: `set` sets the header, adding it if it is missing, and `remove` deletes it. |
+| key: String ||| MPH2b | The header's name. |
+| value: (String \| Number \| Boolean)? ||| MPH2c | The header's new value, for `set`. |
+
+## class MessagePatchUserClaimOperation
+
+An operation that sets or removes the message's `extras.userClaim`.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| op: String ||| MPU2a | The operation: `set` sets the claim to `value`, and `remove` deletes it. |
+| value: String? ||| MPU2b | The claim, for `set`. |
+
+## class MessagePatchPrivilegedOperation
+
+An operation that removes the message's `extras.privileged`.
+
+| Method / Property | Parameter | Returns | Spec | Description |
+|---|---|---|---|---|
+| op: String ||| MPP2a | The operation, which is always `remove`. |
 
 ## Class SummaryClientIdList
 

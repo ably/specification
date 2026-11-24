@@ -301,7 +301,7 @@ The members are as follows.
 
 <!-- -->
 
-- i32 action := The message action, indicating the type of message operation. The following values are defined: `MESSAGE_CREATE` (0) for new messages, `MESSAGE_UPDATE` (1) for updates to existing messages, `MESSAGE_DELETE` (2) for message deletions, `META` (3) for metadata messages, `MESSAGE_SUMMARY` (4) for summary messages, and `MESSAGE_APPEND` (5) for appending data to existing messages. When publishing an update, delete, or append, the `serial` field must be populated to identify the target message.
+- i32 action := The message action, indicating the type of message operation. The following values are defined: `MESSAGE_CREATE` (0) for new messages, `MESSAGE_UPDATE` (1) for updates to existing messages, `MESSAGE_DELETE` (2) for message deletions, `META` (3) for metadata messages, `MESSAGE_SUMMARY` (4) for summary messages, `MESSAGE_APPEND` (5) for appending data to existing messages, and `MESSAGE_PATCH` (6) for patching values inside existing messages. When publishing an update, delete, append, or patch, the `serial` field must be populated to identify the target message.
 
 <!-- -->
 
@@ -309,7 +309,11 @@ The members are as follows.
 
 <!-- -->
 
-- object version := Contains information about the latest version of a message, including version serial, timestamp, and optional operation metadata (clientId, description, metadata) for update/delete/append operations.
+- object version := Contains information about the latest version of a message, including version serial, timestamp, and optional operation metadata (clientId, description, metadata) for update/delete/append/patch operations.
+
+<!-- -->
+
+- object patches := Present on a `MESSAGE_PATCH` message: the changes it makes to the message identified by `serial`. `data` is an array of operations on the message's data, each an object with `op` (`set`, `append` or `remove`), an optional `path` (a JSON Pointer into the data), and optional `data` and `encoding`, encoded as a message's `data` is, except that every JSON value is sent as JSON text with an `encoding` of `json`. `extras` is an object with an optional `headers` array of header operations, each with `op` (`set` or `remove`), `key` and, for `set`, `value`; and optional `userClaim` (`op` of `set` or `remove`, and `value`) and `privileged` (`op` of `remove`) operations, which only Ably sends. Delivered from protocol version 7.
 
 ### PublishResult
 

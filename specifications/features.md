@@ -361,15 +361,16 @@ Support for the deprecated client options `environment`, `restHost`, `realtimeHo
     - `(RSL14a1)` In languages where method overloading is supported, the first argument should also accept a `Message` object (which must contain a populated `serial` field)
   - `(RSL14b)` The SDK must send a GET request to the endpoint `/channels/{channelName}/messages/{serial}/versions`
   - `(RSL14c)` Returns a `PaginatedResult<Message>`
-- `(RSL15)` `RestChannel#updateMessage`, `RestChannel#deleteMessage`, and `RestChannel#appendMessage` functions:
+- `(RSL15)` `RestChannel#updateMessage`, `RestChannel#deleteMessage`, `RestChannel#appendMessage`, and `RestChannel#patchMessage` functions:
   - `(RSL15a)` Take a first argument of a `Message` object (which must contain a populated `serial` field), an optional second argument of a `MessageOperation` object, and an optional third argument of `Dict<string, stringifiable>` publish params
   - `(RSL15b)` The SDK must send a PATCH to `/channels/{channelName}/messages/{serial}`. The request body is a `Message` object (encoded per [RSL4](#RSL4)) with whatever fields were in the user-supplied `Message`, in addition to:
-    - `(RSL15b1)` `action` - set to `MESSAGE_UPDATE` for `updateMessage()`, `MESSAGE_DELETE` for `deleteMessage()`, and `MESSAGE_APPEND` for `appendMessage()`.
+    - `(RSL15b1)` `action` - set to `MESSAGE_UPDATE` for `updateMessage()`, `MESSAGE_DELETE` for `deleteMessage()`, `MESSAGE_APPEND` for `appendMessage()`, and `MESSAGE_PATCH` for `patchMessage()`.
     - `(RSL15b7)` `version` - set to the `MessageOperation` object if provided.
   - `(RSL15f)` Any params provided in the third argument must be sent in the querystring, with values stringified
   - `(RSL15c)` The SDK must not mutate the user-supplied `Message` object.
   - `(RSL15d)` The request body must be encoded to the appropriate format per `RSC8`.
   - `(RSL15e)` On success, returns an `UpdateDeleteResult` object. The API response body will contain a superset of the fields of a `UpdateDeleteResult`. Indicates an error if the operation was not successful.
+  - `(RSL15g)` The `data` value of each operation in the `patches` field ([TM2v](#TM2v)) of the request body must be encoded per [MPD3](#MPD3).
 - `(RSL16)` `RestChannel#object` attribute:
   - `(RSL16a)` Returns the `RestObject` object for this channel [RSO1](../objects-features#RSO1)
   - `(RSL16b)` It is a programmer error to access this property without first providing the `Objects` plugin ([PC5](#PC5)) in the client options. This programmer error should be handled in an idiomatic fashion; if this means accessing the property should throw an error, then the error should be an `ErrorInfo` with `statusCode` 400 and `code` 40019.
@@ -841,14 +842,15 @@ The threading and/or asynchronous model for each realtime library will vary by l
 - `(RTL29)` This clause has been replaced by [`RTL32`](#RTL32) as of specification version 5.0.0.
 - `(RTL30)` This clause has been replaced by [`RTL32`](#RTL32) as of specification version 5.0.0.
 - `(RTL31)` `RealtimeChannel#getMessageVersions` function: same as `RestChannel#getMessageVersions`
-- `(RTL32)` `RealtimeChannel#updateMessage`, `RealtimeChannel#deleteMessage`, and `RealtimeChannel#appendMessage` functions:
+- `(RTL32)` `RealtimeChannel#updateMessage`, `RealtimeChannel#deleteMessage`, `RealtimeChannel#appendMessage`, and `RealtimeChannel#patchMessage` functions:
   - `(RTL32a)` Take a first argument of a `Message` object (which must contain a populated `serial` field), an optional second argument of a `MessageOperation` object, and an optional third argument of `Dict<string, stringifiable>` publish params
   - `(RTL32b)` The SDK must send a `MESSAGE` `ProtocolMessage` to Ably, containing a single `Message` populated with whatever fields were in the user-supplied `Message`, in addition to:
-    - `(RTL32b1)` `action` - set to `MESSAGE_UPDATE` for `updateMessage()`, `MESSAGE_DELETE` for `deleteMessage()`, and `MESSAGE_APPEND` for `appendMessage()`
+    - `(RTL32b1)` `action` - set to `MESSAGE_UPDATE` for `updateMessage()`, `MESSAGE_DELETE` for `deleteMessage()`, `MESSAGE_APPEND` for `appendMessage()`, and `MESSAGE_PATCH` for `patchMessage()`
     - `(RTL32b2)` `version` - set to the `MessageOperation` object if provided.
   - `(RTL32e)` Any params provided in the third argument must be sent in the `TR4q` `ProtocolMessage.params` field, as a `Dict<String, String>` (that is, with the values of the provided dict stringified per `RTC1f`)
   - `(RTL32c)` The SDK must not mutate the user-supplied `Message` object.
   - `(RTL32d)` On success, returns an `UpdateDeleteResult` object containing the version serial of the published update, obtained from the first element of the `serials` array of the [TR4s](#TR4s) `res` field of the `ACK`. Indicates an error if the operation was not successful.
+  - `(RTL32f)` The `data` value of each operation in the `patches` field ([TM2v](#TM2v)) of the `Message` must be encoded per [MPD3](#MPD3).
 - `(RTL33)` *Ensure-active-channel* internal procedure. When invoked, the SDK must inspect the current state of the `RealtimeChannel` (see [RTL2](#RTL2)) and proceed as follows:
   - `(RTL33a)` If the channel is in the `ATTACHED` or `SUSPENDED` state, the procedure completes immediately without performing any attach.
   - `(RTL33b)` If the channel is in the `INITIALIZED`, `DETACHED`, `DETACHING`, or `ATTACHING` state, perform an implicit attach per [RTL4](#RTL4) and wait for it to complete
@@ -1228,7 +1230,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 #### Message
 
 - `(TM1)` A `Message` represents an individual message to be sent or received via the Ably Realtime service.
-- `(TM5)` `Message` `Action` enum has the following values in order from zero: `MESSAGE_CREATE`, `MESSAGE_UPDATE`, `MESSAGE_DELETE`, `META`, `MESSAGE_SUMMARY`, `MESSAGE_APPEND`
+- `(TM5)` `Message` `Action` enum has the following values in order from zero: `MESSAGE_CREATE`, `MESSAGE_UPDATE`, `MESSAGE_DELETE`, `META`, `MESSAGE_SUMMARY`, `MESSAGE_APPEND`, `MESSAGE_PATCH`
 - `(TM2)` The attributes available in a `Message` are:
   - `(TM2a)` `id` string - unique ID for this message. This attribute is always populated for messages received over REST. For messages received over Realtime, if the message does not contain an `id`, it should be set to `protocolMsgId:index`, where `protocolMsgId` is the id of the `ProtocolMessage` encapsulating it, and `index` is the index of the message inside the `messages` array of the `ProtocolMessage`
   - `(TM2b)` `clientId` string
@@ -1257,6 +1259,7 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
     - `(TM2s4)` `description` - string
     - `(TM2s5)` `metadata` - Dict\<String, string\> - used to contain any arbitrary key value pairs of type string.
   - `(TM2u)` `annotations` - an object of type `MessageAnnotations`. If not set on the wire, the SDK must set it to an empty `MessageAnnotations` object.
+  - `(TM2v)` `patches` `MessagePatches` (optional) - the changes that a message whose `action` is `MESSAGE_PATCH` makes to the message identified by its `serial`. The user populates it on the `Message` passed to `RestChannel#patchMessage` ([RSL15](#RSL15)) or `RealtimeChannel#patchMessage` ([RTL32](#RTL32)). It is decoded on receipt per [MPD4](#MPD4).
 - `(TM4)` `Message` has constructors `constructor(name: String?, data: Data?)` and `constructor(name: String?, data: Data?, clientId: String?)`.
 - `(TM3)` `fromEncoded` and `fromEncodedArray` are alternative constructors that take an (already deserialized) `Message`-like object (or array of such objects), and optionally a `channelOptions`, and return a `Message` (or array of such `Messages`) that's decoded and decrypted as specified in `RSL6`, using the cipher in the `channelOptions` if the message is encrypted, with any residual transforms (ones that the library cannot decode or decrypt) left in the `encoding` property per `RSL6b`. This is intended for users receiving messages other than from a REST or Realtime channel (for example, from a queue), to avoid them having to parse the `encoding` string themselves.
 - `(TM6)` The size of the `Message` for [TO3l8](#TO3l8) is calculated as follows:
@@ -1290,6 +1293,49 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(TM8)` The attributes available in a `MessageAnnotations` object are:
   - `(TM8a)` `summary` `Dict<string, JsonObject>` - an object whose keys are annotation types, and the values are aggregated summaries for that annotation type. A missing `summary` field on the wire indicates an empty summary, equivalent to an object with no keys. The SDK must initialize this object if not present.
     - `(TM8a1)` A given annotation type has a fixed summary structure, and the currently-used structured are documented for the user's use in api-docstrings. But the sdk MUST be able to cope with structures and aggregation types that have it does not yet know about or have explicit support for, hence the loose (JsonObject) type.
+- `(TM9)` `Message.applyPatch` is a static function that takes a `Message` (the _message_: a `MESSAGE_CREATE` or `MESSAGE_UPDATE` received from Ably, or the result of an earlier call to `applyPatch`) and a `Message` whose `action` is `MESSAGE_PATCH` (the _patch_), and returns a new `Message` that represents the message with the patch applied.
+  - `(TM9a)` If the `action` of the patch is not `MESSAGE_PATCH`, `applyPatch` must fail with an `ErrorInfo` with `code` 40000 and `statusCode` 400.
+  - `(TM9b)` If the `serial` of the patch is not equal to the `serial` of the message, `applyPatch` must fail with an `ErrorInfo` with `code` 40000 and `statusCode` 400.
+  - `(TM9c)` The SDK must not mutate the message, nor any value that it holds, such as a JSON-encodable object or array in its `data` or its `extras`. The returned `Message` may share with the message any value that the patch does not change.
+  - `(TM9d)` The returned `Message` must have the same attribute values as the message, except for the following:
+    - `(TM9d1)` `action` - set to `MESSAGE_UPDATE`
+    - `(TM9d2)` `data` and `encoding` - the result of applying the data operations of the patch, per [TM9f](#TM9f)
+    - `(TM9d3)` `extras` - the result of applying the extras operations of the patch, per [TM9g](#TM9g)
+    - `(TM9d4)` `version` - set to the `version` of the patch
+  - `(TM9e)` If any operation of the patch cannot be applied, as specified by the clauses below, `applyPatch` must fail with an `ErrorInfo` with `code` 40000 and `statusCode` 400, and must not return a result. The `message` of the `ErrorInfo` should identify the operation that could not be applied, by its index in `patches.data` or `patches.extras.headers`.
+  - `(TM9f)` The SDK must apply the operations of `patches.data` ([MPA2a](#MPA2a)) in order, each to the `data` that results from the previous one, starting with the `data` of the message:
+    - `(TM9f1)` An operation whose `op` is not `set`, `append` or `remove` cannot be applied.
+    - `(TM9f2)` An operation without a `path`, or with an empty `path`, applies to the whole of `data`:
+      - `(TM9f2a)` `set` replaces `data`. If the `encoding` of the operation is `json`, the operation's JSON text must represent an object or an array, otherwise the operation cannot be applied; the resulting `data` is the JSON-encodable object or array that it represents, and the resulting `encoding` is empty. Otherwise, the resulting `data` and `encoding` are the `data` and `encoding` of the operation.
+      - `(TM9f2b)` `append`, if `data` is absent, and the `data` of the operation is a string or binary and the `encoding` of the operation is empty, sets `data` to the `data` of the operation. The resulting `encoding` is empty.
+      - `(TM9f2c)` `append`, if `data` and the `data` of the operation are both strings, or both binary, and both the `encoding` of the message and the `encoding` of the operation are empty, sets `data` to their concatenation. The resulting `encoding` is empty.
+      - `(TM9f2d)` Any other `append`, and any `remove`, cannot be applied.
+    - `(TM9f3)` An operation with a non-empty `path` applies to a value inside `data`, which must be a JSON object or array, held either as a JSON-encodable object or array, or as a string or binary (UTF-8) holding JSON text whose top-level value is an object or array. If `data` is anything else, the operation cannot be applied. The `encoding` is unchanged.
+      - `(TM9f3a)` The `path` is a JSON Pointer, as defined by [RFC 6901](https://www.rfc-editor.org/rfc/rfc6901). If it does not start with `/`, or it contains a `~` that is not followed by `0` or `1`, the operation cannot be applied. Each reference token is unescaped as RFC 6901 section 4 specifies.
+      - `(TM9f3b)` Every reference token but the last must reference an existing value, starting from the top-level value: a member of an object, by its name, or an element of an array, by an index that is a sequence of decimal digits without leading zeros (as RFC 6901 section 4 specifies) and less than the length of the array. Otherwise, the operation cannot be applied.
+      - `(TM9f3c)` The value that every reference token but the last references (the _parent_), or the top-level value if there is only one reference token, must be an object or an array. Otherwise, the operation cannot be applied.
+      - `(TM9f3d)` `set`, if the parent is an object, sets the member named by the last reference token to the value of the operation ([TM9f3h](#TM9f3h)), adding the member if the object does not have it.
+      - `(TM9f3e)` `set`, if the parent is an array, and the last reference token is `-`, adds the value of the operation as a new element after the last one. If the last reference token is an index of an existing element, `set` replaces that element with the value of the operation. Otherwise, the operation cannot be applied.
+      - `(TM9f3f)` `append` requires that the last reference token references an existing value that is a string, and that the `data` of the operation is a string and the `encoding` of the operation is empty; it replaces the value with the concatenation of the value and the `data` of the operation. Otherwise, including if the last reference token is `-`, the operation cannot be applied.
+      - `(TM9f3g)` `remove` requires that the last reference token references an existing value; it removes the member from an object, or the element from an array, moving every later element to the index before it. Otherwise, including if the last reference token is `-`, the operation cannot be applied.
+      - `(TM9f3h)` The value of an operation is: the JSON value that its `data` represents, if its `encoding` is `json`; the string of the Base64 encoding of its `data`, if its `data` is binary; and otherwise its `data`.
+    - `(TM9f4)` If `data` is a JSON-encodable object or array, the result of an operation with a `path` must be a JSON-encodable object or array, as described by [TM9f3](#TM9f3). The SDK must add or set a member named by a reference token as an ordinary member of the object.
+    - `(TM9f5)` If `data` is a string or binary holding JSON text, the result of an operation with a `path` must be of the same type, holding the JSON text that results from changing only the text described below. All other text, including whitespace, the order of members, and the text of every number and string, must be unchanged.
+      - `(TM9f5a)` The _value text_ of an operation is: its `data`, verbatim, if its `encoding` is `json`; and otherwise the JSON string ([RFC 8259 section 7](https://www.rfc-editor.org/rfc/rfc8259#section-7)) of its value ([TM9f3h](#TM9f3h)).
+      - `(TM9f5b)` `set` of an existing member or element replaces the text of its value with the value text.
+      - `(TM9f5c)` `set` of a member that the object does not have inserts, immediately after the text of the value of its last member, or immediately after its `{` if it has no members: a `,` if it has members, then the JSON string ([RFC 8259 section 7](https://www.rfc-editor.org/rfc/rfc8259#section-7)) of the member name, then `:`, then the value text, without whitespace.
+      - `(TM9f5d)` `set` with the last reference token `-` inserts, immediately after the text of the last element of the array, or immediately after its `[` if it has no elements: a `,` if it has elements, then the value text, without whitespace.
+      - `(TM9f5e)` `append` inserts the JSON string ([RFC 8259 section 7](https://www.rfc-editor.org/rfc/rfc8259#section-7)) of the `data` of the operation, without its enclosing quotation marks, immediately before the closing quotation mark of the string that it appends to.
+      - `(TM9f5f)` `remove`, if the member or element is followed by another, deletes the text from the start of the member (the opening quotation mark of its name) or element, up to the start of the next member or element.
+      - `(TM9f5g)` `remove`, if the member or element is the last of several, deletes the text from the end of the value of the previous member or element up to the end of its value.
+      - `(TM9f5h)` `remove`, if the member or element is the only one, deletes the text of the member or element, from its start up to the end of its value.
+      - `(TM9f5i)` The SDK must compare the name of a member in the JSON text with a reference token after unescaping the JSON string of the name.
+      - `(TM9f5j)` If the SDK finds that the JSON text is not valid JSON, the operation cannot be applied.
+  - `(TM9g)` After the data operations, the SDK must apply the operations of `patches.extras` ([MPA2b](#MPA2b)) to the `extras` of the message:
+    - `(TM9g1)` The operations of `patches.extras.headers`, in order: `set` sets the member of `extras.headers` named by its `key` to its `value`, adding `extras` and `extras.headers` if they are absent. `remove` deletes the member of `extras.headers` named by its `key`, and cannot be applied if `extras.headers` does not have it. An operation whose `op` is neither cannot be applied.
+    - `(TM9g2)` The operation `patches.extras.userClaim`, if present: `set` sets `extras.userClaim` to its `value`, adding `extras` if it is absent. `remove` deletes `extras.userClaim`, if present. An operation whose `op` is neither cannot be applied.
+    - `(TM9g3)` The operation `patches.extras.privileged`, if present: `remove` deletes `extras.privileged`, if present. An operation whose `op` is not `remove` cannot be applied.
+    - `(TM9g4)` If deleting `extras.userClaim` per [TM9g2](#TM9g2), or `extras.privileged` per [TM9g3](#TM9g3), leaves `extras` with no members, the returned `Message` must have no `extras`.
 
 #### DeltaExtras
 
@@ -1297,6 +1343,56 @@ The core SDK provides an API for wrapper SDKs to supply Ably with analytics info
 - `(DE2)` `DeltaExtras` has the following attributes:
 - `(DE2a)` `from` string - the ID of the base message the delta was generated from
 - `(DE2b)` `format` string -- the delta format; currently only "vcdiff" is allowed
+
+#### MessagePatches
+
+- `(MPA1)` `MessagePatches` describes the changes that a message whose `action` is `MESSAGE_PATCH` makes to a message: values inside its JSON `data`, and individual fields of its `extras`. They are applied to a copy of the message by `Message.applyPatch` ([TM9](#TM9)).
+- `(MPA2)` The attributes of `MessagePatches` consist of:
+  - `(MPA2a)` `data` array of `MessagePatchDataOperation` (optional) - operations that change the message's `data`, applied in order
+  - `(MPA2b)` `extras` object (optional) - operations that change fields of the message's `extras`, with the following attributes:
+    - `(MPA2b1)` `headers` array of `MessagePatchHeaderOperation` (optional) - operations that change the message's `extras.headers`, applied in order
+    - `(MPA2b2)` `userClaim` `MessagePatchUserClaimOperation` (optional) - an operation that sets or removes the message's `extras.userClaim`. Only Ably sets it.
+    - `(MPA2b3)` `privileged` `MessagePatchPrivilegedOperation` (optional) - an operation that removes the message's `extras.privileged`. Only Ably sets it.
+
+#### MessagePatchDataOperation
+
+- `(MPD1)` `MessagePatchDataOperation` describes an operation that changes a message's `data`, or a value inside it.
+- `(MPD2)` The attributes of `MessagePatchDataOperation` consist of:
+  - `(MPD2a)` `op` string - the operation: `set`, `append` or `remove`
+  - `(MPD2b)` `path` string (optional) - a JSON Pointer ([RFC 6901](https://www.rfc-editor.org/rfc/rfc6901)) to a value inside `data`. Without a `path`, the operation applies to the whole of `data`.
+  - `(MPD2c)` `data` string, binary, or any JSON-encodable value, including a number, boolean or `null` (optional) - the value that the operation uses
+  - `(MPD2d)` `encoding` string (optional)
+- `(MPD3)` When sending a `MessagePatches` ([RSL15g](#RSL15g), [RTL32f](#RTL32f)), the SDK must encode the `data` of each `MessagePatchDataOperation` as follows, and must not mutate the user-supplied operation:
+  - `(MPD3a)` A string is sent unchanged, as a string, and the `encoding` is unchanged.
+  - `(MPD3b)` A binary value is encoded per [RSL4c1](#RSL4c1) when using MessagePack, and per [RSL4d1](#RSL4d1) when using JSON.
+  - `(MPD3c)` Any other value, including a number, boolean or `null`, is stringified as JSON, sent as a string (a MessagePack string when using MessagePack), and the `encoding` is set to `json`. Unlike [RSL4c3](#RSL4c3) and [RSL4d3](#RSL4d3), this applies to every JSON value, not only objects and arrays.
+  - `(MPD3d)` An operation without `data`, such as a `remove`, is sent without `data` or `encoding`.
+  - `(MPD3e)` The SDK must not encrypt the `data` of an operation, even if the channel has a `cipher` ([RSL5](#RSL5)).
+- `(MPD4)` When decoding a received `Message` ([RSL6](#RSL6), [TM3](#TM3)), the SDK must decode the `data` of each `MessagePatchDataOperation` of its `patches` by inverting the encoding rules of [RSL4](#RSL4) for the transforms in its `encoding`, except for the following:
+  - `(MPD4a)` If the first transform in the `encoding` is `json`, the SDK must not invert it: the `data` must be left as a string holding the JSON text, and the `encoding` must be `json`.
+  - `(MPD4b)` This clause is non-normative. A JSON value is left as text so that `Message.applyPatch` can insert it into JSON text verbatim ([TM9f5a](#TM9f5a)), and so that the user can parse it into the type of the value that it changes.
+  - `(MPD4c)` The SDK must not apply the decryption rules of [RSL5](#RSL5), nor the delta decoding rules of [RTL19](#RTL19) and [RTL20](#RTL20), to the `data` of an operation, and must not use it as the base payload for delta decoding. If the SDK cannot invert a transform, it must leave the `data` and the remaining transforms of the `encoding` as they are, per [RSL6b](#RSL6b).
+
+#### MessagePatchHeaderOperation
+
+- `(MPH1)` `MessagePatchHeaderOperation` describes an operation that changes a header in a message's `extras.headers`.
+- `(MPH2)` The attributes of `MessagePatchHeaderOperation` consist of:
+  - `(MPH2a)` `op` string - the operation: `set` or `remove`
+  - `(MPH2b)` `key` string - the name of the header
+  - `(MPH2c)` `value` string, number or boolean (optional) - the new value of the header, for `set`
+
+#### MessagePatchUserClaimOperation
+
+- `(MPU1)` `MessagePatchUserClaimOperation` describes an operation that sets or removes a message's `extras.userClaim`.
+- `(MPU2)` The attributes of `MessagePatchUserClaimOperation` consist of:
+  - `(MPU2a)` `op` string - the operation: `set` or `remove`
+  - `(MPU2b)` `value` string (optional) - the claim, for `set`
+
+#### MessagePatchPrivilegedOperation
+
+- `(MPP1)` `MessagePatchPrivilegedOperation` describes an operation that removes a message's `extras.privileged`.
+- `(MPP2)` The attributes of `MessagePatchPrivilegedOperation` consist of:
+  - `(MPP2a)` `op` string - the operation, which is `remove`
 
 #### PresenceMessage
 
@@ -2303,6 +2399,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       deleteMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL13
       getMessageVersions(serial: String, params?: Dict<String, Stringifiable>) => io PaginatedResult<Message> // RSL14
       appendMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL15
+      patchMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RSL15
 
       // Only on platforms that support receiving push notifications:
       push: PushChannel // RSH7
@@ -2345,6 +2442,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       deleteMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RTL30
       getMessageVersions(serial: String, params?: Dict<String, Stringifiable>) => io PaginatedResult<Message> // RTL31
       appendMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RTL32
+      patchMessage(Message, operation?: MessageOperation, params?: Dict<String, Stringifiable>) => io UpdateDeleteResult // RTL32
 
     class MessageFilter: // MFI*
       isRef: bool // MFI2a
@@ -2520,6 +2618,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       META // TM5
       MESSAGE_SUMMARY // TM5
       MESSAGE_APPEND // TM5
+      MESSAGE_PATCH // TM5
 
     enum ObjectOperationAction: // OOP2, internal
       MAP_CREATE // OOP2
@@ -2559,6 +2658,7 @@ Each type, method, and attribute is labelled with the name of one or more clause
       +summaryMultipleV1(JsonObject) -> Dict<string, SummaryClientIdCounts> // TM7b3
       +summaryFlagV1(JsonObject) -> SummaryClientIdList // TM7b4
       +summaryTotalV1(JsonObject) -> SummaryTotal // TM7b5
+      +applyPatch(message: Message, patch: Message) -> Message // TM9
       clientId: String? // TM2b
       connectionId: String? // TM2c
       connectionKey: String? // TM2h
@@ -2572,6 +2672,33 @@ Each type, method, and attribute is labelled with the name of one or more clause
       serial: string? // TM2r
       version: MessageVersion // TM2s
       annotations: MessageAnnotations // TM2u
+      patches: MessagePatches? // TM2v
+
+    class MessagePatches: // MPA*
+      data: [MessagePatchDataOperation]? // MPA2a
+      extras: { // MPA2b
+        headers: [MessagePatchHeaderOperation]? // MPA2b1
+        userClaim: MessagePatchUserClaimOperation? // MPA2b2
+        privileged: MessagePatchPrivilegedOperation? // MPA2b3
+      }?
+
+    class MessagePatchDataOperation: // MPD*
+      op: String // MPD2a
+      path: String? // MPD2b
+      data: (String | Binary | JsonValue)? // MPD2c
+      encoding: String? // MPD2d
+
+    class MessagePatchHeaderOperation: // MPH*
+      op: String // MPH2a
+      key: String // MPH2b
+      value: (String | Number | Boolean)? // MPH2c
+
+    class MessagePatchUserClaimOperation: // MPU*
+      op: String // MPU2a
+      value: String? // MPU2b
+
+    class MessagePatchPrivilegedOperation: // MPP*
+      op: String // MPP2a
 
     class PresenceMessage // TP*
       +fromEncoded(JsonObject, ChannelOptions?) -> PresenceMessage // TP4
