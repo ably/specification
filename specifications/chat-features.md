@@ -1590,6 +1590,10 @@ The codes listed here shall be defined in any error enums that exist in client l
         // To be accompanied by status code 400.
         ResourceDisposed = 40014,
 
+        // The client ID of the connection or request exceeds the maximum permitted length.
+        // To be accompanied by status code 400.
+        ClientIdTooLong = 40036,
+
         // The message was rejected before publishing by a rule on the chat room.
         // To be accompanied by status code 422.
         MessageRejectedByBeforePublishRule = 42211,
@@ -1605,6 +1609,14 @@ The codes listed here shall be defined in any error enums that exist in client l
         // Could not re-enter presence automatically after a room re-attach occurred.
         // To be accompanied by status code 400.
         PresenceAutoReentryFailed = 91004,
+
+        // The message already has the maximum number of distinct reactions, so a reaction that would add a new one was rejected.
+        // To be accompanied by status code 400.
+        MessageReactionLimitExceeded = 93003,
+
+        // The message has been deleted, so a reaction to it was rejected.
+        // To be accompanied by status code 400.
+        MessageReactionTargetDeleted = 93004,
 
 ## Chat-specific Error Codes {#error-codes}
 
