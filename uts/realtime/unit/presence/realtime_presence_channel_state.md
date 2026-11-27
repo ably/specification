@@ -431,12 +431,33 @@ immediately, but the PresenceMap is maintained. This ensures that when the chann
 becomes ATTACHED, it will only emit presence events for changes that occurred while
 disconnected.
 
+A transport drop alone leaves the connection DISCONNECTED (RTN15a), and RTL3c moves a channel to SUSPENDED only when the connection itself becomes SUSPENDED. That happens once the connection has been DISCONNECTED for `connectionStateTtl` (RTN14e), which the client takes from the CONNECTED message's `connectionDetails` (DF1a, RTN21). The mock accepts the first connection attempt with a 5 s `connectionStateTtl` and refuses every later one, and the test advances fake time past the TTL.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTP5f-${random_id()}"
 
+enable_fake_timers()
+
+connection_attempt_count = 0
+
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    IF connection_attempt_count == 1:
+      conn.respond_with_success(ProtocolMessage(
+        action: CONNECTED,
+        connectionId: "connection-id",
+        connectionDetails: ConnectionDetails(
+          connectionKey: "connection-key",
+          maxIdleInterval: 15000,
+          connectionStateTtl: 5000
+        )
+      ))
+    ELSE:
+      # Refuse all reconnection attempts so the connection enters SUSPENDED
+      conn.respond_with_refused()
+  },
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
@@ -457,7 +478,11 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
+client = Realtime(options: ClientOptions(
+  key: "fake.key:secret",
+  autoConnect: false,
+  disconnectedRetryTimeout: 1000
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -470,8 +495,16 @@ AWAIT channel.attach()
 members = AWAIT channel.presence.get()
 ASSERT members.length == 2
 
-# Channel becomes SUSPENDED (e.g., connection transitions to SUSPENDED)
+# Channel becomes SUSPENDED when the connection transitions to SUSPENDED (RTL3c)
 mock_ws.active_connection.simulate_disconnect()
+
+# Advance time past connectionStateTtl until the connection enters SUSPENDED
+LOOP up to 15 times:
+  ADVANCE_TIME(2000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.suspended
 AWAIT_STATE channel.state == ChannelState.suspended
 
 # PresenceMap is maintained during SUSPENDED
@@ -666,13 +699,33 @@ CLOSE_CLIENT(client)
 
 **Test ID**: `realtime/unit/RTL11/queued-presence-fail-suspended-1`
 
+A transport drop alone leaves the connection DISCONNECTED (RTN15a), and RTL3c moves a channel to SUSPENDED only when the connection itself becomes SUSPENDED. That happens once the connection has been DISCONNECTED for `connectionStateTtl` (RTN14e), which the client takes from the CONNECTED message's `connectionDetails` (DF1a, RTN21). The mock accepts the first connection attempt with a 5 s `connectionStateTtl` and refuses every later one, and the test advances fake time past the TTL.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL11-suspended-${random_id()}"
 
+enable_fake_timers()
+
+connection_attempt_count = 0
 captured_presence = []
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    IF connection_attempt_count == 1:
+      conn.respond_with_success(ProtocolMessage(
+        action: CONNECTED,
+        connectionId: "connection-id",
+        connectionDetails: ConnectionDetails(
+          connectionKey: "connection-key",
+          maxIdleInterval: 15000,
+          connectionStateTtl: 5000
+        )
+      ))
+    ELSE:
+      # Refuse all reconnection attempts so the connection enters SUSPENDED
+      conn.respond_with_refused()
+  },
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       # Do NOT respond — leave channel in ATTACHING
@@ -682,7 +735,12 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-client = Realtime(options: ClientOptions(key: "fake.key:secret", clientId: "my-client", autoConnect: false))
+client = Realtime(options: ClientOptions(
+  key: "fake.key:secret",
+  clientId: "my-client",
+  autoConnect: false,
+  disconnectedRetryTimeout: 1000
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -700,8 +758,16 @@ update_future = channel.presence.update(data: "queued-update")
 
 ASSERT captured_presence.length == 0
 
-# Connection goes SUSPENDED, causing channel to go SUSPENDED
+# Connection goes SUSPENDED, causing channel to go SUSPENDED (RTL3c)
 mock_ws.active_connection.simulate_disconnect()
+
+# Advance time past connectionStateTtl until the connection enters SUSPENDED
+LOOP up to 15 times:
+  ADVANCE_TIME(2000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.suspended
 AWAIT_STATE channel.state == ChannelState.suspended
 ```
 

@@ -1337,14 +1337,33 @@ CLOSE_CLIENT(client)
 
 Tests that messages awaiting ACK/NACK are failed with the state change reason when the connection enters SUSPENDED.
 
+`connectionStateTtl` is not a `ClientOptions` field; the client takes it from the `connectionDetails` of the CONNECTED message (DF1a, RTN21). The mock accepts the first connection attempt with a CONNECTED message carrying a 5 s `connectionStateTtl`, and refuses every later attempt, so once the transport drops the connection stays DISCONNECTED until that TTL expires and it becomes SUSPENDED (RTN14e).
+
 ### Setup
 ```pseudo
 channel_name = "test-RTN7e-suspended-${random_id()}"
 
 enable_fake_timers()
 
+connection_attempt_count = 0
+
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    IF connection_attempt_count == 1:
+      conn.respond_with_success(ProtocolMessage(
+        action: CONNECTED,
+        connectionId: "connection-id",
+        connectionDetails: ConnectionDetails(
+          connectionKey: "connection-key",
+          maxIdleInterval: 15000,
+          connectionStateTtl: 5000
+        )
+      ))
+    ELSE:
+      # Refuse all reconnection attempts so the connection enters SUSPENDED
+      conn.respond_with_refused()
+  },
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
@@ -1360,8 +1379,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
-  disconnectedRetryTimeout: 1000,
-  connectionStateTtl: 5000
+  disconnectedRetryTimeout: 1000
 ))
 channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
 ```
@@ -1375,12 +1393,7 @@ AWAIT channel.attach()
 # Publish but don't ACK — message stays pending
 publish_future = channel.publish(name: "pending", data: "data")
 
-# Disconnect and refuse all reconnection attempts so connection enters SUSPENDED
-mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_refused()
-)
-install_mock(mock_ws)
-
+# Drop the transport; the mock refuses every reconnection attempt
 mock_ws.active_connection.simulate_disconnect()
 
 # Advance time until connection enters SUSPENDED
