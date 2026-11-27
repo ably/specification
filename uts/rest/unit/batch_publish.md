@@ -14,6 +14,43 @@ These tests use the mock HTTP infrastructure defined in `rest_client.md`. The mo
 
 See `rest_client.md` for detailed mock interface documentation.
 
+## Server Response Format
+
+A client sends the CSV2b protocol version in `X-Ably-Version` (RSC7e). At that version,
+as at every version from 3, `POST /messages` returns HTTP 201 and an array holding one
+`BatchResult` envelope (BAR2) per `BatchPublishSpec` sent, in the order the specs were sent:
+
+```json
+[
+  {
+    "successCount": 1,
+    "failureCount": 1,
+    "results": [
+      { "channel": "ch-a", "messageId": "msg1", "serials": ["s1"] },
+      { "channel": "ch-b", "error": { "code": 40160, "statusCode": 401, "message": "..." } }
+    ]
+  }
+]
+```
+
+- **A single spec** sent as a bare object is answered like an array of one: an array holding
+  a single envelope. This is the array RSC22b says the REST API still returns; an SDK that
+  implements the single-spec overload extracts the envelope from it.
+- **All success, mixed and all failure** batches return HTTP 201 with this format.
+- **Server-level errors** (HTTP 500, 401, etc.) return an error object: `{"error": {...}}`.
+- Each success result (BPR2) carries `serials` (BPR2c), which was added at protocol version 5.
+
+Every batch result fixture in this file is in this format, as the server sends it to a
+client sending `X-Ably-Version: 5` or later. A mock described only as responding "with
+success" responds with HTTP 201 and one envelope per spec sent, holding a success result
+for each channel.
+
+**Legacy format (`X-Ably-Version` 2 or below, or no version header):** the server returns
+one flat array of per-channel results across every spec, with nothing marking which spec
+each result belongs to, and without `serials`. A batch in which any channel fails is
+answered with HTTP 400, error `40020`, and that flat array as `batchResponse`. This format
+is not used by current SDKs.
+
 ## RSC22c - batchPublish sends POST to /messages
 
 **Spec requirement:** The `batchPublish` method must send a POST request to the `/messages` endpoint with the batch specifications in the request body.
@@ -62,18 +99,22 @@ And the captured request body is an array containing both specs
 
 **Test ID**: `rest/unit/RSC22c/single-spec-single-result-0`
 
-**Spec requirement:** When a single BatchPublishSpec is sent, the response is a single BatchResult (not an array).
+**Spec requirement:** When a single BatchPublishSpec is sent, batchPublish returns a single BatchResult (not an array). The REST response is still an array of one envelope, from which the SDK extracts the element (RSC22b).
 
 ```pseudo
 channel_name = "test-RSC22c3-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock is configured to respond with:
-  {
-    "channel": channel_name,
-    "messageId": "msg123",
-    "serials": ["serial1"]
-  }
+And the mock is configured to respond with HTTP 201 and:
+  [
+    {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "channel": channel_name, "messageId": "msg123", "serials": ["serial1"] }
+      ]
+    }
+  ]
 When batchPublish is called with a single BatchPublishSpec
 Then a single BatchResult is returned (not an array)
 And the result contains the success result for channel_name
@@ -90,14 +131,26 @@ channel_name_1 = "test-RSC22c4-a-${random_id()}"
 channel_name_2 = "test-RSC22c4-b-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock is configured to respond with an array of results:
+And the mock is configured to respond with HTTP 201 and one envelope per spec:
   [
-    { "channel": channel_name_1, "messageId": "msg1", "serials": ["s1"] },
-    { "channel": channel_name_2, "messageId": "msg2", "serials": ["s2"] }
+    {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [{ "channel": channel_name_1, "messageId": "msg1", "serials": ["s1"] }]
+    },
+    {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [{ "channel": channel_name_2, "messageId": "msg2", "serials": ["s2"] }]
+    }
   ]
-When batchPublish is called with an array of BatchPublishSpecs
+When batchPublish is called with an array of BatchPublishSpecs:
+  - BatchPublishSpec(channels: [channel_name_1], messages: [Message(name: "e1", data: "d1")])
+  - BatchPublishSpec(channels: [channel_name_2], messages: [Message(name: "e2", data: "d2")])
 Then an array of BatchResults is returned
-And each result corresponds to the respective spec
+And each result corresponds to the respective spec:
+  - result[0].results[0].channel equals channel_name_1
+  - result[1].results[0].channel equals channel_name_2
 ```
 
 ### RSC22c5 - Multiple channels in spec produces multiple results
@@ -113,7 +166,18 @@ channel_name_3 = "test-RSC22c5-c-${random_id()}"
 
 Given a REST client with mock HTTP
 And a BatchPublishSpec with channels: [channel_name_1, channel_name_2, channel_name_3]
-And the mock is configured to respond with results for each channel
+And the mock is configured to respond with HTTP 201 and one envelope holding a result for each channel:
+  [
+    {
+      "successCount": 3,
+      "failureCount": 0,
+      "results": [
+        { "channel": channel_name_1, "messageId": "msg1", "serials": ["s1"] },
+        { "channel": channel_name_2, "messageId": "msg2", "serials": ["s2"] },
+        { "channel": channel_name_3, "messageId": "msg3", "serials": ["s3"] }
+      ]
+    }
+  ]
 When batchPublish is called
 Then the BatchResult contains results for all three channels
 ```
@@ -260,10 +324,13 @@ And each message is serialized according to TM* rules
 channel_name = "test-BPR2a-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock responds with:
-  { "channel": channel_name, "messageId": "msg123", "serials": ["s1"] }
-When the response is parsed into BatchPublishSuccessResult
-Then result.channel equals channel_name
+And the mock responds with HTTP 201 and:
+  [{ "successCount": 1, "failureCount": 0, "results": [
+    { "channel": channel_name, "messageId": "msg123", "serials": ["s1"] }
+  ] }]
+When batchPublish is called with a single BatchPublishSpec for channel_name
+And result.results[0] is parsed into BatchPublishSuccessResult
+Then result.results[0].channel equals channel_name
 ```
 
 ### BPR2b - messageId contains the message ID prefix
@@ -276,10 +343,13 @@ Then result.channel equals channel_name
 channel_name = "test-BPR2b-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock responds with:
-  { "channel": channel_name, "messageId": "unique-id-prefix", "serials": ["s1", "s2"] }
-When the response is parsed into BatchPublishSuccessResult
-Then result.messageId equals "unique-id-prefix"
+And the mock responds with HTTP 201 and:
+  [{ "successCount": 1, "failureCount": 0, "results": [
+    { "channel": channel_name, "messageId": "unique-id-prefix", "serials": ["s1", "s2"] }
+  ] }]
+When batchPublish is called with a single BatchPublishSpec for channel_name
+And result.results[0] is parsed into BatchPublishSuccessResult
+Then result.results[0].messageId equals "unique-id-prefix"
 ```
 
 ### BPR2c - serials contains array of message serials
@@ -292,10 +362,13 @@ Then result.messageId equals "unique-id-prefix"
 channel_name = "test-BPR2c-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock responds with:
-  { "channel": channel_name, "messageId": "msg", "serials": ["serial1", "serial2", "serial3"] }
-When the response is parsed into BatchPublishSuccessResult
-Then result.serials equals ["serial1", "serial2", "serial3"]
+And the mock responds with HTTP 201 and:
+  [{ "successCount": 1, "failureCount": 0, "results": [
+    { "channel": channel_name, "messageId": "msg", "serials": ["serial1", "serial2", "serial3"] }
+  ] }]
+When batchPublish is called with a single BatchPublishSpec publishing three messages to channel_name
+And result.results[0] is parsed into BatchPublishSuccessResult
+Then result.results[0].serials equals ["serial1", "serial2", "serial3"]
 And serials.length matches the number of messages published
 ```
 
@@ -309,10 +382,13 @@ And serials.length matches the number of messages published
 channel_name = "test-BPR2c1-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock responds with a response where some messages were conflated:
-  { "channel": channel_name, "messageId": "msg", "serials": ["serial1", null, "serial3"] }
-When the response is parsed into BatchPublishSuccessResult
-Then result.serials equals ["serial1", null, "serial3"]
+And the mock responds with HTTP 201 and a response where some messages were conflated:
+  [{ "successCount": 1, "failureCount": 0, "results": [
+    { "channel": channel_name, "messageId": "msg", "serials": ["serial1", null, "serial3"] }
+  ] }]
+When batchPublish is called with a single BatchPublishSpec publishing three messages to channel_name
+And result.results[0] is parsed into BatchPublishSuccessResult
+Then result.results[0].serials equals ["serial1", null, "serial3"]
 And the null indicates the second message was discarded due to conflation
 ```
 
@@ -330,13 +406,16 @@ And the null indicates the second message was discarded due to conflation
 channel_name = "test-BPF2a-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock responds with a failure:
-  {
-    "channel": channel_name,
-    "error": { "code": 40160, "statusCode": 401, "message": "Not permitted" }
-  }
-When the response is parsed into BatchPublishFailureResult
-Then result.channel equals channel_name
+And the mock responds with HTTP 201 and a failure:
+  [{ "successCount": 0, "failureCount": 1, "results": [
+    {
+      "channel": channel_name,
+      "error": { "code": 40160, "statusCode": 401, "message": "Not permitted" }
+    }
+  ] }]
+When batchPublish is called with a single BatchPublishSpec for channel_name
+And result.results[0] is parsed into BatchPublishFailureResult
+Then result.results[0].channel equals channel_name
 ```
 
 ### BPF2b - error contains ErrorInfo for failure reason
@@ -349,21 +428,24 @@ Then result.channel equals channel_name
 channel_name = "test-BPF2b-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock responds with a detailed error:
-  {
-    "channel": channel_name,
-    "error": {
-      "code": 40160,
-      "statusCode": 401,
-      "message": "Channel operation not permitted",
-      "href": "https://help.ably.io/error/40160"
+And the mock responds with HTTP 201 and a detailed error:
+  [{ "successCount": 0, "failureCount": 1, "results": [
+    {
+      "channel": channel_name,
+      "error": {
+        "code": 40160,
+        "statusCode": 401,
+        "message": "Channel operation not permitted",
+        "href": "https://help.ably.io/error/40160"
+      }
     }
-  }
-When the response is parsed into BatchPublishFailureResult
-Then result.error is an ErrorInfo
-And result.error.code equals 40160
-And result.error.statusCode equals 401
-And result.error.message contains "not permitted"
+  ] }]
+When batchPublish is called with a single BatchPublishSpec for channel_name
+And result.results[0] is parsed into BatchPublishFailureResult
+Then result.results[0].error is an ErrorInfo
+And result.results[0].error.code equals 40160
+And result.results[0].error.statusCode equals 401
+And result.results[0].error.message contains "not permitted"
 ```
 
 ## BatchResult - Mixed Success and Failure
@@ -382,15 +464,21 @@ channel_name_restricted = "test-BatchResult1-restricted-${random_id()}"
 
 Given a REST client with mock HTTP
 And a BatchPublishSpec with channels: [channel_name_allowed, channel_name_restricted]
-And the mock responds with mixed results:
+And the mock responds with HTTP 201 and mixed results in one envelope:
   [
-    { "channel": channel_name_allowed, "messageId": "msg1", "serials": ["s1"] },
-    { "channel": channel_name_restricted, "error": { "code": 40160, ... } }
+    {
+      "successCount": 1,
+      "failureCount": 1,
+      "results": [
+        { "channel": channel_name_allowed, "messageId": "msg1", "serials": ["s1"] },
+        { "channel": channel_name_restricted, "error": { "code": 40160, ... } }
+      ]
+    }
   ]
 When batchPublish is called
 Then the BatchResult contains both results
-And result[0] is a BatchPublishSuccessResult
-And result[1] is a BatchPublishFailureResult
+And result.results[0] is a BatchPublishSuccessResult
+And result.results[1] is a BatchPublishFailureResult
 ```
 
 ### BatchResult2 - Distinguishing success from failure results
@@ -494,7 +582,7 @@ Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests
 When batchPublish is called
 Then the captured request includes:
-  - X-Ably-Version: 2
+  - X-Ably-Version: the CSV2b protocol version (RSC7e), matching pattern "[0-9]+" and at least 5 (see "Server Response Format")
   - Ably-Agent: <library-agent-string>
   - Content-Type: application/json
 ```
@@ -550,7 +638,18 @@ channel_name_2 = "test-RSC22-Batch2-b-${random_id()}"
 channel_name_3 = "test-RSC22-Batch2-c-${random_id()}"
 
 Given a REST client with mock HTTP
-And the mock is configured to respond with results for each channel
+And the mock is configured to respond with HTTP 201 and one envelope holding a result for each channel:
+  [
+    {
+      "successCount": 3,
+      "failureCount": 0,
+      "results": [
+        { "channel": channel_name_1, "messageId": "id1", "serials": ["s1", "s2", "s3"] },
+        { "channel": channel_name_2, "messageId": "id2", "serials": ["s4", "s5", "s6"] },
+        { "channel": channel_name_3, "messageId": "id3", "serials": ["s7", "s8", "s9"] }
+      ]
+    }
+  ]
 And a BatchPublishSpec with:
   - channels: [channel_name_1, channel_name_2, channel_name_3]
   - messages: [msg1, msg2, msg3]
