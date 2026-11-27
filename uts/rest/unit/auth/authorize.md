@@ -1,6 +1,6 @@
 # Auth.authorize() Tests
 
-Spec points: `RSA10`, `RSA10a`, `RSA10b`, `RSA10e`, `RSA10g`, `RSA10i`, `RSA10k`, `RSA10l`, `RSA16c`
+Spec points: `RSA10`, `RSA10a`, `RSA10b`, `RSA10e`, `RSA10g`, `RSA10i`, `RSA10k`, `RSA16c`
 
 ## Test Type
 Unit test with mocked HTTP client and/or mocked authCallback
@@ -406,9 +406,9 @@ ASSERT time_request IS NOT null
 
 ---
 
-## RSA10l - authorize() error handling
+## RSA10i - authorize() error handling
 
-**Test ID**: `rest/unit/RSA10l/authorize-error-propagated-0`
+**Test ID**: `rest/unit/RSA10i/authorize-error-propagated-1`
 
 **Spec requirement:** Errors during authorization are properly propagated to the caller.
 

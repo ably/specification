@@ -103,11 +103,11 @@ ASSERT error.href == "https://help.ably.io/error/40100"
 
 ---
 
-## TI - ErrorInfo with nested error
+## TI1 - ErrorInfo with nested error
 
 **Test ID**: `rest/unit/TI/errorinfo-nested-cause-1`
 
-**Spec requirement:** ErrorInfo must support nested error structures with a cause field (TI5).
+**Spec requirement:** ErrorInfo must support nested error structures with a cause field (TI1).
 
 Tests parsing error response with nested error structure.
 
