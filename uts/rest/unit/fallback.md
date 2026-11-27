@@ -304,7 +304,7 @@ FOR EACH status_code IN [500, 501, 502, 503, 504]:
     onRequest: (req) => {
       request_count++
       IF request_count == 1:
-        req.respond_with(status_code, {"error": {"code": status_code * 100}})
+        req.respond_with(status_code, {"error": {"message": "Error", "code": status_code * 100, "statusCode": status_code}})
       ELSE:
         req.respond_with(200, [1234567890000])
     }
@@ -331,7 +331,7 @@ FOR EACH status_code IN [400, 401, 404]:
     onConnectionAttempt: (conn) => conn.respond_with_success(),
     onRequest: (req) => {
       request_count++
-      req.respond_with(status_code, {"error": {"code": status_code * 100}})
+      req.respond_with(status_code, {"error": {"message": "Error", "code": status_code * 100, "statusCode": status_code}})
     }
   )
   install_mock(mock_http)
