@@ -43,9 +43,9 @@ ASSERT client.options.idempotentRestPublishing == true
 
 ---
 
-## RSL1k2 - Message ID format when idempotent publishing enabled
+## RSL1k1 - Message ID format when idempotent publishing enabled
 
-**Test ID**: `rest/unit/RSL1k2/message-id-format-0`
+**Test ID**: `rest/unit/RSL1k1/message-id-format-1`
 
 **Spec requirement:** When `idempotentRestPublishing` is enabled, library-generated message IDs must follow the format `<base64>:<serial>` where base64 is a URL-safe base64-encoded random value and serial is a zero-based sequential integer.
 
@@ -53,7 +53,7 @@ Tests that library-generated message IDs follow the `<base64>:<serial>` format.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k2-${random_id()}"
+channel_name = "test-RSL1k1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -99,9 +99,9 @@ ASSERT parts[1] == "0"
 
 ---
 
-## RSL1k2 - Serial increments for batch publish
+## RSL1k1 - Serial increments for batch publish
 
-**Test ID**: `rest/unit/RSL1k2/serial-increments-batch-1`
+**Test ID**: `rest/unit/RSL1k1/serial-increments-batch-2`
 
 **Spec requirement:** When publishing multiple messages in a batch, all messages must share the same base ID with incrementing serial numbers starting from 0.
 
@@ -109,7 +109,7 @@ Tests that serial numbers increment for each message in a batch.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k2-batch-${random_id()}"
+channel_name = "test-RSL1k1-batch-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -161,9 +161,9 @@ ASSERT serials == [0, 1, 2]
 
 ---
 
-## RSL1k3 - Separate publishes get unique base IDs
+## RSL1k1 - Separate publishes get unique base IDs
 
-**Test ID**: `rest/unit/RSL1k3/unique-base-ids-0`
+**Test ID**: `rest/unit/RSL1k1/unique-base-ids-3`
 
 **Spec requirement:** Each separate publish call must generate a new unique base ID, even for messages published to the same channel.
 
@@ -171,7 +171,7 @@ Tests that separate publish calls generate unique base IDs.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k3-${random_id()}"
+channel_name = "test-RSL1k1-unique-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -210,9 +210,9 @@ ASSERT base1 != base2
 
 ---
 
-## RSL1k3 - No ID generated when idempotent publishing disabled
+## RSL1k1 - No ID generated when idempotent publishing disabled
 
-**Test ID**: `rest/unit/RSL1k3/no-id-when-disabled-1`
+**Test ID**: `rest/unit/RSL1k1/no-id-when-disabled-4`
 
 **Spec requirement:** When `idempotentRestPublishing` is false, the library must not automatically generate message IDs.
 
@@ -220,7 +220,7 @@ Tests that message IDs are not automatically generated when disabled.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k3-disabled-${random_id()}"
+channel_name = "test-RSL1k1-disabled-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -255,7 +255,7 @@ ASSERT "id" NOT IN body
 
 ---
 
-## RSL1k - Client-supplied ID preserved
+## RSL1k2 - Client-supplied ID preserved
 
 **Test ID**: `rest/unit/RSL1k/client-id-preserved-0`
 
@@ -302,9 +302,9 @@ ASSERT body["id"] == "my-custom-id"
 
 ---
 
-## RSL1k2 - Same ID used on retry
+## RSL1k1 - Same ID used on retry
 
-**Test ID**: `rest/unit/RSL1k2/same-id-on-retry-2`
+**Test ID**: `rest/unit/RSL1k1/same-id-on-retry-5`
 
 **Spec requirement:** When a publish request is retried after a failure, the same message ID(s) must be used to ensure idempotent behavior.
 
@@ -312,7 +312,7 @@ Tests that the same message ID is used when retrying after failure.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k2-retry-${random_id()}"
+channel_name = "test-RSL1k1-retry-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -357,7 +357,7 @@ ASSERT body1["id"] == body2["id"]
 
 ---
 
-## RSL1k - Mixed client and library IDs in batch
+## RSL1k3 - Mixed client-supplied and absent IDs in batch
 
 **Test ID**: `rest/unit/RSL1k/mixed-ids-in-batch-1`
 

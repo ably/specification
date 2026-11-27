@@ -68,12 +68,12 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSA7 | ClientId and authenticated clients (RSA7a–RSA7e2) | Partial — `rest/unit/auth/client_id.md` covers RSA7, RSA7a–RSA7c; `realtime/integration/auth.md` covers RSA7 |
 | RSA8 | RequestToken function (RSA8a–RSA8g) | Partial — `rest/unit/auth/auth_callback.md` covers RSA8c, RSA8d; `realtime/unit/auth/connection_auth_test.md` covers RSA8d; `rest/integration/auth.md` covers RSA8; `realtime/integration/auth.md` covers RSA8 |
 | RSA9 | CreateTokenRequest (RSA9a–RSA9i) | Partial — `rest/integration/auth.md` covers RSA9; `realtime/integration/auth/token_request_test.md` covers RSA9a, RSA9g |
-| RSA10 | Authorize function (RSA10a–RSA10l) | Yes — `rest/unit/auth/authorize.md` |
+| RSA10 | Authorize function (RSA10a–RSA10l) | Partial — `rest/unit/auth/authorize.md` covers RSA10a, RSA10b, RSA10e, RSA10g, RSA10i, RSA10k |
 | RSA11 | Base64 encoded API key | Yes — `rest/unit/auth/auth_scheme.md` (with RSA2) |
 | RSA12 | Auth#clientId attribute (RSA12a–RSA12b) | Yes — `rest/unit/auth/client_id.md` |
 | RSA14 | Error when token auth selected without token | Yes — `rest/unit/auth/token_renewal.md`, `rest/integration/auth.md` |
 | RSA15 | ClientId validation (RSA15a–RSA15c) | Yes — `rest/unit/auth/client_id.md`, `realtime/integration/auth.md` (RSA15c Realtime case) |
-| RSA16 | TokenDetails attribute (RSA16a–RSA16d) | Yes — `rest/unit/auth/token_details.md` |
+| RSA16 | TokenDetails attribute (RSA16a–RSA16d) | Yes — `rest/unit/auth/token_details.md`; `rest/unit/auth/authorize.md` covers RSA16c |
 | RSA17 | RevokeTokens (RSA17a–RSA17g) | Yes — `rest/unit/auth/revoke_tokens.md`, `rest/integration/revoke_tokens.md` |
 
 ### Channels (REST)
@@ -334,7 +334,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | TN1–TN3 | Token string | |
 | AD1–AD2 | AuthDetails | |
 | TS1–TS14 | Stats | |
-| TI1–TI5 | ErrorInfo | Yes — `rest/unit/types/error_types.md` |
+| TI1–TI6 | ErrorInfo | Partial — `rest/unit/types/error_types.md` covers TI1, TI2, TI4; `realtime/unit/auth/token_expiry_non_renewable_test.md` covers TI5 |
 | TA1–TA5 | ConnectionStateChange | |
 | TH1–TH6 | ChannelStateChange | Yes — `realtime/unit/channels/channel_state_events.md` |
 | TC1–TC2 | Capability | |
@@ -356,7 +356,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
 | TO1–TO3 | ClientOptions | Yes — `rest/unit/types/options_types.md` |
-| TK1–TK6 | TokenParams | Yes — `rest/unit/types/token_types.md` |
+| TK1, TK2, TK2a–TK2e | TokenParams | Yes — `rest/unit/types/token_types.md` |
 | AO1–AO2 | AuthOptions | Yes — `rest/unit/types/options_types.md` |
 | TB1–TB4 | ChannelOptions | Yes — `realtime/unit/channels/channel_options.md` |
 | DO1–DO2 | DeriveOptions | Yes — `realtime/unit/channels/channel_options.md` |

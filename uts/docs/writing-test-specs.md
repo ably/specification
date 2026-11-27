@@ -1144,8 +1144,8 @@ rest/
       message_encoding.md     # RSL4, RSL5, RSL6
     types/
       message_types.md        # TM2, TM3, TM4
-      error_types.md          # TI1-5
-      token_types.md          # TD1-5, TK1-6, TE1-6
+      error_types.md          # TI1, TI2, TI4
+      token_types.md          # TD1-7, TK1, TK2a-e, TE1-6
       options_types.md        # TO3, AO2
       paginated_result.md     # TG1-5
   integration/

@@ -1,6 +1,6 @@
 # Auth.authorize() Tests
 
-Spec points: `RSA10`, `RSA10a`, `RSA10b`, `RSA10e`, `RSA10g`, `RSA10h`, `RSA10i`, `RSA10j`, `RSA10k`, `RSA10l`
+Spec points: `RSA10`, `RSA10a`, `RSA10b`, `RSA10e`, `RSA10g`, `RSA10i`, `RSA10k`, `RSA16c`
 
 ## Test Type
 Unit test with mocked HTTP client and/or mocked authCallback
@@ -111,9 +111,9 @@ ASSERT params.ttl == 7200000
 
 ---
 
-## RSA10e - authorize() saves tokenParams for reuse
+## RSA10g - authorize() saves tokenParams for reuse
 
-**Test ID**: `rest/unit/RSA10e/authorize-saves-params-0`
+**Test ID**: `rest/unit/RSA10g/authorize-saves-params-0`
 
 **Spec requirement:** `tokenParams` provided to `authorize()` are saved and reused on subsequent token requests.
 
@@ -166,9 +166,9 @@ ASSERT callback_invocations[1].ttl == 3600000
 
 ---
 
-## RSA10g - authorize() updates Auth.tokenDetails
+## RSA16c - authorize() updates Auth.tokenDetails
 
-**Test ID**: `rest/unit/RSA10g/authorize-updates-token-details-0`
+**Test ID**: `rest/unit/RSA16c/authorize-updates-token-details-0`
 
 **Spec requirement:** After `authorize()`, `auth.tokenDetails` reflects the new token.
 
@@ -209,13 +209,13 @@ ASSERT client.auth.tokenDetails == result  # Same object
 
 ---
 
-## RSA10h - authorize() with authOptions replaces defaults
+## RSA10e - authorize() obtains the token via authOptions
 
-**Test ID**: `rest/unit/RSA10h/authorize-replaces-auth-options-0`
+**Test ID**: `rest/unit/RSA10e/authorize-replaces-auth-options-0`
 
-**Spec requirement:** `authOptions` in `authorize()` replaces stored auth options.
+**Spec requirement:** When the `authOptions` passed to `authorize()` contain a way of obtaining a token (here an `authCallback`), that is used to obtain the new token in place of the stored one.
 
-Tests that `authOptions` in `authorize()` replaces stored auth options.
+Tests that an `authCallback` passed in `authOptions` is used to obtain the token instead of the one configured on the constructor.
 
 ### Setup
 ```pseudo
@@ -312,9 +312,9 @@ AWAIT client.auth.authorize(
 
 ---
 
-## RSA10j - authorize() when already authorized
+## RSA10a - authorize() when already authorized
 
-**Test ID**: `rest/unit/RSA10j/authorize-replaces-existing-token-0`
+**Test ID**: `rest/unit/RSA10a/authorize-replaces-existing-token-1`
 
 **Spec requirement:** Calling `authorize()` when a valid token exists obtains a new token.
 
@@ -406,9 +406,9 @@ ASSERT time_request IS NOT null
 
 ---
 
-## RSA10l - authorize() error handling
+## RSA10i - authorize() error handling
 
-**Test ID**: `rest/unit/RSA10l/authorize-error-propagated-0`
+**Test ID**: `rest/unit/RSA10i/authorize-error-propagated-1`
 
 **Spec requirement:** Errors during authorization are properly propagated to the caller.
 
