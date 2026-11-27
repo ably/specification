@@ -357,7 +357,7 @@ ASSERT body1["id"] == body2["id"]
 
 ---
 
-## RSL1k3 - Mixed client and library IDs in batch
+## RSL1k3 - Mixed client-supplied and absent IDs in batch
 
 **Test ID**: `rest/unit/RSL1k/mixed-ids-in-batch-1`
 
