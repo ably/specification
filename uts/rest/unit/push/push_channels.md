@@ -47,7 +47,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 
 # Configure the local device as a registered push target
 client.device = LocalDevice(
@@ -148,7 +151,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 
 # Configure the local device with a clientId
 client.device = LocalDevice(

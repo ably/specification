@@ -44,7 +44,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -100,7 +103,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -126,7 +132,9 @@ ASSERT body.length == 3
 ASSERT body[0]["name"] == "event1"
 ASSERT body[0]["data"] == "data1"
 ASSERT body[1]["name"] == "event2"
-ASSERT body[1]["data"] == { "key": "value" }
+ASSERT body[1]["data"] IS String
+ASSERT parse_json(body[1]["data"]) == { "key": "value" }
+ASSERT body[1]["encoding"] == "json"
 # Note: binary data encoding tested separately in encoding tests
 ```
 
@@ -154,17 +162,20 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
 ### Test Cases
 
-| ID | name | data | Expected body |
-|----|------|------|---------------|
-| 1 | `null` | `"hello"` | `[{"data": "hello"}]` |
-| 2 | `"event"` | `null` | `[{"name": "event"}]` |
-| 3 | `null` | `null` | `[{}]` |
+| ID | name | data |
+|----|------|------|
+| 1 | `null` | `"hello"` |
+| 2 | `"event"` | `null` |
+| 3 | `null` | `null` |
 
 ### Test Steps
 ```pseudo
@@ -174,7 +185,9 @@ FOR EACH test_case IN test_cases:
   AWAIT channel.publish(name: test_case.name, data: test_case.data)
 
   body = parse_json(captured_requests[0].body)
-  ASSERT body == [test_case.expected_body]
+  ASSERT body.length == 1
+  ASSERT body[0]["name"] == test_case.name IF test_case.name IS NOT null
+  ASSERT body[0]["data"] == test_case.data IF test_case.data IS NOT null
   ASSERT "name" NOT IN body[0] IF test_case.name IS null
   ASSERT "data" NOT IN body[0] IF test_case.data IS null
 ```
@@ -205,7 +218,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -308,7 +324,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -439,6 +458,7 @@ captured_requests = []
 
 client_with_id = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
+  useBinaryProtocol: false,  # pins JSON so parse_json(request.body) applies
   clientId: "lib-client"
 ))
 AWAIT client_with_id.channels.get(channel_name_m1).publish(name: "e", data: "d")
@@ -461,7 +481,10 @@ ASSERT body["clientId"] == "lib-client"  # Explicit clientId preserved
 # RSL1m3 - Unidentified client with message clientId
 captured_requests = []
 
-client_no_id = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client_no_id = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 AWAIT client_no_id.channels.get(channel_name_m3).publish(
   message: Message(name: "e", data: "d", clientId: "msg-client")
 )

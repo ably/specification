@@ -36,7 +36,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -88,7 +91,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -136,7 +142,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -182,7 +191,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -231,7 +243,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -272,7 +287,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -487,7 +505,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  useBinaryProtocol: false  # pins JSON so parse_json(request.body) applies
+))
 channel = client.channels.get(channel_name)
 ```
 

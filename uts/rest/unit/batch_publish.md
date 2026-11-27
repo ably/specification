@@ -28,7 +28,7 @@ See `rest_client.md` for detailed mock interface documentation.
 channel_name_1 = "test-RSC22c1-a-${random_id()}"
 channel_name_2 = "test-RSC22c1-b-${random_id()}"
 
-Given a REST client with mock HTTP
+Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests and respond with success
 When batchPublish is called with a single BatchPublishSpec:
   - channels: [channel_name_1, channel_name_2]
@@ -49,7 +49,7 @@ And the captured request body contains:
 channel_name_1 = "test-RSC22c2-a-${random_id()}"
 channel_name_2 = "test-RSC22c2-b-${random_id()}"
 
-Given a REST client with mock HTTP
+Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests and respond with success
 When batchPublish is called with an array of BatchPublishSpecs:
   - BatchPublishSpec(channels: [channel_name_1], messages: [Message(name: "e1", data: "d1")])
@@ -127,13 +127,13 @@ Then the BatchResult contains results for all three channels
 ```pseudo
 channel_name = "test-RSC22c6-${random_id()}"
 
-Given a REST client with mock HTTP
+Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests
 When batchPublish is called with messages containing:
   - String data
   - Binary data (Uint8List/[]byte)
   - JSON object data
-Then the captured request shows each message is encoded per RSL4:
+Then the captured request shows each message is encoded per RSL4 (JSON protocol branch):
   - String: data as-is, no encoding
   - Binary: base64 encoded, encoding: "base64"
   - JSON: JSON stringified, encoding: "json"
@@ -174,7 +174,7 @@ Then the captured POST request includes Authorization: Basic <base64(key)>
 **Spec requirement:** With idempotentRestPublishing enabled, messages without IDs get unique IDs generated in baseId:serial format per RSL1k1, applied to each BatchPublishSpec separately.
 
 ```pseudo
-Given a REST client with idempotentRestPublishing: true and mock HTTP
+Given a REST client with idempotentRestPublishing: true, useBinaryProtocol: false and mock HTTP
 And the mock is configured to capture requests
 When batchPublish is called with messages that have no id
 Then the captured request shows each message in each BatchPublishSpec has a unique id generated
@@ -189,7 +189,7 @@ And each BatchPublishSpec gets a separate base ID
 **Spec requirement:** Per RSL1k3, messages with explicit IDs must have those IDs preserved as-is, even when idempotent publishing is enabled.
 
 ```pseudo
-Given a REST client with idempotentRestPublishing: true and mock HTTP
+Given a REST client with idempotentRestPublishing: true, useBinaryProtocol: false and mock HTTP
 And the mock is configured to capture requests
 When batchPublish is called with messages that have explicit ids
 Then the captured request shows the explicit ids are preserved (not overwritten)
@@ -202,7 +202,7 @@ Then the captured request shows the explicit ids are preserved (not overwritten)
 **Spec requirement:** When idempotent REST publishing is disabled, no IDs are generated for messages without IDs.
 
 ```pseudo
-Given a REST client with idempotentRestPublishing: false and mock HTTP
+Given a REST client with idempotentRestPublishing: false, useBinaryProtocol: false and mock HTTP
 And the mock is configured to capture requests
 When batchPublish is called with messages that have no id
 Then the captured request shows messages are sent without id fields
@@ -223,7 +223,7 @@ channel_name_1 = "test-BSP2a-a-${random_id()}"
 channel_name_2 = "test-BSP2a-b-${random_id()}"
 channel_name_3 = "test-BSP2a-c-${random_id()}"
 
-Given a BatchPublishSpec with mock HTTP
+Given a BatchPublishSpec and a REST client with mock HTTP configured with useBinaryProtocol: false
 When channels is set to [channel_name_1, channel_name_2, channel_name_3]
 Then the serialized spec in the captured request contains channels as a string array
 ```
@@ -237,7 +237,7 @@ Then the serialized spec in the captured request contains channels as a string a
 ```pseudo
 channel_name = "test-BSP2b-${random_id()}"
 
-Given a BatchPublishSpec with mock HTTP
+Given a BatchPublishSpec and a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests
 When messages contains multiple Message objects with:
   - Message(name: "event1", data: "data1")
@@ -490,7 +490,7 @@ And exception.statusCode equals 401
 ```pseudo
 channel_name = "test-RSC22-Headers1-${random_id()}"
 
-Given a REST client with mock HTTP
+Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests
 When batchPublish is called
 Then the captured request includes:
@@ -528,7 +528,7 @@ And the request_id is a unique identifier
 ```pseudo
 channel_name = "test-RSC22-Batch1-${random_id()}"
 
-Given a REST client with mock HTTP
+Given a REST client with mock HTTP configured with useBinaryProtocol: false
 And the mock is configured to capture requests
 And a BatchPublishSpec with:
   - channels: [channel_name]
