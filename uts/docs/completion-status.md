@@ -99,7 +99,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSL10 | Annotations attribute | Yes — `rest/unit/channel/annotations.md` |
 | RSL11 | GetMessage function (RSL11a–RSL11c) | Yes — `rest/unit/channel/get_message.md`, `rest/integration/mutable_messages.md` |
 | RSL14 | GetMessageVersions (RSL14a–RSL14c) | Yes — `rest/unit/channel/message_versions.md`, `rest/integration/mutable_messages.md` |
-| RSL15 | UpdateMessage/DeleteMessage/AppendMessage (RSL15a–RSL15f) | Yes — `rest/unit/channel/update_delete_message.md`, `rest/integration/mutable_messages.md` |
+| RSL15 | UpdateMessage/DeleteMessage/AppendMessage/PatchMessage (RSL15a–RSL15g) | Yes — `rest/unit/channel/update_delete_message.md`, `rest/unit/channel/patch_message.md`, `rest/integration/mutable_messages.md` |
 
 ### Plugins
 
@@ -236,7 +236,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RTL27 | Objects attribute (RTL27a–RTL27b) | |
 | RTL28 | GetMessage function | Yes — `realtime/unit/channels/channel_get_message.md` (proxies to RSL11 tests), `realtime/integration/mutable_messages_test.md` |
 | RTL31 | GetMessageVersions function | Yes — `realtime/unit/channels/channel_message_versions.md` (proxies to RSL14 tests), `realtime/integration/mutable_messages_test.md` |
-| RTL32 | UpdateMessage/DeleteMessage/AppendMessage (RTL32a–RTL32e) | Yes — `realtime/unit/channels/channel_update_delete_message.md`, `realtime/integration/mutable_messages_test.md` |
+| RTL32 | UpdateMessage/DeleteMessage/AppendMessage/PatchMessage (RTL32a–RTL32f) | Yes — `realtime/unit/channels/channel_update_delete_message.md`, `realtime/unit/channels/channel_patch_message.md`, `realtime/integration/mutable_messages_test.md` |
 
 ### RealtimePresence
 
@@ -313,8 +313,13 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 
 | Spec item | Description | UTS test spec |
 |-----------|-------------|---------------|
-| TM1–TM8 | Message (TM1–TM8a1) | Partial — `rest/unit/types/message_types.md` covers TM1–TM5; `rest/unit/types/mutable_message_types.md` covers TM2j, TM2r, TM2s, TM2u, TM5, TM8; `realtime/unit/channels/message_field_population.md` covers TM2a, TM2c, TM2f (realtime field population) |
+| TM1–TM9 | Message (TM1–TM9g4) | Partial — `rest/unit/types/message_types.md` covers TM1–TM5; `rest/unit/types/mutable_message_types.md` covers TM2j, TM2r, TM2s, TM2u, TM5, TM8; `rest/unit/types/message_patch_types.md` covers TM2v, TM5 (`MESSAGE_PATCH`); `rest/unit/types/message_apply_patch.md` covers TM9; `realtime/unit/channels/message_field_population.md` covers TM2a, TM2c, TM2f (realtime field population) |
 | DE1–DE2 | DeltaExtras | |
+| MPA1–MPA2 | MessagePatches | Yes — `rest/unit/types/message_patch_types.md` |
+| MPD1–MPD4 | MessagePatchDataOperation | Yes — `rest/unit/types/message_patch_types.md` (MPD2, MPD4); `rest/unit/channel/patch_message.md`, `realtime/unit/channels/channel_patch_message.md` (MPD3) |
+| MPH1–MPH2 | MessagePatchHeaderOperation | Yes — `rest/unit/types/message_patch_types.md` |
+| MPU1–MPU2 | MessagePatchUserClaimOperation | Yes — `rest/unit/types/message_patch_types.md` |
+| MPP1–MPP2 | MessagePatchPrivilegedOperation | Yes — `rest/unit/types/message_patch_types.md` |
 | TP1–TP5 | PresenceMessage | Yes — `rest/unit/types/presence_message_types.md` |
 | OM1–OM5 | ObjectMessage | |
 | OOP1–OOP5 | ObjectOperation | |
@@ -449,7 +454,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | **Wrapper SDK** (WP) | 7 | 0 | None |
 | **Push notifications** (RSH) | 8 | 1 | Partial |
 | **Plugins** (PC/PT/VD) | 3 | 2 | Partial |
-| **Data types** | 30 | 12 | Partial |
+| **Data types** | 35 | 17 | Partial |
 | **Option types** | 8 | 5 | Partial |
 | **Push types** | 3 | 0 | None |
 | **Introspection** (CR) | 1 | 0 | None |
