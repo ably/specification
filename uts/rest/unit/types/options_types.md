@@ -32,7 +32,7 @@ Tests that `ClientOptions` has all REST-relevant attributes with correct default
 | 8 | `authParams` | Map | (empty) |
 | 9 | `clientId` | String | (none) |
 | 10 | `endpoint` | String | (none - uses production) |
-| 11 | `restHost` | String | `"rest.ably.io"` |
+| 11 | `restHost` | String | `"main.realtime.ably.net"` |
 | 12 | `fallbackHosts` | List | (default fallback hosts) |
 | 13 | `tls` | Boolean | `true` |
 | 14 | `httpRequestTimeout` | Integer | `10000` (10 seconds) |
@@ -251,9 +251,9 @@ Tests that endpoint option affects default hosts.
 
 | ID | Endpoint | Expected Rest Host |
 |----|----------|--------------------|
-| 1 | (none/production) | `rest.ably.io` |
-| 2 | `"test"` | `test-rest.ably.io` |
-| 3 | `"custom-env"` | `custom-env-rest.ably.io` |
+| 1 | (none/production) | `main.realtime.ably.net` |
+| 2 | `"test"` | `test.realtime.ably.net` |
+| 3 | `"custom-env"` | `custom-env.realtime.ably.net` |
 
 ### Note
 The actual host resolution may be tested at the HTTP client level. This test verifies the option is stored correctly.

@@ -402,7 +402,7 @@ mock_http = MockHttpClient(
       {
         "id": "msg1",
         "name": "event",
-        "data": "encrypted-data-here",
+        "data": "ZW5jcnlwdGVkLWRhdGEtaGVyZQ==",
         "encoding": "custom-encryption/base64",
         "timestamp": 1234567890000
       }
@@ -427,6 +427,69 @@ message = history.items[0]
 ASSERT message.encoding == "custom-encryption"
 # Data should be base64-decoded but not further processed
 ASSERT message.data IS bytes  # Result of base64 decode
+ASSERT message.data == bytes("encrypted-data-here")
+```
+
+---
+
+## RSL6b - An encrypted message is delivered still encrypted without a cipher
+
+**Test ID**: `rest/unit/RSL6b/no-cipher-delivers-encrypted-1`
+
+**Spec requirement:** If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be decrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc".
+
+Tests RSL6b's own worked example: a channel with no `cipher` receives an encrypted message, decodes its base64,
+keeps the rest of its encoding, and logs an error.
+
+### Setup
+```pseudo
+channel_name = "test-RSL6b-${random_id()}"
+captured_requests = []
+captured_logs = []
+
+# items[0].encrypted from ably-common test-resources/crypto-data-128.json:
+# "The quick brown fox jumped over the lazy dog" encrypted with AES-128-CBC.
+encrypted_data = "HO4cYSP8LybPYBPZPHQOtmHItcxYdSvcNUC6kXVpMn0VFL+9z2/5tJ6WFbR0SBT1xhFRuJ+MeBGTU3yOY9P5ow=="
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.push(req)
+    req.respond_with(200, [
+      {
+        "id": "msg1",
+        "name": "example",
+        "data": encrypted_data,
+        "encoding": "utf-8/cipher+aes-128-cbc/base64",
+        "timestamp": 1234567890000
+      }
+    ])
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  logHandler: (level, message, context) => captured_logs.push({level, message, context})
+))
+channel = client.channels.get(channel_name)  # no cipher
+```
+
+### Test Steps
+```pseudo
+history = AWAIT channel.history()
+message = history.items[0]
+```
+
+### Assertions
+```pseudo
+# The base64 step is decoded; the cipher step cannot be, so it and the steps
+# before it stay in the encoding and the payload stays encrypted.
+ASSERT message.data IS bytes
+ASSERT message.data == base64_decode(encrypted_data)
+ASSERT message.encoding == "utf-8/cipher+aes-128-cbc"
+
+ASSERT ANY log IN captured_logs: log.level == error
 ```
 
 ---
