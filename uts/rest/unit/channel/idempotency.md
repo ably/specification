@@ -397,7 +397,7 @@ channel = client.channels.get(channel_name)
 ```pseudo
 messages = [
   Message(id: "client-id-1", name: "event1", data: "data1"),
-  Message(name: "event2", data: "data2"),  # No ID - should be generated
+  Message(name: "event2", data: "data2"),  # No ID - preserved as absent, none generated (RSL1k3)
   Message(id: "client-id-2", name: "event3", data: "data3")
 ]
 AWAIT channel.publish(messages: messages)
