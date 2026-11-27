@@ -110,7 +110,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
@@ -147,7 +150,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
@@ -491,7 +497,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
@@ -527,7 +536,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
@@ -569,7 +581,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
@@ -605,7 +620,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
@@ -640,7 +658,10 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyName:keySecret"))
+client = Rest(options: ClientOptions(
+  key: "appId.keyName:keySecret",
+  useBinaryProtocol: false  # pins JSON so JSON_PARSE(request.body) applies
+))
 ```
 
 ### Test Steps
