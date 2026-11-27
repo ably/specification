@@ -12,7 +12,7 @@ No mocks required for most tests - these verify type structure and serialization
 
 ## TD2-TD6 - TokenDetails structure
 
-**Test ID**: `rest/unit/TD2/token-details-attributes-0`
+**Test ID**: `rest/unit/TD1/token-details-attributes-0`
 
 **Spec requirement:** TokenDetails type must provide all required attributes according to TD2-TD6 specifications.
 
@@ -97,7 +97,7 @@ ASSERT token_details.clientId == "json-client"
 
 ## TK2, TK2a-TK2e - TokenParams structure
 
-**Test ID**: `rest/unit/TK2a/token-params-attributes-0`
+**Test ID**: `rest/unit/TK1/token-params-attributes-0`
 
 **Spec requirement:** TokenParams type must provide all required attributes according to TK2 and TK2a-TK2e specifications.
 
@@ -186,7 +186,7 @@ ASSERT query_map["capability"] == "{\"ch\":[\"pub\"]}"
 
 ## TE2-TE5 - TokenRequest structure
 
-**Test ID**: `rest/unit/TE2/token-request-attributes-0`
+**Test ID**: `rest/unit/TE1/token-request-attributes-0`
 
 **Spec requirement:** TokenRequest type must provide all required attributes according to TE2-TE5 specifications.
 

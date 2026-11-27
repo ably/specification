@@ -53,7 +53,7 @@ Tests that library-generated message IDs follow the `<base64>:<serial>` format.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k2-${random_id()}"
+channel_name = "test-RSL1k1-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -109,7 +109,7 @@ Tests that serial numbers increment for each message in a batch.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k2-batch-${random_id()}"
+channel_name = "test-RSL1k1-batch-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -171,7 +171,7 @@ Tests that separate publish calls generate unique base IDs.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k3-${random_id()}"
+channel_name = "test-RSL1k1-unique-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -220,7 +220,7 @@ Tests that message IDs are not automatically generated when disabled.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k3-disabled-${random_id()}"
+channel_name = "test-RSL1k1-disabled-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -257,7 +257,7 @@ ASSERT "id" NOT IN body
 
 ## RSL1k2 - Client-supplied ID preserved
 
-**Test ID**: `rest/unit/RSL1k2/client-id-preserved-0`
+**Test ID**: `rest/unit/RSL1k/client-id-preserved-0`
 
 **Spec requirement:** Client-supplied message IDs must be preserved and transmitted exactly as provided, even when `idempotentRestPublishing` is enabled.
 
@@ -312,7 +312,7 @@ Tests that the same message ID is used when retrying after failure.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL1k2-retry-${random_id()}"
+channel_name = "test-RSL1k1-retry-${random_id()}"
 captured_requests = []
 request_count = 0
 
@@ -359,7 +359,7 @@ ASSERT body1["id"] == body2["id"]
 
 ## RSL1k3 - Mixed client and library IDs in batch
 
-**Test ID**: `rest/unit/RSL1k3/mixed-ids-in-batch-0`
+**Test ID**: `rest/unit/RSL1k/mixed-ids-in-batch-1`
 
 **Spec requirement:** In a batch publish, messages with client-supplied IDs must be preserved, while messages without IDs receive library-generated IDs using the standard format.
 

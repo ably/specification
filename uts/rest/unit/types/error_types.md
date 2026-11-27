@@ -76,7 +76,7 @@ ASSERT error.cause == original_error
 
 ## TI2 - ErrorInfo from JSON response
 
-**Test ID**: `rest/unit/TI2/errorinfo-from-json-0`
+**Test ID**: `rest/unit/TI/errorinfo-from-json-0`
 
 **Spec requirement:** ErrorInfo type must support deserialization from Ably JSON error responses.
 
@@ -138,7 +138,7 @@ IF error.cause IS ErrorInfo:
 
 ## TI2 - AblyException wraps ErrorInfo
 
-**Test ID**: `rest/unit/TI2/ably-exception-wraps-errorinfo-2`
+**Test ID**: `rest/unit/TI/ably-exception-wraps-errorinfo-2`
 
 **Spec requirement:** AblyException (throwable) must wrap ErrorInfo and expose its attributes.
 

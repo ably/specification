@@ -1,6 +1,6 @@
 # Auth.authorize() Tests
 
-Spec points: `RSA10`, `RSA10a`, `RSA10b`, `RSA10e`, `RSA10g`, `RSA10i`, `RSA10j`, `RSA10k`, `RSA10l`, `RSA16c`
+Spec points: `RSA10`, `RSA10a`, `RSA10b`, `RSA10e`, `RSA10g`, `RSA10i`, `RSA10k`, `RSA10l`, `RSA16c`
 
 ## Test Type
 Unit test with mocked HTTP client and/or mocked authCallback
@@ -209,13 +209,13 @@ ASSERT client.auth.tokenDetails == result  # Same object
 
 ---
 
-## RSA10j - authorize() with authOptions replaces defaults
+## RSA10e - authorize() obtains the token via authOptions
 
-**Test ID**: `rest/unit/RSA10j/authorize-replaces-auth-options-0`
+**Test ID**: `rest/unit/RSA10e/authorize-replaces-auth-options-0`
 
-**Spec requirement:** `authOptions` in `authorize()` replaces stored auth options.
+**Spec requirement:** When the `authOptions` passed to `authorize()` contain a way of obtaining a token (here an `authCallback`), that is used to obtain the new token in place of the stored one.
 
-Tests that `authOptions` in `authorize()` replaces stored auth options.
+Tests that an `authCallback` passed in `authOptions` is used to obtain the token instead of the one configured on the constructor.
 
 ### Setup
 ```pseudo
