@@ -226,27 +226,34 @@ CLOSE_CLIENT(client)
 messages fail immediately, and both the PresenceMap and internal PresenceMap (RTP17)
 are cleared. LEAVE events should NOT be emitted when clearing.
 
+The map is read back with `presence.get(waitForSync: false)`. On a DETACHED channel, `get` runs the ensure-active-channel procedure (RTP11e), which re-attaches the channel (RTL33b); `waitForSync: false` (RTP11c1) only skips waiting for the SYNC. The mock therefore answers only the first ATTACH with a SYNC. It answers the re-attach with ATTACHED and no SYNC, so the map `get` returns is the one DETACHED left behind.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTP5a-detached-${random_id()}"
+
+attach_count = 0
 
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
+      attach_count++
       mock_ws.send_to_client(ProtocolMessage(
         action: ATTACHED,
         channel: channel_name,
         flags: HAS_PRESENCE
       ))
-      mock_ws.send_to_client(ProtocolMessage(
-        action: SYNC,
-        channel: channel_name,
-        channelSerial: "seq1:",
-        presence: [
-          PresenceMessage(action: PRESENT, clientId: "alice", connectionId: "c1", id: "c1:0:0", timestamp: 100)
-        ]
-      ))
+      IF attach_count == 1:
+        mock_ws.send_to_client(ProtocolMessage(
+          action: SYNC,
+          channel: channel_name,
+          channelSerial: "seq1:",
+          presence: [
+            PresenceMessage(action: PRESENT, clientId: "alice", connectionId: "c1", id: "c1:0:0", timestamp: 100)
+          ]
+        ))
+      # The re-attach made by presence.get() below gets no SYNC
     ELSE IF msg.action == DETACH:
       mock_ws.send_to_client(ProtocolMessage(action: DETACHED, channel: channel_name))
   }
@@ -283,8 +290,9 @@ ASSERT channel.state == ChannelState.detached
 # RTP5a: No LEAVE events emitted when clearing on DETACHED
 ASSERT leave_events.length == 0
 
-# Presence map is cleared
-members_after = channel.presence.get(waitForSync: false)
+# Presence map is cleared. get() re-attaches the channel (RTP11e), and the
+# mock sends no SYNC for that attach, so this reads the map DETACHED left.
+members_after = AWAIT channel.presence.get(waitForSync: false)
 ASSERT members_after.length == 0
 
 CLOSE_CLIENT(client)
