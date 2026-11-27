@@ -119,9 +119,9 @@ FOR EACH test_case IN test_cases:
 
 ---
 
-## RSL2b1 - Default direction is backwards
+## RSL2b2 - Default direction is backwards
 
-**Test ID**: `rest/unit/RSL2b1/default-direction-backwards-0`
+**Test ID**: `rest/unit/RSL2b2/default-direction-backwards-0`
 
 **Spec requirement:** When the direction parameter is not specified, the default direction for history queries must be backwards (newest messages first).
 
@@ -129,7 +129,7 @@ Tests that the default direction for history is backwards (newest first).
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL2b1-${random_id()}"
+channel_name = "test-RSL2b2-${random_id()}"
 captured_requests = []
 
 mock_http = MockHttpClient(
@@ -158,46 +158,6 @@ request = captured_requests[0]
 IF "direction" IN request.url.query_params:
   ASSERT request.url.query_params["direction"] == "backwards"
 # If absent, server defaults to backwards per spec
-```
-
----
-
-## RSL2b2 - Limit parameter
-
-**Test ID**: `rest/unit/RSL2b2/limit-parameter-0`
-
-**Spec requirement:** The limit parameter must control the maximum number of messages returned in a single history query.
-
-Tests that limit parameter restricts the number of returned items.
-
-### Setup
-```pseudo
-channel_name = "test-RSL2b2-${random_id()}"
-captured_requests = []
-
-mock_http = MockHttpClient(
-  onConnectionAttempt: (conn) => conn.respond_with_success(),
-  onRequest: (req) => {
-    captured_requests.append(req)
-    req.respond_with(200, [
-      { "id": "msg1", "name": "e", "data": "d", "timestamp": 1000 },
-      { "id": "msg2", "name": "e", "data": "d", "timestamp": 2000 },
-      { "id": "msg3", "name": "e", "data": "d", "timestamp": 3000 }
-    ])
-  }
-)
-install_mock(mock_http)
-
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get(channel_name)
-```
-
-### Test Steps
-```pseudo
-AWAIT channel.history(limit: 10)
-
-request = captured_requests[0]
-ASSERT request.url.query_params["limit"] == "10"
 ```
 
 ---
@@ -241,6 +201,46 @@ request = captured_requests[0]
 IF "limit" IN request.url.query_params:
   ASSERT request.url.query_params["limit"] == "100"
 # If absent, server defaults to 100 per spec
+```
+
+---
+
+## RSL2b3 - Limit parameter
+
+**Test ID**: `rest/unit/RSL2b3/limit-parameter-1`
+
+**Spec requirement:** The limit parameter must control the maximum number of messages returned in a single history query.
+
+Tests that limit parameter restricts the number of returned items.
+
+### Setup
+```pseudo
+channel_name = "test-RSL2b3-${random_id()}"
+captured_requests = []
+
+mock_http = MockHttpClient(
+  onConnectionAttempt: (conn) => conn.respond_with_success(),
+  onRequest: (req) => {
+    captured_requests.append(req)
+    req.respond_with(200, [
+      { "id": "msg1", "name": "e", "data": "d", "timestamp": 1000 },
+      { "id": "msg2", "name": "e", "data": "d", "timestamp": 2000 },
+      { "id": "msg3", "name": "e", "data": "d", "timestamp": 3000 }
+    ])
+  }
+)
+install_mock(mock_http)
+
+client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
+channel = client.channels.get(channel_name)
+```
+
+### Test Steps
+```pseudo
+AWAIT channel.history(limit: 10)
+
+request = captured_requests[0]
+ASSERT request.url.query_params["limit"] == "10"
 ```
 
 ---
@@ -297,7 +297,7 @@ FOR EACH test_case IN test_cases:
 
 ---
 
-## RSL2 - History with time range
+## RSL2b1 - History with time range
 
 **Test ID**: `rest/unit/RSL2/history-time-range-1`
 

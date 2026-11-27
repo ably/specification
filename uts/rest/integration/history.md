@@ -89,11 +89,11 @@ ASSERT ALL msg IN history.items: msg.timestamp IS NOT null
 
 ---
 
-## RSL2b1 - History direction forwards
+## RSL2b2 - History direction forwards
 
-**Test ID**: `rest/integration/RSL2b1/history-direction-forwards-0`
+**Test ID**: `rest/integration/RSL2b2/history-direction-forwards-0`
 
-**Spec requirement:** RSL2b1 - `direction` param controls message ordering (forwards = oldest first).
+**Spec requirement:** RSL2b2 - `direction` param controls message ordering (forwards = oldest first).
 
 Tests that `direction: forwards` returns messages oldest-first.
 
@@ -136,11 +136,11 @@ ASSERT history.items[2].name == "third"
 
 ---
 
-## RSL2b2 - History limit parameter
+## RSL2b3 - History limit parameter
 
-**Test ID**: `rest/integration/RSL2b2/history-limit-parameter-0`
+**Test ID**: `rest/integration/RSL2b3/history-limit-parameter-0`
 
-**Spec requirement:** RSL2b2 - `limit` param restricts the number of messages returned.
+**Spec requirement:** RSL2b3 - `limit` param restricts the number of messages returned.
 
 Tests that `limit` parameter restricts number of returned messages.
 
@@ -183,11 +183,11 @@ ASSERT history.items[4].name == "event-6"
 
 ---
 
-## RSL2b3 - History time range parameters
+## RSL2b1 - History time range parameters
 
-**Test ID**: `rest/integration/RSL2b3/history-time-range-0`
+**Test ID**: `rest/integration/RSL2b1/history-time-range-0`
 
-**Spec requirement:** RSL2b3 - `start` and `end` params filter messages by timestamp range.
+**Spec requirement:** RSL2b1 - `start` and `end` params filter messages by timestamp range.
 
 Tests that `start` and `end` parameters filter messages by time.
 
@@ -248,14 +248,20 @@ late_history = AWAIT channel.history(
 
 ### Assertions
 ```pseudo
+# The two batches must be separable, which is what the 2ms wait is for.
+# With both inside one millisecond the boundary has no side to put them on,
+# and the window assertions below could not hold whatever the server does.
+ASSERT min_late_ts > max_early_ts
+
 ASSERT early_history.items.length >= 1
 ASSERT late_history.items.length >= 1
 
-# Early messages should contain "early" names
-ASSERT ANY msg IN early_history.items: msg.name STARTS WITH "early"
-
-# Late messages should contain "late" names
-ASSERT ANY msg IN late_history.items: msg.name STARTS WITH "late"
+# Each window must exclude the other batch, not just contain its own. An
+# unfiltered page holds both batches, so a client that dropped `start` would
+# fail only the late-window check, and one that dropped `end` only the
+# early-window check.
+ASSERT ALL msg IN early_history.items: msg.name STARTS WITH "early"
+ASSERT ALL msg IN late_history.items: msg.name STARTS WITH "late"
 ```
 
 ---
