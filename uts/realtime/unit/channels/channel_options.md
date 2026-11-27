@@ -3,9 +3,13 @@
 Spec points: `TB2`, `TB3`, `TB4`, `RTS3b`, `RTS3c`, `RTS3c1`, `RTS5`, `RTL16`
 
 ## Test Type
-Unit test - no network calls required for most tests
+Unit test - no network calls required for most tests. The tests that attach a channel use a mocked WebSocket.
 
 These tests verify channel options and derived channel functionality.
+
+## Mock WebSocket Infrastructure
+
+See `uts/realtime/unit/helpers/mock_websocket.md` for the full Mock WebSocket Infrastructure specification.
 
 ---
 
@@ -215,7 +219,21 @@ Tests that get() throws error when params/modes change on attached channel.
 ```pseudo
 channel_name = "test-RTS3c1-${random_id()}"
 
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel
+      ))
+  }
+)
+install_mock(mock_ws)
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
 
 # Create and attach channel
 channel = client.channels.get(channel_name)
@@ -252,10 +270,23 @@ Tests error when modes change on attaching channel.
 ```pseudo
 channel_name = "test-RTS3c1-attaching-${random_id()}"
 
-client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      # Do NOT respond — leave the channel ATTACHING
+  }
+)
+install_mock(mock_ws)
 
+client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
+# Put channel in attaching state: the ATTACH is sent and never answered
 channel = client.channels.get(channel_name)
-# Put channel in attaching state (implementation detail)
+channel.attach()
+AWAIT_STATE channel.state == ChannelState.attaching
 ```
 
 ### Test Steps
@@ -317,7 +348,22 @@ Tests that setOptions with params/modes on attached channel triggers reattachmen
 ```pseudo
 channel_name = "test-RTL16a-${random_id()}"
 
+mock_ws = MockWebSocket(
+  onConnectionAttempt: (conn) => conn.respond_with_success(CONNECTED_MESSAGE),
+  onMessageFromClient: (msg) => {
+    IF msg.action == ATTACH:
+      mock_ws.send_to_client(ProtocolMessage(
+        action: ATTACHED,
+        channel: msg.channel
+      ))
+  }
+)
+install_mock(mock_ws)
+
 client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+client.connect()
+AWAIT_STATE client.connection.state == ConnectionState.connected
+
 channel = client.channels.get(channel_name)
 AWAIT channel.attach()
 ASSERT channel.state == ChannelState.attached
