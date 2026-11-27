@@ -193,12 +193,15 @@ ch_denied = realtime.channels.get(denied_channel)
 AWAIT ch_denied.attach()
 AWAIT ch_denied.presence.enterClient("member-2", data: "world")
 
-AWAIT realtime.close()
+# NOTE: Keep realtime open during the REST query. The presence members belong
+# to this connection, so closing it before the query would make them leave and
+# the allowed channel's result would carry no members.
 ```
 
 ### Test Steps
 ```pseudo
-# Query with restricted key (only has access to "batch-allowed" channel)
+# Query with the restricted key. Its capability grants "channel6":["*"] (the
+# allowed channel) and nothing on denied_channel.
 restricted_rest = Rest(options: ClientOptions(
   key: restricted_key,
   endpoint: "nonprod:sandbox",
@@ -231,9 +234,9 @@ ASSERT failure.error.statusCode == 401
 ```
 
 ### Cleanup
-
-No cleanup needed — the Realtime client was already closed during setup,
-and the REST client has no persistent connection to close.
+```pseudo
+AWAIT realtime.close()
+```
 
 ---
 
