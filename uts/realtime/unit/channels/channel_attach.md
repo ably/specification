@@ -439,30 +439,39 @@ CLOSE_CLIENT(client)
 
 Tests that attach fails when connection is in suspended state.
 
+The connection becomes SUSPENDED once it has been DISCONNECTED for `connectionStateTtl` (RTN14e). Every connection attempt is refused, so no CONNECTED message, and no `connectionDetails`, ever reaches the client, and the TTL in force is the DF1a default of 120 s. The test advances fake time past it. (`channelRetryTimeout` governs the retry of a SUSPENDED channel, per RTL13b, and has no effect on the connection.)
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL4b-suspended-${random_id()}"
 
-# Configure client with short suspend timeout for testing
-client = Realtime(options: ClientOptions(
-  key: "appId.keyId:keySecret",
-  autoConnect: false,
-  channelRetryTimeout: 100  # Short timeout for testing
-))
-channel = client.channels.get(channel_name)
+enable_fake_timers()
 
 # Mock that refuses all connections to trigger suspended state
 mock_ws = MockWebSocket(
   onConnectionAttempt: (conn) => conn.respond_with_refused()
 )
 install_mock(mock_ws)
+
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false,
+  disconnectedRetryTimeout: 1000
+))
+channel = client.channels.get(channel_name)
 ```
 
 ### Test Steps
 ```pseudo
 client.connect()
 
-# Wait for connection to enter suspended state after retries exhausted
+# Advance time past the default connectionStateTtl (DF1a: 120 s)
+# until the connection enters SUSPENDED
+LOOP up to 15 times:
+  ADVANCE_TIME(10000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
 AWAIT_STATE client.connection.state == ConnectionState.suspended
 
 # Try to attach

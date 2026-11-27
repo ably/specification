@@ -437,9 +437,11 @@ CLOSE_CLIENT(client)
 
 **Test ID**: `realtime/unit/RTN14e/disconnected-to-suspended-0`
 
-**Spec requirement:** Once the connection has been DISCONNECTED for longer than connectionStateTtl, transition to SUSPENDED state.
+**Spec requirement:** Once the connection has been DISCONNECTED for longer than the default connectionStateTtl, transition to SUSPENDED state.
 
 Tests that prolonged disconnection leads to suspension.
+
+Every connection attempt is refused, so no CONNECTED message, and no `connectionDetails`, ever reaches the client. The `connectionStateTtl` in force is therefore the DF1a default of 120 s, which RTN14e names. A test cannot shorten it: it is not a `ClientOptions` field. The test advances fake time past it instead.
 
 ### Setup
 
@@ -457,11 +459,6 @@ client = Realtime(options: ClientOptions(
   disconnectedRetryTimeout: 1000,  # Retry every 1 second
   autoConnect: false
 ))
-
-# Simulate short connectionStateTtl
-# In real implementation, this comes from server in CONNECTED message
-# For this test, we'll use a short default value
-DEFAULT_CONNECTION_STATE_TTL = 5000  # 5 seconds
 ```
 
 ### Test Steps
@@ -475,12 +472,14 @@ client.connect()
 # Should transition to DISCONNECTED
 AWAIT_STATE client.connection.state == ConnectionState.disconnected
 
-# Advance time past connectionStateTtl
-ADVANCE_TIME(DEFAULT_CONNECTION_STATE_TTL + 100)
+# Advance time past the default connectionStateTtl (DF1a: 120 s)
+LOOP up to 15 times:
+  ADVANCE_TIME(10000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
 
 # Should transition to SUSPENDED
 AWAIT_STATE client.connection.state == ConnectionState.suspended
-  WITH timeout: 1 second
 ```
 
 ### Assertions

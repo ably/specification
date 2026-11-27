@@ -270,7 +270,8 @@ mock_ws.active_connection.send_to_client(ProtocolMessage(
     connectionStateTtl: 120000,  # Changed
     maxMessageSize: 32768,  # Changed
     serverId: "server-2",  # Changed
-    clientId: "client-updated"  # Changed
+    clientId: "client-original"  # Unchanged: RTN24 overrides operational
+                                 # parameters, not the connection's identity
   )
 ))
 

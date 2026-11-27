@@ -412,11 +412,22 @@ it returns the members currently stored in the PresenceMap.
 ```pseudo
 channel_name = "test-RTP11d-${random_id()}"
 
+enable_fake_timers()
+
+connection_attempt_count = 0
+
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionId: "conn-1",
-      connectionDetails: ConnectionDetails(connectionStateTtl: 5000))
-  ),
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    IF connection_attempt_count == 1:
+      conn.respond_with_success(
+        ProtocolMessage(action: CONNECTED, connectionId: "conn-1",
+          connectionDetails: ConnectionDetails(connectionStateTtl: 5000))
+      )
+    ELSE:
+      # Refuse all reconnection attempts so the connection enters SUSPENDED
+      conn.respond_with_refused()
+  },
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
@@ -437,7 +448,11 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
+client = Realtime(options: ClientOptions(
+  key: "fake.key:secret",
+  autoConnect: false,
+  disconnectedRetryTimeout: 500
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -447,8 +462,17 @@ client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 
-# Simulate channel becoming SUSPENDED (e.g., connection drops)
+# Simulate channel becoming SUSPENDED. The transport drop leaves the connection
+# DISCONNECTED; the channel becomes SUSPENDED once the connection does (RTL3c),
+# after connectionStateTtl (RTN14e)
 mock_ws.active_connection.simulate_disconnect()
+
+LOOP up to 15 times:
+  ADVANCE_TIME(2000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.suspended
 AWAIT_STATE channel.state == ChannelState.suspended
 
 # Default get (waitForSync=true) should error
@@ -476,11 +500,22 @@ members currently in the PresenceMap.
 ```pseudo
 channel_name = "test-RTP11d-nowait-${random_id()}"
 
+enable_fake_timers()
+
+connection_attempt_count = 0
+
 mock_ws = MockWebSocket(
-  onConnectionAttempt: (conn) => conn.respond_with_success(
-    ProtocolMessage(action: CONNECTED, connectionId: "conn-1",
-      connectionDetails: ConnectionDetails(connectionStateTtl: 5000))
-  ),
+  onConnectionAttempt: (conn) => {
+    connection_attempt_count++
+    IF connection_attempt_count == 1:
+      conn.respond_with_success(
+        ProtocolMessage(action: CONNECTED, connectionId: "conn-1",
+          connectionDetails: ConnectionDetails(connectionStateTtl: 5000))
+      )
+    ELSE:
+      # Refuse all reconnection attempts so the connection enters SUSPENDED
+      conn.respond_with_refused()
+  },
   onMessageFromClient: (msg) => {
     IF msg.action == ATTACH:
       mock_ws.send_to_client(ProtocolMessage(
@@ -500,7 +535,11 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-client = Realtime(options: ClientOptions(key: "fake.key:secret", autoConnect: false))
+client = Realtime(options: ClientOptions(
+  key: "fake.key:secret",
+  autoConnect: false,
+  disconnectedRetryTimeout: 500
+))
 channel = client.channels.get(channel_name)
 ```
 
@@ -510,8 +549,17 @@ client.connect()
 AWAIT_STATE client.connection.state == ConnectionState.connected
 AWAIT channel.attach()
 
-# Simulate channel becoming SUSPENDED
+# Simulate channel becoming SUSPENDED. The transport drop leaves the connection
+# DISCONNECTED; the channel becomes SUSPENDED once the connection does (RTL3c),
+# after connectionStateTtl (RTN14e)
 mock_ws.active_connection.simulate_disconnect()
+
+LOOP up to 15 times:
+  ADVANCE_TIME(2000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
+
+AWAIT_STATE client.connection.state == ConnectionState.suspended
 AWAIT_STATE channel.state == ChannelState.suspended
 
 # waitForSync=false returns what's in the PresenceMap

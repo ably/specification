@@ -128,6 +128,8 @@ CLOSE_CLIENT(client)
 
 Tests that errorReason reflects suspension reason.
 
+Every connection attempt is refused, so no CONNECTED message, and no `connectionDetails`, ever reaches the client. The `connectionStateTtl` in force is therefore the DF1a default of 120 s, which RTN14e names. A test cannot shorten it: it is not a `ClientOptions` field. The test advances fake time past it instead.
+
 ### Setup
 
 ```pseudo
@@ -144,8 +146,6 @@ client = Realtime(options: ClientOptions(
   disconnectedRetryTimeout: 500,
   autoConnect: false
 ))
-
-DEFAULT_CONNECTION_STATE_TTL = 5000  # 5 seconds
 ```
 
 ### Test Steps
@@ -159,12 +159,14 @@ client.connect()
 # Wait for DISCONNECTED state
 AWAIT_STATE client.connection.state == ConnectionState.disconnected
 
-# Advance time past connectionStateTtl
-ADVANCE_TIME(DEFAULT_CONNECTION_STATE_TTL + 100)
+# Advance time past the default connectionStateTtl (DF1a: 120 s)
+LOOP up to 15 times:
+  ADVANCE_TIME(10000)
+  IF client.connection.state == ConnectionState.suspended:
+    BREAK
 
 # Wait for SUSPENDED state
 AWAIT_STATE client.connection.state == ConnectionState.suspended
-  WITH timeout: 1 second
 ```
 
 ### Assertions
