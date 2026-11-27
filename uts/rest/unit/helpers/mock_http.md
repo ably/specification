@@ -67,7 +67,7 @@ mock_http = MockHttpClient(
   },
   onRequest: (req) => {
     IF req.url.path == "/time":
-      req.respond_with(200, {"time": 1234567890000})
+      req.respond_with(200, [1234567890000])
     ELSE:
       req.respond_with(404, {"error": {"code": 40400}})
   }
@@ -97,7 +97,7 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, {"time": 1234567890000})
+    req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -122,7 +122,7 @@ mock_http = MockHttpClient(
     IF request_count == 1:
       req.respond_with(500, {"error": {"code": 50000}})
     ELSE:
-      req.respond_with(200, {"time": 1234567890000})
+      req.respond_with(200, [1234567890000])
   }
 )
 install_mock(mock_http)
@@ -153,7 +153,7 @@ connection.respond_with_success()
 # Wait for and handle HTTP request
 request = AWAIT mock_http.await_request()
 ASSERT request.headers["X-Ably-Version"] IS NOT null
-request.respond_with(200, {"time": 1234567890000})
+request.respond_with(200, [1234567890000])
 
 # Complete the operation
 result = AWAIT request_future
