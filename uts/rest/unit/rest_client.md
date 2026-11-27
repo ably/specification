@@ -485,7 +485,8 @@ install_mock(mock_http)
 
 client = Rest(options: ClientOptions(
   key: "appId.keyId:keySecret",
-  httpRequestTimeout: 1000  # 1 second timeout
+  httpRequestTimeout: 1000,  # 1 second timeout
+  fallbackHosts: []  # No fallback (RSC15m), so the timeout is observed on the primary host
 ))
 ```
 
