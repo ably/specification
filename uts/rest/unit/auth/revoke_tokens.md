@@ -59,9 +59,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -103,9 +107,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -141,11 +149,15 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
-      { "target": "revocationKey:group-1", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
-      { "target": "channel:secret", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 3,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
+        { "target": "revocationKey:group-1", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
+        { "target": "channel:secret", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -191,10 +203,14 @@ ASSERT request_body["targets"] == ["clientId:alice", "revocationKey:group-1", "c
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
-      { "target": "clientId:bob", "issuedBefore": 1700000000000, "appliesAt": 1700000002000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 2,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 },
+        { "target": "clientId:bob", "issuedBefore": 1700000000000, "appliesAt": 1700000002000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -222,14 +238,14 @@ ASSERT result.results.length == 2
 **Test ID**: `rest/unit/RSA17c/mixed-success-failure-1`
 
 **Spec requirement:** When the server returns a mix of successes and failures,
-the response is HTTP 200 with a `BatchResult` envelope.
+the response is HTTP 201 with a `BatchResult` envelope.
 
 ### Setup
 ```pseudo
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, {
+    req.respond_with(201, {
       "successCount": 1,
       "failureCount": 1,
       "results": [
@@ -317,9 +333,13 @@ ASSERT result.results.length == 2
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -413,7 +433,7 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [])
+    req.respond_with(201, { "successCount": 0, "failureCount": 0, "results": [] })
   }
 )
 install_mock(mock_http)
@@ -449,7 +469,7 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [])
+    req.respond_with(201, { "successCount": 0, "failureCount": 0, "results": [] })
   }
 )
 install_mock(mock_http)
@@ -490,9 +510,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1699999000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1699999000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -529,9 +553,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -574,9 +602,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000030000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000030000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -613,9 +645,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -651,9 +687,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1699999000000, "appliesAt": 1700000030000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1699999000000, "appliesAt": 1700000030000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
@@ -738,9 +778,13 @@ mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
     captured_requests.append(req)
-    req.respond_with(200, [
-      { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
-    ])
+    req.respond_with(201, {
+      "successCount": 1,
+      "failureCount": 0,
+      "results": [
+        { "target": "clientId:alice", "issuedBefore": 1700000000000, "appliesAt": 1700000001000 }
+      ]
+    })
   }
 )
 install_mock(mock_http)
