@@ -248,14 +248,20 @@ late_history = AWAIT channel.history(
 
 ### Assertions
 ```pseudo
+# The two batches must be separable, which is what the 2ms wait is for.
+# With both inside one millisecond the boundary has no side to put them on,
+# and the window assertions below could not hold whatever the server does.
+ASSERT min_late_ts > max_early_ts
+
 ASSERT early_history.items.length >= 1
 ASSERT late_history.items.length >= 1
 
-# Early messages should contain "early" names
-ASSERT ANY msg IN early_history.items: msg.name STARTS WITH "early"
-
-# Late messages should contain "late" names
-ASSERT ANY msg IN late_history.items: msg.name STARTS WITH "late"
+# Each window must exclude the other batch, not just contain its own. An
+# unfiltered page holds both batches, so a client that dropped `start` would
+# fail only the late-window check, and one that dropped `end` only the
+# early-window check.
+ASSERT ALL msg IN early_history.items: msg.name STARTS WITH "early"
+ASSERT ALL msg IN late_history.items: msg.name STARTS WITH "late"
 ```
 
 ---
