@@ -68,7 +68,7 @@ This matrix lists all spec items from the [Ably features spec](../../specificati
 | RSA7 | ClientId and authenticated clients (RSA7a–RSA7e2) | Partial — `rest/unit/auth/client_id.md` covers RSA7, RSA7a–RSA7c; `realtime/integration/auth.md` covers RSA7 |
 | RSA8 | RequestToken function (RSA8a–RSA8g) | Partial — `rest/unit/auth/auth_callback.md` covers RSA8c, RSA8d; `realtime/unit/auth/connection_auth_test.md` covers RSA8d; `rest/integration/auth.md` covers RSA8; `realtime/integration/auth.md` covers RSA8 |
 | RSA9 | CreateTokenRequest (RSA9a–RSA9i) | Partial — `rest/integration/auth.md` covers RSA9; `realtime/integration/auth/token_request_test.md` covers RSA9a, RSA9g |
-| RSA10 | Authorize function (RSA10a–RSA10l) | Partial — `rest/unit/auth/authorize.md` covers RSA10a, RSA10b, RSA10e, RSA10g, RSA10i, RSA10k |
+| RSA10 | Authorize function (RSA10a–RSA10l) | Partial — `rest/unit/auth/authorize.md` covers RSA10a, RSA10b, RSA10e, RSA10g, RSA10i, RSA10j, RSA10k |
 | RSA11 | Base64 encoded API key | Yes — `rest/unit/auth/auth_scheme.md` (with RSA2) |
 | RSA12 | Auth#clientId attribute (RSA12a–RSA12b) | Yes — `rest/unit/auth/client_id.md` |
 | RSA14 | Error when token auth selected without token | Yes — `rest/unit/auth/token_renewal.md`, `rest/integration/auth.md` |
