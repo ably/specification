@@ -89,9 +89,13 @@ channel_b = client_b.channels.get(channel_name)
 AWAIT channel_b.attach()
 
 # Subscribe on client B before client A enters. Members are counted by clientId from
-# both ENTER and PRESENT events: if client B's connection drops mid-test, members it
-# missed arrive via the presence re-sync as PRESENT events rather than ENTER, and an
-# ENTER-only count would undercount forever.
+# both ENTER and PRESENT events, because a member can reach client B as PRESENT rather
+# than ENTER. Client B's ATTACHED may carry HAS_PRESENCE even though the channel is
+# empty, with a SYNC following it (RTP1): members whose enters reach the server before
+# that SYNC goes out arrive inside it as PRESENT, and their ENTERs need not be emitted
+# afterwards. Likewise, if client B's connection drops mid-test, members it missed
+# arrive via the presence re-sync as PRESENT. An ENTER-only count would undercount
+# forever.
 entered_client_ids = SET()
 channel_b.presence.subscribe(action: [ENTER, PRESENT], (event) => {
   entered_client_ids.add(event.clientId)
@@ -183,6 +187,12 @@ all_events = []
 channel_b.presence.subscribe((event) => {
   all_events.append(event)
 })
+
+# Client B's ATTACHED may carry HAS_PRESENCE even though the channel is empty, with a
+# SYNC following it (RTP1). Wait for that SYNC to complete (RTP11c1) before client A
+# attaches, so that client A's enter reaches client B live as an ENTER rather than
+# inside the SYNC as a PRESENT.
+AWAIT channel_b.presence.get()
 
 AWAIT channel_a.attach()
 
