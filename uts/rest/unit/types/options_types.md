@@ -32,7 +32,7 @@ Tests that `ClientOptions` has all REST-relevant attributes with correct default
 | 8 | `authParams` | Map | (empty) |
 | 9 | `clientId` | String | (none) |
 | 10 | `endpoint` | String | (none - uses production) |
-| 11 | `restHost` | String | `"rest.ably.io"` |
+| 11 | `restHost` | String | `"main.realtime.ably.net"` |
 | 12 | `fallbackHosts` | List | (default fallback hosts) |
 | 13 | `tls` | Boolean | `true` |
 | 14 | `httpRequestTimeout` | Integer | `10000` (10 seconds) |
