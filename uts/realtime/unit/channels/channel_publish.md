@@ -1041,7 +1041,11 @@ mock_ws = MockWebSocket(
 )
 install_mock(mock_ws)
 
-client = Realtime(options: ClientOptions(key: "appId.keyId:keySecret", autoConnect: false))
+client = Realtime(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  autoConnect: false,
+  useBinaryProtocol: false  # pins JSON: the assertions read the wire encoding (RSL4d3)
+))
 channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
 ```
 
@@ -1059,7 +1063,10 @@ channel.publish(message: Message(name: "custom", data: {"key": "value"}))
 ASSERT length(captured_messages) == 1
 ASSERT length(captured_messages[0].messages) == 1
 ASSERT captured_messages[0].messages[0].name == "custom"
-ASSERT captured_messages[0].messages[0].data == {"key": "value"}
+# RSL4d3 (via RTL6a): a JSON payload goes on the wire stringified, with encoding "json"
+ASSERT captured_messages[0].messages[0].data IS String
+ASSERT parse_json(captured_messages[0].messages[0].data) == {"key": "value"}
+ASSERT captured_messages[0].messages[0].encoding == "json"
 CLOSE_CLIENT(client)
 ```
 
