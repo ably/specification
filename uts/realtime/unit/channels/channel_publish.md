@@ -611,6 +611,8 @@ CLOSE_CLIENT(client)
 
 Tests that publishing fails immediately when the connection is SUSPENDED.
 
+Every connection attempt is refused, so no CONNECTED message, and no `connectionDetails`, ever reaches the client. The `connectionStateTtl` in force is therefore the DF1a default of 120 s (RTN14e). It is not a `ClientOptions` field, so the test advances fake time past it rather than setting it.
+
 ### Setup
 ```pseudo
 channel_name = "test-RTL6c4-suspended-${random_id()}"
@@ -625,8 +627,7 @@ install_mock(mock_ws)
 client = Realtime(options: ClientOptions(
   key: "appId.keyId:keySecret",
   autoConnect: false,
-  disconnectedRetryTimeout: 1000,
-  connectionStateTtl: 5000
+  disconnectedRetryTimeout: 1000
 ))
 channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubscribe: false))
 ```
@@ -635,9 +636,10 @@ channel = client.channels.get(channel_name, RealtimeChannelOptions(attachOnSubsc
 ```pseudo
 client.connect()
 
-# Advance time until connection enters SUSPENDED
+# Advance time past the default connectionStateTtl (DF1a: 120 s)
+# until the connection enters SUSPENDED
 LOOP up to 15 times:
-  ADVANCE_TIME(2000)
+  ADVANCE_TIME(10000)
   IF client.connection.state == ConnectionState.suspended:
     BREAK
 
