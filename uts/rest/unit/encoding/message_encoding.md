@@ -432,18 +432,25 @@ ASSERT message.data == bytes("encrypted-data-here")
 
 ---
 
-## RSL6b - Invalid base64 delivered with last successful decoding
+## RSL6b - An encrypted message is delivered still encrypted without a cipher
 
-**Test ID**: `rest/unit/RSL6b/invalid-base64-preserved-1`
+**Test ID**: `rest/unit/RSL6b/no-cipher-delivers-encrypted-1`
 
-**Spec requirement:** If invalid Base64 is detected in the message payload, an error message must be sent to the logger, but the message must still be delivered with the last successful decoding and the `encoding` field retaining the component that could not be decoded.
+**Spec requirement:** If, for example, incompatible encryption details are provided or invalid Base64 is detected in the message payload, an error message will be sent to the logger, but the message will still be delivered with last successful decoding and the `encoding` field. For example, if a message had a decoding of "utf-8/cipher+aes-128-cbc/base64", and the payload was successfully Base64 decoded but the payload could not be decrypted because the `CipherParam` details were not configured, the message would be delivered with a binary payload and an `encoding` with the value "utf-8/cipher+aes-128-cbc".
+
+Tests RSL6b's own worked example: a channel with no `cipher` receives an encrypted message, decodes its base64,
+keeps the rest of its encoding, and logs an error.
 
 ### Setup
 ```pseudo
-channel_name = "test-RSL6b-invalid-${random_id()}"
+channel_name = "test-RSL6b-${random_id()}"
 captured_requests = []
+captured_logs = []
 
-# "@@@invalid@@@" is not valid RFC4648 base64 and cannot be decoded.
+# items[0].encrypted from ably-common test-resources/crypto-data-128.json:
+# "The quick brown fox jumped over the lazy dog" encrypted with AES-128-CBC.
+encrypted_data = "HO4cYSP8LybPYBPZPHQOtmHItcxYdSvcNUC6kXVpMn0VFL+9z2/5tJ6WFbR0SBT1xhFRuJ+MeBGTU3yOY9P5ow=="
+
 mock_http = MockHttpClient(
   onConnectionAttempt: (conn) => conn.respond_with_success(),
   onRequest: (req) => {
@@ -451,9 +458,9 @@ mock_http = MockHttpClient(
     req.respond_with(200, [
       {
         "id": "msg1",
-        "name": "event",
-        "data": "@@@invalid@@@",
-        "encoding": "custom-encryption/base64",
+        "name": "example",
+        "data": encrypted_data,
+        "encoding": "utf-8/cipher+aes-128-cbc/base64",
         "timestamp": 1234567890000
       }
     ])
@@ -461,8 +468,11 @@ mock_http = MockHttpClient(
 )
 install_mock(mock_http)
 
-client = Rest(options: ClientOptions(key: "appId.keyId:keySecret"))
-channel = client.channels.get(channel_name)
+client = Rest(options: ClientOptions(
+  key: "appId.keyId:keySecret",
+  logHandler: (level, message, context) => captured_logs.push({level, message, context})
+))
+channel = client.channels.get(channel_name)  # no cipher
 ```
 
 ### Test Steps
@@ -473,10 +483,13 @@ message = history.items[0]
 
 ### Assertions
 ```pseudo
-# Base64 decode fails, so the message is delivered with the last successful
-# decoding: the data is unchanged and the encoding retains the base64 component.
-ASSERT message.data == "@@@invalid@@@"
-ASSERT message.encoding == "custom-encryption/base64"
+# The base64 step is decoded; the cipher step cannot be, so it and the steps
+# before it stay in the encoding and the payload stays encrypted.
+ASSERT message.data IS bytes
+ASSERT message.data == base64_decode(encrypted_data)
+ASSERT message.encoding == "utf-8/cipher+aes-128-cbc"
+
+ASSERT ANY log IN captured_logs: log.level == error
 ```
 
 ---
